@@ -28,6 +28,13 @@
  */
 package org.opalj.fp.analyses;
 
+/**
+ * Some Demo code to test/demonstrate the complexity related to calculating the purity of
+ * methods in the presence of mutual recursive methods.
+ * 
+ * @author Michael Eichberg
+ *
+ */
 class Demo {
 
     private Demo() {/* empty */
@@ -42,7 +49,7 @@ class Demo {
     }
 
     //
-    // Both methods are actually pure but have a dependency on each other...
+    // The following two methods are mutually dependent and are pure.
     //
     static int foo(int i) {
         return i < 0 ? i : bar(i - 10);
@@ -51,14 +58,14 @@ class Demo {
     static int bar(int i) {
         return i % 2 == 0 ? i : foo(i - 1);
     }
-    
-    // the following method is (conditionally) pure, but does not contribute to the 
-    // cyclic computation
 
+    // The following method is not direct involved in a 
+    // mutual recursive dependency, but requires information about a set of
+    //
     static int fooBar(int i) {
-        return foo(i)+bar(i);
+        return foo(i) + bar(i);
     }
-    
+
     //
     // All three methods are actually pure but have a dependency on each other...
     //
@@ -75,10 +82,26 @@ class Demo {
     }
 
     //
+    // All three methods are depending on each other, but they are NOT pure.
+    //
+    static int m1np(int i) {
+        return i < 0 ? i : m2np(i - 10);
+    }
+
+    static int m2np(int i) {
+        return i % 2 == 0 ? i : m3np(i - 1);
+    }
+
+    static int m3np(int i) {
+        int j = m1np(i - 1);
+        return impure(j);
+    }
+
+    //
     // The following method is pure, but only if we know the pureness of the target method
     // which we don't know if do not analyze the JDK!
     //
-    
+
     static int cpure(int i) {
         return Math.abs(i) * 21;
     }

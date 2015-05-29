@@ -92,21 +92,21 @@ abstract class Suspended(
         requiredEntity: Entity,
         requiredProperty: Property): PropertyComputationResult
 
-    /**
-     * Terminates this computation.
-     *
-     * This method is called by the framework if this computation is waiting on the results
-     * of computations of properties for elements for which no further computations
-     * are running.
-     */
-    def terminate(): Unit
-
-    /**
-     * The fallback [[Property]] associated with the computation. This method is
-     * called by the framework if it identifies a cycle and tries to continue the computation
-     * by using default properties for one or more elements of the cycle.
-     */
-    def fallback: Property
+    //    /**
+    //     * Terminates this computation.
+    //     *
+    //     * This method is called by the framework if this computation is waiting on the results
+    //     * of computations of properties for elements for which no further computations
+    //     * are running.
+    //     */
+    //    def terminate(): Unit
+    //
+    //    /**
+    //     * The fallback [[Property]] associated with the computation. This method is
+    //     * called by the framework if it identifies a cycle and tries to continue the computation
+    //     * by using default properties for one or more elements of the cycle.
+    //     */
+    //    def fallback: Property
 }
 
 object Suspended {

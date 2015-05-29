@@ -79,23 +79,19 @@ sealed trait Purity extends Property {
 }
 private object Purity {
     final val Key = PropertyKey.create("Purity")
+
 }
+
+/*
+ * Used if we have a computation
+ *
+ * Effectively the same as Impure unless it is refined later on.
+ */
+case object ConditionallyPure extends Purity
 
 case object Pure extends Purity
 
 case object Impure extends Purity
-
-sealed trait Mutability extends Property {
-    final val key = Mutability.Key // All instances have to share the SAME key!
-}
-
-private object Mutability {
-    final val Key = PropertyKey.create("Mutability")
-}
-
-case object EffectivelyFinal extends Mutability
-
-case object NonFinal extends Mutability
 
 /**
  * This analysis determines whether a method is pure (I.e., Whether the method
@@ -104,37 +100,35 @@ case object NonFinal extends Mutability
  * This needs a fixpoint computation as a method that only calls other pure methods
  * is also pure.
  */
-object PurityAnalysis extends DefaultOneStepAnalysis {
-
-    override def title: String =
-        "determines those methods that are pure"
-
-    override def description: String =
-        "identifies method which are pure; i.e. which just operate on the passed parameters"
+object PurityAnalysis {
 
     /* The implementation is inspired by continuation-passing style.
      * Here, the rest of the computation is encapsulated by a PropertyComputation object.
      */
 
+    final val Purity = org.opalj.fp.analyses.Purity.Key
+
+    final val Mutability = org.opalj.fp.analyses.Mutability.Key
+
     /*
      * Determines the purity of the method starting with the instruction with the given
-     * pc.
+     * pc. If the given pc is larger than 0 then all previous instructions must be pure.
+     *
+     * This function encapsulates the continuation.
      */
     def determinePurityCont(
+        method: Method,
         pc: PC)(
-            method: Method)(
-                implicit project: SomeProject,
-                projectStore: PropertyStore): PropertyComputationResult = {
+            implicit project: SomeProject, projectStore: PropertyStore): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
         val methodDescriptor = method.descriptor
         val methodName = method.name
-
-        val debug = declaringClassType == org.opalj.br.ObjectType("java/util/Optional") && methodName == "hashCode"
-
         val body = method.body.get
         val instructions = body.instructions
-        val maxPC = body.instructions.size
+        val maxPC = instructions.size
+
+        val debug = declaringClassType == org.opalj.br.ObjectType("java/util/Optional") && methodName == "hashCode"
 
         var currentPC = pc
 
@@ -143,24 +137,20 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
          * carried out once the property becomes known.
          */
         def waitOnPurityInformation(callee: Method): Suspended = {
-            new Suspended(method, Purity.Key, callee, Purity.Key) {
-                Console.err.println(":::::::::::::::::: created "+this.toString())
+            new Suspended(method, Purity, callee, Purity) {
+
                 final val nextPC = body.pcOfNextInstruction(currentPC)
 
                 def continue(
-                    dependingEntity: AnyRef,
-                    dependingProperty: Property): PropertyComputationResult = {
+                    dependeeE: AnyRef,
+                    dependeeP: Property): PropertyComputationResult = {
 
-                    if (dependingProperty == Pure) {
-                        determinePurityCont(nextPC)(method)
+                    if (dependeeP == Pure) {
+                        determinePurityCont(method, nextPC)
                     } else {
                         Result(method, Impure)
                     }
                 }
-
-                def terminate(): Unit = { /* Nothing to do. */ }
-
-                def fallback: Purity = Impure
 
                 override def toString: String =
                     "suspended purity computation of "+
@@ -170,37 +160,33 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
             }
         }
 
-        /*
-         * Create a representation of the rest of the computation that needs to be
-         * carried out once the property becomes known.
-         */
-        def waitOnMutabilityInformation(field: Field): Suspended = {
-            new Suspended(method, Purity.Key, field, Mutability.Key) {
-                Console.err.println(":::::::::::::::::: created "+this.toString())
-                final val nextPC = body.pcOfNextInstruction(currentPC)
-
-                def continue(
-                    dependingEntity: AnyRef,
-                    dependingProperty: Property): PropertyComputationResult = {
-
-                    if (dependingProperty == EffectivelyFinal) {
-                        determinePurityCont(nextPC)(method)
-                    } else {
-                        Result(method, Impure)
-                    }
-                }
-
-                def terminate(): Unit = { /* Nothing to do. */ }
-
-                def fallback: Mutability = NonFinal
-
-                override def toString: String =
-                    "suspended purity computation of "+
-                        method.toJava(declaringClassType)+
-                        "; requiring mutability information about "+
-                        field.toJava(project.classFile(field))
-            }
-        }
+        //        /*
+        //         * Create a representation of the rest of the computation that needs to be
+        //         * carried out once the property becomes known.
+        //         */
+        //        def waitOnMutabilityInformation(field: Field): Suspended = {
+        //            new Suspended(method, Purity.Key, field, Mutability.Key) {
+        //                Console.err.println(":::::::::::::::::: created "+this.toString())
+        //                final val nextPC = body.pcOfNextInstruction(currentPC)
+        //
+        //                def continue(
+        //                    dependingEntity: AnyRef,
+        //                    dependingProperty: Property): PropertyComputationResult = {
+        //
+        //                    if (dependingProperty == EffectivelyFinal) {
+        //                        determinePurityCont(nextPC)(method)
+        //                    } else {
+        //                        Result(method, Impure)
+        //                    }
+        //                }
+        //
+        //                override def toString: String =
+        //                    "suspended purity computation of "+
+        //                        method.toJava(declaringClassType)+
+        //                        "; requiring mutability information about "+
+        //                        field.toJava(project.classFile(field))
+        //            }
+        //        }
 
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
@@ -213,51 +199,40 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
                     resolveFieldReference(declaringClass, fieldName, fieldType, project) match {
 
                         case Some(field) if field.isFinal ⇒
-                        // nothing to do... (we don't care about constants)
+                        // Nothing to do; constants do not impede purity!
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            val mutability = projectStore(field, Mutability.Key)
-                            Console.err.println(s"mutability of callee $field is $mutability")
-                            mutability match {
-                                case Some(EffectivelyFinal) ⇒ /* Nothing to do...*/
-                                case Some(NonFinal)         ⇒ return Result(method, Impure);
-                                case None                   ⇒ return waitOnMutabilityInformation(field);
-                                case _                      ⇒ new UnknownError
-                            }
 
-                        case _ ⇒ return Result(method, Impure);
+                            //                            val mutability = projectStore(field, Mutability.Key)
+                            //                            Console.err.println(s"mutability of callee $field is $mutability")
+                            //                            mutability match {
+                            //                                case Some(EffectivelyFinal) ⇒ /* Nothing to do...*/
+                            //                                case Some(NonFinal)         ⇒ return Result(method, Impure);
+                            //                                case None                   ⇒ return waitOnMutabilityInformation(field);
+                            //                                case _                      ⇒ new UnknownError
+                            //                            }
+                            val c: Continuation =
+                                (dependeeE: AnyRef, dependeeP: Property) ⇒
+                                    if (dependeeP == EffectivelyFinal) {
+                                        val nextPC = body.pcOfNextInstruction(currentPC)
+                                        determinePurityCont(method, nextPC)
+                                    } else {
+                                        Result(method, Impure)
+                                    }
+                            return projectStore.require(method, Purity, field, Mutability)(c);
+
+                        case _ ⇒
+                            return Result(method, Impure);
                     }
-
-                case NEW.opcode |
-                    GETFIELD.opcode |
-                    PUTFIELD.opcode | PUTSTATIC.opcode |
-                    MONITORENTER.opcode | MONITOREXIT.opcode ⇒
-                    return Result(method, Impure);
-
-                case NEWARRAY.opcode | MULTIANEWARRAY.opcode | ANEWARRAY.opcode |
-                    AALOAD.opcode | AASTORE.opcode |
-                    BALOAD.opcode | BASTORE.opcode |
-                    CALOAD.opcode | CASTORE.opcode |
-                    SALOAD.opcode | SASTORE.opcode |
-                    IALOAD.opcode | IASTORE.opcode |
-                    LALOAD.opcode | LASTORE.opcode |
-                    DALOAD.opcode | DASTORE.opcode |
-                    FALOAD.opcode | FASTORE.opcode |
-                    ARRAYLENGTH.opcode ⇒
-                    return Result(method, Impure);
-
-                case INVOKEDYNAMIC.opcode ⇒
-                    return Result(method, Impure);
-
-                case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    return Result(method, Impure);
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
                     instruction match {
+
                         case MethodInvocationInstruction(`declaringClassType`, `methodName`, `methodDescriptor`) ⇒
                         // We have a self-recursive call; such calls do not influence
                         // the computation of the method's purity and are ignored.
                         // Let's continue with the evaluation of the next instruction.
+
                         case MethodInvocationInstruction(declaringClassType, methodName, methodDescriptor) ⇒
                             import project.classHierarchy.lookupMethodDefinition
                             val calleeOpt =
@@ -271,7 +246,7 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
                                     return Result(method, Impure);
                                 case Some(callee) ⇒
                                     /* Recall that self-recursive calls are handled earlier! */
-                                    val purity = projectStore(callee, Purity.Key)
+                                    val purity = projectStore(callee, Purity)
                                     Console.err.println(s"purity of callee $callee is $purity")
                                     purity match {
                                         case Some(Pure)   ⇒ /* Nothing to do...*/
@@ -282,6 +257,23 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
                                     }
                             }
                     }
+
+                case NEW.opcode |
+                    GETFIELD.opcode |
+                    PUTFIELD.opcode | PUTSTATIC.opcode |
+                    NEWARRAY.opcode | MULTIANEWARRAY.opcode | ANEWARRAY.opcode |
+                    AALOAD.opcode | AASTORE.opcode |
+                    BALOAD.opcode | BASTORE.opcode |
+                    CALOAD.opcode | CASTORE.opcode |
+                    SALOAD.opcode | SASTORE.opcode |
+                    IALOAD.opcode | IASTORE.opcode |
+                    LALOAD.opcode | LASTORE.opcode |
+                    DALOAD.opcode | DASTORE.opcode |
+                    FALOAD.opcode | FASTORE.opcode |
+                    ARRAYLENGTH.opcode |
+                    MONITORENTER.opcode | MONITOREXIT.opcode |
+                    INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                    return Result(method, Impure);
 
                 case _ ⇒
                 /* All other instructions (IFs, Load/Stores, Arith., etc.) are pure. */
@@ -295,8 +287,7 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
 
     def determinePurity(
         entity: AnyRef)(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
         if (!entity.isInstanceOf[Method])
             return Impossible;
 
@@ -307,7 +298,8 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
 
-        // Due to a lack of knowledge, we classify all native methods as impure...
+        // Due to a lack of knowledge, we classify all native methods of methods loaded
+        // using a library class loader as impure...
         if (method.body.isEmpty)
             return Result(method, Impure);
 
@@ -316,78 +308,12 @@ object PurityAnalysis extends DefaultOneStepAnalysis {
         if (method.parameterTypes.exists { !_.isBaseType })
             return Result(method, Impure);
 
-        determinePurityCont(0)(method)
+        determinePurityCont(method, 0)
     }
 
-    /**
-     * Identifies those private static non-final fields that are initialized exactly once.
-     */
-    def determineMutabilityOfNonFinalPrivateStaticFields(
-        entity: AnyRef)(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
-        if (!entity.isInstanceOf[ClassFile])
-            return Impossible;
-
-        val classFile = entity.asInstanceOf[ClassFile]
-        val thisType = classFile.thisType
-
-        val psnfFields = classFile.fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
-        var effectivelyFinalFields = psnfFields
-        if (psnfFields.isEmpty)
-            return Empty;
-
-        val concreteStaticMethods = classFile.methods filter { m ⇒
-            m.isStatic && !m.isStaticInitializer && !m.isNative
-        }
-        concreteStaticMethods foreach { m ⇒
-            m.body.get foreach { (pc, instruction) ⇒
-                instruction match {
-                    case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
-                        // we don't need to lookup the field in the
-                        // the class hierarchy since we are only concerned about private
-                        // fiels so far... so we don't have to do a
-                        // classHierarchy.resolveFieldReference(thisType, fieldName, fieldType, project).get
-                        classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
-                    case _ ⇒ /*Nothing to do*/
-                }
-            }
-        }
-
-        /*DEBUGGING*/ if (psnfFields.nonEmpty)
-            /*DEBUGGING*/ println(psnfFields.map(f ⇒ f.toJava(thisType) + effectivelyFinalFields.contains(f)).toSeq.sorted.mkString("\n"))
-
-        Result(
-            psnfFields map { f ⇒
-                if (effectivelyFinalFields.contains(f))
-                    (f, EffectivelyFinal)
-                else
-                    (f, NonFinal)
-            }
-        )
-    }
-
-    override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): BasicReport = {
-
-        implicit val theProjectStore = PropertyStore(project.allSourceElements)
-        implicit val theProject = project
-
-        theProjectStore <<= determineMutabilityOfNonFinalPrivateStaticFields
-        theProjectStore <<= determinePurity
-
-        theProjectStore waitOnPropertyComputationCompletion
-
-        val pureMethods: Traversable[(Method, Property)] =
-            theProjectStore(Purity.Key).filter(_._2 == Pure).map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsCount = pureMethods.size
-        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._1.toJava(project.classFile(m._1)))
-        BasicReport(
-            pureMethodsAsStrings.toList.sorted.mkString("\nPure methods:\n", "\n", s"\nTotal: $pureMethodsCount\n") +
-                theProjectStore.toString
-        )
+    def analyze(implicit project: Project[URL]): Unit = {
+        implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
+        projectStore <<= determinePurity
     }
 }
 

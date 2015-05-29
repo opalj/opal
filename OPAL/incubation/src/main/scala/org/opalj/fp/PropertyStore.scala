@@ -52,25 +52,26 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  * computations that provide information about the entities of the store.
  *
  * In general, we can distinguish two kinds of computations:
- *  1. [Strictly Dependent Computations] which require information about a specific other element's properties
- *      to be able to continue. (Mutual Dependency) For such computations it may happen that the computation
- *      cannot proceed because the computation of a property p of an entity e1 depends
+ *  1. [Strictly Dependent Computations] require information about a specific property of an entity
+ *      to be able to continue. For such computations it may happen that we run into a deadlock that
+ *      consists of n >= 2 computations that are mutually dependent. In this case
+ *      the computation of a property p of an entity e1 depends
  *      on the property p of an entity e2 that requires the property p of the entity e1.
  *      The store implements an algorithm to detect dependencies and to report a
  *      set of strongly connected computations to respective handler computations.
- *  1. [Weakly Dependent Computations] which may use information about a specific property of an entity e, but
- *      which can still continue if the respective knowledge is not (yet) available and which
+ *  1. [Weakly Dependent Computations] may use information about a specific property of an entity e, but
+ *      they can still continue if the respective knowledge is not (yet) available and they
  *      are able to refine the results, once the knowledge becomes available.
  *
  *
- * ==Core Requirements==
+ * ==Core Requirements on Property Computation Functions==
  *  - (One Function per Property Kind) A specific kind of property is always computed
  *      by only one registered `PropertyComputation` function.
- *  - (Thread-Safe) The PropertyComputation functions are thread-safe.
- *  - (Non-Overlapping Results) If the same `PropertyComputation` function is invoked concurrently on different
- *      entities then the set of entities for which results are computed must be disjoint.
- *      For example, an analysis that performs a computation on class file entities and
- *      that derives properties of specific kind relate to method entities must ensure
+ *  - (Thread-Safe) PropertyComputation functions have to be thread-safe.
+ *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
+ *      entities have to compute result sets that are disjoint.
+ *      For example, an analysis that performs a computation on class files and
+ *      that derives properties of specific kind related to a class file's methods must ensure
  *      that no two analysis of two different class files derive information about
  *      the same method.
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new )property for
@@ -87,7 +88,8 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  * read) lock at a time.
  */
 class PropertyStore private (
-        private[this] val data: JIDMap[Entity, PropertyStoreValue]) { store ⇒
+        private[this] val data: JIDMap[Entity, PropertyStoreValue],
+        val isInterrupted: () ⇒ Boolean) { store ⇒
 
     // COMMON ABBREVIATONS USED IN THE FOLLOWING:
     // ==========================================
@@ -111,7 +113,7 @@ class PropertyStore private (
     /**
      * The set of all stored elements.
      *
-     * This set is not mutable.
+     * This set is not mutated.
      */
     private[this] final val keys: JSet[Entity] = data.keySet()
 
@@ -119,12 +121,20 @@ class PropertyStore private (
      * Returns the property of the respective property kind currently associated
      * with the given element.
      *
-     * @param e A value in the store.
-     * @param key The kind of property.
+     * This is most basic method to get some property and it is the preferred way
+     * if (a) you know that the property is already available – e.g., because some
+     * property computation function was strictly run before the current one – or if (b) the running computation
+     * has a huge, complex state that is not completely required if the computation
+     * needs to be suspended because the property is not (yet) available. In the latter
+     * case it may be beneficial to only store the strictly necessary information and
+     *
+     * @note The returned value may change over time but only such that it
+     *      is strictly more precise.
+     *
+     * @param e An entity stored in the property store.
+     * @param pk The kind of property.
      * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
-     *      Note that the returned value may change over time but only such that it
-     *      is strictly more precise.
      */
     def apply(e: Entity, pk: PropertyKey): Option[Property] = accessEntity {
         val (lock, properties) = data.get(e)
@@ -136,12 +146,33 @@ class PropertyStore private (
         }
     }
 
+    def require(
+        dependerE: Entity,
+        dependerPK: PropertyKey,
+        dependeeE: Entity,
+        dependeePK: PropertyKey)(
+            c: Continuation): PropertyComputationResult = {
+
+        @inline def suspend: Suspended =
+            new Suspended(dependerE, dependerPK, dependeeE, dependeePK) {
+                def continue(
+                    dependeeE: Entity,
+                    dependeeP: Property): PropertyComputationResult =
+                    c(dependeeE, dependeeP)
+            }
+
+        apply(dependeeE, dependeePK) match {
+            case Some(dependeeP) ⇒ c(dependeeE, dependeeP)
+            case None            ⇒ suspend
+        }
+    }
+
     /**
      * Returns all elements which have a property of the respective kind. This method
-     * always '''just''' returns a snapshot view of the store w.r.t. the given
-     * [[PropertyKey]]. While the view is computed all other computations are blocked.
+     * returns a consistent snapshot view of the store w.r.t. the given
+     * [[PropertyKey]].
      *
-     *
+     * While the view is computed all other computations are blocked.
      */
     def apply(pk: PropertyKey): Traversable[(Entity, Property)] = accessStore {
         import scala.collection.JavaConversions._
@@ -165,9 +196,11 @@ class PropertyStore private (
      * then only because a dependee has changed!
      */
     def <<=(c: PropertyComputation): Unit = accessEntity {
-        val it = keys.iterator()
-        while (it.hasNext()) {
-            scheduleComputation(it.next(), c)
+        if (!isInterrupted()) {
+            val it = keys.iterator()
+            while (it.hasNext()) {
+                scheduleComputation(it.next(), c)
+            }
         }
     }
 
@@ -181,7 +214,10 @@ class PropertyStore private (
     def waitOnPropertyComputationCompletion(): Unit = Tasks.waitOnCompletion()
 
     override def toString: String = accessStore {
-        s"PropertyStore(entitiesCount= ${data.size()}, executedComputations= ${Tasks.executed}"
+        "PropertyStore("+
+            s"entitiesCount=${data.size()}, "+
+            s"executedComputations=${Tasks.executedComputations}"+
+            ")"
     }
 
     //
@@ -197,20 +233,29 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
-        //        // The key is the `AtomicInteger` object that counts the number of unchanged
-        //        // property dependencies
-        //        // The value tuple contains of the number of all
-        //        // dependencies and the property computation.
-        //        val restartableComputations = new JCHMap[AtomicInteger, (Int, PropertyComputation)](100)
-
         // ALL ACCESSES ARE SYNCHRONIZED
-        var executed = 0
+        private[this] var executed = 0
+
+        private[PropertyStore] def executedComputations: Int = synchronized { executed }
+
+        private[this] var isInterrupted: Boolean = false
 
         /**
          * The number of scheduled tasks. I.e., the number of tasks that are running or
          * that will run in the future.
          */
-        var scheduled = 0
+        private[this] var scheduled = 0
+
+        /**
+         * @return `true` if the state was newly set to `true`.
+         */
+        private[PropertyStore] def interrupt(): Unit = synchronized {
+            if (!isInterrupted) {
+                isInterrupted = true
+                val waitingTasks = threadPool.shutdownNow()
+                scheduled -= waitingTasks.size
+            }
+        }
 
         def taskStarted() = synchronized {
             executed += 1
@@ -226,11 +271,7 @@ class PropertyStore private (
             if (scheduled == 0) {
                 // Let's check if we have some potentially refineable intermediate results.
 
-                // Let's identify and break up all cycles of strongly connected
-                // computations... Note that - at this point in time, where we have
-                // no further running computations - all remaining computations must
-                // take part in exactly one cycle of dependent computation.
-                handleOpenComputations()
+                if (!isInterrupted) handleOpenComputations()
 
                 if (scheduled == 0 /*scheduled is still === 0*/ )
                     // Well... it seems as if we are done
@@ -338,18 +379,22 @@ class PropertyStore private (
     }
 
     private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
-        Tasks.taskStarted()
-        threadPool.submit(new Runnable {
-            def run(): Unit = {
-                try {
-                    t()
-                } catch {
-                    case t: Throwable ⇒ uncaughtException(Thread.currentThread(), t)
-                } finally {
-                    Tasks.taskCompleted()
+        if (!isInterrupted()) {
+            Tasks.taskStarted()
+            threadPool.submit(new Runnable {
+                def run(): Unit = {
+                    try {
+                        t()
+                    } catch {
+                        case t: Throwable ⇒ uncaughtException(Thread.currentThread(), t)
+                    } finally {
+                        Tasks.taskCompleted()
+                    }
                 }
-            }
-        })
+            })
+        } else {
+            Tasks.interrupt()
+        }
     }
 
     /**
@@ -444,13 +489,13 @@ class PropertyStore private (
                 //    observer that will schedule the computation when the
                 //    property was computed.
 
-                def createPropertyObserver = new DefaultPropertyObserver(Some(EPK(e, pk))) {
-                    def apply(dependingEntity: Entity, property: Property): Unit = {
-                        val c: PropertyComputation =
-                            (Entity) ⇒ suspended.continue(dependingEntity, property)
-                        scheduleComputation(e, c)
+                def createPropertyObserver =
+                    new DefaultPropertyObserver(Some(EPK(e, pk))) {
+                        def apply(dependeeE: Entity, dependeeP: Property): Unit = {
+                            val pc = (e: AnyRef) ⇒ suspended.continue(dependeeE, dependeeP)
+                            scheduleComputation(e, pc)
+                        }
                     }
-                }
 
                 val (lock, properties) = data.get(requiredE)
                 withWriteLock(lock) {
@@ -461,10 +506,8 @@ class PropertyStore private (
                                 observers += createPropertyObserver
                             } else {
                                 // the property was computed in the meantime
-                                scheduleComputation(
-                                    e,
-                                    (Entity) ⇒ suspended.continue(requiredE, requiredP)
-                                )
+                                val pc = (e: AnyRef) ⇒ suspended.continue(requiredE, requiredP)
+                                scheduleComputation(e, pc)
                             }
                         case _ ⇒
                             // this computation is the first who is interested in the property
@@ -480,13 +523,16 @@ class PropertyStore private (
  */
 object PropertyStore {
 
-    def apply(entities: Traversable[Entity]): PropertyStore = {
+    def apply(
+        entities: Traversable[Entity],
+        isInterrupted: () ⇒ Boolean): PropertyStore = {
+
         val entitiesCount = entities.size
         val map = new JIDMap[Entity, PropertyStoreValue](entitiesCount)
 
         entities.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, HMap.empty)) }
 
-        new PropertyStore(map)
+        new PropertyStore(map, isInterrupted)
     }
 
 }
