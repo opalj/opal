@@ -51,12 +51,14 @@ import org.opalj.ai.BaseAI
 class QuadruplesTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
+    val ControlSequencesType = ObjectType("tactest/ControlSequences")
 
     val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
     val project = Project(testResources)
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
+    val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
     val IntegerTestMethod = ArithmeticExpressionsClassFile.findMethod("integerTest").get
     val DoubleTestMethod = ArithmeticExpressionsClassFile.findMethod("doubleTest").get
