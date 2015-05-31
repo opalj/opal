@@ -965,5 +965,98 @@ class QuadruplesTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 > 0) goto 6; \n"+returnJLC)
             }
         }
+
+        describe("of reference comparison if instructions") {
+
+            import RelationalOperators._
+
+            val IfACMPEQMethod = ControlSequencesClassFile.findMethod("ifacmpeq").get
+            val IfACMPNEMethod = ControlSequencesClassFile.findMethod("ifacmpne").get
+            //            val IfNonNullMethod = ControlSequencesClassFile.findMethod("ifnonnull").get
+            //            val IfNullMethod = ControlSequencesClassFile.findMethod("ifnull").get
+
+            def binaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+                Assignment(-1, SimpleVar(-3, ComputationalTypeReference), Param(ComputationalTypeReference, "p_2")),
+                Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                Assignment(1, SimpleVar(1, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
+                stmt,
+                Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                ReturnValue(6, SimpleVar(0, ComputationalTypeReference)),
+                Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
+                ReturnValue(8, SimpleVar(0, ComputationalTypeReference))
+            )
+
+            //            def unaryResultAST(stmt: Stmt): Array[Stmt] = Array(
+            //                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+            //                Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+            //                Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+            //                stmt,
+            //                Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+            //                ReturnValue(5, SimpleVar(0, ComputationalTypeReference)),
+            //                Assignment(6, SimpleVar(0, ComputationalTypeReference), ClassConst(6, "null")),
+            //                ReturnValue(7, SimpleVar(0, ComputationalTypeReference))
+            //            )
+
+            def binarySetupJLC = {
+                "    0: r_0 = this; \n"+
+                    "    1: r_1 = p_1; \n"+
+                    "    2: r_2 = p_2; \n"+
+                    "    3: op_0 = r_1; \n"+
+                    "    4: op_1 = r_2; \n"
+            }
+
+            def binaryReturnJLC = {
+                "    6: op_0 = r_1; \n"+
+                    "    7: return op_0; \n"+
+                    "    8: op_0 = r_2; \n"+
+                    "    9: return op_0; \n"
+            }
+
+            it("should correctly reflect the equals case (using no AI results)") {
+                val statements = AsQuadruples(IfACMPEQMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+                //TODO
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryResultAST(
+                    If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: if(op_0 == op_1) goto 8; \n"+binaryReturnJLC)
+            }
+
+            it("should correctly reflect the not-equals case (using no AI results)") {
+                val statements = AsQuadruples(IfACMPNEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+                //TODO
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryResultAST(
+                    If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: if(op_0 != op_1) goto 8; \n"+binaryReturnJLC)
+            }
+
+            //            it("should correctly reflect the non-null case (using no AI results)") {
+            //                val statements = AsQuadruples(IfNonNullMethod, None)
+            //                val javaLikeCode = ToJavaLike(statements)
+            //                //TODO
+            //                assert(statements.nonEmpty)
+            //                assert(javaLikeCode.length() > 0)
+            //                statements.shouldEqual(unaryResultAST(
+            //                    If(1, SimpleVar(0, ComputationalTypeReference), NE, ClassConst(-1, /*null*/), 6)))
+            //                javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 > 0) goto 6; \n"+unaryReturnJLC)
+            //            }
+            //            
+            //            it("should correctly reflect the is-null case (using no AI results)") {
+            //                val statements = AsQuadruples(IfNullMethod, None)
+            //                val javaLikeCode = ToJavaLike(statements)
+            //                //TODO
+            //                assert(statements.nonEmpty)
+            //                assert(javaLikeCode.length() > 0)
+            //                statements.shouldEqual(unaryResultAST(
+            //                    If(1, SimpleVar(0, ComputationalTypeReference), EQ, ClassConst(-1, /*null*/), 6)))
+            //                javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 > 0) goto 6; \n"+unaryReturnJLC)
+            //            }
+        }
     }
 }

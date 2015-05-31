@@ -119,6 +119,34 @@ public class ControlSequences {
 		}
 		return 0;
 	}
+	
+	Object ifacmpeq(Object a, Object b){
+		if(a != b){
+			return a;
+		}
+		return b;
+	}
+	
+	Object ifacmpne(Object a, Object b){
+		if(a == b){
+			return a;
+		}
+		return b;
+	}
+	
+	Object ifnonnull(Object a){
+		if(a == null){
+			return a;
+		}
+		return null;
+	}
+	
+	Object ifnull(Object a){
+		if(a != null){
+			return a;
+		}
+		return null;
+	}
 
 	int ifTest(int a, int b) {
 		int result = 0;
