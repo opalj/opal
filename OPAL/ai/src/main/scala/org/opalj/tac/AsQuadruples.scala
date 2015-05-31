@@ -246,6 +246,26 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                    val ifInstr = as[IFACMPInstruction](instruction)
+                    val value2 :: value1 :: rest = stack
+                    // let's calculate the final address
+                    val targetPC = pc + ifInstr.branchoffset
+                    val stmt = If(pc, value1, ifInstr.condition, value2, targetPC)
+                    statements(pc) = List(stmt)
+                    schedule(pcOfNextInstruction(pc), rest)
+                    schedule(targetPC, rest)
+
+                case IFNONNULL.opcode | IFNULL.opcode ⇒
+                    val ifInstr = as[IFXNullInstruction](instruction)
+                    val value :: rest = stack
+                    // let's calculate the final address
+                    val targetPC = pc + ifInstr.branchoffset
+                    val stmt = If(pc, value, ifInstr.condition, ClassConst(-pc, null), targetPC)
+                    statements(pc) = List(stmt)
+                    schedule(pcOfNextInstruction(pc), rest)
+                    schedule(targetPC, rest)
+
                 case SWAP.opcode ⇒
                     val value2 :: value1 :: rest = stack
                     val tempVar = TempVar(value2.cTpe)
