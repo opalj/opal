@@ -51,6 +51,7 @@ object ToJavaLike {
             case LongConst(_, value)      ⇒ value.toString+"l"
             case FloatConst(_, value)     ⇒ value.toString
             case DoubleConst(_, value)    ⇒ value.toString+"d"
+            case ClassConst(_, value)     ⇒ value.toString
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
             case PrefixExpr(_, _, op, operand) ⇒

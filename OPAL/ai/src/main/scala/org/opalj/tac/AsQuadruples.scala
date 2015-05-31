@@ -322,6 +322,31 @@ object AsQuadruples {
                     statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
+                case ACONST_NULL.opcode ⇒
+                    val value = as[LoadConstantInstruction[Null]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeReference, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, ClassConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case DCONST_0.opcode | DCONST_1.opcode ⇒
+                    val value = as[LoadConstantInstruction[Double]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeDouble, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, DoubleConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case FCONST_0.opcode | FCONST_1.opcode |
+                    FCONST_2.opcode ⇒
+                    val value = as[LoadConstantInstruction[Float]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeFloat, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, FloatConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case LCONST_0.opcode | LCONST_1.opcode ⇒
+                    val value = as[LoadConstantInstruction[Long]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeLong, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
                 case GOTO.opcode ⇒ Goto(pc, pc + as[GOTO](instruction).branchoffset)
 
                 // TODO Add support for all the other instructions!
