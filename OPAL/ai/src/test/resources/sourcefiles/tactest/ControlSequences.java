@@ -119,44 +119,38 @@ public class ControlSequences {
 		}
 		return 0;
 	}
-	
-	int ifTest(int a, int b){
+
+	int ifTest(int a, int b) {
+		int result = 0;
 		if (a == b) {
-			return a;
+			result = a;
+
+			if (a != b) {
+				result = a;
+			} else if (a < b) {
+				result = a;
+			} else {
+				result = 1;
+			}
+		} else if (a >= b) {
+			result = a;
+		} else if (a > b) {
+			result = a;
+		} else if (a <= b) {
+			result = a;
+		} else if (a == 0) {
+			result = a;
+		} else if (a != 0) {
+			result = a;
+		} else if (a < 0) {
+			result = a;
+		} else if (a >= 0) {
+			result = a;
+		} else if (a > 0) {
+			result = a;
+		} else {
+			result = a;
 		}
-		if (a != b) {
-			return a;
-		}
-		if (a < b) {
-			return a;
-		}
-		if (a >= b) {
-			return a;
-		}
-		if (a > b) {
-			return a;
-		}
-		if (a <= b) {
-			return a;
-		}
-		if (a == 0) {
-			return a;
-		}
-		if (a != 0) {
-			return a;
-		}
-		if (a < 0) {
-			return a;
-		}
-		if (a >= 0) {
-			return a;
-		}
-		if (a > 0) {
-			return a;
-		}
-		if (a <= 0) {
-			return a;
-		}
-		return 0;
+		return result;
 	}
 }

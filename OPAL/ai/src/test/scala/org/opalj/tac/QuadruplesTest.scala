@@ -278,17 +278,17 @@ class QuadruplesTest extends FunSpec with Matchers {
             }
 
             //TESTOUTPUT INT
-                        it("should just print a method for testing purposes") {
-                            val statements = AsQuadruples(IfTestMethod, None)
-                            val javaLikeCode = ToJavaLike(statements)
-            
-                            assert(statements.nonEmpty)
-                            assert(javaLikeCode.length() > 0)
-            
-                            println(IfTestMethod.body.get.instructions.mkString("\n"))
-                            println(statements.mkString("\n"))
-                            println(javaLikeCode)
-                        }
+            //            it("should just print a method for testing purposes") {
+            //                val statements = AsQuadruples(IfTestMethod, None)
+            //                val javaLikeCode = ToJavaLike(statements)
+            //
+            //                assert(statements.nonEmpty)
+            //                assert(javaLikeCode.length() > 0)
+            //
+            //                println(IfTestMethod.body.get.instructions.mkString("\n"))
+            //                println(statements.mkString("\n"))
+            //                println(javaLikeCode)
+            //            }
             //TESTOUTPUT INT
         }
 
@@ -755,6 +755,214 @@ class QuadruplesTest extends FunSpec with Matchers {
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
                 javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 ^ op_2; \n"+returnJLC)
+            }
+        }
+
+        describe("of integer if instructions") {
+
+            import RelationalOperators._
+
+            val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").get
+            val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").get
+            val ICMPGEMethod = ControlSequencesClassFile.findMethod("icmpge").get
+            val ICMPLTMethod = ControlSequencesClassFile.findMethod("icmplt").get
+            val ICMPLEMethod = ControlSequencesClassFile.findMethod("icmple").get
+            val ICMPGTMethod = ControlSequencesClassFile.findMethod("icmpgt").get
+
+            def setupJLC = {
+                "    0: r_0 = this; \n"+
+                    "    1: r_1 = p_1; \n"+
+                    "    2: r_2 = p_2; \n"+
+                    "    3: op_0 = r_1; \n"+
+                    "    4: op_1 = r_2; \n"
+            }
+
+            def returnJLC = {
+                "    6: op_0 = r_1; \n"+
+                    "    7: return op_0; \n"+
+                    "    8: op_0 = r_2; \n"+
+                    "    9: return op_0; \n"
+            }
+
+            def resultAST(stmt: Stmt): Array[Stmt] = Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+                Assignment(-1, SimpleVar(-3, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),
+                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
+                stmt,
+                Assignment(5, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                ReturnValue(6, SimpleVar(0, ComputationalTypeInt)),
+                Assignment(7, SimpleVar(0, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
+                ReturnValue(8, SimpleVar(0, ComputationalTypeInt))
+            )
+
+            it("should correctly reflect the not-equals case (using no AI results)") {
+                val statements = AsQuadruples(ICMPNEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 != op_1) goto 8; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the equals case (using no AI results)") {
+                val statements = AsQuadruples(ICMPEQMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 == op_1) goto 8; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the greater-equals case (using no AI results)") {
+                val statements = AsQuadruples(ICMPGEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 >= op_1) goto 8; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the less-then case (using no AI results)") {
+                val statements = AsQuadruples(ICMPLTMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 < op_1) goto 8; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the less-equals case (using no AI results)") {
+                val statements = AsQuadruples(ICMPLEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 <= op_1) goto 8; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the greater-then case (using no AI results)") {
+                val statements = AsQuadruples(ICMPGTMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8)))
+                javaLikeCode.shouldEqual(setupJLC+"    5: if(op_0 > op_1) goto 8; \n"+returnJLC)
+            }
+        }
+
+        describe("of compare to zero if instructions") {
+
+            import RelationalOperators._
+
+            val IfNEMethod = ControlSequencesClassFile.findMethod("ifne").get
+            val IfEQMethod = ControlSequencesClassFile.findMethod("ifeq").get
+            val IfGEMethod = ControlSequencesClassFile.findMethod("ifge").get
+            val IfLTMethod = ControlSequencesClassFile.findMethod("iflt").get
+            val IfLEMethod = ControlSequencesClassFile.findMethod("ifle").get
+            val IfGTMethod = ControlSequencesClassFile.findMethod("ifgt").get
+
+            def setupJLC = {
+                "    0: r_0 = this; \n"+
+                    "    1: r_1 = p_1; \n"+
+                    "    2: op_0 = r_1; \n"
+            }
+
+            def returnJLC = {
+                "    4: op_0 = r_1; \n"+
+                    "    5: return op_0; \n"+
+                    "    6: op_0 = 0; \n"+
+                    "    7: return op_0; \n"
+            }
+
+            def resultAST(stmt: Stmt): Array[Stmt] = Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                stmt,
+                Assignment(4, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                ReturnValue(5, SimpleVar(0, ComputationalTypeInt)),
+                Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 0)),
+                ReturnValue(7, SimpleVar(0, ComputationalTypeInt))
+            )
+
+            it("should correctly reflect the not-equals case (using no AI results)") {
+                val statements = AsQuadruples(IfNEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 != 0) goto 6; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the equals case (using no AI results)") {
+                val statements = AsQuadruples(IfEQMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 == 0) goto 6; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the greater-equals case (using no AI results)") {
+                val statements = AsQuadruples(IfGEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 >= 0) goto 6; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the less-then case (using no AI results)") {
+                val statements = AsQuadruples(IfLTMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 < 0) goto 6; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the less-equals case (using no AI results)") {
+                val statements = AsQuadruples(IfLEMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 <= 0) goto 6; \n"+returnJLC)
+            }
+
+            it("should correctly reflect the greater-then case (using no AI results)") {
+                val statements = AsQuadruples(IfGTMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(resultAST(
+                    If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6)))
+                javaLikeCode.shouldEqual(setupJLC+"    3: if(op_0 > 0) goto 6; \n"+returnJLC)
             }
         }
     }
