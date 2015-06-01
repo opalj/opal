@@ -258,15 +258,15 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
-                //                case IFNONNULL.opcode | IFNULL.opcode ⇒
-                //                    val ifInstr = as[IFXNullInstruction](instruction)
-                //                    val value :: rest = stack
-                //                    // let's calculate the final address
-                //                    val targetPC = pc + ifInstr.branchoffset
-                //                    val stmt = If(pc, value, ifInstr.condition, ClassConst(-pc, /*null*/), targetPC)
-                //                    statements(pc) = List(stmt)
-                //                    schedule(pcOfNextInstruction(pc), rest)
-                //                    schedule(targetPC, rest)
+                case IFNONNULL.opcode | IFNULL.opcode ⇒
+                    val ifInstr = as[IFXNullInstruction](instruction)
+                    val value :: rest = stack
+                    // let's calculate the final address
+                    val targetPC = pc + ifInstr.branchoffset
+                    val stmt = If(pc, value, ifInstr.condition, NullExpr.asInstanceOf[Expr], targetPC)
+                    statements(pc) = List(stmt)
+                    schedule(pcOfNextInstruction(pc), rest)
+                    schedule(targetPC, rest)
 
                 case SWAP.opcode ⇒
                     val value2 :: value1 :: rest = stack
@@ -347,7 +347,7 @@ object AsQuadruples {
                 case ACONST_NULL.opcode ⇒
                     val value = as[LoadConstantInstruction[Null]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeReference, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, ClassConst(pc, value)))
+                    statements(pc) = List(Assignment(pc, targetVar, value))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case DCONST_0.opcode | DCONST_1.opcode ⇒
