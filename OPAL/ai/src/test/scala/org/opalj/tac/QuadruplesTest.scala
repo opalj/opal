@@ -52,6 +52,7 @@ class QuadruplesTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
     val ControlSequencesType = ObjectType("tactest/ControlSequences")
+    val ConstantsType = ObjectType("tactest/Constants")
 
     val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
@@ -59,6 +60,7 @@ class QuadruplesTest extends FunSpec with Matchers {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
+    val ConstantsClassFile = project.classFile(ConstantsType).get
 
     val IntegerTestMethod = ArithmeticExpressionsClassFile.findMethod("integerTest").get
     val DoubleTestMethod = ArithmeticExpressionsClassFile.findMethod("doubleTest").get
@@ -1069,6 +1071,145 @@ class QuadruplesTest extends FunSpec with Matchers {
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)))
                 javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 == null) goto 6; \n"+unaryReturnJLC)
+            }
+        }
+
+        describe("of instructions loading constants") {
+
+            val IntConstsMethod = ConstantsClassFile.findMethod("intConsts").get
+            val LongConstsMethod = ConstantsClassFile.findMethod("longConsts").get
+            val FloatConstsMethod = ConstantsClassFile.findMethod("floatConsts").get
+            val DoubleConstsMethod = ConstantsClassFile.findMethod("doubleConsts").get
+            val NullRefConstMethod = ConstantsClassFile.findMethod("nullReferenceConst").get
+
+            it("should correctly reflect the integer constants (using no AI results)") {
+                val statements = AsQuadruples(IntConstsMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 0)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt), IntConst(2, 1)),
+                    Assignment(3, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(4, SimpleVar(0, ComputationalTypeInt), IntConst(4, 2)),
+                    Assignment(5, SimpleVar(-4, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 3)),
+                    Assignment(7, SimpleVar(-5, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(9, SimpleVar(0, ComputationalTypeInt), IntConst(9, 4)),
+                    Assignment(10, SimpleVar(-6, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(12, SimpleVar(0, ComputationalTypeInt), IntConst(12, 5)),
+                    Assignment(13, SimpleVar(-7, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(15, SimpleVar(0, ComputationalTypeInt), IntConst(15, -1)),
+                    Assignment(16, SimpleVar(-8, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Return(18)))
+                javaLikeCode.shouldEqual(
+                    "    0: r_0 = this; \n"+
+                        "    1: op_0 = 0; \n"+
+                        "    2: r_1 = op_0; \n"+
+                        "    3: op_0 = 1; \n"+
+                        "    4: r_2 = op_0; \n"+
+                        "    5: op_0 = 2; \n"+
+                        "    6: r_3 = op_0; \n"+
+                        "    7: op_0 = 3; \n"+
+                        "    8: r_4 = op_0; \n"+
+                        "    9: op_0 = 4; \n"+
+                        "   10: r_5 = op_0; \n"+
+                        "   11: op_0 = 5; \n"+
+                        "   12: r_6 = op_0; \n"+
+                        "   13: op_0 = -1; \n"+
+                        "   14: r_7 = op_0; \n"+
+                        "   15: return; \n")
+            }
+
+            it("should correctly reflect the long constants (using no AI results)") {
+                val statements = AsQuadruples(LongConstsMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeLong), LongConst(0, 0L)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
+                    Assignment(2, SimpleVar(0, ComputationalTypeLong), LongConst(2, 1L)),
+                    Assignment(3, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
+                    Return(4)))
+                javaLikeCode.shouldEqual(
+                    "    0: r_0 = this; \n"+
+                        "    1: op_0 = 0l; \n"+
+                        "    2: r_1 = op_0; \n"+
+                        "    3: op_0 = 1l; \n"+
+                        "    4: r_3 = op_0; \n"+
+                        "    5: return; \n")
+            }
+
+            it("should correctly reflect the float constants (using no AI results)") {
+                val statements = AsQuadruples(FloatConstsMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeFloat), FloatConst(0, 0.0f)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
+                    Assignment(2, SimpleVar(0, ComputationalTypeFloat), FloatConst(2, 1.0f)),
+                    Assignment(3, SimpleVar(-3, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
+                    Assignment(4, SimpleVar(0, ComputationalTypeFloat), FloatConst(4, 2.0f)),
+                    Assignment(5, SimpleVar(-4, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
+                    Return(6)))
+                javaLikeCode.shouldEqual(
+                    "    0: r_0 = this; \n"+
+                        "    1: op_0 = 0.0; \n"+
+                        "    2: r_1 = op_0; \n"+
+                        "    3: op_0 = 1.0; \n"+
+                        "    4: r_2 = op_0; \n"+
+                        "    5: op_0 = 2.0; \n"+
+                        "    6: r_3 = op_0; \n"+
+                        "    7: return; \n")
+            }
+
+            it("should correctly reflect the double constants (using no AI results)") {
+                val statements = AsQuadruples(DoubleConstsMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeDouble), DoubleConst(0, 0.0d)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
+                    Assignment(2, SimpleVar(0, ComputationalTypeDouble), DoubleConst(2, 1.0d)),
+                    Assignment(3, SimpleVar(-4, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
+                    Return(4)))
+                javaLikeCode.shouldEqual(
+                    "    0: r_0 = this; \n"+
+                        "    1: op_0 = 0.0d; \n"+
+                        "    2: r_1 = op_0; \n"+
+                        "    3: op_0 = 1.0d; \n"+
+                        "    4: r_3 = op_0; \n"+
+                        "    5: return; \n")
+            }
+
+            it("should correctly reflect the null reference constants (using no AI results)") {
+                val statements = AsQuadruples(NullRefConstMethod, None)
+                val javaLikeCode = ToJavaLike(statements)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    Return(2)))
+                javaLikeCode.shouldEqual(
+                    "    0: r_0 = this; \n"+
+                        "    1: op_0 = null; \n"+
+                        "    2: r_1 = op_0; \n"+
+                        "    3: return; \n")
             }
         }
     }

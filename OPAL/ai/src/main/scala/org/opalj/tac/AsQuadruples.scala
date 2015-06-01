@@ -149,6 +149,13 @@ object AsQuadruples {
                 case ALOAD.opcode ⇒
                     loadInstruction(as[ALOAD](instruction).lvIndex, ComputationalTypeReference)
 
+                case ASTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeReference)
+                case ASTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeReference)
+                case ASTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeReference)
+                case ASTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeReference)
+                case ASTORE.opcode ⇒
+                    storeInstruction(as[ASTORE](instruction).lvIndex, ComputationalTypeReference)    
+                    
                 case ILOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeInt)
                 case ILOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeInt)
                 case ILOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeInt)
