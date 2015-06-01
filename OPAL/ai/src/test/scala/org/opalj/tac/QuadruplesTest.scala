@@ -995,7 +995,7 @@ class QuadruplesTest extends FunSpec with Matchers {
                 stmt,
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 ReturnValue(5, SimpleVar(0, ComputationalTypeReference)),
-                Assignment(6, SimpleVar(0, ComputationalTypeReference), NullExpr.asInstanceOf[Expr]),
+                Assignment(6, SimpleVar(0, ComputationalTypeReference), NullExpr(6)),
                 ReturnValue(7, SimpleVar(0, ComputationalTypeReference))
             )
 
@@ -1012,6 +1012,19 @@ class QuadruplesTest extends FunSpec with Matchers {
                     "    7: return op_0; \n"+
                     "    8: op_0 = r_2; \n"+
                     "    9: return op_0; \n"
+            }
+
+            def unarySetupJLC = {
+                "    0: r_0 = this; \n"+
+                    "    1: r_1 = p_1; \n"+
+                    "    2: op_0 = r_1; \n"
+            }
+
+            def unaryReturnJLC = {
+                "    4: op_0 = r_1; \n"+
+                    "    5: return op_0; \n"+
+                    "    6: op_0 = null; \n"+
+                    "    7: return op_0; \n"
             }
 
             it("should correctly reflect the equals case (using no AI results)") {
@@ -1043,8 +1056,8 @@ class QuadruplesTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(unaryResultAST(
-                    If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr.asInstanceOf[Expr], 6)))
-                //                            javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 > 0) goto 6; \n"+unaryReturnJLC)
+                    If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)))
+                javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 != null) goto 6; \n"+unaryReturnJLC)
             }
 
             it("should correctly reflect the is-null case (using no AI results)") {
@@ -1054,8 +1067,8 @@ class QuadruplesTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(unaryResultAST(
-                    If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr.asInstanceOf[Expr], 6)))
-                //                            javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 > 0) goto 6; \n"+unaryReturnJLC)
+                    If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)))
+                javaLikeCode.shouldEqual(unarySetupJLC+"    3: if(op_0 == null) goto 6; \n"+unaryReturnJLC)
             }
         }
     }

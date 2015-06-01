@@ -263,7 +263,7 @@ object AsQuadruples {
                     val value :: rest = stack
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
-                    val stmt = If(pc, value, ifInstr.condition, NullExpr.asInstanceOf[Expr], targetPC)
+                    val stmt = If(pc, value, ifInstr.condition, NullExpr(-pc), targetPC)
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
@@ -345,9 +345,9 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case ACONST_NULL.opcode ⇒
-                    val value = as[LoadConstantInstruction[Null]](instruction).value
+//                    val value = as[LoadConstantInstruction[Null]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeReference, stack)
-                    statements(pc) = List(Assignment(pc, targetVar, value))
+                    statements(pc) = List(Assignment(pc, targetVar, NullExpr(pc)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case DCONST_0.opcode | DCONST_1.opcode ⇒
