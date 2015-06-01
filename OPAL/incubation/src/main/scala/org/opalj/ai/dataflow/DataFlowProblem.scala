@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -64,7 +64,7 @@ trait DataFlowProblem[Source, P] {
 
     // __________________________________________________________________________________
     //
-    // Functionality required to specify the taint-information flow 
+    // Functionality required to specify the taint-information flow
     //
     //
 
@@ -96,7 +96,7 @@ trait DataFlowProblem[Source, P] {
     protected[this] trait TaintedValue extends TaintInformation {
         final override def isTainted(): Boolean = true
 
-        def typeInformation: TypesAnswer
+        def typeInformation: TypeInformation
         def domainValue: DomainValue
     }
 
@@ -110,7 +110,7 @@ trait DataFlowProblem[Source, P] {
      * Extractor to match tainted values.
      */
     object Tainted {
-        def unapply(value: TaintedValue): Some[TypesAnswer] = Some(value.typeInformation)
+        def unapply(value: TaintedValue) = Some(value.typeInformation)
     }
 
     case class Invoke(

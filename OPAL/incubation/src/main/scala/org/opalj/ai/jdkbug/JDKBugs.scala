@@ -32,6 +32,7 @@ package jdkbug
 
 import scala.language.existentials
 import java.net.URL
+import java.io.File
 import org.opalj.io.process
 import org.opalj.graphs._
 import org.opalj.br._
@@ -115,11 +116,23 @@ object JDKTaintAnalysis
     override def analysisSpecificParametersDescription: String =
         javaSecurityParameter+"<JRE/JDK Security Policy File>"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-        parameters.size == 1 && {
-            javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
-            new java.io.File(javaSecurityFile).exists()
-        }
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
+        if (parameters.size == 0)
+            Seq("missing parameter: -java.security")
+        else if (parameters.size > 1)
+            Seq("too many parameters: "+parameters.mkString(" "))
+        else if (!parameters.head.startsWith(javaSecurityParameter))
+            Seq("unknown parameter: "+parameters.head)
+        else if (!{
+            val securityFileParameter = parameters.head
+            val javaSecurityFile = securityFileParameter.substring(javaSecurityParameter.length())
+            new File(javaSecurityFile).exists()
+        })
+            Seq("the specified security file is not valid: "+parameters.head)
+        else
+            Seq.empty
+
+    }
 
     override def doAnalyze(
         project: analyses.Project[URL],

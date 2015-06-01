@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -78,7 +78,9 @@ sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
  *
  * @author Michael Eichberg
  */
-sealed trait VisibilityModifier extends AccessFlag
+sealed trait VisibilityModifier extends AccessFlag {
+    val javaName: Some[String]
+}
 
 /**
  * Defines extractor methods related to visibility modifiers.
@@ -112,116 +114,116 @@ object VisibilityModifier {
 }
 
 object ACC_PUBLIC extends VisibilityModifier {
-    final override val javaName: Option[String] = Some("public")
+    final override val javaName: Some[String] = Some("public")
     final override val mask: Int = 0x0001
     override def toString = "PUBLIC"
 }
 
 object ACC_PRIVATE extends VisibilityModifier {
-    final override val javaName: Option[String] = Some("private")
+    final override val javaName: Some[String] = Some("private")
     final override val mask: Int = 0x0002
     override def toString = "PRIVATE"
 }
 
 object ACC_PROTECTED extends VisibilityModifier {
-    final override val javaName: Option[String] = Some("protected")
+    final override val javaName: Some[String] = Some("protected")
     final override val mask: Int = 0x0004
     override def toString = "PROTECTED"
 }
 
 object ACC_STATIC extends AccessFlag {
-    final override val javaName: Option[String] = Some("static")
+    final override val javaName: Some[String] = Some("static")
     final override val mask = 0x0008
     override def toString = "STATIC"
 }
 
 object ACC_FINAL extends AccessFlag {
-    final override val javaName: Option[String] = Some("final")
+    final override val javaName: Some[String] = Some("final")
     final override val mask = 0x0010
     override def toString = "FINAL"
 }
 
 object ACC_SUPER extends AccessFlag {
-    final val javaName: Option[String] = None
+    final val javaName: None.type = None
     final val mask = 0x0020
     override def toString = "SUPER"
 }
 
 object ACC_SYNCHRONIZED extends AccessFlag {
-    final override val javaName: Option[String] = Some("synchronized")
+    final override val javaName: Some[String] = Some("synchronized")
     final override val mask = 0x0020
     override def toString = "SYNCHRONIZED"
 }
 
 object ACC_VOLATILE extends AccessFlag {
-    final override val javaName: Option[String] = Some("volatile")
+    final override val javaName: Some[String] = Some("volatile")
     final override val mask = 0x0040
     override def toString = "VOLATILE"
 }
 
 object ACC_BRIDGE extends AccessFlag {
-    final val javaName: Option[String] = None
+    final val javaName: None.type = None
     final val mask = 0x0040
     override def toString = "BRIDGE"
 }
 
 object ACC_TRANSIENT extends AccessFlag {
-    final override val javaName: Option[String] = Some("transient")
+    final override val javaName: Some[String] = Some("transient")
     final override val mask = 0x0080
     override def toString = "TRANSIENT"
 }
 
 object ACC_VARARGS extends AccessFlag {
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x0080
     override def toString = "VARARGS"
 }
 
 object ACC_NATIVE extends AccessFlag {
-    final val javaName: Option[String] = Some("native")
+    final val javaName: Some[String] = Some("native")
     final val mask = 0x0100
     override def toString = "NATIVE"
 }
 
 object ACC_INTERFACE extends AccessFlag {
     // this flag modifies the semantics of a class, but it is not an additional flag
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x0200
     override def toString = "INTERFACE"
 }
 
 object ACC_ABSTRACT extends AccessFlag {
-    final override val javaName: Option[String] = Some("abstract")
+    final override val javaName: Some[String] = Some("abstract")
     final override val mask = 0x0400
     override def toString = "ABSTRACT"
 }
 
 object ACC_STRICT extends AccessFlag {
-    final override val javaName: Option[String] = Some("strictfp")
+    final override val javaName: Some[String] = Some("strictfp")
     final val mask = 0x0800
     override def toString = "STRICT"
 }
 
 object ACC_SYNTHETIC extends AccessFlag {
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x1000
     override def toString = "SYNTHETIC"
 }
 
 object ACC_ANNOTATION extends AccessFlag {
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x2000
     override def toString = "ANNOTATION"
 }
 
 object ACC_ENUM extends AccessFlag {
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x4000
     override def toString = "ENUM"
 }
 
 object ACC_MANDATED extends AccessFlag {
-    final override val javaName: Option[String] = None
+    final override val javaName: None.type = None
     final override val mask = 0x8000
     override def toString = "MANDATED"
 }

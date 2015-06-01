@@ -47,6 +47,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -121,6 +123,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
         import theProject.logContext
+
+        OPALLogger.info("analysis progress", "starting analysis")
 
         val (analysisTime, issues0, exceptions) =
             bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
@@ -222,13 +226,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         )
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         var outputFormatGiven = false
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
 
-        parameters.forall(parameter ⇒
-            parameter match {
+        val issues =
+            parameters.filterNot(parameter ⇒ parameter match {
                 case MaxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
@@ -264,8 +268,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
                 case IssueKindsPattern(ks) ⇒
                     val kinds = ks.split(',')
-                    kinds.length > 0 &&
-                        kinds.forall { k ⇒ IssueKind.AllKinds.contains(k) }
+                    kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
                 case MinRelevancePattern(_) ⇒
                     // the pattern ensures that the value is legal...
@@ -279,15 +282,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
-                case _ ⇒
-                    // TODO report the issue back to the calling method
-                    println("Unknown parameter: "+parameter)
-                    false
+                case _                             ⇒ false
+            })
 
-            }
-        ) &&
-            outputFormatGiven
+        if (!outputFormatGiven)
+            OPALLogger.warn("analysis configuration", "no output format specified")(GlobalLogContext)
 
+        issues.map("unknown or illegal parameter: "+_)
     }
 }
 

@@ -40,6 +40,7 @@ import bi.AccessFlagsContexts
 import bi.AccessFlags
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -84,8 +85,7 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 final class ClassFile private (
-    val minorVersion: Int,
-    val majorVersion: Int,
+    val version: UShortPair,
     val accessFlags: Int,
     val thisType: ObjectType,
     val superclassType: Option[ObjectType],
@@ -98,12 +98,19 @@ final class ClassFile private (
 
     import ClassFile._
 
-    final override def isClass = true
+    final def minorVersion = version.minor
 
-    final override def asClassFile = this
+    final def majorVersion = version.major
+
+    final override def isClass: Boolean = true
+
+    final override def asClassFile: this.type = this
 
     def asVirtualClass: VirtualClass = VirtualClass(thisType)
 
+    /**
+     * The unique id associated with the type defined by this class file.
+     */
     def id = thisType.id
 
     /**
@@ -154,6 +161,17 @@ final class ClassFile private (
      */
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
+
+    /**
+     * Returns `true` if this class file defines an anonymous inner class.
+     *
+     * This method relies on the inner classes attribute to identify anonymous inner
+     * classes.
+     */
+    def isAnonymousInnerClass: Boolean = isClassDeclaration &&
+        innerClasses.map(_.exists { i ⇒
+            i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
+        }).getOrElse(false)
 
     /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
@@ -501,26 +519,31 @@ final class ClassFile private (
 
     override def toString: String = {
         try {
+            val superIntefaces =
+                if (interfaceTypes.nonEmpty)
+                    interfaceTypes.map(_.toJava).mkString("\t\twith ", " with ", "\n")
+                else
+                    ""
+
             "ClassFile(\n\t"+
                 AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
                 thisType.toJava+"\n"+
                 superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-                (if (interfaceTypes.nonEmpty) interfaceTypes.map(_.toJava).mkString("\t\twith ", " with ", "\n") else "") +
+                superIntefaces +
                 annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
                 annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
                 "\t{version="+majorVersion+"."+minorVersion+"}\n)"
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: Exception ⇒
-                throw new RuntimeException(
-                    s"creating a string representation for ${thisType.toJava} failed",
-                    e)
+                val error = s"toString for ${thisType.toJava} failed"
+                throw new RuntimeException(error, e)
         }
     }
 
     protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {
         new ClassFile(
-            this.minorVersion, this.majorVersion, this.accessFlags,
+            this.version, this.accessFlags,
             this.thisType, this.superclassType, this.interfaceTypes,
             this.fields, this.methods, newAttributes
         )
@@ -549,7 +572,7 @@ object ClassFile {
         methods: Methods,
         attributes: Attributes): ClassFile = {
         new ClassFile(
-            minorVersion, majorVersion,
+            UShortPair(minorVersion, majorVersion),
             accessFlags,
             thisType, superclassType, interfaceTypes,
             fields sortWith { (f1, f2) ⇒ f1 < f2 },

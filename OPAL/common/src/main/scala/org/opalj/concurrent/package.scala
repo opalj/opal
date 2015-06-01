@@ -45,8 +45,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
- * Common constants, factory methods and objects used throughout OPAL when doing
- * parallelization.
+ * Common constants, factory methods and objects used throughout OPAL when performing
+ * concurrent computations.
  *
  * @author Michael Eichberg
  */

@@ -87,7 +87,7 @@ import org.opalj.br.instructions._
  */
 trait AI[D <: Domain] {
 
-    type SomeLocals[V <: d.DomainValue forSome { val d: Domain }] = Option[IndexedSeq[V]]
+    type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
     /**
      * Determines whether a running (or to be started) abstract interpretation
@@ -112,7 +112,7 @@ trait AI[D <: Domain] {
      * This method '''needs to be overridden in subclasses to identify situations
      * in which a running abstract interpretation should be interrupted'''.
      */
-    def isInterrupted: Boolean = false
+    protected def isInterrupted: Boolean = false
 
     /**
      * The tracer (default: `None`) that is called by OPAL while performing the abstract
@@ -339,7 +339,8 @@ trait AI[D <: Domain] {
     }
 
     def continueInterpretation(
-        strictfp: Boolean, code: Code,
+        strictfp: Boolean,
+        code: Code,
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
@@ -358,7 +359,7 @@ trait AI[D <: Domain] {
 
     /**
      * Continues the interpretation of/performs an abstract interpretation of
-     *  the given method (code) using the given domain.
+     * the given method (code) using the given domain.
      *
      * @param strictfp `true` if ''strict'' semantics for floating point operations should
      *      be used; `false` otherwise.
@@ -449,13 +450,18 @@ trait AI[D <: Domain] {
                 instructions, joinInstructions,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall)
 
+        /*
+         * The first PC of each element of the list is the pc of the first instruction of
+         * the subroutine <=> the subroutine id
+         */
+        type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
         /* 1 */ var operandsArray = theOperandsArray
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(PC /* the pc of the first instruction of the subroutine <=> the subroutine id */ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
 
         // -------------------------------------------------------------------------------
         //
@@ -1052,7 +1058,7 @@ trait AI[D <: Domain] {
 
                         val (updatedOperands2, updatedLocals2) =
                             if (upperBound.isDefined)
-                                theDomain.refSetUpperBound(
+                                theDomain.refSetUpperTypeBoundOfTopOperand(
                                     branchTarget,
                                     upperBound.get,
                                     updatedOperands1,
@@ -2217,7 +2223,7 @@ trait AI[D <: Domain] {
                                             handleException(theDomain.VMClassCastException(pc))
 
                                         val (newOperands, newLocals) =
-                                            theDomain.refSetIsNull(pc, operands, locals)
+                                            theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
                                     }
 
@@ -2226,7 +2232,7 @@ trait AI[D <: Domain] {
                                         handleException(theDomain.VMClassCastException(pc))
 
                                     val (newOperands, newLocals) =
-                                        theDomain.refSetUpperBound(
+                                        theDomain.refSetUpperTypeBoundOfTopOperand(
                                             pc,
                                             supertype,
                                             operands, locals)

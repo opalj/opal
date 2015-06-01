@@ -57,6 +57,7 @@ class AnalysisWorker(
     doc: ObjectProperty[xmlNode],
     project: Project[URL],
     parameters: AnalysisParameters,
+    issuez: ObjectProperty[Iterable[Issue]],
     initProgressManagement: Int ⇒ ProgressManagement) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
@@ -64,6 +65,7 @@ class AnalysisWorker(
             val parametersAsString = parameters.toStringParameters
             val (analysisTime, issues, _) =
                 AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
+            issuez() = issues
             doc() = createHTMLReport(analysisTime, parametersAsString, issues)
         }
 

@@ -33,6 +33,7 @@ import bi.ACC_TRANSIENT
 import bi.ACC_VOLATILE
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single field declaration/definition.
@@ -98,6 +99,21 @@ final class Field private (
         attributes collectFirst { case cv: ConstantFieldValue[_] ⇒ cv }
 
     def toJavaSignature: String = fieldType.toJava+" "+name
+
+    def toJava(): String = {
+        val accessFlags = AccessFlags.toStrings(this.accessFlags, AccessFlagsContexts.FIELD)
+        (
+            if (accessFlags.nonEmpty)
+                accessFlags.mkString("", " ", " ")
+            else
+                ""
+        ) +
+            fieldType.toJava+" "+name
+    }
+
+    def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
+
+    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
 
     /**
      * Defines an absolute order on `Field` objects w.r.t. their names and types.

@@ -28,6 +28,11 @@
  */
 package controlflow;
 
+/**
+ * Created to test the computation of control flow graphs.
+ * 
+ * @author Erich Wittenbeck
+ */
 public class SwitchCode {
 
     public int simpleSwitchWithBreakNoDefault(int a) {

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,6 +31,7 @@ package ai
 package dataflow
 package instance
 
+import java.io.File
 import org.opalj.io.process
 import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.br._
@@ -130,12 +131,22 @@ object StringPassedToClassForName extends DataFlowProblemFactory with DataFlowPr
     override def analysisSpecificParametersDescription: String =
         javaSecurityParameter+"<JRE/JDK Security Policy File>"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
-        parameters.size == 1 && {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
+        if (parameters.size == 0)
+            Seq("missing parameter: -java.security")
+        else if (parameters.size > 1)
+            Seq("too many parameters: "+parameters.mkString(" "))
+        else if (!parameters.head.startsWith(javaSecurityParameter))
+            Seq("unknown parameter: "+parameters.head)
+        else if (!{
             val securityFileParameter = parameters.head
-            securityFileParameter.startsWith(javaSecurityParameter) &&
-                new java.io.File(securityFileParameter.substring(javaSecurityParameter.length())).exists()
-        }
+            val securityFile = securityFileParameter.substring(javaSecurityParameter.length())
+            new File(securityFile).exists()
+        })
+            Seq("the specified security file is not valid: "+parameters.head)
+        else
+            Seq.empty
+
     }
 
     override def processAnalysisParameters(parameters: Seq[String]): P = {

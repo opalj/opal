@@ -44,11 +44,10 @@ import org.opalj.log.GlobalLogContext
  * Basic tests of the class hierarchy.
  *
  * @author Michael Eichberg
+ * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
-class ClassHierarchyTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */ {
+class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll */ {
 
     // -----------------------------------------------------------------------------------
     //
@@ -59,13 +58,10 @@ class ClassHierarchyTest
     //
     // Setup
     //
-    val preInitCH =
-        ClassHierarchy.preInitializedClassHierarchy
-    val javaLangCH =
-        ClassHierarchy(
-            Traversable.empty,
-            List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
-        )(GlobalLogContext)
+    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
+    val javaLangCHFile = "JavaLangClassHierarchy.ths"
+    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
+    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -84,6 +80,130 @@ class ClassHierarchyTest
     val intArray = ArrayType(IntegerType)
     val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)
+
+    // Commonly used pacakge names
+    val pgk = Some("classhierarchy/")
+
+    val SimpleCTS = SimpleClassTypeSignature
+    val CTS = ClassTypeSignature
+    def CTS(cn: String, ptas: List[TypeArgument]) =
+        ClassTypeSignature(pgk, SimpleCTS(cn, ptas), Nil)
+
+    def elementType(cts: ClassTypeSignature) =
+        ProperTypeArgument(None, cts)
+
+    def lowerBound(cts: ClassTypeSignature) =
+        ProperTypeArgument(Some(CovariantIndicator), cts)
+
+    def upperBound(cts: ClassTypeSignature) =
+        ProperTypeArgument(Some(ContravariantIndicator), cts)
+
+    /*SimpleClassTypeSignatures*/
+    val baseSCTS = SimpleCTS("Base", Nil)
+    val extBaseSCTS = SimpleCTS("ExtendedBase", Nil)
+    val lvlTwoBaseSCTS = SimpleCTS("lvlTwoBase", Nil)
+    val altBaseSCTS = SimpleCTS("AlternativBase", Nil)
+    val genericSCTS = SimpleCTS("SimpleGeneric", Nil)
+
+    /*Nested ClassTypeSignatures*/
+    val baseCTS = CTS(pgk, baseSCTS, Nil)
+    val extBaseCTS = CTS(pgk, extBaseSCTS, Nil)
+    val lvlTwoBaseCTS = CTS(pgk, lvlTwoBaseSCTS, Nil)
+    val altBaseCTS = CTS(pgk, altBaseSCTS, Nil)
+    val genericCTS = CTS(pgk, genericSCTS, Nil)
+
+    /* UContainer<UnknownType> */
+    val unknownContainer =
+        ClassTypeSignature(
+            pgk,
+            SimpleClassTypeSignature(
+                "UContainer",
+                List(
+                    elementType(ClassTypeSignature(Some("unknown/"),
+                        SimpleClassTypeSignature("UnkownType", Nil),
+                        Nil))
+                )),
+            Nil)
+
+    /* SimpleGeneric<Base> */
+    val baseContainer = CTS("SimpleGeneric", List(elementType(baseCTS)))
+
+    /*SimpleGeneric<AlternativeBase> */
+    val altContainer = CTS("SimpleGeneric", List(elementType(altBaseCTS)))
+
+    /* SimpleGeneric<lvlTwoBase>*/
+    val lvlTwoContainer = CTS("SimpleGeneric", List(elementType(lvlTwoBaseCTS)))
+
+    /* SimpleGeneric<Base> */
+    val extBaseContainer = CTS("SimpleGeneric", List(elementType(extBaseCTS)))
+
+    /* ExtendedGeneric<Base> */
+    val extGenContainer = CTS("ExtendedGeneric", List(elementType(baseCTS)))
+
+    /* SimpleGeneric<*> */
+    val wildCardContainer = CTS("SimpleGeneric", List(Wildcard))
+
+    /*  SimpleGeneric<? extends Base>*/
+    val covariantContainer = CTS("SimpleGeneric", List(lowerBound(baseCTS)))
+
+    /*  SimpleGeneric<? super Base>*/
+    val contravariantContainer = CTS("SimpleGeneric", List(upperBound(extBaseCTS)))
+
+    /*  SimpleGeneric<? super SimpleGenericBase>*/
+    val contravariantWithContainer =
+        CTS("SimpleGeneric", List(upperBound(baseContainer)))
+
+    /*  SimpleGeneric<? super Base> */
+    val contravariantBaseContainer =
+        CTS("SimpleGeneric", List(upperBound(baseCTS)))
+
+    /* SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
+    val doubleContainerET =
+        CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
+
+    /* SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    val doubleContainerTE =
+        CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
+
+    /* IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    val doubleContainerBase =
+        CTS("IndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
+
+    /* SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    val wrongDoubleContainer =
+        CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
+
+    /* SimpleGeneric<SimpleGeneric<Base>> */
+    val nestedBase =
+        CTS("SimpleGeneric", List(elementType(baseContainer)))
+
+    /* SimpleGeneric<SimpleGeneric<ExtendedBase>> */
+    val nestedExtBase =
+        CTS("SimpleGeneric", List(elementType(extBaseContainer)))
+
+    /* SimpleGeneric<SimpleGeneric<lvlTwoContainer>> */
+    val nestedLvlTwoBase =
+        CTS("SimpleGeneric", List(elementType(lvlTwoContainer)))
+
+    /* SimpleGeneric<SimpleGeneric<AlternativeBase>> */
+    val nestedAltBase =
+        CTS("SimpleGeneric", List(elementType(altContainer)))
+
+    /* SimpleGeneric<ExtendedGeneric<Base>> */
+    val nestedSubGenBase =
+        CTS("SimpleGeneric", List(elementType(extGenContainer)))
+
+    /* SimpleGeneric<SimpleGeneric<? extends Base>> */
+    val nestedInnerCovariantContainer =
+        CTS("SimpleGeneric", List(elementType(covariantContainer)))
+
+    /* SimpleGeneric<? extends SimpleGeneric<Base>> */
+    val nestedOutterCovariantContainer =
+        CTS("SimpleGeneric", List(lowerBound(baseContainer)))
+
+    /* SimpleGeneric<? super SimpleGeneric<Base>> */
+    val nestedContravariantContainer =
+        CTS("SimpleGeneric", List(elementType(contravariantBaseContainer)))
 
     //
     // Verify
@@ -286,6 +406,66 @@ class ClassHierarchyTest
 
     // -----------------------------------------------------------------------------------
     //
+    // TESTING THE HANDLING OF GENERICS
+    //
+    // -----------------------------------------------------------------------------------
+
+    behavior of "isSubTypeOf method w.r.t. generics"
+
+    it should "correctly reflect the type hierarchy related to primitve generics should return YES" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(baseContainer, baseContainer) should be(Yes)
+        isSubtypeOf(baseContainer, wildCardContainer) should be(Yes)
+        isSubtypeOf(wildCardContainer, wildCardContainer) should be(Yes)
+        isSubtypeOf(extBaseContainer, covariantContainer) should be(Yes)
+        isSubtypeOf(baseContainer, covariantContainer) should be(Yes)
+        isSubtypeOf(baseContainer, contravariantContainer) should be(Yes)
+        isSubtypeOf(doubleContainerET, baseContainer) should be(Yes)
+        isSubtypeOf(doubleContainerTE, baseContainer) should be(Yes)
+        isSubtypeOf(doubleContainerBase, baseContainer) should be(Yes)
+    }
+
+    it should "correctly reflect the type hierarchy related to primitve generics should return NO" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(baseContainer, extBaseContainer) should be(No)
+        isSubtypeOf(wildCardContainer, baseContainer) should be(No)
+        isSubtypeOf(altContainer, contravariantContainer) should be(No)
+        isSubtypeOf(extBaseContainer, contravariantBaseContainer) should be(No)
+        isSubtypeOf(altContainer, covariantContainer) should be(No)
+        isSubtypeOf(baseContainer, doubleContainerET) should be(No)
+        isSubtypeOf(baseContainer, doubleContainerTE) should be(No)
+        isSubtypeOf(wrongDoubleContainer, baseContainer) should be(No)
+    }
+
+    it should "correctly reflect the type hierarchy related to primitve generics should return Unknown" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(unknownContainer, baseContainer) should be(Unknown)
+    }
+
+    it should "correctly reflect the type hierarchy related to nested generics should return YES" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(nestedInnerCovariantContainer, nestedInnerCovariantContainer) should be(Yes)
+        isSubtypeOf(nestedExtBase, nestedInnerCovariantContainer) should be(Yes)
+        isSubtypeOf(nestedBase, nestedContravariantContainer) should be(Yes)
+        isSubtypeOf(nestedBase, contravariantWithContainer) should be(Yes)
+        isSubtypeOf(nestedBase, nestedOutterCovariantContainer) should be(Yes)
+    }
+
+    it should "correctly reflect the type hierarchy related to nested generics should return NO" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(nestedBase, nestedAltBase) should be(No)
+        isSubtypeOf(nestedAltBase, nestedInnerCovariantContainer) should be(No)
+        isSubtypeOf(nestedLvlTwoBase, nestedContravariantContainer) should be(No)
+        isSubtypeOf(nestedSubGenBase, nestedContravariantContainer) should be(No)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
     // TESTS IF WE HAVE AN INCOMPLETE CLASS HIERARCHY
     //
     // -----------------------------------------------------------------------------------
@@ -346,7 +526,8 @@ class ClassHierarchyTest
             window,
             "draw",
             MethodDescriptor.NoArgsAndReturnVoid,
-            clusteringProject) should be('nonEmpty)
+            clusteringProject,
+            (cf) ⇒ true) should be('nonEmpty)
     }
 
     // -----------------------------------------------------------------------------------
@@ -455,7 +636,8 @@ class ClassHierarchyTest
                 superI,
                 "someMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject)
+                methodsProject,
+                (cf) ⇒ true)
 
         implementingMethods.size should be(0)
     }
@@ -467,7 +649,8 @@ class ClassHierarchyTest
                 classType,
                 "publicMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject)
+                methodsProject,
+                (cf) ⇒ true)
 
         implementingMethods.size should be(1)
         implementingMethods.head should have(
@@ -475,4 +658,11 @@ class ClassHierarchyTest
             'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
         )
     }
+}
+
+object ClassHierarchyTest {
+
+    val generics = locateTestResources("classfiles/genericTypes.jar", "br")
+    val genericProject = Project(ClassFiles(generics), Traversable.empty)
+
 }

@@ -1722,7 +1722,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     //
     // -----------------------------------------------------------------------------------
 
-    override def refSetUpperBound(
+    override def refSetUpperTypeBoundOfTopOperand(
         pc: PC,
         bound: ReferenceType,
         operands: Operands,
@@ -1739,7 +1739,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         asReferenceValue(value).refineIsNull(pc, isNull, operands, locals)
     }
 
-    override def refSetIsNull(
+    override def refTopOperandIsNull(
         pc: PC,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {

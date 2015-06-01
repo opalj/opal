@@ -144,7 +144,7 @@ object FindRealBugs {
 
         val progressManagement =
             new ProgressManagement {
-                def progress(step: Int, event: Event, message: Option[String]): Unit = {
+                def progress(step: Int, event: ProgressEvent, message: Option[String]): Unit = {
                     // DO NOTHING
                 }
                 def isInterrupted(): Boolean = {

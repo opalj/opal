@@ -35,7 +35,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Very primitive rating of the complexity of methods.
@@ -55,7 +55,7 @@ object MethodComplexityAnalysis
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        var executionTime = NanoSeconds.None
+        var executionTime = Nanoseconds.None
 
         val analysisResults = time {
 

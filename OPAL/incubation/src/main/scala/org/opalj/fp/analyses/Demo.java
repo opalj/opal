@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,35 +26,65 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
+package org.opalj.fp.analyses;
 
-/**
- * Characterizes the type of an event related to a running analysis.
- *
- * @see [[ProgressManagement]] for further details.
- *
- * @author Michael Eichberg
- */
-object EventType extends Enumeration {
+class Demo {
 
-    /**
-     * Used to signal the start of a (longer-running) computation.
-     * Each computation that signals a start must also signal an end of the computation.
-     */
-    val Start = Value
+    private Demo() {/* empty */
+    }
 
-    /**
-     * Used to signal the end of a computation.
-     */
-    val End = Value
+    public static int simplyPure(int i, int j) {
+        return i % 3 == 0 ? i : j;
+    }
 
-    /**
-     * Use to signal that a computation was killed.
-     *
-     * '''After signaling a `Killed` event the underlying computation is not
-     * allowed to signal any further events.'''
-     */
-    val Killed = Value
+    public static int impure(int i) {
+        return (int) (i * System.nanoTime());
+    }
+
+    //
+    // Both methods are actually pure but have a dependency on each other...
+    //
+    static int foo(int i) {
+        return i < 0 ? i : bar(i - 10);
+    }
+
+    static int bar(int i) {
+        return i % 2 == 0 ? i : foo(i - 1);
+    }
+    
+    // the following method is (conditionally) pure, but does not contribute to the 
+    // cyclic computation
+
+    static int fooBar(int i) {
+        return foo(i)+bar(i);
+    }
+    
+    //
+    // All three methods are actually pure but have a dependency on each other...
+    //
+    static int m1(int i) {
+        return i < 0 ? i : m2(i - 10);
+    }
+
+    static int m2(int i) {
+        return i % 2 == 0 ? i : m3(i - 1);
+    }
+
+    static int m3(int i) {
+        return i % 4 == 0 ? i : m1(i - 1);
+    }
+
+    //
+    // The following method is pure, but only if we know the pureness of the target method
+    // which we don't know if do not analyze the JDK!
+    //
+    
+    static int cpure(int i) {
+        return Math.abs(i) * 21;
+    }
+
+    static int cpureCallee(int i) {
+        return cpure(i / 21);
+    }
+
 }

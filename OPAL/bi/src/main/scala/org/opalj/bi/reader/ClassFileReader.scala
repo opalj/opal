@@ -49,6 +49,9 @@ import org.opalj.io.process
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import scala.util.control.ControlThrowable
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -68,6 +71,8 @@ import scala.concurrent.Future
  * @author Michael Eichberg
  */
 trait ClassFileReader extends Constant_PoolAbstractions {
+
+    import ClassFileReader.{ ExceptionHandler, defaultExceptionHandler }
 
     //
     // ABSTRACT DEFINITIONS
@@ -321,8 +326,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
-            if (jarEntry == null)
-                throw new IOException(s"the file $jarFile does not contain $jarFileEntryName")
+            if (jarEntry == null) {
+                val message = s"the file $jarFile does not contain $jarFileEntryName"
+                throw new IOException(message)
+            }
             ClassFile(zf, jarEntry)
         }
     }
@@ -346,7 +353,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFiles(
         jarFile: ZipFile,
-        exceptionHandler: (Exception) ⇒ Unit): Seq[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler): Seq[(ClassFile, URL)] = {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
@@ -375,7 +382,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         jarFile: ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit): Unit = {
+        exceptionHandler: ExceptionHandler): Unit = {
         val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
         val jarFileName = "jar:"+jarFileURL+"!/"
         ClassFiles(jarFileName, jarFile, classFileHandler, exceptionHandler)
@@ -385,7 +392,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         jarFileURL: String, // the complete path to the given jar file.
         jarFile: ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit): Unit = {
+        exceptionHandler: ExceptionHandler): Unit = {
 
         import scala.collection.JavaConversions._
 
@@ -412,10 +419,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                             } catch {
-                                case e: Exception ⇒
-                                    exceptionHandler(
-                                        new IOException("cannot process: "+jarEntryName, e)
-                                    )
+                                case ct: ControlThrowable ⇒
+                                    throw ct
+                                case t: Throwable ⇒
+                                    exceptionHandler(jarEntryName, t)
                             }
                         } else if (jarEntryName.endsWith(".jar")) {
                             innerJarEntries.add(jarEntry)
@@ -427,15 +434,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         futureIndexes.foreach { fi ⇒ Await.ready(futures(fi), Duration.Inf) }
 
         for (jarEntry ← innerJarEntries.iterator()) {
+            val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
             try {
-                val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
                 val jarData = new Array[Byte](jarEntry.getSize().toInt)
                 val din = new DataInputStream(jarFile.getInputStream(jarEntry))
                 din.readFully(jarData)
                 din.close()
                 ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
             } catch {
-                case e: Exception ⇒ exceptionHandler(e)
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ exceptionHandler(nextJarFileURL, t)
             }
         }
     }
@@ -450,7 +458,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         jarFileURL: String,
         jarData: Array[Byte],
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit): Unit = {
+        exceptionHandler: ExceptionHandler): Unit = {
         val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 3)
         val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1)
         try {
@@ -463,7 +471,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
             jarFile.delete()
         } catch {
-            case e: Exception ⇒ exceptionHandler(e)
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable         ⇒ exceptionHandler(pathToEntry, t)
         }
     }
 
@@ -479,14 +488,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFiles(
         file: File,
-        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Seq[(ClassFile, URL)] = {
 
         def processJar(file: File): Seq[(ClassFile, URL)] = {
             try {
                 process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
             } catch {
                 case e: Exception ⇒
-                    exceptionHandler(new IOException("cannot process: "+file, e))
+                    exceptionHandler(file, new IOException("cannot process: "+file, e))
                     Nil
             }
         }
@@ -498,7 +507,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 }
             } catch {
                 case e: Exception ⇒
-                    exceptionHandler(new IOException("cannot process "+file, e))
+                    exceptionHandler(file, new IOException("cannot process "+file, e))
                     Nil
             }
         }
@@ -562,7 +571,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
     def AllClassFiles(
         files: Traversable[File],
-        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Traversable[(ClassFile, URL)] = {
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Traversable[(ClassFile, URL)] = {
 
         files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten
     }
@@ -574,6 +583,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
  */
 object ClassFileReader {
 
-    final val defaultExceptionHandler: (Exception) ⇒ Unit =
-        (e) ⇒ e.printStackTrace(Console.err)
+    type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
+
+    final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
+        OPALLogger.error(
+            "reading class files",
+            s"processing $source failed",
+            t)(GlobalLogContext)
+    }
 }

@@ -42,6 +42,8 @@ import org.opalj.ai.AIResult
 /**
  * Converts the bytecode of a method into a three address/quadruples representation.
  *
+ * TODO Complete implementation of "AsQuadruples".
+ *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */

@@ -229,7 +229,7 @@ object DeadEdgesAnalysis {
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
-            // to draw any conclusion; hence,
+            // to draw any conclusion; hence, we cannot derive any results.
             allOperands = operandsArray(pc)
             if allOperands ne null // null if we are in a subroutine (java < 1.5)
         } {
