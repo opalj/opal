@@ -338,14 +338,14 @@ object AsQuadruples {
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
-                    ICONST_4.opcode ⇒
+                    ICONST_4.opcode | ICONST_5.opcode |
+                    ICONST_M1.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
                     statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case ACONST_NULL.opcode ⇒
-//                    val value = as[LoadConstantInstruction[Null]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeReference, stack)
                     statements(pc) = List(Assignment(pc, targetVar, NullExpr(pc)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)

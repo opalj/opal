@@ -1030,7 +1030,7 @@ class QuadruplesTest extends FunSpec with Matchers {
             it("should correctly reflect the equals case (using no AI results)") {
                 val statements = AsQuadruples(IfACMPEQMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
-                //TODO
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(binaryResultAST(
@@ -1041,7 +1041,7 @@ class QuadruplesTest extends FunSpec with Matchers {
             it("should correctly reflect the not-equals case (using no AI results)") {
                 val statements = AsQuadruples(IfACMPNEMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
-                //TODO
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(binaryResultAST(
@@ -1052,7 +1052,7 @@ class QuadruplesTest extends FunSpec with Matchers {
             it("should correctly reflect the non-null case (using no AI results)") {
                 val statements = AsQuadruples(IfNonNullMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
-                //TODO
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(unaryResultAST(
@@ -1063,7 +1063,7 @@ class QuadruplesTest extends FunSpec with Matchers {
             it("should correctly reflect the is-null case (using no AI results)") {
                 val statements = AsQuadruples(IfNullMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
-                //TODO
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(unaryResultAST(
