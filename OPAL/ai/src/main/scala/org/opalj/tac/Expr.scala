@@ -84,6 +84,10 @@ case class ClassConst(pc: PC, value: ObjectType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
+case class NullExpr(pc: PC) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
 /**
  * @param cTpe The computational type of the result of the binary expression.
  */
