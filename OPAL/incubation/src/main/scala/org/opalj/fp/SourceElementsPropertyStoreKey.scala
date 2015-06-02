@@ -53,6 +53,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     override protected def compute(project: SomeProject): PropertyStore = {
         PropertyStore(
             project.allSourceElements,
-            () ⇒ Thread.currentThread.isInterrupted())
+            () ⇒ Thread.currentThread.isInterrupted())(
+                project.logContext)
     }
 }

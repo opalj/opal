@@ -38,11 +38,14 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.{ Future ⇒ JFuture }
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.CancellationException
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -54,12 +57,9 @@ package object concurrent {
 
     private implicit def logContext = GlobalLogContext
 
-    final val UncaughtExceptionHandler =
-        new Thread.UncaughtExceptionHandler {
-            def uncaughtException(t: Thread, e: Throwable): Unit = {
-                OPALLogger.error("internal error", "uncaught exception", e)
-            }
-        }
+    final def handleUncaughtException(t: Throwable): Unit = {
+        OPALLogger.error("internal", "uncaught exception", t)
+    }
 
     //
     // STEP 1
@@ -128,6 +128,11 @@ package object concurrent {
     //
     // STEP 3
     //
+    private[this] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+        def uncaughtException(t: Thread, e: Throwable): Unit = {
+            handleUncaughtException(e)
+        }
+    }
     def ThreadPoolN(n: Int): ThreadPoolExecutor = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
@@ -150,7 +155,26 @@ package object concurrent {
                         t
                     }
                 }
-            )
+            ) {
+                override def afterExecute(r: Runnable, t: Throwable): Unit = {
+                    super.afterExecute(r, t)
+                    var e = t
+                    if (e == null && r.isInstanceOf[JFuture[_]]) {
+                        try {
+                            r.asInstanceOf[JFuture[_]].get()
+                        } catch {
+                            case ce: CancellationException ⇒ e = ce
+                            case ee: ExecutionException    ⇒ e = ee.getCause();
+                            case ie: InterruptedException ⇒
+                                e = ie
+                                Thread.currentThread().interrupt(); // ignore/reset
+                        }
+                    }
+                    if (e ne null) {
+                        handleUncaughtException(e)
+                    }
+                }
+            }
         tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp

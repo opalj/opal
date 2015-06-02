@@ -32,10 +32,13 @@ package org.opalj.fp
  * A PropertyObserver is a function that is called if the property associated
  * with the respective entity is computed or refined.
  *
+ * A PropertyObserver never directly executes/continues the analysis but schedules it if
+ * necessary.
+ *
  * The parameters of the function are the observed element (dependee) and its
  * (then available/refined) property.
  */
-trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
+private[fp] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
     /**
      * The entity and property key for which the property of the observed element
@@ -46,10 +49,14 @@ trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
      *      for algorithms that may use some available information, but does not
      *      strictly require it.
      */
-    def depender: Option[EPK]
+    def depender: EPK
 
 }
 
-abstract class DefaultPropertyObserver(
-    final val depender: Option[EPK])
-        extends PropertyObserver
+private[fp] abstract class DefaultPropertyObserver(
+    final val depender: EPK)
+        extends PropertyObserver {
+
+    override def toString: String = s"PropertyObserver(depender=$depender)"
+
+}

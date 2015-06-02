@@ -39,6 +39,8 @@ import org.opalj.br.Method
 
 /**
  * Demonstrates how to run the purity analysis.
+ *
+ * @author Michael Eichberg
  */
 object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
@@ -50,23 +52,31 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def doAnalyze(
         project: Project[URL],
-        parameters: Seq[String] = List.empty,
+        parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        // The purity analysis required information about the actual mutability
-        // of certain fields. Hence, we have to schedule the respective analysis.
+        // The purity analysis requires information about the actual mutability
+        // of private static non-final fields. Hence, we have to schedule the
+        // respective analysis. (Technically, it would be possible to schedule
+        // it afterwards, but that doesn't make sense.)
+        println("Starting Mutability Analysis")
         MutablityAnalysis.analyze(project)
+        println("Starting Purity Analysis")
         PurityAnalysis.analyze(project)
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore waitOnPropertyComputationCompletion
+        projectStore.waitOnPropertyComputationCompletion()
+        projectStore.terminateSuspendedComputations()
 
-        val pureEntities: Traversable[(AnyRef, Property)] =
-            projectStore(Purity.Key).filter(_._2 == Pure)
+        val pureEntities: Traversable[(AnyRef, Property)] = projectStore(Purity.Key)
+        //            projectStore(Purity.Key).filter { ep ⇒
+        //                val purity = ep._2
+        //                (purity == Pure || purity == ConditionallyPure)
+        //            }
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
         val pureMethodsAsStrings =
-            pureMethods.map(m ⇒ m._1.toJava(project.classFile(m._1)))
+            pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
 
         BasicReport(
             pureMethodsAsStrings.
@@ -75,7 +85,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 mkString(
                     "\nPure methods:\n",
                     "\n",
-                    s"\nTotal: ${pureMethods.size}%n$projectStore")
+                    s"\nTotal: ${pureMethods.size}\n$projectStore")
         )
     }
 }

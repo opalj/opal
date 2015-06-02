@@ -78,19 +78,37 @@ sealed trait Purity extends Property {
     final val key = Purity.Key // All instances have to share the SAME key!
 }
 private object Purity {
-    final val Key = PropertyKey.create("Purity")
+    final val Key =
+        PropertyKey.create(
+            "Purity",
+            Some(EPK ⇒ MaybePure)
+        )
 
 }
 
-/*
- * Used if we have a computation
+/**
+ * This is the fallback purity that is used by the framework in case of a cyclic
+ * dependency. In that case the framework breaks up the cycle by setting one method's
+ * purity property to `MaybePure`.
+ */
+case object MaybePure extends Purity
+
+/**
+ * Used if we know that the pureness of a methods only depends on the pureness
+ * of the target methods.
  *
  * Effectively the same as Impure unless it is refined later on.
  */
 case object ConditionallyPure extends Purity
 
+/**
+ * The respective method is pure.
+ */
 case object Pure extends Purity
 
+/**
+ * The respective method is impure.
+ */
 case object Impure extends Purity
 
 /**
@@ -118,7 +136,8 @@ object PurityAnalysis {
      */
     def determinePurityCont(
         method: Method,
-        pc: PC)(
+        pc: PC,
+        maxPurity: Purity)(
             implicit project: SomeProject, projectStore: PropertyStore): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
@@ -128,9 +147,8 @@ object PurityAnalysis {
         val instructions = body.instructions
         val maxPC = instructions.size
 
-        val debug = declaringClassType == org.opalj.br.ObjectType("java/util/Optional") && methodName == "hashCode"
-
         var currentPC = pc
+        var currentMaxPurity = maxPurity
 
         /*
          * Create a representation of the rest of the computation that needs to be
@@ -145,10 +163,29 @@ object PurityAnalysis {
                     dependeeE: AnyRef,
                     dependeeP: Property): PropertyComputationResult = {
 
-                    if (dependeeP == Pure) {
-                        determinePurityCont(method, nextPC)
-                    } else {
-                        Result(method, Impure)
+                    dependeeP match {
+                        case Impure ⇒
+                            Result(method, Impure)
+                        case Pure ⇒
+                            determinePurityCont(method, nextPC, currentMaxPurity)
+
+                        case MaybePure ⇒
+                            determinePurityCont(method, nextPC, MaybePure)
+                        case ConditionallyPure ⇒
+                            if (nextPC == maxPC)
+                                // We are finished with the analysis of this method
+                                // and get the message that the cyclic dependee is
+                                // conditionallyPure - hence, the whole cycle is
+                                // conditionallyPure and we can rais the pureness
+                                // level to "pure".
+                                Result(method, Pure)
+                            else
+                                // Some other method which uses this one
+                                // signals that it is conditionally pure, if this
+                                // method is pure, but the computation of this
+                                // method has not yet ended and, hence, we cannot
+                                // assume that is method is pure anymore!
+                                determinePurityCont(method, nextPC, MaybePure)
                     }
                 }
 
@@ -160,38 +197,9 @@ object PurityAnalysis {
             }
         }
 
-        //        /*
-        //         * Create a representation of the rest of the computation that needs to be
-        //         * carried out once the property becomes known.
-        //         */
-        //        def waitOnMutabilityInformation(field: Field): Suspended = {
-        //            new Suspended(method, Purity.Key, field, Mutability.Key) {
-        //                Console.err.println(":::::::::::::::::: created "+this.toString())
-        //                final val nextPC = body.pcOfNextInstruction(currentPC)
-        //
-        //                def continue(
-        //                    dependingEntity: AnyRef,
-        //                    dependingProperty: Property): PropertyComputationResult = {
-        //
-        //                    if (dependingProperty == EffectivelyFinal) {
-        //                        determinePurityCont(nextPC)(method)
-        //                    } else {
-        //                        Result(method, Impure)
-        //                    }
-        //                }
-        //
-        //                override def toString: String =
-        //                    "suspended purity computation of "+
-        //                        method.toJava(declaringClassType)+
-        //                        "; requiring mutability information about "+
-        //                        field.toJava(project.classFile(field))
-        //            }
-        //        }
-
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
-            if (debug)
-                println(s"\n\n[Debug]${declaringClassType.toJava} $methodName [$currentPC:] $instruction\n")
+
             (instruction.opcode: @scala.annotation.switch) match {
                 case GETSTATIC.opcode ⇒
                     val GETSTATIC(declaringClass, fieldName, fieldType) = instruction
@@ -199,26 +207,16 @@ object PurityAnalysis {
                     resolveFieldReference(declaringClass, fieldName, fieldType, project) match {
 
                         case Some(field) if field.isFinal ⇒
-                        // Nothing to do; constants do not impede purity!
+                        /* Nothing to do; constants do not impede purity! */
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-
-                            //                            val mutability = projectStore(field, Mutability.Key)
-                            //                            Console.err.println(s"mutability of callee $field is $mutability")
-                            //                            mutability match {
-                            //                                case Some(EffectivelyFinal) ⇒ /* Nothing to do...*/
-                            //                                case Some(NonFinal)         ⇒ return Result(method, Impure);
-                            //                                case None                   ⇒ return waitOnMutabilityInformation(field);
-                            //                                case _                      ⇒ new UnknownError
-                            //                            }
-                            val c: Continuation =
-                                (dependeeE: AnyRef, dependeeP: Property) ⇒
-                                    if (dependeeP == EffectivelyFinal) {
-                                        val nextPC = body.pcOfNextInstruction(currentPC)
-                                        determinePurityCont(method, nextPC)
-                                    } else {
-                                        Result(method, Impure)
-                                    }
+                            val c: Continuation = (dependeeE: AnyRef, dependeeP: Property) ⇒
+                                if (dependeeP == EffectivelyFinal) {
+                                    val nextPC = body.pcOfNextInstruction(currentPC)
+                                    determinePurityCont(method, nextPC, currentMaxPurity)
+                                } else {
+                                    Result(method, Impure)
+                                }
                             return projectStore.require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
@@ -253,7 +251,16 @@ object PurityAnalysis {
                                         case Some(Impure) ⇒ return Result(method, Impure);
                                         case None         ⇒ return waitOnPurityInformation(callee);
 
-                                        case _            ⇒ throw new UnknownError
+                                        // Handling cyclic computations
+                                        case Some(MaybePure) ⇒
+                                            currentMaxPurity = MaybePure
+                                        case Some(ConditionallyPure) ⇒
+                                            if (currentMaxPurity == Pure)
+                                                currentMaxPurity = ConditionallyPure
+
+                                        case _ ⇒
+                                            val message = s"unknown purity $purity"
+                                            throw new UnknownError(message)
                                     }
                             }
                     }
@@ -282,7 +289,23 @@ object PurityAnalysis {
         }
 
         // Every method that is not identified as being impure is pure.
-        Result(method, Pure)
+        currentMaxPurity match {
+            case Pure ⇒ Result(method, Pure)
+
+            case MaybePure ⇒
+                // We are dependent on a method that is `maybe pure`, but we know now
+                // that this method is pure if the `maybe pure` method is also pure;
+                // hence, we are `ConditionallyPure`.
+                IntermediateResult(method, ConditionallyPure)
+            case ConditionallyPure ⇒
+                // This method is not involved in a cyclic computation but depends on a
+                // method that is involved in such a computation and that method is/was
+                // ConditionallyPure.
+                IntermediateResult(method, ConditionallyPure)
+
+            case _ ⇒
+                throw new UnknownError(s"unexpected max purity: $currentMaxPurity")
+        }
     }
 
     def determinePurity(
@@ -308,7 +331,10 @@ object PurityAnalysis {
         if (method.parameterTypes.exists { !_.isBaseType })
             return Result(method, Impure);
 
-        determinePurityCont(method, 0)
+        println(s"determing purity of $method")
+        val purity = determinePurityCont(method, 0, Pure)
+        println(s"purity of $method is $purity")
+        purity
     }
 
     def analyze(implicit project: Project[URL]): Unit = {
