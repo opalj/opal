@@ -27,13 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
+package br
+package analyses
 
 /**
  * Exception raised while the anaylsis is executed.
  *
  * @author Michael Eichberg
  */
-case class AnalysisException(message: String, cause: Throwable)
+case class AnalysisException(message: String, cause: Throwable = null)
     extends RuntimeException(message, cause)

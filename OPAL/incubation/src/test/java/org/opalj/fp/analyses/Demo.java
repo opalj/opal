@@ -59,9 +59,9 @@ class Demo {
         return i % 2 == 0 ? i : foo(i - 1);
     }
 
-    // The following method is not direct involved in a 
-    // mutual recursive dependency, but requires information about a set of
-    //
+    // The following method is not direct involved in a
+    // mutually recursive dependency, but requires information about a set of
+    // mutually recursive dependent methods.
     static int fooBar(int i) {
         return foo(i) + bar(i);
     }
@@ -82,7 +82,8 @@ class Demo {
     }
 
     //
-    // All three methods are depending on each other, but they are NOT pure.
+    // All three methods are depending on each other, but they are NOT pure, because
+    // one calls an impure method.
     //
     static int m1np(int i) {
         return i < 0 ? i : m2np(i - 10);
@@ -93,7 +94,8 @@ class Demo {
     }
 
     static int m3np(int i) {
-        int j = m1np(i - 1);
+        int k = m1(i);
+        int j = m1np(k - 1);
         return impure(j);
     }
 
@@ -110,4 +112,21 @@ class Demo {
         return cpure(i / 21);
     }
 
+    //
+    // All methods are involved in multiple cycles of dependent methods
+    // one calls an impure method.
+    //
+    static int mm1(int i) {
+        return i < 0 ? i : mm2(i - 10);
+    }
+
+    static int mm2(int i) {
+        return i % 2 == 0 ? mm1(-i) : mm3(i - 1);
+    }
+
+    static int mm3(int i) {
+        int j = m3(i);
+        int k = mm2(j);
+        return m1(k);
+    }
 }
