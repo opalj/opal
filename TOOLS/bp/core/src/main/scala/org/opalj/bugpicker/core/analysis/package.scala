@@ -32,6 +32,7 @@ package core
 
 import org.opalj.util.NanoSeconds
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.AnalysisException
 
 /**
  * Common constants and helper methods used by the BugPicker.

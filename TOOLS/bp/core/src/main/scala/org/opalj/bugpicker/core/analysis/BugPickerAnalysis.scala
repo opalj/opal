@@ -58,6 +58,7 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
