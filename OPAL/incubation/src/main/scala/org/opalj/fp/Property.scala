@@ -78,16 +78,14 @@ object PropertyKey {
     import lock.withWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val propertyKeyCyclicComputationsFallback = ArrayBuffer.empty[Option[EPK ⇒ Property]]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
     private[this] var lastKeyId: Int = -1
 
-    def create(
-        name: String,
-        cyclicComputationsFallback: Option[EPK ⇒ Property] = None): PropertyKey =
+    def create(name: String, defaultProperty: Property): PropertyKey =
         withWriteLock {
             lastKeyId += 1
             propertyKeyNames += name
-            propertyKeyCyclicComputationsFallback += cyclicComputationsFallback
+            defaultProperties += defaultProperty
             new PropertyKey(lastKeyId)
         }
 
@@ -96,9 +94,9 @@ object PropertyKey {
             propertyKeyNames(key.id)
         }
 
-    def cyclicComputationFallback(key: PropertyKey): Option[EPK ⇒ Property] =
+    def defaultProperty(key: PropertyKey): Property =
         withReadLock {
-            propertyKeyCyclicComputationsFallback(key.id)
+            defaultProperties(key.id)
         }
 
 }

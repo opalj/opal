@@ -115,18 +115,18 @@ class Demo {
     //
     // All methods are involved in multiple cycles of dependent methods
     // one calls an impure method.
-    //
-    // static int mm1(int i) {
-    // return i < 0 ? i : mm2(i - 10);
-    // }
-    //
-    // static int mm2(int i) {
-    // return i % 2 == 0 ? mm1(-i) : mm3(i - 1);
-    // }
-    //
-    // static int mm3(int i) {
-    // int j = m3(i);
-    // int k = mm2(j);
-    // return m1(k);
-    // }
+
+    static int mm1(int i) {
+        return i < 0 ? i : mm2(i - 10);
+    }
+
+    static int mm2(int i) {
+        return i % 2 == 0 ? mm1(-i) : mm3(i - 1);
+    }
+
+    static int mm3(int i) {
+        int j = m3(i);
+        int k = mm2(j);
+        return m1(k);
+    }
 }

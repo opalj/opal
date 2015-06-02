@@ -404,20 +404,21 @@ class PropertyStore private (
                     // Let's pick one (arbitrary!) element and set it to the default
                     // property for elements involved in a cyclic dependency.
                     def handleCycle: Boolean = {
-                        cyclic.exists { epko ⇒
-                            val (epk, o) = epko
-                            val pk = epk.pk
-                            PropertyKey.cyclicComputationFallback(pk) match {
-                                case Some(fallback) ⇒
-                                    val p = fallback(epk)
-                                    val e = epk.e
-                                    o(e, p)
-                                    println(s"handling cyclic dependency: $e <= $p")
-                                    true
-                                case None ⇒
-                                    false
-                            }
-                        }
+                        //                        cyclic.exists { epko ⇒
+                        ////                            val (epk, o) = epko
+                        ////                            val pk = epk.pk
+                        ////                            PropertyKey.cyclicComputationHandler(cyclic) match {
+                        ////                                case Some(fallback) ⇒
+                        ////                                    val p = fallback(epk)
+                        ////                                    val e = epk.e
+                        ////                                    o(e, p)
+                        ////                                    println(s"handling cyclic dependency: $e <= $p")
+                        ////                                    true
+                        ////                                case None ⇒
+                        ////                                    false
+                        //                            }
+                        false
+
                     }
                     if (!handleCycle) {
                         val message = s"unresolvable cyclic dependency (${cyclic.unzip._1})"
@@ -441,15 +442,15 @@ class PropertyStore private (
         scheduleTask(() ⇒ handleResult(pc(e)))
     }
 
-    //    /**
-    //     * Schedules the continuation w.r.t. the entity `e`.
-    //     */
-    //    private[this] def scheduleContinuation(
-    //        dependeeE: Entity,
-    //        dependeeP: Property,
-    //        c: Continuation): Unit = {
-    //        scheduleTask(() ⇒ handleResult(c(dependeeE, dependeeP)))
-    //    }
+    /**
+     * Schedules the continuation w.r.t. the entity `e`.
+     */
+    private[this] def scheduleContinuation(
+        dependeeE: Entity,
+        dependeeP: Property,
+        c: Continuation): Unit = {
+        scheduleTask(() ⇒ handleResult(c(dependeeE, dependeeP)))
+    }
 
     private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
         if (!isInterrupted()) {
@@ -480,10 +481,10 @@ class PropertyStore private (
     private[this] def update(
         e: Entity,
         p: Property,
-        finalProperty: Boolean): Unit = accessEntity {
+        finished: Boolean): Unit = accessEntity {
         val (lock, properties) = data.get(e)
 
-        if (finalProperty) {
+        if (finished) {
             // All observers that were registered with other entities to compute this
             // property can now be removed!
             val entitiesIterator = data.entrySet().iterator()
@@ -517,14 +518,16 @@ class PropertyStore private (
                     assert(
                         oldP != p,
                         s"$e: the old ($oldP) and the new property ($p) are identical")
-                    if (finalProperty) {
-                        // All entities that observer this value are
+                    if (finished) {
+                        // All entities that observe this value are
                         // informed and then the observers are removed.
                         properties.put(p.key, (p, Buffer.empty))
+                        observers foreach { o ⇒ o(e, p) }
                     } else {
-                        properties.put(p.key, (p, observers))
+                        val newOs = observers.filterNot(o ⇒ o.removeAfterNotification)
+                        properties.put(p.key, (p, newOs))
+                        observers foreach { o ⇒ o(e, p) }
                     }
-                    observers.foreach { o ⇒ o(e, p) }
 
                 case None ⇒
                     properties.put(p.key, (p, Buffer.empty))
@@ -559,7 +562,7 @@ class PropertyStore private (
     //                } else {
     //                    // ... the value in the store is already a more refined value
     //                    // than the value given by pOption
-    //                    o(e, p)
+    //                    o (e, p)
     //                }
     //            }
     //        }
@@ -570,14 +573,45 @@ class PropertyStore private (
         if (r != NoResult) println("RESULTS => "+r)
 
         r match {
-            case NoResult ⇒
-            // Nothing to do..
+            case NoResult ⇒ // Nothing to do..
 
             case Result(results) ⇒
-                results foreach { result ⇒ val (e, p) = result; update(e, p, true) }
+                results foreach { ep ⇒ val (e, p) = ep; update(e, p, finished = true) }
 
-            case IntermediateResult(results) ⇒
-                results foreach { result ⇒ val (e, p) = result; update(e, p, false) }
+            case IntermediateResult(e, p, dependees: Traversable[EP], c) ⇒
+                dependees foreach { ep ⇒
+
+                    val e = ep.e
+                    val p = ep.p
+                    val pk = p.key
+
+                    def createObserver() = {
+                        new DefaultPropertyObserver(EPK(e, pk), false) {
+                            def apply(dependeeE: Entity, dependeeP: Property): Unit = {
+                                scheduleContinuation(dependeeE, dependeeP, c)
+                            }
+                        }
+                    }
+
+                    val (lock, properties) = data.get(e)
+                    withWriteLock(lock) {
+                        properties.get(pk) match {
+                            case None ⇒
+                                properties.put(pk, (null, Buffer(createObserver())))
+                            case Some((null, os)) ⇒
+                                os += createObserver()
+                            case Some((`p`, os)) ⇒
+                                os += createObserver()
+                            case Some((newP, os)) ⇒
+                                os += createObserver()
+                                scheduleContinuation(e, newP, c)
+                        }
+                    }
+                }
+                update(e, p, finished = false)
+
+            //            case IntermediateResult(results) ⇒
+            //                results foreach { result ⇒ val (e, p) = result; update(e, p, false) }
 
             //            case result @ RefineableResult(results, dependingEntities) ⇒
             //                // 1) Store the results
@@ -609,7 +643,7 @@ class PropertyStore private (
                 //    property was computed.
 
                 def createPropertyObserver =
-                    new DefaultPropertyObserver(EPK(dependerE, dependerPK)) {
+                    new DefaultPropertyObserver(EPK(dependerE, dependerPK), true) {
                         def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                             val pc = (e: AnyRef) ⇒ suspended.continue(dependeeE, dependeeP)
                             scheduleComputation(dependerE, pc)
@@ -627,7 +661,6 @@ class PropertyStore private (
                             } else {
                                 // the property was computed in the meantime
                                 (e: AnyRef) ⇒ suspended.continue(requiredE, requiredP)
-
                             }
                         case _ ⇒
                             // this computation is the first who is interested in the property

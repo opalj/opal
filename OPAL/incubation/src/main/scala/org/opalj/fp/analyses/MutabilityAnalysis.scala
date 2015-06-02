@@ -79,7 +79,7 @@ sealed trait Mutability extends Property {
 }
 
 private object Mutability {
-    final val Key = PropertyKey.create("Mutability")
+    final val Key = PropertyKey.create("Mutability", NonFinal)
 }
 
 case object EffectivelyFinal extends Mutability

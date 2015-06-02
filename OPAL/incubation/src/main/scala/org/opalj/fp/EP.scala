@@ -28,37 +28,35 @@
  */
 package org.opalj.fp
 
-/**
- * A PropertyObserver is a function that is called if the property associated
- * with the respective entity is computed or refined.
- *
- * A PropertyObserver never directly executes/continues the analysis but schedules it if
- * necessary.
- *
- * The parameters of the function are the observed element (dependee) and its
- * (then available/refined) property.
- */
-private[fp] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
+final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property] {
 
-    /**
-     * The entity and property key for which the property of the observed element
-     * is necessary.
-     *
-     * @return The return value should be [[None]] if the property of the dependee
-     *      is not strictly required by the depender. This is usually the case
-     *      for algorithms that may use some available information, but does not
-     *      strictly require it.
-     */
-    def depender: EPK
+    def _1 = e
+    def _2 = p
 
-    def removeAfterNotification: Boolean
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: EP ⇒ (that.e eq this.e) && this.p == that.p
+            case _        ⇒ false
+        }
+    }
+
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP]
+
+    def pk: PropertyKey = p.key
+
+    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
+
+    override def toString: String = s"EK($e,$p)"
 }
 
-private[fp] abstract class DefaultPropertyObserver(
-    final val depender: EPK,
-    final val removeAfterNotification: Boolean)
-        extends PropertyObserver {
+object EP {
 
-    override def toString: String = s"PropertyObserver(depender=$depender)"
+    def apply(e: Entity, p: Property): EP = new EP(e, p)
 
+    def unapply(ep: EP): Option[(Entity, Property)] = {
+        if (ep eq null)
+            None
+        else
+            Some((ep.e, ep.p))
+    }
 }

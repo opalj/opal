@@ -71,6 +71,13 @@ package object fp {
     type PropertyComputation = (Entity) ⇒ PropertyComputationResult
 
     /**
+     * A function that continues the computation of a property. It takes:
+     *  1. The current property that the computation computes/is going to refine.
+     *  1. The entity + property of the entity on which the computation depends.
+     */
+    type Continuation = (Entity, Property) ⇒ PropertyComputationResult
+
+    /**
      * A computation of a property that was restarted (under different properties)
      * yielded the same result.
      *
@@ -90,13 +97,6 @@ package object fp {
     // IMPLEMENTATION SPECIFIC TYPES
     //
     //
-
-    /**
-     * A function that continues the computation of a property. It takes:
-     *  1. The current property that the computation computes/is going to refine.
-     *  1. The entity + property of the entity on which the computation depends.
-     */
-    private[fp]type Continuation = (Entity, Property) ⇒ PropertyComputationResult
 
     /**
      * The type of the observers that can be associated with a specific property

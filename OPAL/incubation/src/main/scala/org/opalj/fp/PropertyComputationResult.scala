@@ -62,12 +62,10 @@ object Result {
  * All current observer remain registered and will be informed in the future.
  */
 case class IntermediateResult(
-    properties: Traversable[(Entity, Property)])
+    e: Entity, p: Property,
+    dependeeEs: Traversable[EP],
+    c: Continuation)
         extends PropertyComputationResult
-
-object IntermediateResult {
-    def apply(e: Entity, p: Property) = new IntermediateResult(Traversable((e, p)))
-}
 
 ///**
 // * Encapsulates the result of the computation of a property which may be refined if
