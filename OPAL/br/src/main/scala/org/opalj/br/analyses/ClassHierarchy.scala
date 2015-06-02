@@ -1238,11 +1238,13 @@ class ClassHierarchy private (
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
+            if (classFileOption.isEmpty)
+                return None;
+            val classFile = classFileOption.get
+
             val methodOption =
-                if (classFileOption.isDefined) {
-                    val classFile = classFileOption.get
-                    classFile.findMethod(methodName, methodDescriptor).orElse {
-                        /* FROM THE SPECIFICATION:
+                classFile.findMethod(methodName, methodDescriptor).orElse {
+                    /* FROM THE SPECIFICATION:
                          * Method resolution attempts to look up the referenced method in C and
                          * its superclasses:
                          * If C declares exactly one method with the name specified by the
@@ -1256,16 +1258,14 @@ class ClassHierarchy private (
                          * - It has a return type of Object.
                          * - It has the ACC_VARARGS and ACC_NATIVE flags set.
                          */
-                        if (receiverType eq ObjectType.MethodHandle)
-                            classFile.findMethod(
-                                methodName,
-                                MethodDescriptor.SignaturePolymorphicMethod).find(
-                                    _.isNativeAndVarargs)
-                        else
-                            None
-                    }
-                } else
-                    None
+                    if (receiverType eq ObjectType.MethodHandle)
+                        classFile.findMethod(
+                            methodName,
+                            MethodDescriptor.SignaturePolymorphicMethod).find(
+                                _.isNativeAndVarargs)
+                    else
+                        None
+                }
 
             if (methodOption.isDefined)
                 methodOption
