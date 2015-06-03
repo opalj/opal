@@ -128,53 +128,15 @@ package object concurrent {
     //
     // STEP 3
     //
-    private[this] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+    private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
         def uncaughtException(t: Thread, e: Throwable): Unit = {
             handleUncaughtException(e)
         }
     }
-    def ThreadPoolN(n: Int): ThreadPoolExecutor = {
+
+    def ThreadPoolN(n: Int): OPALThreadPoolExecutor = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
-        val tp =
-            new ThreadPoolExecutor(
-                n, n,
-                60L, TimeUnit.SECONDS, // this is a fixed size pool
-                new LinkedBlockingQueue[Runnable](),
-                new ThreadFactory {
-
-                    val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
-
-                    def newThread(r: Runnable): Thread = {
-                        val id = s"${nextID.incrementAndGet()}"
-                        val name = s"org.opalj.ThreadPool[N=$n]-Thread $id"
-                        val t = new Thread(group, r, name)
-                        // we are using demon threads to make sure that these
-                        // threads never prevent the JVM from regular termination
-                        t.setDaemon(true)
-                        t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
-                        t
-                    }
-                }
-            ) {
-                override def afterExecute(r: Runnable, t: Throwable): Unit = {
-                    super.afterExecute(r, t)
-                    var e = t
-                    if (e == null && r.isInstanceOf[JFuture[_]]) {
-                        try {
-                            r.asInstanceOf[JFuture[_]].get()
-                        } catch {
-                            case ce: CancellationException ⇒ e = ce
-                            case ee: ExecutionException    ⇒ e = ee.getCause();
-                            case ie: InterruptedException ⇒
-                                e = ie
-                                Thread.currentThread().interrupt(); // ignore/reset
-                        }
-                    }
-                    if (e ne null) {
-                        handleUncaughtException(e)
-                    }
-                }
-            }
+        val tp = new OPALThreadPoolExecutor(n, group)
         tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp
@@ -183,7 +145,7 @@ package object concurrent {
     /**
      * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
-    final val ThreadPool: ThreadPoolExecutor = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
+    final val ThreadPool = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
 
     //
     // STEP 4
