@@ -75,10 +75,10 @@ import org.opalj.br.ClassFile
 import org.opalj.fp.SourceElementsPropertyStoreKey
 
 sealed trait Mutability extends Property {
-    final val key = Mutability.Key // All instances have to share the SAME key!
+    final def key = Mutability.Key // All instances have to share the SAME key!
 }
 
-private object Mutability {
+object Mutability {
     final val Key = PropertyKey.create("Mutability", NonFinal)
 }
 
@@ -92,11 +92,9 @@ object MutablityAnalysis {
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineMutabilityOfNonFinalPrivateStaticFields(
-        entity: AnyRef)(
+        entity: Entity)(
             implicit project: SomeProject,
             projectStore: PropertyStore): PropertyComputationResult = {
-        if (!entity.isInstanceOf[ClassFile])
-            return Impossible;
 
         val classFile = entity.asInstanceOf[ClassFile]
         val thisType = classFile.thisType
@@ -106,39 +104,35 @@ object MutablityAnalysis {
         if (psnfFields.isEmpty)
             return Empty;
 
-        val concreteStaticMethods = classFile.methods filter { m ⇒
-            m.isStatic && !m.isStaticInitializer && !m.isNative
+        val concreteMethods = classFile.methods filter { m ⇒
+            !m.isStaticInitializer && !m.isNative && !m.isAbstract
         }
-        concreteStaticMethods foreach { m ⇒
+        concreteMethods foreach { m ⇒
             m.body.get foreach { (pc, instruction) ⇒
                 instruction match {
                     case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
                         // we don't need to lookup the field in the
-                        // the class hierarchy since we are only concerned about private
-                        // fiels so far... so we don't have to do a
-                        // classHierarchy.resolveFieldReference(thisType, fieldName, fieldType, project).get
+                        // class hierarchy since we are only concerned about private
+                        // fields so far... so we don't have to do a full
+                        // resolution of the field reference.
                         classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
                     case _ ⇒ /*Nothing to do*/
                 }
             }
         }
 
-        /*DEBUGGING*/ if (psnfFields.nonEmpty)
-            /*DEBUGGING*/ println(psnfFields.map(f ⇒ f.toJava(thisType) + effectivelyFinalFields.contains(f)).toSeq.sorted.mkString("\n"))
-
-        Result(
-            psnfFields map { f ⇒
-                if (effectivelyFinalFields.contains(f))
-                    (f, EffectivelyFinal)
-                else
-                    (f, NonFinal)
-            }
-        )
+        val results = psnfFields map { f ⇒
+            if (effectivelyFinalFields.contains(f))
+                (f, EffectivelyFinal)
+            else
+                (f, NonFinal)
+        }
+        MultiResult(results)
     }
 
     def analyze(implicit project: Project[URL]): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore <<= determineMutabilityOfNonFinalPrivateStaticFields
+        projectStore <~< ((e: Entity) ⇒ e.isInstanceOf[ClassFile], determineMutabilityOfNonFinalPrivateStaticFields)
     }
 }
 

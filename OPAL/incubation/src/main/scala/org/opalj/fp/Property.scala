@@ -49,7 +49,7 @@ trait Property {
      * In general each `Property` kind is expected to have a companion object that
      * stores the unique [[PropertyKey]].
      */
-    val key: PropertyKey
+    def key: PropertyKey
 
 }
 
@@ -74,15 +74,13 @@ class PropertyKey private ( final val id: Int) extends AnyVal {
 object PropertyKey {
 
     private[this] val lock = Locking()
-    import lock.withReadLock
-    import lock.withWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
     private[this] val defaultProperties = ArrayBuffer.empty[Property]
     private[this] var lastKeyId: Int = -1
 
     def create(name: String, defaultProperty: Property): PropertyKey =
-        withWriteLock {
+        lock.withWriteLock {
             lastKeyId += 1
             propertyKeyNames += name
             defaultProperties += defaultProperty
@@ -90,12 +88,12 @@ object PropertyKey {
         }
 
     def name(key: PropertyKey): String =
-        withReadLock {
+        lock.withReadLock {
             propertyKeyNames(key.id)
         }
 
     def defaultProperty(key: PropertyKey): Property =
-        withReadLock {
+        lock.withReadLock {
             defaultProperties(key.id)
         }
 

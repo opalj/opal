@@ -55,18 +55,20 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
+        val projectStore = project.get(SourceElementsPropertyStoreKey)
+
         // The purity analysis requires information about the actual mutability
         // of private static non-final fields. Hence, we have to schedule the
         // respective analysis. (Technically, it would be possible to schedule
         // it afterwards, but that doesn't make sense.)
         println("Starting Mutability Analysis")
         MutablityAnalysis.analyze(project)
+
         println("Starting Purity Analysis")
         PurityAnalysis.analyze(project)
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        println("Waiting on analyses to finish")
         projectStore.waitOnPropertyComputationCompletion()
-        projectStore.terminateSuspendedComputations()
 
         val pureEntities: Traversable[(AnyRef, Property)] = projectStore(Purity.Key)
         //            projectStore(Purity.Key).filter { ep ⇒

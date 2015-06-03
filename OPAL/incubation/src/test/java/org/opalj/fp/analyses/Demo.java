@@ -41,7 +41,7 @@ class Demo {
     }
 
     public static int simplyPure(int i, int j) {
-        return i % 3 == 0 ? i : j;
+        return i % 3 == 0 ? simplyPure(i, 0) : simplyPure(0, j);
     }
 
     public static int impure(int i) {
@@ -66,6 +66,17 @@ class Demo {
         return foo(i) + bar(i);
     }
 
+    // The following two methods are mutually dependent and use an impure method.
+    //
+
+    static int npfoo(int i) {
+        return i < 0 ? simplyPure(i, 0) : npbar(i - 10);
+    }
+
+    static int npbar(int i) {
+        return i % 2 == 0 ? impure(i) : foo(i - 1);
+    }
+
     //
     // All three methods are actually pure but have a dependency on each other...
     //
@@ -81,10 +92,10 @@ class Demo {
         return i % 4 == 0 ? i : m1(i - 1);
     }
 
-    //
     // All three methods are depending on each other, but they are NOT pure, because
     // one calls an impure method.
     //
+
     static int m1np(int i) {
         return i < 0 ? i : m2np(i - 10);
     }
@@ -99,7 +110,6 @@ class Demo {
         return impure(j);
     }
 
-    //
     // The following method is pure, but only if we know the pureness of the target method
     // which we don't know if do not analyze the JDK!
     //
@@ -112,9 +122,9 @@ class Demo {
         return cpure(i / 21);
     }
 
-    //
     // All methods are involved in multiple cycles of dependent methods
     // one calls an impure method.
+    //
 
     static int mm1(int i) {
         return i < 0 ? i : mm2(i - 10);
@@ -129,4 +139,16 @@ class Demo {
         int k = mm2(j);
         return m1(k);
     }
+
+    // Two cycles connecte by a "weak link"
+    //
+
+    static int cm1(int i) {
+        return i < 0 ? i : cm2(i - 10);
+    }
+
+    static int cm2(int i) {
+        return i % 2 == 0 ? cm1(-i) : fooBar(i - 1);
+    }
+
 }

@@ -42,18 +42,22 @@ sealed trait PropertyComputationResult
 case object NoResult extends PropertyComputationResult
 
 /**
- * Encapsulates the '''final result''' of the computation of the property.
+ * Encapsulates the '''final results''' of the computation of the property.
  *
- * Result is only to be used if no further refinement is possible or may happen. The
+ * A [[MultiResult]] is only to be used if no further refinement is possible or may happen. The
  * framework will then invoke and deregister all observers (garbage collection).
  */
-case class Result(
+case class MultiResult(
     properties: Traversable[(Entity, Property)])
         extends PropertyComputationResult
 
-object Result {
-    def apply(e: Entity, p: Property) = new Result(Traversable((e, p)))
-}
+/**
+ * Encapsulates the '''final result''' of the computation of the property.
+ *
+ * A [[Result]] is only to be used if no further refinement is possible or may happen. The
+ * framework will then invoke and deregister all observers (garbage collection).
+ */
+case class Result(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
  * Encapsulates an intermediate result of the computation of the property.

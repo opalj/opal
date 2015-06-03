@@ -88,13 +88,11 @@ object Locking {
      * the function `f`. Afterwards, the lock is released.
      */
     final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
-        var isLocked = false
         try {
-            rwLock.readLock().lockInterruptibly()
-            isLocked = true
+            rwLock.readLock().lock()
             f
         } finally {
-            if (isLocked) rwLock.readLock().unlock()
+            rwLock.readLock().unlock()
         }
     }
 

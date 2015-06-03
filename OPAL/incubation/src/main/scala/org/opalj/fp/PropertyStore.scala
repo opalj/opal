@@ -47,6 +47,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
 import org.opalj.br.analyses.AnalysisException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.RejectedExecutionException
+import scala.collection.mutable.StringBuilder
 
 /**
  * The central store which manages the execution of all
@@ -134,11 +137,9 @@ class PropertyStore private (
      */
     def apply(e: Entity, pk: PropertyKey): Option[Property] = accessEntity {
         val (lock, properties) = data.get(e)
-        withReadLock(lock) {
-            properties.get(pk) match {
-                case None | Some((null, _))             ⇒ None
-                case Some((property, _ /*observers*/ )) ⇒ Some(property)
-            }
+        withReadLock(lock) { properties.get(pk) } match {
+            case None | Some((null, _))             ⇒ None
+            case Some((property, _ /*observers*/ )) ⇒ Some(property)
         }
     }
 
@@ -187,14 +188,30 @@ class PropertyStore private (
      * Registers a function that calculates a property for all or some elements
      * of the store.
      *
-     * This store ensures that `f` is never invoked more than once for the
-     * same element at the same time. If `f` is invoked again for a specific element
+     * This store ensures that `pc` is never invoked more than once for the
+     * same element at the same time. If `pc` is invoked again for a specific element
      * then only because a dependee has changed!
      */
-    def <<=(c: PropertyComputation): Unit = accessEntity {
+    def <<(pc: PropertyComputation): Unit = {
         val it = keys.iterator()
-        while (it.hasNext() && !isInterrupted()) {
-            scheduleComputation(it.next(), c)
+        while (it.hasNext()) {
+            if (isInterrupted())
+                return ;
+            scheduleComputation(it.next(), pc)
+        }
+    }
+
+    /**
+     * @param f A filter that selects those entities that are relevant to the analysis.
+     *      For which the analysis may compute some property.
+     */
+    def <~<(f: Entity ⇒ Boolean, c: PropertyComputation): Unit = {
+        val it = keys.iterator()
+        while (it.hasNext()) {
+            if (isInterrupted())
+                return ;
+            val e = it.next()
+            if (f(e)) scheduleComputation(e, c)
         }
     }
 
@@ -210,29 +227,31 @@ class PropertyStore private (
     }
 
     /**
-     * Can be called by a client to terminate all suspended computations; that is, all
-     * computations that are currently waiting for some result.
-     *
-     * The calling thread will be blocked until it gets exclusive access to the store.
-     * Then it will terminate all pending computations, but it will not terminate
-     * running or scheduled computations.
+     * Returns a string representation of the stored properties.
      */
-    def terminateSuspendedComputations(): Unit = accessStore {
-        // Effectively, just deregisters all still registered observers
-        import scala.collection.JavaConversions._
-        for {
-            entry ← data.entrySet()
-            ps = entry.getValue()._2
-            (_ /*p*/ , os) ← ps.values
-        } {
-            os.clear()
-        }
-    }
-
     override def toString: String = accessStore {
-        "PropertyStore("+
-            s"entitiesCount=${data.size()}, "+
-            s"executedComputations=${Tasks.executedComputations}"+
+        val text = new StringBuilder
+        val it = data.entrySet().iterator()
+        while (it.hasNext()) {
+            val entry = it.next()
+            val ps = entry.getValue._2.map { pkpos ⇒
+                val (pk, (p, os)) = pkpos
+                (
+                    if (p eq null)
+                        s"<Unsatisfied: ${PropertyKey.name(pk)}>"
+                    else
+                        p.toString
+                )+"["+(if (os eq null) 0 else os.size)+"]"
+            }
+            if (ps.nonEmpty) {
+                val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
+                text.append(s)
+            }
+        }
+        "PropertyStore(\n"+
+            s"\tentitiesCount=${data.size()},\n"+
+            s"\texecutedComputations=${Tasks.executedComputations}\n"+
+            "\tproperties=\n"+text+
             ")"
     }
 
@@ -263,18 +282,55 @@ class PropertyStore private (
         private[this] var scheduled = 0
 
         /**
-         * @return `true` if the state was newly set to `true`.
+         * Terminates all scheduled but not executing computations and afterwards
+         * deregisters all observers.
          */
-        private[PropertyStore] def interrupt(): Unit = synchronized {
-            if (!isInterrupted) {
+        private[PropertyStore] def interrupt(): Unit = {
+
+            if (isInterrupted)
+                return ;
+
+            this.synchronized {
+                if (isInterrupted)
+                    return ;
+
                 isInterrupted = true
+                OPALLogger.debug("analysis progress", "cancelling scheduled computations")
                 val waitingTasks = threadPool.shutdownNow()
                 scheduled -= waitingTasks.size
             }
+
+            def collectGarbage(): Unit = {
+
+                threadPool.awaitTermination(5000l, TimeUnit.MILLISECONDS)
+
+                OPALLogger.debug("analysis progress", "garbage collecting property computations")
+                accessStore {
+                    import scala.collection.JavaConversions._
+                    for {
+                        entry ← data.entrySet()
+                        (_ /*p*/ , os) ← entry.getValue()._2.values
+                    } {
+                        os.clear()
+                    }
+                }
+            }
+
+            if (threadPool.group == Thread.currentThread().getThreadGroup) {
+                val t = new Thread(new Runnable { def run(): Unit = collectGarbage() })
+                t.start()
+            } else {
+                collectGarbage()
+            }
+
         }
 
         def taskStarted() = synchronized {
             scheduled += 1
+        }
+
+        def taskRejected() = synchronized {
+            scheduled -= 1
         }
 
         def taskCompleted() = synchronized {
@@ -286,11 +342,24 @@ class PropertyStore private (
             // pending computations that now can be activated.
             if (scheduled == 0) {
                 // Let's check if we have some potentially refineable intermediate results.
-                OPALLogger.debug("analysis progress", s"all $executed previously scheduled tasks are executed")
+                OPALLogger.debug(
+                    "analysis progress",
+                    s"all $executed previously scheduled tasks are executed")
 
-                if (!isInterrupted) {
-                    OPALLogger.debug("analysis progress", s"handling suspended computations")
-                    handleOpenComputations()
+                try {
+                    if (!isInterrupted) {
+                        OPALLogger.debug("analysis progress", s"handling unsatisfied dependencies")
+                        handleUnsatisfiedDependencies()
+                    }
+                } catch {
+                    case t: Throwable ⇒
+                        OPALLogger.error(
+                            "analysis progress",
+                            "handling suspended computations failed; aborting analyses",
+                            t)
+                        interrupt()
+                        notifyAll()
+                        throw t
                 }
 
                 if (scheduled == 0 /*scheduled is still === 0*/ ) {
@@ -310,14 +379,12 @@ class PropertyStore private (
         //  1. computations that are part of a cyclic computation dependency
         //  1. computations that depend on knowledge related to a specific kind of
         //     property that was not computed (final lack of knowledge)
-        // @return The set of strict PropertyObservers.
-        private[this] def handleOpenComputations(): Boolean = {
-            // Based on the set of required core properties, each computation can
-            // at most be found in one cyclic strictly dependent computation;
-            // however, an epk can have multiple observers!
+        private[this] def handleUnsatisfiedDependencies(): Unit = {
 
-            var scheduledComputations = false
-            val processedEPK = HSet.empty[EPK]
+            println(store.toString)
+
+            val openComputations = HSet.empty[EPK]
+            val unsatisfiedDependencies = HSet.empty[EPK]
 
             import scala.collection.JavaConversions._
             for {
@@ -325,114 +392,144 @@ class PropertyStore private (
                 e = entry.getKey()
                 ps = entry.getValue()._2
                 (pk, (p, os)) ← ps
-                dependerO ← os
-                // we have observers ...
-                dependeeEPK = EPK(e, pk)
-                if !processedEPK.contains(dependeeEPK)
-                dependerEPK = dependerO.depender
-                depender = (dependerEPK, dependerO)
-                if !processedEPK.contains(dependerEPK)
-                // we now have only "strict observers" that are not in an already
-                // found strictly dependent computation
+                if os ne null
+                o ← os
+                // we have an entity with unsatisfied dependencies
             } {
-                println(s"handling entity $e "+data.get(e)._2)
-                def dependers(epk: EPK): Iterable[(EPK, PropertyObserver)] = {
-                    for {
-                        (pk, (p, os)) ← data.get(epk.e)._2
-                        o ← os
-                        dependerEPK = o.depender
-                        if !processedEPK.contains(dependerEPK)
-                    } yield {
-                        (dependerEPK, o)
-                    }
-                }
-
-                // Extracts all paths, to which this entity contributes.
-                // @return
-                //    The first list of ePKs are those entity/property key contributing
-                //    to the cycle, the
-                //    second list of entities are the entities that do not belong to a
-                //    a cycle.
-                def extractPaths(
-                    rootEPK: EPK,
-                    current: (EPK, PropertyObserver)): (List[(EPK, PropertyObserver)], List[(EPK, PropertyObserver)]) = {
-
-                    var cyclic: List[(EPK, PropertyObserver)] = Nil
-                    var linear: List[(EPK, PropertyObserver)] = Nil
-                    val (currentEPK, _ /*currentO*/ ) = current
-                    dependers(currentEPK) foreach { depender: (EPK, PropertyObserver) ⇒
-                        val (dependerEPK, _ /*dependerO*/ ) = depender
-                        if (dependerEPK == rootEPK) {
-                            assert(cyclic.isEmpty)
-                            cyclic = List(depender)
-                        } else {
-                            val (c, l) = extractPaths(rootEPK, depender)
-                            if (c.nonEmpty) {
-                                assert(cyclic.isEmpty)
-                                cyclic = c
-                            }
-                            linear :::= l
-                        }
-                    }
-                    if (cyclic.nonEmpty)
-                        (current :: cyclic, linear)
-                    else
-                        (cyclic, current :: linear)
-                }
-                println(s"handling entity $e - extracting paths")
-                val (cyclic, linear) = //try {
-                    extractPaths(dependeeEPK, depender)
-                //                } catch {
-                //                    case t: Throwable ⇒
-                //                        println(Thread.currentThread())
-                //                        println(t.printStackTrace())
-                //                        throw t
-                //                }
-                println(s"handling entity $e - paths are extracted")
-                cyclic.foreach(epko ⇒ processedEPK += epko._1)
-                processedEPK ++= linear.view.map(_._1)
-
-                /*START-DEBUG*/
-                if (cyclic.nonEmpty)
-                    println("entities with cyclic dependency: "+cyclic)
-                if (linear.nonEmpty)
-                    println("entities with linear dependency: "+linear+" >> "+dependeeEPK)
-                println()
-                /*DEBUG-END*/
-
-                if (cyclic.nonEmpty) {
-                    // Let's pick one (arbitrary!) element and set it to the default
-                    // property for elements involved in a cyclic dependency.
-                    def handleCycle: Boolean = {
-                        //                        cyclic.exists { epko ⇒
-                        ////                            val (epk, o) = epko
-                        ////                            val pk = epk.pk
-                        ////                            PropertyKey.cyclicComputationHandler(cyclic) match {
-                        ////                                case Some(fallback) ⇒
-                        ////                                    val p = fallback(epk)
-                        ////                                    val e = epk.e
-                        ////                                    o(e, p)
-                        ////                                    println(s"handling cyclic dependency: $e <= $p")
-                        ////                                    true
-                        ////                                case None ⇒
-                        ////                                    false
-                        //                            }
-                        false
-
-                    }
-                    if (!handleCycle) {
-                        val message = s"unresolvable cyclic dependency (${cyclic.unzip._1})"
-                        throw new AnalysisException(message)
-                    }
-                    scheduledComputations = true
-                }
+                openComputations += o.depender
+                unsatisfiedDependencies += EPK(e, pk)
             }
-            scheduledComputations
+            // Let's get the set of observers that will never be notified, because
+            // there are no open computations related to the respective property.
+            for {
+                EPK(e, pk) ← unsatisfiedDependencies -- openComputations
+            } {
+                val defaultP = PropertyKey.defaultProperty(pk)
+                OPALLogger.debug(
+                    "analysis progress",
+                    s"associated default property $defaultP with $e")
+                scheduleHandleResult(Result(e, defaultP))
+            }
+
+            //            import scala.collection.JavaConversions._
+            //            for {
+            //                entry ← data.entrySet()
+            //                e = entry.getKey()
+            //                ps = entry.getValue()._2
+            //                (pk, (p, os)) ← ps
+            //                dependerO ← os
+            //                // we haven an entry with observers ...
+            //                dependeeEPK = EPK(e, pk)
+            //                if !processedEPK.contains(dependeeEPK)
+            //                dependerEPK = dependerO.depender
+            //                depender = (dependerEPK, dependerO)
+            //                if !processedEPK.contains(dependerEPK)
+            //                // we now have observers that are not in an already
+            //                // found dependent computation
+            //            } {
+            //                println(s"handling entity $e "+data.get(e)._2)
+            //                def dependers(epk: EPK): Iterable[(EPK, PropertyObserver)] = {
+            //                    for {
+            //                        (pk, (p, os)) ← data.get(epk.e)._2
+            //                        o ← os
+            //                        dependerEPK = o.depender
+            //                        if !processedEPK.contains(dependerEPK)
+            //                    } yield {
+            //                        (dependerEPK, o)
+            //                    }
+            //                }
+            //
+            //                // Extracts all paths, to which this entity contributes.
+            //                // @return
+            //                //    The first list of ePKs are those entity/property key contributing
+            //                //    to the cycle, the
+            //                //    second list of entities are the entities that do not belong to a
+            //                //    a cycle.
+            //                def extractPaths(
+            //                    rootEPK: EPK,
+            //                    current: (EPK, PropertyObserver)): (List[(EPK, PropertyObserver)], List[(EPK, PropertyObserver)]) = {
+            //
+            //                    var cyclic: List[(EPK, PropertyObserver)] = Nil
+            //                    var linear: List[(EPK, PropertyObserver)] = Nil
+            //                    val (currentEPK, _ /*currentO*/ ) = current
+            //                    dependers(currentEPK) foreach { depender: (EPK, PropertyObserver) ⇒
+            //                        val (dependerEPK, _ /*dependerO*/ ) = depender
+            //                        if (dependerEPK == rootEPK) {
+            //                            assert(cyclic.isEmpty)
+            //                            cyclic = List(depender)
+            //                        } else {
+            //                            val (c, l) = extractPaths(rootEPK, depender)
+            //                            if (c.nonEmpty) {
+            //                                assert(cyclic.isEmpty)
+            //                                cyclic = c
+            //                            }
+            //                            linear :::= l
+            //                        }
+            //                    }
+            //                    if (cyclic.nonEmpty)
+            //                        (current :: cyclic, linear)
+            //                    else
+            //                        (cyclic, current :: linear)
+            //                }
+            //                println(s"handling entity $e - extracting paths")
+            //                val (cyclic, linear) = //try {
+            //                    extractPaths(dependeeEPK, depender)
+            //                //                } catch {
+            //                //                    case t: Throwable ⇒
+            //                //                        println(Thread.currentThread())
+            //                //                        println(t.printStackTrace())
+            //                //                        throw t
+            //                //                }
+            //                println(s"handling entity $e - paths are extracted")
+            //                cyclic.foreach(epko ⇒ processedEPK += epko._1)
+            //                processedEPK ++= linear.view.map(_._1)
+            //
+            //                /*START-DEBUG*/
+            //                if (cyclic.nonEmpty)
+            //                    println("entities with cyclic dependency: "+cyclic)
+            //                if (linear.nonEmpty)
+            //                    println("entities with linear dependency: "+linear+" >> "+dependeeEPK)
+            //                println()
+            //                /*DEBUG-END*/
+            //
+            //                if (cyclic.nonEmpty) {
+            //                    // Let's pick one (arbitrary!) element and set it to the default
+            //                    // property for elements involved in a cyclic dependency.
+            //                    def handleCycle: Boolean = {
+            //                        //                        cyclic.exists { epko ⇒
+            //                        ////                            val (epk, o) = epko
+            //                        ////                            val pk = epk.pk
+            //                        ////                            PropertyKey.cyclicComputationHandler(cyclic) match {
+            //                        ////                                case Some(fallback) ⇒
+            //                        ////                                    val p = fallback(epk)
+            //                        ////                                    val e = epk.e
+            //                        ////                                    o(e, p)
+            //                        ////                                    println(s"handling cyclic dependency: $e <= $p")
+            //                        ////                                    true
+            //                        ////                                case None ⇒
+            //                        ////                                    false
+            //                        //                            }
+            //                        false
+            //
+            //                    }
+            //                    if (!handleCycle) {
+            //                        val message = s"unresolvable cyclic dependency (${cyclic.unzip._1})"
+            //                        throw new AnalysisException(message)
+            //                    }
+            //                }
+            //            }
         }
 
         def waitOnCompletion() = synchronized {
             while (scheduled > 0) { wait }
         }
+    }
+
+    /**
+     * Schedules the handling of the result of a property computation.
+     */
+    private[this] def scheduleHandleResult(r: PropertyComputationResult): Unit = {
+        scheduleTask(() ⇒ handleResult(r))
     }
 
     /**
@@ -460,14 +557,56 @@ class PropertyStore private (
                     try {
                         t()
                     } catch {
-                        case t: Throwable ⇒ handleUncaughtException(t); throw t;
+                        case t: Throwable ⇒
+                            handleUncaughtException(t)
+                            throw t
                     } finally {
                         Tasks.taskCompleted()
                     }
             }
-            threadPool.submit(task)
+            try {
+                threadPool.submit(task)
+            } catch {
+                case reh: RejectedExecutionException ⇒
+                    Tasks.taskRejected()
+                case t: Throwable ⇒
+                    Tasks.taskRejected()
+                    handleUncaughtException(t)
+                    throw t
+            }
         } else {
             Tasks.interrupt()
+        }
+    }
+
+    // Clears all observers that were registered with other entities to compute the
+    // respective property.
+    private[this] def clearObservers(e: Entity, pk: PropertyKey): Unit = {
+        val entitiesIterator = data.entrySet().iterator()
+        while (entitiesIterator.hasNext()) {
+            val (lock, properties) = entitiesIterator.next().getValue()
+            val removeableO =
+                withReadLock(lock) {
+                    properties.get(pk).flatMap(pos ⇒ {
+                        val os = pos._2
+                        if (os ne null) {
+                            os.find { po ⇒
+                                val EPK(observerE, observerPK) = po.depender
+                                (observerE eq e) && (observerPK == pk)
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                }
+            if (removeableO.isDefined) {
+                withWriteLock(lock) {
+                    properties.get(pk) foreach { pos ⇒
+                        val os = pos._2
+                        os -= removeableO.get
+                    }
+                }
+            }
         }
     }
 
@@ -483,56 +622,36 @@ class PropertyStore private (
         p: Property,
         finished: Boolean): Unit = accessEntity {
         val (lock, properties) = data.get(e)
+        val pk = p.key
 
         if (finished) {
-            // All observers that were registered with other entities to compute this
-            // property can now be removed!
-            val entitiesIterator = data.entrySet().iterator()
-            while (entitiesIterator.hasNext()) {
-                val entity = entitiesIterator.next();
-                val (lock, properties) = entity.getValue
-                val removeableO =
-                    withReadLock(lock) {
-                        properties.get(p.key).flatMap(pos ⇒ {
-                            val (p, os) = pos
-                            os.find { po ⇒
-                                val EPK(observerE, observerPK) = po.depender
-                                (observerE eq e) && (observerPK == p.key)
-                            }
-                        })
-                    }
-                if (removeableO.isDefined) {
-                    withWriteLock(lock) {
-                        properties.get(p.key) foreach { pos ⇒
-                            val os = pos._2
-                            os -= removeableO.get
-                        }
-                    }
-                }
-            }
+            clearObservers(e, pk)
         }
 
-        withWriteLock(lock) {
-            properties.get(p.key) match {
-                case Some((oldP, observers)) ⇒
+        val observers = withWriteLock(lock) {
+            properties.get(pk) match {
+                case Some((oldP, os)) ⇒
                     assert(
                         oldP != p,
                         s"$e: the old ($oldP) and the new property ($p) are identical")
                     if (finished) {
                         // All entities that observe this value are
                         // informed and then the observers are removed.
-                        properties.put(p.key, (p, Buffer.empty))
-                        observers foreach { o ⇒ o(e, p) }
+                        properties.put(p.key, (p, null /*The list of observers is no longer required!*/ ))
+                        os
                     } else {
-                        val newOs = observers.filterNot(o ⇒ o.removeAfterNotification)
+                        val newOs = os.filterNot(o ⇒ o.removeAfterNotification)
                         properties.put(p.key, (p, newOs))
-                        observers foreach { o ⇒ o(e, p) }
+                        os
                     }
 
                 case None ⇒
-                    properties.put(p.key, (p, Buffer.empty))
+                    val os = Buffer.empty[PropertyObserver]
+                    properties.put(p.key, (p, os))
+                    os
             }
         }
+        observers foreach { o ⇒ o(e, p) }
     }
     //
     //    /**
@@ -570,41 +689,42 @@ class PropertyStore private (
 
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
 
-        if (r != NoResult) println("RESULTS => "+r)
-
         r match {
             case NoResult ⇒ // Nothing to do..
 
-            case Result(results) ⇒
+            case Result(e, p) ⇒
+                update(e, p, finished = true)
+
+            case MultiResult(results) ⇒
                 results foreach { ep ⇒ val (e, p) = ep; update(e, p, finished = true) }
 
             case IntermediateResult(e, p, dependees: Traversable[EP], c) ⇒
                 dependees foreach { ep ⇒
 
-                    val e = ep.e
-                    val p = ep.p
-                    val pk = p.key
+                    val dependeeE = ep.e
+                    val dependeeP = ep.p
+                    val dependeePK = dependeeP.key
 
                     def createObserver() = {
-                        new DefaultPropertyObserver(EPK(e, pk), false) {
+                        new DefaultPropertyObserver(EPK(e, p.key), false) {
                             def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                                 scheduleContinuation(dependeeE, dependeeP, c)
                             }
                         }
                     }
 
-                    val (lock, properties) = data.get(e)
+                    val (lock, properties) = data.get(dependeeE)
                     withWriteLock(lock) {
-                        properties.get(pk) match {
+                        properties.get(dependeePK) match {
                             case None ⇒
-                                properties.put(pk, (null, Buffer(createObserver())))
+                                properties.put(dependeePK, (null, Buffer(createObserver())))
                             case Some((null, os)) ⇒
                                 os += createObserver()
                             case Some((`p`, os)) ⇒
                                 os += createObserver()
-                            case Some((newP, os)) ⇒
+                            case Some((dependeeNewP, os)) ⇒
                                 os += createObserver()
-                                scheduleContinuation(e, newP, c)
+                                scheduleContinuation(dependeeE, dependeeNewP, c)
                         }
                     }
                 }

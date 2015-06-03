@@ -75,9 +75,9 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.ClassFile
 
 sealed trait Purity extends Property {
-    final val key = Purity.Key // All instances have to share the SAME key!
+    final def key = Purity.Key // All instances have to share the SAME key!
 }
-private object Purity {
+object Purity {
     final val Key = PropertyKey.create("Purity", MaybePure)
 }
 
@@ -282,12 +282,8 @@ object PurityAnalysis {
     def determinePurity(
         entity: AnyRef)(
             implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
-        if (!entity.isInstanceOf[Method])
-            return Impossible;
 
         val method = entity.asInstanceOf[Method]
-        if (method.isAbstract)
-            return Impossible;
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
@@ -302,15 +298,15 @@ object PurityAnalysis {
         if (method.parameterTypes.exists { !_.isBaseType })
             return Result(method, Impure);
 
-        println(s"determing purity of $method")
         val purity = determinePurityCont(method, 0)
-        println(s"initial purity of $method is $purity")
         purity
     }
 
     def analyze(implicit project: Project[URL]): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore <<= determinePurity
+        def entitySelector =
+            (e: AnyRef) ⇒ e.isInstanceOf[Method] && !e.asInstanceOf[Method].isAbstract
+        projectStore <~< (entitySelector, determinePurity)
     }
 }
 

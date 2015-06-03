@@ -131,9 +131,19 @@ final class Field private (
     }
 
     override def toString(): String = {
-        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.FIELD).mkString("", " ", " ") +
-            fieldType.toJava+" "+name +
-            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+        import AccessFlagsContexts.FIELD
+        val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
+        val jDescriptor = fieldType.toJava+" "+name
+        val field =
+            if (jAccessFlags.nonEmpty)
+                jAccessFlags+" "+jDescriptor
+            else
+                jDescriptor
+
+        if (attributes.nonEmpty)
+            field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
+        else
+            field
     }
 }
 
