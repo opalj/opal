@@ -67,7 +67,8 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
+import org.opalj.util.Milliseconds
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -121,9 +122,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
                 getOrElse(DefaultMaxEvalFactor)
 
-        val maxEvalTime: Int =
+        val maxEvalTime: Milliseconds =
             parameters.
-                collectFirst { case MaxEvalTimePattern(l) ⇒ parseInt(l).toInt }.
+                collectFirst { case MaxEvalTimePattern(l) ⇒ new Milliseconds(parseLong(l).toLong) }.
                 getOrElse(DefaultMaxEvalTime)
 
         val maxCardinalityOfIntegerRanges: Long =
@@ -402,7 +403,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         }
 
         val exceptions = new ConcurrentLinkedQueue[AnalysisException]
-        var analysisTime = NanoSeconds.None
+        var analysisTime = Nanoseconds.None
         val identifiedIssues = time {
             val stepIds = new AtomicInteger(PreAnalysesCount + 1)
 
@@ -473,7 +474,7 @@ object BugPickerAnalysis {
     final val DefaultMaxEvalFactor = 1.75d
 
     final val MaxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val DefaultMaxEvalTime = 10000 // in ms => 10secs.
+    final val DefaultMaxEvalTime: Milliseconds = new Milliseconds(10000) // in ms => 10secs.
 
     final val MaxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val DefaultMaxCallChainLength = 1
@@ -502,7 +503,7 @@ object BugPickerAnalysis {
     def resultsAsXHTML(
         parameters: Seq[String],
         methodsWithIssues: Iterable[Issue],
-        analysisTime: NanoSeconds): Node = {
+        analysisTime: Nanoseconds): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 

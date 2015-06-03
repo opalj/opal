@@ -34,12 +34,10 @@ import java.io.File
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
-
 import scala.xml.Node
 import scala.xml.dtd.DocType
 import scala.xml.dtd.IntDef
 import scala.xml.dtd.NoExternalID
-
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
@@ -54,7 +52,6 @@ import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
 import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
-
 import javafx.application.Application
 import javafx.scene.control.SeparatorMenuItem
 import scalafx.Includes.eventClosureWrapperWithParam
@@ -109,6 +106,7 @@ import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
+import org.opalj.util.Milliseconds
 
 /**
  * @author Arne Lottmann
@@ -709,9 +707,9 @@ object BugPicker {
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             DefaultMaxEvalFactor)
-        val maxEvalTime = PREFERENCES.getInt(
+        val maxEvalTime = new Milliseconds(PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            DefaultMaxEvalTime)
+            DefaultMaxEvalTime.timeSpan))
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             DefaultMaxCardinalityOfIntegerRanges)
@@ -730,9 +728,9 @@ object BugPicker {
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
-        PREFERENCES.putInt(
+        PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            parameters.maxEvalTime)
+            parameters.maxEvalTime.timeSpan)
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             parameters.maxEvalFactor)

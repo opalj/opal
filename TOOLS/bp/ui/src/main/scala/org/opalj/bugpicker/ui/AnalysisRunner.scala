@@ -69,7 +69,7 @@ object AnalysisRunner extends BugPickerAnalysis {
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project first!", stage)
             reportView.engine.loadContent(Messages.LOAD_CLASSES_FIRST)
-            return
+            return ;
         }
 
         val interrupted = BooleanProperty(false)
