@@ -37,7 +37,8 @@ import org.opalj.br.analyses.ProgressManagement
 import scalafx.beans.property.ReadOnlyBooleanProperty
 import scalafx.beans.property.DoubleProperty
 import scalafx.stage.Stage
-import org.opalj.br.analyses.EventType
+import org.opalj.br.analyses.ProgressEvent
+import org.opalj.br.analyses.ProgressEvents
 
 class InitProgressManagement(
         interrupted: ReadOnlyBooleanProperty,
@@ -51,8 +52,8 @@ class InitProgressManagement(
 
         final private[this] val finishedSteps = new java.util.concurrent.atomic.AtomicInteger(0)
 
-        final def progress(stepID: Int, evt: EventType.Value, msg: Option[String]): Unit = evt match {
-            case EventType.Start ⇒ {
+        final def progress(stepID: Int, evt: ProgressEvent, msg: Option[String]): Unit = evt match {
+            case ProgressEvents.Start ⇒ {
                 Platform.runLater(new Runnable() {
                     override def run(): Unit = {
                         progressListView.items() += stepID.toString+": "+msg.get
@@ -61,7 +62,7 @@ class InitProgressManagement(
                     }
                 })
             }
-            case EventType.End ⇒ {
+            case ProgressEvents.End ⇒ {
                 Platform.runLater(new Runnable() {
                     override def run(): Unit = {
                         progressListView.items() -= stepID.toString+": "+progressListItems.get(stepID.toString).get

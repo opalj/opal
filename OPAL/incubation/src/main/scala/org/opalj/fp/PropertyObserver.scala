@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,44 +26,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package util
+package org.opalj.fp
 
 /**
- * Represents a time span of `n` nanoseconds.
+ * A PropertyObserver is a function that is called if the property associated
+ * with the respective entity is computed or refined.
  *
- * @author Michael Eichberg
+ * A PropertyObserver never directly executes/continues the analysis but schedules it if
+ * necessary.
+ *
+ * The parameters of the function are the observed element (dependee) and its
+ * (then available/refined) property.
  */
-class NanoSeconds(val timeSpan: Long) extends AnyVal {
-
-    final def +(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan + other.timeSpan)
-
-    final def -(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan - other.timeSpan)
+private[fp] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
     /**
-     * Converts the specified number of nanoseconds into seconds.
+     * The entity and property key for which the property of the observed element
+     * is necessary.
+     *
+     * @return The return value should be [[None]] if the property of the dependee
+     *      is not strictly required by the depender. This is usually the case
+     *      for algorithms that may use some available information, but does not
+     *      strictly require it.
      */
-    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    def depender: EPK
 
-    override def toString: String = timeSpan+" ns"
+    def removeAfterNotification: Boolean
 }
-/**
- * Defines factory methods and constants related to time spans in [[NanoSeconds]].
- *
- * @author Michael Eichberg
- */
-object NanoSeconds {
 
-    final val None: NanoSeconds = new NanoSeconds(0)
+private[fp] abstract class DefaultPropertyObserver(
+    final val depender: EPK,
+    final val removeAfterNotification: Boolean)
+        extends PropertyObserver {
 
-    /**
-     * Converts the specified time span and converts it into seconds.
-     */
-    final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds: Long): NanoSeconds =
-        new NanoSeconds(endTimeInNanoseconds - startTimeInNanoseconds)
+    override def toString: String = s"PropertyObserver(depender=$depender)"
 
 }

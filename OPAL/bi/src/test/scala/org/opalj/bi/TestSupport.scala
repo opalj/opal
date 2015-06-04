@@ -48,32 +48,31 @@ object TestSupport {
      * @param resourceName The name of the resource relative to the test/resources
      *      folder. The name must not begin with a "/".
      * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
-     *      (Default: "core").
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
         val resourceFile = subProjectFolder+"/src/test/resources/"+resourceName
 
         { // if the current path is set to OPAL's root folder
             val file = new File("OPAL/"+resourceFile)
-            if (file.exists()) return file
+            if (file.exists()) return file;
         }
         { // if the current path is set to "<SUB-PROJECT>/<BIN>"
             val file = new File("../../"+resourceFile)
-            if (file.exists()) return file
+            if (file.exists()) return file;
         }
         { // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
             val file = new File("../../../OPAL/"+resourceFile)
-            if (file.exists()) return file
+            if (file.exists()) return file;
         }
         {
             // if we are in the sub-project's root folder
             val file = new File("../"+subProjectFolder + resourceFile)
-            if (file.exists()) return file
+            if (file.exists()) return file;
         }
         {
             // if we are in a "developing opal" sub-project's root folder
             val file = new File("../../OPAL/"+resourceFile)
-            if (file.exists()) return file
+            if (file.exists()) return file;
         }
         {
             val userDir = System.getProperty("user.dir")
@@ -81,7 +80,7 @@ object TestSupport {
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
 
                 val file = new File("../../../src/test/resources/"+resourceName)
-                if (file.exists()) return file
+                if (file.exists()) return file;
             }
         }
 

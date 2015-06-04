@@ -32,6 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
+
 import scala.collection.{ Set, Map }
 import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
 import scala.collection.parallel.mutable.ParArray
@@ -44,6 +45,13 @@ import scala.reflect.ClassTag
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.parForeachArrayElement
@@ -51,8 +59,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.ConsoleOPALLogger
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
 import org.opalj.log.DefaultLogContext
 
 /**
@@ -74,6 +80,19 @@ import org.opalj.log.DefaultLogContext
  * ==Thread Safety==
  * This class is thread-safe.
  *
+ * ==Prototyping Analyses/Querying Projects==
+ * Projects can easily be created and queried using the Scala `REPL`. For example,
+ * to create a project, you can use:
+ * {{{
+ * val JRE = "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib"
+ * val project = org.opalj.br.analyses.Project(new java.io.File(JRE))
+ * }}}
+ * Now, to determine the number of methods that have at least one parameter of type
+ * `int`, you can use:
+ * {{{
+ * p.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
+ * }}}
+ *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
  *      a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
  *      presenting users meaningful messages w.r.t. the location of issues.
@@ -92,7 +111,7 @@ class Project[Source] private (
     private[this] val projectClassFiles: Array[ClassFile],
     private[this] val libraryClassFiles: Array[ClassFile],
     private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
-    private[this] val projectTypes: Set[ObjectType],
+    private[this] val projectTypes: Set[ObjectType], // the types defined by the class files belonging to the project's code
     private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
     private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
     private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
@@ -110,13 +129,11 @@ class Project[Source] private (
         implicit val config: Config)
         extends ClassFileRepository {
 
-    assert(
-        libraryClassFiles.forall { cf ⇒ (cf == null) || !projectTypes.contains(cf.thisType) },
-        "the project is inconsistent; some classes in the library are also listed as project types"
-    )
-
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
+    /**
+     * Creates a new `Project` which also includes the given class files.
+     */
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -126,6 +143,10 @@ class Project[Source] private (
             libraryClassFilesWithSources)
     }
 
+    /**
+     * Creates a new `Project` which also includes this as well as the other project's
+     * class files.
+     */
     def extend(otherProject: Project[Source]): Project[Source] = {
         Project.extend[Source](
             this,
@@ -133,11 +154,33 @@ class Project[Source] private (
             otherProject.libraryClassFilesWithSources)
     }
 
-    val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
+    /**
+     * The number of classes (including inner and annoymous classes as well as
+     * interfaces, annotations, etc.) defined in libraries and in the analyzed project.
+     */
+    final val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
-    val methodsCount: Int = projectMethodsCount + libraryMethodsCount
+    /**
+     * The number of methods defined in libraries and in the analyzed project.
+     */
+    final val methodsCount: Int = projectMethodsCount + libraryMethodsCount
 
-    val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+    /**
+     * The number of field defined in libraries and in the analyzed project.
+     */
+    final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+
+    /**
+     * The number of all source elements (fields, methods and class files).
+     */
+    def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
+
+    /**
+     * Returns a new `Iterable` over all source elements of the project. The set
+     * of all source elements consists of (in this order): all methods + all fields +
+     * all class files.
+     */
+    def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
 
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
 
@@ -173,6 +216,13 @@ class Project[Source] private (
             f: ClassFile ⇒ T): Unit = {
         parForeachProjectClassFile(isInterrupted)(f)
         parForeachLibraryClassFile(isInterrupted)(f)
+    }
+
+    /**
+     * The set of all method names of the given types.
+     */
+    def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
+        objectTypes.map(classFile(_)).flatten.map(_.methods.map(_.name)).flatten.toSet
     }
 
     /**
@@ -311,9 +361,9 @@ class Project[Source] private (
             libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
     }
 
-    def methods: Iterable[Method] = methodToClassFile.keys
+    def methods(): Iterable[Method] = methodToClassFile.keys
 
-    def fields: Iterable[Field] = fieldToClassFile.keys
+    def fields(): Iterable[Field] = fieldToClassFile.keys
 
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒
@@ -523,7 +573,7 @@ class Project[Source] private (
 
     /**
      * Tests if the information identified by the given [[ProjectInformationKey]]
-     * is available. If the information is not available, the information
+     * is available. If the information is not (yet) available, the information
      * will not be computed and `None` will be returned.
      *
      * @see [[ProjectInformationKey]] for further information.
@@ -537,6 +587,15 @@ class Project[Source] private (
             None
     }
 
+    // ----------------------------------------------------------------------------------
+    //
+    // FINALIZATION
+    //
+    // ----------------------------------------------------------------------------------
+
+    /**
+     * Unregisters this project from the OPALLogger and then calls `super.finalize`.
+     */
     override protected def finalize(): Unit = {
         OPALLogger.debug("project", "finalized ("+logContext+")")
         OPALLogger.unregister(logContext)
@@ -546,19 +605,23 @@ class Project[Source] private (
 }
 
 /**
- * Factory for `Project`s.
+ * Definition of factory methods to create [[Project]]s.
  *
  * @author Michael Eichberg
  */
 object Project {
 
-    private[this] def cache = new reader.BytecodeInstructionsCache
-    lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-    lazy val Java8LibraryClassFileReader = new reader.Java8LibraryFrameworkWithCaching(cache)
+    private[this] def cache = new BytecodeInstructionsCache
+
+    lazy val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+
+    lazy val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
+     *
+     * The global logger will be used for logging messages.
      */
     def apply(file: File): Project[URL] = {
         Project.apply(file, OPALLogger.globalLogger())
@@ -636,12 +699,21 @@ object Project {
             virtualClassFiles = Traversable.empty)
     }
 
+    /**
+     * The type of the function that is called if an inconsistent project is detected.
+     */
     type HandleInconsistenProject = (LogContext, InconsistentProjectException) ⇒ Unit
 
-    def defaultHandlerForInconsistentProject(
+    /**
+     * This default handler just "logs" inconsistent project exceptions at the
+     * [[org.opalj.log.Warn]] level.
+     */
+    def defaultHandlerForInconsistentProjects(
         logContext: LogContext,
         ex: InconsistentProjectException): Unit = {
+
         OPALLogger.log(Warn("project configuration", ex.message))(logContext)
+
     }
 
     /**
@@ -666,7 +738,7 @@ object Project {
      *
      * @param handleInconsistentProject A function that is called back if the project
      *      is not consistent. The default behavior
-     *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
+     *      ([[defaultHandlerForInconsistentProjects]]) is to write a warning
      *      message to the console. Alternatively it is possible to throw the given
      *      exception to cancel the loading of the project (which is the only
      *      meaningful option for several advanced analyses.)
@@ -675,7 +747,7 @@ object Project {
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
-        handleInconsistentProject: HandleInconsistenProject = defaultHandlerForInconsistentProject)(
+        handleInconsistentProject: HandleInconsistenProject = defaultHandlerForInconsistentProjects)(
             implicit config: Config = ConfigFactory.load(),
             projectLogger: OPALLogger = OPALLogger.globalLogger()): Project[Source] = {
 
@@ -714,59 +786,85 @@ object Project {
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
             val sources = OpenHashMap.empty[ObjectType, Source]
 
-            def processClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
-                projectClassFiles = classFile :: projectClassFiles
-                projectClassFilesCount += 1
-                val objectType = classFile.thisType
-                projectTypes += objectType
-                for (method ← classFile.methods) {
-                    projectMethodsCount += 1
-                    methodToClassFile.put(method, classFile)
-                    method.body.foreach(codeSize += _.instructions.size)
-                }
-                for (field ← classFile.fields) {
-                    projectFieldsCount += 1
-                    fieldToClassFile.put(field, classFile)
-                }
-                if (objectTypeToClassFile.contains(objectType)) {
+            def processProjectClassFile(
+                classFile: ClassFile,
+                source: Option[Source]): Unit = {
+                val projectType = classFile.thisType
+                if (projectTypes.contains(projectType)) {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${objectType.toJava} is defined by multiple class files: "+
-                                sources.get(objectType).getOrElse("<VIRTUAL>")+" and "+
+                            s"${projectType.toJava} is defined by multiple class files: "+
+                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and "+
                                 source.map(_.toString).getOrElse("<VIRTUAL>")+
                                 "; keeping the first one."
                         )
                     )
                 } else {
-                    objectTypeToClassFile.put(objectType, classFile)
+                    projectTypes += projectType
+                    projectClassFiles = classFile :: projectClassFiles
+                    projectClassFilesCount += 1
+                    for (method ← classFile.methods) {
+                        projectMethodsCount += 1
+                        methodToClassFile.put(method, classFile)
+                        method.body.foreach(codeSize += _.instructions.size)
+                    }
+                    for (field ← classFile.fields) {
+                        projectFieldsCount += 1
+                        fieldToClassFile.put(field, classFile)
+                    }
+                    objectTypeToClassFile.put(projectType, classFile)
                     source.foreach(sources.put(classFile.thisType, _))
                 }
             }
 
             for ((classFile, source) ← projectClassFilesWithSources) {
-                processClassFile(classFile, Some(source))
+                processProjectClassFile(classFile, Some(source))
             }
 
             for (classFile ← virtualClassFiles) {
-                processClassFile(classFile, None)
+                processProjectClassFile(classFile, None)
             }
 
-            for ((classFile, source) ← libraryClassFilesWithSources) {
-                libraryClassFiles = classFile :: libraryClassFiles
-                libraryClassFilesCount += 1
-                val objectType = classFile.thisType
-                for (method ← classFile.methods) {
-                    libraryMethodsCount += 1
-                    methodToClassFile.put(method, classFile)
-                    method.body.foreach(codeSize += _.instructions.size)
+            // The Set `libraryTypes` is only used to improve the identification of
+            // inconsistent projects while loading libraries
+            val libraryTypes = Set.empty[ObjectType]
+            for ((libClassFile, source) ← libraryClassFilesWithSources) {
+                val libraryType = libClassFile.thisType
+                if (projectTypes.contains(libClassFile.thisType)) {
+                    handleInconsistentProject(
+                        logContext,
+                        InconsistentProjectException(
+                            s"${libraryType.toJava} is defined by the project and a library: "+
+                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                source.toString+"; keeping the project class file."
+                        )
+                    )
+                } else if (libraryTypes.contains(libraryType)) {
+                    handleInconsistentProject(
+                        logContext,
+                        InconsistentProjectException(
+                            s"${libraryType.toJava} is defined multiple times in the project's lbraries: "+
+                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                source.toString+"; keeping the first one."
+                        )
+                    )
+                } else {
+                    libraryClassFiles = libClassFile :: libraryClassFiles
+                    libraryTypes += libraryType
+                    libraryClassFilesCount += 1
+                    for (method ← libClassFile.methods) {
+                        libraryMethodsCount += 1
+                        methodToClassFile.put(method, libClassFile)
+                        method.body.foreach(codeSize += _.instructions.size)
+                    }
+                    for (field ← libClassFile.fields) {
+                        libraryFieldsCount += 1
+                        fieldToClassFile.put(field, libClassFile)
+                    }
+                    objectTypeToClassFile.put(libraryType, libClassFile)
+                    sources.put(libraryType, source)
                 }
-                for (field ← classFile.fields) {
-                    libraryFieldsCount += 1
-                    fieldToClassFile.put(field, classFile)
-                }
-                objectTypeToClassFile.put(objectType, classFile)
-                sources.put(objectType, source)
             }
 
             fieldToClassFile.repack()
@@ -807,4 +905,3 @@ object Project {
         }
     }
 }
-

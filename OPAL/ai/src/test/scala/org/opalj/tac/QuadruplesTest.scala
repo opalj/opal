@@ -27,14 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package quadruples
+package tac
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
+import org.junit.runner.RunWith
+
+import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.ai.BaseAI
@@ -67,8 +68,8 @@ class QuadruplesTest extends FunSpec with Matchers {
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-            // println(statements.mkString("\n"))
-            // println(ToJavaLike(statements))
+            println(statements.mkString("\n"))
+            println(javaLikeCode)
 
             // TODO  test that everything is as expected...
         }

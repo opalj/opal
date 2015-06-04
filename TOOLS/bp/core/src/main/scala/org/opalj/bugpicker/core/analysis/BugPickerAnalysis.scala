@@ -55,8 +55,10 @@ import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
@@ -65,7 +67,8 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
+import org.opalj.util.Milliseconds
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -119,9 +122,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
                 getOrElse(DefaultMaxEvalFactor)
 
-        val maxEvalTime: Int =
+        val maxEvalTime: Milliseconds =
             parameters.
-                collectFirst { case MaxEvalTimePattern(l) ⇒ parseInt(l).toInt }.
+                collectFirst { case MaxEvalTimePattern(l) ⇒ new Milliseconds(parseLong(l).toLong) }.
                 getOrElse(DefaultMaxEvalTime)
 
         val maxCardinalityOfIntegerRanges: Long =
@@ -159,15 +162,19 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        step(1, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
+        step(1, "[Pre-Analysis] Identifying non-instantiable classes") {
+            (theProject.get(InstantiableClassesKey), None)
+        }
+
+        step(2, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
             (theProject.get(FieldValuesKey), None)
         }
 
-        step(2, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
+        step(3, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
             (theProject.get(MethodReturnValuesKey), None)
         }
 
-        val callGraph = step(3, "[Pre-Analysis] Creating the call graph") {
+        val callGraph = step(4, "[Pre-Analysis] Creating the call graph") {
             (theProject.get(VTACallGraphKey), None)
         }
         val callGraphEntryPoints = callGraph.entryPoints().toSet
@@ -396,7 +403,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         }
 
         val exceptions = new ConcurrentLinkedQueue[AnalysisException]
-        var analysisTime = NanoSeconds.None
+        var analysisTime = Nanoseconds.None
         val identifiedIssues = time {
             val stepIds = new AtomicInteger(PreAnalysesCount + 1)
 
@@ -451,7 +458,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
  */
 object BugPickerAnalysis {
 
-    final val PreAnalysesCount = 3 // FieldValues analysis + MethodReturnValues analysis + Callgraph
+    // 1: InstantiableClasses analysis
+    // 2: FieldValues analysis
+    // 3: MethodReturnValues analysis
+    // 4: Callgraph
+    final val PreAnalysesCount = 4
 
     // We want to match expressions such as:
     // -maxEvalFactor=1
@@ -463,7 +474,7 @@ object BugPickerAnalysis {
     final val DefaultMaxEvalFactor = 1.75d
 
     final val MaxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val DefaultMaxEvalTime = 10000 // in ms => 10secs.
+    final val DefaultMaxEvalTime: Milliseconds = new Milliseconds(10000) // in ms => 10secs.
 
     final val MaxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val DefaultMaxCallChainLength = 1
@@ -492,7 +503,7 @@ object BugPickerAnalysis {
     def resultsAsXHTML(
         parameters: Seq[String],
         methodsWithIssues: Iterable[Issue],
-        analysisTime: NanoSeconds): Node = {
+        analysisTime: Nanoseconds): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 
@@ -569,9 +580,6 @@ object BugPickerAnalysis {
                 <div id="analysis_results">
                     { issuesNode }
                 </div>
-                <script type="text/javascript">
-                    openAllPackages();
-                </script>
             </body>
         </html>
     }

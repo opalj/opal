@@ -33,6 +33,7 @@ import bi.ACC_TRANSIENT
 import bi.ACC_VOLATILE
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single field declaration/definition.
@@ -99,6 +100,21 @@ final class Field private (
 
     def toJavaSignature: String = fieldType.toJava+" "+name
 
+    def toJava(): String = {
+        val accessFlags = AccessFlags.toStrings(this.accessFlags, AccessFlagsContexts.FIELD)
+        (
+            if (accessFlags.nonEmpty)
+                accessFlags.mkString("", " ", " ")
+            else
+                ""
+        ) +
+            fieldType.toJava+" "+name
+    }
+
+    def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
+
+    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
+
     /**
      * Defines an absolute order on `Field` objects w.r.t. their names and types.
      * The order is defined by first lexicographically comparing the names of the
@@ -115,9 +131,19 @@ final class Field private (
     }
 
     override def toString(): String = {
-        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.FIELD).mkString("", " ", " ") +
-            fieldType.toJava+" "+name +
-            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+        import AccessFlagsContexts.FIELD
+        val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
+        val jDescriptor = fieldType.toJava+" "+name
+        val field =
+            if (jAccessFlags.nonEmpty)
+                jAccessFlags+" "+jDescriptor
+            else
+                jDescriptor
+
+        if (attributes.nonEmpty)
+            field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
+        else
+            field
     }
 }
 

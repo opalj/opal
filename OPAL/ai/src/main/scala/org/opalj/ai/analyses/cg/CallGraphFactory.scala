@@ -37,6 +37,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.br.analyses.InstantiableClassesKey
 
 /**
  * Factory object to create call graphs.
@@ -46,6 +47,20 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 object CallGraphFactory {
 
     @volatile var debug: Boolean = false
+
+    /**
+     * Annotations that are indicating that the code is generally only implicitly called.
+     * (E.g., by a container using Java reflection or using runtime generated classes.)
+     *
+     *  - `javax.annotation.PostConstruct` and `javax.annotation.PreDestroy`
+     *     are used by enterprise applications to tell the container that these methods
+     *     should be called at the respective points in time. Such annotations may be
+     *     used with private methods!
+     */
+    @volatile var annotationsIndicatingImplicitUsage = Set(
+        ObjectType("javax/annotation/PostConstruct"),
+        ObjectType("javax/annotation/PreDestroy")
+    )
 
     /**
      * Returns a list of all entry points that is well suited if we want to
@@ -58,28 +73,61 @@ object CallGraphFactory {
      *  - every non-private method,
      *  - every private method (including a default constructor) related to
      *    Serialization, even if the respective declaring class is not a current subtype
-     *    of     java.io.Serializable but maybe a subtype later on.
-     *  // TODO ...
-     *  - No entry points:
-     *    - public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
-     *    - methods of a "private object" that is never instantiated (dead objects...)
+     *    of java.io.Serializable but maybe a subtype later on.
+     *  - every private method that has an annotation that indicates that the method is
+     *    implicitly called (e.g., using Java Reflection.)
+     * Unless, one of the following conditions is met:
+     *  - the method is an instance method, but
+     *    the class cannot be instantiated (all constructors are private and no
+     *    factory methods are provided) [we currently ignore self-calls using
+     *    reflection; this is – however – very unlikely.]
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
+
+        val instantiableClasses = project.get(InstantiableClassesKey)
+
+        /*  TODO Filter methods that are impossible entry points...
+         *  - No entry points:
+         *    - methods of a "private class" that is never instantiated (dead objects...)
+         *
+         */
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
-            if (!method.isPrivate ||
-                ( // the method is private, but...
-                    Method.isObjectSerializationRelated(method) &&
+
+            val classIsInstantiable = instantiableClasses.isInstantiable(classFile.thisType)
+
+            val isNonPrivate = !method.isPrivate
+
+            @inline def isPotentiallySerializationRelated: Boolean = {
+                Method.isObjectSerializationRelated(method) &&
                     (
                         !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
                         classHierarchy.isSubtypeOf(
                             classFile.thisType,
                             ObjectType.Serializable).isYesOrUnknown
                     )
-                ))
+            }
+
+            @inline def isImplicitlyUsed: Boolean = {
+                method.annotations.exists { annotation ⇒
+                    val annotationType = annotation.annotationType
+                    annotationType.isObjectType &&
+                        annotationsIndicatingImplicitUsage.contains(
+                            annotationType.asObjectType
+                        )
+                }
+            }
+
+            if ((classIsInstantiable || method.isStatic) &&
+                (isNonPrivate || isPotentiallySerializationRelated)) {
                 methods.add(method)
+            } else if (isImplicitlyUsed) {
+                methods.add(method)
+            } else if (isNonPrivate) {
+                println("no entry method: "+method.toJava(classFile))
+            }
         }
         import scala.collection.JavaConverters._
         methods.asScala

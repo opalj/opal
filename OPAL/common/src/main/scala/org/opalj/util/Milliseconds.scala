@@ -27,25 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package util
 
 /**
- * The standard relational operators used by if instructions as well as compare
- * instructions.
+ * Represents a time span of `n` milliseconds.
  *
  * @author Michael Eichberg
  */
-object RelationalOperators extends Enumeration {
-    final val LT = Value("<")
-    final val < = LT
-    final val GT = Value(">")
-    final val > = GT
-    final val LE = Value("<=")
-    final val <= = LE
-    final val GE = Value(">=")
-    final val >= = GE
-    final val EQ = Value("==")
-    final val == = EQ
-    final val NE = Value("!=")
-    final val != = NE
+class Milliseconds(val timeSpan: Long) extends AnyVal {
+
+    final def +(other: Milliseconds): Milliseconds =
+        new Milliseconds(this.timeSpan + other.timeSpan)
+
+    final def -(other: Milliseconds): Milliseconds =
+        new Milliseconds(this.timeSpan - other.timeSpan)
+
+    /**
+     * Converts the specified number of milliseconds into seconds.
+     */
+    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d)
+
+    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000l)
+
+    override def toString: String = timeSpan+" ms"
+}
+/**
+ * Defines factory methods and constants related to time spans in [[Milliseconds]].
+ *
+ * @author Michael Eichberg
+ */
+object Milliseconds {
+
+    final val None: Milliseconds = new Milliseconds(0l)
+
+    /**
+     * Converts the specified time span and converts it into milliseconds.
+     */
+    final def TimeSpan(
+        startTimeInMilliseconds: Long,
+        endTimeInMilliseconds: Long): Milliseconds =
+        new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
+
 }

@@ -38,6 +38,7 @@ import scala.xml.{ Node ⇒ xmlNode }
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.ui.codeview.AddClickListenersOnLoadListener
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.ProgressManagementDialog
@@ -62,12 +63,13 @@ object AnalysisRunner extends BugPickerAnalysis {
     def runAnalysis(
         stage: Stage,
         project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
+        issues: ObjectProperty[Iterable[Issue]],
         sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane): Unit = {
 
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project first!", stage)
             reportView.engine.loadContent(Messages.LOAD_CLASSES_FIRST)
-            return
+            return ;
         }
 
         val interrupted = BooleanProperty(false)
@@ -92,7 +94,7 @@ object AnalysisRunner extends BugPickerAnalysis {
 
         val doc = new ObjectProperty[xmlNode]
 
-        val worker = new AnalysisWorker(doc, project, parameters, initProgressManagement)
+        val worker = new AnalysisWorker(doc, project, parameters, issues, initProgressManagement)
         worker.handleEvent(WorkerStateEvent.ANY)(
             new WorkerFinishedListener(project, sources, doc, reportView, sourceView, byteView, tabPane)
         )

@@ -30,6 +30,7 @@ package org.opalj
 package graphs
 
 import scala.collection.Map
+import org.opalj.collection.UID
 
 /**
  * Default implementation of a mutable node of a graph.
@@ -68,5 +69,6 @@ class DefaultMutableNode[I](
                 getOrElse(Map.empty[String, String]),
             List.empty)
     }
+
 }
 

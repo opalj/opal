@@ -38,6 +38,7 @@ import bi.ACC_SYNCHRONIZED
 import bi.AccessFlagsContexts
 import bi.AccessFlags
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single method.
@@ -208,7 +209,9 @@ final class Method private (
         }
     }
 
-    def toJava(): String = descriptor.toJava(name)
+    def toJava(): String =
+        VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("") +
+            descriptor.toJava(name)
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 
@@ -219,9 +222,19 @@ final class Method private (
     }
 
     override def toString(): String = {
-        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
-            descriptor.toJava(name) +
-            attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
+        import AccessFlagsContexts.METHOD
+        val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
+        val method =
+            if (jAccessFlags.nonEmpty)
+                " "+descriptor.toJava(name)
+            else
+                descriptor.toJava(name)
+
+        if (attributes.nonEmpty)
+            method + attributes.map(_.getClass.getSimpleName).mkString("«", ", ", "»")
+        else
+            method
+
     }
 
 }

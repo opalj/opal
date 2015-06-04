@@ -156,7 +156,7 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                             observerFields += ((classFile, field))
                         else { // check if it is a container type
                             field.fieldTypeSignature match {
-                                case Some(GenericContainer(c, ot: ObjectType)) if allObserverTypes.contains(ot) ⇒
+                                case Some(SimpleGenericType(c, ot: ObjectType)) if allObserverTypes.contains(ot) ⇒
                                     observerFields += ((classFile, field))
                                 case _ ⇒
                                 /* Ignore */

@@ -35,7 +35,7 @@ package ai
 package domain
 
 /**
- * Mixed in by domain's that support the conversation of a `DomainValue` into
+ * Mixed in by domains that support the conversation of a `DomainValue` into
  * a respective Java object. This Java object can then be used to perform method
  * invocations.
  *

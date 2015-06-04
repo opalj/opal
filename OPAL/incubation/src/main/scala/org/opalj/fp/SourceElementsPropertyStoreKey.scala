@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,14 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
+package fp
+
+import org.opalj.br.analyses.ProjectInformationKey
+
+import org.opalj.br.analyses.SomeProject
 
 /**
+ * The ''key'' object to get access to the properties store.
+ *
  * @author Michael Eichberg
  */
-package object quadruples {
+object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
-    type Stack = List[Var]
+    /**
+     * The [[SourceElementsPropertyStore]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    type ArithmeticOperator = ArithmeticOperators.Value
+    /**
+     * Creates a new empty property store.
+     */
+    override protected def compute(project: SomeProject): PropertyStore = {
+        PropertyStore(
+            project.allSourceElements,
+            () ⇒ Thread.currentThread.isInterrupted())(
+                project.logContext)
+    }
 }

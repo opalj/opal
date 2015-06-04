@@ -28,6 +28,10 @@
  */
 package org.opalj
 
+import java.util.concurrent.ConcurrentHashMap
+import scala.collection.immutable.HashMap
+import scala.collection.JavaConverters._
+
 /**
  * Defines helper methods related to Scala's and OPAL's collections APIs.
  *
@@ -40,7 +44,9 @@ package object collection {
     //
 
     /**
-     * Returns `true` if l2 and l1 have a common prefix.
+     * Returns the common prefix of the given lists. If l1 is a prefix of l2, then
+     * l1 is returned. If l2 is a prefix of l1, l2 is returned, otherwise a new list
+     * that contains the prefix is returned. Hence, if `l1===l2` then l1 is returned.
      */
     def commonPrefix[T](l1: List[T], l2: List[T]): List[T] = {
         if (l1 eq l2)
@@ -66,8 +72,6 @@ package object collection {
     // Helpers related to java.util.concurrent.ConcurrentHashMaps
     //
 
-    import java.util.concurrent.{ ConcurrentHashMap ⇒ CMap }
-
     /**
      * If the `ConcurrentHashMap` (map) contains the key, the respective value is
      * returned. Otherwise, the given function `f` is evaluated and that value is
@@ -77,7 +81,7 @@ package object collection {
      *      another thread has already associated a value with the respective key.
      *      In that case the result of the evaluation of `f` is completely thrown away.
      */
-    def putIfAbsentAndGet[K, V](map: CMap[K, V], key: K, f: ⇒ V): V = {
+    def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
         if (value != null) {
             value
@@ -97,31 +101,31 @@ package object collection {
      * based on `scala.collection.immutable.HashMap`s.
      * E.g.,
      * {{{
-     * val source : CMap[SourceElement, CMap[ArrayType, Set[DType]]] =...
-     * val target : Map[SourceElement, Map[ArrayType, Set[DType]]] = convert(source)
+     * val source : ConcurrentHashMap[SourceElement, CMap[ArrayType, Set[DType]]] =...
+     * val target : Map[SourceElement, Map[ArrayType, Set[DType]]] = asScala(source)
      * }}}
      */
-    def convert[K, SubK, V](map: CMap[K, CMap[SubK, V]]): Map[K, Map[SubK, V]] = {
-        import scala.collection.immutable.HashMap
-        import scala.collection.JavaConversions
+    def asScala[K, SubK, V](
+        map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]): Map[K, Map[SubK, V]] = {
 
-        HashMap.empty ++
-            (for {
-                aDep ← JavaConversions.iterableAsScalaIterable(map.entrySet)
+        val entries =
+            for {
+                aDep ← map.entrySet.asScala
                 source = aDep.getKey()
                 value = aDep.getValue()
             } yield {
                 (
                     source,
-                    HashMap.empty ++
-                    (for {
-                        target ← JavaConversions.iterableAsScalaIterable(value.entrySet)
-                        key = target.getKey()
-                        value = target.getValue()
-                    } yield {
-                        (key, value)
-                    })
+                    HashMap.empty ++ (
+                        for {
+                            target ← value.entrySet.asScala
+                            key = target.getKey()
+                            value = target.getValue()
+                        } yield (key, value)
+                    )
                 )
-            })
+            }
+
+        HashMap.empty ++ entries
     }
 }

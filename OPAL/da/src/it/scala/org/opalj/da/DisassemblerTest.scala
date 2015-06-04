@@ -52,14 +52,13 @@ class DisassemblerTest extends FlatSpec with Matchers {
     it should (s"be able to process every class of $files") in {
 
         val Lock = new Object
-        var exceptions: List[Exception] = Nil
+        var exceptions: List[Throwable] = Nil
 
         val classFiles =
             ClassFileReader.ClassFiles(
                 files,
-                { (exception: Exception) ⇒
+                (source: AnyRef, exception: Throwable) ⇒
                     Lock.synchronized { exceptions = exception :: exceptions }
-                }
             )
         exceptions should be('empty)
         classFiles.isEmpty should be(false)
