@@ -153,17 +153,20 @@ object PurityAnalysis {
                         /* Nothing to do; constants do not impede purity! */
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            val c: Continuation = (dependeeE: AnyRef, dependeeP: Property) ⇒
+                            val c: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒
                                 if (dependeeP == EffectivelyFinal) {
                                     val nextPC = body.pcOfNextInstruction(currentPC)
                                     determinePurityCont(method, nextPC)
                                 } else {
                                     Result(method, Impure)
                                 }
+                            // We are effectively suspending this computation and
+                            // will wait for the result.
+                            // This, however, does not make this a multi-step computation!
                             return projectStore.require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
-                            return Result(method, Impure);
+                            return OneStepResult(method, Impure);
                     }
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
@@ -185,7 +188,7 @@ object PurityAnalysis {
                             calleeOpt match {
                                 case None ⇒
                                     // We know nothing about the target method.
-                                    return Result(method, Impure);
+                                    return OneStepResult(method, Impure);
 
                                 case Some(callee) ⇒
                                     /* Recall that self-recursive calls are handled earlier! */
@@ -193,7 +196,7 @@ object PurityAnalysis {
 
                                     purity match {
                                         case Some(Pure)   ⇒ /* Nothing to do...*/
-                                        case Some(Impure) ⇒ return Result(method, Impure);
+                                        case Some(Impure) ⇒ return OneStepResult(method, Impure);
 
                                         // Handling cyclic computations
                                         case Some(ConditionallyPure) | None ⇒
@@ -221,7 +224,7 @@ object PurityAnalysis {
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    return Result(method, Impure);
+                    return OneStepResult(method, Impure);
 
                 case _ ⇒
                 /* All other instructions (IFs, Load/Stores, Arith., etc.) are pure. */
@@ -231,7 +234,7 @@ object PurityAnalysis {
 
         // Every method that is not identified as being impure is (conditionally)pure.
         if (currentDependees.isEmpty)
-            Result(method, Pure)
+            OneStepResult(method, Pure)
         else
             IntermediateResult(
                 method, ConditionallyPure,
@@ -258,7 +261,6 @@ object PurityAnalysis {
                                     if (remainingDependendees.isEmpty) {
                                         isFinished = true
                                         Result(method, Pure)
-
                                     } else
                                         Unchanged
 
@@ -282,7 +284,6 @@ object PurityAnalysis {
     def determinePurity(
         entity: AnyRef)(
             implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
-
         val method = entity.asInstanceOf[Method]
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
@@ -291,12 +292,12 @@ object PurityAnalysis {
         // Due to a lack of knowledge, we classify all native methods of methods loaded
         // using a library class loader as impure...
         if (method.body.isEmpty)
-            return Result(method, Impure);
+            return OneStepResult(method, Impure);
 
         // We are currently only able to handle simple methods that just take
         // primitive values.
         if (method.parameterTypes.exists { !_.isBaseType })
-            return Result(method, Impure);
+            return OneStepResult(method, Impure);
 
         val purity = determinePurityCont(method, 0)
         purity
@@ -306,7 +307,7 @@ object PurityAnalysis {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
         def entitySelector =
             (e: AnyRef) ⇒ e.isInstanceOf[Method] && !e.asInstanceOf[Method].isAbstract
-        projectStore <~< (entitySelector, determinePurity)
+        projectStore <|< (entitySelector, determinePurity)
     }
 }
 

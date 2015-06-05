@@ -28,22 +28,50 @@
  */
 package org.opalj.fp
 
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.concurrent.Locking
+
 /**
- * An information associated with an entity. Each property belongs to exactly one
- * property kind identified by a [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
+ * An object that identifies a specific kind of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ *
+ * To create a property key use the companion object's [[PropertyKey$.next]] method.
  *
  * @author Michael Eichberg
  */
-trait Property {
+class PropertyKey private ( final val id: Int) extends AnyVal {
 
-    /**
-     * The key uniquely identifies this property's category. All property objects
-     * of the same kind have to use the same key.
-     *
-     * In general each `Property` kind is expected to have a companion object that
-     * stores the unique [[PropertyKey]].
-     */
-    def key: PropertyKey
+    override def toString: String = s"PropertyKey(${PropertyKey.name(this)},id=$id)"
+}
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey extends Locking {
+
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] var lastKeyId: Int = -1
+
+    def create(name: String, defaultProperty: Property): PropertyKey =
+        withWriteLock {
+            lastKeyId += 1
+            propertyKeyNames += name
+            defaultProperties += defaultProperty
+            new PropertyKey(lastKeyId)
+        }
+
+    def name(key: PropertyKey): String =
+        withReadLock {
+            propertyKeyNames(key.id)
+        }
+
+    def defaultProperty(key: PropertyKey): Property =
+        withReadLock {
+            defaultProperties(key.id)
+        }
 
 }
+

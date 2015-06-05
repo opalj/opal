@@ -127,12 +127,12 @@ object MutablityAnalysis {
             else
                 (f, NonFinal)
         }
-        MultiResult(results)
+        OneStepMultiResult(results)
     }
 
     def analyze(implicit project: Project[URL]): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore <~< ((e: Entity) ⇒ e.isInstanceOf[ClassFile], determineMutabilityOfNonFinalPrivateStaticFields)
+        projectStore <|< ((e: Entity) ⇒ e.isInstanceOf[ClassFile], determineMutabilityOfNonFinalPrivateStaticFields)
     }
 }
 

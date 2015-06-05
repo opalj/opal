@@ -104,9 +104,9 @@ class PropertyStore private (
 
     // We want to be able to make sure that methods that access the store as
     // a whole always get a consistent snapshot view
-    private[this] val storeLock = Locking()
-    import storeLock.{ withReadLock ⇒ accessEntity }
-    import storeLock.{ withWriteLock ⇒ accessStore }
+    private[this] val storeLock = new ReentrantReadWriteLock
+    @inline private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(storeLock)(f)
+    @inline private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(storeLock)(f)
 
     /**
      * The set of all stored elements.
@@ -135,9 +135,11 @@ class PropertyStore private (
      * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
      */
-    def apply(e: Entity, pk: PropertyKey): Option[Property] = accessEntity {
-        val (lock, properties) = data.get(e)
-        withReadLock(lock) { properties.get(pk) } match {
+    def apply(e: Entity, pk: PropertyKey): Option[Property] = {
+        accessEntity {
+            val (lock, properties) = data.get(e)
+            withReadLock(lock) { properties.get(pk) }
+        } match {
             case None | Some((null, _))             ⇒ None
             case Some((property, _ /*observers*/ )) ⇒ Some(property)
         }
@@ -188,31 +190,33 @@ class PropertyStore private (
      * Registers a function that calculates a property for all or some elements
      * of the store.
      *
-     * This store ensures that `pc` is never invoked more than once for the
+     * This store ensures that the property
+     * computation function `pc` is never invoked more than once for the
      * same element at the same time. If `pc` is invoked again for a specific element
      * then only because a dependee has changed!
      */
     def <<(pc: PropertyComputation): Unit = {
-        val it = keys.iterator()
-        while (it.hasNext()) {
-            if (isInterrupted())
-                return ;
-            scheduleComputation(it.next(), pc)
-        }
+        import scala.collection.JavaConverters._
+        bulkScheduleComputations(keys.asScala, pc)
     }
 
     /**
+     * Registers a function that calculates a property for those elements
+     * of the store that pass the filter.
+     *
      * @param f A filter that selects those entities that are relevant to the analysis.
      *      For which the analysis may compute some property.
      */
-    def <~<(f: Entity ⇒ Boolean, c: PropertyComputation): Unit = {
+    def <|<(f: Entity ⇒ Boolean, c: PropertyComputation): Unit = {
         val it = keys.iterator()
+        var es: List[Entity] = Nil
         while (it.hasNext()) {
             if (isInterrupted())
                 return ;
             val e = it.next()
-            if (f(e)) scheduleComputation(e, c)
+            if (f(e)) es = e :: es
         }
+        bulkScheduleComputations(es, c)
     }
 
     /**
@@ -229,18 +233,23 @@ class PropertyStore private (
     /**
      * Returns a string representation of the stored properties.
      */
-    override def toString: String = accessStore {
+    override def toString: String = accessStore /* <=> Exclusive Access*/ {
         val text = new StringBuilder
+        var propertiesCount = 0
+        var unsatisfiedPropertyDependencies = 0
         val it = data.entrySet().iterator()
         while (it.hasNext()) {
             val entry = it.next()
             val ps = entry.getValue._2.map { pkpos ⇒
                 val (pk, (p, os)) = pkpos
                 (
-                    if (p eq null)
+                    if (p eq null) {
+                        unsatisfiedPropertyDependencies += 1
                         s"<Unsatisfied: ${PropertyKey.name(pk)}>"
-                    else
+                    } else {
+                        propertiesCount += 1
                         p.toString
+                    }
                 )+"["+(if (os eq null) 0 else os.size)+"]"
             }
             if (ps.nonEmpty) {
@@ -251,7 +260,8 @@ class PropertyStore private (
         "PropertyStore(\n"+
             s"\tentitiesCount=${data.size()},\n"+
             s"\texecutedComputations=${Tasks.executedComputations}\n"+
-            "\tproperties=\n"+text+
+            s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
+            s"\tproperties[$propertiesCount]=\n"+text+
             ")"
     }
 
@@ -260,6 +270,16 @@ class PropertyStore private (
     // INTERNAL IMPLEMENTATION
     //
     //
+
+    private[fp] object UpdateTypes extends Enumeration {
+        val IntermediateUpdate = Value("Intermediate")
+        val FinalUpdate = Value("Final")
+        val OneStepFinalUpdate = Value("FinalWithoutDependencies")
+    }
+    private[fp]type UpdateType = UpdateTypes.Value
+    import UpdateTypes.FinalUpdate
+    import UpdateTypes.OneStepFinalUpdate
+    import UpdateTypes.IntermediateUpdate
 
     private[this] final val threadPool = ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks, 2))
 
@@ -316,6 +336,9 @@ class PropertyStore private (
                 }
             }
 
+            // Invoke the garbage collector either in this thread if this thread
+            // is not a thread belonging to the property store's thread pool or
+            // in a new thread.
             if (threadPool.group == Thread.currentThread().getThreadGroup) {
                 val t = new Thread(new Runnable { def run(): Unit = collectGarbage() })
                 t.start()
@@ -329,8 +352,12 @@ class PropertyStore private (
             scheduled += 1
         }
 
-        def taskRejected() = synchronized {
-            scheduled -= 1
+        def tasksStarted(tasksCount: Int) = synchronized {
+            scheduled += tasksCount
+        }
+
+        def tasksAborted(tasksCount: Int) = synchronized {
+            scheduled -= tasksCount
         }
 
         def taskCompleted() = synchronized {
@@ -529,14 +556,59 @@ class PropertyStore private (
      * Schedules the handling of the result of a property computation.
      */
     private[this] def scheduleHandleResult(r: PropertyComputationResult): Unit = {
-        scheduleTask(() ⇒ handleResult(r))
+        scheduleTask(new Runnable {
+            def run() = {
+                try {
+                    handleResult(r)
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        })
     }
 
     /**
      * Schedules the computation of a property w.r.t. the entity `e`.
      */
     private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
-        scheduleTask(() ⇒ handleResult(pc(e)))
+        scheduleTask(new Runnable {
+            def run() = {
+                try {
+                    handleResult(pc(e))
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        })
+    }
+
+    /**
+     * Schedules the computation of a property w.r.t. the entity `e`.
+     */
+    private[this] def bulkScheduleComputations(
+        es: Traversable[Entity],
+        pc: PropertyComputation): Unit = {
+        val tasks = es.map { e ⇒
+            new Runnable {
+                def run() = {
+                    try {
+                        handleResult(pc(e))
+                    } catch {
+                        case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                    } finally {
+                        Tasks.taskCompleted()
+                    }
+                }
+            }
+        }
+        if (isInterrupted())
+            return ;
+
+        scheduleTasks(tasks)
     }
 
     /**
@@ -546,36 +618,72 @@ class PropertyStore private (
         dependeeE: Entity,
         dependeeP: Property,
         c: Continuation): Unit = {
-        scheduleTask(() ⇒ handleResult(c(dependeeE, dependeeP)))
+        scheduleTask(new Runnable {
+            def run() = {
+                try {
+                    handleResult(c(dependeeE, dependeeP))
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        })
     }
 
-    private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
-        if (!isInterrupted()) {
-            Tasks.taskStarted()
-            val task = new Runnable {
-                def run(): Unit =
-                    try {
-                        t()
-                    } catch {
-                        case t: Throwable ⇒
-                            handleUncaughtException(t)
-                            throw t
-                    } finally {
-                        Tasks.taskCompleted()
-                    }
-            }
-            try {
-                threadPool.submit(task)
-            } catch {
-                case reh: RejectedExecutionException ⇒
-                    Tasks.taskRejected()
-                case t: Throwable ⇒
-                    Tasks.taskRejected()
-                    handleUncaughtException(t)
-                    throw t
-            }
-        } else {
+    //    private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
+    //        scheduleTask(
+    //            new Runnable {
+    //                def run(): Unit =
+    //                    try {
+    //                        t()
+    //                    } catch {
+    //                        case t: Throwable ⇒
+    //                            handleUncaughtException(t)
+    //                            throw t
+    //                    } finally {
+    //                        Tasks.taskCompleted()
+    //                    }
+    //            }
+    //        )
+    //    }
+
+    private[this] def scheduleTask(r: Runnable): Unit = {
+        if (isInterrupted()) {
             Tasks.interrupt()
+            return ;
+        }
+
+        Tasks.taskStarted()
+        try {
+            threadPool.submit(r)
+        } catch {
+            case reh: RejectedExecutionException ⇒
+                Tasks.taskCompleted()
+
+            case t: Throwable ⇒
+                Tasks.taskCompleted()
+                handleUncaughtException(t);
+        }
+    }
+
+    private[this] def scheduleTasks(rs: Traversable[Runnable]): Unit = {
+        if (isInterrupted()) {
+            Tasks.interrupt()
+            return ;
+        }
+        val allTasksCount = rs.size
+        Tasks.tasksStarted(allTasksCount)
+        var startedTasksCount = 0
+        try {
+            rs foreach { r ⇒ threadPool.submit(r); startedTasksCount += 1 }
+        } catch {
+            case reh: RejectedExecutionException ⇒
+                Tasks.tasksAborted(allTasksCount - startedTasksCount)
+
+            case t: Throwable ⇒
+                Tasks.tasksAborted(allTasksCount - startedTasksCount)
+                handleUncaughtException(t);
         }
     }
 
@@ -585,28 +693,39 @@ class PropertyStore private (
         val entitiesIterator = data.entrySet().iterator()
         while (entitiesIterator.hasNext()) {
             val (lock, properties) = entitiesIterator.next().getValue()
-            val removeableO =
-                withReadLock(lock) {
-                    properties.get(pk).flatMap(pos ⇒ {
-                        val os = pos._2
-                        if (os ne null) {
-                            os.find { po ⇒
-                                val EPK(observerE, observerPK) = po.depender
-                                (observerE eq e) && (observerPK == pk)
-                            }
-                        } else {
-                            None
-                        }
-                    })
-                }
-            if (removeableO.isDefined) {
-                withWriteLock(lock) {
-                    properties.get(pk) foreach { pos ⇒
-                        val os = pos._2
-                        os -= removeableO.get
-                    }
+            val osOption = withReadLock(lock) { properties.get(pk).map(_._2) }
+            if (osOption.isDefined && (osOption.get ne null)) {
+                osOption.get.find { po ⇒
+                    val depender = po.depender
+                    (depender.e eq e) && (depender.pk == pk)
+                } match {
+                    case Some(o) ⇒ withWriteLock(lock) { properties.get(pk).get._2 -= o }
+                    case None    ⇒ // nothing to do
                 }
             }
+
+            //            val removeableO =
+            //                withReadLock(lock) {
+            //                    properties.get(pk).flatMap(pos ⇒ {
+            //                        val os = pos._2
+            //                        if (os ne null) {
+            //                            os.find { po ⇒
+            //                                val EPK(observerE, observerPK) = po.depender
+            //                                (observerE eq e) && (observerPK == pk)
+            //                            }
+            //                        } else {
+            //                            None
+            //                        }
+            //                    })
+            //                }
+            //            if (removeableO.isDefined) {
+            //                withWriteLock(lock) {
+            //                    properties.get(pk) foreach { pos ⇒
+            //                        val os = pos._2
+            //                        os -= removeableO.get
+            //                    }
+            //                }
+            //            }
         }
     }
 
@@ -620,38 +739,39 @@ class PropertyStore private (
     private[this] def update(
         e: Entity,
         p: Property,
-        finished: Boolean): Unit = accessEntity {
+        updateType: UpdateType): Unit = accessEntity {
         val (lock, properties) = data.get(e)
         val pk = p.key
 
-        if (finished) {
+        if (updateType == /*just*/ FinalUpdate) {
             clearObservers(e, pk)
         }
-
+        var callObservers = true
         val observers = withWriteLock(lock) {
             properties.get(pk) match {
                 case Some((oldP, os)) ⇒
                     assert(
                         oldP != p,
                         s"$e: the old ($oldP) and the new property ($p) are identical")
-                    if (finished) {
+                    if (updateType == IntermediateUpdate) {
+                        val newOs = os.filterNot(o ⇒ o.removeAfterNotification)
+                        properties.put(p.key, (p, newOs))
+                        os
+                    } else {
                         // All entities that observe this value are
                         // informed and then the observers are removed.
                         properties.put(p.key, (p, null /*The list of observers is no longer required!*/ ))
-                        os
-                    } else {
-                        val newOs = os.filterNot(o ⇒ o.removeAfterNotification)
-                        properties.put(p.key, (p, newOs))
                         os
                     }
 
                 case None ⇒
                     val os = Buffer.empty[PropertyObserver]
+                    callObservers = false
                     properties.put(p.key, (p, os))
                     os
             }
         }
-        observers foreach { o ⇒ o(e, p) }
+        if (callObservers) observers foreach { o ⇒ o(e, p) }
     }
     //
     //    /**
@@ -690,13 +810,17 @@ class PropertyStore private (
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
 
         r match {
-            case NoResult ⇒ // Nothing to do..
+            case NoResult            ⇒ // Nothing to do..
 
-            case Result(e, p) ⇒
-                update(e, p, finished = true)
+            case OneStepResult(e, p) ⇒ update(e, p, OneStepFinalUpdate)
+
+            case Result(e, p)        ⇒ update(e, p, FinalUpdate)
 
             case MultiResult(results) ⇒
-                results foreach { ep ⇒ val (e, p) = ep; update(e, p, finished = true) }
+                results foreach { ep ⇒ val (e, p) = ep; update(e, p, FinalUpdate) }
+
+            case OneStepMultiResult(results) ⇒
+                results foreach { ep ⇒ val (e, p) = ep; update(e, p, OneStepFinalUpdate) }
 
             case IntermediateResult(e, p, dependees: Traversable[EP], c) ⇒
                 dependees foreach { ep ⇒
@@ -728,7 +852,7 @@ class PropertyStore private (
                         }
                     }
                 }
-                update(e, p, finished = false)
+                update(e, p, IntermediateUpdate)
 
             //            case IntermediateResult(results) ⇒
             //                results foreach { result ⇒ val (e, p) = result; update(e, p, false) }
