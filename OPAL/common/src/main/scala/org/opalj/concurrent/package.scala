@@ -61,6 +61,10 @@ package object concurrent {
         OPALLogger.error("internal", "uncaught exception", t)
     }
 
+    final def handleUncaughtException(t: Thread, e: Throwable): Unit = {
+        OPALLogger.error("internal", s"uncaught exception (Thread=${t.getName})", e)
+    }
+
     //
     // STEP 1
     //
