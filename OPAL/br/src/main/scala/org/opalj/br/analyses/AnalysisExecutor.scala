@@ -86,15 +86,16 @@ trait AnalysisExecutor {
 
     /**
      * Checks if the (additional) parameters are understood by
-     * the analysis.
+     * the analysis. If an error is found a list of issues is returned and the analysis
+     * will not be executed.
      *
      * This method '''must be''' overridden if the analysis defines additional
-     * parameters. A method that overrides this method should `return` false if it can't
-     * validate all arguments.
+     * parameters. A method that overrides this method should `return` the list of
+     * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-        parameters.isEmpty
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] =
+        if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
 
     /**
      * Prints out general information how to use this analysis. Printed whenever
@@ -200,12 +201,9 @@ trait AnalysisExecutor {
         }
         val libcpFiles = verifyFiles(libcp)
 
-        if (!checkAnalysisSpecificParameters(args2)) {
-            println(Console.RED+
-                "[error] Unknown parameter(s): "+args2.mkString("\"", " ", "\"")+
-                "; original: \""+unparsedArgs.mkString(" ")+"\""+
-                "; parsed: \""+args.mkString(" ")+"\""+
-                Console.RESET)
+        val issues = checkAnalysisSpecificParameters(args2)
+        if (issues.nonEmpty) {
+            issues.foreach { i ⇒ println(Console.RED+"[error] "+Console.RESET + i) }
             printUsage()
             sys.exit(2)
         }

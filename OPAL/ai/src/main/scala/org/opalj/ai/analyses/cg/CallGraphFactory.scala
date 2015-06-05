@@ -37,6 +37,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.br.analyses.InstantiableClassesKey
 
 /**
  * Factory object to create call graphs.
@@ -56,7 +57,7 @@ object CallGraphFactory {
      *     should be called at the respective points in time. Such annotations may be
      *     used with private methods!
      */
-    @volatile var annotationsIndicatingImplicitUsage = Seq(
+    @volatile var annotationsIndicatingImplicitUsage = Set(
         ObjectType("javax/annotation/PostConstruct"),
         ObjectType("javax/annotation/PreDestroy")
     )
@@ -75,20 +76,27 @@ object CallGraphFactory {
      *    of java.io.Serializable but maybe a subtype later on.
      *  - every private method that has an annotation that indicates that the method is
      *    implicitly called (e.g., using Java Reflection.)
+     * Unless, one of the following conditions is met:
+     *  - the method is an instance method, but
+     *    the class cannot be instantiated (all constructors are private and no
+     *    factory methods are provided) [we currently ignore self-calls using
+     *    reflection; this is – however – very unlikely.]
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
 
+        val instantiableClasses = project.get(InstantiableClassesKey)
+
         /*  TODO Filter methods that are impossible entry points...
-     *  - No entry points:
-     *    - public instance methods of a class that provides no way to create an
-     *      instance of it (e.g., java.lang.Math)
-     *    - methods of a "private class" that is never instantiated (dead objects...)
-     *
-     */
+         *  - No entry points:
+         *    - methods of a "private class" that is never instantiated (dead objects...)
+         *
+         */
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
+
+            val classIsInstantiable = instantiableClasses.isInstantiable(classFile.thisType)
 
             val isNonPrivate = !method.isPrivate
 
@@ -103,11 +111,23 @@ object CallGraphFactory {
             }
 
             @inline def isImplicitlyUsed: Boolean = {
-                method.annotations.exists { annotationsIndicatingImplicitUsage.contains(_) }
+                method.annotations.exists { annotation ⇒
+                    val annotationType = annotation.annotationType
+                    annotationType.isObjectType &&
+                        annotationsIndicatingImplicitUsage.contains(
+                            annotationType.asObjectType
+                        )
+                }
             }
 
-            if (isNonPrivate || isPotentiallySerializationRelated || isImplicitlyUsed)
+            if ((classIsInstantiable || method.isStatic) &&
+                (isNonPrivate || isPotentiallySerializationRelated)) {
                 methods.add(method)
+            } else if (isImplicitlyUsed) {
+                methods.add(method)
+            } else if (isNonPrivate) {
+                println("no entry method: "+method.toJava(classFile))
+            }
         }
         import scala.collection.JavaConverters._
         methods.asScala

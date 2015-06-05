@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,43 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
+package fp
+
+import org.opalj.br.analyses.ProjectInformationKey
+
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Represents a time span of `n` nanoseconds.
+ * The ''key'' object to get access to the properties store.
  *
  * @author Michael Eichberg
  */
-class NanoSeconds(val timeSpan: Long) extends AnyVal {
-
-    final def +(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan + other.timeSpan)
-
-    final def -(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan - other.timeSpan)
+object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
     /**
-     * Converts the specified number of nanoseconds into seconds.
+     * The [[SourceElementsPropertyStore]] has no special prerequisites.
+     *
+     * @return `Nil`.
      */
-    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
-
-    override def toString: String = timeSpan+" ns"
-}
-/**
- * Defines factory methods and constants related to time spans in [[NanoSeconds]].
- *
- * @author Michael Eichberg
- */
-object NanoSeconds {
-
-    final val None: NanoSeconds = new NanoSeconds(0)
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
     /**
-     * Converts the specified time span and converts it into seconds.
+     * Creates a new empty property store.
      */
-    final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds: Long): NanoSeconds =
-        new NanoSeconds(endTimeInNanoseconds - startTimeInNanoseconds)
-
+    override protected def compute(project: SomeProject): PropertyStore = {
+        PropertyStore(
+            project.allSourceElements,
+            () ⇒ Thread.currentThread.isInterrupted())(
+                project.logContext)
+    }
 }

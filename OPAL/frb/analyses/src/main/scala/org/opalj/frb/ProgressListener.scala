@@ -29,7 +29,7 @@
 package org.opalj
 package frb
 
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * `FindRealBugs.analyze()` users can implement this interface in order to obtain
@@ -72,6 +72,6 @@ trait ProgressListener {
         analysis: Analysis,
         position: Int,
         total: Int,
-        timeSpan: NanoSeconds,
+        timeSpan: Nanoseconds,
         reports: FindRealBugs.AnalysisReports): Unit
 }

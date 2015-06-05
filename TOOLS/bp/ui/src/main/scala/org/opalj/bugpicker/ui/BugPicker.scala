@@ -34,12 +34,11 @@ import java.io.File
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
-
+import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
 import scala.xml.dtd.IntDef
 import scala.xml.dtd.NoExternalID
-
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
@@ -54,8 +53,8 @@ import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
 import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
-
 import javafx.application.Application
+import javafx.scene.control.ScrollBar
 import javafx.scene.control.SeparatorMenuItem
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
@@ -109,6 +108,7 @@ import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
+import org.opalj.util.Milliseconds
 
 /**
  * @author Arne Lottmann
@@ -207,9 +207,23 @@ class BugPicker extends Application {
             logMessagesTableView
         }
 
+        def extractScrollBar(table: TableView[BugPickerLogMessage]): Option[ScrollBar] = {
+
+            table.lookupAll(".scroll-bar:vertical").asScala.foreach { node ⇒
+                node match {
+                    case s: ScrollBar ⇒ {
+                        if (s.getOrientation().equals(javafx.geometry.Orientation.VERTICAL))
+                            return Some(s)
+                    }
+                    case _ ⇒
+                }
+            }
+            None
+        }
+
         def logMessagesOnChangeBehaviour(
             sortOrder: ObservableBuffer[javafx.scene.control.TableColumn[BugPickerLogMessage, _]],
-            tv: TableView[BugPickerLogMessage]): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
+            tv: TableView[BugPickerLogMessage], scrollBar: Option[ScrollBar]): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
             (_, changes) ⇒
                 {
                     for (change ← changes)
@@ -226,7 +240,8 @@ class BugPicker extends Application {
                                     tv.sortOrder ++= sortOrder
                                 } else {
                                     // table isn't sorted, scroll to new element
-                                    tv.scrollTo(pos)
+                                    if (scrollBar.isDefined && scrollBar.get.isVisible())
+                                        tv.scrollTo(pos)
                                 }
                             }
                             case _ ⇒ {
@@ -245,12 +260,7 @@ class BugPicker extends Application {
         val projectLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(projectLogMessages)
         val bugpickerLogSortOrder = ObservableBuffer(bugpickerLogView.sortOrder)
         val projectLogSortOrder = ObservableBuffer(projectLogView.sortOrder)
-        bugpickerLogMessages.onChange {
-            logMessagesOnChangeBehaviour(bugpickerLogSortOrder, bugpickerLogView)
-        }
-        projectLogMessages.onChange {
-            logMessagesOnChangeBehaviour(projectLogSortOrder, projectLogView)
-        }
+
         val tabPane: TabPane = new TabPane {
             this += new Tab {
                 text = "BugPicker Log"
@@ -316,8 +326,7 @@ class BugPicker extends Application {
                     title = "Save Analysis"
                     extensionFilters ++= Seq(
                         new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
-                        new FileChooser.ExtensionFilter("All Files", "*.*")
-                    )
+                        new FileChooser.ExtensionFilter("All Files", "*.*"))
                     initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
                     initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
                 }
@@ -345,8 +354,7 @@ class BugPicker extends Application {
                     title = "Open Analysis"
                     extensionFilters ++= Seq(
                         new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
-                        new FileChooser.ExtensionFilter("All Files", "*.*")
-                    )
+                        new FileChooser.ExtensionFilter("All Files", "*.*"))
                     initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
                 }
                 val file = fod.showOpenDialog(stage)
@@ -425,8 +433,7 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+Q")
                                 onAction = { e: ActionEvent ⇒ stage.close }
-                            }
-                        )
+                            })
                     },
                     new Menu {
                         text = "_Analysis"
@@ -472,8 +479,7 @@ class BugPicker extends Application {
                             new SeparatorMenuItem,
                             storeCurrentAnalysis,
                             loadAnalysisToDiff,
-                            recentAnalysisToDiffMenu
-                        )
+                            recentAnalysisToDiffMenu)
                     },
                     new Menu {
                         text = "_Help"
@@ -489,8 +495,7 @@ class BugPicker extends Application {
                                 text = "_About"
                                 mnemonicParsing = true
                                 onAction = { e: ActionEvent ⇒ aboutDialog.showAndWait() }
-                            }
-                        )
+                            })
                     })
             }
         }
@@ -612,8 +617,7 @@ class BugPicker extends Application {
                         dividerPositions = 0.4
 
                         items ++= Seq(reportView, tabPane)
-                    }
-                )
+                    })
             }
 
             stylesheets += BugPicker.defaultAppCSSURL
@@ -647,6 +651,16 @@ class BugPicker extends Application {
         }
 
         stage.show()
+
+        val bugpickerLogViewScrollBar: Option[ScrollBar] = extractScrollBar(bugpickerLogView)
+        val projectLogViewScrollBar: Option[ScrollBar] = extractScrollBar(projectLogView)
+
+        bugpickerLogMessages.onChange {
+            logMessagesOnChangeBehaviour(bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar)
+        }
+        projectLogMessages.onChange {
+            logMessagesOnChangeBehaviour(projectLogSortOrder, projectLogView, projectLogViewScrollBar)
+        }
     }
 }
 
@@ -709,9 +723,9 @@ object BugPicker {
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             DefaultMaxEvalFactor)
-        val maxEvalTime = PREFERENCES.getInt(
+        val maxEvalTime = new Milliseconds(PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            DefaultMaxEvalTime)
+            DefaultMaxEvalTime.timeSpan))
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             DefaultMaxCardinalityOfIntegerRanges)
@@ -730,9 +744,9 @@ object BugPicker {
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
-        PREFERENCES.putInt(
+        PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            parameters.maxEvalTime)
+            parameters.maxEvalTime.timeSpan)
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             parameters.maxEvalFactor)

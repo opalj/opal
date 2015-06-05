@@ -93,21 +93,31 @@ object ToJavaLike {
      * Converts the quadruples representation into Java-like code.
      */
     def apply(stmts: Array[Stmt]): String = {
+        apply(stmts, true).mkString("\n")
+    }
+
+    /**
+     * Converts each statement into a Java-like statement.
+     */
+    def apply(stmts: Array[Stmt], indented: Boolean): Array[String] = {
 
         val max = stmts.size
+        val javaLikeCode = new Array[String](max)
         var index = 0;
-        val javaLikeCode = new StringBuffer(max * 128);
         while (index < max) {
-            def append(javaLikeStmt: String): Unit = {
-                javaLikeCode append f"$index%5d: $javaLikeStmt %n"
+            def qualify(javaLikeStmt: String): String = {
+                if (indented)
+                    f"$index%5d: $javaLikeStmt"
+                else
+                    s"$index: $javaLikeStmt"
             }
 
-            append(toJavaLikeStmt(stmts(index)))
+            javaLikeCode(index) = qualify(toJavaLikeStmt(stmts(index)))
 
             index += 1
         }
 
-        javaLikeCode.toString
+        javaLikeCode
     }
 
 }

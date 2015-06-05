@@ -120,19 +120,21 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
     // W.r.t Reference Values
 
     /**
-     * Called by the framework when the top-most operand stack value has to be null, but
+     * Sets the `is null` property of the top-most stack value to `Yes`. This method is
+     * called by the framework when the top-most operand stack value has to be null, but
      * a previous `isNull` check returned [[Unknown]].
      * E.g., after a [[org.opalj.br.instructions.CHECKCAST]] that fails unless the
      * value is "null".
      *
-     * '''This method can be ignored'''; it is e.g., used by
-     * instructions.
-     *
-     * A domain that is able to identify aliases can use this information to propagate
+     * '''This method can be ignored'''; i.e., the return value can be `(operands,locals)`.
+     * However, a domain that is able to identify
+     * aliases can use this information to propagate
      * the information to the other aliases.
      */
-    def refSetIsNull(pc: PC, operands: Operands, locals: Locals): (Operands, Locals) =
-        (operands, locals)
+    def refTopOperandIsNull(
+        pc: PC,
+        operands: Operands,
+        locals: Locals): (Operands, Locals)
 
     /**
      * Called by the abstract interpreter when '''the type bound of the top most stack
@@ -145,7 +147,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * A domain that is able to identify aliases can use this information to propagate
      * the information to the other aliases.
      */
-    /*abstract*/ def refSetUpperBound(
+    /*abstract*/ def refSetUpperTypeBoundOfTopOperand(
         pc: PC,
         bound: ReferenceType,
         operands: Operands,

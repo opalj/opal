@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,35 +26,52 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
+package org.opalj.fp
+
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.concurrent.Locking
 
 /**
- * Characterizes the type of an event related to a running analysis.
+ * An object that identifies a specific kind of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
  *
- * @see [[ProgressManagement]] for further details.
+ * To create a property key use the companion object's [[PropertyKey$.next]] method.
  *
  * @author Michael Eichberg
  */
-object EventType extends Enumeration {
+class PropertyKey private ( final val id: Int) extends AnyVal {
 
-    /**
-     * Used to signal the start of a (longer-running) computation.
-     * Each computation that signals a start must also signal an end of the computation.
-     */
-    val Start = Value
-
-    /**
-     * Used to signal the end of a computation.
-     */
-    val End = Value
-
-    /**
-     * Use to signal that a computation was killed.
-     *
-     * '''After signaling a `Killed` event the underlying computation is not
-     * allowed to signal any further events.'''
-     */
-    val Killed = Value
+    override def toString: String = s"PropertyKey(${PropertyKey.name(this)},id=$id)"
 }
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey extends Locking {
+
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] var lastKeyId: Int = -1
+
+    def create(name: String, defaultProperty: Property): PropertyKey =
+        withWriteLock {
+            lastKeyId += 1
+            propertyKeyNames += name
+            defaultProperties += defaultProperty
+            new PropertyKey(lastKeyId)
+        }
+
+    def name(key: PropertyKey): String =
+        withReadLock {
+            propertyKeyNames(key.id)
+        }
+
+    def defaultProperty(key: PropertyKey): Property =
+        withReadLock {
+            defaultProperties(key.id)
+        }
+
+}
+

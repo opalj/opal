@@ -52,8 +52,8 @@ trait TypedValuesFactory {
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for
-     * which we have some type information but no value or source information.
-     * However, the value is guaranteed to be proper initialized (if non-null).
+     * which we have some type information but no precise value or source information.
+     * However, the value is guaranteed to be `null` or properly initialized.
      *
      * For example, if `valueType` is a reference type it may be possible
      * that the actual value is `null`, but such knowledge is not available.
@@ -63,18 +63,17 @@ trait TypedValuesFactory {
      * used elsewhere by the framework.
      */
     def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue =
-        valueType match {
-            case BooleanType       ⇒ BooleanValue(origin)
-            case ByteType          ⇒ ByteValue(origin)
-            case ShortType         ⇒ ShortValue(origin)
-            case CharType          ⇒ CharValue(origin)
-            case IntegerType       ⇒ IntegerValue(origin)
-            case FloatType         ⇒ FloatValue(origin)
-            case LongType          ⇒ LongValue(origin)
-            case DoubleType        ⇒ DoubleValue(origin)
-            case rt: ReferenceType ⇒ ReferenceValue(origin, rt)
-            case VoidType ⇒
-                throw DomainException("a domain value cannot have the type void")
+        (valueType.id: @scala.annotation.switch) match {
+            case BooleanType.id ⇒ BooleanValue(origin)
+            case ByteType.id    ⇒ ByteValue(origin)
+            case ShortType.id   ⇒ ShortValue(origin)
+            case CharType.id    ⇒ CharValue(origin)
+            case IntegerType.id ⇒ IntegerValue(origin)
+            case FloatType.id   ⇒ FloatValue(origin)
+            case LongType.id    ⇒ LongValue(origin)
+            case DoubleType.id  ⇒ DoubleValue(origin)
+            case VoidType.id    ⇒ throw DomainException("cannot create void typed value")
+            case _              ⇒ ReferenceValue(origin, valueType.asReferenceType)
         }
 
     /**
@@ -84,16 +83,17 @@ trait TypedValuesFactory {
      * `ReferenceType` the value is the [[ReferenceValuesFactory#NullValue]].
      */
     final def DefaultValue(origin: ValueOrigin, theType: FieldType): DomainValue = {
-        theType match {
-            case BooleanType      ⇒ BooleanValue(origin, false)
-            case ByteType         ⇒ ByteValue(origin, 0)
-            case CharType         ⇒ CharValue(origin, 0)
-            case ShortType        ⇒ ShortValue(origin, 0)
-            case IntegerType      ⇒ IntegerValue(origin, 0)
-            case FloatType        ⇒ FloatValue(origin, 0.0f)
-            case LongType         ⇒ LongValue(origin, 0l)
-            case DoubleType       ⇒ DoubleValue(origin, 0.0d)
-            case _: ReferenceType ⇒ NullValue(origin)
+        (theType.id: @scala.annotation.switch) match {
+            case BooleanType.id ⇒ BooleanValue(origin, false)
+            case ByteType.id    ⇒ ByteValue(origin, 0)
+            case CharType.id    ⇒ CharValue(origin, 0)
+            case ShortType.id   ⇒ ShortValue(origin, 0)
+            case IntegerType.id ⇒ IntegerValue(origin, 0)
+            case FloatType.id   ⇒ FloatValue(origin, 0.0f)
+            case LongType.id    ⇒ LongValue(origin, 0l)
+            case DoubleType.id  ⇒ DoubleValue(origin, 0.0d)
+            case VoidType.id    ⇒ throw DomainException("cannot create void typed value")
+            case _              ⇒ NullValue(origin)
         }
     }
 }

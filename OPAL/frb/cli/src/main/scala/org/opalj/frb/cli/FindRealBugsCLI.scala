@@ -35,7 +35,7 @@ import br.analyses._
 import util.PerformanceEvaluation
 import java.net.URL
 import java.text.DecimalFormat
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * The FindRealBugs command line interface.
@@ -202,7 +202,7 @@ object FindRealBugsCLI extends ProgressListener {
         }
     }
 
-    var analysesExecutionTime: NanoSeconds = NanoSeconds.None
+    var analysesExecutionTime: Nanoseconds = Nanoseconds.None
     val progressLock = new Object
 
     /**
@@ -233,7 +233,7 @@ object FindRealBugsCLI extends ProgressListener {
         analysis: Analysis,
         position: Int,
         total: Int,
-        timeSpan: NanoSeconds,
+        timeSpan: Nanoseconds,
         reports: AnalysisReports): Unit = {
         progressLock.synchronized {
             analysesExecutionTime += timeSpan

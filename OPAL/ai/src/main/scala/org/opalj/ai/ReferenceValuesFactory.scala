@@ -40,8 +40,8 @@ import org.opalj.br.{ MethodDescriptor, MethodHandle }
 trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 
     /**
-     * Factory method to create a `DomainValue` that represents the `null` value and
-     * and that was created (explicitly or implicitly) by the instruction (`aconst_null`)
+     * Factory method to create a `DomainValue` that represents value `null` and
+     * and that was created (explicitly or implicitly) by the instruction
      * with the specified program counter.
      *
      * The domain may ignore the information about the value and the origin (`pc`).

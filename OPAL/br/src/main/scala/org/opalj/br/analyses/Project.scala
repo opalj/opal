@@ -80,6 +80,19 @@ import org.opalj.log.DefaultLogContext
  * ==Thread Safety==
  * This class is thread-safe.
  *
+ * ==Prototyping Analyses/Querying Projects==
+ * Projects can easily be created and queried using the Scala `REPL`. For example,
+ * to create a project, you can use:
+ * {{{
+ * val JRE = "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib"
+ * val project = org.opalj.br.analyses.Project(new java.io.File(JRE))
+ * }}}
+ * Now, to determine the number of methods that have at least one parameter of type
+ * `int`, you can use:
+ * {{{
+ * p.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
+ * }}}
+ *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
  *      a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
  *      presenting users meaningful messages w.r.t. the location of issues.
@@ -118,6 +131,9 @@ class Project[Source] private (
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
+    /**
+     * Creates a new `Project` which also includes the given class files.
+     */
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -127,6 +143,10 @@ class Project[Source] private (
             libraryClassFilesWithSources)
     }
 
+    /**
+     * Creates a new `Project` which also includes this as well as the other project's
+     * class files.
+     */
     def extend(otherProject: Project[Source]): Project[Source] = {
         Project.extend[Source](
             this,
@@ -150,8 +170,16 @@ class Project[Source] private (
      */
     final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
+    /**
+     * The number of all source elements (fields, methods and class files).
+     */
     def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
 
+    /**
+     * Returns a new `Iterable` over all source elements of the project. The set
+     * of all source elements consists of (in this order): all methods + all fields +
+     * all class files.
+     */
     def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
 
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
@@ -188,6 +216,13 @@ class Project[Source] private (
             f: ClassFile ⇒ T): Unit = {
         parForeachProjectClassFile(isInterrupted)(f)
         parForeachLibraryClassFile(isInterrupted)(f)
+    }
+
+    /**
+     * The set of all method names of the given types.
+     */
+    def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
+        objectTypes.map(classFile(_)).flatten.map(_.methods.map(_.name)).flatten.toSet
     }
 
     /**
@@ -538,7 +573,7 @@ class Project[Source] private (
 
     /**
      * Tests if the information identified by the given [[ProjectInformationKey]]
-     * is available. If the information is not available, the information
+     * is available. If the information is not (yet) available, the information
      * will not be computed and `None` will be returned.
      *
      * @see [[ProjectInformationKey]] for further information.
@@ -552,6 +587,15 @@ class Project[Source] private (
             None
     }
 
+    // ----------------------------------------------------------------------------------
+    //
+    // FINALIZATION
+    //
+    // ----------------------------------------------------------------------------------
+
+    /**
+     * Unregisters this project from the OPALLogger and then calls `super.finalize`.
+     */
     override protected def finalize(): Unit = {
         OPALLogger.debug("project", "finalized ("+logContext+")")
         OPALLogger.unregister(logContext)
