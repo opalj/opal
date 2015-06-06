@@ -234,7 +234,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} with method call execution aborted "+
                             s"after ${ai0.currentEvaluationCount} steps "+
                             s"(code size: ${method.body.get.instructions.length})"
-                    // let's try it again, but without performing method calls
+                    // let's try it again, but without performing method calls;
                     // let's reuse the current state
                     val fallbackAnalysisDomain =
                         new FallbackBugPickerAnalysisDomain(
