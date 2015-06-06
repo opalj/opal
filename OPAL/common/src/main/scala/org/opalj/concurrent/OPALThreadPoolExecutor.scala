@@ -50,7 +50,7 @@ import java.util.concurrent.CancellationException
 
 /**
  * A ThreadPool that knows the ThreadGroup associated with its threads and that
- * catches exceptions if a thread crashes.
+ * catches exceptions if a thread crashes and reports them using the OPALLogger facility.
  *
  * @author Michael Eichberg
  */
