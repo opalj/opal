@@ -98,8 +98,8 @@ object MutablityAnalysis {
 
         val classFile = entity.asInstanceOf[ClassFile]
         val thisType = classFile.thisType
-
-        val psnfFields = classFile.fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
+        val fields = classFile.fields
+        val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
         var effectivelyFinalFields = psnfFields
         if (psnfFields.isEmpty)
             return Empty;
@@ -116,7 +116,10 @@ object MutablityAnalysis {
                         // fields so far... so we don't have to do a full
                         // resolution of the field reference.
                         classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
-                    case _ ⇒ /*Nothing to do*/
+                        if (effectivelyFinalFields.isEmpty)
+                            return OneStepMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
+                    case _ ⇒
+                    /*Nothing to do*/
                 }
             }
         }

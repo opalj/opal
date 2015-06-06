@@ -28,6 +28,9 @@
  */
 package org.opalj.fp
 
+/**
+ * A pairing of an entity and an associated property.
+ */
 final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property] {
 
     def _1 = e
@@ -49,6 +52,9 @@ final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property
     override def toString: String = s"EK($e,$p)"
 }
 
+/**
+ * Provides a factory and an extractor for EP objects.
+ */
 object EP {
 
     def apply(e: Entity, p: Property): EP = new EP(e, p)

@@ -43,11 +43,6 @@ private[fp] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
     /**
      * The entity and property key for which the property of the observed element
      * is necessary.
-     *
-     * @return The return value should be [[None]] if the property of the dependee
-     *      is not strictly required by the depender. This is usually the case
-     *      for algorithms that may use some available information, but does not
-     *      strictly require it.
      */
     def depender: EPK
 

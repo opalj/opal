@@ -28,14 +28,18 @@
  */
 package org.opalj.fp
 
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ExecutorCompletionService
-import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.{ IdentityHashMap ⇒ JIDMap }
 import java.util.{ Set ⇒ JSet }
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ExecutorCompletionService
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.{ ConcurrentHashMap ⇒ JCHMap }
 import scala.collection.mutable.{ HashSet ⇒ HSet }
 import scala.collection.mutable.{ HashMap ⇒ HMap }
 import scala.collection.mutable.{ ListBuffer ⇒ Buffer }
+import scala.collection.mutable.StringBuilder
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutorService
 import org.opalj.concurrent.Locking
@@ -47,9 +51,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
 import org.opalj.br.analyses.AnalysisException
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.RejectedExecutionException
-import scala.collection.mutable.StringBuilder
+import org.opalj.collection.mutable.ArrayMap
+import java.util.concurrent.locks.ReentrantLock
+import scala.collection.mutable.ListBuffer
 
 /**
  * The central store which manages the execution of all
@@ -108,6 +112,10 @@ class PropertyStore private (
     @inline private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(storeLock)(f)
     @inline private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(storeLock)(f)
 
+    // The list of observers used by the entity to compute the property p (EP).
+    // Mapping between a Depender and its Observers!
+    private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+
     /**
      * The set of all stored elements.
      *
@@ -138,10 +146,10 @@ class PropertyStore private (
     def apply(e: Entity, pk: PropertyKey): Option[Property] = {
         accessEntity {
             val (lock, properties) = data.get(e)
-            withReadLock(lock) { properties.get(pk) }
+            withReadLock(lock) { properties(pk.id) }
         } match {
-            case None | Some((null, _))             ⇒ None
-            case Some((property, _ /*observers*/ )) ⇒ Some(property)
+            case null                         ⇒ None
+            case (property, _ /*observers*/ ) ⇒ Option(property)
         }
     }
 
@@ -178,12 +186,12 @@ class PropertyStore private (
         val valuesWithProperty =
             data.entrySet() filter { v ⇒
                 val (_ /*lock*/ , properties) = v.getValue()
-                properties.get(pk) match {
-                    case Some((null, _)) | None ⇒ false
-                    case _                      ⇒ true
+                properties(pk.id) match {
+                    case null | (null, _) ⇒ false
+                    case _                ⇒ true
                 }
             }
-        valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(pk)._1) }
+        valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(pk.id)._1) }
     }
 
     /**
@@ -220,6 +228,24 @@ class PropertyStore private (
     }
 
     /**
+     * Registers a function that calculates a property for those elements
+     * of the store that pass the filter and which are sorted by the given function `s`.
+     * The given function `s`
+     *
+     * @param pf A filter that selects those entities that are relevant to the analysis.
+     *      For which the analysis may compute some property.
+     * @param s A ordering defined on the selected entities.
+     */
+    def <|~<[E <: Entity](
+        pf: PartialFunction[Entity, E],
+        s: Ordering[E],
+        c: E ⇒ PropertyComputationResult): Unit = {
+        import scala.collection.JavaConverters._
+        val es = keys.iterator().asScala.collect(pf).toSeq.sorted(s)
+        bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
+    }
+
+    /**
      * Can be called by a client to await the completion of the computation of all
      * properties of all previously registered property computation functions.
      *
@@ -240,8 +266,8 @@ class PropertyStore private (
         val it = data.entrySet().iterator()
         while (it.hasNext()) {
             val entry = it.next()
-            val ps = entry.getValue._2.map { pkpos ⇒
-                val (pk, (p, os)) = pkpos
+            val ps = entry.getValue._2.map { (pk, pos) ⇒
+                val (p, os) = pos
                 (
                     if (p eq null) {
                         unsatisfiedPropertyDependencies += 1
@@ -284,7 +310,7 @@ class PropertyStore private (
     private[this] final val threadPool = ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks, 2))
 
     /**
-     * General information about the tasks that are executed.
+     * General handling of the tasks that are executed.
      */
     private[this] object Tasks {
 
@@ -360,6 +386,13 @@ class PropertyStore private (
             scheduled -= tasksCount
         }
 
+        private[this] def registeredObservers: Int = {
+            import scala.collection.JavaConverters._
+            val ps = data.values().asScala.map(_._2)
+            val poss = ps.map(_.values).flatten
+            poss.map(pos ⇒ if (pos._2 eq null) 0 else pos._2.filter(_ ne null).size).sum
+        }
+
         def taskCompleted() = synchronized {
             assert(scheduled > 0)
             scheduled -= 1
@@ -386,13 +419,13 @@ class PropertyStore private (
                             t)
                         interrupt()
                         notifyAll()
-                        throw t
                 }
 
                 if (scheduled == 0 /*scheduled is still === 0*/ ) {
                     OPALLogger.debug(
                         "analysis progress",
-                        s"computation of all properties finished")
+                        "computation of all properties finished"+
+                            s" (remaining computations: $registeredObservers)")
                     notifyAll()
                 } else {
                     OPALLogger.debug(
@@ -402,36 +435,41 @@ class PropertyStore private (
             }
         }
 
-        // Handle open computations supports both cases:
+        // THIS METHOD REQUIRES EXCLUSIVE ACCESS TO THE STORE!
+        // Handle unsatisfied dependencies supports both cases:
         //  1. computations that are part of a cyclic computation dependency
         //  1. computations that depend on knowledge related to a specific kind of
         //     property that was not computed (final lack of knowledge)
         private[this] def handleUnsatisfiedDependencies(): Unit = {
 
-            println(store.toString)
+            //println(store.toString)
 
+            // The set of entity/property key pairs which may be refined if a dependee
+            // is refined
             val openComputations = HSet.empty[EPK]
+
+            // The set of entity/property key pairs that have observers.
             val unsatisfiedDependencies = HSet.empty[EPK]
 
             import scala.collection.JavaConversions._
             for {
                 entry ← data.entrySet()
                 e = entry.getKey()
-                ps = entry.getValue()._2
-                (pk, (p, os)) ← ps
+                ps = entry.getValue()._2.entries
+                (pk, (_ /*p*/ , os)) ← ps
                 if os ne null
                 o ← os
                 // we have an entity with unsatisfied dependencies
             } {
                 openComputations += o.depender
-                unsatisfiedDependencies += EPK(e, pk)
+                unsatisfiedDependencies += EPK(e, new PropertyKey(pk))
             }
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             for {
                 EPK(e, pk) ← unsatisfiedDependencies -- openComputations
             } {
-                val defaultP = PropertyKey.defaultProperty(pk)
+                val defaultP = PropertyKey.defaultProperty(pk.id)
                 OPALLogger.debug(
                     "analysis progress",
                     s"associated default property $defaultP with $e")
@@ -570,6 +608,26 @@ class PropertyStore private (
     }
 
     /**
+     * Schedules the continuation w.r.t. the entity `e`.
+     */
+    private[this] def scheduleContinuation(
+        dependeeE: Entity,
+        dependeeP: Property,
+        c: Continuation): Unit = {
+        scheduleTask(new Runnable {
+            def run() = {
+                try {
+                    handleResult(c(dependeeE, dependeeP))
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        })
+    }
+
+    /**
      * Schedules the computation of a property w.r.t. the entity `e`.
      */
     private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
@@ -609,26 +667,6 @@ class PropertyStore private (
             return ;
 
         scheduleTasks(tasks)
-    }
-
-    /**
-     * Schedules the continuation w.r.t. the entity `e`.
-     */
-    private[this] def scheduleContinuation(
-        dependeeE: Entity,
-        dependeeP: Property,
-        c: Continuation): Unit = {
-        scheduleTask(new Runnable {
-            def run() = {
-                try {
-                    handleResult(c(dependeeE, dependeeP))
-                } catch {
-                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
-                } finally {
-                    Tasks.taskCompleted()
-                }
-            }
-        })
     }
 
     //    private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
@@ -688,44 +726,26 @@ class PropertyStore private (
     }
 
     // Clears all observers that were registered with other entities to compute the
-    // respective property.
-    private[this] def clearObservers(e: Entity, pk: PropertyKey): Unit = {
-        val entitiesIterator = data.entrySet().iterator()
-        while (entitiesIterator.hasNext()) {
-            val (lock, properties) = entitiesIterator.next().getValue()
-            val osOption = withReadLock(lock) { properties.get(pk).map(_._2) }
-            if (osOption.isDefined && (osOption.get ne null)) {
-                osOption.get.find { po ⇒
-                    val depender = po.depender
-                    (depender.e eq e) && (depender.pk == pk)
-                } match {
-                    case Some(o) ⇒ withWriteLock(lock) { properties.get(pk).get._2 -= o }
-                    case None    ⇒ // nothing to do
+    // respective property of the given entity.
+    // This method handles the situation where the computation of a property
+    // potentially depended on some other entities and we now have a final result
+    // and now need to cleanup the registered observers.
+    private[this] def clearAllObservers(dependerE: Entity, dependerPK: PropertyKey): Unit = {
+        // observers : JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+        val dependerEPK = EPK(dependerE, dependerPK)
+        val dependerOs = observers.get(dependerEPK)
+        if (dependerOs ne null) {
+            dependerOs foreach { epkos ⇒
+                val (dependeeEPK, dependerO) = epkos
+                val (lock, dependeePs) = data.get(dependeeEPK.e)
+                withWriteLock(lock) {
+                    val dependeeOs = dependeePs(dependeeEPK.pk.id)._2
+                    if (dependeeOs ne null)
+                        dependeeOs -= dependerO
                 }
             }
 
-            //            val removeableO =
-            //                withReadLock(lock) {
-            //                    properties.get(pk).flatMap(pos ⇒ {
-            //                        val os = pos._2
-            //                        if (os ne null) {
-            //                            os.find { po ⇒
-            //                                val EPK(observerE, observerPK) = po.depender
-            //                                (observerE eq e) && (observerPK == pk)
-            //                            }
-            //                        } else {
-            //                            None
-            //                        }
-            //                    })
-            //                }
-            //            if (removeableO.isDefined) {
-            //                withWriteLock(lock) {
-            //                    properties.get(pk) foreach { pos ⇒
-            //                        val os = pos._2
-            //                        os -= removeableO.get
-            //                    }
-            //                }
-            //            }
+            observers.remove(dependerEPK)
         }
     }
 
@@ -743,35 +763,64 @@ class PropertyStore private (
         val (lock, properties) = data.get(e)
         val pk = p.key
 
-        if (updateType == /*just*/ FinalUpdate) {
-            clearObservers(e, pk)
-        }
-        var callObservers = true
-        val observers = withWriteLock(lock) {
-            properties.get(pk) match {
-                case Some((oldP, os)) ⇒
+        var obsoleteOs: List[PropertyObserver] = Nil
+        val os = withWriteLock(lock) {
+            properties(pk.id) match {
+                case null ⇒
+                    // No one was interested in this property so far...
+                    val os = Buffer.empty[PropertyObserver]
+                    properties(p.key.id) = (p, os)
+                    return ;
+
+                case (oldP, os) ⇒
                     assert(
                         oldP != p,
                         s"$e: the old ($oldP) and the new property ($p) are identical")
-                    if (updateType == IntermediateUpdate) {
-                        val newOs = os.filterNot(o ⇒ o.removeAfterNotification)
-                        properties.put(p.key, (p, newOs))
-                        os
-                    } else {
-                        // All entities that observe this value are
-                        // informed and then the observers are removed.
-                        properties.put(p.key, (p, null /*The list of observers is no longer required!*/ ))
-                        os
-                    }
 
-                case None ⇒
-                    val os = Buffer.empty[PropertyObserver]
-                    callObservers = false
-                    properties.put(p.key, (p, os))
+                    updateType match {
+
+                        case OneStepFinalUpdate ⇒
+                            // The computation did not create any (still living) dependencies!
+                            properties(pk.id) = (p, null /*The list of observers is no longer required!*/ )
+
+                        case FinalUpdate ⇒
+                            // We still may observe other entities... we have to clear
+                            // these dependencies.
+                            clearAllObservers(e, pk)
+                            properties(pk.id) = (p, null /*The list of observers is no longer required!*/ )
+
+                        case IntermediateUpdate ⇒
+                            // We still continue observing all other entities;
+                            // hence, we only need to clear our one-time observers.
+                            val newOs = os.filterNot { o ⇒
+                                if (o.removeAfterNotification) {
+                                    obsoleteOs = o :: obsoleteOs
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            properties(p.key.id) = (p, newOs)
+                    }
                     os
             }
         }
-        if (callObservers) observers foreach { o ⇒ o(e, p) }
+        // ... non-exclusive access
+        if (obsoleteOs.nonEmpty) {
+            val dependeeEPK = EPK(e, pk)
+            obsoleteOs foreach { o ⇒
+                val depender = o.depender
+                val (lock, _) = store.data.get(depender.e)
+                withWriteLock(lock) {
+                    val dependerOs = store.observers.get(depender)
+                    // TODO Is this thread-safe?
+                    if (dependerOs ne null) {
+                        dependerOs -= ((dependeeEPK, o))
+                    }
+                }
+            }
+        }
+        os foreach { o ⇒ o(e, p) }
     }
     //
     //    /**
@@ -816,46 +865,51 @@ class PropertyStore private (
 
             case Result(e, p)        ⇒ update(e, p, FinalUpdate)
 
-            case MultiResult(results) ⇒
-                results foreach { ep ⇒ val (e, p) = ep; update(e, p, FinalUpdate) }
-
             case OneStepMultiResult(results) ⇒
                 results foreach { ep ⇒ val (e, p) = ep; update(e, p, OneStepFinalUpdate) }
 
+            case MultiResult(results) ⇒
+                results foreach { ep ⇒ val (e, p) = ep; update(e, p, FinalUpdate) }
+
             case IntermediateResult(e, p, dependees: Traversable[EP], c) ⇒
+                val dependerEPK = EPK(e, p.key)
                 dependees foreach { ep ⇒
 
                     val dependeeE = ep.e
                     val dependeeP = ep.p
-                    val dependeePK = dependeeP.key
+                    val dependeePK = dependeeP.key.id
+                    val dependeeEPK = EPK(dependeeE, dependeeP.key)
+                    val (dependeeLock, properties) = data.get(dependeeE)
 
-                    def createObserver() = {
-                        new DefaultPropertyObserver(EPK(e, p.key), false) {
+                    val o = {
+                        new DefaultPropertyObserver(dependerEPK, false) {
                             def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                                 scheduleContinuation(dependeeE, dependeeP, c)
                             }
                         }
                     }
 
-                    val (lock, properties) = data.get(dependeeE)
-                    withWriteLock(lock) {
-                        properties.get(dependeePK) match {
-                            case None ⇒
-                                properties.put(dependeePK, (null, Buffer(createObserver())))
-                            case Some((null, os)) ⇒
-                                os += createObserver()
-                            case Some((`p`, os)) ⇒
-                                os += createObserver()
-                            case Some((dependeeNewP, os)) ⇒
-                                os += createObserver()
+                    withWriteLock(dependeeLock) {
+                        properties(dependeePK) match {
+                            case null       ⇒ properties(dependeePK) = (null, Buffer(o))
+                            case (null, os) ⇒ os += o
+                            case (`p`, os)  ⇒ os += o
+                            case (dependeeNewP, os) ⇒
+                                os += o
                                 scheduleContinuation(dependeeE, dependeeNewP, c)
                         }
                     }
+                    val (dependerLock, _) = data.get(e)
+                    withWriteLock(dependerLock) {
+                        var buffer = observers.get(dependerEPK)
+                        if (buffer eq null) {
+                            buffer = ListBuffer.empty
+                            observers.put(dependerEPK, buffer)
+                        }
+                        buffer += ((dependeeEPK, o))
+                    }
                 }
                 update(e, p, IntermediateUpdate)
-
-            //            case IntermediateResult(results) ⇒
-            //                results foreach { result ⇒ val (e, p) = result; update(e, p, false) }
 
             //            case result @ RefineableResult(results, dependingEntities) ⇒
             //                // 1) Store the results
@@ -876,7 +930,7 @@ class PropertyStore private (
             //                    handleDependency(e, pk, pOption, o)
             //                }
 
-            case suspended @ Suspended(dependerE, dependerPK, requiredE, requiredPK) ⇒
+            case suspended @ Suspended(dependerE, dependerPK, dependeeE, dependeePK) ⇒
 
                 // CONCEPT
                 // First, let's get the property, then...
@@ -886,7 +940,7 @@ class PropertyStore private (
                 //    observer that will schedule the computation when the
                 //    property was computed.
 
-                def createPropertyObserver =
+                def createPropertyObserver(): PropertyObserver =
                     new DefaultPropertyObserver(EPK(dependerE, dependerPK), true) {
                         def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                             val pc = (e: AnyRef) ⇒ suspended.continue(dependeeE, dependeeP)
@@ -894,22 +948,23 @@ class PropertyStore private (
                         }
                     }
 
-                val (lock, properties) = data.get(requiredE)
+                val (lock, properties) = data.get(dependeeE)
                 val pc = withWriteLock(lock) {
-                    properties.get(requiredPK) match {
-                        case Some((requiredP, observers)) ⇒
-                            if (requiredP eq null) {
+                    properties(dependeePK.id) match {
+                        case null ⇒
+                            // this computation is the first who is interested in the property
+                            properties(dependeePK.id) = (null, Buffer(createPropertyObserver()))
+                            null
+
+                        case (dependeeP, observers) ⇒
+                            if (dependeeP eq null) {
                                 // we have other computations that are also waiting...
-                                observers += createPropertyObserver
+                                observers += createPropertyObserver()
                                 null
                             } else {
                                 // the property was computed in the meantime
-                                (e: AnyRef) ⇒ suspended.continue(requiredE, requiredP)
+                                (e: AnyRef) ⇒ suspended.continue(dependeeE, dependeeP)
                             }
-                        case _ ⇒
-                            // this computation is the first who is interested in the property
-                            properties.put(requiredPK, (null, Buffer(createPropertyObserver)))
-                            null
                     }
                 }
                 if (pc ne null) {
@@ -932,7 +987,7 @@ object PropertyStore {
         val entitiesCount = entities.size
         val map = new JIDMap[Entity, PropertyStoreValue](entitiesCount)
 
-        entities.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, HMap.empty)) }
+        entities.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, ArrayMap.empty)) }
 
         new PropertyStore(map, isInterrupted)
     }

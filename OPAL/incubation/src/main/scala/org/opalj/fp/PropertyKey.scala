@@ -39,9 +39,9 @@ import org.opalj.concurrent.Locking
  *
  * @author Michael Eichberg
  */
-class PropertyKey private ( final val id: Int) extends AnyVal {
+class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
 
-    override def toString: String = s"PropertyKey(${PropertyKey.name(this)},id=$id)"
+    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
 }
 
 /**
@@ -63,14 +63,14 @@ object PropertyKey extends Locking {
             new PropertyKey(lastKeyId)
         }
 
-    def name(key: PropertyKey): String =
+    def name(id: Int): String =
         withReadLock {
-            propertyKeyNames(key.id)
+            propertyKeyNames(id)
         }
 
-    def defaultProperty(key: PropertyKey): Property =
+    def defaultProperty(id: Int): Property =
         withReadLock {
-            defaultProperties(key.id)
+            defaultProperties(id)
         }
 
 }

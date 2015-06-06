@@ -30,12 +30,12 @@ package org.opalj.fp
 package analyses
 
 import scala.language.postfixOps
-
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.Method
+import org.opalj.br.Field
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -64,11 +64,19 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         println("Starting Mutability Analysis")
         MutablityAnalysis.analyze(project)
 
+        // We immediately also schedule the purity analysis to improve the
+        // parallelization!
         println("Starting Purity Analysis")
         PurityAnalysis.analyze(project)
 
         println("Waiting on analyses to finish")
         projectStore.waitOnPropertyComputationCompletion()
+
+        val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.Key)
+        val effectivelyFinalFields: Traversable[(Field, Property)] =
+            effectivelyFinalEntities.map(e ⇒ (e._1.asInstanceOf[Field], e._2))
+        val effectivelyFinalFieldsAsStrings =
+            effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
         val pureEntities: Traversable[(AnyRef, Property)] = projectStore(Purity.Key)
         //            projectStore(Purity.Key).filter { ep ⇒
@@ -80,15 +88,19 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         val pureMethodsAsStrings =
             pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
 
-        BasicReport(
-            pureMethodsAsStrings.
-                toList.
-                sorted.
-                mkString(
-                    "\nPure methods:\n",
-                    "\n",
-                    s"\nTotal: ${pureMethods.size}\n$projectStore")
-        )
+        val fieldInfo =
+            effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
+                "\nMutability of private static non-final fields:\n",
+                "\n",
+                s"\nTotal: ${effectivelyFinalFields.size}\n")
+
+        val methodInfo =
+            pureMethodsAsStrings.toList.sorted.mkString(
+                "\nPure methods:\n",
+                "\n",
+                s"\nTotal: ${pureMethods.size}\n"
+            )
+        BasicReport(fieldInfo + methodInfo)
     }
 }
 
