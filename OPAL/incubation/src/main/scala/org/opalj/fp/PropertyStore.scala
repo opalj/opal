@@ -252,7 +252,9 @@ class PropertyStore private (
      * This function is only '''guaranteed''' to wait on the completion of the computation
      * of those properties that were registered by this thread.
      */
-    def waitOnPropertyComputationCompletion(): Unit = {
+    def waitOnPropertyComputationCompletion(
+        useDefaultForUnsatisfiableLinearDependencies: Boolean = true): Unit = {
+        this.useDefaultForUnsatisfiableLinearDependencies = useDefaultForUnsatisfiableLinearDependencies
         Tasks.waitOnCompletion()
     }
 
@@ -314,6 +316,8 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
+        @volatile var useDefaultForUnsatisfiableLinearDependencies: Boolean = false
+
         // ALL ACCESSES ARE SYNCHRONIZED
         private[this] var executed = 0
 
@@ -346,12 +350,13 @@ class PropertyStore private (
                 scheduled -= waitingTasks.size
             }
 
-            def collectGarbage(): Unit = {
+            def clearAllObservers(): Unit = {
 
                 threadPool.awaitTermination(5000l, TimeUnit.MILLISECONDS)
 
                 OPALLogger.debug("analysis progress", "garbage collecting property computations")
                 accessStore {
+                    observers.clear()
                     import scala.collection.JavaConversions._
                     for {
                         entry ← data.entrySet()
@@ -366,10 +371,10 @@ class PropertyStore private (
             // is not a thread belonging to the property store's thread pool or
             // in a new thread.
             if (threadPool.group == Thread.currentThread().getThreadGroup) {
-                val t = new Thread(new Runnable { def run(): Unit = collectGarbage() })
+                val t = new Thread(new Runnable { def run(): Unit = clearAllObservers() })
                 t.start()
             } else {
-                collectGarbage()
+                clearAllObservers()
             }
 
         }
@@ -439,7 +444,8 @@ class PropertyStore private (
         // Handle unsatisfied dependencies supports both cases:
         //  1. computations that are part of a cyclic computation dependency
         //  1. computations that depend on knowledge related to a specific kind of
-        //     property that was not computed (final lack of knowledge)
+        //     property that was not computed (final lack of knowledge) and for
+        //     which no computation exits.
         private[this] def handleUnsatisfiedDependencies(): Unit = {
 
             //println(store.toString)
@@ -466,14 +472,17 @@ class PropertyStore private (
             }
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
-            for {
-                EPK(e, pk) ← unsatisfiedDependencies -- openComputations
-            } {
-                val defaultP = PropertyKey.defaultProperty(pk.id)
-                OPALLogger.debug(
-                    "analysis progress",
-                    s"associated default property $defaultP with $e")
-                scheduleHandleResult(Result(e, defaultP))
+            // This is also the case if no respective analysis is registered so far.
+            if (useDefaultForUnsatisfiableLinearDependencies) {
+                for {
+                    EPK(e, pk) ← unsatisfiedDependencies -- openComputations
+                } {
+                    val defaultP = PropertyKey.defaultProperty(pk.id)
+                    OPALLogger.debug(
+                        "analysis progress",
+                        s"associated default property $defaultP with $e")
+                    scheduleHandleResult(Result(e, defaultP))
+                }
             }
 
             //            import scala.collection.JavaConversions._
@@ -588,6 +597,14 @@ class PropertyStore private (
         def waitOnCompletion() = synchronized {
             while (scheduled > 0) { wait }
         }
+    }
+
+    def useDefaultForUnsatisfiableLinearDependencies: Boolean = {
+        Tasks.useDefaultForUnsatisfiableLinearDependencies
+    }
+
+    def useDefaultForUnsatisfiableLinearDependencies_=(useDefault: Boolean): Unit = {
+        Tasks.useDefaultForUnsatisfiableLinearDependencies = useDefault
     }
 
     /**

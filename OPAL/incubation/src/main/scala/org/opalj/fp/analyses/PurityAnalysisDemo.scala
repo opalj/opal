@@ -70,7 +70,10 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         PurityAnalysis.analyze(project)
 
         println("Waiting on analyses to finish")
-        projectStore.waitOnPropertyComputationCompletion()
+        // We have scheduled all analyses that we are going to execute.
+        //        projectStore.useDefaultForUnsatisfiableLinearDependencies = true
+        //        projectStore.waitOnPropertyComputationCompletion()
+        projectStore.waitOnPropertyComputationCompletion(true)
 
         val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.Key)
         val effectivelyFinalFields: Traversable[(Field, Property)] =
