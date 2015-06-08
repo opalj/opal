@@ -279,6 +279,14 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
     }
 
+    def useDefaultForUnsatisfiableLinearDependencies: Boolean = {
+        Tasks.useDefaultForUnsatisfiableLinearDependencies
+    }
+
+    def useDefaultForUnsatisfiableLinearDependencies_=(useDefault: Boolean): Unit = {
+        Tasks.useDefaultForUnsatisfiableLinearDependencies = useDefault
+    }
+
     /**
      * Awaits the completion of the computation of all
      * properties of all previously registered property computation functions. I.e.,
@@ -642,14 +650,6 @@ class PropertyStore private (
         def waitOnCompletion() = synchronized {
             while (scheduled > 0) { wait }
         }
-    }
-
-    def useDefaultForUnsatisfiableLinearDependencies: Boolean = {
-        Tasks.useDefaultForUnsatisfiableLinearDependencies
-    }
-
-    def useDefaultForUnsatisfiableLinearDependencies_=(useDefault: Boolean): Unit = {
-        Tasks.useDefaultForUnsatisfiableLinearDependencies = useDefault
     }
 
     /**
