@@ -340,7 +340,8 @@ object PurityAnalysis {
                 bSize - aSize
             }
         }
-        projectStore <|~< (entitySelector, methodOrdering, determinePurity)
+        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
+
     }
 }
 
