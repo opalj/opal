@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
+package org.opalj
+package br
 package analyses
+package fp
 
 import scala.language.postfixOps
 import java.net.URL
-import org.opalj.br.Method
-import org.opalj.br.Field
-import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
@@ -65,14 +64,17 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.PC
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.ClassFile
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.EP
+import org.opalj.fp.Unchanged
+import org.opalj.fp.Impossible
+import org.opalj.fp.Continuation
+import org.opalj.fp.Result
+import org.opalj.fp.OneStepResult
+import org.opalj.fp.IntermediateResult
+import org.opalj.fp.SourceElementsPropertyStoreKey
 
 /**
  * Common supertrait of all purity properties.
@@ -140,9 +142,9 @@ case object Impure extends Purity
  */
 object PurityAnalysis {
 
-    final val Purity = org.opalj.fp.analyses.Purity.Key
+    final val Purity = org.opalj.br.analyses.fp.Purity.Key
 
-    final val Mutability = org.opalj.fp.analyses.Mutability.Key
+    final val Mutability = org.opalj.br.analyses.fp.Mutability.Key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
