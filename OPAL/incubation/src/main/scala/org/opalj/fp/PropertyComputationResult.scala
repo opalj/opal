@@ -42,28 +42,71 @@ sealed trait PropertyComputationResult
 case object NoResult extends PropertyComputationResult
 
 /**
- * Encapsulates the '''final results''' of the computation of the property.
+ * Encapsulates the '''final results''' of the computation of a set of properties.
  *
- * A [[MultiResult]] is only to be used if no further refinement is possible or may happen. The
- * framework will then invoke and deregister all observers (garbage collection).
+ * A [[MultiResult]] is only to be used if no further refinement is possible
+ * or may happen. The framework will then invoke and deregister all
+ * dependent computations (observers).
  */
 case class MultiResult(
     properties: Traversable[(Entity, Property)])
         extends PropertyComputationResult
 
 /**
+ * Encapsulates the '''final results''' of the computation of a set of properties that
+ * required no intermediate steps.
+ *
+ * A [[OneStepMultiResult]] is only to be used if no further refinement is possible
+ * or may happen. The framework will then invoke and deregister all
+ * dependent computations (observers).
+ */
+case class OneStepMultiResult(
+    properties: Traversable[(Entity, Property)])
+        extends PropertyComputationResult
+
+/**
  * Encapsulates the '''final result''' of the computation of the property.
  *
- * A [[Result]] is only to be used if no further refinement is possible or may happen. The
- * framework will then invoke and deregister all observers (garbage collection).
+ * A [[Result]] is only to be used if no further refinement is possible
+ * or may happen. The framework will then invoke and deregister all
+ * dependent computations (observers).
  */
 case class Result(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
- * Encapsulates an intermediate result of the computation of the property.
+ * Encapsulates the '''final result''' of a computation of a property that '''required
+ * no intermediate results'''.
  *
- * Intermediate results are to be used if further refinements are possible or may happen.
- * All current observer remain registered and will be informed in the future.
+ * A [[OneStepResult]] is only to be used if no further refinement is possible
+ * or may happen. The framework will then invoke and deregister all
+ * dependent computations (observers).
+ */
+case class OneStepResult(e: Entity, p: Property) extends PropertyComputationResult
+
+/**
+ * Factory for [[Result]] and [[OneStepResult]] objects.
+ */
+object Result {
+
+    def apply(e: Entity, p: Property, oneStep: Boolean): PropertyComputationResult = {
+        if (oneStep)
+            new OneStepResult(e, p)
+        else
+            new Result(e, p)
+    }
+}
+
+/**
+ * Encapsulates an intermediate result of the computation of a property.
+ *
+ * Intermediate results are to be used if further refinements are possible and may happen.
+ * All current computations
+ * depending on the given entry's property remain registered and will be invoked in the future
+ * if another `IntermediateResult` or `Result` is computed.
+ * Furthermore, if a property of any of the dependees changes, the given given
+ * continuation `c` is invoked.
+ * (This requires that the given continuation is thread-safe! In most cases the easiest
+ * and correct solution is to just wrap it in a synchronized block.)
  */
 case class IntermediateResult(
     e: Entity, p: Property,

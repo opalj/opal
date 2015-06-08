@@ -30,12 +30,12 @@ package org.opalj.fp
 package analyses
 
 import scala.language.postfixOps
-
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.Method
+import org.opalj.br.Field
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -57,18 +57,43 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
+        // RECOMMENDED
         // The purity analysis requires information about the actual mutability
         // of private static non-final fields. Hence, we have to schedule the
         // respective analysis. (Technically, it would be possible to schedule
         // it afterwards, but that doesn't make sense.)
+        //        println("Starting Mutability Analysis")
+        //        MutablityAnalysis.analyze(project)
+
+        // We immediately also schedule the purity analysis to improve the
+        // parallelization!
+        //        println("Starting Purity Analysis")
+        //        PurityAnalysis.analyze(project)
+
+        // ALTERNATIVE APPROACH
+        // (This approach is if the filtering and sorting functions are complex as
+        // both operations are carried out in the calling thread's context.)
+        println("Starting Purity Analysis")
+        val pat = new Thread(new Runnable { def run = PurityAnalysis.analyze(project) });
+        pat.start
         println("Starting Mutability Analysis")
         MutablityAnalysis.analyze(project)
-
-        println("Starting Purity Analysis")
-        PurityAnalysis.analyze(project)
+        // Let's make sure that everything is scheduled.
+        pat.join
 
         println("Waiting on analyses to finish")
-        projectStore.waitOnPropertyComputationCompletion()
+        // We have scheduled all analyses that we are going to execute.
+        // DETAILS
+        // projectStore.useDefaultForUnsatisfiableLinearDependencies = true
+        // projectStore.waitOnPropertyComputationCompletion()
+        // ABBREVIATED
+        projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+
+        val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.Key)
+        val effectivelyFinalFields: Traversable[(Field, Property)] =
+            effectivelyFinalEntities.map(e ⇒ (e._1.asInstanceOf[Field], e._2))
+        val effectivelyFinalFieldsAsStrings =
+            effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
         val pureEntities: Traversable[(AnyRef, Property)] = projectStore(Purity.Key)
         //            projectStore(Purity.Key).filter { ep ⇒
@@ -80,15 +105,19 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         val pureMethodsAsStrings =
             pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
 
-        BasicReport(
-            pureMethodsAsStrings.
-                toList.
-                sorted.
-                mkString(
-                    "\nPure methods:\n",
-                    "\n",
-                    s"\nTotal: ${pureMethods.size}\n$projectStore")
-        )
+        val fieldInfo =
+            effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
+                "\nMutability of private static non-final fields:\n",
+                "\n",
+                s"\nTotal: ${effectivelyFinalFields.size}\n")
+
+        val methodInfo =
+            pureMethodsAsStrings.toList.sorted.mkString(
+                "\nPure methods:\n",
+                "\n",
+                s"\nTotal: ${pureMethods.size}\n"
+            )
+        BasicReport(fieldInfo + methodInfo + projectStore)
     }
 }
 

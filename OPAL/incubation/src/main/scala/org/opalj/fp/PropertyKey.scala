@@ -28,33 +28,50 @@
  */
 package org.opalj.fp
 
-final class EPK(val e: Entity, val pk: PropertyKey) extends Product2[Entity, PropertyKey] {
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.concurrent.Locking
 
-    def _1 = e
-    def _2 = pk
+/**
+ * An object that identifies a specific kind of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ *
+ * To create a property key use the companion object's [[PropertyKey$.next]] method.
+ *
+ * @author Michael Eichberg
+ */
+class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
-            case _         ⇒ false
+    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+}
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey extends Locking {
+
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] var lastKeyId: Int = -1
+
+    def create(name: String, defaultProperty: Property): PropertyKey =
+        withWriteLock {
+            lastKeyId += 1
+            propertyKeyNames += name
+            defaultProperties += defaultProperty
+            new PropertyKey(lastKeyId)
         }
-    }
 
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
+    def name(id: Int): String =
+        withReadLock {
+            propertyKeyNames(id)
+        }
 
-    override def hashCode: Int = e.hashCode() * 511 + pk.id
+    def defaultProperty(id: Int): Property =
+        withReadLock {
+            defaultProperties(id)
+        }
 
-    override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
 }
 
-object EPK {
-
-    def apply(e: Entity, pk: PropertyKey): EPK = new EPK(e, pk)
-
-    def unapply(epk: EPK): Option[(Entity, PropertyKey)] = {
-        if (epk eq null)
-            None
-        else
-            Some((epk.e, epk.pk))
-    }
-}

@@ -29,6 +29,7 @@
 package org.opalj
 
 import scala.collection.mutable
+import org.opalj.collection.mutable.{ ArrayMap ⇒ OArrayMap }
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
@@ -81,15 +82,22 @@ package object fp {
      * A computation of a property that was restarted (under different properties)
      * yielded the same result.
      *
-     * @note This is just an alias of NoResult.
+     * @note This is just an alias for [[NoResult]].
      */
     final val Unchanged: NoResult.type = NoResult
 
     /**
      * Computing a property for the a specific element is not/never possible.
+     *
+     * @note This is just an alias for [[NoResult]].
      */
     final val Impossible: NoResult.type = NoResult
 
+    /**
+     * The computation has no results (and there will be no results in the future!).
+     *
+     * @note This is just an alias for [[NoResult]].
+     */
     final val Empty: NoResult.type = NoResult
 
     //
@@ -114,7 +122,7 @@ package object fp {
      * The underlying assumption is that not every property key is actually associated
      * with a property value for each element.
      */
-    private[fp]type Properties = mutable.HashMap[PropertyKey, (Property, Observers)]
+    private[fp]type Properties = OArrayMap[(Property, Observers)]
 
     /**
      * The type of the value associated with each entity (key) found in the store.
