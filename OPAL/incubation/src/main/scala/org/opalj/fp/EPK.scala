@@ -42,7 +42,7 @@ final class EPK(val e: Entity, val pk: PropertyKey) extends Product2[Entity, Pro
 
     override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
 
-    override def hashCode: Int = e.hashCode() * 511 + pk.id
+    override val hashCode: Int = e.hashCode() * 511 + pk.id
 
     override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
 }
