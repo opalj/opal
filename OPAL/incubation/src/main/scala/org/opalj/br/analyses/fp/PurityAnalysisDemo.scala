@@ -38,7 +38,6 @@ import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.Method
 import org.opalj.br.Field
-import org.opalj.fp.SourceElementsPropertyStoreKey
 import org.opalj.fp.Property
 
 /**
