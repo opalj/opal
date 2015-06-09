@@ -66,10 +66,9 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.fp.SourceElementsPropertyStoreKey
 import org.opalj.fp.Empty
 import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
-import org.opalj.fp.OneStepMultiResult
+import org.opalj.fp.ImmediateMultiResult
 
 sealed trait Mutability extends Property {
     final def key = Mutability.Key // All instances have to share the SAME key!
@@ -114,7 +113,7 @@ object MutablityAnalysis {
                         // resolution of the field reference.
                         classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
                         if (effectivelyFinalFields.isEmpty)
-                            return OneStepMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
+                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
                     case _ ⇒
                     /*Nothing to do*/
                 }
@@ -127,7 +126,7 @@ object MutablityAnalysis {
             else
                 (f, NonFinal)
         }
-        OneStepMultiResult(results)
+        ImmediateMultiResult(results)
     }
 
     def analyze(implicit project: Project[URL]): Unit = {
