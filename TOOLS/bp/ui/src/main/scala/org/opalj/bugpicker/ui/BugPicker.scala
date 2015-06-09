@@ -78,6 +78,7 @@ import scalafx.event.ActionEvent
 import scalafx.geometry.Orientation
 import scalafx.geometry.Rectangle2D
 import scalafx.scene.Scene
+import scalafx.scene.control.Label
 import scalafx.scene.control.Menu
 import scalafx.scene.control.MenuBar
 import scalafx.scene.control.MenuItem
@@ -191,6 +192,7 @@ class BugPicker extends Application {
                     categoryColumn,
                     messageColumn)
                 editable = false
+                placeholder = Label("")
             }
             timestampColumn.prefWidthProperty().bind(
                 logMessagesTableView.widthProperty().multiply(0.17))
@@ -321,21 +323,23 @@ class BugPicker extends Application {
             accelerator = KeyCombination("Shortcut+S")
             disable = true
             onAction = { e: ActionEvent ⇒
-                val name = recentProjects.head.projectName
-                val fsd = new FileChooser {
-                    title = "Save Analysis"
-                    extensionFilters ++= Seq(
-                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
-                        new FileChooser.ExtensionFilter("All Files", "*.*"))
-                    initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
-                    initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
-                }
-                val file = fsd.showSaveDialog(stage)
-                if (file != null) {
-                    BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
-                    recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
-                    recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
-                    recentAnalysisToDiffMenu.disable = false
+                Platform.runLater {
+                    val name = recentProjects.head.projectName
+                    val fsd = new FileChooser {
+                        title = "Save Analysis"
+                        extensionFilters ++= Seq(
+                            new FileChooser.ExtensionFilter("Bugpicker Analysis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                            new FileChooser.ExtensionFilter("All Files", "*.*"))
+                        initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                        initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
+                    }
+                    val file = fsd.showSaveDialog(stage)
+                    if (file != null) {
+                        BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
+                        recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
+                        recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
+                        recentAnalysisToDiffMenu.disable = false
+                    }
                 }
             }
         }
@@ -418,14 +422,22 @@ class BugPicker extends Application {
                                 text = "_New Project"
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+N")
-                                onAction = { e: ActionEvent ⇒ loadProjectAction() }
+                                onAction = { e: ActionEvent ⇒
+                                    Platform.runLater {
+                                        loadProjectAction()
+                                    }
+                                }
                             },
                             recentProjectsMenu,
                             new MenuItem {
                                 text = "Project _Info"
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+I")
-                                onAction = { e: ActionEvent ⇒ ProjectInfoDialog.show(stage, project, sources) }
+                                onAction = { e: ActionEvent ⇒
+                                    Platform.runLater {
+                                        ProjectInfoDialog.show(stage, project, sources)
+                                    }
+                                }
                             },
                             new SeparatorMenuItem,
                             new MenuItem {
@@ -444,22 +456,24 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+R")
                                 onAction = { e: ActionEvent ⇒
-                                    val parameters = BugPicker.loadParametersFromPreferences()
-                                    storeCurrentAnalysis.disable = true
-                                    val issues = ObjectProperty(Iterable.empty[Issue])
-                                    issues.onChange((o, p, q) ⇒ {
-                                        currentAnalysis = issues().map(_.asXHTML(false))
-                                        if (currentAnalysis != null) {
-                                            storeCurrentAnalysis.disable = false
-                                            loadAnalysisToDiff.disable = false
-                                            if (!recentAnalysisToDiffMenu.items.isEmpty)
-                                                recentAnalysisToDiffMenu.disable = false
+                                    Platform.runLater {
+                                        val parameters = BugPicker.loadParametersFromPreferences()
+                                        storeCurrentAnalysis.disable = true
+                                        val issues = ObjectProperty(Iterable.empty[Issue])
+                                        issues.onChange((o, p, q) ⇒ {
+                                            currentAnalysis = issues().map(_.asXHTML(false))
+                                            if (currentAnalysis != null) {
+                                                storeCurrentAnalysis.disable = false
+                                                loadAnalysisToDiff.disable = false
+                                                if (!recentAnalysisToDiffMenu.items.isEmpty)
+                                                    recentAnalysisToDiffMenu.disable = false
+                                            }
+                                        })
+                                        AnalysisRunner.runAnalysis(stage, project, sources, parameters,
+                                            issues, sourceView, byteView, reportView, tabPane)
+                                        if (!tabPane.selectionModel().isSelected(1)) {
+                                            tabPane.selectionModel().select(1)
                                         }
-                                    })
-                                    AnalysisRunner.runAnalysis(stage, project, sources, parameters,
-                                        issues, sourceView, byteView, reportView, tabPane)
-                                    if (!tabPane.selectionModel().isSelected(1)) {
-                                        tabPane.selectionModel().select(1)
                                     }
                                 }
                             },
@@ -468,11 +482,13 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+P")
                                 onAction = { e: ActionEvent ⇒
-                                    val parameters = BugPicker.loadParametersFromPreferences
-                                    val dialog = new AnalysisParametersDialog(stage)
-                                    val newParameters = dialog.show(parameters)
-                                    if (newParameters.isDefined) {
-                                        BugPicker.storeParametersToPreferences(newParameters.get)
+                                    Platform.runLater {
+                                        val parameters = BugPicker.loadParametersFromPreferences
+                                        val dialog = new AnalysisParametersDialog(stage)
+                                        val newParameters = dialog.show(parameters)
+                                        if (newParameters.isDefined) {
+                                            BugPicker.storeParametersToPreferences(newParameters.get)
+                                        }
                                     }
                                 }
                             },
@@ -510,10 +526,8 @@ class BugPicker extends Application {
                         if (p == currentAnalysis)
                             disable = true
                         onAction = { e: ActionEvent ⇒
-                            {
-                                val dv = new DiffView(currentAnalysis, p)
-                                dv.show(stage)
-                            }
+                            val dv = new DiffView(currentAnalysis, p)
+                            dv.show(stage)
                         }
                     }
                 }) ++ Seq(
@@ -522,13 +536,11 @@ class BugPicker extends Application {
                         mnemonicParsing = true
                         id = "clearAnalyses"
                         onAction = { e: ActionEvent ⇒
-                            {
-                                recentAnalyses = Seq.empty
-                                BugPicker.deleteAnalyses()
-                                // recentAnalysisMenu should now be empty, disable it
-                                recentAnalysisToDiffMenu.items = Seq.empty
-                                recentAnalysisToDiffMenu.disable = true;
-                            }
+                            recentAnalyses = Seq.empty
+                            BugPicker.deleteAnalyses()
+                            // recentAnalysisMenu should now be empty, disable it
+                            recentAnalysisToDiffMenu.items = Seq.empty
+                            recentAnalysisToDiffMenu.disable = true;
                         }
                     })
             } else {
@@ -552,7 +564,7 @@ class BugPicker extends Application {
                             accelerator = KeyCombination(s"Shortcut+$i")
                         }
                         onAction = { e: ActionEvent ⇒
-                            {
+                            Platform.runLater {
                                 BugPicker.storeFilesToPreferences(p)
                                 loadProjectAction()
                             }
@@ -565,7 +577,7 @@ class BugPicker extends Application {
                         accelerator = KeyCombination("Shortcut+0")
                         id = "clearItems"
                         onAction = { e: ActionEvent ⇒
-                            {
+                            Platform.runLater {
                                 recentProjects = Seq.empty
                                 BugPicker.deleteRecentProjectsFromPreferences()
                                 recentProjectsMenu.items = Seq.empty
