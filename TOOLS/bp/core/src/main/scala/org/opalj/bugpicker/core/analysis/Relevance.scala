@@ -50,7 +50,7 @@ import scala.Console.{ RED, YELLOW, RESET }
 final case class Relevance(value: Int) extends AnyVal {
 
     def merge(other: Relevance): Relevance =
-        new Relevance(if (this.value > other.value) this.value else other.value)
+        new Relevance((this.value + other.value) / 2)
 
     /**
      * The lower the value, the "whiter" the color. If the value is 100
