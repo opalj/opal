@@ -35,6 +35,25 @@ if (typeof String.prototype.startsWith != 'function') {
     };
 }
 
+function toggleDetailsOpen(event) {
+    var details = event.target.parentNode;
+    if (details.hasAttribute("open")) {
+        details.removeAttribute("open");
+    } else {
+        details.setAttribute("open", "");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function(e) {
+    if (!('open' in document.createElement("details"))) {
+        e.target.documentElement.classList.add("noDetails");
+        var summarys = document.querySelectorAll("details summary");
+        summarys.forEach(function(e) {
+            e.addEventListener("click", toggleDetailsOpen);
+        });
+    }
+}, false)
+
 var debug_OFF = 0,
     debug_ERROR = -10,
     debug_WARNING = -20,
@@ -481,7 +500,7 @@ IssueFilter.register(
 function openAllPackages() {
     document.querySelectorAll('div#analysis_results > details').forEach(
         function (e) {
-            e.open = true;
+            e.setAttribute('open', '');
         }
     );
 }
