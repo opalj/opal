@@ -60,10 +60,6 @@ div#analysis_controls span#search_box {
   margin: 10px 20px;
 }
 
-.highlight_occurence {
-	background-color: rgba(255, 255, 0, 0.5);
-}
-
 input#relevance {
 	transform: translate(0px,6px);
 	-webkit-transform: translate(0px,6px);

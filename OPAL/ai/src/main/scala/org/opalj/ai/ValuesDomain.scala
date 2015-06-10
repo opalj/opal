@@ -130,7 +130,7 @@ trait ValuesDomain {
         // and is only implemented by ReturnAddressValue.
         @throws[DomainException]("This value is not a return address value.")
         private[ai] def asReturnAddressValue: PC =
-            throw new DomainException("this value ("+this+") is not a return address")
+            throw new DomainException(s"this value ($this) is not a return address")
 
         /**
          * Joins this value and the given value.
@@ -152,7 +152,8 @@ trait ValuesDomain {
          * ==Contract==
          * '''`this` value''' is always the value that was previously used to
          * perform subsequent computations/analyses. Hence, if `this` value subsumes
-         * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
+         * the given value, the result has to be either `NoUpdate` or a
+         * `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
          * a `StructuralUpdate` with the given value as the new value. Hence,
          * ''this `join` operation is not commutative''. If a new (more abstract)
@@ -194,8 +195,8 @@ trait ValuesDomain {
         protected[this] def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
         /**
-         * Checks that the given value and this value are compatible and – if so –
-         * calls [[doJoin]].
+         * Checks that the given value and this value are compatible with regard to
+         * its computational type and – if so – calls [[doJoin]].
          *
          * See `doJoin(PC,DomainValue)` for details.
          *
@@ -266,9 +267,8 @@ trait ValuesDomain {
          * value and the `other` value and that could lead to a
          * [[StructuralUpdate]].
          *
-         * @note It is recommended to overwrite this method. The default
-         *      implementation relies on [[join]] which usually performs
-         * 		too much to make a decision.
+         * @note It is recommended to overwrite this method for performance
+         *      reasons, as the default implementation relies on [[join]].
          *
          * @param other Another `DomainValue` with the same computational
          * 		type as this value.
@@ -314,7 +314,7 @@ trait ValuesDomain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note The framework (the classes directly in org.opalj.ai) does not
+         * @note The framework (the classes in the package `org.opalj.a`i) does not
          *      use/call this method.
          *      This method is solely predefined to facilitate the development of
          *      project-wide analyses.
@@ -342,11 +342,6 @@ trait ValuesDomain {
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             throw new DomainException(s"adaptation of $this to $target is unsupported")
-
-        // TODO implement adaptInPlace
-        // @throws[DomainException]("Adaptation of this value is not supported.")
-        // def adaptInPlace(target: TargetDomain): target.DomainValue =
-        //    throw new DomainException(s"adaptation of $this to $target is unsupported")
 
     }
 
@@ -422,7 +417,7 @@ trait ValuesDomain {
         final override def computationalType: ComputationalType =
             throw DomainException("the illegal value has no computational type")
 
-        @throws[DomainException]("\"doJoin\" is not defined on illegal values.")
+        @throws[DomainException]("\"doJoin\" is not defined on illegal values")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             throw DomainException("this method is not supported")
 
@@ -432,7 +427,7 @@ trait ValuesDomain {
             else
                 MetaInformationUpdateIllegalValue
 
-        @throws[DomainException]("\"summarize\" is not defined on illegal values.")
+        @throws[DomainException]("\"summarize\" is not defined on illegal values")
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
@@ -470,10 +465,11 @@ trait ValuesDomain {
      * @note This method is solely defined for documentation purposes and to catch
      *      implementation errors early on.
      */
-    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
+    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
         throw new DomainException(
-            "internal error (see documentation of Domain.StructuralUpdateIllegalValue())"
+            "internal error (see documentation of ValuesDomain.StructuralUpdateIllegalValue())"
         )
+    }
 
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
@@ -494,7 +490,6 @@ trait ValuesDomain {
         final override def computationalType: ComputationalType =
             ComputationalTypeReturnAddress
 
-        @throws[DomainException]("Return address values cannot be joined.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             // Note that "Value" already handles the case where this
             // value is joined with itself.
@@ -571,10 +566,10 @@ trait ValuesDomain {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypesAnswer =
+    def typeOfValue(value: DomainValue): TypeInformation =
         value match {
-            case ta: TypesAnswer ⇒ ta
-            case _               ⇒ TypeUnknown
+            case ta: TypeInformation ⇒ ta
+            case _                   ⇒ TypeUnknown
         }
 
     /**
@@ -613,9 +608,8 @@ trait ValuesDomain {
         values.tail foreach { value ⇒
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
-                    case NoUpdate ⇒ /*nothing to do*/
-                    case SomeUpdate(newSummary) ⇒
-                        summary = newSummary.summarize(pc)
+                    case NoUpdate               ⇒ /*nothing to do*/
+                    case SomeUpdate(newSummary) ⇒ summary = newSummary.summarize(pc)
                 }
             }
         }

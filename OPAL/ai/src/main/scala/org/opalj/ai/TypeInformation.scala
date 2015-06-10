@@ -35,13 +35,15 @@ import org.opalj.br.{ BooleanType, ByteType, CharType, ShortType, IntegerType, L
 import org.opalj.br.{ FloatType, DoubleType }
 
 /**
- * The answer of a domain to a query about a value's specific type.
+ * Encapsulates the available type information about a `DomainValue`.
  *
- * (See `Domain.valueOfType(DomainValue)` for further details.)
+ * (See `ValuesDomain.typeOfValue(DomainValue)` for further details.)
  *
  * @author Michael Eichberg
  */
-sealed trait TypesAnswer {
+sealed trait TypeInformation {
+
+    def unknown: Boolean
 
     def isReferenceValue: Boolean
 
@@ -50,18 +52,21 @@ sealed trait TypesAnswer {
 }
 
 /**
- * This answer is given when no specific/additional type information about a value
- * is available.
+ * Specifies that no type information is available.
  *
- * @note Recall that the computational type of a value always has to be available, but
- *      that a `Domain.typeOfValue(...)` query does not need to take the computational type
- *      into account (Whenever the core framework requires the computational type of a
- *      value it uses the respective method.) However, in case of array or exception
- *      values the reported type must not be `TypeUnknown`.
+ * @note Recall that the computational type of a value always has to
+ *      be available, but that a
+ *      `ValuesDomain.typeOfValue(...)` query does not need to take the computational type
+ *      into account. (Whenever the core framework requires the computational type of a
+ *      value it uses the respective method.) However, in case that the
+ *      underlying value may be an array or exception
+ *      value the reported type must not be `TypeUnknown`.
  *
  * @author Michael Eichberg
  */
-case object TypeUnknown extends TypesAnswer {
+case object TypeUnknown extends TypeInformation {
+
+    def unknown: Boolean = true
 
     def isReferenceValue: Boolean = throw DomainException("the type is unknown")
 
@@ -71,7 +76,9 @@ case object TypeUnknown extends TypesAnswer {
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue extends TypesAnswer {
+sealed trait IsPrimitiveValue extends TypeInformation {
+
+    final def unknown: Boolean = false
 
     final def isReferenceValue: Boolean = false
 
@@ -81,7 +88,9 @@ sealed trait IsPrimitiveValue extends TypesAnswer {
 }
 
 object IsPrimitiveValue {
+
     def unapply(answer: IsPrimitiveValue): Option[BaseType] = Some(answer.primitiveType)
+
 }
 
 trait IsBooleanValue extends IsPrimitiveValue {
@@ -249,7 +258,7 @@ object IsAReferenceValue {
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
+trait IsReferenceValue extends TypeInformation with IsAReferenceValue {
 
     /**
      * In general a domain value can represent several distinct values (depending
@@ -259,6 +268,8 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
      * an upper bound can in turn consist of several interfaces and a class.
      */
     def referenceValues: Traversable[IsAReferenceValue]
+
+    final def unknown: Boolean = false
 
     final def isReferenceValue: Boolean = true
 

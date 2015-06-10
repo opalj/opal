@@ -53,18 +53,27 @@ object InterpretMethods extends AnalysisExecutor {
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         def isDomainParameter(parameter: String) =
             parameter.startsWith("-domain=") && parameter.length() > 8
         def isVerbose(parameter: String) =
             parameter == "-verbose=true" || parameter == "-verbose=false"
 
         parameters match {
-            case Nil ⇒ true
+            case Nil ⇒ Traversable.empty
             case Seq(parameter) ⇒
-                isDomainParameter(parameter) || isVerbose(parameter)
+                if (isDomainParameter(parameter) || isVerbose(parameter))
+                    Traversable.empty
+                else
+                    Traversable("unknown parameter: "+parameter)
             case Seq(parameter1, parameter2) ⇒
-                isDomainParameter(parameter1) && isVerbose(parameter2)
+                if (!isDomainParameter(parameter1))
+                    Seq("the first parameter does not specify the domain: "+parameter1)
+                else if (!isVerbose(parameter2))
+                    Seq("the second parameter has to be \"verbose\": "+parameter2)
+                else
+                    Traversable.empty
+
         }
     }
 

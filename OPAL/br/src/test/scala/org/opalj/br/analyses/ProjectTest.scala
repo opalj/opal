@@ -326,11 +326,18 @@ private object ProjectTest {
     val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
+    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+    val opalProject = Project(ClassFiles(opal), Traversable.empty)
+
+    //
+    //
+    // Types used by the tests
+    //
+    //
+
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")
     val AbstractB = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
 
-    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty)
 }

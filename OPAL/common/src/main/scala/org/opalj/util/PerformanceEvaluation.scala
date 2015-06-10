@@ -44,7 +44,7 @@ import org.opalj.log.GlobalLogContext
  */
 class PerformanceEvaluation extends Locking {
 
-    private[this] val timeSpans: Map[Symbol, NanoSeconds] = Map.empty
+    private[this] val timeSpans: Map[Symbol, Nanoseconds] = Map.empty
 
     /**
      * Times the execution of the given method / function literal / code block and
@@ -62,7 +62,7 @@ class PerformanceEvaluation extends Locking {
             f
         } finally {
             val endTime = System.nanoTime
-            withWriteLock { doUpdateTimes(s, new NanoSeconds(endTime - startTime)) }
+            withWriteLock { doUpdateTimes(s, new Nanoseconds(endTime - startTime)) }
         }
     }
 
@@ -73,15 +73,15 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `time` method takes care of the synchronization.
      */
-    protected[this] def doUpdateTimes(s: Symbol, timeSpan: NanoSeconds): Unit = {
-        val oldTimeSpan = timeSpans.getOrElseUpdate(s, NanoSeconds.None)
+    protected[this] def doUpdateTimes(s: Symbol, timeSpan: Nanoseconds): Unit = {
+        val oldTimeSpan = timeSpans.getOrElseUpdate(s, Nanoseconds.None)
         timeSpans.update(s, oldTimeSpan + timeSpan)
     }
 
     /**
      * Returns the overall time spent by computations with the given symbol.
      */
-    final def getTime(s: Symbol): NanoSeconds = withReadLock { doGetTime(s) }
+    final def getTime(s: Symbol): Nanoseconds = withReadLock { doGetTime(s) }
 
     /**
      * Called by the `getTime(Symbol)` method.
@@ -89,8 +89,8 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `getTime` method takes care of the synchronization.
      */
-    protected[this] def doGetTime(s: Symbol): NanoSeconds = {
-        timeSpans.getOrElse(s, NanoSeconds.None)
+    protected[this] def doGetTime(s: Symbol): Nanoseconds = {
+        timeSpans.getOrElse(s, Nanoseconds.None)
     }
 
     /**
@@ -173,14 +173,14 @@ object PerformanceEvaluation {
      * @param r A function that is passed the time (in nano seconds) that it
      *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
-    def time[T](f: ⇒ T)(r: NanoSeconds ⇒ Unit): T = {
+    def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
         val result =
             try {
                 f
             } finally {
                 val endTime: Long = System.nanoTime
-                r(NanoSeconds.TimeSpan(startTime, endTime))
+                r(Nanoseconds.TimeSpan(startTime, endTime))
             }
         result
     }
@@ -237,7 +237,7 @@ object PerformanceEvaluation {
      * @param r A function that is called back whenever `f` was successfully evaluated.
      *      The signature is:
      *      {{{
-     *      def r(consideredExecutionTimes : Seq[NanoSeconds]) : Unit
+     *      def r(consideredExecutionTimes : Seq[Nanoseconds]) : Unit
      *      }}}
      *       1. The first parameter is the last execution time of `f`.
      *       1. The last parameter are the times of the evaluation of `f` that are taken
@@ -248,7 +248,7 @@ object PerformanceEvaluation {
         consideredRunsEpsilon: Int,
         minimalNumberOfRelevantRuns: Int,
         f: ⇒ T)(
-            r: (NanoSeconds, Seq[NanoSeconds]) ⇒ Unit): T = {
+            r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit): T = {
 
         require(minimalNumberOfRelevantRuns >= 3)
         require(consideredRunsEpsilon > epsilon)
@@ -259,7 +259,7 @@ object PerformanceEvaluation {
         val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
         var runsSinceLastUpdate = 0
-        var times = List.empty[NanoSeconds]
+        var times = List.empty[Nanoseconds]
         time { f } { t ⇒
             times = t :: times
             if (t.timeSpan <= 199999) { // < 2 milliseconds
@@ -307,10 +307,10 @@ object PerformanceEvaluation {
      *      took to evaluate `f` and the result produced by `f`.
      *      `r` is only called if `f` succeeds.
      */
-    def run[T, X](f: ⇒ T)(r: (NanoSeconds, T) ⇒ X): X = {
+    def run[T, X](f: ⇒ T)(r: (Nanoseconds, T) ⇒ X): X = {
         val startTime: Long = System.nanoTime
         val result = f
         val endTime: Long = System.nanoTime
-        r(NanoSeconds.TimeSpan(startTime, endTime), result)
+        r(Nanoseconds.TimeSpan(startTime, endTime), result)
     }
 }

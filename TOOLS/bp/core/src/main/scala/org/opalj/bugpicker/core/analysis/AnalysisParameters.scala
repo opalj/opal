@@ -32,9 +32,10 @@ package core
 package analysis
 
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
+import org.opalj.util.Milliseconds
 
 case class AnalysisParameters(
-        maxEvalTime: Int = DefaultMaxEvalTime,
+        maxEvalTime: Milliseconds = DefaultMaxEvalTime,
         maxEvalFactor: Double = DefaultMaxEvalFactor,
         maxCardinalityOfIntegerRanges: Long = DefaultMaxCardinalityOfIntegerRanges,
         maxCardinalityOfLongSets: Int = DefaultMaxCardinalityOfLongSets,

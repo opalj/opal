@@ -109,7 +109,7 @@ object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
                 //                    ObjectType(packageName + simpleName)
                 //
                 // 2. using a custom (specialized) matcher
-                case GenericContainer(`containerType`, componentType) ⇒ componentType
+                case SimpleGenericType(`containerType`, componentType) ⇒ componentType
             }
         } yield {
             (subtype, componentType)

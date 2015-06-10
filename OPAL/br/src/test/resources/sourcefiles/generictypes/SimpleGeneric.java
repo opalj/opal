@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,48 +22,17 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package util
+package classhierarchy;
 
 /**
- * Represents a time span of `n` nanoseconds.
- *
- * @author Michael Eichberg
+ * Created to test subtype of queries related to generic types. 
+ *  
+ * @author Michael Reif
  */
-class NanoSeconds(val timeSpan: Long) extends AnyVal {
-
-    final def +(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan + other.timeSpan)
-
-    final def -(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan - other.timeSpan)
-
-    /**
-     * Converts the specified number of nanoseconds into seconds.
-     */
-    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
-
-    override def toString: String = timeSpan+" ns"
-}
-/**
- * Defines factory methods and constants related to time spans in [[NanoSeconds]].
- *
- * @author Michael Eichberg
- */
-object NanoSeconds {
-
-    final val None: NanoSeconds = new NanoSeconds(0)
-
-    /**
-     * Converts the specified time span and converts it into seconds.
-     */
-    final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds: Long): NanoSeconds =
-        new NanoSeconds(endTimeInNanoseconds - startTimeInNanoseconds)
+public class SimpleGeneric<E> {
 
 }

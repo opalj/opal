@@ -39,9 +39,7 @@ import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.instructions.ReturnInstruction
 
 /**
- * Identifies unused methods and constructors based on the call graph.
- *
- * Currently using the VTACallGraphAlgorithm.
+ * Identifies unused methods and constructors using the given call graph.
  *
  * @author Marco Jacobasch
  * @author Michael Eichberg
@@ -49,9 +47,11 @@ import org.opalj.br.instructions.ReturnInstruction
 object UnusedMethodsAnalysis {
 
     /**
-     * Finds those methods that are never called.
+     * Checks if the given method is used/potentially useable. If the method is not used
+     * and is also not potentially useable by future clients then an issue is created
+     * and returned.
      *
-     * If any of the following conditions is true, it will assume the method as being called.
+     * If any of the following conditions is true the method is considered as being called.
      * - The method is the target of a method call in the calculated call graph.
      * - The method is a private (empty) default constructor in a final class. Such constructors
      *      are usually defined to avoid instantiations of the respective class.
@@ -64,12 +64,13 @@ object UnusedMethodsAnalysis {
         theProject: SomeProject,
         callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
         classFile: ClassFile, method: Method): Option[StandardIssue] = {
+
         if (callgraphEntryPoints.contains(method))
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
 
-            import method._
+            import method.{ isConstructor, isPrivate, parametersCount }
 
             // Let's check if it is a default constructor
             // which was defined to avoid instantiations of the
@@ -86,11 +87,14 @@ object UnusedMethodsAnalysis {
 
             val body = method.body.get
             val instructions = body.instructions
+            def justThrowsException: Boolean = {
+                !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                    ReturnInstruction.isReturnInstruction(i)
+                }
+            }
             if (instructions.size == 5 /* <= default empty constructor */ )
                 Relevance.TechnicalArtifact
-            else if (!body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
-                ReturnInstruction.isReturnInstruction(i)
-            })
+            else if (justThrowsException)
                 Relevance.CommonIdiom
             else
                 Relevance.DefaultRelevance
@@ -98,7 +102,11 @@ object UnusedMethodsAnalysis {
 
         val callers = callgraph.callGraph calledBy method
         if (callers.isEmpty) {
-            val description = methodOrConstructor(method)
+
+            val description =
+                methodOrConstructor(method) + (
+                    if (!method.isPrivate) "the class is not instantiable" else ""
+                )
             val relevance: Relevance = rateMethod()
             // the unused method or constructor issue
             Some(StandardIssue(

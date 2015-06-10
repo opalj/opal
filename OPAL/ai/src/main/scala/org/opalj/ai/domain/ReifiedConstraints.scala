@@ -130,7 +130,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         super.refEstablishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
-    abstract override def refSetUpperBound(
+    abstract override def refSetUpperTypeBoundOfTopOperand(
         pc: PC,
         bound: ReferenceType,
         operands: Operands,
@@ -139,17 +139,17 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         nextConstraint(
             ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
         )
-        super.refSetUpperBound(pc, bound, operands, locals)
+        super.refSetUpperTypeBoundOfTopOperand(pc, bound, operands, locals)
     }
 
-    abstract override def refSetIsNull(
+    abstract override def refTopOperandIsNull(
         pc: PC,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         nextConstraint(
             ReifiedSingleValueConstraint(pc, operands.head, "is null")
         )
-        super.refSetIsNull(pc, operands, locals)
+        super.refTopOperandIsNull(pc, operands, locals)
     }
 
     //

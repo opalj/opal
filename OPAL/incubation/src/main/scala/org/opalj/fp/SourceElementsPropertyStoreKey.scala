@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,34 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package fp
+
+import org.opalj.br.analyses.ProjectInformationKey
+
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Characterizes the type of an event related to a running analysis.
- *
- * @see [[ProgressManagement]] for further details.
+ * The ''key'' object to get access to the properties store.
  *
  * @author Michael Eichberg
  */
-object EventType extends Enumeration {
+object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
     /**
-     * Used to signal the start of a (longer-running) computation.
-     * Each computation that signals a start must also signal an end of the computation.
-     */
-    val Start = Value
-
-    /**
-     * Used to signal the end of a computation.
-     */
-    val End = Value
-
-    /**
-     * Use to signal that a computation was killed.
+     * The [[SourceElementsPropertyStore]] has no special prerequisites.
      *
-     * '''After signaling a `Killed` event the underlying computation is not
-     * allowed to signal any further events.'''
+     * @return `Nil`.
      */
-    val Killed = Value
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+
+    /**
+     * Creates a new empty property store.
+     */
+    override protected def compute(project: SomeProject): PropertyStore = {
+        PropertyStore(
+            project.allSourceElements,
+            () ⇒ Thread.currentThread.isInterrupted())(
+                project.logContext)
+    }
 }
