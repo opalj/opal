@@ -31,14 +31,14 @@ package concurrent
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
  * structure.
  *
  * ==Usage==
- * To use this generic locking facility, you can either mix-in this trait or
- * create a new instance.
+ * To use this generic locking facility you should mix in this trait.
  *
  * @author Michael Eichberg
  */
@@ -50,13 +50,13 @@ trait Locking {
      * Acquires the write lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
+    protected[this] def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
+    protected[this] def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Factory for `Locking` objects.
@@ -105,6 +105,19 @@ object Locking {
                 None
         } finally {
             if (isLocked) rwLock.readLock().unlock()
+        }
+    }
+
+    /**
+     * Acquires the lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    @inline final def withLock[B](lock: ReentrantLock)(f: ⇒ B): B = {
+        try {
+            lock.lock()
+            f
+        } finally {
+            lock.unlock()
         }
     }
 }

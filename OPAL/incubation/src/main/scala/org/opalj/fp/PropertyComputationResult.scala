@@ -73,16 +73,6 @@ case class OneStepMultiResult(
  */
 case class Result(e: Entity, p: Property) extends PropertyComputationResult
 
-object Result {
-
-    def apply(e: Entity, p: Property, oneStep: Boolean): PropertyComputationResult = {
-        if (oneStep)
-            new OneStepResult(e, p)
-        else
-            new Result(e, p)
-    }
-}
-
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
  * no intermediate results'''.
@@ -94,11 +84,29 @@ object Result {
 case class OneStepResult(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
- * Encapsulates an intermediate result of the computation of the property.
+ * Factory for [[Result]] and [[OneStepResult]] objects.
+ */
+object Result {
+
+    def apply(e: Entity, p: Property, oneStep: Boolean): PropertyComputationResult = {
+        if (oneStep)
+            new OneStepResult(e, p)
+        else
+            new Result(e, p)
+    }
+}
+
+/**
+ * Encapsulates an intermediate result of the computation of a property.
  *
- * Intermediate results are to be used if further refinements are possible or may happen.
+ * Intermediate results are to be used if further refinements are possible and may happen.
  * All current computations
- * depending on this property remain registered and will be informed in the future.
+ * depending on the given entry's property remain registered and will be invoked in the future
+ * if another `IntermediateResult` or `Result` is computed.
+ * Furthermore, if a property of any of the dependees changes, the given given
+ * continuation `c` is invoked.
+ * (This requires that the given continuation is thread-safe! In most cases the easiest
+ * and correct solution is to just wrap it in a synchronized block.)
  */
 case class IntermediateResult(
     e: Entity, p: Property,

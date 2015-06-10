@@ -28,7 +28,11 @@
  */
 package org.opalj.fp
 
-final class EPK(val e: Entity, val pk: PropertyKey) {
+final class EPK(val e: Entity, val pk: PropertyKey) extends Product2[Entity, PropertyKey] {
+
+    def _1 = e
+    def _2 = pk
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
@@ -36,9 +40,11 @@ final class EPK(val e: Entity, val pk: PropertyKey) {
         }
     }
 
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
+
     override def hashCode: Int = e.hashCode() * 511 + pk.id
 
-    override def toString: String = s"EPK($e,${PropertyKey.name(pk)})"
+    override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
 }
 
 object EPK {
