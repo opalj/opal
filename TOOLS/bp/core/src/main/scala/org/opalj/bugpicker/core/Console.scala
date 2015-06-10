@@ -158,7 +158,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         // Generate the HTML report
         //
-        lazy val htmlReport = resultsAsXHTML(parameters, issues, analysisTime).toString
+        lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
         parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
             case Some(fileName) ⇒
                 val file = new File(fileName).toPath
