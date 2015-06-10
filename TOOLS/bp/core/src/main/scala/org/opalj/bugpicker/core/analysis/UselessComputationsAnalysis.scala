@@ -78,7 +78,8 @@ import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.instructions.IFNULL
 
 /**
- * Identifies computations that are useless.
+ * Identifies computations that are useless (i.e., computations that could be done
+ * in the source code.)
  *
  * @author Michael Eichberg
  */
