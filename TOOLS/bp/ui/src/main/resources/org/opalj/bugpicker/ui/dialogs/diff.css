@@ -29,3 +29,27 @@
 div.an_issue {
 	display: block;
 }
+
+#parameters  table{
+    margin-left:auto; 
+    margin-right:auto;
+}
+#parameters table tr td {
+	padding: 0px 20px;
+}
+
+details.missingIssues summary {
+	background-color: rgb(245, 0, 0);
+}
+
+details.newIssues summary {
+	background-color: rgb(0, 245, 0);
+}
+
+.paramEqual td:not(:first-child) {
+	color: #00FF00;
+}
+
+.paramUnequal td:not(:first-child) {
+	color: #FF0000;
+}

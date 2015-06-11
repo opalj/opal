@@ -32,6 +32,8 @@ package ui
 package dialogs
 
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.Date
 
 import scala.io.Source
@@ -41,27 +43,90 @@ import scala.xml.Unparsed
 import org.opalj.bugpicker.core.HTMLCSS
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.ReportCSS
 import org.opalj.bugpicker.ui.BugPicker
+import org.opalj.bugpicker.ui.Messages
 import org.opalj.io.process
 
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
+import scalafx.Includes.jfxWorker2sfxWorker
 import scalafx.Includes.observableList2ObservableBuffer
+import scalafx.beans.binding.NumberBinding.sfxNumberBinding2jfx
+import scalafx.beans.property.DoubleProperty
+import scalafx.concurrent.Service
+import scalafx.concurrent.Task
+import scalafx.concurrent.Task.sfxTask2jfx
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
 import scalafx.scene.control.Label
+import scalafx.scene.control.ProgressBar
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.layout.HBox
+import scalafx.scene.layout.Priority
+import scalafx.scene.layout.StackPane
 import scalafx.scene.layout.VBox
+import scalafx.scene.web.WebEngine.sfxWebEngine2jfx
 import scalafx.scene.web.WebView
+import scalafx.stage.FileChooser
 import scalafx.stage.Modality
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
 
-class DiffView(currentIssues: Iterable[Node], oldAnalysis: StoredAnalysis) extends Stage {
+class DiffView(currentName: String, currentIssues: Iterable[Node], currentParameters: Seq[String], oldAnalysis: StoredAnalysis) extends Stage {
     self ⇒
+
+    showing.onChange((_, _, newShow) ⇒ {
+        if (newShow) {
+            val generatingTask = Task[Unit](XHTMLContent.toString)
+            val generatingService = Service(generatingTask)
+            generatingService.running.onChange((_, _, isGenerating) ⇒
+                if (!isGenerating) {
+                    view.engine.getLoadWorker.running.onChange((_, _, isLoading) ⇒
+                        if (!isLoading) {
+                            saveButton.disable = false
+                            loadProgress.close
+                        }
+                    )
+                    view.engine.loadContent(XHTMLContent.toString)
+                })
+            generatingService.start
+            loadProgress.showAndWait()
+        }
+    })
+
+    val view =
+        new WebView {
+            contextMenuEnabled = false
+            engine.loadContent(Messages.GENERATING_DIFF)
+        }
+    val saveButton = new Button {
+        text = "Save"
+        defaultButton = false
+        disable = true
+        HBox.setMargin(this, Insets(10))
+        onAction = { e: ActionEvent ⇒ saveDiff() }
+    }
+
+    lazy val loadProgress = new Stage {
+        initOwner(self)
+        scene = new Scene {
+            root = new StackPane {
+                children = Seq(
+                    new ProgressBar {
+                        progress <== theProgress
+                        margin = Insets(1)
+                        HBox.setHgrow(this, Priority.Always)
+                        minWidth <== (self.width / 2)
+                        minHeight = 30
+                    }
+                )
+                alignment = Pos.Center
+                hgrow = Priority.Always
+            }
+        }
+    }
 
     title = "Analysis Diff"
 
@@ -71,66 +136,123 @@ class DiffView(currentIssues: Iterable[Node], oldAnalysis: StoredAnalysis) exten
                 margin = Insets(20)
                 alignment = Pos.TopLeft
                 children = Seq(
-                    new Label("Analysis Difference between:"),
-                    new Label("Now - "+currentIssues.size+" Issues"),
-                    new Label(oldAnalysis.analysisName+" - "+oldAnalysis.getIssues.get.size+" Issues - From "+oldAnalysis.analysisDate)
+                    new Label("Difference between analyses:")
                 )
             }
 
-            center = new WebView {
-                contextMenuEnabled = false
-                engine.loadContent(XHTMLContent.toString)
-            }
+            center = view
 
             bottom = new HBox {
-                children = new Button {
+                children = Seq(new Button {
                     text = "Close"
                     defaultButton = true
                     HBox.setMargin(this, Insets(10))
                     onAction = { e: ActionEvent ⇒ close() }
-                }
+                }, saveButton)
                 alignment = Pos.Center
             }
         }
         stylesheets += BugPicker.defaultAppCSSURL
     }
 
-    /**
-     * expects two "issue"-nodes, as returned by `Issue.asXHTML`
-     * @see ``StandardIssue.asXHTML``
-     */
-    def isSameIssue(n1: Node, n2: Node): Boolean = {
-        def getData(n: Node) = {
-            val description = n \ "dl" \ "dt"
-            val data = n \ "dl" \ "dd"
-            assert(description.size == data.size)
-            (description.map(_.text.trim) zip (data.map(_.text.trim))).toMap
-        }
-        val data1 = getData(n1)
-        val data2 = getData(n2)
-        def eqIfExists(s: String) = {
-            val c1 = data1.contains(s)
-            val c2 = data2.contains(s)
-            (c1 == c2 && // key must be in both or in neither
-                (!c1 || data1(s) == data2(s))) // if it is in both, data of them has to be equal
-        }
-        (eqIfExists("class") &&
-            eqIfExists("method") &&
-            eqIfExists("instruction") &&
-            eqIfExists("relevance"))
-    }
-
     final lazy val DiffCSS: String =
         process(this.getClass.getResourceAsStream("diff.css"))(
             Source.fromInputStream(_).mkString
         )
-    lazy val oldIssues = oldAnalysis.getIssues.get
 
-    lazy val (commonIssues, newIssues) = currentIssues.partition(issue ⇒ {
-        oldIssues.exists(isSameIssue(_, issue))
-    })
-    lazy val (_, missingIssues) = oldIssues.partition(issue ⇒
-        currentIssues.exists(isSameIssue(_, issue)))
+    def saveDiff() = {
+        val fsd = new FileChooser {
+            title = "Save Analysis"
+            extensionFilters ++= Seq(
+                new FileChooser.ExtensionFilter("HTML File", "*.html"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+            )
+            initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+            initialFileName = "diff.html"
+        }
+        val file = fsd.showSaveDialog(self)
+        if (file != null) {
+            process { Files.newBufferedWriter(file.toPath, StandardCharsets.UTF_8) } { fos ⇒
+                fos.write(XHTMLContent.toString, 0, XHTMLContent.toString.length)
+            }
+        }
+    }
+
+    lazy val theProgress = DoubleProperty(0.0)
+
+    def updateProgress(c: Int, a: Int) = {
+        val p: Double = (c + 1).toDouble / a.toDouble
+        theProgress.update(p)
+    }
+
+    def getDiff(): (Iterable[Node], Iterable[Node], Iterable[Node]) = {
+        def isSameIssue(node1: Node, node2: Node): Boolean = {
+            def getData(n: Node) = {
+                val description = n \ "dl" \ "dt"
+                val data = n \ "dl" \ "dd"
+                assert(description.size == data.size)
+                (description.map(_.text.trim) zip (data.map(_.text.trim))).toMap
+            }
+            val data1 = getData(node1)
+            val data2 = getData(node2)
+            def eqIfExists(s: String) = {
+                val c1 = data1.contains(s)
+                val c2 = data2.contains(s)
+                (c1 == c2 && // key must be in both or in neither
+                    (!c1 || (data1(s) == data2(s)))) // if it is in both, data of them has to be equal
+            }
+            eqIfExists("class") && eqIfExists("method") && eqIfExists("instruction") && eqIfExists("relevance")
+        }
+
+        val oIssues = oldAnalysis.getIssues.get.toSeq
+        val cIssues = currentIssues.toSeq
+        var i = 0
+        var j = 0
+
+        var commonIssues = Seq.empty[Node]
+        var newIssues = Seq.empty[Node]
+        var missingIssues = Seq.empty[Node]
+        while (i < cIssues.size && j < oIssues.size) {
+            updateProgress(i, cIssues.size)
+            val c1 = cIssues(i)
+            val c2 = oIssues(j)
+            if (isSameIssue(c1, c2)) { // both issues where they are expected, easy ...
+                commonIssues = commonIssues :+ c1
+                i += 1
+                j += 1
+            } else {
+                var x = j
+                var found = false
+                while (!found && x < oIssues.size) {
+                    if (isSameIssue(c1, oIssues(x))) { // found the same issue in both, but old one later than expected
+                        commonIssues = commonIssues :+ c1 // add common issue
+                        for (s ← j until x) { // everything between add as missing issues 
+                            missingIssues = missingIssues :+ oIssues(s)
+                        }
+                        j = x + 1
+                        i += 1
+                        found = true // cancel loop
+                    }
+                    x += 1
+                }
+                if (!found) { // did not find c1 in old issues, must be new
+                    newIssues = newIssues :+ c1
+                    i += 1
+                }
+            }
+        }
+        while (i == cIssues.size && j < oIssues.size) {
+            missingIssues = missingIssues :+ oIssues(j)
+            j += 1
+        }
+        while (i < cIssues.size && j == oIssues.size) {
+            newIssues = newIssues :+ cIssues(i)
+            i += 1
+        }
+        (newIssues, commonIssues, missingIssues)
+    }
+
+    lazy val (newIssues, commonIssues, missingIssues) = getDiff()
 
     lazy val XHTMLContent =
         <html>
@@ -140,10 +262,41 @@ class DiffView(currentIssues: Iterable[Node], oldAnalysis: StoredAnalysis) exten
                 <style>{ Unparsed(DiffCSS) }</style>
             </head>
             <body>
+                <div id="parameters">
+                    <details id="analysis_parameters_summary" open="true">
+                        <summary>Parameters</summary>
+                        <table>
+                            <tr>
+                                <td> </td><td>{ currentName }</td><td>{ oldAnalysis.analysisName }</td>
+                            </tr>
+                            <tr>
+                                <td>Issues</td><td>{ currentIssues.size.toString }</td><td>{ oldAnalysis.getIssues.getOrElse(Seq.empty).size.toString }</td>
+                            </tr>
+                            <tr>
+                                <td>Date</td><td>{ java.util.Calendar.getInstance().getTime().toString }</td><td>{ oldAnalysis.analysisDate.toString }</td>
+                            </tr>
+                            {
+                                (currentParameters zip oldAnalysis.getParameters.getOrElse(Seq.empty)).map {
+                                    _ match {
+                                        case (newP: String, oldP: String) ⇒
+                                            val n = newP.split("=")
+                                            val o = oldP.split("=")
+                                            val name = n(0)
+                                            val newParam = n(1)
+                                            val oldParam = o(1)
+                                            <tr class={ if (newParam == oldParam) "paramEqual" else "paramUnequal" }>
+                                                <td>{ name }</td><td>{ newParam }</td><td>{ oldParam }</td>
+                                            </tr>
+                                    }
+                                }
+                            }
+                        </table>
+                    </details>
+                </div>
                 <div id="diff">
                     {
                         if (newIssues.nonEmpty) {
-                            <details class="package_summary" open="true">
+                            <details class="package_summary newIssues" open="true">
                                 <summary class="package_summary">New Issue(s): { newIssues.size }</summary>
                                 <div>{ newIssues }</div>
                             </details>
@@ -151,7 +304,7 @@ class DiffView(currentIssues: Iterable[Node], oldAnalysis: StoredAnalysis) exten
                     }
                     {
                         if (missingIssues.nonEmpty) {
-                            <details class="package_summary" open="true">
+                            <details class="package_summary missingIssues" open="true">
                                 <summary class="package_summary">Missing Issue(s): { missingIssues.size }</summary>
                                 <div>{ missingIssues }</div>
                             </details>
@@ -159,7 +312,7 @@ class DiffView(currentIssues: Iterable[Node], oldAnalysis: StoredAnalysis) exten
                     }
                     {
                         if (commonIssues.nonEmpty) {
-                            <details class="package_summary" open="true">
+                            <details class="package_summary">
                                 <summary class="package_summary">Common Issue(s): { commonIssues.size }</summary>
                                 <div>{ commonIssues }</div>
                             </details>
@@ -185,8 +338,16 @@ case class StoredAnalysis(
     lazy val xml = scala.xml.XML.loadFile(analysisFile)
     def getIssues(): Option[Iterable[Node]] = {
         try {
-            val issues = xml \ "div"
+            val issues = xml \ "issues" \ "div"
             Some(issues)
+        } catch {
+            case e: Exception ⇒ None
+        }
+    }
+    def getParameters(): Option[Seq[String]] = {
+        try {
+            val parameters = xml \ "parameters" \ "parameter"
+            Some(parameters.toSeq.map(_.text.trim))
         } catch {
             case e: Exception ⇒ None
         }

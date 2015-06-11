@@ -124,6 +124,7 @@ class BugPicker extends Application {
     var recentProjects: Seq[LoadedFiles] = BugPicker.loadRecentProjectsFromPreferences().getOrElse(Seq.empty)
     var recentAnalyses: Seq[StoredAnalysis] = BugPicker.loadRecentlyUsedAnalyses
     var currentAnalysis: Iterable[Node] = null
+    var currentAnalysisParameters: AnalysisParameters = null
 
     override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
@@ -336,11 +337,12 @@ class BugPicker extends Application {
                     val file = fsd.showSaveDialog(stage)
                     if (file != null) {
                         BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
-                        recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
+                        recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, currentAnalysisParameters, file)(recentAnalyses)
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
                     }
                 }
+
             }
         }
 
@@ -366,7 +368,7 @@ class BugPicker extends Application {
                     BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
                     val oldAnalysis = StoredAnalysis.readFromFile(file)
                     if (oldAnalysis.isDefined) {
-                        val dv = new DiffView(currentAnalysis, oldAnalysis.get)
+                        val dv = new DiffView(recentProjects.head.projectName, currentAnalysis, currentAnalysisParameters.toStringParameters, oldAnalysis.get)
                         recentAnalyses = BugPicker.updateRecentlyUsedAnalyses(oldAnalysis.get, recentAnalyses)
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
@@ -462,6 +464,7 @@ class BugPicker extends Application {
                                         val issues = ObjectProperty(Iterable.empty[Issue])
                                         issues.onChange((o, p, q) ⇒ {
                                             currentAnalysis = issues().map(_.asXHTML(false))
+                                            currentAnalysisParameters = parameters
                                             if (currentAnalysis != null) {
                                                 storeCurrentAnalysis.disable = false
                                                 loadAnalysisToDiff.disable = false
@@ -526,7 +529,7 @@ class BugPicker extends Application {
                         if (p == currentAnalysis)
                             disable = true
                         onAction = { e: ActionEvent ⇒
-                            val dv = new DiffView(currentAnalysis, p)
+                            val dv = new DiffView(recentProjects.head.projectName, currentAnalysis, currentAnalysisParameters.toStringParameters, p)
                             dv.show(stage)
                         }
                     }
@@ -840,7 +843,7 @@ object BugPicker {
         Some(result)
     }
 
-    def storeAnalysis(name: String, issues: Iterable[Node], file: File)(recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
+    def storeAnalysis(name: String, issues: Iterable[Node], parameters: AnalysisParameters, file: File)(recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
         class PE(name: String, entdef: scala.xml.dtd.EntityDef) extends scala.xml.dtd.ParsedEntityDecl(name, entdef) {
             override def toString: String = {
                 val sb = new StringBuilder()
@@ -852,9 +855,14 @@ object BugPicker {
 
         // 2. create XML-output and save it to file
         val data =
-            <issues name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
-                { issues }
-            </issues>
+            <analysis name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
+                <parameters>
+                    { parameters.toStringParameters.map { x ⇒ <parameter>{ x }</parameter> } }
+                </parameters>
+                <issues>
+                    { issues }
+                </issues>
+            </analysis>
         scala.xml.XML.save(file.getAbsolutePath, data, "UTF-8", true, DocType("issues", NoExternalID, Seq(new PE("nbsp", IntDef("&#160;")))))
 
         // 3. update recently used analyses in Prefs
