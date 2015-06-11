@@ -30,8 +30,9 @@ package org.opalj
 package bugpicker
 package core
 
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.AnalysisException
 
 /**
  * Common constants and helper methods used by the BugPicker.
@@ -40,7 +41,7 @@ import org.opalj.br.ObjectType
  */
 package object analysis {
 
-    type BugPickerResults = (NanoSeconds, Iterable[Issue], Iterable[AnalysisException])
+    type BugPickerResults = (Nanoseconds, Iterable[Issue], Iterable[AnalysisException])
 
     final val AssertionError = ObjectType("java/lang/AssertionError")
 }

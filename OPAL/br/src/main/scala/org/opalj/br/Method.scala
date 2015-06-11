@@ -222,9 +222,19 @@ final class Method private (
     }
 
     override def toString(): String = {
-        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
-            descriptor.toJava(name) +
-            attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
+        import AccessFlagsContexts.METHOD
+        val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
+        val method =
+            if (jAccessFlags.nonEmpty)
+                " "+descriptor.toJava(name)
+            else
+                descriptor.toJava(name)
+
+        if (attributes.nonEmpty)
+            method + attributes.map(_.getClass.getSimpleName).mkString("«", ", ", "»")
+        else
+            method
+
     }
 
 }

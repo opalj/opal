@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,14 +26,56 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
-package core
+package org.opalj.fp
+
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * Exception raised while the anaylsis is executed.
+ * An object that identifies a specific kind of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ *
+ * To create a property key use the companion object's [[PropertyKey$.next]] method.
  *
  * @author Michael Eichberg
  */
-case class AnalysisException(message: String, cause: Throwable)
-    extends RuntimeException(message, cause)
+class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
+
+    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+}
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey {
+
+    private[this] val lock = new ReentrantReadWriteLock
+
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] var lastKeyId: Int = -1
+
+    def create(name: String, defaultProperty: Property): PropertyKey =
+        withWriteLock(lock) {
+            lastKeyId += 1
+            propertyKeyNames += name
+            defaultProperties += defaultProperty
+            new PropertyKey(lastKeyId)
+        }
+
+    def name(id: Int): String =
+        withReadLock(lock) {
+            propertyKeyNames(id)
+        }
+
+    def defaultProperty(id: Int): Property =
+        withReadLock(lock) {
+            defaultProperties(id)
+        }
+
+}
+

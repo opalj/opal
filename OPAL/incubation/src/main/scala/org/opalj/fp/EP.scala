@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,32 +26,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
-
-import scala.io.Source
-import org.opalj.io.process
+package org.opalj.fp
 
 /**
- * Common constants used by the BugPicker.
- *
- * @author Michael Eichberg
+ * A pairing of an entity and an associated property.
  */
-package object core {
+final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property] {
 
-    def getAsset(path: String): String =
-        process(getClass.getResourceAsStream(path)) {
-            Source.fromInputStream(_).mkString
+    def _1 = e
+    def _2 = p
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: EP ⇒ (that.e eq this.e) && this.p == that.p
+            case _        ⇒ false
         }
+    }
 
-    lazy val HTMLCSS: String = getAsset("html.css")
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP]
 
-    lazy val HTMLJS: String = getAsset("html.js")
+    def pk: PropertyKey = p.key
 
-    lazy val SearchJS: String = getAsset("search.js")
+    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
-    lazy val ReportCSS: String = getAsset("report.css")
+    override def toString: String = s"EK($e,$p)"
+}
 
-    lazy val ReportJS: String = getAsset("report.js")
+/**
+ * Provides a factory and an extractor for EP objects.
+ */
+object EP {
 
+    def apply(e: Entity, p: Property): EP = new EP(e, p)
+
+    def unapply(ep: EP): Option[(Entity, Property)] = {
+        if (ep eq null)
+            None
+        else
+            Some((ep.e, ep.p))
+    }
 }

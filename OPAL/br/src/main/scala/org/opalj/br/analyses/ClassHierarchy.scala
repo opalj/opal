@@ -470,6 +470,23 @@ class ClassHierarchy private (
     }
 
     /**
+     * Returns the set of all interfaces implemented by the given type.
+     *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
+     * @param reflexive If `true` the returned set will also contain the given type if
+     *      it is an interface type.
+     */
+    def allSuperinterfacetypes(
+        objectType: ObjectType,
+        reflexive: Boolean = false): Set[ObjectType] = {
+        val supertypes = HashSet.empty[ObjectType]
+        foreachSupertype(objectType) { st ⇒ if (isInterface(st)) supertypes.add(st) }
+        if (reflexive && isInterface(objectType)) supertypes.add(objectType)
+        supertypes
+    }
+
+    /**
      * Calls the function `f` for each supertype of the given object type for
      * which the classfile is available.
      * It is possible that the class file of the same super interface type `I`
@@ -1221,11 +1238,13 @@ class ClassHierarchy private (
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
+            if (classFileOption.isEmpty)
+                return None;
+            val classFile = classFileOption.get
+
             val methodOption =
-                if (classFileOption.isDefined) {
-                    val classFile = classFileOption.get
-                    classFile.findMethod(methodName, methodDescriptor).orElse {
-                        /* FROM THE SPECIFICATION:
+                classFile.findMethod(methodName, methodDescriptor).orElse {
+                    /* FROM THE SPECIFICATION:
                          * Method resolution attempts to look up the referenced method in C and
                          * its superclasses:
                          * If C declares exactly one method with the name specified by the
@@ -1239,16 +1258,14 @@ class ClassHierarchy private (
                          * - It has a return type of Object.
                          * - It has the ACC_VARARGS and ACC_NATIVE flags set.
                          */
-                        if (receiverType eq ObjectType.MethodHandle)
-                            classFile.findMethod(
-                                methodName,
-                                MethodDescriptor.SignaturePolymorphicMethod).find(
-                                    _.isNativeAndVarargs)
-                        else
-                            None
-                    }
-                } else
-                    None
+                    if (receiverType eq ObjectType.MethodHandle)
+                        classFile.findMethod(
+                            methodName,
+                            MethodDescriptor.SignaturePolymorphicMethod).find(
+                                _.isNativeAndVarargs)
+                    else
+                        None
+                }
 
             if (methodOption.isDefined)
                 methodOption

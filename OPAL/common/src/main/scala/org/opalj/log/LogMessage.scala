@@ -117,7 +117,7 @@ case class ExceptionLogMessage(
 
         def exceptionToMessage(t: Throwable): String = {
             val stacktrace = t.getStackTrace.mkString("\t", "\n\t", "")
-            val message = t.getLocalizedMessage+"\n"+stacktrace
+            val message = t.getClass.toString()+": "+t.getLocalizedMessage ++ "\n"+stacktrace
             if (t.getCause != null)
                 message+"\n"+exceptionToMessage(t.getCause)
             else

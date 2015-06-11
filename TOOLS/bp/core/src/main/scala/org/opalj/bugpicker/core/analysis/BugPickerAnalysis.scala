@@ -58,6 +58,7 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
@@ -66,7 +67,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
+import org.opalj.util.Milliseconds
+import scala.xml.NodeSeq
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -120,9 +123,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
                 getOrElse(DefaultMaxEvalFactor)
 
-        val maxEvalTime: Int =
+        val maxEvalTime: Milliseconds =
             parameters.
-                collectFirst { case MaxEvalTimePattern(l) ⇒ parseInt(l).toInt }.
+                collectFirst { case MaxEvalTimePattern(l) ⇒ new Milliseconds(parseLong(l).toLong) }.
                 getOrElse(DefaultMaxEvalTime)
 
         val maxCardinalityOfIntegerRanges: Long =
@@ -232,7 +235,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} with method call execution aborted "+
                             s"after ${ai0.currentEvaluationCount} steps "+
                             s"(code size: ${method.body.get.instructions.length})"
-                    // let's try it again, but without performing method calls
+                    // let's try it again, but without performing method calls;
                     // let's reuse the current state
                     val fallbackAnalysisDomain =
                         new FallbackBugPickerAnalysisDomain(
@@ -401,7 +404,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         }
 
         val exceptions = new ConcurrentLinkedQueue[AnalysisException]
-        var analysisTime = NanoSeconds.None
+        var analysisTime = Nanoseconds.None
         val identifiedIssues = time {
             val stepIds = new AtomicInteger(PreAnalysesCount + 1)
 
@@ -472,7 +475,7 @@ object BugPickerAnalysis {
     final val DefaultMaxEvalFactor = 1.75d
 
     final val MaxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val DefaultMaxEvalTime = 10000 // in ms => 10secs.
+    final val DefaultMaxEvalTime: Milliseconds = new Milliseconds(10000) // in ms => 10secs.
 
     final val MaxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val DefaultMaxCallChainLength = 1
@@ -485,23 +488,11 @@ object BugPickerAnalysis {
         """-maxCardinalityOfLongSets=(\d+)""".r
     final val DefaultMaxCardinalityOfLongSets = 2
 
-    /**
-     *
-     */
-    final lazy val ReportCSS: String =
-        process(this.getClass.getResourceAsStream("report.css"))(
-            Source.fromInputStream(_).mkString
-        )
-
-    final lazy val ReportJS: String =
-        process(this.getClass.getResourceAsStream("report.js"))(
-            Source.fromInputStream(_).mkString
-        )
-
     def resultsAsXHTML(
         parameters: Seq[String],
         methodsWithIssues: Iterable[Issue],
-        analysisTime: NanoSeconds): Node = {
+        showSearch: Boolean,
+        analysisTime: Nanoseconds): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 
@@ -528,11 +519,22 @@ object BugPickerAnalysis {
                 is
         }
 
+        val (searchJS: NodeSeq, searchBox: NodeSeq) =
+            if (showSearch) {
+                (
+                    <script type="text/javascript">{ Unparsed(SearchJS) }</script>,
+                    <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
+                )
+            } else {
+                (NodeSeq.Empty, NodeSeq.Empty)
+            }
+
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
                 <script type="text/javascript">{ Unparsed(HTMLJS) }</script>
                 <script type="text/javascript">{ Unparsed(ReportJS) }</script>
+                { searchJS }
                 <style>{ Unparsed(HTMLCSS) }</style>
                 <style>{ Unparsed(ReportCSS) }</style>
             </head>
@@ -540,7 +542,7 @@ object BugPickerAnalysis {
                 <div id="analysis_controls">
                     <div>
                         <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
-                        <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
+                        { searchBox }
                     </div>
                     <div>
                         Suppress issues with an estimated

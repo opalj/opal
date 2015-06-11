@@ -51,16 +51,14 @@ class BugPickerOPALLogger(
         extends AbstractOPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        Platform.runLater(new Runnable() {
-            def run: Unit = {
-                messages +=
-                    BugPickerLogMessage(
-                        BugPickerOPALLogger.DateFormatter.format(new Date()),
-                        message.level.id,
-                        message.category.getOrElse(""),
-                        message.message)
-            }
-        })
+        Platform.runLater {
+            messages +=
+                BugPickerLogMessage(
+                    BugPickerOPALLogger.DateFormatter.format(new Date()),
+                    message.level.id,
+                    message.category.getOrElse(""),
+                    message.message)
+        }
     }
 }
 

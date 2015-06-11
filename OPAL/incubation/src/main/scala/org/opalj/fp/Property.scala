@@ -28,12 +28,10 @@
  */
 package org.opalj.fp
 
-import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.mutable.ListBuffer
-
 /**
  * An information associated with an entity. Each property belongs to exactly one
- * property kind and each entity has at most one property per property kind.
+ * property kind identified by a [[PropertyKey]]. Furthermore, each property
+ * is associated with at most one property per property kind.
  *
  * @author Michael Eichberg
  */
@@ -41,50 +39,11 @@ trait Property {
 
     /**
      * The key uniquely identifies this property's category. All property objects
-     * that belong to the same category have to use the same key.
+     * of the same kind have to use the same key.
      *
-     * In general each `Property` category is expected to have a companion object that
-     * stores the property key.
+     * In general each `Property` kind is expected to have a companion object that
+     * stores the unique [[PropertyKey]].
      */
-    val key: PropertyKey
+    def key: PropertyKey
 
 }
-
-/**
- * An object that identifies a specific category of properties. An element in
- * the [[PropertyStore]] must be associated with at most one property per kind/key.
- *
- * To create a property key use the companion object's [[PropertyKey$.next]] method.
- *
- * @author Michael Eichberg
- */
-class PropertyKey private ( final val id: Int) extends AnyVal {
-
-    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
-}
-
-/**
- * Factory to create [[PropertyKey]] objects.
- *
- * @author Michael Eichberg
- */
-object PropertyKey {
-
-    private[fp] final val propertyKeyNames = ListBuffer.empty[String]
-    private[this] var lastKeyId: Int = -1
-
-    def create(name: String): PropertyKey = {
-
-        new PropertyKey(
-            propertyKeyNames.synchronized {
-                lastKeyId += 1
-                val key = lastKeyId
-                propertyKeyNames += name
-                key
-            }
-        )
-    }
-
-    def name(id: Int): String = propertyKeyNames.synchronized { propertyKeyNames(id) }
-}
-
