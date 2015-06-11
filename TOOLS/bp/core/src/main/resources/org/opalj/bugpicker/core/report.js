@@ -47,6 +47,8 @@ function toggleDetailsOpen(event) {
 document.addEventListener("DOMContentLoaded", function(e) {
     if (!('open' in document.createElement("details"))) {
         e.target.documentElement.classList.add("noDetails");
+        var parameters = document.querySelector("details#analysis_parameters_summary");
+        parameters.setAttribute("open","");
         var summarys = document.querySelectorAll("details summary");
         summarys.forEach(function(e) {
             e.addEventListener("click", toggleDetailsOpen);
@@ -381,121 +383,6 @@ IssueFilter.register(
         return commonValue(actual, checked);
     });
 
-// quotes RegExp special character in a String
-RegExp.quote = function (str) {
-    return (str + '').replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&");
-};
-
-// Filter: text search
-function findTextInIssue(issue, text, category) {
-
-    var erg = false;
-    var rx = new RegExp(RegExp.quote(text), "gi");
-    var processDD = function (dd) {
-        var attributes = dd.attributes;
-        var i = 0;
-        while (i < attributes.length) {
-            var attr = attributes[i];
-            if (attr.name.startsWith("data-")) {
-                var attrText = attr.value.toLowerCase().replace(/\//g, ".");
-                if (attrText.indexOf(text.toLowerCase()) >= 0) {
-                    erg = true;
-                }
-            }
-            i++;
-        }
-        var highlight = [];
-        var nodeIterator = document.createNodeIterator(dd, NodeFilter.SHOW_TEXT);
-        var currentNode;
-        while (currentNode = nodeIterator.nextNode()) {
-            if (currentNode.textContent.toLowerCase().indexOf(text.toLowerCase()) >= 0) {
-                erg = true;
-                // we will change the DOM, nodes can be become detached, store the parent for this case
-                highlight.push([currentNode, currentNode.parentNode]);
-            }
-        }
-        highlight.forEach(function (pair) {
-            var node = pair[0];
-            var parent = pair[1];
-            var oldTextContent = node.textContent;
-            var newTextContent = oldTextContent.replace(rx, function (t) {
-                return "<mark>" + t + "</mark>";
-            });
-            parent.innerHTML = parent.innerHTML.replace(new RegExp(RegExp.quote(
-                oldTextContent)), newTextContent);
-
-        });
-    };
-    if (category === undefined) {
-        // highlight package summary
-        var package_summary = issue.parentNode.firstChild.nextSibling;
-        var oldPackageName = package_summary.firstChild.textContent;
-        var newPackageName = oldPackageName.replace(rx, function (t) {
-            return "<mark>" + t + "</mark>";
-        });
-        package_summary.innerHTML = package_summary.innerHTML.replace(new RegExp(RegExp.quote(
-            oldPackageName)), newPackageName);
-        issue.querySelectorAll("dd:not(.issue_message)").forEach(processDD);
-    } else {
-        processDD(category);
-    }
-    return erg;
-}
-
-var searchField;
-var searchCategories = [];
-IssueFilter.register(
-    function () {
-        searchField = document.querySelector("#search_field");
-        // delay the event-listener
-        searchField.addEventListener("input", function () {
-            var searchString = searchField.value;
-            setTimeout(function () {
-                if (searchString == searchField.value)
-                    IssueFilter.update();
-            }, 300);
-        }, false);
-        document.querySelectorAll("dt").forEach(function (dt) {
-            if (searchCategories.indexOf(dt.innerText.replace(/\W/g, '')) < 0)
-                searchCategories.push(dt.innerText.replace(/\W/g, ''));
-        });
-        searchField.disabled = false;
-        log("[TextSearchFilter] Initialized.");
-    },
-    function (issue) {
-        var package_summary = issue.parentNode.firstChild.nextSibling;
-        package_summary.querySelectorAll("mark").forEach(function (e) {
-            e.outerHTML = e.innerHTML;
-        });
-        issue.querySelectorAll("mark").forEach(function (e) {
-            e.outerHTML = e.innerHTML;
-        });
-        var searchString = searchField.value;
-        if (searchString.length === 0)
-            return true;
-        var categoryLength = searchString.indexOf(":");
-        var category = searchString.substring(0, categoryLength);
-        if (searchCategories.indexOf(category) !== -1) {
-            searchString = searchString.slice(categoryLength + 1);
-        } else {
-            category = "";
-        }
-        var found = false;
-        if (category !== "") {
-            var elem;
-            issue.querySelectorAll("dt").forEach(function (dt) {
-                if (dt.innerText.replace(/\W/g, '') == category) {
-                    elem = dt.nextSibling;
-                    while (elem.nodeName != "DD")
-                        elem = elem.nextSibling;
-                }
-            });
-            found = findTextInIssue(issue, searchString, elem);
-        } else {
-            found = findTextInIssue(issue, searchString);
-        }
-        return found;
-    });
 
 function openAllPackages() {
     document.querySelectorAll('div#analysis_results > details').forEach(

@@ -69,6 +69,7 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
+import scala.xml.NodeSeq
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -487,22 +488,10 @@ object BugPickerAnalysis {
         """-maxCardinalityOfLongSets=(\d+)""".r
     final val DefaultMaxCardinalityOfLongSets = 2
 
-    /**
-     *
-     */
-    final lazy val ReportCSS: String =
-        process(this.getClass.getResourceAsStream("report.css"))(
-            Source.fromInputStream(_).mkString
-        )
-
-    final lazy val ReportJS: String =
-        process(this.getClass.getResourceAsStream("report.js"))(
-            Source.fromInputStream(_).mkString
-        )
-
     def resultsAsXHTML(
         parameters: Seq[String],
         methodsWithIssues: Iterable[Issue],
+        showSearch: Boolean,
         analysisTime: Nanoseconds): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
@@ -530,11 +519,22 @@ object BugPickerAnalysis {
                 is
         }
 
+        val (searchJS: NodeSeq, searchBox: NodeSeq) =
+            if (showSearch) {
+                (
+                    <script type="text/javascript">{ Unparsed(SearchJS) }</script>,
+                    <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
+                )
+            } else {
+                (NodeSeq.Empty, NodeSeq.Empty)
+            }
+
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
                 <script type="text/javascript">{ Unparsed(HTMLJS) }</script>
                 <script type="text/javascript">{ Unparsed(ReportJS) }</script>
+                { searchJS }
                 <style>{ Unparsed(HTMLCSS) }</style>
                 <style>{ Unparsed(ReportCSS) }</style>
             </head>
@@ -542,7 +542,7 @@ object BugPickerAnalysis {
                 <div id="analysis_controls">
                     <div>
                         <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
-                        <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
+                        { searchBox }
                     </div>
                     <div>
                         Suppress issues with an estimated

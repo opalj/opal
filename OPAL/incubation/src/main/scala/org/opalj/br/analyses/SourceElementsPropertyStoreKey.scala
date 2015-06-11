@@ -27,11 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fp
+package br
+package analyses
 
-import org.opalj.br.analyses.ProjectInformationKey
-
-import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.PropertyStore
 
 /**
  * The ''key'' object to get access to the properties store.
@@ -51,9 +50,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      * Creates a new empty property store.
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        PropertyStore(
-            project.allSourceElements,
-            () ⇒ Thread.currentThread.isInterrupted())(
-                project.logContext)
+        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
+        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
     }
 }
