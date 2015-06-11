@@ -58,7 +58,6 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
-        //        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -154,8 +153,8 @@ object AsQuadruples {
                 case ASTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeReference)
                 case ASTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeReference)
                 case ASTORE.opcode ⇒
-                    storeInstruction(as[ASTORE](instruction).lvIndex, ComputationalTypeReference)    
-                    
+                    storeInstruction(as[ASTORE](instruction).lvIndex, ComputationalTypeReference)
+
                 case ILOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeInt)
                 case ILOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeInt)
                 case ILOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeInt)
