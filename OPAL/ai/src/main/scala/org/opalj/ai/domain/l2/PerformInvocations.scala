@@ -33,6 +33,7 @@ package l2
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.log.Error
 import org.opalj.br._
 import scala.util.control.ControlThrowable
 
@@ -140,7 +141,7 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     /**
-     * Returns `true` is a potential target.
+     * Returns `true` if the given method should be invoked.
      */
     def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean
 
@@ -160,6 +161,7 @@ trait PerformInvocations extends MethodCallsHandling {
             s"the method ${project.source(definingClass.thisType)}: "+
                 s"${method.toJava(definingClass)} does not have a body "+
                 "(is the project self-consistent?)")
+
         val calledMethodDomain = this.calledMethodDomain(definingClass, method)
         val parameters = mapOperandsToParameters(operands, method, calledMethodDomain)
         val aiResult = doInvoke(method, calledMethodDomain)(parameters)
@@ -181,10 +183,10 @@ trait PerformInvocations extends MethodCallsHandling {
             return fallback();
 
         if (method.isAbstract) {
-            OPALLogger.error(
+            OPALLogger.logOnce(Error(
                 "project configuration",
                 "the resolved method on a concrete object is abstract: "+
-                    method.toJava(definingClass))
+                    method.toJava(definingClass)))
             fallback()
         } else if (!method.isNative) {
             if (!shouldInvocationBePerformed(definingClass, method))
@@ -210,33 +212,37 @@ trait PerformInvocations extends MethodCallsHandling {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        val methodOption = try {
-            classHierarchy.resolveMethodReference(
-                // the cast is safe since arrays do not have any static/special methods
-                declaringClassType.asObjectType,
-                methodName,
-                methodDescriptor,
-                project)
-        } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case e: AssertionError ⇒
-                OPALLogger.error(
-                    "internal error - recoverable",
-                    "exception occured while resolving method reference: "+
-                        declaringClassType.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+
-                        ": "+e.getMessage)
-                return fallback();
-            case e: Throwable ⇒
-                OPALLogger.error(
-                    "internal error - recoverable",
-                    "exception occured while resolving method reference: "+
-                        declaringClassType.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}",
-                    e
-                )
-                return fallback();
-        }
+        val methodOption =
+            try {
+                classHierarchy.resolveMethodReference(
+                    // the cast is safe since arrays do not have any static/special methods
+                    declaringClassType.asObjectType,
+                    methodName,
+                    methodDescriptor,
+                    project)
+            } catch {
+                case ct: ControlThrowable ⇒
+                    throw ct;
+
+                case e: AssertionError ⇒
+                    OPALLogger.logOnce(Error(
+                        "internal error - recoverable",
+                        "exception occured while resolving method reference: "+
+                            declaringClassType.toJava+
+                            "{ static "+methodDescriptor.toJava(methodName)+"}"+
+                            ": "+e.getMessage))
+                    return fallback();
+
+                case e: Throwable ⇒
+                    OPALLogger.error(
+                        "internal error - recoverable",
+                        "exception occured while resolving method reference: "+
+                            declaringClassType.toJava+
+                            "{ static "+methodDescriptor.toJava(methodName)+"}",
+                        e
+                    )
+                    return fallback();
+            }
 
         methodOption match {
             case Some(method) ⇒

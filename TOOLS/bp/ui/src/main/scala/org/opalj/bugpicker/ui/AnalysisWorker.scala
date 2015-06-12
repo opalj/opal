@@ -45,7 +45,7 @@ import javafx.concurrent.{ Task ⇒ jTask }
 import scalafx.beans.property.ObjectProperty
 import scalafx.concurrent.Service
 import org.opalj.log.OPALLogger
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 
 /**
@@ -57,6 +57,7 @@ class AnalysisWorker(
     doc: ObjectProperty[xmlNode],
     project: Project[URL],
     parameters: AnalysisParameters,
+    issuez: ObjectProperty[Iterable[Issue]],
     initProgressManagement: Int ⇒ ProgressManagement) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
@@ -64,14 +65,18 @@ class AnalysisWorker(
             val parametersAsString = parameters.toStringParameters
             val (analysisTime, issues, _) =
                 AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
+            issuez() = issues
             doc() = createHTMLReport(analysisTime, parametersAsString, issues)
         }
 
         def createHTMLReport(
-            analysisTime: NanoSeconds,
+            analysisTime: Nanoseconds,
             parametersAsString: Seq[String],
             issues: Iterable[Issue]): scala.xml.Node = {
-            val report = resultsAsXHTML(parametersAsString, issues, analysisTime)
+            val report =
+                resultsAsXHTML(
+                    parametersAsString, issues, showSearch = true,
+                    analysisTime)
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString

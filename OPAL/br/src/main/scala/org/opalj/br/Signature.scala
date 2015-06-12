@@ -30,14 +30,19 @@ package org.opalj
 package br
 
 /**
+ * An element of a [[Signature]] used to encode generic type information.
+ *
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-
 trait SignatureElement {
 
     def accept[T](sv: SignatureVisitor[T]): T
 
+    /**
+     * Converts this signature into its JVM representation. (See the JVM 5 or later
+     * specification for further details.)
+     */
     def toJVMSignature: String
 
 }
@@ -56,6 +61,183 @@ sealed trait ThrowsSignature extends SignatureElement {
 
 /**
  * An attribute-level signature as defined in the JVM specification.
+ *
+ * To match `Signature` objects the predefined matchers/extractors can be used.
+ * * @example
+ * ==Example 1==
+ * {{{
+ * interface Processor extends Function<Object, Void> { /*empty*/ }
+ * }}}
+ * '''ClassSignature''':
+ * `Ljava/lang/Object;Ljava/util/function/Function<Ljava/lang/Object;Ljava/lang/Void;>;`
+ * {{{
+ *  ClassSignature(
+ *    typeParameters=List(),
+ *    superClass=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List()),
+ *    superInterfaces=List(
+ *        ClassTypeSignature(
+ *            Some(java/util/function/),
+ *            SimpleClassTypeSignature(Function,
+ *                  List(ProperTypeArgument(
+ *                         None,
+ *                         ClassTypeSignature(
+ *                            Some(java/lang/),
+ *                            SimpleClassTypeSignature(Object,List()),
+ *                            List())),
+ *                     ProperTypeArgument(
+ *                        None,
+ *                        ClassTypeSignature(
+ *                            Some(java/lang/),
+ *                            SimpleClassTypeSignature(Void,List()),
+ *                            List())))),
+ *            List())))
+ * }}}
+ *
+ * ==Example 2==
+ * {{{
+ * interface Col<C> { /*empty*/ }
+ * }}}
+ * '''ClassSignature''':
+ * `<C:Ljava/lang/Object;>Ljava/lang/Object;`
+ * {{{
+ *  ClassSignature(
+ *      typeParameters=
+ *          List(
+ *              FormalTypeParameter(
+ *                  C,
+ *                  Some(ClassTypeSignature(
+ *                          Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())),
+ *                  List())),
+ *       superClass=ClassTypeSignature(
+ *              Some(java/lang/),SimpleClassTypeSignature(Object,List()),List()),
+ *       superInterfaces=List())
+ * }}}
+ *
+ * ==Example 3==
+ * {{{
+ * interface ColObject extends Col<Object> { /*empty*/ }
+ * }}}
+ * '''ClassSignature''':
+ * `Ljava/lang/Object;LCol<Ljava/lang/Object;>;`
+ * {{{
+ *  ClassSignature(
+ *      typeParameters=List(),
+ *      superClass=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List()),
+ *      superInterfaces=List(
+ *              ClassTypeSignature(
+ *                  None,
+ *                  SimpleClassTypeSignature(
+ *                      Col,
+ *                      List(ProperTypeArgument(
+ *                              variance=None,
+ *                              signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List()))
+ *                   )),
+ *                   List())))
+ * }}}
+ *
+ * ==Example 4==
+ * {{{
+ * interface ColError<E extends Error> extends Col<E>{/*empty*/}
+ * }}}
+ * '''ClassSignature''':
+ * `<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;`
+ * {{{
+ *  ClassSignature(
+ *      typeParameters=List(
+ *              FormalTypeParameter(
+ *                  E,
+ *                  Some(ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Error,List()),List())),List())),
+ *      superClass=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List()),
+ *      superInterfaces=List(
+ *              ClassTypeSignature(
+ *                  None,
+ *                  SimpleClassTypeSignature(
+ *                      Col,
+ *                      List(ProperTypeArgument(variance=None,signature=TypeVariableSignature(E)))),
+ *                  List())))
+ * }}}
+ *
+ * ==Example 5==
+ * {{{
+ * class Use {
+ *   // The following fields all have "ClassTypeSignatures"
+ *   Col<?> ce = null; // Signature: LCol<*>;
+ *   Col<Object> co = null; // Signature: LCol<Ljava/lang/Object;>;
+ *   Col<? super Serializable> cs = null; // Signature: LCol<-Ljava/io/Serializable;>;
+ *   Col<? extends Comparable<?>> cc = null; // Signature: LCol<+Ljava/lang/Comparable<*>;>;
+ *
+ *   MyCol<java.util.List<Object>> mco = new MyCol<>();
+ *   MyCol<java.util.List<Object>>.MyInnerCol<Comparable<java.util.List<Object>>> mico = this.mco.new MyInnerCol<Comparable<java.util.List<Object>>>();
+ *   // Signature: LMyCol<Ljava/util/List<Ljava/lang/Object;>;>.MyInnerCol<Ljava/lang/Comparable<Ljava/util/List<Ljava/lang/Object;>;>;>;
+ * }
+ * }}}
+ *
+ * AST of `mico`:
+ * {{{
+ *  ClassSignature(
+ *      typeParameters=List(),
+ *      superClass=ClassTypeSignature(
+ *              None,
+ *              SimpleClassTypeSignature(
+ *                  MyCol,
+ *                  List(ProperTypeArgument(
+ *                          variance=None,
+ *                          signature=ClassTypeSignature(
+ *                                  Some(java/util/),
+ *                                  SimpleClassTypeSignature(
+ *                                      List,
+ *                                      List(ProperTypeArgument(
+ *                                              variance=None,
+ *                                              signature=ClassTypeSignature(
+ *                                                      Some(java/lang/),
+ *                                                      SimpleClassTypeSignature(Object,List()),
+ *                                                      List())))),
+ *                                   List())))),
+ *              /*suffic=*/List(SimpleClassTypeSignature(
+ *                      MyInnerCol,
+ *                      List(ProperTypeArgument(
+ *                              variance=None,
+ *                              signature=ClassTypeSignature(
+ *                                  Some(java/lang/),
+ *                                  SimpleClassTypeSignature(
+ *                                      Comparable,
+ *                                      List(ProperTypeArgument(
+ *                                              variance=None,
+ *                                              signature=ClassTypeSignature(
+ *                                                      Some(java/util/),
+ *                                                      SimpleClassTypeSignature(
+ *                                                          List,
+ *                                                          List(ProperTypeArgument(
+ *                                                                  variance=None,
+ *                                                                  signature=ClassTypeSignature(
+ *                                                                          Some(java/lang/),
+ *                                                                          SimpleClassTypeSignature(Object,List()),
+ *                                                                          List())))),
+ *                                                      List())))),
+ *                                  List())))))),
+ *      superInterfaces=List())
+ * }}}
+ *
+ * ==Matching Signatures==
+ * '''Scala REPL''':
+ * {{{
+ * val SignatureParser = org.opalj.br.reader.SignatureParser
+ * val GenericType = org.opalj.br.GenericType
+ * val SimpleGenericType = org.opalj.br.SimpleGenericType
+ * val BasicClassTypeSignature = org.opalj.br.BasicClassTypeSignature
+ *
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ot) => ot.toJava; case _ => null}
+ * // res: String = Col
+ *
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case SimpleGenericType(bt,gt) => bt.toJava+"<"+gt.toJava+">"; case _ => null}
+ * //res11: String = null
+ *
+ * scala> SignatureParser.parseFieldTypeSignature("LCol<Ljava/lang/Object;>;") match { case SimpleGenericType(bt,ta) => bt.toJava+"<"+ta+">"; case _ => null}
+ * res1: String = Col<ObjectType(java/lang/Object)>
+ *
+ * scala> SignatureParser.parseFieldTypeSignature("LCol<Ljava/lang/Object;>;") match { case GenericType(bt,ta) => bt.toJava+"<"+ta+">"; case _ => null}
+ * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
+ * }}}
  */
 sealed trait Signature extends SignatureElement with Attribute
 
@@ -63,17 +245,19 @@ private[br] object Signature {
 
     def formalTypeParametersToJVMSignature(
         formalTypeParameters: List[FormalTypeParameter]): String = {
-        if (formalTypeParameters.isEmpty)
+        if (formalTypeParameters.isEmpty) {
             ""
-        else
-            // IMPROVE Consider using a fold and a Stringbuffer.
+        } else {
             formalTypeParameters.map(_.toJVMSignature).mkString("<", "", ">")
-
+        }
     }
 
 }
 import Signature.formalTypeParametersToJVMSignature
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class ClassSignature(
     formalTypeParameters: List[FormalTypeParameter],
     superClassSignature: ClassTypeSignature,
@@ -89,6 +273,13 @@ case class ClassSignature(
             superClassSignature.toJVMSignature +
             superInterfacesSignature.map(_.toJVMSignature).mkString("")
     }
+
+    override def toString(): String = {
+        "ClassSignature("+
+            formalTypeParameters.mkString("typeParameters=List(", ",", ")")+
+            ",superClass="+superClassSignature.toString() +
+            superInterfacesSignature.mkString(",superInterfaces=List(", ",", "))")
+    }
 }
 object ClassSignature {
 
@@ -96,6 +287,9 @@ object ClassSignature {
 
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class MethodTypeSignature(
     formalTypeParameters: List[FormalTypeParameter],
     parametersTypeSignatures: List[TypeSignature],
@@ -119,6 +313,9 @@ object MethodTypeSignature {
 
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 trait FieldTypeSignature extends Signature with TypeSignature
 
 object FieldTypeSignature {
@@ -127,6 +324,9 @@ object FieldTypeSignature {
 
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
@@ -141,6 +341,9 @@ object ArrayTypeSignature {
 
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class ClassTypeSignature(
     packageIdentifier: Option[String],
     simpleClassTypeSignature: SimpleClassTypeSignature,
@@ -191,6 +394,9 @@ object ClassTypeSignature {
 
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class TypeVariableSignature(
     identifier: String)
         extends FieldTypeSignature
@@ -208,6 +414,10 @@ object TypeVariableSignature {
     final val KindId = 16
 
 }
+
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class SimpleClassTypeSignature(
         simpleName: String,
         typeArguments: List[TypeArgument]) {
@@ -223,6 +433,9 @@ case class SimpleClassTypeSignature(
     }
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class FormalTypeParameter(
         identifier: String,
         classBound: Option[FieldTypeSignature],
@@ -243,8 +456,14 @@ case class FormalTypeParameter(
     }
 }
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 sealed trait TypeArgument extends SignatureElement
 
+/**
+ * @see For matching signatures see [[Signature]].
+ */
 case class ProperTypeArgument(
     varianceIndicator: Option[VarianceIndicator],
     fieldTypeSignature: FieldTypeSignature)
@@ -260,6 +479,13 @@ case class ProperTypeArgument(
             fieldTypeSignature.toJVMSignature
     }
 
+    override def toString(): String = {
+        "ProperTypeArgument"+
+            "(variance="+varianceIndicator+
+            ",signature="+fieldTypeSignature+
+            ")"
+    }
+
 }
 
 /**
@@ -272,6 +498,8 @@ sealed trait VarianceIndicator extends SignatureElement {
 /**
  * If you have a declaration such as &lt;? extends Entry&gt; then the "? extends" part
  * is represented by the `CovariantIndicator`.
+ *
+ * @see For matching signatures see [[Signature]].
  */
 sealed trait CovariantIndicator extends VarianceIndicator {
 
@@ -285,6 +513,8 @@ case object CovariantIndicator extends CovariantIndicator
 /**
  * A declaration such as <? super Entry> is represented in class file signatures
  * by the ContravariantIndicator ("? super") and a FieldTypeSignature.
+ *
+ * @see For matching signatures see [[Signature]].
  */
 sealed trait ContravariantIndicator extends VarianceIndicator {
 
@@ -298,6 +528,9 @@ case object ContravariantIndicator extends ContravariantIndicator
 /**
  * If a type argument is not further specified (e.g. List<?> l = …) then the
  * type argument "?" is represented by this object.
+ *
+ *
+ * @see For matching signatures see [[Signature]].
  */
 sealed trait Wildcard extends TypeArgument {
 
@@ -309,41 +542,194 @@ sealed trait Wildcard extends TypeArgument {
 case object Wildcard extends Wildcard
 
 /**
- * Facilitates matching the `ObjectType` that is defined by a `ClassTypeSignature`.
- * Ignores all further type parameters.
+ * Extractor/Matcher of the (potentially erased) `ObjectType` that is defined by a
+ * `ClassTypeSignature`; ignores all further potential type parameters.
+ *
+ * @see For matching signatures see [[Signature]].
  */
 object BasicClassTypeSignature {
+
     def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
         Some(cts.objectType)
     }
 }
 
 /**
- * Facilitates matching fields with generic types.
+ * Matches a [[ClassTypeSignature]] with a [[SimpleClassTypeSignature]] that does not define
+ * a generic type. For example, `java.lang.Object`.
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object ConcreteType {
+
+    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
+        cts match {
+
+            case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) ⇒
+                Some(ObjectType(cpn.getOrElse("") + csn))
+
+            case _ ⇒
+                None
+        }
+    }
+}
+
+/**
+ * Facilitates matching [[ProperTypeArgument]]s that define a single concrete/invariant
+ * type that is not a generic type on its own. E.g., it can be used to match the
+ * type argument of `List<Integer>` and to extract the concrete type `Integer`. It
+ * cannot be used to match, e.g., `List<List<Integer>>`.
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object ConcreteTypeArgument {
+
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
+        pta match {
+            case ProperTypeArgument(None, ConcreteType(ot)) ⇒ Some(ot)
+            case _ ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching [[ProperTypeArgument]]s that define an upper type bound. E.g.,
+ * a type bound which uses a CovarianceIndicator (`? extends`) such as in
+ * `List<? extends Number>`.
  *
  * @example
  * {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments.head match {
+ *      case UpperTypeBound(objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ *
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object UpperTypeBound {
+
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
+        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) ⇒ Some(ot)
+        case _ ⇒ None
+    }
+}
+
+/**
+ * Facilitates matching [[ProperTypeArgument]]s that define a lower type bound. E.g.,
+ * a type bound which uses a ContravarianceIndicator (`? super`) such as in
+ * `List<? super Number>`.
+ *
+ * @example
+ *  matches, e.g., `List<? super Integer>`
+ *  {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments.head match {
+ *      case LowerTypeBound(objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object LowerTypeBound {
+
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
+
+        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) ⇒
+            Some(ot)
+
+        case _ ⇒
+            None
+    }
+}
+
+/**
+ * Facilitates matching the (`VarianceIndicator`, `ObjectType`) that is defined
+ * within a `ProperTypeArgument`. It matches ProperTypeArguments which define
+ * `TypeArgument`s in the inner ClassTypeSignature.
+ *
+ * @example
+ *      matches e.g.: `List<List<Integer>>`
+ * {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments match {
+ *      case GenericTypeArgument(varInd, objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object GenericTypeArgument {
+
+    def unapply(pta: ProperTypeArgument): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
+        pta match {
+            case ProperTypeArgument(variance, cts: ClassTypeSignature) ⇒
+                Some((variance, cts))
+
+            case _ ⇒
+                None
+        }
+    }
+}
+
+/**
+ * Matches all [[ClassTypeSignature]]s which consists of
+ * a [[SimpleClassTypeSignature]] with a non-empty List of TypeArguments (
+ * which consists of [[Wildcard]]s or [[ProperTypeArgument]]s)
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object GenericType {
+
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument])] = {
+        cts match {
+
+            case ClassTypeSignature(
+                cpn,
+                SimpleClassTypeSignature(csn, typeArgs),
+                Nil) if typeArgs.nonEmpty ⇒
+                Some((ObjectType(cpn.getOrElse("") + csn), typeArgs))
+
+            case _ ⇒
+                None
+        }
+    }
+}
+
+/**
+ * Facilitates matching [[ClassTypeSignature]]s that define a simple generic type that
+ * has a single type argument with a concrete type.
+ *
+ * @example
+ * The following can be used to match, e.g., `List<Object>`.
+ * {{{
  *  val f : Field = ...
  *  f.fieldTypeSignature match {
- *      case GenericContainer(ContainerType,ElementType) => ...
+ *      case SimpleGenericType(ContainerType,ElementType) => ...
  *      case _ => ...
  *  }
  * }}}
  *
  * @author Michael Eichberg
  */
-object GenericContainer { // matches : List<Object>
+object SimpleGenericType {
 
     def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = {
         cts match {
+
             case ClassTypeSignature(
-                Some(cpn),
+                cpn,
                 SimpleClassTypeSignature(
                     csn,
-                    List(ProperTypeArgument(None, BasicClassTypeSignature(tp)))),
+                    List(ProperTypeArgument(None, ConcreteType(tp)))),
                 Nil
                 ) ⇒
-                Some((ObjectType(cpn + csn), tp))
+                Some((ObjectType(cpn.getOrElse("") + csn), tp))
+
             case _ ⇒
                 None
         }

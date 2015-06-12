@@ -32,6 +32,7 @@ package mutable
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+import scala.collection.immutable.Vector
 
 /**
  * Conceptually, an array that enables random access and which is heavily optimized for
@@ -39,11 +40,14 @@ import scala.reflect.ClassTag
  * and where sharing is beneficial.
  *
  * A `Locals` array contains `null` values for all elements that are not yet set.
- * Furthermore, a `Locals` array is not resizable.
+ * Furthermore, a `Locals` array is not resizable and – if used in development mode –
+ * minimizes checks whenever possible. I.e., the user is expected to correctly use
+ * this data structure.
  *
  * ==Usage Scenario==
  * For example, the median of the number of registers that are used per method is 2
- * (JDK and OPAL) and more then 99,5% of all methods have less than 20 elements.
+ * (JDK and OPAL) and more then 99,5% of all methods have less than 20 elements and
+ * in particular those elements related to the parameters do not change often.
  *
  * @author Michael Eichberg
  */
@@ -55,35 +59,66 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ def nonEmpty: Boolean
 
+    /**
+     * Returns the value stored at the given index.
+     *
+     * @note If the index is not valid the result is not defined.
+     */
     /* ABSTRACT */ def apply(index: Int): T
 
+    /**
+     * Sets the value at the given index to the given value.
+     *
+     * @note If the index is not valid the result is not defined.
+     */
     /* ABSTRACT */ def set(index: Int, value: T): Unit
 
     final def update(index: Int, value: T): Unit = set(index, value)
 
+    /**
+     * Applies the given function to all elements and updates the value stored at
+     * the respective index. Compared to `map` an in-place update is performed.
+     *
+     * @note For those values which are not yet set, `null` is passed to `f`.
+     */
     /* ABSTRACT */ def update(f: (T) ⇒ T): Unit
 
+    /**
+     * Creates a new Locals object where the value stored at the given index is
+     * set to the given one.
+     */
     /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
 
     /* ABSTRACT */ def foreach(f: T ⇒ Unit): Unit
 
     /* ABSTRACT */ def foreachReverse(f: T ⇒ Unit): Unit
 
+    /**
+     * Merges this `Locals` data-structure with the given `Locals`. If
+     * the pairwise merge of those values that are different always results in values that
+     * are reference equal to this local's elements or the other local's elements,
+     * the return value will be `this` or `other` otherwise a new locals data structure
+     * is created.
+     *
+     * @param other Another `Locals` data-structure that has the the same number of
+     *      elements as this `Locals` data-structure.
+     */
     /* ABSTRACT */ def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
 
     /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
 
     /**
      * Transforms the values of this locals array. If all values are the same as
-     * before `this` is returned.
+     * before `this` is returned otherwise a new Locals object is created which contains
+     * the updated values.
      */
-    /* ABSTRACT */ def transform(f: T ⇒ T): Locals[T]
+    /* ABSTRACT */ def mapConserve(f: T ⇒ T): Locals[T]
 
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
      */
     def forall[X >: T](f: X ⇒ Boolean): Boolean = {
-        foreach { e ⇒ if (!f(e)) return false }
+        foreach { e ⇒ if (!f(e)) return false; }
         true
     }
 
@@ -91,7 +126,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * Returns `true` if an element satisfies the given predicate, `false` otherwise.
      */
     def exists[X >: T](f: X ⇒ Boolean): Boolean = {
-        foreach { e ⇒ if (f(e)) return true }
+        foreach { e ⇒ if (f(e)) return true; }
         false
     }
 
@@ -99,7 +134,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * Returns `true` if the given element is already in this list, `false` otherwise.
      */
     def contains[X >: T](o: X): Boolean = {
-        foreach { e ⇒ if (e == o) return true }
+        foreach { e ⇒ if (e == o) return true; }
         false
     }
 
@@ -107,16 +142,18 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * Returns the first element that satisfies the given predicate.
      */
     def find[X >: T](f: X ⇒ Boolean): Option[T] = {
-        foreach { e ⇒ if (f(e)) return Some(e) }
+        foreach { e ⇒ if (f(e)) return Some(e); }
         None
     }
 
     def indexOf(other: Object): Option[Int]
 
     /**
-     * Counts the number of '''non-null''' values that do not match the given given predicate;
-     * the index of the first element that matches the predicate is returned. If
-     * no value matches the value -1 is returned.
+     * Counts the number of '''non-null''' values that do not match the given
+     * given predicate; the index of the first element that matches the predicate
+     * is returned.
+     *
+     * If no value matches the value -1 is returned.
      */
     def nthValue[X >: T](f: X ⇒ Boolean): Int = {
         val max = size
@@ -144,8 +181,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * @param f The function that converts this collection's elements. `f` has to
      *      be able to handle `null` values if this collection may contain `null` values.
      */
-    def mapToVector[X](f: T ⇒ X): scala.collection.immutable.Vector[X] = {
-        var newLocals = scala.collection.immutable.Vector.empty[X]
+    def mapToVector[X](f: T ⇒ X): Vector[X] = {
+        var newLocals = Vector.empty[X]
         foreach { e ⇒ newLocals = newLocals :+ f(e) }
         newLocals
     }
@@ -174,56 +211,48 @@ sealed trait Locals[T >: Null <: AnyRef] {
         seq
     }
 
-    def zipWithIndex: Iterator[(T, Int)] = {
-        new Iterator[(T, Int)] {
-            var index = 0
-            def hasNext = index < Locals.this.size
-            def next = {
-                val currentValue = Locals.this.apply(index)
-                val currentIndex = index
-                index += 1
-                (currentValue, currentIndex)
-            }
+    def zipWithIndex: Iterator[(T, Int)] = new Iterator[(T, Int)] {
+        var index = 0
+        def hasNext = index < Locals.this.size
+        def next = {
+            val currentValue = Locals.this.apply(index)
+            val currentIndex = index
+            index += 1
+            (currentValue, currentIndex)
         }
     }
 
-    def zip(other: Locals[T]): Iterator[(T, T)] = {
-        new Iterator[(T, T)] {
-            var index = 0
-            def hasNext: Boolean = index < Locals.this.size
-            def next: (T, T) = {
-                val thisValue = Locals.this.apply(index)
-                val otherValue = other(index)
-                index += 1
-                (thisValue, otherValue)
-            }
+    def zip(other: Locals[T]): Iterator[(T, T)] = new Iterator[(T, T)] {
+        var index = 0
+        def hasNext: Boolean = index < Locals.this.size
+        def next: (T, T) = {
+            val thisValue = Locals.this.apply(index)
+            val otherValue = other(index)
+            index += 1
+            (thisValue, otherValue)
         }
     }
 
     def corresponds[U >: Null <: AnyRef](
         other: Locals[U])(
             compare: (T, U) ⇒ Boolean): Boolean = {
-        this.size == other.size &&
-            {
-                var i = 0
-                while (i < this.size) {
-                    if (!compare(this(i), other(i)))
-                        return false;
-                    i += 1
-                }
-                true
+        this.size == other.size && {
+            var i = 0
+            while (i < this.size) {
+                if (!compare(this(i), other(i))) return false;
+                i += 1
             }
+            true
+        }
     }
 
-    def iterator: Iterator[T] = {
-        new Iterator[T] {
-            var index = 0
-            def hasNext = index < Locals.this.size
-            def next = {
-                val currentValue = Locals.this.apply(index)
-                index += 1
-                currentValue
-            }
+    def iterator: Iterator[T] = new Iterator[T] {
+        var index = 0
+        def hasNext = index < Locals.this.size
+        def next = {
+            val currentValue = Locals.this.apply(index)
+            index += 1
+            currentValue
         }
     }
 
@@ -231,7 +260,9 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒ hc = hc * 41 + { if (e ne null) e.hashCode else 7 } }
+        foreach { e ⇒
+            hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
+        }
         hc
     }
 
@@ -248,8 +279,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
             s + end
     }
 
-    override def toString: String =
-        mkString("org.opalj.collection.immutable.Locals(", ",", ")")
+    override def toString: String = mkString("Locals(IndexedSeq(", ",", "))")
 
 }
 
@@ -289,7 +319,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
         this.asInstanceOf[Locals[X]]
     }
 
-    override def transform(f: Null ⇒ Null) = this
+    override def mapConserve(f: Null ⇒ Null) = this
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -355,9 +385,12 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         else {
             // Locals1 is left-right stabilized
             val newV = onDiff(thisV, thatV)
-            if (newV eq thatV) that
-            else if (newV eq thisV) this
-            else new Locals1(newV)
+            if (newV eq thatV)
+                that
+            else if (newV eq thisV)
+                this
+            else
+                new Locals1(newV)
         }
     }
 
@@ -369,7 +402,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         new Locals1[X](f(v))
     }
 
-    override def transform(f: T ⇒ T): Locals1[T] = {
+    override def mapConserve(f: T ⇒ T): Locals1[T] = {
         val thisV = v
         val newV = f(thisV)
         if (newV eq thisV)
@@ -457,7 +490,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         new Locals2[X](f(v0), f(v1))
     }
 
-    override def transform(f: T ⇒ T): Locals2[T] = {
+    override def mapConserve(f: T ⇒ T): Locals2[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -576,7 +609,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         new Locals3[X](f(v0), f(v1), f(v2))
     }
 
-    override def transform(f: T ⇒ T): Locals3[T] = {
+    override def mapConserve(f: T ⇒ T): Locals3[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -715,7 +748,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         new Locals4[X](f(v0), f(v1), f(v2), f(v3))
     }
 
-    override def transform(f: T ⇒ T): Locals4[T] = {
+    override def mapConserve(f: T ⇒ T): Locals4[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -804,11 +837,11 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         new Locals5[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals5[T] = {
+    override def mapConserve(f: T ⇒ T): Locals5[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -899,11 +932,11 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         new Locals6[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals6[T] = {
+    override def mapConserve(f: T ⇒ T): Locals6[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -987,11 +1020,11 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         new Locals7[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals7[T] = {
+    override def mapConserve(f: T ⇒ T): Locals7[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -1109,13 +1142,13 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
         new Locals8[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals8[T] = {
+    override def mapConserve(f: T ⇒ T): Locals8[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1233,13 +1266,13 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         new Locals9[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals9[T] = {
+    override def mapConserve(f: T ⇒ T): Locals9[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1357,13 +1390,13 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         new Locals10[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals10[T] = {
+    override def mapConserve(f: T ⇒ T): Locals10[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1481,13 +1514,13 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         new Locals11[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals11[T] = {
+    override def mapConserve(f: T ⇒ T): Locals11[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1620,9 +1653,9 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         new Locals12_N[X](vs11.map(f), vs12_N.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals12_N[T] = {
+    override def mapConserve(f: T ⇒ T): Locals12_N[T] = {
         val thisVs11 = vs11
-        val newVs11 = thisVs11.transform(f)
+        val newVs11 = thisVs11.mapConserve(f)
         val thisVs12_N = vs12_N
         var vs12_Nupdated = false
         var newVs12_N = thisVs12_N map { v ⇒

@@ -30,6 +30,8 @@ package org.opalj
 package br
 
 /**
+ * Implements a visitor for type signatures.
+ *
  * @author Michael Eichberg
  */
 trait SignatureVisitor[T] {
@@ -54,10 +56,13 @@ trait SignatureVisitor[T] {
     def visit(dt: DoubleType): T
     def visit(vt: VoidType): T
 }
+/**
+ * This visitor's visit methods completely traverse all elements of a type signature.
+ */
 trait TraversingVisitor extends SignatureVisitor[Unit] {
 
     override def visit(cs: ClassSignature): Unit = {
-        cs.formalTypeParameters foreach (_.accept(this))
+        cs.formalTypeParameters.foreach(_.accept(this))
         cs.superClassSignature.accept(this)
         cs.superInterfacesSignature.foreach(_.accept(this))
     }
@@ -81,7 +86,7 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
     override def visit(tvs: TypeVariableSignature): Unit = { /* Leafnode */ }
 
     override def visit(scts: SimpleClassTypeSignature): Unit = {
-        scts.typeArguments foreach (_.accept(this))
+        scts.typeArguments.foreach(_.accept(this))
     }
 
     override def visit(ftp: FormalTypeParameter): Unit = {
@@ -126,20 +131,31 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
  * ==Thread Safety==
  * This class is thread-safe and reusable. I.e., you can use one instance
  * of this visitor to simultaneously process multiple signatures. In this
- * case, however, the given function f also has to be thread safe.
+ * case, however, the given function `f` also has to be thread safe or you have
+ * to use different functions.
  */
 class TypesVisitor(val f: Type ⇒ Unit) extends TraversingVisitor {
+
     override def visit(cts: ClassTypeSignature): Unit = {
         f(cts.objectType)
         super.visit(cts)
     }
+
     override def visit(bt: BooleanType): Unit = { f(bt) }
+
     override def visit(bt: ByteType): Unit = { f(bt) }
+
     override def visit(it: IntegerType): Unit = { f(it) }
+
     override def visit(lt: LongType): Unit = { f(lt) }
+
     override def visit(ct: CharType): Unit = { f(ct) }
+
     override def visit(st: ShortType): Unit = { f(st) }
+
     override def visit(ft: FloatType): Unit = { f(ft) }
+
     override def visit(dt: DoubleType): Unit = { f(dt) }
+
     override def visit(vt: VoidType): Unit = { f(vt) }
 }

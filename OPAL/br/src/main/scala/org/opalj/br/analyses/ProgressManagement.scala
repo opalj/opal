@@ -71,17 +71,17 @@ trait ProgressManagement {
      * @param message An optional message. Typically used in combination with `Start`
      *      events.
      */
-    def progress(step: Int, event: Event, message: Option[String]): Unit
+    def progress(step: Int, event: ProgressEvent, message: Option[String]): Unit
 
     final def start(step: Int, message: String): Unit =
-        progress(step, EventType.Start, Some(message))
+        progress(step, ProgressEvents.Start, Some(message))
 
-    final def end(step: Int): Unit = progress(step, EventType.End, None)
+    final def end(step: Int): Unit = progress(step, ProgressEvents.End, None)
 
     final def end(step: Int, message: String): Unit = end(step, Some(message))
 
     final def end(step: Int, message: Option[String]): Unit =
-        progress(step, EventType.End, message)
+        progress(step, ProgressEvents.End, message)
 
     final def step[T](
         step: Int,
@@ -119,7 +119,7 @@ object ProgressManagement {
 
     val None: (Int) ⇒ ProgressManagement = (maxSteps) ⇒ new ProgressManagement {
 
-        final def progress(step: Int, evt: Event, msg: Option[String]): Unit = {}
+        final def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
 
         final def isInterrupted: Boolean = false
 

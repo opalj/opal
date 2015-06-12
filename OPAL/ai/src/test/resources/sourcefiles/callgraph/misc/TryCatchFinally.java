@@ -61,7 +61,7 @@ public class TryCatchFinally {
     Base simple = new SimpleBase();
     Base alternate = new AlternateBase();
 
-    @InvokedConstructor(receiverType = SimpleBase.class, line = 70)
+    @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 70)
     @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 71)
     void callVirtualMethodInCatch() {
         try {
@@ -100,7 +100,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, line = 111)
+    @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 111)
     @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 112)
     void callVirtualMethodInFinally() {
         try {

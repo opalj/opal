@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,21 +36,49 @@ package domain
 package l1
 
 import org.opalj.br.ArrayType
+import scala.reflect.ClassTag
 
 /**
  * @author Michael Eichberg
  */
 trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with ArrayValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
+
+    type DomainInitializedArrayValue = InitializedArrayValue
+    final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly
+
+    type DomainConcreteArrayValue = ConcreteArrayValue
+    final val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
+
     //
     // FACTORY METHODS
     //
 
-    override protected def ArrayValue( // for ArrayValue
-        vo: ValueOrigin,
+    final override def ArrayValue(
+        origin: ValueOrigin,
         theType: ArrayType,
-        values: Array[DomainValue]): DomainArrayValue =
-        new ArrayValue(vo, theType, values, nextT)
+        values: Array[DomainValue]): DomainConcreteArrayValue =
+        ArrayValue(origin, theType, values, nextT())
+
+    override def ArrayValue(
+        origin: ValueOrigin,
+        theType: ArrayType,
+        values: Array[DomainValue],
+        t: Timestamp): DomainConcreteArrayValue =
+        new ConcreteArrayValue(origin, theType, values, t)
+
+    final override def InitializedArrayValue(
+        origin: ValueOrigin,
+        arrayType: ArrayType,
+        counts: List[Int]): DomainInitializedArrayValue =
+        InitializedArrayValue(origin, arrayType, counts, nextT())
+
+    override def InitializedArrayValue(
+        origin: ValueOrigin,
+        arrayType: ArrayType, counts: List[Int],
+        t: Timestamp): DomainInitializedArrayValue = {
+        new InitializedArrayValue(origin, arrayType, counts.take(2), nextT())
+    }
 
 }
 

@@ -48,6 +48,8 @@ sealed abstract class AIResult {
      * If `true` then then code was evaluated using `strict` semantics (in Java
      * the `strictfp` modifier was used), otherwise
      * it was evaluated using the standard JVM semantics.
+     *
+     * Note, that most standard JVMs nowadays always use strict semantics.
      */
     val strictfp: Boolean
 
@@ -60,6 +62,9 @@ sealed abstract class AIResult {
      * The instructions where two or more control flow paths join.
      *
      * (See also [[org.opalj.br.Code.joinInstructions]].)
+     *
+     * @note This information could be recomputed on-demand but is stored for performance
+     * reasons.
      */
     val joinInstructions: BitSet
 

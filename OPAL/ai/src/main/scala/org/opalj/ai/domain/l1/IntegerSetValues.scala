@@ -58,10 +58,10 @@ trait IntegerSetValues
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines the maximum number of values captured by an Integer set.
+     * Determines the maximum size of values captured by an Integer set.
      *
      * In many cases a rather (4-16) small number is completely sufficient to
-     * capture typically variability.
+     * capture typical variability.
      */
     def maxCardinalityOfIntegerSets: Int = 8
 

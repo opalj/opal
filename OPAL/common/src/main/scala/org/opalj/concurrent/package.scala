@@ -38,21 +38,32 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.{ Future ⇒ JFuture }
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.CancellationException
 
 /**
- * Common constants, factory methods and objects used throughout OPAL when doing
- * parallelization.
+ * Common constants, factory methods and objects used throughout OPAL when performing
+ * concurrent computations.
  *
  * @author Michael Eichberg
  */
 package object concurrent {
 
-    private implicit def logContext = GlobalContext
+    private implicit def logContext = GlobalLogContext
+
+    final def handleUncaughtException(t: Throwable): Unit = {
+        OPALLogger.error("internal", "uncaught exception", t)
+    }
+
+    final def handleUncaughtException(t: Thread, e: Throwable): Unit = {
+        OPALLogger.error("internal", s"uncaught exception (Thread=${t.getName})", e)
+    }
 
     //
     // STEP 1
@@ -121,28 +132,15 @@ package object concurrent {
     //
     // STEP 3
     //
-    def ThreadPoolN(n: Int): ExecutorService = {
+    private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+        def uncaughtException(t: Thread, e: Throwable): Unit = {
+            handleUncaughtException(e)
+        }
+    }
+
+    def ThreadPoolN(n: Int): OPALThreadPoolExecutor = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
-        val tp =
-            new ThreadPoolExecutor(
-                n, n,
-                60L, TimeUnit.SECONDS, // this is a fixed size pool
-                new LinkedBlockingQueue[Runnable](),
-                new ThreadFactory {
-
-                    val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
-
-                    def newThread(r: Runnable): Thread = {
-                        val id = s"${nextID.incrementAndGet()}"
-                        val name = s"org.opalj.ThreadPool[N=$n]-Thread $id"
-                        val t = new Thread(group, r, name)
-                        // we are using demon threads to make sure that these
-                        // threads never prevent the JVM from regular termination
-                        t.setDaemon(true)
-                        t
-                    }
-                }
-            )
+        val tp = new OPALThreadPoolExecutor(n, group)
         tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp
@@ -151,7 +149,7 @@ package object concurrent {
     /**
      * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
-    final val ThreadPool: ExecutorService = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
+    final val ThreadPool = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
 
     //
     // STEP 4

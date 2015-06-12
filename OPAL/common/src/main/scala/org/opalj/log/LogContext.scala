@@ -33,12 +33,12 @@ package log
  * A log context associates log messages with a specific context and logger.
  * Using a log context
  * facilitates the suppression of recurring message in a specific context and also
- * makes it possible to direct message to different targets.
+ * makes it possible to direct messages to different targets.
  * Before using a `LogContext` it has to be registered with the [[OPALLogger$]].
  *
  * OPAL uses two primary log contexts:
  *
- *  1. The [[GlobalContext$]] which should be used for general
+ *  1. The [[GlobalLogContext$]] which should be used for general
  *      log messages related to OPAL, such as the number of threads used for
  *      computations.
  *
@@ -49,8 +49,8 @@ package log
  * @note The registration of the `LogContext` with the `OPALLogger` does not prevent
  *      the garbage collection of the `LogContext` unless a logged message explicitly
  *      references its log context. This is – however – discouraged! If no message
- *      explicitly reference the log context it is then possible to unregister the log context
- *      in the `finalize` method that references the context.
+ *      explicitly reference the log context it is then possible to unregister the log
+ *      context in the `finalize` method that references the context.
  *
  * @author Michael Eichberg
  */
@@ -62,18 +62,18 @@ trait LogContext {
      * The unique id associated with this log context. Each log context gets a unique id
      * when it is registered with the OPALLogger. This id will not change afterwards.
      */
-    def logContextId: Int = id
-}
+    final def logContextId: Int = id
 
-/**
- * The global log context which should be used to log global messages.
- *
- * @author Michael Eichberg
- */
-case object GlobalContext extends LogContext {
+    def newInstance(): LogContext
 
-    OPALLogger.globalContextMutex.synchronized {
-        OPALLogger.globalContextCreated = true
-        OPALLogger.register(this, OPALLogger.globalContextLogger)
+    /**
+     * Creates a new log context that is the successor of this context and which will
+     * automatically be associated with the same logger as this `LogContext`.
+     */
+    final def successor: LogContext = {
+        val newLogContext = newInstance();
+        val logger = OPALLogger.logger(this)
+        OPALLogger.register(newLogContext, logger)
+        newLogContext
     }
 }

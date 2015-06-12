@@ -38,7 +38,9 @@ package instructions
  */
 abstract class IFICMPInstruction extends SimpleConditionalBranchInstruction {
 
-    def operandCount = 2
+    final def operandCount = 2
+
+    def condition: RelationalOperator
 
 }
 

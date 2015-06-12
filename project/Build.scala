@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
 
-import sbtassembly.Plugin.AssemblyKeys._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 import scoverage.ScoverageSbtPlugin
 
@@ -20,7 +20,7 @@ object OPALBuild extends Build {
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
 			"junit" % "junit" % "4.12" % "test,it",
-			"org.scalatest" %% "scalatest" % "2.2.1" % "test,it"))
+			"org.scalatest" %% "scalatest" % "2.2.4" % "test,it"))
 
 	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
 		(file("Scalariform Formatter Preferences.properties").getPath))
@@ -146,7 +146,6 @@ object OPALBuild extends Build {
 		base = file("OPAL/frb/cli"),
 		settings =
 			buildSettings ++
-			sbtassembly.Plugin.assemblySettings ++
 			Seq (
 				test in assembly := {},
 				jarName in assembly := "FindREALBugs-" + version.value+".jar",

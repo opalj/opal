@@ -38,7 +38,8 @@ package instructions
  */
 abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
 
-    def operandCount = 1
+    final def operandCount = 1
 
+    def condition: RelationalOperator
 }
 

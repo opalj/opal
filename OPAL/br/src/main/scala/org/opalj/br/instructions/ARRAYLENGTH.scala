@@ -43,10 +43,9 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final val mnemonic = "arraylength"
 
-    final val runtimeExceptions: List[ObjectType] =
-        List(ObjectType.NullPointerException)
+    final val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
 
-    final def length: Int = 1
+    final val length = 1
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
@@ -55,11 +54,11 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
         this eq code.instructions(otherPC)
 
-    final def readsLocal: Boolean = false
+    final val readsLocal = false
 
     final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def writesLocal: Boolean = false
+    final val writesLocal = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 

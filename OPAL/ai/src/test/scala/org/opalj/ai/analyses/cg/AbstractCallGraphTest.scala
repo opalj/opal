@@ -74,7 +74,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     val invokedConstructorAnnotation =
         ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructor")
     val invokedConstructorsAnnotation =
-        ObjectType("org/opalj/ai/invokedynamic/annotations/InvokedConstructors")
+        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructors")
 
     val accessedFieldAnnotation =
         ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedField")
@@ -230,7 +230,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         val evps = annotation.elementValuePairs
         val Some(receiver) =
             evps collectFirst (
-                { case ElementValuePair("receiverType", ClassValue(receiver)) ⇒ receiver })
+                { case ElementValuePair("receiverType", StringValue(receiver)) ⇒ ObjectType(receiver) })
         val Some(lineNumber) =
             evps collectFirst (
                 { case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber })
@@ -239,7 +239,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             (evps collectFirst (
                 { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })).getOrElse(false)
 
-        val receiverClassIsUnknown = !project.classFile(receiver.asObjectType).isDefined
+        val receiverClassIsUnknown = !project.classFile(receiver).isDefined
 
         // If we are not able to handle reflective calls and we have one, forget about it
         if (isReflective && ignoreReflectiveCalls)

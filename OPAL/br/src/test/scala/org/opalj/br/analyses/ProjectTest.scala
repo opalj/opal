@@ -35,7 +35,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 
@@ -47,7 +46,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
+class ProjectTest extends FlatSpec with Matchers {
 
     import ProjectTest._
     //
@@ -327,11 +326,18 @@ private object ProjectTest {
     val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
+    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+    val opalProject = Project(ClassFiles(opal), Traversable.empty)
+
+    //
+    //
+    // Types used by the tests
+    //
+    //
+
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")
     val AbstractB = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
 
-    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty)
 }

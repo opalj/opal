@@ -47,6 +47,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -75,8 +77,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               A value greater than 1.5 can already lead to very long evaluation times.
             |               If the threshold is exceeded the analysis of the method is aborted and no
             |               result can be drawn.]
-            |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis is allowed
-            |               to take for one method before the analysis is terminated.]
+            |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis
+            |               is allowed to take for one method before the analysis is terminated.]
             |[-maxCardinalityOfIntegerRanges=<LongValue [1,4294967295]=16> basically determines for each integer
             |               value how long the value is "precisely" tracked. Internally the analysis
             |               computes the range of values that an integer value may have at runtime. The
@@ -84,14 +86,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               the range is exceeded the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]
+            |               may require the increase of maxEvalFactor.]
             |[-maxCardinalityOfLongSets=<IntValue [1,1024]=2> basically determines for each long
             |               value how long the value is "precisely" tracked.
             |               The maximum size/cardinality of this set is controlled by this setting. If
             |               the set's size is tool large the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]            |
+            |               may require the increase of maxEvalFactor.]            |
             |[-maxCallChainLength=<IntValue [0..9]=1> determines the maximum length of the call chain
             |               that is analyzed.
             |               If you increase this value by one it is typically also necessary
@@ -121,6 +123,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
         import theProject.logContext
+
+        OPALLogger.info("analysis progress", "starting analysis")
 
         val (analysisTime, issues0, exceptions) =
             bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
@@ -154,7 +158,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         // Generate the HTML report
         //
-        lazy val htmlReport = resultsAsXHTML(parameters, issues, analysisTime).toString
+        lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
         parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
             case Some(fileName) ⇒
                 val file = new File(fileName).toPath
@@ -222,13 +226,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         )
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         var outputFormatGiven = false
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
 
-        parameters.forall(parameter ⇒
-            parameter match {
+        val issues =
+            parameters.filterNot(parameter ⇒ parameter match {
                 case MaxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
@@ -264,8 +268,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
                 case IssueKindsPattern(ks) ⇒
                     val kinds = ks.split(',')
-                    kinds.length > 0 &&
-                        kinds.forall { k ⇒ IssueKind.AllKinds.contains(k) }
+                    kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
                 case MinRelevancePattern(_) ⇒
                     // the pattern ensures that the value is legal...
@@ -279,15 +282,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
-                case _ ⇒
-                    // TODO report the issue back to the calling method
-                    println("Unknown parameter: "+parameter)
-                    false
+                case _                             ⇒ false
+            })
 
-            }
-        ) &&
-            outputFormatGiven
+        if (!outputFormatGiven)
+            OPALLogger.warn("analysis configuration", "no output format specified")(GlobalLogContext)
 
+        issues.map("unknown or illegal parameter: "+_)
     }
 }
 

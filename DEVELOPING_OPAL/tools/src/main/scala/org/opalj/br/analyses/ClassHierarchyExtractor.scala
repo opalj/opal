@@ -31,6 +31,7 @@ package br
 package analyses
 
 import java.io.File
+import org.opalj.log.GlobalLogContext
 
 /**
  * Writes out (a subset of) the class hierarchy in the format used by the
@@ -58,8 +59,7 @@ object ClassHierarchyExtractor {
             (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
                 cfs ++ ClassFiles(new File(filename))
             }
-        val classHierarchy =
-            ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
+        val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
             Console.err.println(

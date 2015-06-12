@@ -38,9 +38,13 @@ import org.opalj.log.LogContext
  */
 trait ClassFileRepository {
 
+    implicit def logContext: LogContext
+
     def classFile(objectType: ObjectType): Option[ClassFile]
 
-    def logContext: LogContext
+    def classFile(method: Method): ClassFile
+
+    def classFile(field: Field): ClassFile
 
 }
 

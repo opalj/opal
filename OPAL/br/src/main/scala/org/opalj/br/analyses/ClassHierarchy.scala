@@ -42,7 +42,7 @@ import org.opalj.graphs.Node
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -375,7 +375,8 @@ class ClassHierarchy private (
      * Subtypes for which no `ClassFile` object is available are ignored.
      */
     def foreachSubclass(
-        objectType: ObjectType, project: SomeProject)(
+        objectType: ObjectType,
+        project: ClassFileRepository)(
             f: ClassFile ⇒ Unit): Unit = {
         foreachSubtype(objectType) { objectType ⇒
             project.classFile(objectType) foreach (f)
@@ -389,7 +390,8 @@ class ClassHierarchy private (
      * Subtypes for which no `ClassFile` object is available are ignored.
      */
     def foreachDirectSubclass[T](
-        objectType: ObjectType, project: SomeProject)(
+        objectType: ObjectType,
+        project: ClassFileRepository)(
             f: ClassFile ⇒ T): Unit = {
         val subclassTypes = subclassTypesMap(objectType.id)
         if (subclassTypes ne null)
@@ -404,7 +406,10 @@ class ClassHierarchy private (
      *
      * Subtypes for which no `ClassFile` object is available are ignored.
      */
-    def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
+    def existsSubclass(
+        objectType: ObjectType,
+        project: ClassFileRepository)(
+            f: ClassFile ⇒ Boolean): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
             project.classFile(objectType) foreach { cf ⇒
                 if (f(cf))
@@ -465,6 +470,23 @@ class ClassHierarchy private (
     }
 
     /**
+     * Returns the set of all interfaces implemented by the given type.
+     *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
+     * @param reflexive If `true` the returned set will also contain the given type if
+     *      it is an interface type.
+     */
+    def allSuperinterfacetypes(
+        objectType: ObjectType,
+        reflexive: Boolean = false): Set[ObjectType] = {
+        val supertypes = HashSet.empty[ObjectType]
+        foreachSupertype(objectType) { st ⇒ if (isInterface(st)) supertypes.add(st) }
+        if (reflexive && isInterface(objectType)) supertypes.add(objectType)
+        supertypes
+    }
+
+    /**
      * Calls the function `f` for each supertype of the given object type for
      * which the classfile is available.
      * It is possible that the class file of the same super interface type `I`
@@ -479,10 +501,10 @@ class ClassHierarchy private (
      */
     def foreachSuperclass(
         objectType: ObjectType,
-        classes: SomeProject)(
+        project: ClassFileRepository)(
             f: ClassFile ⇒ Unit): Unit =
         foreachSupertype(objectType) { supertype ⇒
-            classes.classFile(supertype) match {
+            project.classFile(supertype) match {
                 case Some(classFile) ⇒ f(classFile)
                 case _               ⇒ /*Do nothing*/
             }
@@ -502,12 +524,12 @@ class ClassHierarchy private (
      */
     def superclasses(
         objectType: ObjectType,
-        classes: SomeProject)(
+        project: ClassFileRepository)(
             classFileFilter: ClassFile ⇒ Boolean = { _ ⇒ true }): Iterable[ClassFile] = {
         // We want to make sure that every class file is returned only once,
         // but we want to avoid equals calls on `ClassFile` objects.
         var classFiles = Map[ObjectType, ClassFile]()
-        foreachSuperclass(objectType, classes) { classFile ⇒
+        foreachSuperclass(objectType, project) { classFile ⇒
             if (classFileFilter(classFile))
                 classFiles = classFiles.updated(classFile.thisType, classFile)
         }
@@ -773,10 +795,10 @@ class ClassHierarchy private (
         supertype: ReferenceType): Answer = {
 
         if ((subtype eq supertype) || (supertype eq Object))
-            return Yes
+            return Yes;
 
         if (subtype eq Object)
-            return No // the given supertype has to be a subtype...
+            return No; // the given supertype has to be a subtype...
 
         subtype match {
             case ot: ObjectType ⇒
@@ -884,6 +906,139 @@ class ClassHierarchy private (
 
     }
 
+    //
+    //
+    // SUBTYPE RELATION W.R.T. GENERIC TYPES
+    //
+    //
+
+    /*
+     * This is a helper method only. TypeArguments are just a part of a generic
+     * `ClassTypeSignature`. Hence, it makes no
+     * sense to check subtype relation of incomplete information.
+     */
+    private[this] def isSubtypeOfByTypeArgument(
+        subtype: TypeArgument,
+        supertype: TypeArgument)(
+            implicit project: ClassFileRepository): Answer = {
+        (subtype, supertype) match {
+            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ Answer(et eq superEt)
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt)) ⇒ isSubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
+            case (_, Wildcard) ⇒ Yes
+            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
+                case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No // It smells..: Answer(cts.objectType eq supCts.objectType)
+                case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
+                case (None, Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
+                case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
+                case (Some(ContravariantIndicator), Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
+                case _ ⇒ No
+
+            }
+            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ isSubtypeOf(et, superEt)
+            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
+            case _ ⇒ No
+        }
+    }
+
+    @inline @tailrec private[this] final def evalTypeArguments(
+        subtypeArgs: List[TypeArgument],
+        supertypeArgs: List[TypeArgument])(
+            implicit project: ClassFileRepository): Answer = {
+
+        (subtypeArgs, supertypeArgs) match {
+            case (Nil, Nil)          ⇒ Yes
+            case (Nil, _) | (_, Nil) ⇒ No
+            case (arg :: tail, supArg :: supTail) ⇒
+                val isSubtypeOf = isSubtypeOfByTypeArgument(arg, supArg)
+                if (isSubtypeOf.isNoOrUnknown)
+                    No
+                else
+                    evalTypeArguments(tail, supTail)
+        }
+    }
+
+    /**
+     * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
+     * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
+     *
+     * @note This method relies – in case of a comparison of non generic types – on
+     *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
+     *        performs an upwards search only. E.g., given the following
+     *      type hierarchy:
+     *      `class D inherits from C`
+     *      `class E inherits from D`
+     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
+     *      `Unknown` and `No` otherwise.
+     *
+     * @param subtype Any `ClassTypeSignature`.
+     * @param theSupertype Any `ClassTypeSignature`.
+     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
+     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *      not conclusive. The latter can happen if the class hierarchy is not
+     *      complete and hence precise information about a type's supertypes
+     *      is not available.
+     */
+    // TODO Consider the Interface types...
+    // TODO Consider Suffixes...
+    def isSubtypeOf(
+        subtype: ClassTypeSignature,
+        supertype: ClassTypeSignature)(
+            implicit project: ClassFileRepository): Answer = {
+        import project.classFile
+        if (subtype.objectType eq supertype.objectType) {
+            (subtype, supertype) match {
+                case (ConcreteType(ot), ConcreteType(superOt)) ⇒
+                    Yes
+
+                case (GenericType(ot, _), ConcreteType(superOt)) ⇒
+                    isSubtypeOf(ot, superOt)
+
+                case (GenericType(_, elements), GenericType(_, superElements)) ⇒
+                    evalTypeArguments(elements, superElements)
+
+                case _ ⇒ No
+            }
+        } else {
+            val isSubtype = isSubtypeOf(subtype.objectType, supertype.objectType)
+            if (isSubtype.isYes) {
+                (subtype, supertype) match {
+
+                    case (ConcreteType(ot), ConcreteType(superOt)) ⇒ Yes
+
+                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒
+                        if (classFile(containerType).nonEmpty && classFile(superContainerType).nonEmpty)
+                            if (classFile(containerType).get.classSignature.nonEmpty &&
+                                classFile(superContainerType).get.classSignature.nonEmpty) {
+                                val ftp = classFile(containerType).get.classSignature.get.formalTypeParameters
+                                val superFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
+                                var typeArgs = List.empty[TypeArgument]
+                                var supertypeArgs = List.empty[TypeArgument]
+                                for (i ← 0 to ftp.size - 1) {
+                                    val index = superFtp.indexOf(ftp(i))
+                                    if (index >= 0) {
+                                        typeArgs = typeArgs ++ List(elements(i))
+                                        supertypeArgs = supertypeArgs ++ List(superElements(index))
+                                    }
+                                }
+                                if (typeArgs.isEmpty)
+                                    return Yes
+                                else
+                                    return evalTypeArguments(typeArgs, supertypeArgs)
+                            }
+                        Unknown
+                    case _ ⇒ No
+                }
+            } else isSubtype
+        }
+    }
+
+    //
+    //
+    // RESOLVING FIELD AND METHOD REFERENCES
+    //
+    //
+
     /**
      * Resolves a symbolic reference to a field. Basically, the search starts with
      * the given class `c` and then continues with `c`'s superinterfaces before the
@@ -919,7 +1074,7 @@ class ClassHierarchy private (
         declaringClassType: ObjectType,
         fieldName: String,
         fieldType: FieldType,
-        project: SomeProject): Option[Field] = {
+        project: ClassFileRepository): Option[Field] = {
         // More details: JVM 7 Spec. Section 5.4.3.2
         project.classFile(declaringClassType) flatMap { classFile ⇒
             classFile.fields find { field ⇒
@@ -968,7 +1123,7 @@ class ClassHierarchy private (
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject): Option[Method] = {
+        project: ClassFileRepository): Option[Method] = {
 
         project.classFile(receiverType) flatMap { classFile ⇒
 
@@ -991,7 +1146,7 @@ class ClassHierarchy private (
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject): Option[Method] = {
+        project: ClassFileRepository): Option[Method] = {
 
         project.classFile(receiverType) flatMap { classFile ⇒
             assume(classFile.isInterfaceDeclaration)
@@ -1016,20 +1171,16 @@ class ClassHierarchy private (
         classFile: ClassFile,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject): Option[Method] = {
-
-        {
-            classFile.findMethod(methodName, methodDescriptor)
-        } orElse {
+        project: ClassFileRepository): Option[Method] = {
+        classFile.findMethod(methodName, methodDescriptor) orElse
             lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
-        }
     }
 
     def lookupMethodInSuperinterfaces(
         classFile: ClassFile,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject): Option[Method] = {
+        project: ClassFileRepository): Option[Method] = {
 
         classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
             project.classFile(superinterface) foreach { superclass ⇒
@@ -1077,7 +1228,7 @@ class ClassHierarchy private (
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject): Option[Method] = {
+        project: ClassFileRepository): Option[Method] = {
 
         // TODO [Java8] Support Extension Methods!
         assert(
@@ -1087,11 +1238,13 @@ class ClassHierarchy private (
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
+            if (classFileOption.isEmpty)
+                return None;
+            val classFile = classFileOption.get
+
             val methodOption =
-                if (classFileOption.isDefined) {
-                    val classFile = classFileOption.get
-                    classFile.findMethod(methodName, methodDescriptor).orElse {
-                        /* FROM THE SPECIFICATION:
+                classFile.findMethod(methodName, methodDescriptor).orElse {
+                    /* FROM THE SPECIFICATION:
                          * Method resolution attempts to look up the referenced method in C and
                          * its superclasses:
                          * If C declares exactly one method with the name specified by the
@@ -1105,16 +1258,14 @@ class ClassHierarchy private (
                          * - It has a return type of Object.
                          * - It has the ACC_VARARGS and ACC_NATIVE flags set.
                          */
-                        if (receiverType eq ObjectType.MethodHandle)
-                            classFile.findMethod(
-                                methodName,
-                                MethodDescriptor.SignaturePolymorphicMethod).find(
-                                    _.isNativeAndVarargs)
-                        else
-                            None
-                    }
-                } else
-                    None
+                    if (receiverType eq ObjectType.MethodHandle)
+                        classFile.findMethod(
+                            methodName,
+                            MethodDescriptor.SignaturePolymorphicMethod).find(
+                                _.isNativeAndVarargs)
+                    else
+                        None
+                }
 
             if (methodOption.isDefined)
                 methodOption
@@ -1156,8 +1307,8 @@ class ClassHierarchy private (
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        project: SomeProject,
-        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Set[Method] = {
+        project: ClassFileRepository,
+        classesFilter: ObjectType ⇒ Boolean): Set[Method] = {
 
         val receiverIsInterface = isInterface(receiverType)
         // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
@@ -1317,7 +1468,7 @@ class ClassHierarchy private (
                     aType,
                     new Node {
                         private val directSubtypes = directSubtypesOf(aType)
-                        def uniqueId = aType.id
+                        def id = aType.id
                         def toHRR: Option[String] = Some(aType.toJava)
                         override val visualProperties: Map[String, String] = {
                             Map("shape" -> "box") ++ (
@@ -1341,7 +1492,7 @@ class ClassHierarchy private (
         }
 
         // a virtual root node
-        def uniqueId = -1
+        def id = -1
         def toHRR = None
         def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*
@@ -1860,7 +2011,7 @@ object ClassHierarchy {
      * This class hierarchy is primarily useful for testing purposes.
      */
     def preInitializedClassHierarchy: ClassHierarchy =
-        apply(classFiles = Traversable.empty)(logContext = GlobalContext)
+        apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined

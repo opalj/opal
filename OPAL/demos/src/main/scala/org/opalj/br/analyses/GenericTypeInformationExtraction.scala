@@ -51,16 +51,26 @@ object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
     override def doAnalyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        isInterrupted: () ⇒ Boolean): BasicReport = {
         // THE NAME OF THE CONTAINER (HERE) HAS TO BE AN INTERFACE NAME!
-        val containerPackageName = "java/lang/"
-        val containerSimpleName = "Iterable"
-        //
+        //        val containerPackageName = "java/lang/"
+        //        val containerSimpleName = "Iterable"
+        //        val containerSimpleName = "Comparable"
+
         //        val containerPackageName = "java/util/"
         //        val containerSimpleName = "Iterator"
+        //    val containerSimpleName = "Collection"
+        //    val containerSimpleName = "Comparator"
+        //val containerSimpleName = "Enumeration"
+
+        val containerPackageName = "java/util/concurrent/"
+        val containerSimpleName = "Future"
 
         val containerName = containerPackageName + containerSimpleName
         val containerType = ObjectType(containerName)
+        if (!theProject.classHierarchy.isKnown(containerType))
+            return BasicReport(s"the type $containerType is unknown");
+
         val subtypes = theProject.classHierarchy.allSubtypes(containerType, false)
 
         val typeBindingSubtypes = for {
@@ -99,10 +109,8 @@ object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
                 //                    ObjectType(packageName + simpleName)
                 //
                 // 2. using a custom (specialized) matcher
-                case GenericContainer(`containerType`, componentType) ⇒ componentType
+                case SimpleGenericType(`containerType`, componentType) ⇒ componentType
             }
-
-            if componentType ne ObjectType.Object
         } yield {
             (subtype, componentType)
         }

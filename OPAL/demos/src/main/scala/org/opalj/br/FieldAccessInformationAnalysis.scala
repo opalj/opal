@@ -30,12 +30,11 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Basic field access information.
@@ -47,20 +46,18 @@ import org.opalj.util.NanoSeconds
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
-
-    val analysis = this
+object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
 
     override def description: String = "Provides information about field accesses."
 
     override def analysisSpecificParametersDescription: String =
         "[-field=\"<The field for which we want read/write access information (e.g., -field=\"java.util.HashMap entrySet\">\"]"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-        parameters.isEmpty ||
-            (parameters.size == 1 && parameters.head.startsWith("-field="))
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] =
+        if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field=")))
+            Seq.empty
+        else
+            Seq("unknown parameters: "+parameters.mkString(" "))
 
     def doAnalyze(
         project: Project[URL],
@@ -68,7 +65,7 @@ object FieldAccessInformationAnalysis
         isInterrupted: () ⇒ Boolean) = {
 
         import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
-        var overallExecutionTime = NanoSeconds.None
+        var overallExecutionTime = Nanoseconds.None
         var memoryUsageInMB = ""
 
         val accessInformation = memory {

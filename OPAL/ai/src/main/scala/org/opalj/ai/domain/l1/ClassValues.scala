@@ -47,8 +47,7 @@ import org.opalj.br.MethodDescriptor
 import scala.reflect.ClassTag
 
 /**
- * Enables the tracking of concrete `Class` values and can, e.g., be used to resolve
- * Groovy's invokedynamic constructor calls.
+ * Enables the tracking of concrete `Class` values.
  *
  * This class overrides `invokestatic` and only delegates to the default implementation
  * if it cannot successfully handle the call. Hence, this trait needs to be mixed in after
@@ -71,8 +70,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     val DomainClassValue: ClassTag[DomainClassValue]
 
     /**
-     * All class values that represent the same type are actually represented by the
-     * class (object) value at runtime.
+     * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)
+     * are actually represented by the same class (object) value at runtime.
      */
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.Class, t) {

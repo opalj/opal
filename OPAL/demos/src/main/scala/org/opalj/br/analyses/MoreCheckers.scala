@@ -31,11 +31,11 @@ package br
 package analyses
 
 import org.opalj.util.{ Counting, PerformanceEvaluation }
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -69,9 +69,9 @@ object MoreCheckers {
         println("Usage: java …Main <JAR file containing class files>+")
     }
 
-    val results = scala.collection.mutable.Map[String, List[NanoSeconds]]();
+    val results = scala.collection.mutable.Map[String, List[Nanoseconds]]();
 
-    def collect(id: String, ns: NanoSeconds): Unit = {
+    def collect(id: String, ns: Nanoseconds): Unit = {
         print(id+", "+ns);
         results.update(id, ns :: results.getOrElse(id, List()));
     }
@@ -137,7 +137,7 @@ object MoreCheckers {
             }
             cf
         }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
-        val classHierarchy = ClassHierarchy(classFiles)(GlobalContext)
+        val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
 
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()

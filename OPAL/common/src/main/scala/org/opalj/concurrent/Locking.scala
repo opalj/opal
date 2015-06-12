@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,53 +22,41 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package concurrent
 
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
  * structure.
  *
  * ==Usage==
- * To use this generic locking facility, you can either mix-in this trait or
- * create a new instance.
+ * To use this generic locking facility you should mix in this trait.
  *
  * @author Michael Eichberg
  */
 trait Locking {
 
-    import java.util.concurrent.locks.ReentrantReadWriteLock
     private[this] val rwLock = new ReentrantReadWriteLock()
 
     /**
      * Acquires the write lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withWriteLock[B](f: ⇒ B): B = {
-        try {
-            rwLock.writeLock().lock()
-            f
-        } finally {
-            rwLock.writeLock().unlock()
-        }
-    }
+    protected[this] def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withReadLock[B](f: ⇒ B): B = {
-        try {
-            rwLock.readLock().lock()
-            f
-        } finally {
-            rwLock.readLock().unlock()
-        }
-    }
+    protected[this] def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Factory for `Locking` objects.
@@ -76,9 +64,61 @@ trait Locking {
 object Locking {
 
     /**
-     * Creates a new reentrant read-write lock.
+     * Acquires the write lock associated with this instance and then executes
+     * the function `f`. Afterwards, the lock is released.
      */
-    def apply(): Locking = new Locking {}
+    @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        var isLocked = false
+        try {
+            rwLock.writeLock().lock()
+            isLocked = true
+            f
+        } finally {
+            if (isLocked) rwLock.writeLock().unlock()
+        }
+    }
 
+    /**
+     * Acquires the read lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        try {
+            rwLock.readLock().lock()
+            f
+        } finally {
+            rwLock.readLock().unlock()
+        }
+    }
+
+    /**
+     * Tries to acquire the read lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): Option[B] = {
+        var isLocked = false
+        try {
+            isLocked = rwLock.readLock().tryLock(100l, TimeUnit.MILLISECONDS)
+            if (isLocked)
+                Some(f)
+            else
+                None
+        } finally {
+            if (isLocked) rwLock.readLock().unlock()
+        }
+    }
+
+    /**
+     * Acquires the lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    @inline final def withLock[B](lock: ReentrantLock)(f: ⇒ B): B = {
+        try {
+            lock.lock()
+            f
+        } finally {
+            lock.unlock()
+        }
+    }
 }
 

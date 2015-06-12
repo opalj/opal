@@ -27,8 +27,8 @@ object BugPickerBuild extends Build {
 			EclipseKeys.withSource := true
 		) ++
 		Seq(libraryDependencies ++= Seq(
-			"de.opal-project" % "abstract-interpretation-framework_2.11" % "0.0.1-SNAPSHOT",
-			"de.opal-project" % "bytecode-disassembler_2.11" % "0.1.0-SNAPSHOT"
+			"de.opal-project" %% "abstract-interpretation-framework" % "0.0.1-SNAPSHOT",
+			"de.opal-project" %% "bytecode-disassembler" % "0.1.0-SNAPSHOT"
 		)) ++
 		Seq(resolvers ++= Seq(
 			"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
@@ -50,7 +50,7 @@ object BugPickerBuild extends Build {
 				JFX.addJfxrtToClasspath := true
 			) ++
 			Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
-			Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "2.2.76-R11") ++
+			Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.40-R8") ++
 			Seq(
 				resourceGenerators in Compile <+= Def.task {
 					val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"

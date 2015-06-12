@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,8 +40,8 @@ import org.opalj.br.{ MethodDescriptor, MethodHandle }
 trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 
     /**
-     * Factory method to create a `DomainValue` that represents the `null` value and
-     * and that was created (explicitly or implicitly) by the instruction (`aconst_null`)
+     * Factory method to create a `DomainValue` that represents value `null` and
+     * and that was created (explicitly or implicitly) by the instruction
      * with the specified program counter.
      *
      * The domain may ignore the information about the value and the origin (`pc`).
@@ -86,21 +86,19 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *
      * ==Summary==
      * The properties of the domain value are:
-     *  - Initialized: '''Yes'''
-     *  	(i.e., the fields of the array have the type dependent default value)
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
      *
      * @param origin Information about the origin of the value.
-     * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
-     * 		if no corresponding information is available; however, if available the
+     * @param counts The size of each dimension if available. `counts` may not be empty but
+     *      may not contain information about all dimensions; the
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
         origin: ValueOrigin,
-        counts: List[Int],
-        arrayType: ArrayType): DomainReferenceValue
+        arrayType: ArrayType,
+        counts: List[Int]): DomainReferenceValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.

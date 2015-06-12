@@ -59,23 +59,9 @@ trait CoreDomainFunctionality extends ValuesDomain {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        var opsUpdated = false
-        var newOps: Operands = Nil
-        if (operands.nonEmpty) {
-            val opIt = operands.iterator
-            while (opIt.hasNext) {
-                val opValue = opIt.next()
-                if (opValue eq oldValue) {
-                    newOps = newValue :: newOps
-                    opsUpdated = true
-                } else
-                    newOps = opValue :: newOps
-            }
-        }
-
         (
-            if (opsUpdated) newOps.reverse else operands,
-            locals.transform(l ⇒ if (l eq oldValue) newValue else l)
+            operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
+            locals.mapConserve(l ⇒ if (l eq oldValue) newValue else l)
         )
     }
 

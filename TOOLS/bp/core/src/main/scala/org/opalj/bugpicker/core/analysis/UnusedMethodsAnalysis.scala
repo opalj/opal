@@ -36,11 +36,10 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
- * Identifies unused methods and constructors based on the call graph.
- *
- * Currently using the VTACallGraphAlgorithm.
+ * Identifies unused methods and constructors using the given call graph.
  *
  * @author Marco Jacobasch
  * @author Michael Eichberg
@@ -48,34 +47,67 @@ import org.opalj.ai.analyses.cg.ComputedCallGraph
 object UnusedMethodsAnalysis {
 
     /**
-     * Finds those methods that are never called.
+     * Checks if the given method is used/is potentially useable. If the method is not used
+     * and is also not potentially useable by future clients then an issue is created
+     * and returned.
      *
-     * If any of the following conditions is true, it will assume the method as being called.
+     * If any of the following conditions is true the method is considered as being called.
      * - The method is the target of a method call in the calculated call graph.
-     * - The method is a private default constructor in a final class. Such constructors
+     * - The method is a private (empty) default constructor in a final class. Such constructors
      *      are usually defined to avoid instantiations of the respective class.
+     * - The method is a private constructor in a final class that always throws an exception.
+     *      Such constructors are usually defined to avoid instantiations of the
+     *      respective class. E.g.
+     *      `private XYZ(){throw new UnsupportedOperationException()`
      */
     def analyze(
         theProject: SomeProject,
         callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
         classFile: ClassFile, method: Method): Option[StandardIssue] = {
 
-        def ignoreMethod(): Boolean = {
-            val ignoreIt =
-                callgraphEntryPoints.contains(method) || (
-                    // it is basically a default constructor ...
-                    method.isConstructor && method.isPrivate && method.parametersCount == 1 /*this*/ &&
-                    method.body.isDefined && method.body.get.instructions.size == 5 &&
-                    // ... which was (usually) defined to avoid instantiations of the
-                    // class (e.g., java.lang.Math)
-                    classFile.constructors.size == 1
-                )
-            ignoreIt
+        if (callgraphEntryPoints.contains(method))
+            return None; // <=== early return
+
+        def rateMethod(): Relevance = {
+
+            import method.{ isConstructor, isPrivate, parametersCount }
+
+            // Let's check if it is a default constructor
+            // which was defined to avoid instantiations of the
+            // class (e.g., java.lang.Math)
+            val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
+            if (!isDefaultConstructor)
+                return Relevance.DefaultRelevance; // <=== early return
+
+            val constructorsIterator = classFile.constructors
+            constructorsIterator.next // <= we have at least one constructor
+            if (constructorsIterator.hasNext)
+                // we have (among others) a default constructor that is not used
+                return Relevance.High; // <=== early return
+
+            val body = method.body.get
+            val instructions = body.instructions
+            def justThrowsException: Boolean = {
+                !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                    ReturnInstruction.isReturnInstruction(i)
+                }
+            }
+            if (instructions.size == 5 /* <= default empty constructor */ )
+                Relevance.TechnicalArtifact
+            else if (justThrowsException)
+                Relevance.CommonIdiom
+            else
+                Relevance.DefaultRelevance
         }
 
         val callers = callgraph.callGraph calledBy method
-        if (callers.isEmpty && !ignoreMethod) {
-            val description = methodOrConstructor(method)
+        if (callers.isEmpty) {
+
+            val description =
+                methodOrConstructor(method) + (
+                    if (!method.isPrivate) "the class is not instantiable" else ""
+                )
+            val relevance: Relevance = rateMethod()
             // the unused method or constructor issue
             Some(StandardIssue(
                 theProject, classFile, Some(method), None,
@@ -86,24 +118,24 @@ object UnusedMethodsAnalysis {
                 Set(IssueCategory.Comprehensibility),
                 Set(IssueKind.Unused),
                 Seq(),
-                Relevance.DefaultRelevance
+                relevance
             ))
         } else
             None
     }
 
     def methodOrConstructor(method: Method): String = {
+        def access(flags: Int): String =
+            VisibilityModifier.get(flags) match {
+                case Some(visiblity) ⇒ visiblity.javaName.get
+                case _               ⇒ "/*default*/"
+            }
+
         if (method.isConstructor)
             s"the ${access(method.accessFlags)} constructor is not used"
         else
             s"the ${access(method.accessFlags)} method is not used"
     }
-
-    def access(flags: Int): String =
-        VisibilityModifier.get(flags) match {
-            case Some(visiblity) ⇒ visiblity.javaName.get
-            case _               ⇒ "/*default*/"
-        }
 
 }
 

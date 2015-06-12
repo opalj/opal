@@ -32,20 +32,29 @@ package ui
 
 import java.io.File
 import java.net.URL
+import java.util.Date
 import java.util.prefs.Preferences
-
+import scala.collection.JavaConverters._
+import scala.xml.Node
+import scala.xml.dtd.DocType
+import scala.xml.dtd.IntDef
+import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
+import org.opalj.bugpicker.ui.dialogs.DiffView
 import org.opalj.bugpicker.ui.dialogs.HelpBrowser
 import org.opalj.bugpicker.ui.dialogs.LoadProjectDialog
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
-
+import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
+import org.opalj.log.OPALLogger
 import javafx.application.Application
+import javafx.scene.control.ScrollBar
 import javafx.scene.control.SeparatorMenuItem
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
@@ -57,6 +66,11 @@ import scalafx.Includes.jfxTab2sfx
 import scalafx.Includes.jfxWindowEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.application.Platform
+import scalafx.beans.property.ObjectProperty
+import scalafx.collections.ObservableBuffer
+import scalafx.collections.ObservableBuffer.Add
+import scalafx.collections.ObservableBuffer.Change
+import scalafx.collections.ObservableBuffer.Reorder
 import scalafx.concurrent.Service
 import scalafx.concurrent.Task
 import scalafx.concurrent.Task.sfxTask2jfx
@@ -64,6 +78,7 @@ import scalafx.event.ActionEvent
 import scalafx.geometry.Orientation
 import scalafx.geometry.Rectangle2D
 import scalafx.scene.Scene
+import scalafx.scene.control.Label
 import scalafx.scene.control.Menu
 import scalafx.scene.control.MenuBar
 import scalafx.scene.control.MenuItem
@@ -71,29 +86,44 @@ import scalafx.scene.control.SplitPane
 import scalafx.scene.control.Tab
 import scalafx.scene.control.TabPane
 import scalafx.scene.control.TabPane.sfxTabPane2jfx
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.TableCell.sfxTableCell2jfx
+import scalafx.scene.control.TableColumn
+import scalafx.scene.control.TableColumn.sfxTableColumn2jfx
+import scalafx.scene.control.TableView
+import scalafx.scene.control.TableView.sfxTableView2jfx
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
 import scalafx.scene.input.KeyCodeCombination
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
+import scalafx.scene.paint.Color
+import scalafx.scene.text.Text
+import scalafx.scene.text.Text.sfxText2jfx
 import scalafx.scene.web.WebView
 import scalafx.scene.web.WebView.sfxWebView2jfx
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.sfxFileChooser2jfx
 import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
+import org.opalj.util.Milliseconds
 
 /**
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author David Becker
+ * @author Tobias Becker
  */
 class BugPicker extends Application {
 
     var project: Project[URL] = null
     var sources: Seq[File] = Seq.empty
     var recentProjects: Seq[LoadedFiles] = BugPicker.loadRecentProjectsFromPreferences().getOrElse(Seq.empty)
+    var recentAnalyses: Seq[StoredAnalysis] = BugPicker.loadRecentlyUsedAnalyses
+    var currentAnalysis: Iterable[Node] = null
 
     override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
@@ -108,7 +138,142 @@ class BugPicker extends Application {
             contextMenuEnabled = false
             engine.loadContent(Messages.APP_STARTED)
         }
+
+        def createLogMessagesTableView(
+            messages: ObservableBuffer[BugPickerLogMessage]): TableView[BugPickerLogMessage] = {
+            val timestampColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Timestamp"
+                maxWidth = 100
+                resizable = false
+                cellValueFactory = { _.value.timestamp }
+            }
+            val levelColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Level"
+                maxWidth = 75
+                resizable = false
+                cellValueFactory = { _.value.level }
+                cellFactory = { _ ⇒
+                    new TableCell[BugPickerLogMessage, String] {
+                        item.onChange { (_, _, newV) ⇒
+                            newV match {
+                                case "warn"  ⇒ textFill = Color.Blue
+                                case "error" ⇒ textFill = Color.Red
+                                case _       ⇒ textFill = Color.Black
+                            }
+                            text = newV
+                        }
+                    }
+                }
+            }
+            val categoryColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Category"
+                maxWidth = 150
+                resizable = false
+                cellValueFactory = { _.value.category }
+            }
+            val messageColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Message"
+                resizable = false
+                cellValueFactory = { _.value.message }
+                cellFactory = { _ ⇒
+                    val tc = new TableCell[BugPickerLogMessage, String]
+                    val text = new Text()
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(20))
+                    text.textProperty().bind(tc.itemProperty())
+                    tc.setGraphic(text)
+                    tc.wrapText = true
+                    tc
+                }
+            }
+            val logMessagesTableView = new TableView[BugPickerLogMessage](messages) {
+                columns ++= Seq(
+                    timestampColumn,
+                    levelColumn,
+                    categoryColumn,
+                    messageColumn)
+                editable = false
+                placeholder = Label("")
+            }
+            timestampColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.17))
+            levelColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.13))
+            categoryColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.26))
+            messageColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().subtract(
+                    timestampColumn.widthProperty()).subtract(
+                        levelColumn.widthProperty()).subtract(
+                            categoryColumn.widthProperty()))
+
+            logMessagesTableView
+        }
+
+        def extractScrollBar(table: TableView[BugPickerLogMessage]): Option[ScrollBar] = {
+
+            table.lookupAll(".scroll-bar:vertical").asScala.foreach { node ⇒
+                node match {
+                    case s: ScrollBar ⇒ {
+                        if (s.getOrientation().equals(javafx.geometry.Orientation.VERTICAL))
+                            return Some(s)
+                    }
+                    case _ ⇒
+                }
+            }
+            None
+        }
+
+        def logMessagesOnChangeBehaviour(
+            sortOrder: ObservableBuffer[javafx.scene.control.TableColumn[BugPickerLogMessage, _]],
+            tv: TableView[BugPickerLogMessage], scrollBar: Option[ScrollBar]): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
+            (_, changes) ⇒
+                {
+                    for (change ← changes)
+                        change match {
+                            case _: Reorder ⇒ {
+                                // sortOrder changed, store it
+                                sortOrder.clear()
+                                sortOrder ++= tv.sortOrder
+                            }
+                            case Add(pos, _) ⇒ {
+                                if (!sortOrder.isEmpty) {
+                                    // table was sorted before Add, retain sorting
+                                    tv.sortOrder.clear()
+                                    tv.sortOrder ++= sortOrder
+                                } else {
+                                    // table isn't sorted, scroll to new element
+                                    if (scrollBar.isDefined && scrollBar.get.isVisible())
+                                        tv.scrollTo(pos)
+                                }
+                            }
+                            case _ ⇒ {
+                                if (!sortOrder.isEmpty) {
+                                    tv.sortOrder.clear()
+                                    tv.sortOrder ++= sortOrder
+                                }
+                            }
+                        }
+                }
+        }
+
+        val bugpickerLogMessages = ObservableBuffer[BugPickerLogMessage]()
+        val projectLogMessages = ObservableBuffer[BugPickerLogMessage]()
+        val bugpickerLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(bugpickerLogMessages)
+        val projectLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(projectLogMessages)
+        val bugpickerLogSortOrder = ObservableBuffer(bugpickerLogView.sortOrder)
+        val projectLogSortOrder = ObservableBuffer(projectLogView.sortOrder)
+
         val tabPane: TabPane = new TabPane {
+            this += new Tab {
+                text = "BugPicker Log"
+                content = bugpickerLogView
+                closable = false
+            }
+            this += new Tab {
+                text = "Project Log"
+                content = projectLogView
+                closable = false
+            }
             this += new Tab {
                 text = "Source code"
                 content = sourceView
@@ -120,6 +285,8 @@ class BugPicker extends Application {
                 closable = false
             }
         }
+
+        OPALLogger.initGlobalContextLogger(new BugPickerOPALLogger(bugpickerLogMessages))
 
         def screenForStage(stage: Stage): Screen =
             Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
@@ -144,10 +311,70 @@ class BugPicker extends Application {
         lazy val recentProjectsMenu = new Menu {
             text = "_Open Recent"
             mnemonicParsing = true
-            accelerator = KeyCombination("Shortcut+O")
             items = createRecentProjectsMenu()
             if (items.isEmpty) {
                 disable = true
+            }
+        }
+
+        lazy val storeCurrentAnalysis = new MenuItem {
+            text = "_Store Analysis"
+            mnemonicParsing = true
+            accelerator = KeyCombination("Shortcut+S")
+            disable = true
+            onAction = { e: ActionEvent ⇒
+                Platform.runLater {
+                    val name = recentProjects.head.projectName
+                    val fsd = new FileChooser {
+                        title = "Save Analysis"
+                        extensionFilters ++= Seq(
+                            new FileChooser.ExtensionFilter("Bugpicker Analysis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                            new FileChooser.ExtensionFilter("All Files", "*.*"))
+                        initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                        initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
+                    }
+                    val file = fsd.showSaveDialog(stage)
+                    if (file != null) {
+                        BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
+                        recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
+                        recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
+                        recentAnalysisToDiffMenu.disable = false
+                    }
+                }
+            }
+        }
+
+        lazy val recentAnalysisToDiffMenu = new Menu {
+            text = "Recent Diff"
+            items = createRecentAnalysisMenu()
+            disable = true
+        }
+
+        lazy val loadAnalysisToDiff = new MenuItem {
+            text = "Load Diff"
+            disable = true
+            onAction = { e: ActionEvent ⇒
+                val fod = new FileChooser {
+                    title = "Open Analysis"
+                    extensionFilters ++= Seq(
+                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                        new FileChooser.ExtensionFilter("All Files", "*.*"))
+                    initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                }
+                val file = fod.showOpenDialog(stage)
+                if (file != null) {
+                    BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
+                    val oldAnalysis = StoredAnalysis.readFromFile(file)
+                    if (oldAnalysis.isDefined) {
+                        val dv = new DiffView(currentAnalysis, oldAnalysis.get)
+                        recentAnalyses = BugPicker.updateRecentlyUsedAnalyses(oldAnalysis.get, recentAnalyses)
+                        recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
+                        recentAnalysisToDiffMenu.disable = false
+                        dv.show(stage)
+                    } else {
+                        DialogStage.showMessage("Error", "Not an BugPickerAnalysis-File.", stage)
+                    }
+                }
             }
         }
 
@@ -163,15 +390,18 @@ class BugPicker extends Application {
                 recentProjectsMenu.disable = false;
                 sourceView.engine.loadContent("")
                 byteView.engine.loadContent("")
+                bugpickerLogMessages.clear()
                 reportView.engine.loadContent(Messages.LOADING_STARTED)
                 Service {
                     Task[Unit] {
-                        val projectAndSources = ProjectHelper.setupProject(results.get, stage)
+                        val projectAndSources = ProjectHelper.setupProject(results.get, stage, projectLogMessages)
                         project = projectAndSources._1
                         sources = projectAndSources._2
                         Platform.runLater {
-                            tabPane.tabs(0).disable = sources.isEmpty
-                            if (sources.isEmpty) tabPane.selectionModel().select(1)
+                            tabPane.tabs(2).disable = sources.isEmpty
+                            if (!tabPane.selectionModel().isSelected(1)) {
+                                tabPane.selectionModel().select(1)
+                            }
                             reportView.engine.loadContent(Messages.LOADING_FINISHED)
                         }
                     }
@@ -192,14 +422,22 @@ class BugPicker extends Application {
                                 text = "_New Project"
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+N")
-                                onAction = { e: ActionEvent ⇒ loadProjectAction() }
+                                onAction = { e: ActionEvent ⇒
+                                    Platform.runLater {
+                                        loadProjectAction()
+                                    }
+                                }
                             },
                             recentProjectsMenu,
                             new MenuItem {
                                 text = "Project _Info"
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+I")
-                                onAction = { e: ActionEvent ⇒ ProjectInfoDialog.show(stage, project, sources) }
+                                onAction = { e: ActionEvent ⇒
+                                    Platform.runLater {
+                                        ProjectInfoDialog.show(stage, project, sources)
+                                    }
+                                }
                             },
                             new SeparatorMenuItem,
                             new MenuItem {
@@ -207,8 +445,7 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+Q")
                                 onAction = { e: ActionEvent ⇒ stage.close }
-                            }
-                        )
+                            })
                     },
                     new Menu {
                         text = "_Analysis"
@@ -219,9 +456,25 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+R")
                                 onAction = { e: ActionEvent ⇒
-                                    val parameters = BugPicker.loadParametersFromPreferences()
-                                    AnalysisRunner.runAnalysis(stage, project, sources, parameters,
-                                        sourceView, byteView, reportView, tabPane)
+                                    Platform.runLater {
+                                        val parameters = BugPicker.loadParametersFromPreferences()
+                                        storeCurrentAnalysis.disable = true
+                                        val issues = ObjectProperty(Iterable.empty[Issue])
+                                        issues.onChange((o, p, q) ⇒ {
+                                            currentAnalysis = issues().map(_.asXHTML(false))
+                                            if (currentAnalysis != null) {
+                                                storeCurrentAnalysis.disable = false
+                                                loadAnalysisToDiff.disable = false
+                                                if (!recentAnalysisToDiffMenu.items.isEmpty)
+                                                    recentAnalysisToDiffMenu.disable = false
+                                            }
+                                        })
+                                        AnalysisRunner.runAnalysis(stage, project, sources, parameters,
+                                            issues, sourceView, byteView, reportView, tabPane)
+                                        if (!tabPane.selectionModel().isSelected(1)) {
+                                            tabPane.selectionModel().select(1)
+                                        }
+                                    }
                                 }
                             },
                             new MenuItem {
@@ -229,15 +482,20 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+P")
                                 onAction = { e: ActionEvent ⇒
-                                    val parameters = BugPicker.loadParametersFromPreferences
-                                    val dialog = new AnalysisParametersDialog(stage)
-                                    val newParameters = dialog.show(parameters)
-                                    if (newParameters.isDefined) {
-                                        BugPicker.storeParametersToPreferences(newParameters.get)
+                                    Platform.runLater {
+                                        val parameters = BugPicker.loadParametersFromPreferences
+                                        val dialog = new AnalysisParametersDialog(stage)
+                                        val newParameters = dialog.show(parameters)
+                                        if (newParameters.isDefined) {
+                                            BugPicker.storeParametersToPreferences(newParameters.get)
+                                        }
                                     }
                                 }
-                            }
-                        )
+                            },
+                            new SeparatorMenuItem,
+                            storeCurrentAnalysis,
+                            loadAnalysisToDiff,
+                            recentAnalysisToDiffMenu)
                     },
                     new Menu {
                         text = "_Help"
@@ -253,9 +511,40 @@ class BugPicker extends Application {
                                 text = "_About"
                                 mnemonicParsing = true
                                 onAction = { e: ActionEvent ⇒ aboutDialog.showAndWait() }
-                            }
-                        )
+                            })
                     })
+            }
+        }
+
+        def createRecentAnalysisMenu(): Seq[MenuItem] = {
+
+            if (!recentAnalyses.isEmpty) {
+                (recentAnalyses.map { p ⇒
+                    new MenuItem {
+                        text = p.analysisName+" - "+p.analysisDate
+                        mnemonicParsing = true
+                        if (p == currentAnalysis)
+                            disable = true
+                        onAction = { e: ActionEvent ⇒
+                            val dv = new DiffView(currentAnalysis, p)
+                            dv.show(stage)
+                        }
+                    }
+                }) ++ Seq(
+                    new MenuItem {
+                        text = "Clear Analyses"
+                        mnemonicParsing = true
+                        id = "clearAnalyses"
+                        onAction = { e: ActionEvent ⇒
+                            recentAnalyses = Seq.empty
+                            BugPicker.deleteAnalyses()
+                            // recentAnalysisMenu should now be empty, disable it
+                            recentAnalysisToDiffMenu.items = Seq.empty
+                            recentAnalysisToDiffMenu.disable = true;
+                        }
+                    })
+            } else {
+                Seq.empty
             }
         }
 
@@ -266,13 +555,16 @@ class BugPicker extends Application {
                 (for (p ← recentProjects) yield {
                     i = i + 1
                     new MenuItem {
-                        text = p.projectName
+                        text = p.projectName flatMap {
+                            case '_' ⇒ "__"
+                            case c   ⇒ s"$c"
+                        }
                         mnemonicParsing = true
                         if (i < 10) {
                             accelerator = KeyCombination(s"Shortcut+$i")
                         }
                         onAction = { e: ActionEvent ⇒
-                            {
+                            Platform.runLater {
                                 BugPicker.storeFilesToPreferences(p)
                                 loadProjectAction()
                             }
@@ -280,12 +572,12 @@ class BugPicker extends Application {
                     }
                 }) ++ Seq(
                     new MenuItem {
-                        text = "Clear Items"
+                        text = "_Clear Items"
                         mnemonicParsing = true
                         accelerator = KeyCombination("Shortcut+0")
                         id = "clearItems"
                         onAction = { e: ActionEvent ⇒
-                            {
+                            Platform.runLater {
                                 recentProjects = Seq.empty
                                 BugPicker.deleteRecentProjectsFromPreferences()
                                 recentProjectsMenu.items = Seq.empty
@@ -311,7 +603,7 @@ class BugPicker extends Application {
                 lastProject +: recentProjects.filter(
                     _.projectName != lastProject.projectName)
             } else {
-                if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
+                if (recentProjects.size < BugPicker.MAX_RECENT_PROJECTS) {
                     // lastProject is most recent project, enough space for one more
                     lastProject +: recentProjects
                 } else {
@@ -337,8 +629,7 @@ class BugPicker extends Application {
                         dividerPositions = 0.4
 
                         items ++= Seq(reportView, tabPane)
-                    }
-                )
+                    })
             }
 
             stylesheets += BugPicker.defaultAppCSSURL
@@ -347,15 +638,20 @@ class BugPicker extends Application {
         stage.handleEvent(WindowEvent.WindowShown) { e: WindowEvent ⇒
             val storedSize = BugPicker.loadWindowSizeFromPreferences()
             if (storedSize.isDefined) {
-                val currentScreen = Screen.screensForRectangle(storedSize.get)(0)
-                val currentScreenSize = currentScreen.bounds
-                if (currentScreenSize.contains(storedSize.get)) {
-                    stage.width = storedSize.get.width
-                    stage.height = storedSize.get.height
-                    stage.x = storedSize.get.minX
-                    stage.y = storedSize.get.minY
+                val screens = Screen.screensForRectangle(storedSize.get)
+                if (screens.isEmpty) {
+                    maximizeOnCurrentScreen(stage)
                 } else {
-                    maximizeOnScreen(stage, currentScreen)
+                    val currentScreen = screens(0)
+                    val currentScreenSize = currentScreen.bounds
+                    if (currentScreenSize.contains(storedSize.get)) {
+                        stage.width = storedSize.get.width
+                        stage.height = storedSize.get.height
+                        stage.x = storedSize.get.minX
+                        stage.y = storedSize.get.minY
+                    } else {
+                        maximizeOnScreen(stage, currentScreen)
+                    }
                 }
             } else {
                 maximizeOnCurrentScreen(stage)
@@ -367,6 +663,16 @@ class BugPicker extends Application {
         }
 
         stage.show()
+
+        val bugpickerLogViewScrollBar: Option[ScrollBar] = extractScrollBar(bugpickerLogView)
+        val projectLogViewScrollBar: Option[ScrollBar] = extractScrollBar(projectLogView)
+
+        bugpickerLogMessages.onChange {
+            logMessagesOnChangeBehaviour(bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar)
+        }
+        projectLogMessages.onChange {
+            logMessagesOnChangeBehaviour(projectLogSortOrder, projectLogView, projectLogViewScrollBar)
+        }
     }
 }
 
@@ -383,16 +689,32 @@ object BugPicker {
     final val PREFERENCES_KEY_RECENT_PROJECT_CLASSES = "classes_"
     final val PREFERENCES_KEY_RECENT_PROJECT_LIBS = "libs_"
     final val PREFERENCES_KEY_RECENT_PROJECT_SOURCES = "sources_"
+    final val RECENT_ANALYSIS = "recentAnalysis_"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_NAME = "name"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_DATE = "date"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_FILE = "file"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS = "maxCardinalityOfLongSets"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
+    final val PREFERENCES_KEY_LAST_DIRECTORY = "lastDirectory"
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
-    final val MAX_PREFERENCES_SIZE = 9
+    final val MAX_RECENT_PROJECTS = 9
+
+    final val MAX_RECENT_ANALYSES = 7
+    final val BUGPICKER_ANALYSIS_FILE_EXTENSION = ".bpa"
+
+    def storeLastDirectoryToPreferences(file: File) = {
+        BugPicker.PREFERENCES.put(BugPicker.PREFERENCES_KEY_LAST_DIRECTORY, file.getAbsolutePath)
+    }
+
+    def loadLastDirectoryFromPreferences(): File = {
+        new File(BugPicker.PREFERENCES.get(BugPicker.PREFERENCES_KEY_LAST_DIRECTORY, System.getProperty("user.home")))
+    }
 
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
@@ -413,9 +735,9 @@ object BugPicker {
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             DefaultMaxEvalFactor)
-        val maxEvalTime = PREFERENCES.getInt(
+        val maxEvalTime = new Milliseconds(PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            DefaultMaxEvalTime)
+            DefaultMaxEvalTime.timeSpan))
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             DefaultMaxCardinalityOfIntegerRanges)
@@ -434,9 +756,9 @@ object BugPicker {
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
-        PREFERENCES.putInt(
+        PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            parameters.maxEvalTime)
+            parameters.maxEvalTime.timeSpan)
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             parameters.maxEvalFactor)
@@ -492,7 +814,6 @@ object BugPicker {
     }
 
     def deleteRecentProjectsFromPreferences(): Unit = {
-
         for (i ← 1 to PREFERENCES.childrenNames().size) {
             val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
             PREFERENCES_RECENT_PROJECT.clear()
@@ -507,20 +828,82 @@ object BugPicker {
         if (!PREFERENCES.nodeExists("")) {
             return None
         }
-        val result = for (i ← 1 to PREFERENCES.childrenNames().size) yield {
-            if (!PREFERENCES.nodeExists(s"$RECENT_PROJECT$i"))
-                return None
-            else {
-                val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
-                val name = PREFERENCES_RECENT_PROJECT.get(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", "")
-                val classes = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", PREFERENCES_RECENT_PROJECT)
-                val libs = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", PREFERENCES_RECENT_PROJECT)
-                val sources = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", PREFERENCES_RECENT_PROJECT)
+        val result = for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_PROJECT$i")) yield {
+            val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
+            val name = PREFERENCES_RECENT_PROJECT.get(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", "")
+            val classes = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", PREFERENCES_RECENT_PROJECT)
+            val libs = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", PREFERENCES_RECENT_PROJECT)
+            val sources = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", PREFERENCES_RECENT_PROJECT)
 
-                LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs)
-            }
+            LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs)
         }
         Some(result)
+    }
+
+    def storeAnalysis(name: String, issues: Iterable[Node], file: File)(recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
+        class PE(name: String, entdef: scala.xml.dtd.EntityDef) extends scala.xml.dtd.ParsedEntityDecl(name, entdef) {
+            override def toString: String = {
+                val sb = new StringBuilder()
+                return this.buildString(sb).toString
+            }
+        }
+        // 1. create new StoredAnalysis
+        val newStoredAnalysis = StoredAnalysis(name, file)
+
+        // 2. create XML-output and save it to file
+        val data =
+            <issues name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
+                { issues }
+            </issues>
+        scala.xml.XML.save(file.getAbsolutePath, data, "UTF-8", true, DocType("issues", NoExternalID, Seq(new PE("nbsp", IntDef("&#160;")))))
+
+        // 3. update recently used analyses in Prefs
+        updateRecentlyUsedAnalyses(newStoredAnalysis, recentAnalyses)
+    }
+
+    def updateRecentlyUsedAnalyses(newAnalysis: StoredAnalysis, recentAnalyses: Seq[StoredAnalysis]) = {
+        val updatedAnalyses = ((newAnalysis +: recentAnalyses.filter(_ != newAnalysis)).take(BugPicker.MAX_RECENT_ANALYSES))
+
+        var i = 0
+        for (recentAnalysis ← updatedAnalyses) {
+            i = i + 1
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_NAME", recentAnalysis.analysisName)
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_DATE", recentAnalysis.analysisDate.getTime.toString)
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_FILE", recentAnalysis.analysisFile.getAbsolutePath)
+        }
+        updatedAnalyses
+    }
+
+    def loadRecentlyUsedAnalyses(): Seq[StoredAnalysis] = {
+        if (!PREFERENCES.nodeExists("")) {
+            return Seq.empty
+        }
+        var rua = Seq.empty[StoredAnalysis]
+        for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_ANALYSIS$i")) {
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            val path = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_FILE", "")
+            val file = new File(path)
+            if (file.exists) {
+                val name = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_NAME", "")
+                val date = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_DATE", "")
+                val loadedAnalysis = StoredAnalysis(name, file, new Date(date.toLong))
+                rua = rua :+ loadedAnalysis
+            } else {
+                // file moved or deleted, remove from Prefs
+                PREFERENCES_RECENT_ANALYSIS.clear()
+                PREFERENCES_RECENT_ANALYSIS.removeNode()
+            }
+        }
+        rua
+    }
+
+    def deleteAnalyses(): Unit = {
+        for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_ANALYSIS$i")) {
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            PREFERENCES_RECENT_ANALYSIS.clear()
+            PREFERENCES_RECENT_ANALYSIS.removeNode()
+        }
     }
 
     def main(args: Array[String]): Unit = {

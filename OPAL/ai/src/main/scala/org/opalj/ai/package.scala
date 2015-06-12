@@ -29,7 +29,7 @@
 package org.opalj
 
 import scala.language.existentials
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -65,14 +65,17 @@ import scala.reflect.ClassTag
  */
 package object ai {
 
+    final val FrameworkName = "Abstract Interpretation Framework"
+
     {
-        implicit val logContext = GlobalContext
+        implicit val logContext = GlobalLogContext
         try {
-            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
-            OPALLogger.info("OPAL", "Abstract Interpretation Framework - Production Build")
+            scala.Predef.assert(false) // <= tests whether assertions are on or off...
+            OPALLogger.info("OPAL", s"$FrameworkName - Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Abstract Interpretation Framework - Assertions are enabled - Development Build.")
+            case _: AssertionError ⇒
+                val message = s"$FrameworkName - Development Build (Assertions are enabled)"
+                OPALLogger.info("OPAL", message)
         }
     }
 
@@ -227,11 +230,11 @@ package object ai {
 
     type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T >: Null <: (ValuesDomain with Singleton)#Operands] = Array[T]
+    type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 
     type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T >: Null <: (ValuesDomain with Singleton)#Locals] = Array[T]
+    type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.

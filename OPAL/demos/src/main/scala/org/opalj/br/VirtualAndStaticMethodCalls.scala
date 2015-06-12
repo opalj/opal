@@ -34,7 +34,7 @@ import java.net.URL
 import org.opalj.br.instructions._
 import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Counts the number of static and virtual method calls.
@@ -55,7 +55,7 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis
 
         var staticCalls = 0
         var virtualCalls = 0
-        var executionTime = NanoSeconds.None
+        var executionTime = Nanoseconds.None
         time {
             for {
                 classFile ← project.allClassFiles

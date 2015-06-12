@@ -56,7 +56,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.br.instructions.ArithmeticInstruction
 import org.opalj.br.instructions.BinaryArithmeticInstruction

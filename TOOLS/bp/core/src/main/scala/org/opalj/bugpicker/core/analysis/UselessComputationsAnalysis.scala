@@ -57,7 +57,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.br.instructions.ArithmeticInstruction
 import org.opalj.br.instructions.BinaryArithmeticInstruction
@@ -79,7 +78,8 @@ import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.instructions.IFNULL
 
 /**
- * Identifies computations that are useless.
+ * Identifies computations that are useless (i.e., computations that could be done
+ * in the source code.)
  *
  * @author Michael Eichberg
  */

@@ -34,7 +34,7 @@ import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -86,8 +86,31 @@ import org.opalj.log.OPALLogger
  */
 package object opalj {
 
+    /**
+     * The type of the predefined relational operators.
+     *
+     * See [[org.opalj.RelationalOperators]] for the list of all defined operators.
+     */
+    type RelationalOperator = RelationalOperators.Value
+
+    /**
+     * The type of the predefined binary arithmetic operators.
+     *
+     * See [[org.opalj.BinaryArithmeticOperators]] for the list of all defined operators.
+     */
+    type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
+
+    /**
+     * The type of the predefined unary arithmetic operators.
+     *
+     * See [[org.opalj.UnaryArithmeticOperators]] for the list of all defined operators.
+     */
+    type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
+
     {
-        implicit val logContext = GlobalContext
+        // Log the information whether a production build or a development build is
+        // used.
+        implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false)
             OPALLogger.info("OPAL", "Common - Production Build")
@@ -111,7 +134,7 @@ package object opalj {
      *
      * @note '''This is a macro.'''
      */
-    def foreachNonNullValueOf[T <: AnyRef](
+    final def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
             f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
 

@@ -61,7 +61,7 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
 public class DefaultConstructor {
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = SimpleBase.class, line = 66)
+    @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 66)
     public void createSimpleBase() {
         Base simpleBase = new SimpleBase();
     }
@@ -74,19 +74,19 @@ public class DefaultConstructor {
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = DefaultConstructor.MyBase.class, line = 79)
+    @InvokedConstructor(receiverType = "callgraph/constructors/DefaultConstructor$MyBase", line = 79)
     public void createAbstractBase() {
         Base abstractBase = new MyBase();
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = ConcreteBase.class, line = 85)
+    @InvokedConstructor(receiverType = "callgraph/base/ConcreteBase", line = 85)
     public void createConcreteBase() {
         Base concreteBase = new ConcreteBase();
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AlternateBase.class, line = 91)
+    @InvokedConstructor(receiverType = "callgraph/base/AlternateBase", line = 91)
     public void createAlternateBase() {
         Base alternerateBase = new AlternateBase();
     }

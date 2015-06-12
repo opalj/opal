@@ -44,7 +44,8 @@ import br._
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait ReflectiveInvoker extends JavaObjectConversion { domain: Domain ⇒
+trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with AsJavaObject {
+    domain: Domain ⇒
 
     def warnOnFailedReflectiveCalls: Boolean = true
 
@@ -52,7 +53,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { domain: Domain ⇒
      * Performs a reflective call to the specified method. The declaring class needs
      * to be in the classpath of the analyzing JavaVM.
      *
-     * @see [[JavaObjectConversion]] for details.
+     * @see [[DefaultJavaObjectToDomainValueConversion]] for details.
      *
      * @return `None` when the reflective invocation has failed.
      */
@@ -100,7 +101,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { domain: Domain ⇒
                                 ") class is not found on the JVM's classpath."+
                                 Console.RESET
                         )
-                    return None /* <------- EARLY RETURN FROM METHOD */
+                    return None; /* <------- EARLY RETURN FROM METHOD */
                 case e: NoSuchMethodException ⇒
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
@@ -110,7 +111,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { domain: Domain ⇒
                                 declaringClass.toJava+"."+
                                 Console.RESET
                         )
-                    return None /* <------- EARLY RETURN FROM METHOD */
+                    return None; /* <------- EARLY RETURN FROM METHOD */
             }
 
         try {

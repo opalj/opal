@@ -419,13 +419,15 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     def boxValue: Array[Instruction]
 
-    final override def adapt(targetType: Type): Array[Instruction] =
-        if ((targetType eq `WrapperType`) || (targetType eq ObjectType.Object))
+    final override def adapt(targetType: Type): Array[Instruction] = {
+        if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
             boxValue
-        else
-            throw new IllegalArgumentException(
-                s"adaptation of ${this.toJava} to ${targetType} is not supported"
-            )
+        } else {
+            val message = s"adaptation of ${this.toJava} to ${targetType} is not supported"
+            throw new IllegalArgumentException(message)
+        }
+    }
+
 }
 
 /**

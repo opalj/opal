@@ -37,7 +37,7 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
-
+import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 /**
  * Tests the IntegerRanges Domain.
  *
@@ -3385,7 +3385,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
-                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
+                    domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))
                 ) should be(true)
 
                 // get the loop counter at the "icmple instruction" which controls the
@@ -3431,7 +3431,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (*1) should not affect constraint propagation (cfDependentValuesMult) ") {
-                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesMult").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -3448,7 +3448,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (/1) should not affect constraint propagation (cfDependentValuesDiv) ") {
-                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesDiv").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -3458,7 +3458,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (& -1) should not affect constraint propagation (cfDependentValuesBitwiseAnd) ") {
-                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseAnd").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -3468,7 +3468,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (| 0) should not affect constraint propagation (cfDependentValuesBitwiseOr) ") {
-                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(AbsoluteMaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseOr").get
                 val result = BaseAI(IntegerValues, method, domain)
 

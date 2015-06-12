@@ -10,11 +10,12 @@ homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.11.5"
+// [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
+
+scalaVersion in ThisBuild := "2.11.6"
 
 scalacOptions in ThisBuild ++= Seq(
-	"-deprecation", "-feature", "-unchecked", 
-	"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", "-Xfatal-warnings", 
 	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
 	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
 
@@ -35,12 +36,6 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis 
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
-scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
-	"-deprecation", "-feature", "-unchecked", 
-	"-Xlint", "-Xfuture", "-Xfatal-warnings", 
-	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
-
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
   baseDirectory map {
@@ -53,11 +48,12 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
   )
 
 javaOptions in ThisBuild ++= Seq(
-	  "-Xmx3G", "-Xms1024m",
-		"-Xnoclassgc",
+	  "-Xmx3G", "-Xms1024m", "-Xnoclassgc",
 		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
-EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+//EclipseKeys.createSrc := EclipseCreateSrc.Default 
+
+EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 

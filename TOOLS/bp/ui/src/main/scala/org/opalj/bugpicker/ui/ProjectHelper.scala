@@ -30,44 +30,58 @@ package org.opalj
 package bugpicker
 package ui
 
-import scala.collection.JavaConversions
 import java.io.File
-import org.opalj.br.analyses.Project
 import java.net.URL
+
+import scala.collection.JavaConversions
+import scala.language.implicitConversions
+
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.br.ClassFile
-import scalafx.Includes._
-import scalafx.stage.Stage
-import scalafx.scene.layout.BorderPane
-import scalafx.scene.layout.HBox
-import scalafx.scene.control.Button
-import scalafx.scene.control.Label
-import scalafx.geometry.Insets
-import scalafx.scene.web.WebView
-import scalafx.event.ActionEvent
-import scala.language.implicitConversions
-import scalafx.scene.Scene
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
+import org.opalj.log.OPALLogger
+
+import scalafx.application.Platform
+import scalafx.collections.ObservableBuffer
+import scalafx.event.ActionEvent
+import scalafx.geometry.Insets
+import scalafx.Includes._
+import scalafx.scene.control.Button
+import scalafx.scene.control.Label
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.TextInputControl
+import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.HBox
+import scalafx.scene.Scene
+import scalafx.scene.web.WebView
+import scalafx.stage.Stage
 
 object ProjectHelper {
 
-    def setupProject(loadedFiles: LoadedFiles, parentStage: Stage): (Project[URL], Seq[File]) = {
+    private[this] implicit val logContext = org.opalj.log.GlobalLogContext
+
+    def setupProject(
+        loadedFiles: LoadedFiles,
+        parentStage: Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage)
+        val project = setupProject(files, libs, parentStage, projectLogMessages)
         (project, sources)
     }
 
     def setupProject(
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File],
-        parentStage: Stage): Project[URL] = {
-        println("[info] Reading class files (found in):")
+        parentStage: Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): Project[URL] = {
+        OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -76,57 +90,37 @@ object ProjectHelper {
             br.reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ println("[info]\t"+file))
+                (file) ⇒ OPALLogger.info(
+                    "creating project",
+                    "project class path member: "+file.toString))
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                println("[info] Reading library class files (found in):")
+                OPALLogger.info("creating project", "reading library class files")
                 br.reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ println("[info]\t"+file))
+                    (file) ⇒ OPALLogger.info(
+                        "creating project",
+                        "library class path member: "+file.toString))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
+
         val allExceptions = exceptions1 ++ exceptions2
         if (allExceptions.nonEmpty) {
-            val out = new java.io.ByteArrayOutputStream
-            val pout = new java.io.PrintStream(out)
-            for (exception ← exceptions1 ++ exceptions2) {
-                pout.println(s"<h3>${exception.getMessage}</h3>")
-                exception.getStackTrace.foreach { ste ⇒
-                    pout.append(ste.toString).println("<br/>")
-                }
+            for (exception ← allExceptions) {
+                OPALLogger.error(
+                    "creating project",
+                    "an exception occured while creating project; the responsible class file is ignored",
+                    exception)
             }
-            pout.flush
-            val message = new String(out.toByteArray)
-            val dialog = new DialogStage(parentStage) {
-                title = "Error while reading project"
-                scene = new Scene {
-                    root = new BorderPane {
-                        top = new Label {
-                            text = "The following exceptions occurred while reading the specified files:"
-                        }
-                        center = new WebView {
-                            contextMenuEnabled = false
-                            engine.loadContent(message)
-                        }
-                        bottom = new HBox {
-                            children = new Button {
-                                text = "Close"
-                                padding = Insets(5, 10, 5, 10)
-                                onAction = { e: ActionEvent ⇒
-                                    close()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            dialog.showAndWait()
         }
 
-        Project(classFiles, libraryClassFiles)
+        Project(
+            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
+                projectLogger = new BugPickerOPALLogger(projectLogMessages))
     }
 }
+
