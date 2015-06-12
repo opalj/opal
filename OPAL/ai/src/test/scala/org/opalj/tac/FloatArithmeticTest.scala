@@ -185,7 +185,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
             //                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + op_2; \n"+returnJLC)
             //            }
         }
-        
+
         describe("using AI results") {
             def binarySetupJLC = {
                 "    0: r_0 = this; \n"+

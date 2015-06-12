@@ -198,7 +198,7 @@ class ConstantsTest extends FunSpec with Matchers {
                         "    3: return; \n")
             }
         }
-        
+
         describe("using AI results") {
 
             it("should correctly reflect the integer constants") {

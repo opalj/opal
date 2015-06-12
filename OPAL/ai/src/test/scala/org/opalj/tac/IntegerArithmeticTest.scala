@@ -299,8 +299,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
                 stmt
-//                ,
-//                ReturnValue(3, DomainValueBasedVar(0, AnIntegerValue))
+            //                ,
+            //                ReturnValue(3, DomainValueBasedVar(0, AnIntegerValue))
             )
 
             it("should correctly reflect addition") {
@@ -308,7 +308,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAddMethod, domain)
                 val statements = AsQuadruples(IntegerAddMethod, Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements)
-                
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
                 statements.shouldEqual(binaryAST(
