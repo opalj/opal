@@ -53,37 +53,15 @@ function findTextInIssue(issue, text, category) {
             }
             i++;
         }
-        var highlight = [];
         var nodeIterator = document.createNodeIterator(dd, NodeFilter.SHOW_TEXT);
         var currentNode;
         while (currentNode = nodeIterator.nextNode()) {
             if (currentNode.textContent.toLowerCase().indexOf(text.toLowerCase()) >= 0) {
                 erg = true;
-                // we will change the DOM, nodes can be become detached, store the parent for this case
-                highlight.push([currentNode, currentNode.parentNode]);
             }
         }
-        highlight.forEach(function (pair) {
-            var node = pair[0];
-            var parent = pair[1];
-            var oldTextContent = node.textContent;
-            var newTextContent = oldTextContent.replace(rx, function (t) {
-                return "<mark>" + t + "</mark>";
-            });
-            parent.innerHTML = parent.innerHTML.replace(new RegExp(RegExp.quote(
-                oldTextContent)), newTextContent);
-
-        });
     };
     if (category === undefined) {
-        // highlight package summary
-        var package_summary = issue.parentNode.firstChild.nextSibling;
-        var oldPackageName = package_summary.firstChild.textContent;
-        var newPackageName = oldPackageName.replace(rx, function (t) {
-            return "<mark>" + t + "</mark>";
-        });
-        package_summary.innerHTML = package_summary.innerHTML.replace(new RegExp(RegExp.quote(
-            oldPackageName)), newPackageName);
         issue.querySelectorAll("dd:not(.issue_message)").forEach(processDD);
     } else {
         processDD(category);
@@ -112,13 +90,6 @@ IssueFilter.register(
         log("[TextSearchFilter] Initialized.");
     },
     function (issue) {
-        var package_summary = issue.parentNode.firstChild.nextSibling;
-        package_summary.querySelectorAll("mark").forEach(function (e) {
-            e.outerHTML = e.innerHTML;
-        });
-        issue.querySelectorAll("mark").forEach(function (e) {
-            e.outerHTML = e.innerHTML;
-        });
         var searchString = searchField.value;
         if (searchString.length === 0)
             return true;
