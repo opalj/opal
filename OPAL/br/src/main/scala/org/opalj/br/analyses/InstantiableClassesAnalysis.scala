@@ -87,7 +87,7 @@ object InstantiableClassesAnalysis {
 
         def analyzeClassFile(cf: ClassFile): Unit = {
             if (cf.isAbstract)
-                // We a class that either never has any constructor (interfaces)
+                // A class that either never has any constructor (interfaces)
                 // or that must have at least one non-private constructor to make
                 // sense at all.
                 return ;
