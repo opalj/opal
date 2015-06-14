@@ -70,10 +70,10 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the integer constants") {
                 val statements = AsQuadruples(IntConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 0)),
