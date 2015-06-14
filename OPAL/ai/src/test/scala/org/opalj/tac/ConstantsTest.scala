@@ -92,30 +92,30 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(16, SimpleVar(-8, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
                     Return(18)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1; \n"+
-                        "    4: r_2 = op_0; \n"+
-                        "    5: op_0 = 2; \n"+
-                        "    6: r_3 = op_0; \n"+
-                        "    7: op_0 = 3; \n"+
-                        "    8: r_4 = op_0; \n"+
-                        "    9: op_0 = 4; \n"+
-                        "   10: r_5 = op_0; \n"+
-                        "   11: op_0 = 5; \n"+
-                        "   12: r_6 = op_0; \n"+
-                        "   13: op_0 = -1; \n"+
-                        "   14: r_7 = op_0; \n"+
-                        "   15: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 2;",
+                        "6: r_3 = op_0;",
+                        "7: op_0 = 3;",
+                        "8: r_4 = op_0;",
+                        "9: op_0 = 4;",
+                        "10: r_5 = op_0;",
+                        "11: op_0 = 5;",
+                        "12: r_6 = op_0;",
+                        "13: op_0 = -1;",
+                        "14: r_7 = op_0;",
+                        "15: return;"))
             }
 
             it("should correctly reflect the long constants") {
                 val statements = AsQuadruples(LongConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), LongConst(0, 0L)),
@@ -124,20 +124,20 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Return(4)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0l; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1l; \n"+
-                        "    4: r_3 = op_0; \n"+
-                        "    5: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0l;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1l;",
+                        "4: r_3 = op_0;",
+                        "5: return;"))
             }
 
             it("should correctly reflect the float constants") {
                 val statements = AsQuadruples(FloatConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeFloat), FloatConst(0, 0.0f)),
@@ -148,22 +148,22 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(5, SimpleVar(-4, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
                     Return(6)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0.0; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1.0; \n"+
-                        "    4: r_2 = op_0; \n"+
-                        "    5: op_0 = 2.0; \n"+
-                        "    6: r_3 = op_0; \n"+
-                        "    7: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0.0;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1.0;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 2.0;",
+                        "6: r_3 = op_0;",
+                        "7: return;"))
             }
 
             it("should correctly reflect the double constants") {
                 val statements = AsQuadruples(DoubleConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeDouble), DoubleConst(0, 0.0d)),
@@ -172,30 +172,30 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-4, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
                     Return(4)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0.0d; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1.0d; \n"+
-                        "    4: r_3 = op_0; \n"+
-                        "    5: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0.0d;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1.0d;",
+                        "4: r_3 = op_0;",
+                        "5: return;"))
             }
 
             it("should correctly reflect the null reference constants") {
                 val statements = AsQuadruples(NullRefConstMethod, None)
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Return(2)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = null; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = null;",
+                        "2: r_1 = op_0;",
+                        "3: return;"))
             }
         }
 
@@ -205,10 +205,10 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, IntConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, IntConstsMethod, domain)
                 val statements = AsQuadruples(IntConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 0)),
@@ -227,32 +227,32 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(16, SimpleVar(-8, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
                     Return(18)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1; \n"+
-                        "    4: r_2 = op_0; \n"+
-                        "    5: op_0 = 2; \n"+
-                        "    6: r_3 = op_0; \n"+
-                        "    7: op_0 = 3; \n"+
-                        "    8: r_4 = op_0; \n"+
-                        "    9: op_0 = 4; \n"+
-                        "   10: r_5 = op_0; \n"+
-                        "   11: op_0 = 5; \n"+
-                        "   12: r_6 = op_0; \n"+
-                        "   13: op_0 = -1; \n"+
-                        "   14: r_7 = op_0; \n"+
-                        "   15: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 2;",
+                        "6: r_3 = op_0;",
+                        "7: op_0 = 3;",
+                        "8: r_4 = op_0;",
+                        "9: op_0 = 4;",
+                        "10: r_5 = op_0;",
+                        "11: op_0 = 5;",
+                        "12: r_6 = op_0;",
+                        "13: op_0 = -1;",
+                        "14: r_7 = op_0;",
+                        "15: return;"))
             }
 
             it("should correctly reflect the long constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LongConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LongConstsMethod, domain)
                 val statements = AsQuadruples(LongConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), LongConst(0, 0L)),
@@ -261,22 +261,22 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Return(4)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0l; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1l; \n"+
-                        "    4: r_3 = op_0; \n"+
-                        "    5: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0l;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1l;",
+                        "4: r_3 = op_0;",
+                        "5: return;"))
             }
 
             it("should correctly reflect the float constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, FloatConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, FloatConstsMethod, domain)
                 val statements = AsQuadruples(FloatConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeFloat), FloatConst(0, 0.0f)),
@@ -287,24 +287,24 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(5, SimpleVar(-4, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
                     Return(6)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0.0; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1.0; \n"+
-                        "    4: r_2 = op_0; \n"+
-                        "    5: op_0 = 2.0; \n"+
-                        "    6: r_3 = op_0; \n"+
-                        "    7: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0.0;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1.0;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 2.0;",
+                        "6: r_3 = op_0;",
+                        "7: return;"))
             }
 
             it("should correctly reflect the double constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, DoubleConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, DoubleConstsMethod, domain)
                 val statements = AsQuadruples(DoubleConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeDouble), DoubleConst(0, 0.0d)),
@@ -313,32 +313,32 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-4, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
                     Return(4)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = 0.0d; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: op_0 = 1.0d; \n"+
-                        "    4: r_3 = op_0; \n"+
-                        "    5: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = 0.0d;",
+                        "2: r_1 = op_0;",
+                        "3: op_0 = 1.0d;",
+                        "4: r_3 = op_0;",
+                        "5: return;"))
             }
 
             it("should correctly reflect the null reference constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, NullRefConstMethod)
                 val aiResult = BaseAI(ConstantsClassFile, NullRefConstMethod, domain)
                 val statements = AsQuadruples(NullRefConstMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements)
+                val javaLikeCode = ToJavaLike(statements,false)
 
                 assert(statements.nonEmpty)
-                assert(javaLikeCode.length() > 0)
+                assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Return(2)))
                 javaLikeCode.shouldEqual(
-                    "    0: r_0 = this; \n"+
-                        "    1: op_0 = null; \n"+
-                        "    2: r_1 = op_0; \n"+
-                        "    3: return; \n")
+                    Array("0: r_0 = this;",
+                        "1: op_0 = null;",
+                        "2: r_1 = op_0;",
+                        "3: return;"))
             }
         }
     }
