@@ -268,7 +268,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                     "3: op_0 = r_1;",
                     "4: op_2 = r_3;",
                     strg,
-                    "6: return op_0 /*a long*/;"
+                    "6: return op_0 /*ALongValue*/;"
             )
 
             def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
@@ -356,7 +356,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0 /*a long*/;"))
+                        "4: return op_0 /*ALongValue*/;"))
             }
 
             it("should correctly reflect multiplication") {

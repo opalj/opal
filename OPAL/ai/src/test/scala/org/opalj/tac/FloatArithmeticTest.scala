@@ -194,7 +194,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 "3: op_0 = r_1;",
                 "4: op_1 = r_2;",
                 strg,
-                "6: return op_0 /*a float*/;"
+                "6: return op_0 /*AFloatValue*/;"
             )
 
             def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
@@ -257,7 +257,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0 /*a float*/;"))
+                        "4: return op_0 /*AFloatValue*/;"))
             }
 
             it("should correctly reflect multiplication") {

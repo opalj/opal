@@ -220,13 +220,29 @@ object AsQuadruples {
                         }.getOrElse(OperandVar.IntReturnValue)
                     statements(pc) = List(ReturnValue(pc, returnedValue))
                 case LRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.LongReturnValue))
+                    val returnedValue =
+                        aiResult.flatMap { r ⇒
+                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                        }.getOrElse(OperandVar.LongReturnValue)
+                    statements(pc) = List(ReturnValue(pc, returnedValue))
                 case FRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.FloatReturnValue))
+                    val returnedValue =
+                        aiResult.flatMap { r ⇒
+                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                        }.getOrElse(OperandVar.FloatReturnValue)
+                    statements(pc) = List(ReturnValue(pc, returnedValue))
                 case DRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.DoubleReturnValue))
+                    val returnedValue =
+                        aiResult.flatMap { r ⇒
+                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                        }.getOrElse(OperandVar.DoubleReturnValue)
+                    statements(pc) = List(ReturnValue(pc, returnedValue))
                 case ARETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.ReferenceReturnValue))
+                    val returnedValue =
+                        aiResult.flatMap { r ⇒
+                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                        }.getOrElse(OperandVar.ReferenceReturnValue)
+                    statements(pc) = List(ReturnValue(pc, returnedValue))
                 case RETURN.opcode ⇒
                     statements(pc) = List(Return(pc))
 
