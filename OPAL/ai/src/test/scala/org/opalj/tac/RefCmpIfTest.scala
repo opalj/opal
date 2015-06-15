@@ -195,9 +195,9 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "4: op_1 = r_2;",
                 strg,
                 "6: op_0 = r_1;",
-                "7: return op_0;",
+                "7: return op_0 /*{_ <: java.lang.Object, null}[@-2;t=102]*/;",
                 "8: op_0 = r_2;",
-                "9: return op_0;"
+                "9: return op_0 /*{_ <: java.lang.Object, null}[@-3;t=103]*/;"
             )
 
             def unaryJLC(strg: String) = Array(
@@ -221,8 +221,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryResultAST(
                     If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ReferenceType("java.lang.Object")).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ReferenceType("java.lang.Object")).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8;"))
             }
 
@@ -236,8 +236,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryResultAST(
                     If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8),
-                    DomainValueBasedVar(0, domain.NullValue(-2, 102).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.NullValue(-3, 103).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8;"))
             }
 
@@ -251,8 +251,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6),
-                    DomainValueBasedVar(0, domain.NullValue(-2, 102).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.NullValue(-3, 103).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.ReferenceValue(6, ObjectType.Object).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6;"))
             }
 
@@ -266,8 +266,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6),
-                    DomainValueBasedVar(0, domain.NullValue(-2, 102).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.NullValue(-3, 103).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.ReferenceValue(6, ObjectType.Object).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6;"))
             }
         }
