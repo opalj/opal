@@ -200,15 +200,15 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "9: return op_0 /*{_ <: java.lang.Object, null}[@-3;t=103]*/;"
             )
 
-            def unaryJLC(strg: String) = Array(
+            def unaryJLC(cmp: String, ret1:String) = Array(
                 "0: r_0 = this;",
                 "1: r_1 = p_1;",
                 "2: op_0 = r_1;",
-                strg,
+                cmp,
                 "4: op_0 = r_1;",
-                "5: return op_0;",
+                ret1,
                 "6: op_0 = null;",
-                "7: return op_0;"
+                "7: return op_0 /*null[@6;t=103]*/;"
             )
 
             it("should correctly reflect the equals case") {
@@ -251,9 +251,11 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.ReferenceValue(6, ObjectType.Object).asInstanceOf[domain.DomainValue])))
-                javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6;"))
+                    DomainValueBasedVar(0, domain.NullValue(-2).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
+                javaLikeCode.shouldEqual(unaryJLC(
+                        "3: if(op_0 != null) goto 6;",
+                        "5: return op_0 /*null[@-2;t=102]*/;"))
             }
 
             it("should correctly reflect the is-null case") {
@@ -266,9 +268,11 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.ReferenceValue(6, ObjectType.Object).asInstanceOf[domain.DomainValue])))
-                javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6;"))
+                    DomainValueBasedVar(0, domain.NonNullObjectValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
+                javaLikeCode.shouldEqual(unaryJLC(
+                        "3: if(op_0 == null) goto 6;", 
+                        "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"))
             }
         }
     }
