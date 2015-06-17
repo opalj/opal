@@ -45,7 +45,7 @@ case class INVOKESTATIC(
 
     final def mnemonic: String = "invokestatic"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 3
 

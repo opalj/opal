@@ -45,7 +45,7 @@ abstract class AddInstruction
 
     final def operator: String = "+"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC: PC,

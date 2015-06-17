@@ -45,7 +45,7 @@ case class INSTANCEOF(
 
     final def mnemonic: String = "instanceof"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = INSTANCEOF.length
 
