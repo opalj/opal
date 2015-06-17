@@ -110,7 +110,7 @@ class FallbackBugPickerAnalysisDomain(
 
 /**
  * The base domain that is shared by all domains that are used to perform abstract
- * interpretations of methods where call methods are potentially called.
+ * interpretations of methods where methods are potentially called.
  */
 trait BasePerformInvocationBugPickerAnalysisDomain
         extends BaseBugPickerAnalysisDomain
@@ -188,7 +188,6 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
         val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         if (debug) {
-
             println(s"[$currentCallChainLength] call result of "+
                 declaringClass.toJava+" "+descriptor.toJava(name) + result)
         }

@@ -38,6 +38,7 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.bugpicker.ui.BugPicker
 
 import scalafx.Includes._
+import scalafx.application.Platform
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
@@ -412,6 +413,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                         margin = buttonMargin
                         defaultButton = true
                         minWidth = 80
+                        Platform.runLater { requestFocus() }
                         onAction = { e: ActionEvent ⇒
                             if (nameTextField.text.value == "") {
                                 DialogStage.showMessage("Error",
@@ -429,8 +431,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                 self.close()
                             }
                         }
-                    }
-                )
+                    })
             }
         }
         stylesheets += BugPicker.defaultAppCSSURL
@@ -494,15 +495,13 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                     (if (acceptFiles)
                         "You can only drag and drop directories or files of type .jar/.zip/.class\n\n"
                     else
-                        "You can only drag and drop directories here.\n\n"
-                    )+
+                        "You can only drag and drop directories here.\n\n")+
                         "Because of that restriction, the following files weren't added:\n"+
-                        illegalFiles.take(10).mkString("    ", "    \n", "") +
+                        illegalFiles.take(10).mkString("    ", "    \n    ", "") +
                         (if (illegalFiles.size > 10)
                             "\n    ... (further files)."
                         else
-                            "."
-                        )
+                            ".")
 
                 DialogStage.showMessage("Warning", msg, theStage)
             }

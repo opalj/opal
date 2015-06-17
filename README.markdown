@@ -1,7 +1,7 @@
 # Overview
 OPAL is an extensible library for analyzing Java bytecode. OPAL is completely written in Scala and leverages Scala's 
 advanced language features to provide a new and previously unseen level of flexibility and ease of use. 
-OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* in mind. 
+OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* (memory and performance-wise) in mind. 
 
 # Project Structure
 OPAL consists of several projects which are found in the folder OPAL:
@@ -32,14 +32,18 @@ OPAL uses SBT as its build tool and working with OPAL is particularly easy using
 Make sure that you have Java 7 or 8, Scala 2.11.6 and SBT 0.13.8 installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder. 
 
-* Call ` sbt clean copyResources test:compile it:compile unidoc`. This compiles all projects (including tests) and generates the project-wide ScalaDoc documentation.
-* [Optional - but highly recommended] Edit your `.sbtconfig` file and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
+* Call `sbt clean clean-files cleanCache cleanCacheFiles eclipse copyResources it:compile test:compile unidoc publishLocal`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
+* Go to the `TOOLS/bp` folder and call `sbt compile`to compile the BugPicker. You can run the BugPicker using `sbt run`.
+* [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
 -Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5")
 * Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to edit your `.sbtconfig` file and to specify that you want to use more memory (`-Xmx3072M`).*
 * Call `sbt it:test` to run the integration test suite. Executing this test suite will take several minutes (your .sbtconfig file needs to be changed accordingly).
-* If you want to contribute to OPAL and want to develop your analyses using Eclipse, call `sbt eclipse` to create the project structure. Afterwards, you can directly import the projects into Eclipse.
+* If you want to contribute to OPAL and want to develop your analyses using Eclipse, call `sbt eclipse` in the main folder and/or in the `TOOLS/bp` folder to create Eclipse projects. Afterwards, you can directly import the projects into Eclipse.
 
 You are ready to go.
+
+# Using OPAL #
+To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to Articles and Tutorials. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
 # Example Usage #
 
@@ -47,13 +51,10 @@ Start the sbt console. (In OPAL's root folder call `sbt` on the command line.)
 Change the project to OPAL-DeveloperTools using the command `project OPAL-DeveloperTools`.
 To get the call graph of some class call run and specify (a) a jar file and (b) the name of some class. E.g., use the following command (`run ExtVTA /Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/jre/lib java/util/ArrayList`) and then select `CallGraphVisualization`. Afterwards the call graph related to that class is calculated and opened. (Graphviz needs to be installed first, since the visualization of the call graph is done using it.)
 
-# Using OPAL #
-To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to Articles and Tutorials. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks.
-
 # Contributing to OPAL #
 Everybody is welcome to contribute to OPAL and to submit pull requests. However, a pull request is only taken into consideration if:
 
-* ___the pull request consists of only **one commit** and this commit implements a single feature___
+* ___the pull request consists of only **one commit** and this commit **implements a single feature**___
 
 Additionally, the pull request has to meet the following conditions:
 
@@ -62,7 +63,7 @@ Additionally, the pull request has to meet the following conditions:
 * all existing unit and integration tests succeed
 * the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis)
 * the code is reasonably documented
-* the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, a line should not have more than 90 chars (unless Scalariform always reformats the code such that the line has more than 90 chars which is, e.g., often the case for type declarations))
+* the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 90 chars** (unless Scalariform always reformats the code such that the line has more than 90 chars which is, e.g., often the case for type declarations))
 * sufficient tests are included (use Scalatest for the development and use scoverage for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
 
 A recommended read (to spead up the process of getting your Pull Request pulled):
@@ -73,6 +74,3 @@ A recommended read (to spead up the process of getting your Pull Request pulled)
 # Further Information #
 
 * [OPAL Project](http://www.opal-project.de)
-
-
- 

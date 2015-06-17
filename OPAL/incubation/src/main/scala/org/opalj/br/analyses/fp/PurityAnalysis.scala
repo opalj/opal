@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
+package org.opalj
+package br
 package analyses
+package fp
 
 import scala.language.postfixOps
 import java.net.URL
-import org.opalj.br.Method
-import org.opalj.br.Field
-import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
@@ -65,14 +64,16 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.PC
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.ClassFile
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.EP
+import org.opalj.fp.Unchanged
+import org.opalj.fp.Impossible
+import org.opalj.fp.Continuation
+import org.opalj.fp.Result
+import org.opalj.fp.ImmediateResult
+import org.opalj.fp.IntermediateResult
 
 /**
  * Common supertrait of all purity properties.
@@ -140,9 +141,9 @@ case object Impure extends Purity
  */
 object PurityAnalysis {
 
-    final val Purity = org.opalj.fp.analyses.Purity.Key
+    final val Purity = org.opalj.br.analyses.fp.Purity.Key
 
-    final val Mutability = org.opalj.fp.analyses.Mutability.Key
+    final val Mutability = org.opalj.br.analyses.fp.Mutability.Key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
@@ -187,13 +188,14 @@ object PurityAnalysis {
                                 } else {
                                     Result(method, Impure)
                                 }
-                            // We are effectively suspending this computation and
-                            // will wait for the result.
-                            // This, however, does not make this a multi-step computation!
+                            // We are suspending this computation and wait for the result.
+                            // This, however, does not make this a multi-step computation,
+                            // as the analysis is only continued when property becomes
+                            // available.
                             return projectStore.require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
-                            return OneStepResult(method, Impure);
+                            return ImmediateResult(method, Impure);
                     }
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
@@ -215,7 +217,7 @@ object PurityAnalysis {
                             case None ⇒
                                 // We know nothing about the target method (it is not
                                 // found in the scope of the currenr project).
-                                return OneStepResult(method, Impure);
+                                return ImmediateResult(method, Impure);
 
                             case Some(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
@@ -223,7 +225,7 @@ object PurityAnalysis {
 
                                 purity match {
                                     case Some(Pure)   ⇒ /* Nothing to do...*/
-                                    case Some(Impure) ⇒ return OneStepResult(method, Impure);
+                                    case Some(Impure) ⇒ return ImmediateResult(method, Impure);
 
                                     // Handling cyclic computations
                                     case Some(ConditionallyPure) | None ⇒
@@ -251,7 +253,7 @@ object PurityAnalysis {
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    return OneStepResult(method, Impure);
+                    return ImmediateResult(method, Impure);
 
                 case _ ⇒
                 /* All other instructions (IFs, Load/Stores, Arith., etc.) are pure. */
@@ -261,7 +263,7 @@ object PurityAnalysis {
 
         // Every method that is not identified as being impure is (conditionally)pure.
         if (currentDependees.isEmpty)
-            OneStepResult(method, Pure)
+            ImmediateResult(method, Pure)
         else {
             val continuation = new ((Entity, Property) ⇒ PropertyComputationResult) {
 
@@ -313,12 +315,12 @@ object PurityAnalysis {
         // Due to a lack of knowledge, we classify all native methods or methods loaded
         // using a library class loader as impure...
         if (method.body.isEmpty)
-            return OneStepResult(method, Impure);
+            return ImmediateResult(method, Impure);
 
         // We are currently only able to handle simple methods that just take
         // primitive values.
         if (method.parameterTypes.exists { !_.isBaseType })
-            return OneStepResult(method, Impure);
+            return ImmediateResult(method, Impure);
 
         val purity = determinePurityCont(method, 0, Set.empty)
         purity

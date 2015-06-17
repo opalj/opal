@@ -43,7 +43,7 @@ case object AASTORE extends ArrayStoreInstruction {
 
     final val mnemonic = "aastore"
 
-    final val runtimeExceptions: List[ObjectType] = {
+    final val jvmExceptions: List[ObjectType] = {
         import ObjectType._
         List(ArrayIndexOutOfBoundsException, NullPointerException, ArrayStoreException)
     }
@@ -56,5 +56,5 @@ case object AASTORE extends ArrayStoreInstruction {
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, runtimeExceptions)
+                this, currentPC, code, jvmExceptions)
 }

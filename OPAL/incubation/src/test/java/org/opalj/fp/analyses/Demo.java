@@ -59,11 +59,15 @@ class Demo {
         return i % 2 == 0 ? i : foo(i - 1);
     }
 
-    // The following method is not direct involved in a
-    // mutually recursive dependency, but requires information about a set of
+    // The following methods are not direct involved in a
+    // mutually recursive dependency, but require information about a set of
     // mutually recursive dependent methods.
-    static int fooBar(int i) {
+    static int fooBar(int i) { // also observed by other methods
         return foo(i) + bar(i);
+    }
+
+    static int barFoo(int i) {
+        return foo(i) + bar(i); // not observerd
     }
 
     // The following two methods are mutually dependent and use an impure method.
@@ -122,6 +126,22 @@ class Demo {
         return cpure(i / 21);
     }
 
+    static int cpureCalleeCallee1(int i) {
+        return cpureCallee(i / 21);
+    }
+
+    static int cpureCalleeCallee2(int i) {
+        return cpureCallee(i / 21);
+    }
+
+    static int cpureCalleeCalleeCalle(int i) {
+        return cpureCalleeCallee1(i / 21) * cpureCalleeCallee2(i / 21);
+    }
+
+    static int cpureCalleeCalleeCalleCallee(int i) {
+        return cpureCalleeCalleeCalle(1299);
+    }
+
     // All methods are involved in multiple cycles of dependent methods
     // one calls an impure method.
     //
@@ -140,7 +160,7 @@ class Demo {
         return m1(k);
     }
 
-    // Two cycles connecte by a "weak link"
+    // Two cycles connected by a "weak link"
     //
 
     static int cm1(int i) {
@@ -151,4 +171,21 @@ class Demo {
         return i % 2 == 0 ? cm1(-i) : fooBar(i - 1);
     }
 
+    // A classical strongly connected component
+    //
+    static int scc0(int i) {
+        return i < 0 ? scc2(i - 10) : scc1(i - 111);
+    }
+
+    static int scc1(int i) {
+        return i % 2 == 0 ? 32424 : scc3(i - 1);
+    }
+
+    static int scc2(int i) {
+        return i % 2 == 0 ? 1001 : scc3(i - 3);
+    }
+
+    static int scc3(int i) {
+        return scc0(12121 / i);
+    }
 }

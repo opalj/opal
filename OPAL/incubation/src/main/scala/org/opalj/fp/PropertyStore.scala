@@ -290,9 +290,8 @@ class PropertyStore private (
      * of those properties that were registered by this thread.
      */
     def waitOnPropertyComputationCompletion(
-        useDefaultForUnsatisfiableLinearDependencies: Boolean = true): Unit = {
-        this.useDefaultForUnsatisfiableLinearDependencies = useDefaultForUnsatisfiableLinearDependencies
-        Tasks.waitOnCompletion()
+        useDefaultForIncomputableProperties: Boolean = true): Unit = {
+        Tasks.waitOnCompletion(useDefaultForIncomputableProperties)
     }
 
     /**
@@ -361,7 +360,7 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
-        @volatile var useDefaultForUnsatisfiableLinearDependencies: Boolean = false
+        @volatile var useDefaultForIncomputableProperties: Boolean = false
 
         // ALL ACCESSES ARE SYNCHRONIZED
         private[this] var executed = 0
@@ -485,6 +484,19 @@ class PropertyStore private (
             }
         }
 
+        @inline private[this] def getObservers(e: Entity, pkId: Int): Observers = {
+            val value = data.get(e)
+            if (value eq null)
+                return null;
+
+            val (_, properties) = value
+            if (properties eq null)
+                return null;
+
+            val (_, observers) = properties(pkId)
+            observers
+        }
+
         // THIS METHOD REQUIRES EXCLUSIVE ACCESS TO THE STORE!
         // Handle unsatisfied dependencies supports both cases:
         //  1. computations that are part of a cyclic computation dependency
@@ -492,35 +504,76 @@ class PropertyStore private (
         //     property that was not computed (final lack of knowledge) and for
         //     which no computation exits.
         private[this] def handleUnsatisfiedDependencies(): Unit = {
+            import scala.collection.JavaConverters._
+            // GIVEN: data: JIDMap[Entity, PropertyStoreValue]
+            // GIVEN: observers: new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+            val observers = store.observers
 
-            //println(store.toString)
+            val indirectlyIncomputableEPKs = HSet.empty[EPK]
 
-            // The set of entity/property key pairs which may be refined if a dependee
-            // is refined.
-            val openComputations = HSet.empty[EPK]
+            // All those EPKs that require some information that do not depend (directly
+            // or indirectly) on an incomputableEPK. However, this set also includes
+            // those EPKs that may depend on another strongly connected component which
+            // is a knot (which has no outgoing dependency).
+            val cyclicComputableEPKCandidates = HSet.empty[EPK]
 
-            // The set of entity/property key pairs that have observers.
-            val unsatisfiedDependencies = HSet.empty[EPK]
-
-            import scala.collection.JavaConversions._
-            for {
-                entry ← data.entrySet()
-                e = entry.getKey()
-                ps = entry.getValue()._2.entries
-                (pk, (_ /*p*/ , os)) ← ps
-                if os ne null
-                o ← os
-                // we have an entity with unsatisfied dependencies
-            } {
-                openComputations += o.depender
-                unsatisfiedDependencies += EPK(e, new PropertyKey(pk))
+            // Let's determine all EPKs that have a dependency on an incomputableEPK
+            // (They may be in a strongly connected component, but we don't care about
+            // these, because they may still be subject to some refinement.)
+            def determineIncomputableEPKs(dependerEPK: EPK): Unit = {
+                var worklist = List(dependerEPK)
+                while (worklist.nonEmpty) {
+                    val dependerEPK = worklist.head
+                    worklist = worklist.tail
+                    val ps = data.get(dependerEPK.e)._2(dependerEPK._2.id)
+                    if ((ps ne null) && (ps._2 ne null)) {
+                        val os = ps._2
+                        os foreach { o ⇒
+                            val dependerEPK = o.depender
+                            if (indirectlyIncomputableEPKs.add(dependerEPK)) {
+                                cyclicComputableEPKCandidates -= dependerEPK
+                                worklist = dependerEPK :: worklist
+                            }
+                        }
+                    }
+                }
             }
+
+            val directlyIncomputableEPKs = HSet.empty[EPK]
+            observers.entrySet().asScala foreach { e ⇒
+                val dependerEPK = e.getKey
+                if (!indirectlyIncomputableEPKs.contains(dependerEPK)) {
+                    val dependees = e.getValue
+                    dependees foreach { dependee ⇒
+                        val dependeeEPK = dependee._1
+                        if (!observers.containsKey(dependeeEPK)) {
+                            directlyIncomputableEPKs += dependeeEPK
+                            indirectlyIncomputableEPKs += dependerEPK
+                            determineIncomputableEPKs(dependerEPK)
+                        } else {
+                            // this EPK observers EPKs that have observers...
+                            // but, is it also observed?
+                            val observers = getObservers(dependerEPK.e, dependerEPK.pk.id)
+                            if ((observers ne null) && observers.nonEmpty) {
+                                cyclicComputableEPKCandidates += dependerEPK
+                            }
+                        }
+                    }
+                }
+            }
+
+            println("Directly..."+directlyIncomputableEPKs)
+            println("Indirectly..."+indirectlyIncomputableEPKs)
+            println("Cyclic..."+cyclicComputableEPKCandidates)
+
+            // Now
+
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
-            if (useDefaultForUnsatisfiableLinearDependencies) {
+            if (useDefaultForIncomputableProperties) {
                 for {
-                    EPK(e, pk) ← unsatisfiedDependencies -- openComputations
+                    EPK(e, pk) ← directlyIncomputableEPKs
                 } {
                     val defaultP = PropertyKey.defaultProperty(pk.id)
                     OPALLogger.debug(
@@ -529,127 +582,13 @@ class PropertyStore private (
                     scheduleHandleResult(Result(e, defaultP))
                 }
             }
-
-            //            import scala.collection.JavaConversions._
-            //            for {
-            //                entry ← data.entrySet()
-            //                e = entry.getKey()
-            //                ps = entry.getValue()._2
-            //                (pk, (p, os)) ← ps
-            //                dependerO ← os
-            //                // we haven an entry with observers ...
-            //                dependeeEPK = EPK(e, pk)
-            //                if !processedEPK.contains(dependeeEPK)
-            //                dependerEPK = dependerO.depender
-            //                depender = (dependerEPK, dependerO)
-            //                if !processedEPK.contains(dependerEPK)
-            //                // we now have observers that are not in an already
-            //                // found dependent computation
-            //            } {
-            //                println(s"handling entity $e "+data.get(e)._2)
-            //                def dependers(epk: EPK): Iterable[(EPK, PropertyObserver)] = {
-            //                    for {
-            //                        (pk, (p, os)) ← data.get(epk.e)._2
-            //                        o ← os
-            //                        dependerEPK = o.depender
-            //                        if !processedEPK.contains(dependerEPK)
-            //                    } yield {
-            //                        (dependerEPK, o)
-            //                    }
-            //                }
-            //
-            //                // Extracts all paths, to which this entity contributes.
-            //                // @return
-            //                //    The first list of ePKs are those entity/property key contributing
-            //                //    to the cycle, the
-            //                //    second list of entities are the entities that do not belong to a
-            //                //    a cycle.
-            //                def extractPaths(
-            //                    rootEPK: EPK,
-            //                    current: (EPK, PropertyObserver)): (List[(EPK, PropertyObserver)], List[(EPK, PropertyObserver)]) = {
-            //
-            //                    var cyclic: List[(EPK, PropertyObserver)] = Nil
-            //                    var linear: List[(EPK, PropertyObserver)] = Nil
-            //                    val (currentEPK, _ /*currentO*/ ) = current
-            //                    dependers(currentEPK) foreach { depender: (EPK, PropertyObserver) ⇒
-            //                        val (dependerEPK, _ /*dependerO*/ ) = depender
-            //                        if (dependerEPK == rootEPK) {
-            //                            assert(cyclic.isEmpty)
-            //                            cyclic = List(depender)
-            //                        } else {
-            //                            val (c, l) = extractPaths(rootEPK, depender)
-            //                            if (c.nonEmpty) {
-            //                                assert(cyclic.isEmpty)
-            //                                cyclic = c
-            //                            }
-            //                            linear :::= l
-            //                        }
-            //                    }
-            //                    if (cyclic.nonEmpty)
-            //                        (current :: cyclic, linear)
-            //                    else
-            //                        (cyclic, current :: linear)
-            //                }
-            //                println(s"handling entity $e - extracting paths")
-            //                val (cyclic, linear) = //try {
-            //                    extractPaths(dependeeEPK, depender)
-            //                //                } catch {
-            //                //                    case t: Throwable ⇒
-            //                //                        println(Thread.currentThread())
-            //                //                        println(t.printStackTrace())
-            //                //                        throw t
-            //                //                }
-            //                println(s"handling entity $e - paths are extracted")
-            //                cyclic.foreach(epko ⇒ processedEPK += epko._1)
-            //                processedEPK ++= linear.view.map(_._1)
-            //
-            //                /*START-DEBUG*/
-            //                if (cyclic.nonEmpty)
-            //                    println("entities with cyclic dependency: "+cyclic)
-            //                if (linear.nonEmpty)
-            //                    println("entities with linear dependency: "+linear+" >> "+dependeeEPK)
-            //                println()
-            //                /*DEBUG-END*/
-            //
-            //                if (cyclic.nonEmpty) {
-            //                    // Let's pick one (arbitrary!) element and set it to the default
-            //                    // property for elements involved in a cyclic dependency.
-            //                    def handleCycle: Boolean = {
-            //                        //                        cyclic.exists { epko ⇒
-            //                        ////                            val (epk, o) = epko
-            //                        ////                            val pk = epk.pk
-            //                        ////                            PropertyKey.cyclicComputationHandler(cyclic) match {
-            //                        ////                                case Some(fallback) ⇒
-            //                        ////                                    val p = fallback(epk)
-            //                        ////                                    val e = epk.e
-            //                        ////                                    o(e, p)
-            //                        ////                                    println(s"handling cyclic dependency: $e <= $p")
-            //                        ////                                    true
-            //                        ////                                case None ⇒
-            //                        ////                                    false
-            //                        //                            }
-            //                        false
-            //
-            //                    }
-            //                    if (!handleCycle) {
-            //                        val message = s"unresolvable cyclic dependency (${cyclic.unzip._1})"
-            //                        throw new AnalysisException(message)
-            //                    }
-            //                }
-            //            }
         }
 
-        def waitOnCompletion() = synchronized {
-            while (scheduled > 0) { wait }
-        }
-    }
-
-    def useDefaultForUnsatisfiableLinearDependencies: Boolean = {
-        Tasks.useDefaultForUnsatisfiableLinearDependencies
-    }
-
-    def useDefaultForUnsatisfiableLinearDependencies_=(useDefault: Boolean): Unit = {
-        Tasks.useDefaultForUnsatisfiableLinearDependencies = useDefault
+        def waitOnCompletion(useDefaultForIncomputableProperties: Boolean): Unit =
+            synchronized {
+                this.useDefaultForIncomputableProperties = useDefaultForIncomputableProperties
+                while (scheduled > 0) { wait }
+            }
     }
 
     /**
@@ -920,13 +859,13 @@ class PropertyStore private (
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
 
         r match {
-            case NoResult            ⇒ // Nothing to do..
+            case NoResult              ⇒ // Nothing to do..
 
-            case OneStepResult(e, p) ⇒ update(e, p, OneStepFinalUpdate)
+            case ImmediateResult(e, p) ⇒ update(e, p, OneStepFinalUpdate)
 
-            case Result(e, p)        ⇒ update(e, p, FinalUpdate)
+            case Result(e, p)          ⇒ update(e, p, FinalUpdate)
 
-            case OneStepMultiResult(results) ⇒
+            case ImmediateMultiResult(results) ⇒
                 results foreach { ep ⇒ val (e, p) = ep; update(e, p, OneStepFinalUpdate) }
 
             case MultiResult(results) ⇒

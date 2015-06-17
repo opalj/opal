@@ -58,8 +58,7 @@ case class GETFIELD(
 
     final def mnemonic: String = "getfield"
 
-    final def runtimeExceptions: List[ObjectType] =
-        FieldAccess.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 

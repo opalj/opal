@@ -73,7 +73,10 @@ class AnalysisWorker(
             analysisTime: Nanoseconds,
             parametersAsString: Seq[String],
             issues: Iterable[Issue]): scala.xml.Node = {
-            val report = resultsAsXHTML(parametersAsString, issues, analysisTime)
+            val report =
+                resultsAsXHTML(
+                    parametersAsString, issues, showSearch = true,
+                    analysisTime)
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString
