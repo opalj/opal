@@ -29,7 +29,12 @@
 package org.opalj.fp
 
 /**
- * A pairing of an entity and an associated property.
+ * A pairing of an [[Entity]] and an associated [[Property]].
+ *
+ * Compared to a standard `Tuple2` the equality of two EP objects is based on
+ * comparing the entities using reference equality.
+ *
+ * @author Michael Eichberg
  */
 final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property] {
 
@@ -53,16 +58,18 @@ final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property
 }
 
 /**
- * Provides a factory and an extractor for EP objects.
+ * Provides a factory and an extractor for [[EP]] objects.
+ *
+ * @author Michael Eichberg
  */
 object EP {
 
     def apply(e: Entity, p: Property): EP = new EP(e, p)
 
-    def unapply(ep: EP): Option[(Entity, Property)] = {
-        if (ep eq null)
-            None
-        else
-            Some((ep.e, ep.p))
+    def unapply(that: EP): Option[(Entity, Property)] = {
+        that match {
+            case null ⇒ None
+            case ep   ⇒ Some((ep.e, ep.p))
+        }
     }
 }
