@@ -138,6 +138,16 @@ object AsQuadruples {
                 schedule(pcOfNextInstruction(pc), stack)
             }
 
+            def returnInstruction(fallback: SimpleVar): Unit = {
+                val returnedValue =
+                    aiResult.flatMap { r ⇒
+                        // We have to be able to handle the case that the operands
+                        // array is empty (i.e., the instruction is dead)
+                        Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                    }.getOrElse(fallback)
+                statements(pc) = List(ReturnValue(pc, returnedValue))
+            }
+
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
             (opcode: @scala.annotation.switch) match {
@@ -211,38 +221,11 @@ object AsQuadruples {
                 case LSTORE.opcode ⇒
                     storeInstruction(as[LSTORE](instruction).lvIndex, ComputationalTypeLong)
 
-                case IRETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            // We have to be able to handle the case that the operands
-                            // array is empty (i.e., the instruction is dead)
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.IntReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
-                case LRETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.LongReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
-                case FRETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.FloatReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
-                case DRETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.DoubleReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
-                case ARETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.ReferenceReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
+                case IRETURN.opcode ⇒ returnInstruction(OperandVar.IntReturnValue)
+                case LRETURN.opcode ⇒ returnInstruction(OperandVar.LongReturnValue)
+                case FRETURN.opcode ⇒ returnInstruction(OperandVar.FloatReturnValue)
+                case DRETURN.opcode ⇒ returnInstruction(OperandVar.DoubleReturnValue)
+                case ARETURN.opcode ⇒ returnInstruction(OperandVar.ReferenceReturnValue)
                 case RETURN.opcode ⇒
                     statements(pc) = List(Return(pc))
 
