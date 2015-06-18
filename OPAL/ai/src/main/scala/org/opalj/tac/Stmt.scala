@@ -95,6 +95,12 @@ case class ReturnValue(pc: PC, expr: Expr) extends SimpleStmt
 
 case class Return(pc: PC) extends SimpleStmt
 
+case class Nop(pc: PC) extends SimpleStmt
+
+case class EmptyStmt(pc: PC) extends SimpleStmt
+
+case class Checkcast(pc:PC, target:Var, cmpTp: ReferenceType) extends SimpleStmt
+
 /**
  * Call of a method.
  */

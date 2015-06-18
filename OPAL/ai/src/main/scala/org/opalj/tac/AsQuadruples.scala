@@ -374,7 +374,41 @@ object AsQuadruples {
                     statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case GOTO.opcode ⇒ Goto(pc, pc + as[GOTO](instruction).branchoffset)
+                case GOTO.opcode | GOTO_W.opcode ⇒
+                    statements(pc) = List(Goto(pc, pc + as[GOTO](instruction).branchoffset))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case NOP.opcode ⇒
+                    statements(pc) = List(Nop(pc))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case POP.opcode ⇒
+                    val _ :: rest = stack
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case POP2.opcode ⇒
+                    val value1 :: value2 :: rest = stack
+                    if ((value1.cTpe == ComputationalTypeLong) ||
+                        (value1.cTpe == ComputationalTypeDouble))
+                        schedule(pcOfNextInstruction(pc), value2 :: rest)
+                    else schedule(pcOfNextInstruction(pc), rest)
+
+                case WIDE.opcode ⇒
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case INSTANCEOF.opcode ⇒
+                    val value1 :: rest = stack
+                    val resultVar = OperandVar(ComputationalTypeInt, stack)
+                    statements(pc) = List(
+                        Assignment(pc, resultVar, InstanceOf(value1, as[INSTANCEOF](instruction).referenceType)))
+                    schedule(pcOfNextInstruction(pc), resultVar :: rest)
+
+                case CHECKCAST.opcode ⇒
+                    val value1 :: _ = stack
+                    statements(pc) = List(
+                        Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType))
+                    schedule(pcOfNextInstruction(pc), stack)
 
                 // TODO Add support for all the other instructions!
 

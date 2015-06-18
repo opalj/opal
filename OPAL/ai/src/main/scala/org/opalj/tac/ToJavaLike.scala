@@ -53,6 +53,7 @@ object ToJavaLike {
             case DoubleConst(_, value)    ⇒ value.toString+"d"
             case ClassConst(_, value)     ⇒ value.toString
             case NullExpr(_)              ⇒ "null"
+            case InstanceOf(trg, cmpTp)   ⇒ s"${trg.toString} instanceof ${cmpTp.toString}"
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
             case PrefixExpr(_, _, op, operand) ⇒
@@ -72,6 +73,12 @@ object ToJavaLike {
                 s"return ${toJavaLikeExpr(expr)};"
             case Return(_) ⇒
                 s"return;"
+            case Nop(_) ⇒
+                s"nop;"
+            case EmptyStmt(_) ⇒
+                s";"
+            case Checkcast(_, trg, cmpTp) ⇒
+                s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.toString}"
             case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
                 val code = new StringBuffer(256)
 

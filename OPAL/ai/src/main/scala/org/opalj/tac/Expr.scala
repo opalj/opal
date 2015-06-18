@@ -52,6 +52,10 @@ trait Expr {
  */
 case class Param(cTpe: ComputationalType, name: String) extends Expr
 
+case class InstanceOf(target:Var, cmpTp: ReferenceType) extends Expr {
+    final def cTpe = ComputationalTypeInt
+}
+
 sealed trait Const extends Expr
 
 case class IntConst(pc: PC, value: Int) extends Expr {
