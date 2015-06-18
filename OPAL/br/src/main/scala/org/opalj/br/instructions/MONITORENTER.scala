@@ -43,8 +43,7 @@ case object MONITORENTER extends SynchronizationInstruction {
 
     final val mnemonic = "monitorenter"
 
-    final val runtimeExceptions: List[ObjectType] =
-        List(ObjectType.NullPointerException)
+    final val jvmExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
 
     final def nextInstructions(
         currentPC: PC,

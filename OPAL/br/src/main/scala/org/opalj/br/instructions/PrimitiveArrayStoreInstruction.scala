@@ -39,15 +39,15 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class PrimitiveArrayStoreInstruction extends ArrayStoreInstruction {
 
-    final def runtimeExceptions: List[ObjectType] =
-        PrimitiveArrayAccess.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] =
+        PrimitiveArrayAccess.jvmExceptions
 
     final def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
+                this, currentPC, code, PrimitiveArrayAccess.jvmExceptions)
     }
 
 }

@@ -50,7 +50,7 @@ case class GETSTATIC(
 
     final def mnemonic: String = GETSTATIC.mnemonic
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 

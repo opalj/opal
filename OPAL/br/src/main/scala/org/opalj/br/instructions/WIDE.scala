@@ -43,7 +43,7 @@ case object WIDE extends Instruction with ConstantLengthInstruction {
 
     final val mnemonic = "wide"
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 1
 

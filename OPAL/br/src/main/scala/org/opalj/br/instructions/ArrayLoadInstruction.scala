@@ -39,8 +39,7 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
-    final def runtimeExceptions: List[ObjectType] =
-        ArrayLoadInstruction.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] = ArrayLoadInstruction.jvmExceptions
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
@@ -54,12 +53,14 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs =
-        if (regularSuccessorsOnly)
+    final def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs = {
+        if (regularSuccessorsOnly) {
             UShortSet(indexOfNextInstruction(currentPC, code))
-        else
-            Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, runtimeExceptions)
+        } else {
+            import Instruction.nextInstructionOrExceptionHandlers
+            nextInstructionOrExceptionHandlers(this, currentPC, code, jvmExceptions)
+        }
+    }
 
 }
 
@@ -74,7 +75,7 @@ object ArrayLoadInstruction {
      * The exceptions that are potentially thrown by instructions that load values
      * stored in an array.
      */
-    final val runtimeExceptions: List[ObjectType] = {
+    final val jvmExceptions: List[ObjectType] = {
         import ObjectType._
         List(ArrayIndexOutOfBoundsException, NullPointerException)
     }

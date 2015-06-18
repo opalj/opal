@@ -44,6 +44,7 @@ case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction {
     final def operator: String = "!="
 
     final def condition: RelationalOperator = RelationalOperators.NE
+
 }
 object IF_ACMPNE {
 
