@@ -101,6 +101,10 @@ case class EmptyStmt(pc: PC) extends SimpleStmt
 
 case class Checkcast(pc:PC, target:Var, cmpTp: ReferenceType) extends SimpleStmt
 
+case class MonitorEnter(pc:PC, objRef:Var) extends SimpleStmt
+
+case class MonitorExit(pc:PC, objRef:Var) extends SimpleStmt
+
 /**
  * Call of a method.
  */

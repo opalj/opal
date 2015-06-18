@@ -79,6 +79,10 @@ object ToJavaLike {
                 s";"
             case Checkcast(_, trg, cmpTp) ⇒
                 s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.toString}"
+            case MonitorEnter(_, objRef) ⇒
+                s"monitorenter ${objRef.name}"
+            case MonitorExit(_, objRef) ⇒
+                s"monitorexit ${objRef.name}"
             case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
                 val code = new StringBuffer(256)
 

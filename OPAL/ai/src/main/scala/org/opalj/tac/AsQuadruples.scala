@@ -409,6 +409,16 @@ object AsQuadruples {
                     statements(pc) = List(
                         Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType))
                     schedule(pcOfNextInstruction(pc), stack)
+                    
+                case MONITORENTER.opcode ⇒
+                    val objRef :: rest = stack
+                    statements(pc) = List(MonitorEnter(pc, objRef))
+                    schedule(pcOfNextInstruction(pc), rest)
+                
+                case MONITOREXIT.opcode ⇒
+                    val objRef :: rest = stack
+                    statements(pc) = List(MonitorExit(pc, objRef))
+                    schedule(pcOfNextInstruction(pc), rest)
 
                 // TODO Add support for all the other instructions!
 
