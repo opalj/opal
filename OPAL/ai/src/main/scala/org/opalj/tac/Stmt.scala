@@ -105,6 +105,10 @@ case class MonitorEnter(pc:PC, objRef:Var) extends SimpleStmt
 
 case class MonitorExit(pc:PC, objRef:Var) extends SimpleStmt
 
+case class TableSwitch(pc:PC, defaultOffset:Int, low:Int, high:Int, jumpOffsets:IndexedSeq[Int]) extends SimpleStmt
+
+case class LookupSwitch(pc:PC, defaultOffset:Int, npairs:IndexedSeq[(Int, Int)], jumpOffsets:Seq[Int]) extends SimpleStmt
+
 /**
  * Call of a method.
  */

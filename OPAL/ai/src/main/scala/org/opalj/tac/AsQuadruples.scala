@@ -409,15 +409,29 @@ object AsQuadruples {
                     statements(pc) = List(
                         Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType))
                     schedule(pcOfNextInstruction(pc), stack)
-                    
+
                 case MONITORENTER.opcode ⇒
                     val objRef :: rest = stack
                     statements(pc) = List(MonitorEnter(pc, objRef))
                     schedule(pcOfNextInstruction(pc), rest)
-                
+
                 case MONITOREXIT.opcode ⇒
                     val objRef :: rest = stack
                     statements(pc) = List(MonitorExit(pc, objRef))
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case TABLESWITCH.opcode ⇒
+                    val index :: rest = stack
+                    val tsInst = as[TABLESWITCH](instruction)
+                    statements(pc) = List(
+                        TableSwitch(pc, tsInst.defaultOffset, tsInst.low, tsInst.high, tsInst.jumpOffsets))
+                    schedule(pcOfNextInstruction(pc), rest)
+                    
+                case LOOKUPSWITCH.opcode ⇒
+                    val key :: rest = stack
+                    val lsInst = as[LOOKUPSWITCH](instruction)
+                    statements(pc) = List(
+                        LookupSwitch(pc, lsInst.defaultOffset, lsInst.npairs, lsInst.jumpOffsets))
                     schedule(pcOfNextInstruction(pc), rest)
 
                 // TODO Add support for all the other instructions!
