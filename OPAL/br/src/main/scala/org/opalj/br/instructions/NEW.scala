@@ -43,7 +43,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def mnemonic: String = "new"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 3
 

@@ -74,7 +74,7 @@ trait ArithmeticInstruction extends Instruction {
  */
 object ArithmeticInstruction {
 
-    final val runtimeExceptions = List(ObjectType.ArithmeticException)
+    final val jvmExceptions = List(ObjectType.ArithmeticException)
 
 }
 

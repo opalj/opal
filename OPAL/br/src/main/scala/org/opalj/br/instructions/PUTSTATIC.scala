@@ -50,7 +50,7 @@ case class PUTSTATIC(
 
     final def mnemonic: String = "putstatic"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 

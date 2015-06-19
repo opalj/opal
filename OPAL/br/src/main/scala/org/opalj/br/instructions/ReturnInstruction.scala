@@ -40,8 +40,8 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction {
 
-    final def runtimeExceptions: List[ObjectType] =
-        ReturnInstruction.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] =
+        ReturnInstruction.jvmExceptions
 
     final def length: Int = 1
 
@@ -74,7 +74,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
  */
 object ReturnInstruction {
 
-    val runtimeExceptions = List(ObjectType.IllegalMonitorStateException)
+    val jvmExceptions = List(ObjectType.IllegalMonitorStateException)
 
     @inline final def isReturnInstruction(instruction: Instruction): Boolean = {
         (instruction.opcode: @switch) match {
