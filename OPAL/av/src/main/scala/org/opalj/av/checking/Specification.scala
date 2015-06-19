@@ -45,8 +45,9 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
 import org.opalj.log.OPALLogger
-import org.opalj.io.processSource
 import org.opalj.log.GlobalLogContext
+import org.opalj.io.processSource
+import org.opalj.de.DependencyType.toUsageDescription
 
 /**
  * A specification of a project's architectural constraints.
@@ -199,14 +200,14 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
         else if (matcher endsWith ".**")
             PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
         else if (matcher endsWith "*")
-            SimpleClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         else if (matcher.indexOf('*') == -1)
-            SimpleClassMatcher(matcher.replace('.', '/'))
+            ClassMatcher(matcher.replace('.', '/'))
         else
             throw SpecificationError("unsupported matcher pattern: "+matcher);
     }
 
-    def classes(matcher: Regex): SourceElementsMatcher = SimpleClassMatcher(matcher)
+    def classes(matcher: Regex): SourceElementsMatcher = ClassMatcher(matcher)
 
     /**
      * Returns the class files stored at the given location.
@@ -249,64 +250,17 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
             targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
     }
 
-    case class LocalOutgoingIsOnlyAllowedToConstraint(
-        sourceEnsemble: Symbol,
-        targetEnsembles: Seq[Symbol])
-            extends DependencyChecker {
-
-        if (targetEnsembles.isEmpty)
-            throw SpecificationError("no target ensembles specified: "+toString())
-
-        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
-
-        override def violations(): ASet[SpecificationViolation] = {
-            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
-            if (unknownEnsembles.nonEmpty)
-                throw SpecificationError(
-                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
-
-            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
-            val allAllowedLocalTargetSourceElements =
-                // self references are allowed as well as references to source elements belonging
-                // to a target ensemble
-                (sourceEnsembleElements /: targetEnsembles)(_ ++ ensembles(_)._2)
-
-            for {
-                sourceElement ← sourceEnsembleElements
-                // outgoingDependences : Map[VirtualSourceElement, Set[(VirtualSourceElement, DependencyType)]]
-                targets = outgoingDependencies.get(sourceElement)
-                if targets.isDefined
-                (targetElement, dependencyTypes) ← targets.get
-                if !(allAllowedLocalTargetSourceElements contains targetElement)
-                // references to unmatched source elements are ignored
-                if !(unmatchedSourceElements contains targetElement)
-                // from here on, we have found a violation
-                dependencyType ← dependencyTypes
-            } yield {
-                DependencyViolation(
-                    project,
-                    this,
-                    sourceElement,
-                    targetElement,
-                    dependencyType,
-                    "not allowed local outgoing dependency found")
-            }
-        }
-
-        override def toString =
-            sourceEnsemble+" is_only_allowed_to_use ("+targetEnsembles.mkString(",")+")"
-    }
-
     /**
-     * Forbids any locals dependency between a specific sourcs ensemble and
+     * Forbids the given local dependencies between a specific source ensemble and
      * several target ensembles.
      *
      * ==Example Scenario==
      * If the ensemble `ex` is not allowed to use `ey` and the source element `x` which
-     * belongs to ensemble `ex` depends on a source element belonging to `ey` then
-     * a [[SpecificationViolation]] is generated.
+     * belongs to ensemble `ex` has one if the given dependencies on a source element
+     * belonging to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingNotAllowedConstraint(
+        dependencyTypes: Set[DependencyType],
         sourceEnsemble: Symbol,
         targetEnsembles: Seq[Symbol])
             extends DependencyChecker {
@@ -333,22 +287,101 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                 sourceElement ← sourceEnsembleElements
                 targets = outgoingDependencies.get(sourceElement)
                 if targets.isDefined
-                (targetElement, dependencyTypes) ← targets.get
-                dependencyType ← dependencyTypes
-                if (notAllowedTargetSourceElements contains targetElement)
+                (targetElement, currentDependencyTypes) ← targets.get
+                currentDependencyType ← currentDependencyTypes
+                if ((notAllowedTargetSourceElements contains targetElement) &&
+                    ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
             } yield {
                 DependencyViolation(
                     project,
                     this,
                     sourceElement,
                     targetElement,
-                    dependencyType,
+                    currentDependencyType,
                     "not allowed local outgoing dependency found")
             }
         }
 
-        override def toString =
-            targetEnsembles.mkString(s"$sourceEnsemble is_not_allowed_to_use (", ",", ")")
+        override def toString: String = {
+            if (dependencyTypes equals USE) {
+                targetEnsembles.mkString(s"$sourceEnsemble is_not_allowed_to use (", ",", ")")
+            } else {
+                val start =
+                    s"$sourceEnsemble is_not_allowed_to ${
+                        dependencyTypes.map(d ⇒ toUsageDescription(d)).mkString(" and ")
+                    } ("
+                targetEnsembles.mkString(start, ",", ")")
+            }
+        }
+    }
+
+    /**
+     * Allows only the given local dependencies between a specific source ensemble and
+     * several target ensembles.
+     *
+     * ==Example Scenario==
+     * If the ensemble `ex` is only allowed to throw exceptions `ey` and the source element `x` which
+     * belongs to ensemble `ex` throws an exception not belonging to `ey` then
+     * a [[SpecificationViolation]] is generated.
+     */
+    case class LocalOutgoingOnlyAllowedConstraint(
+        dependencyTypes: Set[DependencyType],
+        sourceEnsemble: Symbol,
+        targetEnsembles: Seq[Symbol])
+            extends DependencyChecker {
+
+        if (targetEnsembles.isEmpty)
+            throw SpecificationError("no target ensembles specified: "+toString())
+
+        // WE DO NOT WANT TO CHECK THE VALIDITY OF THE ENSEMBLE IDS NOW TO MAKE IT EASY
+        // TO INTERMIX THE DEFINITION OF ENSEMBLES AND CONSTRAINTS
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
+            if (unknownEnsembles.nonEmpty)
+                throw SpecificationError(
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
+
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val allAllowedLocalTargetSourceElements =
+                // self references are allowed as well as references to source elements belonging
+                // to a target ensemble
+                (sourceEnsembleElements /: targetEnsembles)(_ ++ ensembles(_)._2)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                targets = outgoingDependencies.get(sourceElement)
+                if targets.isDefined
+                (targetElement, currentDependencyTypes) ← targets.get
+                currentDependencyType ← currentDependencyTypes
+                if (!(allAllowedLocalTargetSourceElements contains targetElement) &&
+                    ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
+                // references to unmatched source elements are ignored
+                if !(unmatchedSourceElements contains targetElement)
+            } yield {
+                DependencyViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    targetElement,
+                    currentDependencyType,
+                    "violation of a local outgoing dependency constraint")
+            }
+        }
+
+        override def toString: String = {
+            if (dependencyTypes equals USE) {
+                targetEnsembles.mkString(s"$sourceEnsemble is_only_allowed_to use (", ",", ")")
+            } else {
+                val start =
+                    s"$sourceEnsemble is_only_allowed_to ${
+                        dependencyTypes.map(d ⇒ toUsageDescription(d)).mkString(" and ")
+                    } ("
+                targetEnsembles.mkString(start, ",", ")")
+            }
+        }
     }
 
     /**
@@ -360,17 +393,22 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
      * source element `x` which belongs to ensemble `ex` has no annotation that matches
      * `ey` then a [[SpecificationViolation]] is generated.
      *
-     * 	@param sourceEnsemble An ensemble containing elements that should be annotated.
-     *  @param annotationMatcher The annotation that should match.
+     * 	@param sourceEnsemble An ensemble containing elements, that should be annotated.
+     *  @param annotationMatchers The annotations that should match.
+     *  @param propertyToCheck The property, that should be checked e.g. "validation annotations"
+     *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
         sourceEnsemble: Symbol,
-        annotationMatcher: AnnotationMatcher)
+        annotationMatchers: Seq[AnnotationMatcher],
+        propertyToCheck: Option[String] = None,
+        matchAny: Boolean = false)
             extends PropertyChecker {
 
-        import DependencyType._
-
-        override def property: String = annotationMatcher.toString
+        override def property: String = propertyToCheck match {
+            case Some(p) ⇒ p
+            case _       ⇒ annotationMatchers.map(_.toDescription).mkString("(", " - ", ")")
+        }
 
         override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -398,21 +436,122 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                 }
 
                 if !annotations.foldLeft(false) {
-                    (v: Boolean, a: Annotation) ⇒ v || annotationMatcher.doesMatch(a)
+                    (v: Boolean, a: Annotation) ⇒
+                        v || annotationMatchers.foldLeft(!matchAny) {
+                            (matched: Boolean, m: AnnotationMatcher) ⇒
+                                if (matchAny) {
+                                    matched || m.doesMatch(a)
+                                } else {
+                                    matched && m.doesMatch(a)
+                                }
+                        }
                 }
             } yield {
                 PropertyViolation(
                     project,
                     this,
                     sourceElement,
-                    ANNOTATED_WITH,
+                    "the element should be ANNOTATED WITH",
                     "required annotation not found")
             }
         }
 
         override def toString =
-            s"$sourceEnsemble every_element_should_be_annotated_with "+annotationMatcher.toString
+            s"$sourceEnsemble every_element_should_be_annotated_with "+property
     }
+
+    /**
+     * Checks whether all elements in the source ensemble implement the given
+     * method. The source ensemble should contain only class elements
+     * otherwise a [[SpecificationError]] will be thrown.
+     *
+     * 	@param sourceEnsemble An ensemble containing classes, that should implement the given method.
+     *  @param methodMatcher The method to match.
+     */
+    case class LocalOutgoingShouldImplementMethodConstraint(
+        sourceEnsemble: Symbol,
+        methodAttributesMatcher: MethodAttributesMatcher)
+            extends PropertyChecker {
+
+        override def property: String = methodAttributesMatcher.toDescription
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                sourceClassFile = sourceElement match {
+                    case s: VirtualClass ⇒ project.classFile(s.classType.asObjectType).get
+                    case _               ⇒ throw SpecificationError(sourceElement.toJava+" is not a class")
+                }
+                if sourceClassFile.methods.forall(m ⇒ !methodAttributesMatcher.doesMatch(m))
+            } yield {
+                PropertyViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    "the element should IMPLEMENT METHOD",
+                    "required method implementation not found")
+            }
+        }
+
+        override def toString =
+            s"$sourceEnsemble every_element_should_implement_method ("+property+")"
+    }
+
+    /**
+     * Checks whether all elements in the source ensemble extends any of
+     * the given elements. The source ensemble should contain only class elements
+     * otherwise a [[SpecificationError]] will be thrown.
+     *
+     * 	@param sourceEnsemble An ensemble containing classes, that should implement the given method.
+     *  @param targetEnsembles Ensembles containing elements, that should be extended by the given classes.
+     */
+    case class LocalOutgoingShouldExtendConstraint(
+        sourceEnsemble: Symbol,
+        targetEnsembles: Seq[Symbol])
+            extends PropertyChecker {
+
+        override def property: String = targetEnsembles.mkString(", ")
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val allLocalTargetSourceElements =
+                // self references are allowed as well as references to source elements belonging
+                // to a target ensemble
+                (sourceEnsembleElements /: targetEnsembles)(_ ++ ensembles(_)._2)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                sourceClassFile = sourceElement match {
+                    case s: VirtualClass ⇒ project.classFile(s.classType.asObjectType).get
+                    case _               ⇒ throw SpecificationError(sourceElement.toJava+" is not a class")
+                }
+                if sourceClassFile.superclassType.map(s ⇒
+                    !allLocalTargetSourceElements.exists(v ⇒
+                        v.classType.asObjectType.equals(s))).getOrElse(false)
+            } yield {
+                PropertyViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    "the element should extend any of the given classes",
+                    "required inheritance not found")
+            }
+        }
+
+        override def toString =
+            s"$sourceEnsemble every_element_should_extend ("+targetEnsembles.mkString(",")+")"
+    }
+
+    /**
+     * Represents a set of all [[org.opalj.de.DependencyType]] to use as dependency constraint.
+     */
+    val USE: Set[DependencyType] = DependencyType.values
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
 
@@ -434,16 +573,18 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                     sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
-        def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
+        def is_only_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
-                LocalOutgoingIsOnlyAllowedToConstraint(
+                LocalOutgoingOnlyAllowedConstraint(
+                    dependencyTypes,
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def is_not_allowed_to_use(targetEnsembles: Symbol*): Unit = {
+        def is_not_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
                 LocalOutgoingNotAllowedConstraint(
+                    dependencyTypes,
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: architectureCheckers
         }
@@ -452,7 +593,30 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
             architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
-                    annotationMatcher) :: architectureCheckers
+                    Seq(annotationMatcher)) :: architectureCheckers
+        }
+
+        def every_element_should_be_annotated_with(property: String, annotationMatchers: Seq[AnnotationMatcher], matchAny: Boolean = false): Unit = {
+            architectureCheckers =
+                LocalOutgoingAnnotatedWithConstraint(
+                    contextEnsembleSymbol,
+                    annotationMatchers,
+                    Some(property),
+                    matchAny) :: architectureCheckers
+        }
+
+        def every_element_should_implement_method(methodAttributesMatcher: MethodAttributesMatcher): Unit = {
+            architectureCheckers =
+                LocalOutgoingShouldImplementMethodConstraint(
+                    contextEnsembleSymbol,
+                    methodAttributesMatcher) :: architectureCheckers
+        }
+
+        def every_element_should_extend(targetEnsembles: Symbol*): Unit = {
+            architectureCheckers =
+                LocalOutgoingShouldExtendConstraint(
+                    contextEnsembleSymbol,
+                    targetEnsembles.toSeq) :: architectureCheckers
         }
     }
 

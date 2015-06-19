@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,39 +22,51 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-package checking
+package entity.impl
 
-import scala.util.matching.Regex
-import org.opalj.br.ClassFile
+import javax.persistence.Entity
+import javax.persistence.Table
+import javax.persistence.Id
+import javax.persistence.GeneratedValue
+import javax.persistence.Column
+import javax.persistence.OneToOne
+import javax.persistence.GenerationType
+import javax.persistence.FetchType
+import entity.AbstractEntity
+import javax.persistence.Transient
 
 /**
- * @author Michael Eichberg
+ * @author Marco Torsello
  */
-case class SimpleClassMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
+@Entity
+@Table(name = "User")
+@SerialVersionUID(100L)
+class User extends AbstractEntity {
 
-    def doesMatch(classFile: ClassFile): Boolean = {
-        val classFileName = classFile.thisType.fqn
-        nameMatcher.doesMatch(classFileName)
-    }
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name = "id", nullable = false)
+  var id: Int = _
+  
+  @Column(name = "first_name", nullable = false)
+  var firstName: String = ""
+    
+  @Column(name = "last_name", nullable = false)
+  var lastName: String = ""
 
-}
+  @Column(name = "password", nullable = false)
+  var password: String = ""
 
-object SimpleClassMatcher {
-
-    def apply(className: String, matchPrefix: Boolean = false): SimpleClassMatcher = {
-        require(className.indexOf('*') == -1)
-        require(className.indexOf('.') == -1)
-        SimpleClassMatcher(SimpleNameMatcher(className, matchPrefix))
-    }
-
-    def apply(matcher: Regex): SimpleClassMatcher = {
-        SimpleClassMatcher(RegexNameMatcher(matcher))
-    }
+  @OneToOne(fetch = FetchType.LAZY, mappedBy = "userId")
+  var address: Address = null
+  
+  @Transient
+  def getFullName(): String = {
+    this.firstName + " " + this.lastName 
+  }
 
 }

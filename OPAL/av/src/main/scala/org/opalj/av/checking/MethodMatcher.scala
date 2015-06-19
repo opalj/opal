@@ -32,82 +32,84 @@ package checking
 
 import scala.collection.Set
 import org.opalj.br.ClassFile
-import org.opalj.br.FieldType
-import org.opalj.br.Field
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.Annotation
 
 /**
- * Matches fields based on their name, type, annotations and class.
+ * Matches methods based on their attributes, annotations and class.
  *
  * @author Marco Torsello
- * @author Michael Eichberg
  */
-case class FieldMatcher(
+case class MethodMatcher(
     classLevelMatcher: Option[ClassLevelMatcher],
     annotationMatcher: Option[AnnotationMatcher],
-    fieldType: Option[FieldType],
-    fieldName: Option[NameMatcher])
+    methodAttributesMatcher: Option[MethodAttributesMatcher])
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
     }
 
-    def doesFieldMatch(field: Field): Boolean = {
-        (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get.doesMatch(field.name))) &&
-            (annotationMatcher.isEmpty || (field.annotations.exists(
-                annotationMatcher.get.doesMatch(_))))
+    def doesMethodMatch(method: Method): Boolean = {
+        (annotationMatcher.isEmpty || (method.annotations.exists(
+            annotationMatcher.get.doesMatch(_)))) &&
+            (methodAttributesMatcher.isEmpty || (methodAttributesMatcher.get.doesMatch(method)))
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
-        val allMatchedFields = project.allClassFiles collect {
+        val allMatchedMethods = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) ⇒ {
-                classFile.fields collect {
-                    case field if doesFieldMatch(field) ⇒ field.asVirtualField(classFile)
+                classFile.methods collect {
+                    case method if doesMethodMatch(method) ⇒ method.asVirtualMethod(classFile)
                 }
             }
         }
-        allMatchedFields.flatten.toSet
+        allMatchedMethods.flatten.toSet
     }
 
 }
 
 /**
  * Defines several additional factory methods to facilitate the creation of
- * [[FieldMatcher]]s.
+ * [[MethodMatcher]]s.
  *
  * @author Marco Torsello
  */
-object FieldMatcher {
+object MethodMatcher {
 
     def apply(
-        classLevelMatcher: Option[ClassLevelMatcher] = None,
-        annotationMatcher: Option[AnnotationMatcher] = None,
-        fieldType: Option[String] = None, // java.lang.Object
-        fieldName: Option[String] = None,
-        matchPrefix: Boolean = false): FieldMatcher = {
-
-        val nameMatcher: Option[SimpleNameMatcher] = fieldName match {
-            case Some(f) ⇒ Some(SimpleNameMatcher(f, matchPrefix))
-            case _       ⇒ None
-        }
-
-        new FieldMatcher(classLevelMatcher, annotationMatcher, fieldType.map(ftn ⇒
-            FieldType(ftn.replace('.', '/'))), nameMatcher)
+        annotationMatcher: AnnotationMatcher,
+        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
+        new MethodMatcher(None, Some(annotationMatcher), Some(methodAttributesMatcher))
     }
 
     def apply(
-        classLevelMatcher: ClassLevelMatcher): FieldMatcher = {
-        apply(Some(classLevelMatcher), None, None, None, false)
+        classLevelMatcher: ClassLevelMatcher): MethodMatcher = {
+        new MethodMatcher(Some(classLevelMatcher), None, None)
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
-        annotationMatcher: AnnotationMatcher): FieldMatcher = {
-        apply(Some(classLevelMatcher), Some(annotationMatcher), None, None, false)
+        annotationMatcher: AnnotationMatcher): MethodMatcher = {
+        new MethodMatcher(Some(classLevelMatcher), Some(annotationMatcher), None)
+    }
+
+    def apply(
+        classLevelMatcher: ClassLevelMatcher,
+        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
+        new MethodMatcher(Some(classLevelMatcher), None, Some(methodAttributesMatcher))
+    }
+
+    def apply(
+        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
+        new MethodMatcher(None, None, Some(methodAttributesMatcher))
+    }
+
+    def apply(
+        annotationMatcher: AnnotationMatcher): MethodMatcher = {
+        new MethodMatcher(None, Some(annotationMatcher), None)
     }
 
 }

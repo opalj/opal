@@ -89,7 +89,7 @@ case class AnnotationMatcher(
                         other.elementValuePairs.exists(_ == e))))
     }
 
-    override def toString: String = {
+    def toDescription: String = {
         val at = "@"+annotationType.toJava
         if (elementValuePairs.isDefined)
             elementValuePairs.get.map(_.toJava).mkString(at+"(", ",", ")")

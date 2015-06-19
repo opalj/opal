@@ -39,9 +39,18 @@ case class SimpleNameMatcher(
         extends NameMatcher {
 
     def doesMatch(otherName: String): Boolean = {
-        otherName.startsWith(name) && (
-            matchPrefix || name.length == otherName.length
-        )
+        val byteName = name.replace('.', '/')
+        otherName.startsWith(byteName) && (
+            matchPrefix || byteName.length == otherName.length)
     }
+}
+
+object SimpleNameMatcher {
+
+    def apply(
+        name: String): SimpleNameMatcher = {
+        this(name, false)
+    }
+
 }
 
