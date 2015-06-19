@@ -387,11 +387,12 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case POP2.opcode ⇒
-                    val value1 :: value2 :: rest = stack
-                    if ((value1.cTpe == ComputationalTypeLong) ||
-                        (value1.cTpe == ComputationalTypeDouble))
-                        schedule(pcOfNextInstruction(pc), value2 :: rest)
-                    else schedule(pcOfNextInstruction(pc), rest)
+                    stack match {
+                        case (val1 @ CTC1()) :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), rest)
+                        case val1 :: val2 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), rest)
+                    }
 
                 case WIDE.opcode ⇒
                     statements(pc) = List(EmptyStmt(pc))
@@ -421,18 +422,62 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case TABLESWITCH.opcode ⇒
-                    val index :: rest = stack
+                    val /*index*/ _ :: rest = stack
                     val tsInst = as[TABLESWITCH](instruction)
                     statements(pc) = List(
                         TableSwitch(pc, tsInst.defaultOffset, tsInst.low, tsInst.high, tsInst.jumpOffsets))
                     schedule(pcOfNextInstruction(pc), rest)
-                    
+
                 case LOOKUPSWITCH.opcode ⇒
-                    val key :: rest = stack
+                    val /*key*/ _ :: rest = stack
                     val lsInst = as[LOOKUPSWITCH](instruction)
                     statements(pc) = List(
                         LookupSwitch(pc, lsInst.defaultOffset, lsInst.npairs, lsInst.jumpOffsets))
                     schedule(pcOfNextInstruction(pc), rest)
+
+                case DUP.opcode ⇒
+                    val head :: _ = stack
+                    schedule(pcOfNextInstruction(pc), head :: stack)
+
+                case DUP_X1.opcode ⇒
+                    val val1 :: val2 :: rest = stack
+                    schedule(pcOfNextInstruction(pc), val1 :: val2 :: val1 :: rest)
+
+                case DUP_X2.opcode ⇒
+                    stack match {
+                        case v1 :: (v2 @ CTC1()) :: v3 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
+                        case v1 :: v2 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
+
+                case DUP2.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: v2 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: v2 :: rest)
+                        case v1 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v1 :: rest)
+                    }
+
+                case DUP2_X1.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: v2 :: v3 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                        case v1 :: v2 :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
+
+                case DUP2_X2.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
+                        case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                        case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
 
                 // TODO Add support for all the other instructions!
 
@@ -483,5 +528,35 @@ object AsQuadruples {
         finalStatements.toArray
     }
 
+}
+
+/**
+ * Facilitates matching against values of computational type category 1.
+ *
+ * @example
+ * {{{
+ * case v @ CTC1() => ...
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object CTC1 {
+    def unapply(value: Var): Boolean =
+        value.cTpe.category == 1
+}
+
+/**
+ * Facilitates matching against values of computational type category 2.
+ *
+ * @example
+ * {{{
+ * case v @ CTC2() => ...
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object CTC2 {
+    def unapply(value: Var): Boolean =
+        value.cTpe.category == 2
 }
 

@@ -83,6 +83,8 @@ object ToJavaLike {
                 s"monitorenter ${objRef.name}"
             case MonitorExit(_, objRef) ⇒
                 s"monitorexit ${objRef.name}"
+            case LookupSwitch(_,_,_,_)⇒""/*TODO*/
+            case TableSwitch(_,_,_,_,_)⇒""/*TODO*/
             case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
                 val code = new StringBuffer(256)
 
