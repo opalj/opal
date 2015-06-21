@@ -41,13 +41,35 @@ import org.opalj.bi.AccessFlagsMatcher
 /**
  * @author Marco Torsello
  */
-case class MethodAttributesMatcher(
+trait MethodPredicate {
+
+    def apply(method: Method): Boolean
+
+    def toDescription(): String
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case object NoMethodPredicate extends MethodPredicate {
+
+    def apply(method: Method): Boolean = true
+
+    def toDescription(): String = ""
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class DefaultMethodPredicate(
         accessFlags: AccessFlagsMatcher = AccessFlagsMatcher.ALL,
         name: String,
         descriptor: Option[MethodDescriptor],
-        attributes: Attributes) {
+        attributes: Attributes) extends MethodPredicate {
 
-    def doesMatch(method: Method): Boolean = {
+    def apply(method: Method): Boolean = {
         accessFlags.unapply(method.accessFlags) &&
             ((descriptor.isEmpty && method.name == name) ||
                 (descriptor.nonEmpty && method.hasSameSignature(name, descriptor.get))) &&
@@ -70,28 +92,28 @@ case class MethodAttributesMatcher(
 
 /**
  * Defines several additional factory methods to facilitate the creation of
- * [[MethodAttributesMatcher]]s.
+ * [[MethodPredicate]]s.
  *
  * @author Marco Torsello
  */
-object MethodAttributesMatcher {
+object MethodPredicate {
 
     def apply(
         accessFlags: AccessFlagsMatcher,
         name: String,
-        descriptor: MethodDescriptor): MethodAttributesMatcher = {
-        new MethodAttributesMatcher(accessFlags, name, Some(descriptor), Seq.empty[Attribute])
+        descriptor: MethodDescriptor): MethodPredicate = {
+        new DefaultMethodPredicate(accessFlags, name, Some(descriptor), Seq.empty[Attribute])
     }
 
     def apply(
         accessFlags: AccessFlagsMatcher,
-        name: String): MethodAttributesMatcher = {
-        new MethodAttributesMatcher(accessFlags, name, None, Seq.empty[Attribute])
+        name: String): MethodPredicate = {
+        new DefaultMethodPredicate(accessFlags, name, None, Seq.empty[Attribute])
     }
 
     def apply(
-        name: String): MethodAttributesMatcher = {
-        new MethodAttributesMatcher(name = name, descriptor = None, attributes = Seq.empty[Attribute])
+        name: String): MethodPredicate = {
+        new DefaultMethodPredicate(name = name, descriptor = None, attributes = Seq.empty[Attribute])
     }
 
 }

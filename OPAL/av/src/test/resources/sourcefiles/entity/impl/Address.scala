@@ -28,13 +28,12 @@
  */
 package entity.impl
 
-import javax.persistence.Entity
-import javax.persistence.Table
-import javax.persistence.Id
-import javax.persistence.GeneratedValue
-import javax.persistence.Column
 import entity.AbstractEntity
-import javax.persistence.GenerationType
+import entity.annotation.Entity
+import entity.annotation.Table
+import entity.annotation.Column
+import entity.annotation.Transient
+import entity.annotation.Id
 
 /**
  * @author Marco Torsello
@@ -45,7 +44,6 @@ import javax.persistence.GenerationType
 class Address extends AbstractEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
   var id: Int = _
 

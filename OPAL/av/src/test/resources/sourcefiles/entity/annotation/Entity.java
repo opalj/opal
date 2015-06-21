@@ -26,41 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package entity.impl
+package entity.annotation;
 
-import entity.AbstractEntity
-import entity.annotation.Entity
-import entity.annotation.Table
-import entity.annotation.Column
-import entity.annotation.Transient
-import entity.annotation.Id
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * @author Marco Torsello
  */
-@Entity
-@Table(name = "User")
-@SerialVersionUID(100L)
-class User extends AbstractEntity {
-
-  @Id
-  @Column(name = "id", nullable = false)
-  var id: Int = _
-  
-  @Column(name = "first_name", nullable = false)
-  var firstName: String = ""
-    
-  @Column(name = "last_name", nullable = false)
-  var lastName: String = ""
-
-  @Column(name = "password", nullable = false)
-  var password: String = ""
-
-  var address: Address = null
-  
-  @Transient
-  def getFullName(): String = {
-    this.firstName + " " + this.lastName 
-  }
-
+@Target({METHOD, FIELD}) 
+@Retention(RUNTIME)
+public @interface Entity {
+	
 }

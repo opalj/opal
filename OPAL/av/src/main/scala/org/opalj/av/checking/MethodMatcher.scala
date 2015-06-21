@@ -43,19 +43,18 @@ import org.opalj.br.Annotation
  * @author Marco Torsello
  */
 case class MethodMatcher(
-    classLevelMatcher: Option[ClassLevelMatcher],
-    annotationMatcher: Option[AnnotationMatcher],
-    methodAttributesMatcher: Option[MethodAttributesMatcher])
+    classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
+    annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
+    methodPredicate: MethodPredicate = NoMethodPredicate)
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
-        classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
+        classLevelMatcher.doesMatch(classFile)
     }
 
     def doesMethodMatch(method: Method): Boolean = {
-        (annotationMatcher.isEmpty || (method.annotations.exists(
-            annotationMatcher.get.doesMatch(_)))) &&
-            (methodAttributesMatcher.isEmpty || (methodAttributesMatcher.get.doesMatch(method)))
+        annotationsPredicate(method.annotations) &&
+            methodPredicate(method)
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
@@ -80,36 +79,40 @@ case class MethodMatcher(
 object MethodMatcher {
 
     def apply(
-        annotationMatcher: AnnotationMatcher,
-        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
-        new MethodMatcher(None, Some(annotationMatcher), Some(methodAttributesMatcher))
-    }
-
-    def apply(
-        classLevelMatcher: ClassLevelMatcher): MethodMatcher = {
-        new MethodMatcher(Some(classLevelMatcher), None, None)
+        annotationsPredicate: AnnotationsPredicate,
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(annotationsPredicate = annotationsPredicate, methodPredicate = methodPredicate)
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
-        annotationMatcher: AnnotationMatcher): MethodMatcher = {
-        new MethodMatcher(Some(classLevelMatcher), Some(annotationMatcher), None)
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(classLevelMatcher, methodPredicate = methodPredicate)
+    }
+
+    def apply(
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(methodPredicate = methodPredicate)
+    }
+
+    def apply(
+        annotationsPredicate: AnnotationsPredicate): MethodMatcher = {
+        new MethodMatcher(annotationsPredicate = annotationsPredicate)
+    }
+
+    /**
+     * Creates a MethodMatcher, that relies on an AllAnnotationsPredicate for matching
+     * the given AnnotationPredicate.
+     */
+    def apply(
+        annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        apply(AllAnnotationsPredicate(Set(annotationPredicate)))
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
-        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
-        new MethodMatcher(Some(classLevelMatcher), None, Some(methodAttributesMatcher))
-    }
-
-    def apply(
-        methodAttributesMatcher: MethodAttributesMatcher): MethodMatcher = {
-        new MethodMatcher(None, None, Some(methodAttributesMatcher))
-    }
-
-    def apply(
-        annotationMatcher: AnnotationMatcher): MethodMatcher = {
-        new MethodMatcher(None, Some(annotationMatcher), None)
+        annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        new MethodMatcher(classLevelMatcher, AllAnnotationsPredicate(Set(annotationPredicate)))
     }
 
 }

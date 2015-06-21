@@ -38,9 +38,9 @@ import scala.util.matching.Regex
  *
  * @author Michael Eichberg
  */
-case class RegexNameMatcher(matcher: Regex) extends NameMatcher {
+case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
 
-    def doesMatch(otherName: String): Boolean = {
+    def apply(otherName: String): Boolean = {
         matcher.findFirstIn(otherName).isDefined
     }
 }

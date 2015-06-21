@@ -394,20 +394,20 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
      * `ey` then a [[SpecificationViolation]] is generated.
      *
      * 	@param sourceEnsemble An ensemble containing elements, that should be annotated.
-     *  @param annotationMatchers The annotations that should match.
+     *  @param annotationPredicates The annotations that should match.
      *  @param propertyToCheck The property, that should be checked e.g. "validation annotations"
      *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
         sourceEnsemble: Symbol,
-        annotationMatchers: Seq[AnnotationMatcher],
+        annotationPredicates: Seq[AnnotationPredicate],
         propertyToCheck: Option[String] = None,
         matchAny: Boolean = false)
             extends PropertyChecker {
 
         override def property: String = propertyToCheck match {
             case Some(p) ⇒ p
-            case _       ⇒ annotationMatchers.map(_.toDescription).mkString("(", " - ", ")")
+            case _       ⇒ annotationPredicates.map(_.toDescription).mkString("(", " - ", ")")
         }
 
         override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
@@ -437,12 +437,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
 
                 if !annotations.foldLeft(false) {
                     (v: Boolean, a: Annotation) ⇒
-                        v || annotationMatchers.foldLeft(!matchAny) {
-                            (matched: Boolean, m: AnnotationMatcher) ⇒
+                        v || annotationPredicates.foldLeft(!matchAny) {
+                            (matched: Boolean, m: AnnotationPredicate) ⇒
                                 if (matchAny) {
-                                    matched || m.doesMatch(a)
+                                    matched || m(a)
                                 } else {
-                                    matched && m.doesMatch(a)
+                                    matched && m(a)
                                 }
                         }
                 }
@@ -466,14 +466,14 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
      * otherwise a [[SpecificationError]] will be thrown.
      *
      * 	@param sourceEnsemble An ensemble containing classes, that should implement the given method.
-     *  @param methodMatcher The method to match.
+     *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
         sourceEnsemble: Symbol,
-        methodAttributesMatcher: MethodAttributesMatcher)
+        methodPredicate: MethodPredicate)
             extends PropertyChecker {
 
-        override def property: String = methodAttributesMatcher.toDescription
+        override def property: String = methodPredicate.toDescription
 
         override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -486,7 +486,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                     case s: VirtualClass ⇒ project.classFile(s.classType.asObjectType).get
                     case _               ⇒ throw SpecificationError(sourceElement.toJava+" is not a class")
                 }
-                if sourceClassFile.methods.forall(m ⇒ !methodAttributesMatcher.doesMatch(m))
+                if sourceClassFile.methods.forall(m ⇒ !methodPredicate(m))
             } yield {
                 PropertyViolation(
                     project,
@@ -589,27 +589,27 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(annotationMatcher: AnnotationMatcher): Unit = {
+        def every_element_should_be_annotated_with(annotationPredicate: AnnotationPredicate): Unit = {
             architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
-                    Seq(annotationMatcher)) :: architectureCheckers
+                    Seq(annotationPredicate)) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(property: String, annotationMatchers: Seq[AnnotationMatcher], matchAny: Boolean = false): Unit = {
+        def every_element_should_be_annotated_with(property: String, annotationPredicates: Seq[AnnotationPredicate], matchAny: Boolean = false): Unit = {
             architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
-                    annotationMatchers,
+                    annotationPredicates,
                     Some(property),
                     matchAny) :: architectureCheckers
         }
 
-        def every_element_should_implement_method(methodAttributesMatcher: MethodAttributesMatcher): Unit = {
+        def every_element_should_implement_method(methodPredicate: MethodPredicate): Unit = {
             architectureCheckers =
                 LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
-                    methodAttributesMatcher) :: architectureCheckers
+                    methodPredicate) :: architectureCheckers
         }
 
         def every_element_should_extend(targetEnsembles: Symbol*): Unit = {

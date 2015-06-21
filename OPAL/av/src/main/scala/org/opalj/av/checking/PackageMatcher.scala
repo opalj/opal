@@ -37,24 +37,20 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches all classes in the specified package.
- *
- *
  * @author Marco Torsello
  */
 case class PackageMatcher(
-        nameMatcher: NameMatcher,
-        classMatcher: Option[ClassMatcher]) extends ClassLevelMatcher {
+        namePredicate: NamePredicate,
+        classMatcher: ClassMatcher) extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName
-        nameMatcher.doesMatch(packageName) &&
-            (!classMatcher.isDefined || classMatcher.get.doesMatch(classFile))
+        namePredicate(packageName) &&
+            classMatcher.doesMatch(classFile)
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
-        classMatcher.map(cm ⇒
-            matchClasses(project.allClassFiles filter { doesMatch(_) }, cm.matchMethods, cm.matchFields))
-            .getOrElse(matchClasses(project.allClassFiles filter { doesMatch(_) }))
+        matchClasses(project.allClassFiles filter { doesMatch(_) }, classMatcher.matchMethods, classMatcher.matchFields)
     }
 }
 
@@ -67,44 +63,18 @@ case class PackageMatcher(
 object PackageMatcher {
 
     def apply(
-        nameMatcher: NameMatcher,
-        classMatcher: ClassMatcher): PackageMatcher = {
-        new PackageMatcher(nameMatcher, Some(classMatcher))
+        namePredicate: NamePredicate): PackageMatcher = {
+        new PackageMatcher(namePredicate, AllClassMatcher)
     }
 
     /**
-     * @param packageName The name of a package in java notation.
-     *      (I.e., "." are used to separate a package name's segments; e.g.,
-     *      "java.lang.Object").
-     * @param matchSubpackages If true, all packages that start with the given package
-     *      name are matched otherwise only classes declared in the given package are matched.
+     * Creates a PackageMatcher, that relies on a ClassMatcher for matching the classType.
      *
-     */
-    def apply(
-        packageName: String,
-        matchSubpackages: Boolean = false): PackageMatcher = {
-        new PackageMatcher(SimpleNameMatcher(packageName.replace('.', '/'), matchSubpackages), None)
-    }
-
-    /**
      * @param packageName The name of a package in java notation.
      *      (I.e., "." are used to separate a package name's segments; e.g.,
      *      "java.lang.Object").
-     * @param classMatcher The [[ClassMatcher]] that should be matched.
-     *
-     */
-    def apply(
-        packageName: String,
-        classMatcher: ClassMatcher): PackageMatcher = {
-        new PackageMatcher(SimpleNameMatcher(packageName.replace('.', '/'), false), Some(classMatcher))
-    }
-
-    /**
-     * @param packageName The name of a package in java notation.
-     *      (I.e., "." are used to separate a package name's segments; e.g.,
-     *      "java.lang.Object").
-     * @param classMatcher The [[ClassMatcher]] that should be matched.
-     * @param matchSubpackages If true, all packages that start with the given package
+     * @param classMatcher The [[ClassMatcher]], that will be used to match the class.
+     * @param matchSubpackages If true, all packages, that start with the given package
      *      name are matched otherwise only classes declared in the given package are matched.
      *
      */
@@ -112,6 +82,24 @@ object PackageMatcher {
         packageName: String,
         classMatcher: ClassMatcher,
         matchSubpackages: Boolean): PackageMatcher = {
-        new PackageMatcher(SimpleNameMatcher(packageName.replace('.', '/'), matchSubpackages), Some(classMatcher))
+        new PackageMatcher(SimpleNamePredicate(packageName.replace('.', '/'), matchSubpackages), classMatcher)
     }
+
+    def apply(
+        packageName: String,
+        matchSubpackages: Boolean): PackageMatcher = {
+        apply(packageName.replace('.', '/'), AllClassMatcher, matchSubpackages)
+    }
+
+    def apply(
+        packageName: String): PackageMatcher = {
+        apply(packageName.replace('.', '/'), AllClassMatcher, false)
+    }
+
+    def apply(
+        packageName: String,
+        classMatcher: ClassMatcher): PackageMatcher = {
+        apply(packageName.replace('.', '/'), classMatcher, false)
+    }
+
 }

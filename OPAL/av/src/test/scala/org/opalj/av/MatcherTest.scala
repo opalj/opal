@@ -43,6 +43,7 @@ import org.opalj.br.ObjectType
 import scala.collection.mutable.ArrayBuffer
 import org.opalj.br.ElementValuePair
 import org.opalj.bi.AccessFlagsMatcher
+import scala.collection.IndexedSeq
 
 /**
  * Tests matchers of the Architecture Validation Framework.
@@ -55,87 +56,160 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
     val project = Project(ClassFiles(locateTestResources("classfiles/entity.jar", "av")))
 
     /*
-     * SimpleNameMatcher
+     * SimpleNamePredicate
      */
-    test("the SimpleNameMatcher should match the given name") {
-        val matched1 = SimpleNameMatcher("entity/impl/User").doesMatch("entity/impl/User")
+    test("the SimpleNamePredicate should match the given name") {
+        val matched1 = SimpleNamePredicate("entity/impl/User")("entity/impl/User")
         matched1 should be(true)
 
-        val matched2 = SimpleNameMatcher("entity", true).doesMatch("entity/impl/User")
+        val matched2 = SimpleNamePredicate("entity", true)("entity/impl/User")
         matched2 should be(true)
 
-        val matched3 = SimpleNameMatcher("entity/impl/User", false).doesMatch("entity/impl/User")
+        val matched3 = SimpleNamePredicate("entity/impl/User", false)("entity/impl/User")
         matched3 should be(true)
     }
 
-    test("the SimpleNameMatcher should not match the given name") {
-        val matched1 = SimpleNameMatcher("entity/impl/Contact").doesMatch("entity/impl/User")
+    test("the SimpleNamePredicate should not match the given name") {
+        val matched1 = SimpleNamePredicate("entity/impl/Contact")("entity/impl/User")
         matched1 should be(false)
 
-        val matched2 = SimpleNameMatcher("entity/impl/C", true).doesMatch("entity/impl/User")
+        val matched2 = SimpleNamePredicate("entity/impl/C", true)("entity/impl/User")
         matched2 should be(false)
 
-        val matched3 = SimpleNameMatcher("entity/impl/Contact", false).doesMatch("entity/impl/User")
+        val matched3 = SimpleNamePredicate("entity/impl/Contact", false)("entity/impl/User")
         matched3 should be(false)
     }
 
     /*
-     * RegexNameMatcher
+     * RegexNamePredicate
      */
     test("the RegexNameMatcher should match the given name") {
-        val matched1 = RegexNameMatcher(""".+User""".r).doesMatch("entity/impl/User")
+        val matched1 = RegexNamePredicate(""".+User""".r)("entity/impl/User")
         matched1 should be(true)
     }
 
-    test("the RegexNameMatcher should not match the given name") {
-        val matched1 = RegexNameMatcher(""".+Contact""".r).doesMatch("entity/impl/User")
+    test("the RegexNamePredicate should not match the given name") {
+        val matched1 = RegexNamePredicate(""".+Contact""".r)("entity/impl/User")
         matched1 should be(false)
     }
 
     /*
-     * AnnotationMatcher
+     * AnnotationPredicate
      */
-    test("the AnnotationMatcher should match the given annotation") {
-        val matched1 = AnnotationMatcher("javax.persistence.Transient").doesMatch(
-            Annotation(ObjectType("javax/persistence/Transient"), IndexedSeq.empty))
+    test("the AnnotationPredicate should match the given annotation") {
+        val matched1 = AnnotationPredicate("entity.annotation.Transient")(
+            Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         matched1 should be(true)
 
-        val matched2 = AnnotationMatcher("javax.persistence.Column",
-            Map("name" -> StringValue("first_name"))).doesMatch(
-                Annotation(ObjectType("javax/persistence/Column"),
+        val matched2 = AnnotationPredicate("entity.annotation.Column",
+            Map("name" -> StringValue("first_name")))(
+                Annotation(ObjectType("entity/annotation/Column"),
                     ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("first_name")))))
         matched2 should be(true)
     }
 
-    test("the AnnotationMatcher should not match the given annotation") {
-        val matched1 = AnnotationMatcher("javax.persistence.Column").doesMatch(
-            Annotation(ObjectType("javax/persistence/Transient"), IndexedSeq.empty))
+    test("the AnnotationPredicate should not match the given annotation") {
+        val matched1 = AnnotationPredicate("entity.annotation.Column")(
+            Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         matched1 should be(false)
 
-        val matched2 = AnnotationMatcher("javax.persistence.Column",
-            Map("name" -> StringValue("first_name"))).doesMatch(
-                Annotation(ObjectType("javax/persistence/Transient"),
+        val matched2 = AnnotationPredicate("entity.annotation.Column",
+            Map("name" -> StringValue("first_name")))(
+                Annotation(ObjectType("entity/annotation/Transient"),
                     ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("last_name")))))
         matched2 should be(false)
+    }
+
+    /*
+     * AnnotationsPredicate
+     */
+    test("the AnnotationsPredicate should match the given annotations") {
+        val matched1 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched1 should be(true)
+
+        val matched2 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column",
+            Map("name" -> StringValue("first_name")))))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Column"),
+                ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("first_name"))))))
+        matched2 should be(true)
+
+        val matched3 = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched3 should be(true)
+
+        val matched4 = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column",
+            Map("name" -> StringValue("first_name")))))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Column"),
+                ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("first_name"))))))
+        matched4 should be(true)
+
+        val matched5 = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)))
+        matched5 should be(true)
+
+        val matched6 = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column"),
+            AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)))
+        matched6 should be(true)
+
+        val matched7 = AnyAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column"),
+            AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched7 should be(true)
+    }
+
+    test("the AnnotationsPredicate should not match the given annotations") {
+        val matched1 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched1 should be(false)
+
+        val matched2 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column",
+            Map("name" -> StringValue("first_name")))))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"),
+                ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("last_name"))))))
+        matched2 should be(false)
+
+        val matched3 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)))
+        matched3 should be(false)
+
+        val matched4 = StrictlyAllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column"),
+            AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched4 should be(false)
+
+        val matched5 = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column"),
+            AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty)))
+        matched5 should be(false)
+
+        val matched6 = AnyAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column"),
+            AnnotationPredicate("entity.annotation.Transient")))(
+            IndexedSeq(Annotation(ObjectType("entity/annotation/Embedded"), IndexedSeq.empty)))
+        matched6 should be(false)
     }
 
     /*
      * ClassMatcher matching classes only
      */
     test("the ClassMatcher should match only classes") {
-        val matchedClasses1 = ClassMatcher(nameMatcher = SimpleNameMatcher("entity.impl.User"), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses1 = DefaultClassMatcher(namePredicate = SimpleNamePredicate("entity.impl.User"), matchMethods = false, matchFields = false).extension(project)
         matchedClasses1 should not be (empty)
         matchedClasses1.size should be(1)
 
-        val matchedClasses2 = ClassMatcher(nameMatcher = SimpleNameMatcher("entity/impl/User", false), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses2 = DefaultClassMatcher(namePredicate = SimpleNamePredicate("entity/impl/User", false), matchMethods = false, matchFields = false).extension(project)
         matchedClasses2 should not be (empty)
         matchedClasses2.size should be(1)
 
-        val matchedClasses3 = ClassMatcher(nameMatcher = SimpleNameMatcher("entity", true), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses3 = DefaultClassMatcher(namePredicate = SimpleNamePredicate("entity", true), matchMethods = false, matchFields = false).extension(project)
         matchedClasses3 should not be (empty)
-        matchedClasses3.size should be(3)
+        matchedClasses3.size should be(8)
 
-        val matchedClasses4 = ClassMatcher(nameMatcher = RegexNameMatcher(""".+User""".r), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses4 = DefaultClassMatcher(namePredicate = RegexNamePredicate(""".+User""".r), matchMethods = false, matchFields = false).extension(project)
         matchedClasses4 should not be (empty)
         matchedClasses4.size should be(1)
     }
@@ -144,13 +218,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         val matchedClasses1 = ClassMatcher("entity.impl.Contact").extension(project)
         matchedClasses1 should be(empty)
 
-        val matchedClasses2 = ClassMatcher(SimpleNameMatcher("entity/impl/Contact", false)).extension(project)
+        val matchedClasses2 = ClassMatcher(SimpleNamePredicate("entity/impl/Contact", false)).extension(project)
         matchedClasses2 should be(empty)
 
-        val matchedClasses3 = ClassMatcher(SimpleNameMatcher("entity/impl/C", true)).extension(project)
+        val matchedClasses3 = ClassMatcher(SimpleNamePredicate("entity/impl/C", true)).extension(project)
         matchedClasses3 should be(empty)
 
-        val matchedClasses4 = ClassMatcher(RegexNameMatcher(""".+Contact""".r)).extension(project)
+        val matchedClasses4 = ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension(project)
         matchedClasses4 should be(empty)
     }
 
@@ -158,38 +232,35 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
      * ClassMatcher with AccessFlags matching classes only
      */
     test("the ClassMatcher should match only classes with the given access flags") {
-        val matchedClasses1 = ClassMatcher(AccessFlagsMatcher.NOT_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses1 = DefaultClassMatcher(AccessFlagsMatcher.NOT_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
         matchedClasses1 should not be (empty)
         matchedClasses1.size should be(2)
 
-        val matchedClasses2 = ClassMatcher(AccessFlagsMatcher.PUBLIC_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses2 = DefaultClassMatcher(AccessFlagsMatcher.PUBLIC_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
         matchedClasses2 should not be (empty)
-        matchedClasses2.size should be(1)
+        matchedClasses2.size should be(6)
 
-        val matchedClasses3 = ClassMatcher(AccessFlagsMatcher.PUBLIC, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses3 = DefaultClassMatcher(AccessFlagsMatcher.PUBLIC, matchMethods = false, matchFields = false).extension(project)
         matchedClasses3 should not be (empty)
-        matchedClasses3.size should be(3)
+        matchedClasses3.size should be(8)
 
-        val matchedClasses4 = ClassMatcher(AccessFlagsMatcher.ALL, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses4 = DefaultClassMatcher(AccessFlagsMatcher.ALL, matchMethods = false, matchFields = false).extension(project)
         matchedClasses4 should not be (empty)
-        matchedClasses4.size should be(3)
+        matchedClasses4.size should be(8)
 
-        val matchedClasses5 = ClassMatcher(AccessFlagsMatcher.PUBLIC && AccessFlagsMatcher.NOT_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses5 = DefaultClassMatcher(AccessFlagsMatcher.PUBLIC && AccessFlagsMatcher.NOT_ABSTRACT, matchMethods = false, matchFields = false).extension(project)
         matchedClasses5 should not be (empty)
         matchedClasses5.size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given access flags") {
-        val matchedClasses1 = ClassMatcher(AccessFlagsMatcher.PRIVATE_FINAL, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses1 = DefaultClassMatcher(AccessFlagsMatcher.PRIVATE_FINAL, matchMethods = false, matchFields = false).extension(project)
         matchedClasses1 should be(empty)
 
-        val matchedClasses2 = ClassMatcher(AccessFlagsMatcher.PUBLIC_INTERFACE, matchMethods = false, matchFields = false).extension(project)
-        matchedClasses2 should be(empty)
-
-        val matchedClasses3 = ClassMatcher(AccessFlagsMatcher.PUBLIC_STATIC_FINAL, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses3 = DefaultClassMatcher(AccessFlagsMatcher.PUBLIC_STATIC_FINAL, matchMethods = false, matchFields = false).extension(project)
         matchedClasses3 should be(empty)
 
-        val matchedClasses4 = ClassMatcher(AccessFlagsMatcher.PUBLIC_STATIC, matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses4 = DefaultClassMatcher(AccessFlagsMatcher.PUBLIC_STATIC, matchMethods = false, matchFields = false).extension(project)
         matchedClasses4 should be(empty)
     }
 
@@ -197,13 +268,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
      * ClassMatcher with Annotation matching classes only
      */
     test("the ClassMatcher should match only classes with the given annotation") {
-        val matchedClasses1 = ClassMatcher(annotationMatcher = Some(AnnotationMatcher("javax.persistence.Entity")), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses1 = DefaultClassMatcher(annotationsPredicate = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Entity"))), matchMethods = false, matchFields = false).extension(project)
         matchedClasses1 should not be (empty)
         matchedClasses1.size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given annotation") {
-        val matchedClasses1 = ClassMatcher(annotationMatcher = Some(AnnotationMatcher("javax.persistence.Transient")), matchMethods = false, matchFields = false).extension(project)
+        val matchedClasses1 = DefaultClassMatcher(annotationsPredicate = AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Transient"))), matchMethods = false, matchFields = false).extension(project)
         matchedClasses1 should be(empty)
     }
 
@@ -215,15 +286,15 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         matchedClasses1 should not be (empty)
         matchedClasses1.size should be(19)
 
-        val matchedClasses2 = ClassMatcher(SimpleNameMatcher("entity/impl/User", false)).extension(project)
+        val matchedClasses2 = ClassMatcher(SimpleNamePredicate("entity/impl/User", false)).extension(project)
         matchedClasses2 should not be (empty)
         matchedClasses2.size should be(19)
 
-        val matchedClasses3 = ClassMatcher(SimpleNameMatcher("entity", true)).extension(project)
+        val matchedClasses3 = ClassMatcher(SimpleNamePredicate("entity", true)).extension(project)
         matchedClasses3 should not be (empty)
-        matchedClasses3.size should be(37)
+        matchedClasses3.size should be(46)
 
-        val matchedClasses4 = ClassMatcher(RegexNameMatcher(""".+User""".r)).extension(project)
+        val matchedClasses4 = ClassMatcher(RegexNamePredicate(""".+User""".r)).extension(project)
         matchedClasses4 should not be (empty)
         matchedClasses4.size should be(19)
     }
@@ -232,13 +303,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         val matchedClasses1 = ClassMatcher("entity.impl.Contact").extension(project)
         matchedClasses1 should be(empty)
 
-        val matchedClasses2 = ClassMatcher(SimpleNameMatcher("entity/impl/Contact", false)).extension(project)
+        val matchedClasses2 = ClassMatcher(SimpleNamePredicate("entity/impl/Contact", false)).extension(project)
         matchedClasses2 should be(empty)
 
-        val matchedClasses3 = ClassMatcher(SimpleNameMatcher("entity/impl/C", true)).extension(project)
+        val matchedClasses3 = ClassMatcher(SimpleNamePredicate("entity/impl/C", true)).extension(project)
         matchedClasses3 should be(empty)
 
-        val matchedClasses4 = ClassMatcher(RegexNameMatcher(""".+Contact""".r)).extension(project)
+        val matchedClasses4 = ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension(project)
         matchedClasses4 should be(empty)
     }
 
@@ -246,13 +317,15 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
      * ClassMatcher with Annotation matching complete classes
      */
     test("the ClassMatcher should match any element of the classes annotated with the given annotation") {
-        val matchedClasses1 = ClassMatcher(AnnotationMatcher("javax.persistence.Entity")).extension(project)
+        val matchedClasses1 = ClassMatcher(AllAnnotationsPredicate(
+            Set(AnnotationPredicate("entity.annotation.Entity")))).extension(project)
         matchedClasses1 should not be (empty)
         matchedClasses1.size should be(34)
     }
 
     test("the ClassMatcher should not match any element with the given annotation") {
-        val matchedClasses1 = ClassMatcher(AnnotationMatcher("javax.persistence.Transient")).extension(project)
+        val matchedClasses1 = ClassMatcher(AllAnnotationsPredicate(
+            Set(AnnotationPredicate("entity.annotation.Transient")))).extension(project)
         matchedClasses1 should be(empty)
     }
 
@@ -260,7 +333,7 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
      * PackageMatcher matching classes only
      */
     test("the PackageMatcher should match only classes") {
-        val classMatcher = ClassMatcher(matchMethods = false, matchFields = false)
+        val classMatcher = DefaultClassMatcher(matchMethods = false, matchFields = false)
 
         val matchedClasses1 = PackageMatcher("entity", classMatcher).extension(project)
         matchedClasses1 should not be (empty)
@@ -268,36 +341,36 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedClasses2 = PackageMatcher("entity", classMatcher, true).extension(project)
         matchedClasses2 should not be (empty)
-        matchedClasses2.size should be(3)
+        matchedClasses2.size should be(8)
 
-        val matchedClasses3 = PackageMatcher(SimpleNameMatcher("entity", false), classMatcher).extension(project)
+        val matchedClasses3 = PackageMatcher(SimpleNamePredicate("entity", false), classMatcher).extension(project)
         matchedClasses3 should not be (empty)
         matchedClasses3.size should be(1)
 
-        val matchedClasses4 = PackageMatcher(RegexNameMatcher(""".+impl""".r), classMatcher).extension(project)
+        val matchedClasses4 = PackageMatcher(RegexNamePredicate(""".+impl""".r), classMatcher).extension(project)
         matchedClasses4 should not be (empty)
         matchedClasses4.size should be(2)
     }
 
     test("the PackageMatcher should not match any class") {
-        val classMatcher = ClassMatcher(matchMethods = false, matchFields = false)
+        val classMatcher = DefaultClassMatcher(matchMethods = false, matchFields = false)
 
         val matchedClasses1 = PackageMatcher("entity.user", classMatcher).extension(project)
         matchedClasses1 should be(empty)
 
-        val matchedClasses2 = PackageMatcher(SimpleNameMatcher("entity/user", false), classMatcher).extension(project)
+        val matchedClasses2 = PackageMatcher(SimpleNamePredicate("entity/user", false), classMatcher).extension(project)
         matchedClasses2 should be(empty)
 
-        val matchedClasses3 = PackageMatcher(SimpleNameMatcher("entity/u", true), classMatcher).extension(project)
+        val matchedClasses3 = PackageMatcher(SimpleNamePredicate("entity/u", true), classMatcher).extension(project)
         matchedClasses3 should be(empty)
 
-        val matchedClasses4 = PackageMatcher(RegexNameMatcher(""".+user""".r), classMatcher).extension(project)
+        val matchedClasses4 = PackageMatcher(RegexNamePredicate(""".+user""".r), classMatcher).extension(project)
         matchedClasses4 should be(empty)
     }
 
     /*
-     * PackageMatcher matching complete classes
-     */
+         * PackageMatcher matching complete classes
+         */
     test("the PackageMatcher should match all elements of the class") {
         val matchedClasses1 = PackageMatcher("entity").extension(project)
         matchedClasses1 should not be (empty)
@@ -305,13 +378,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedClasses2 = PackageMatcher("entity", true).extension(project)
         matchedClasses2 should not be (empty)
-        matchedClasses2.size should be(37)
+        matchedClasses2.size should be(46)
 
-        val matchedClasses3 = PackageMatcher(SimpleNameMatcher("entity", false), None).extension(project)
+        val matchedClasses3 = PackageMatcher(SimpleNamePredicate("entity", false)).extension(project)
         matchedClasses3 should not be (empty)
         matchedClasses3.size should be(3)
 
-        val matchedClasses4 = PackageMatcher(RegexNameMatcher(""".+impl""".r), None).extension(project)
+        val matchedClasses4 = PackageMatcher(RegexNamePredicate(""".+impl""".r)).extension(project)
         matchedClasses4 should not be (empty)
         matchedClasses4.size should be(34)
     }
@@ -320,13 +393,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         val matchedClasses1 = PackageMatcher("entity.user").extension(project)
         matchedClasses1 should be(empty)
 
-        val matchedClasses2 = PackageMatcher(SimpleNameMatcher("entity/user", false), None).extension(project)
+        val matchedClasses2 = PackageMatcher(SimpleNamePredicate("entity/user", false)).extension(project)
         matchedClasses2 should be(empty)
 
-        val matchedClasses3 = PackageMatcher(SimpleNameMatcher("entity/u", true), None).extension(project)
+        val matchedClasses3 = PackageMatcher(SimpleNamePredicate("entity/u", true)).extension(project)
         matchedClasses3 should be(empty)
 
-        val matchedClasses4 = PackageMatcher(RegexNameMatcher(""".+user""".r), None).extension(project)
+        val matchedClasses4 = PackageMatcher(RegexNamePredicate(""".+user""".r)).extension(project)
         matchedClasses4 should be(empty)
     }
 
@@ -340,15 +413,15 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedFields2 = FieldMatcher(
             ClassMatcher("entity.impl.User"),
-            AnnotationMatcher("javax.persistence.Column", Map("name" -> StringValue("first_name"), "nullable" -> BooleanValue(false)))).extension(project)
+            AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column", Map("name" -> StringValue("first_name"), "nullable" -> BooleanValue(false)))))).extension(project)
         matchedFields2 should not be (empty)
         matchedFields2.size should be(1)
 
-        val matchedFields3 = FieldMatcher(Some(ClassMatcher("entity.impl.User")), fieldType = Some("Ljava.lang.String;")).extension(project)
+        val matchedFields3 = FieldMatcher(ClassMatcher("entity.impl.User"), fieldType = Some("Ljava.lang.String;")).extension(project)
         matchedFields3 should not be (empty)
         matchedFields3.size should be(3)
 
-        val matchedFields4 = FieldMatcher(Some(ClassMatcher("entity.impl.User")), fieldName = Some("firstName")).extension(project)
+        val matchedFields4 = FieldMatcher(ClassMatcher("entity.impl.User"), fieldName = Some("firstName")).extension(project)
         matchedFields4 should not be (empty)
         matchedFields4.size should be(1)
     }
@@ -359,13 +432,13 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedFields2 = FieldMatcher(
             ClassMatcher("entity.impl.User"),
-            AnnotationMatcher("javax.persistence.Column", Map("name" -> StringValue("street"), "nullable" -> BooleanValue(false)))).extension(project)
+            AllAnnotationsPredicate(Set(AnnotationPredicate("entity.annotation.Column", Map("name" -> StringValue("street"), "nullable" -> BooleanValue(false)))))).extension(project)
         matchedFields2 should be(empty)
 
-        val matchedFields3 = FieldMatcher(Some(ClassMatcher("entity.impl.User")), fieldType = Some("Ljava.lang.Integer;")).extension(project)
+        val matchedFields3 = FieldMatcher(ClassMatcher("entity.impl.User"), fieldType = Some("Ljava.lang.Integer;")).extension(project)
         matchedFields3 should be(empty)
 
-        val matchedFields4 = FieldMatcher(Some(ClassMatcher("entity.impl.User")), fieldName = Some("street")).extension(project)
+        val matchedFields4 = FieldMatcher(ClassMatcher("entity.impl.User"), fieldName = Some("street")).extension(project)
         matchedFields4 should be(empty)
     }
 
@@ -379,11 +452,11 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedMethods2 = MethodMatcher(
             ClassMatcher("entity.impl.User"),
-            AnnotationMatcher("javax.persistence.Transient")).extension(project)
+            AnnotationPredicate("entity.annotation.Transient")).extension(project)
         matchedMethods2 should not be (empty)
         matchedMethods2.size should be(1)
 
-        val matchedMethods3 = MethodMatcher(ClassMatcher("entity.impl.User"), MethodAttributesMatcher("getFullName")).extension(project)
+        val matchedMethods3 = MethodMatcher(ClassMatcher("entity.impl.User"), MethodPredicate("getFullName")).extension(project)
         matchedMethods3 should not be (empty)
         matchedMethods3.size should be(1)
     }
@@ -394,10 +467,10 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
         val matchedFields2 = MethodMatcher(
             ClassMatcher("entity.impl.User"),
-            AnnotationMatcher("javax.persistence.Column", Map("name" -> StringValue("street"), "nullable" -> BooleanValue(false)))).extension(project)
+            AnnotationPredicate("entity.annotation.Column", Map("name" -> StringValue("street"), "nullable" -> BooleanValue(false)))).extension(project)
         matchedFields2 should be(empty)
 
-        val matchedFields3 = MethodMatcher(ClassMatcher("entity.impl.User"), MethodAttributesMatcher("getStreet")).extension(project)
+        val matchedFields3 = MethodMatcher(ClassMatcher("entity.impl.User"), MethodPredicate("getStreet")).extension(project)
         matchedFields3 should be(empty)
     }
 }

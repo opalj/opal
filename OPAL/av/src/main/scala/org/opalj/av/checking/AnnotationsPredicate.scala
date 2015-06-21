@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,45 +22,68 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package entity.impl
+package org.opalj
+package av
+package checking
 
-import entity.AbstractEntity
-import entity.annotation.Entity
-import entity.annotation.Table
-import entity.annotation.Column
-import entity.annotation.Transient
-import entity.annotation.Id
+import scala.collection.Set
+import org.opalj.br._
 
 /**
  * @author Marco Torsello
  */
-@Entity
-@Table(name = "User")
-@SerialVersionUID(100L)
-class User extends AbstractEntity {
+trait AnnotationsPredicate {
 
-  @Id
-  @Column(name = "id", nullable = false)
-  var id: Int = _
-  
-  @Column(name = "first_name", nullable = false)
-  var firstName: String = ""
-    
-  @Column(name = "last_name", nullable = false)
-  var lastName: String = ""
+    def apply(others: Annotations): Boolean
 
-  @Column(name = "password", nullable = false)
-  var password: String = ""
+}
 
-  var address: Address = null
-  
-  @Transient
-  def getFullName(): String = {
-    this.firstName + " " + this.lastName 
-  }
+/**
+ * @author Marco Torsello
+ */
+case object NoAnnotationsPredicate extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = true
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class AllAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
+    }
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class StrictlyAllAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        others.size == annotationPredicates.size &&
+            annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
+    }
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class AnyAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        annotationPredicates.exists(p ⇒ others.exists(a ⇒ p(a)))
+    }
 
 }

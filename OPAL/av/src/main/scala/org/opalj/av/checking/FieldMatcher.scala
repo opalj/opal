@@ -45,21 +45,20 @@ import org.opalj.br.Annotation
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-    classLevelMatcher: Option[ClassLevelMatcher],
-    annotationMatcher: Option[AnnotationMatcher],
+    classLevelMatcher: ClassLevelMatcher,
+    annotationsPredicate: AnnotationsPredicate,
     fieldType: Option[FieldType],
-    fieldName: Option[NameMatcher])
+    fieldName: Option[NamePredicate])
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
-        classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
+        classLevelMatcher.doesMatch(classFile)
     }
 
     def doesFieldMatch(field: Field): Boolean = {
         (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get.doesMatch(field.name))) &&
-            (annotationMatcher.isEmpty || (field.annotations.exists(
-                annotationMatcher.get.doesMatch(_))))
+            (fieldName.isEmpty || fieldName.get(field.name))) &&
+            annotationsPredicate(field.annotations)
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
@@ -84,30 +83,19 @@ case class FieldMatcher(
 object FieldMatcher {
 
     def apply(
-        classLevelMatcher: Option[ClassLevelMatcher] = None,
-        annotationMatcher: Option[AnnotationMatcher] = None,
+        classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
+        annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
         fieldType: Option[String] = None, // java.lang.Object
         fieldName: Option[String] = None,
         matchPrefix: Boolean = false): FieldMatcher = {
 
-        val nameMatcher: Option[SimpleNameMatcher] = fieldName match {
-            case Some(f) ⇒ Some(SimpleNameMatcher(f, matchPrefix))
+        val nameMatcher: Option[SimpleNamePredicate] = fieldName match {
+            case Some(f) ⇒ Some(SimpleNamePredicate(f, matchPrefix))
             case _       ⇒ None
         }
 
-        new FieldMatcher(classLevelMatcher, annotationMatcher, fieldType.map(ftn ⇒
+        new FieldMatcher(classLevelMatcher, annotationsPredicate, fieldType.map(ftn ⇒
             FieldType(ftn.replace('.', '/'))), nameMatcher)
-    }
-
-    def apply(
-        classLevelMatcher: ClassLevelMatcher): FieldMatcher = {
-        apply(Some(classLevelMatcher), None, None, None, false)
-    }
-
-    def apply(
-        classLevelMatcher: ClassLevelMatcher,
-        annotationMatcher: AnnotationMatcher): FieldMatcher = {
-        apply(Some(classLevelMatcher), Some(annotationMatcher), None, None, false)
     }
 
 }
