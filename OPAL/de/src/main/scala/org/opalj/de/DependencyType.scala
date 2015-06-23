@@ -105,4 +105,42 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
         }
         dependencies
     }
+
+    def toUsageDescription(value: Value): String = {
+        value match {
+            case EXTENDS                           ⇒ "extend class type"
+            case IMPLEMENTS                        ⇒ "implement interface type"
+            case OUTER_CLASS                       ⇒ "be outer class"
+            case INNER_CLASS                       ⇒ "be inner class"
+            case INSTANCE_MEMBER                   ⇒ "be instance member"
+            case CLASS_MEMBER                      ⇒ "be class member"
+            case ENCLOSED                          ⇒ "be enclosed"
+            case FIELD_TYPE                        ⇒ "be of type"
+            case CONSTANT_VALUE                    ⇒ "be initialized with constant value"
+            case PARAMETER_TYPE                    ⇒ "have parameter"
+            case RETURN_TYPE                       ⇒ "return"
+            case THROWN_EXCEPTION                  ⇒ "throw exception"
+            case CATCHES                           ⇒ "catch exception"
+            case LOCAL_VARIABLE_TYPE               ⇒ "have local variable"
+            case TYPECAST                          ⇒ "perform type cast"
+            case TYPECHECK                         ⇒ "perform type check"
+            case CREATES_ARRAY                     ⇒ "create array"
+            case CREATES                           ⇒ "create instance"
+            case READS_FIELD                       ⇒ "read field"
+            case WRITES_FIELD                      ⇒ "write field"
+            case DECLARING_CLASS_OF_ACCESSED_FIELD ⇒ "access field declared by"
+            case TYPE_OF_ACCESSED_FIELD            ⇒ "access field"
+            case CALLS_METHOD                      ⇒ "call method"
+            case DECLARING_CLASS_OF_CALLED_METHOD  ⇒ "call method declared by"
+            case PARAMETER_TYPE_OF_CALLED_METHOD   ⇒ "call method with parameter"
+            case RETURN_TYPE_OF_CALLED_METHOD      ⇒ "call method with return type"
+            case ANNOTATED_WITH                    ⇒ "be annotated with"
+            case PARAMETER_ANNOTATED_WITH          ⇒ "have parameter annotated with"
+            case ANNOTATION_DEFAULT_VALUE_TYPE     ⇒ "have annotation default value type"
+            case ANNOTATION_ELEMENT_TYPE           ⇒ "have annotation element value type"
+            case USES_ENUM_VALUE                   ⇒ "have enum value as annotation element value"
+            case TYPE_IN_TYPE_PARAMETERS           ⇒ "be used in the declaration of a signature"
+            case _                                 ⇒ throw new UnknownError("unknown value")
+        }
+    }
 }

@@ -39,15 +39,16 @@ import br.analyses.SomeProject
  * A source element matcher determines a set of source elements that matches a given query.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 trait SourceElementsMatcher { left ⇒
 
-    def extension(project: SomeProject): Set[VirtualSourceElement]
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
 
     def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) ++ right.extension(project)
+            def extension(implicit project: SomeProject) = {
+                left.extension ++ right.extension
             }
 
             override def toString() = { //
@@ -58,8 +59,8 @@ trait SourceElementsMatcher { left ⇒
 
     def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) -- right.extension(project)
+            def extension(implicit project: SomeProject) = {
+                left.extension -- right.extension
             }
 
             override def toString() = { //
@@ -68,8 +69,10 @@ trait SourceElementsMatcher { left ⇒
         }
     }
 
-    protected[this] def matchCompleteClasses(
-        matchedClassFiles: Traversable[ClassFile]): Set[VirtualSourceElement] = {
+    protected[this] def matchClasses(
+        matchedClassFiles: Traversable[ClassFile],
+        matchMethods: Boolean = true,
+        matchFields: Boolean = true): Set[VirtualSourceElement] = {
 
         import scala.collection.mutable.HashSet
         val sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
@@ -77,10 +80,10 @@ trait SourceElementsMatcher { left ⇒
         matchedClassFiles foreach { classFile ⇒
             val declaringClassType = classFile.thisType
             sourceElements += classFile.asVirtualClass
-            sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
-            sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
+            if (matchMethods) sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
+            if (matchFields) sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
         }
         sourceElements
     }
-}
 
+}

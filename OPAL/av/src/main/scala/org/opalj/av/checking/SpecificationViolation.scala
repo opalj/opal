@@ -106,7 +106,7 @@ case class PropertyViolation(
         project: SomeProject,
         propertyChecker: PropertyChecker,
         source: VirtualSourceElement,
-        dependencyType: DependencyType,
+        propertyType: String,
         description: String) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {
@@ -127,12 +127,12 @@ case class PropertyViolation(
             RED + description+
                 " between "+BLUE + propertyChecker.sourceEnsembles.mkString(", ") + RED+
                 " and "+BLUE + propertyChecker.property + RESET+": "+
-                javaSource+" "+BOLD + dependencyType + RESET+" "+propertyChecker.property
+                javaSource+" "+BOLD + propertyType + RESET+" "+propertyChecker.property
         else
             description+
                 " between "+propertyChecker.sourceEnsembles.mkString(", ")+
                 " and "+propertyChecker.property+": "+
-                javaSource+" "+dependencyType+" "+propertyChecker.property
+                javaSource+" "+propertyType+" "+propertyChecker.property
 
     }
 

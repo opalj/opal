@@ -30,22 +30,27 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
-
-import org.opalj.br.ClassFile
-import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.SomeProject
-
 /**
- * A class level matcher matches classes and all methods and fields defined by the
- * respective classes.
- *
  * @author Michael Eichberg
  */
-trait ClassLevelMatcher extends SourceElementsMatcher {
+case class SimpleNamePredicate(
+    name: String,
+    matchPrefix: Boolean)
+        extends NamePredicate {
 
-    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
+    def apply(otherName: String): Boolean = {
+        val binaryName = name.replace('.', '/')
+        otherName.startsWith(binaryName) && (
+            matchPrefix || binaryName.length == otherName.length)
+    }
+}
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
+object SimpleNamePredicate {
+
+    def apply(
+        name: String): SimpleNamePredicate = {
+        this(name, false)
+    }
 
 }
+

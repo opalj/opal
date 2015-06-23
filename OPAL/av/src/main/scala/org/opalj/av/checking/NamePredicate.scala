@@ -30,22 +30,14 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
-
-import org.opalj.br.ClassFile
-import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.SomeProject
-
 /**
- * A class level matcher matches classes and all methods and fields defined by the
- * respective classes.
+ * Matches a (binary) name of a file, method or class.
  *
  * @author Michael Eichberg
  */
-trait ClassLevelMatcher extends SourceElementsMatcher {
+trait NamePredicate {
 
-    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
+    def apply(otherName: String): Boolean
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
-
+    final def unapply(otherName: String): Boolean = apply(otherName)
 }

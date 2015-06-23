@@ -32,70 +32,87 @@ package checking
 
 import scala.collection.Set
 import org.opalj.br.ClassFile
-import org.opalj.br.FieldType
-import org.opalj.br.Field
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.Annotation
 
 /**
- * Matches fields based on their name, type, annotations and class.
+ * Matches methods based on their attributes, annotations and class.
  *
  * @author Marco Torsello
- * @author Michael Eichberg
  */
-case class FieldMatcher(
-    classLevelMatcher: ClassLevelMatcher,
-    annotationsPredicate: AnnotationsPredicate,
-    fieldType: Option[FieldType],
-    fieldName: Option[NamePredicate])
+case class MethodMatcher(
+    classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
+    annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
+    methodPredicate: MethodPredicate = NoMethodPredicate)
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         classLevelMatcher.doesMatch(classFile)
     }
 
-    def doesFieldMatch(field: Field): Boolean = {
-        (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get(field.name))) &&
-            annotationsPredicate(field.annotations)
+    def doesMethodMatch(method: Method): Boolean = {
+        annotationsPredicate(method.annotations) &&
+            methodPredicate(method)
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
-        val allMatchedFields = project.allClassFiles collect {
+        val allMatchedMethods = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) ⇒ {
-                classFile.fields collect {
-                    case field if doesFieldMatch(field) ⇒ field.asVirtualField(classFile)
+                classFile.methods collect {
+                    case method if doesMethodMatch(method) ⇒ method.asVirtualMethod(classFile)
                 }
             }
         }
-        allMatchedFields.flatten.toSet
+        allMatchedMethods.flatten.toSet
     }
 
 }
 
 /**
  * Defines several additional factory methods to facilitate the creation of
- * [[FieldMatcher]]s.
+ * [[MethodMatcher]]s.
  *
  * @author Marco Torsello
  */
-object FieldMatcher {
+object MethodMatcher {
 
     def apply(
-        classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
-        annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
-        fieldType: Option[String] = None, // java.lang.Object
-        fieldName: Option[String] = None,
-        matchPrefix: Boolean = false): FieldMatcher = {
+        annotationsPredicate: AnnotationsPredicate,
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(annotationsPredicate = annotationsPredicate, methodPredicate = methodPredicate)
+    }
 
-        val nameMatcher: Option[SimpleNamePredicate] = fieldName match {
-            case Some(f) ⇒ Some(SimpleNamePredicate(f, matchPrefix))
-            case _       ⇒ None
-        }
+    def apply(
+        classLevelMatcher: ClassLevelMatcher,
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(classLevelMatcher, methodPredicate = methodPredicate)
+    }
 
-        new FieldMatcher(classLevelMatcher, annotationsPredicate, fieldType.map(ftn ⇒
-            FieldType(ftn.replace('.', '/'))), nameMatcher)
+    def apply(
+        methodPredicate: MethodPredicate): MethodMatcher = {
+        new MethodMatcher(methodPredicate = methodPredicate)
+    }
+
+    def apply(
+        annotationsPredicate: AnnotationsPredicate): MethodMatcher = {
+        new MethodMatcher(annotationsPredicate = annotationsPredicate)
+    }
+
+    /**
+     * Creates a MethodMatcher, that relies on an AllAnnotationsPredicate for matching
+     * the given AnnotationPredicate.
+     */
+    def apply(
+        annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        apply(AllAnnotationsPredicate(Set(annotationPredicate)))
+    }
+
+    def apply(
+        classLevelMatcher: ClassLevelMatcher,
+        annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        new MethodMatcher(classLevelMatcher, AllAnnotationsPredicate(Set(annotationPredicate)))
     }
 
 }
