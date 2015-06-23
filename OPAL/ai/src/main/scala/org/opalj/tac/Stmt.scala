@@ -81,6 +81,26 @@ case class Goto(pc: PC, private[tac] var target: UShort) extends Stmt {
 
 }
 
+//case class LookupSwitch(pc:PC, defaultTarget:Int, npairs:IndexedSeq[(Int, Int)], private[tac] var targets:Seq[Int]) extends Stmt {
+//    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+//        targets = pcToIndex(targets)
+//    }
+//
+//    // Calling this method is only supported after the quadruples representation
+//    // is created and the remapping of pcs to instruction indexes has happened!
+//    def targetStmt: Int = targets
+//}
+//
+//case class TableSwitch(pc:PC, defaultOffset:Int, low:Int, high:Int, jumpOffsets:IndexedSeq[Int]) extends Stmt {
+//    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+//        target = pcToIndex(target)
+//    }
+//
+//    // Calling this method is only supported after the quadruples representation
+//    // is created and the remapping of pcs to instruction indexes has happened!
+//    def targetStmt: Int = target
+//}
+
 sealed trait SimpleStmt extends Stmt {
 
     /**
@@ -104,10 +124,6 @@ case class Checkcast(pc:PC, target:Var, cmpTp: ReferenceType) extends SimpleStmt
 case class MonitorEnter(pc:PC, objRef:Var) extends SimpleStmt
 
 case class MonitorExit(pc:PC, objRef:Var) extends SimpleStmt
-
-case class TableSwitch(pc:PC, defaultOffset:Int, low:Int, high:Int, jumpOffsets:IndexedSeq[Int]) extends SimpleStmt
-
-case class LookupSwitch(pc:PC, defaultOffset:Int, npairs:IndexedSeq[(Int, Int)], jumpOffsets:Seq[Int]) extends SimpleStmt
 
 /**
  * Call of a method.
