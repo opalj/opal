@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * An object that identifies a specific kind of properties. An element in
  * the [[PropertyStore]] must be associated with at most one property per kind/key.
  *
- * To create a property key use the companion object's [[PropertyKey$.next]] method.
+ * To create a property key use the companion object's [[PropertyKey$.create]] method.
  *
  * @author Michael Eichberg
  */
