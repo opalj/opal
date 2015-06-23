@@ -200,7 +200,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 "9: return op_0 /*{_ <: java.lang.Object, null}[@-3;t=103]*/;"
             )
 
-            def unaryJLC(cmp: String, ret1:String) = Array(
+            def unaryJLC(cmp: String, ret1: String) = Array(
                 "0: r_0 = this;",
                 "1: r_1 = p_1;",
                 "2: op_0 = r_1;",
@@ -216,7 +216,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 val aiResult = BaseAI(ControlSequencesClassFile, IfACMPEQMethod, domain)
                 val statements = AsQuadruples(IfACMPEQMethod, Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
-                
+
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryResultAST(
@@ -254,8 +254,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                     DomainValueBasedVar(0, domain.NullValue(-2).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(unaryJLC(
-                        "3: if(op_0 != null) goto 6;",
-                        "5: return op_0 /*null[@-2;t=102]*/;"))
+                    "3: if(op_0 != null) goto 6;",
+                    "5: return op_0 /*null[@-2;t=102]*/;"))
             }
 
             it("should correctly reflect the is-null case") {
@@ -271,8 +271,8 @@ class RefCmpIfTest extends FunSpec with Matchers {
                     DomainValueBasedVar(0, domain.NonNullObjectValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
                 javaLikeCode.shouldEqual(unaryJLC(
-                        "3: if(op_0 == null) goto 6;", 
-                        "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"))
+                    "3: if(op_0 == null) goto 6;",
+                    "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"))
             }
         }
     }

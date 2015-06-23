@@ -79,12 +79,12 @@ class LongArithmeticTest extends FunSpec with Matchers {
         describe("using no AI results") {
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: r_3 = p_2;",
-                    "3: op_0 = r_1;",
-                    "4: op_2 = r_3;",
-                    strg,
-                    "6: return op_0;"
+                "1: r_1 = p_1;",
+                "2: r_3 = p_2;",
+                "3: op_0 = r_1;",
+                "4: op_2 = r_3;",
+                strg,
+                "6: return op_0;"
             )
 
             def binaryAST(stmt: Stmt): Array[Stmt] = Array(
@@ -109,7 +109,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect addition") {
                 val statements = AsQuadruples(LongAddMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -121,7 +121,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect logical and") {
                 val statements = AsQuadruples(LongAndMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -133,7 +133,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect division") {
                 val statements = AsQuadruples(LongDivMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -145,7 +145,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect negation") {
                 val statements = AsQuadruples(LongNegMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -166,7 +166,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect multiplication") {
                 val statements = AsQuadruples(LongMulMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -178,7 +178,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect logical or") {
                 val statements = AsQuadruples(LongOrMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -190,7 +190,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect modulo") {
                 val statements = AsQuadruples(LongRemMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -202,7 +202,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect shift right") {
                 val statements = AsQuadruples(LongShRMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -214,7 +214,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect shift left") {
                 val statements = AsQuadruples(LongShLMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -226,7 +226,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect subtraction") {
                 val statements = AsQuadruples(LongSubMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -238,7 +238,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect arithmetic shift right") {
                 val statements = AsQuadruples(LongAShMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -250,7 +250,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
 
             it("should correctly reflect logical xor") {
                 val statements = AsQuadruples(LongXOrMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -263,12 +263,12 @@ class LongArithmeticTest extends FunSpec with Matchers {
         describe("using AI results") {
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: r_3 = p_2;",
-                    "3: op_0 = r_1;",
-                    "4: op_2 = r_3;",
-                    strg,
-                    "6: return op_0 /*ALongValue*/;"
+                "1: r_1 = p_1;",
+                "2: r_3 = p_2;",
+                "3: op_0 = r_1;",
+                "4: op_2 = r_3;",
+                strg,
+                "6: return op_0 /*ALongValue*/;"
             )
 
             def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
@@ -295,7 +295,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAddMethod, domain)
                 val statements = AsQuadruples(LongAddMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -310,7 +310,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAndMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAndMethod, domain)
                 val statements = AsQuadruples(LongAndMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -325,7 +325,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongDivMethod, domain)
                 val statements = AsQuadruples(LongDivMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -340,7 +340,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongNegMethod, domain)
                 val statements = AsQuadruples(LongNegMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -363,7 +363,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongMulMethod, domain)
                 val statements = AsQuadruples(LongMulMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -378,7 +378,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongOrMethod, domain)
                 val statements = AsQuadruples(LongOrMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -393,7 +393,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongRemMethod, domain)
                 val statements = AsQuadruples(LongRemMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -408,7 +408,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShRMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShRMethod, domain)
                 val statements = AsQuadruples(LongShRMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -423,7 +423,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShLMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShLMethod, domain)
                 val statements = AsQuadruples(LongShLMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -438,7 +438,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongSubMethod, domain)
                 val statements = AsQuadruples(LongSubMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -453,7 +453,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAShMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAShMethod, domain)
                 val statements = AsQuadruples(LongAShMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -468,7 +468,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongXOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongXOrMethod, domain)
                 val statements = AsQuadruples(LongXOrMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

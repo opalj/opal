@@ -81,20 +81,20 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
 
             def binaryJLC(strg: String): Array[String] = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: r_2 = p_2;",
-                    "3: op_0 = r_1;",
-                    "4: op_1 = r_2;",
-                    strg,
-                    "6: return op_0;"
+                "1: r_1 = p_1;",
+                "2: r_2 = p_2;",
+                "3: op_0 = r_1;",
+                "4: op_1 = r_2;",
+                strg,
+                "6: return op_0;"
             )
 
             def unaryJLC(strg: String): Array[String] = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: op_0 = r_1;",
-                    strg,
-                    "4: return op_0;"
+                "1: r_1 = p_1;",
+                "2: op_0 = r_1;",
+                strg,
+                "4: return op_0;"
             )
 
             def binaryAST(stmt: Stmt): Array[Stmt] = Array(
@@ -276,20 +276,20 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
 
             def binaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: r_2 = p_2;",
-                    "3: op_0 = r_1;",
-                    "4: op_1 = r_2;",
-                    strg,
-                    "6: return op_0 /*an int*/;"
+                "1: r_1 = p_1;",
+                "2: r_2 = p_2;",
+                "3: op_0 = r_1;",
+                "4: op_1 = r_2;",
+                strg,
+                "6: return op_0 /*an int*/;"
             )
 
             def unaryJLC(strg: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: op_0 = r_1;",
-                    strg,
-                    "4: return op_0 /*an int*/;"
+                "1: r_1 = p_1;",
+                "2: op_0 = r_1;",
+                strg,
+                "4: return op_0 /*an int*/;"
             )
 
             def binaryAST(stmt1: Stmt, stmt2: Stmt): Array[Stmt] = Array(
@@ -306,7 +306,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAddMethod, domain)
                 val statements = AsQuadruples(IntegerAddMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -321,7 +321,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAndMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAndMethod, domain)
                 val statements = AsQuadruples(IntegerAndMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -336,7 +336,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerDivMethod, domain)
                 val statements = AsQuadruples(IntegerDivMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -351,7 +351,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerIncMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerIncMethod, domain)
                 val statements = AsQuadruples(IntegerIncMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -369,7 +369,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerNegMethod, domain)
                 val statements = AsQuadruples(IntegerNegMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -387,7 +387,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerMulMethod, domain)
                 val statements = AsQuadruples(IntegerMulMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -402,7 +402,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerOrMethod, domain)
                 val statements = AsQuadruples(IntegerOrMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -417,7 +417,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerRemMethod, domain)
                 val statements = AsQuadruples(IntegerRemMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -432,7 +432,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShRMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShRMethod, domain)
                 val statements = AsQuadruples(IntegerShRMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -447,7 +447,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerShLMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerShLMethod, domain)
                 val statements = AsQuadruples(IntegerShLMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -462,7 +462,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerSubMethod, domain)
                 val statements = AsQuadruples(IntegerSubMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -477,7 +477,7 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, IntegerAShMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, IntegerAShMethod, domain)
                 val statements = AsQuadruples(IntegerAShMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

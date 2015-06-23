@@ -73,13 +73,13 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             def resultJLC(strg: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: op_0 = r_1;",
-                    strg,
-                    "4: op_0 = r_1;",
-                    "5: return op_0;",
-                    "6: op_0 = 0;",
-                    "7: return op_0;"
+                "1: r_1 = p_1;",
+                "2: op_0 = r_1;",
+                strg,
+                "4: op_0 = r_1;",
+                "5: return op_0;",
+                "6: op_0 = 0;",
+                "7: return op_0;"
             )
 
             def resultAST(stmt: Stmt): Array[Stmt] = Array(
@@ -95,7 +95,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the not-equals case") {
                 val statements = AsQuadruples(IfNEMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -106,7 +106,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the equals case") {
                 val statements = AsQuadruples(IfEQMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -117,7 +117,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the greater-equals case") {
                 val statements = AsQuadruples(IfGEMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -128,7 +128,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the less-then case") {
                 val statements = AsQuadruples(IfLTMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -139,7 +139,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the less-equals case") {
                 val statements = AsQuadruples(IfLEMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -150,7 +150,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
             it("should correctly reflect the greater-then case") {
                 val statements = AsQuadruples(IfGTMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -162,18 +162,18 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
 
         describe("using AI results") {
 
-            def resultJLC(strg1:String, strg2:String, strg3:String) = Array(
+            def resultJLC(strg1: String, strg2: String, strg3: String) = Array(
                 "0: r_0 = this;",
-                    "1: r_1 = p_1;",
-                    "2: op_0 = r_1;",
-                    strg1,
-                    "4: op_0 = r_1;",
-                    strg2,
-                    "6: op_0 = 0;",
-                    strg3
+                "1: r_1 = p_1;",
+                "2: op_0 = r_1;",
+                strg1,
+                "4: op_0 = r_1;",
+                strg2,
+                "6: op_0 = 0;",
+                strg3
             )
 
-            def resultAST(stmt: Stmt, expr1: Expr, expr2:Expr): Array[Stmt] = Array(
+            def resultAST(stmt: Stmt, expr1: Expr, expr2: Expr): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
@@ -188,7 +188,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNEMethod, domain)
                 val statements = AsQuadruples(IfNEMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -197,16 +197,16 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                     DomainValueBasedVar(0, domain.IntegerConstant0),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 != 0) goto 6;",
-                        "5: return op_0 /*int = 0*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 != 0) goto 6;",
+                    "5: return op_0 /*int = 0*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
 
             it("should correctly reflect the equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfEQMethod, domain)
                 val statements = AsQuadruples(IfEQMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -215,85 +215,85 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 == 0) goto 6;",
-                        "5: return op_0 /*an int*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 == 0) goto 6;",
+                    "5: return op_0 /*an int*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
 
             it("should correctly reflect the greater-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGEMethod, domain)
                 val statements = AsQuadruples(IfGEMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0, 
-                            domain.IntegerRange(Integer.MIN_VALUE, -1).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0,
+                        domain.IntegerRange(Integer.MIN_VALUE, -1).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 >= 0) goto 6;",
-                        "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(-1)+"]*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 >= 0) goto 6;",
+                    "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(-1)+"]*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
 
             it("should correctly reflect the less-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLTMethod, domain)
                 val statements = AsQuadruples(IfLTMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0, 
-                            domain.IntegerRange(0, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0,
+                        domain.IntegerRange(0, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 < 0) goto 6;",
-                        "5: return op_0 /*int ∈ [0,"+Integer.MAX_VALUE+"]*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 < 0) goto 6;",
+                    "5: return op_0 /*int ∈ [0,"+Integer.MAX_VALUE+"]*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
 
             it("should correctly reflect the less-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLEMethod, domain)
                 val statements = AsQuadruples(IfLEMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0, 
-                            domain.IntegerRange(1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0,
+                        domain.IntegerRange(1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 <= 0) goto 6;",
-                        "5: return op_0 /*int ∈ [1,"+Integer.MAX_VALUE+"]*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 <= 0) goto 6;",
+                    "5: return op_0 /*int ∈ [1,"+Integer.MAX_VALUE+"]*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
 
             it("should correctly reflect the greater-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGTMethod, domain)
                 val statements = AsQuadruples(IfGTMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0, 
-                            domain.IntegerRange(Integer.MIN_VALUE, 0).asInstanceOf[domain.DomainValue]),
+                    DomainValueBasedVar(0,
+                        domain.IntegerRange(Integer.MIN_VALUE, 0).asInstanceOf[domain.DomainValue]),
                     DomainValueBasedVar(0, domain.IntegerConstant0)))
                 javaLikeCode.shouldEqual(resultJLC(
-                        "3: if(op_0 > 0) goto 6;",
-                        "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+0+"]*/;",
-                        "7: return op_0 /*int = 0*/;"))
+                    "3: if(op_0 > 0) goto 6;",
+                    "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+0+"]*/;",
+                    "7: return op_0 /*int = 0*/;"))
             }
         }
 

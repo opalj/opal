@@ -70,7 +70,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the integer constants") {
                 val statements = AsQuadruples(IntConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -112,7 +112,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the long constants") {
                 val statements = AsQuadruples(LongConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -134,7 +134,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the float constants") {
                 val statements = AsQuadruples(FloatConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -160,7 +160,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the double constants") {
                 val statements = AsQuadruples(DoubleConstsMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -182,7 +182,7 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the null reference constants") {
                 val statements = AsQuadruples(NullRefConstMethod, None)
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -205,7 +205,7 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, IntConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, IntConstsMethod, domain)
                 val statements = AsQuadruples(IntConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -249,7 +249,7 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LongConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LongConstsMethod, domain)
                 val statements = AsQuadruples(LongConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -273,7 +273,7 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, FloatConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, FloatConstsMethod, domain)
                 val statements = AsQuadruples(FloatConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -301,7 +301,7 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, DoubleConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, DoubleConstsMethod, domain)
                 val statements = AsQuadruples(DoubleConstsMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
@@ -325,7 +325,7 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, NullRefConstMethod)
                 val aiResult = BaseAI(ConstantsClassFile, NullRefConstMethod, domain)
                 val statements = AsQuadruples(NullRefConstMethod, Some(aiResult))
-                val javaLikeCode = ToJavaLike(statements,false)
+                val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)

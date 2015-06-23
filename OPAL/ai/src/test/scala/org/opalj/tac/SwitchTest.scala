@@ -26,38 +26,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package tactest;
+package org.opalj
+package tac
+
+import org.scalatest.Matchers
+import org.scalatest.FunSpec
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.Matchers
+import org.junit.runner.RunWith
+
+import org.opalj.br._
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.analyses.Project
 
 /**
- * Class with simple methods containing switch statements.
- * 
- * @author Roberts Kolosovs
+ * Tests the conversion of parsed methods to a quadruple representation
  *
+ * @author Michael Eichberg
+ * @author Roberts Kolosovs
  */
-public class SwitchStatements {
+@RunWith(classOf[JUnitRunner])
+class SwitchTest extends FunSpec with Matchers {
 
-	int tableSwitch(int a) {
-		switch (a) {
-		case 1:
-			return 1;
-		case 2:
-			return 2;
-		case 3:
-			return 3;
-		default:
-			return 0;
-		}
-	}
+    val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
-	int lookupSwitch(int a) {
-		switch (a) {
-		case 1:
-			return 10;
-		case 10:
-			return 100;
-		default:
-			return 0;
-		}
-	}
+    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
+    val project = Project(testResources)
+
+    val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
+
+    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").get
+    val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").get
+
+    describe("preliminary test output") {
+        it("for short switch stmts") {
+            println(TableSwitchMethod.body.get.instructions.mkString("\n"))
+            println("---------------------------")
+        }
+        
+        it("for long switch stmts") {
+            println(LookupSwitchMethod.body.get.instructions.mkString("\n"))
+        }
+    }
 }

@@ -52,7 +52,7 @@ trait Expr {
  */
 case class Param(cTpe: ComputationalType, name: String) extends Expr
 
-case class InstanceOf(target:Var, cmpTp: ReferenceType) extends Expr {
+case class InstanceOf(target: Var, cmpTp: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
