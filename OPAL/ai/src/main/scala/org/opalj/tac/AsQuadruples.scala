@@ -80,8 +80,7 @@ object AsQuadruples {
         processed(0) = true
         var worklist: List[(PC, Stack)] = List((0, Nil))
         for { exceptionHandler ← code.exceptionHandlers } (
-            worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException)))
-        )
+            worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException))))
 
         while (worklist.nonEmpty) {
             val (pc, stack) = worklist.head
@@ -124,8 +123,7 @@ object AsQuadruples {
                 val value2 :: value1 :: _ = stack
                 val cTpe = value1.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2))
-                )
+                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2)))
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
 
@@ -133,9 +131,16 @@ object AsQuadruples {
                 val value :: _ = stack
                 val cTpe = value.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value))
-                )
+                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value)))
                 schedule(pcOfNextInstruction(pc), stack)
+            }
+
+            def castOperation(cTpe: ComputationalType): Unit = {
+                val value :: rest = stack
+                val result = OperandVar(cTpe, stack)
+                statements(pc) = List(
+                    Assignment(pc, result, CastExpr(pc, cTpe, value)))
+                schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
             def returnInstruction(fallback: SimpleVar): Unit = {
@@ -281,8 +286,7 @@ object AsQuadruples {
                     statements(pc) = List(
                         Assignment(pc, tempVar, value2),
                         Assignment(pc, newValue2, value1),
-                        Assignment(pc, newValue1, tempVar)
-                    )
+                        Assignment(pc, newValue1, tempVar))
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
                 case DADD.opcode | FADD.opcode |
@@ -330,8 +334,7 @@ object AsQuadruples {
                     val indexReg = RegisterVar(ComputationalTypeInt, index)
                     statements(pc) = List(
                         Assignment(pc, indexReg,
-                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const)))
-                    )
+                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const))))
                     schedule(pcOfNextInstruction(pc), stack)
 
                 case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
@@ -493,6 +496,11 @@ object AsQuadruples {
                             statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
+
+                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ castOperation(ComputationalTypeFloat)
+                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ castOperation(ComputationalTypeInt)
+                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ castOperation(ComputationalTypeLong)
+                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ castOperation(ComputationalTypeDouble)
 
                 // TODO Add support for all the other instructions!
 

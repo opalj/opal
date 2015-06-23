@@ -26,47 +26,65 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package tac
-
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.junit.runner.RunWith
-
-import org.opalj.br._
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
+package tactest;
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
- *
- * @author Michael Eichberg
+ * Class with simple methods containing cast and typecheck instructions.
+ * 
  * @author Roberts Kolosovs
+ *
  */
-@RunWith(classOf[JUnitRunner])
-class SwitchTest extends FunSpec with Matchers {
+public class CastInstructions {
+	
+	void typecheck(String s){
+		boolean result = s instanceof Object;
+	}
 
-    val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
+	void d2f(double d){
+		float result = (float) d;
+	}
+	
+	void d2i(double d){
+		int result = (int) d;
+	}
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
-
-    val project = Project(testResources)
-
-    val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
-
-    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").get
-    val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").get
-
-    describe("preliminary test output") {
-        it("for short switch stmts") {
-            println(TableSwitchMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-        }
-
-        it("for long switch stmts") {
-            println(LookupSwitchMethod.body.get.instructions.mkString("\n"))
-        }
-    }
+	void d2l(double d){
+		long result = (long) d;
+	}
+	
+	void f2d(float f){
+		double result = (double) f;
+	}
+	
+	void f2i(float f){
+		int result = (int) f;
+	}
+	
+	void f2l(float f){
+		long result = (long) f;
+	}
+	
+	void l2d(long l){
+		double result = (double) l;
+	}
+	
+	void l2f(long l){
+		float result = (float) l;
+	}
+	
+	void l2i(long l){
+		int result = (int) l;
+	}
+	
+	void i2d(int i){
+		double result = (double) i;
+	}
+	
+	void i2f(int i){
+		float result = (float) i;
+	}
+	
+	void i2l(int i){
+		long result = (long) i;
+	}
 }

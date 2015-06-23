@@ -107,6 +107,11 @@ case class PrefixExpr(
     op: UnaryArithmeticOperator,
     operand: Expr) extends Expr
 
+case class CastExpr(
+    pc: PC,
+    cTpe: ComputationalType,
+    operand: Expr) extends Expr
+
 trait Var extends Expr {
 
     /**

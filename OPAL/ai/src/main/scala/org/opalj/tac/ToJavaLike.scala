@@ -58,6 +58,7 @@ object ToJavaLike {
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
             case PrefixExpr(_, _, op, operand) ⇒
                 op.toString()+" "+toJavaLikeExpr(operand)
+            case CastExpr(_, trgTp, operand) ⇒ s"(${trgTp.toString}) ${operand.toString}"
         }
     }
 
