@@ -384,13 +384,16 @@ object AsQuadruples {
 
                 case POP.opcode ⇒
                     val _ :: rest = stack
+                    statements(pc) = List(EmptyStmt(pc))
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case POP2.opcode ⇒
                     stack match {
                         case (val1 @ CTC1()) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), rest)
                         case val1 :: val2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), rest)
                     }
 
@@ -437,45 +440,57 @@ object AsQuadruples {
 
                 case DUP.opcode ⇒
                     val head :: _ = stack
+                    statements(pc) = List(EmptyStmt(pc))
                     schedule(pcOfNextInstruction(pc), head :: stack)
 
                 case DUP_X1.opcode ⇒
                     val val1 :: val2 :: rest = stack
+                    statements(pc) = List(EmptyStmt(pc))
                     schedule(pcOfNextInstruction(pc), val1 :: val2 :: val1 :: rest)
 
                 case DUP_X2.opcode ⇒
                     stack match {
                         case v1 :: (v2 @ CTC1()) :: v3 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
                         case v1 :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
                 case DUP2.opcode ⇒
                     stack match {
                         case (v1 @ CTC1()) :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: v2 :: rest)
                         case v1 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v1 :: rest)
                     }
 
                 case DUP2_X1.opcode ⇒
                     stack match {
                         case (v1 @ CTC1()) :: v2 :: v3 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case v1 :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
                 case DUP2_X2.opcode ⇒
                     stack match {
                         case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
                         case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
                         case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
