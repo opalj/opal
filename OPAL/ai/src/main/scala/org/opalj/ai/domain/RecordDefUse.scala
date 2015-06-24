@@ -41,7 +41,7 @@ import org.opalj.collection.mutable.ArrayMap
 import org.opalj.collection.mutable.{ Locals ⇒ Registers }
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.ComputationalTypeCategory
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DefaultMutableNode
 
