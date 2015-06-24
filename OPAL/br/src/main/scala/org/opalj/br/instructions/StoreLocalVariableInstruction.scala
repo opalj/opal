@@ -43,7 +43,7 @@ abstract class StoreLocalVariableInstruction extends Instruction {
 
     def computationalType: ComputationalType
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC: PC,

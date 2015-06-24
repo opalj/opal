@@ -34,22 +34,35 @@ package org.opalj.fp
  *
  * The parameters of the function are the observed element (dependee) and its
  * (then available/refined) property.
+ *
+ * ==Core Properties==
+ * A PropertyObserver never directly executes/continues the analysis but schedules it if
+ * necessary.
+ *
+ * @author Michael Eichberg
  */
-trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
+private[fp] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
     /**
      * The entity and property key for which the property of the observed element
      * is necessary.
-     *
-     * @return The return value should be [[None]] if the property of the dependee
-     *      is not strictly required by the depender. This is usually the case
-     *      for algorithms that may use some available information, but does not
-     *      strictly require it.
      */
-    def depender: Option[EPK]
+    def depender: EPK
 
+    /**
+     * If `true` the observer is immediately deregistered when it is called (for the
+     * first time).
+     */
+    def removeAfterNotification: Boolean
 }
 
-abstract class DefaultPropertyObserver(
-    final val depender: Option[EPK])
-        extends PropertyObserver
+private[fp] abstract class DefaultPropertyObserver(
+    final val depender: EPK,
+    final val removeAfterNotification: Boolean)
+        extends PropertyObserver {
+
+    override def toString: String = {
+        val id = System.identityHashCode(this).toHexString
+        s"PropertyObserver(depender=$depender,oneTimeOnly=$removeAfterNotification,id=$id)"
+    }
+}

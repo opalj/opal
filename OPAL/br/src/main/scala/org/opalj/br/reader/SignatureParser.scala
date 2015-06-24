@@ -33,13 +33,15 @@ package reader
 import scala.util.parsing.combinator._
 import java.io.InvalidClassException
 
-// TODO [Improvement] consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
+// IMPROVE consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
 /**
  * Parses Java class file signature strings.
  *
  * ==Thread-Safety==
  * Using this object is thread-safe.
+ *
+ * @author Michael Eichberg
  */
 object SignatureParser {
 
@@ -51,15 +53,13 @@ object SignatureParser {
      * However, the only class that can create instances of a `SignatureParsers` is
      * its companion object and that one implements the necessary abstractions for the
      * thread-safe use of `SignatureParsers`.
-     *
-     * @author Michael Eichberg
      */
     class SignatureParsers private[SignatureParser] () extends RegexParsers {
 
         def parseClassSignature(signature: String): ClassSignature = {
             val cs = parseAll(classSignatureParser, signature)
             if (cs.isEmpty)
-                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+                throw new IllegalArgumentException("invalid class signature: "+signature)
             else
                 cs.get
         }
@@ -67,7 +67,7 @@ object SignatureParser {
         def parseFieldTypeSignature(signature: String): FieldTypeSignature = {
             val fts = parseAll(fieldTypeSignatureParser, signature)
             if (fts.isEmpty)
-                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+                throw new IllegalArgumentException("invalid field type signature: "+signature)
             else
                 fts.get
         }
@@ -75,15 +75,13 @@ object SignatureParser {
         def parseMethodTypeSignature(signature: String): MethodTypeSignature = {
             val mts = parseAll(methodTypeSignatureParser, signature)
             if (mts.isEmpty)
-                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+                throw new IllegalArgumentException("invalid method type signature: "+signature)
             else
                 mts.get
         }
 
         //
-        // The methods to parse signatures. The methods which create the parsers
-        // start with an underscore to make them easily distinguishable from
-        // the data structure they parse/create.
+        // The methods to parse signatures.
         //
 
         protected val classSignatureParser: Parser[ClassSignature] =
@@ -149,7 +147,7 @@ object SignatureParser {
 
         protected def packageSpecifierParser: Parser[String] =
             (identifierParser ~ ('/' ~> opt(packageSpecifierParser))) ^^ {
-                case id ~ rest ⇒ id+"/"+rest.getOrElse("")
+                case id ~ rest ⇒ id + '/' + rest.getOrElse("")
             }
 
         protected def simpleClassTypeSignatureParser: Parser[SimpleClassTypeSignature] =
@@ -170,7 +168,7 @@ object SignatureParser {
             (opt(wildcardIndicatorParser) ~ fieldTypeSignatureParser) ^^ {
                 case wi ~ fts ⇒ ProperTypeArgument(wi, fts)
             } |
-                ('*' ^^ { _ ⇒ Wildcard })
+                ('*' ^^^ { Wildcard })
 
         protected def wildcardIndicatorParser: Parser[VarianceIndicator] =
             // Conceptually, we do the following:
@@ -222,7 +220,7 @@ object SignatureParser {
             }
 
         protected def returnTypeParser: Parser[ReturnTypeSignature] =
-            typeSignatureParser | 'V' ^^ (_ ⇒ VoidType)
+            typeSignatureParser | 'V' ^^^ { VoidType }
     }
 
     private def createSignatureParsers() = new SignatureParsers()

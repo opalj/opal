@@ -31,34 +31,37 @@ package av
 package checking
 
 import scala.collection.Set
-
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.Annotation
 
 /**
+ * Matches fields based on their name, type, annotations and class.
+ *
  * @author Marco Torsello
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-    classLevelMatcher: Option[ClassLevelMatcher],
-    annotation: Option[String], // needs to be reconsidered...
+    classLevelMatcher: ClassLevelMatcher,
+    annotationsPredicate: AnnotationsPredicate,
     fieldType: Option[FieldType],
-    fieldName: Option[NameMatcher])
+    fieldName: Option[NamePredicate])
         extends SourceElementsMatcher {
 
-    def doesClassFileMatch(classFile: ClassFile): Boolean = {
-        classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
+    def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
+        classLevelMatcher.doesMatch(classFile)
     }
 
     def doesFieldMatch(field: Field): Boolean = {
         (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get.doesMatch(field.name)))
+            (fieldName.isEmpty || fieldName.get(field.name))) &&
+            annotationsPredicate(field.annotations)
     }
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) ⇒ {
                 classFile.fields collect {
@@ -71,19 +74,28 @@ case class FieldMatcher(
 
 }
 
+/**
+ * Defines several additional factory methods to facilitate the creation of
+ * [[FieldMatcher]]s.
+ *
+ * @author Marco Torsello
+ */
 object FieldMatcher {
 
     def apply(
-        className: Option[ClassLevelMatcher] = None,
-        annotation: Option[String] = None,
+        classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
+        annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
         fieldType: Option[String] = None, // java.lang.Object
-        fieldName: String,
+        fieldName: Option[String] = None,
         matchPrefix: Boolean = false): FieldMatcher = {
-        this(
-            className,
-            annotation,
-            fieldType.map(ftn ⇒ FieldType(ftn.replace('.', '/'))),
-            Some(SimpleNameMatcher(fieldName, matchPrefix)))
+
+        val nameMatcher: Option[SimpleNamePredicate] = fieldName match {
+            case Some(f) ⇒ Some(SimpleNamePredicate(f, matchPrefix))
+            case _       ⇒ None
+        }
+
+        new FieldMatcher(classLevelMatcher, annotationsPredicate, fieldType.map(ftn ⇒
+            FieldType(ftn.replace('.', '/'))), nameMatcher)
     }
 
 }

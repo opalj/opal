@@ -44,9 +44,8 @@ import org.opalj.br.analyses.SomeProject
  */
 trait ClassLevelMatcher extends SourceElementsMatcher {
 
-    def doesMatch(classFile: ClassFile): Boolean
+    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] =
-        matchCompleteClasses(project.allClassFiles filter { doesMatch(_) })
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
 
 }

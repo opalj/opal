@@ -28,7 +28,19 @@
  */
 package org.opalj.fp
 
-private[fp] final class EPK(val e: Entity, val pk: PropertyKey) {
+/**
+ * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
+ *
+ * Compared to a standard `Tuple2` the implementation of equals differ. Here,
+ * the entities are compared using reference comparison and not equality.
+ *
+ * @author Michael Eichberg
+ */
+final class EPK(val e: Entity, val pk: PropertyKey) extends Product2[Entity, PropertyKey] {
+
+    def _1 = e
+    def _2 = pk
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
@@ -36,12 +48,26 @@ private[fp] final class EPK(val e: Entity, val pk: PropertyKey) {
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 511 + pk.id
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
+
+    override val hashCode: Int = e.hashCode() * 511 + pk.id
 
     override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
 }
 
+/**
+ * Factory and extractor for [[EPK]] objects.
+ *
+ * @author Michael Eichberg
+ */
 object EPK {
 
     def apply(e: Entity, pk: PropertyKey): EPK = new EPK(e, pk)
+
+    def unapply(that: EPK): Option[(Entity, PropertyKey)] = {
+        that match {
+            case null ⇒ None
+            case epk  ⇒ Some((epk.e, epk.pk))
+        }
+    }
 }

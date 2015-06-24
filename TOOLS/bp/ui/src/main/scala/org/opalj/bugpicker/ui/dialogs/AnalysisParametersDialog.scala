@@ -33,7 +33,6 @@ package dialogs
 
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
 import scalafx.Includes.jfxNode2sfx
@@ -50,6 +49,7 @@ import scalafx.scene.layout.GridPane
 import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.stage.Stage
+import org.opalj.util.Milliseconds
 
 /**
  * @author Arne Lottmann
@@ -111,7 +111,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxEvalTimeField.text = DefaultMaxEvalTime.toString
+                        maxEvalTimeField.text = DefaultMaxEvalTime.timeSpan.toString
                     }
                 }, 2, 1)
 
@@ -189,14 +189,14 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 }
                             }
                             val maxEvalTime = try {
-                                maxEvalTimeField.text().toInt
+                                new Milliseconds(maxEvalTimeField.text().toLong)
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
                                         "You entered an illegal value for the maximum evaluation time!",
                                         theStage)
                                     interrupt = true
-                                    Int.MinValue
+                                    Milliseconds.None
                                 }
                             }
                             val maxCardinalityOfIntegerRanges = try {

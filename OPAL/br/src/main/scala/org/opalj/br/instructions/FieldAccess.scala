@@ -67,7 +67,7 @@ abstract class FieldAccess extends Instruction with ConstantLengthInstruction {
  */
 object FieldAccess {
 
-    val runtimeExceptions = List(ObjectType.NullPointerException)
+    val jvmExceptions = List(ObjectType.NullPointerException)
 
     def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
         Some((fa.declaringClass, fa.name, fa.fieldType))

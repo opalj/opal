@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,22 +26,56 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-package checking
+package org.opalj.fp
 
-import scala.util.matching.Regex
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * Matches name of class, fields and methods based on their name. The name is matched
- * against the binary notation.
+ * An object that identifies a specific kind of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ *
+ * To create a property key use the companion object's [[PropertyKey$.create]] method.
  *
  * @author Michael Eichberg
  */
-case class RegexNameMatcher(matcher: Regex) extends NameMatcher {
+class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
 
-    def doesMatch(otherName: String): Boolean = {
-        matcher.findFirstIn(otherName).isDefined
-    }
+    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+}
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey {
+
+    private[this] val lock = new ReentrantReadWriteLock
+
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] var lastKeyId: Int = -1
+
+    def create(name: String, defaultProperty: Property): PropertyKey =
+        withWriteLock(lock) {
+            lastKeyId += 1
+            propertyKeyNames += name
+            defaultProperties += defaultProperty
+            new PropertyKey(lastKeyId)
+        }
+
+    def name(id: Int): String =
+        withReadLock(lock) {
+            propertyKeyNames(id)
+        }
+
+    def defaultProperty(id: Int): Property =
+        withReadLock(lock) {
+            defaultProperties(id)
+        }
+
 }
 
