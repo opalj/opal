@@ -101,7 +101,7 @@ class DefaultDomainWithCFG[Source](
  * which also records the abstract-interpretation time control flow graph and def/use
  * information.
  */
-class DefaultDomainWithCFGAndDU[Source](
+class DefaultDomainWithCFGAndDefUse[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)
@@ -113,7 +113,7 @@ class DefaultDomainWithCFGAndDU[Source](
  * Configuration of a domain that uses the most capable `l1` domains and
  * which also records the definition use information.
  */
-class DefaultDomainWithDU[Source](
+class DefaultDomainWithDefUse[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)
