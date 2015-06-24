@@ -37,7 +37,7 @@ import org.opalj.br.{ Method, Code }
  *
  * ==Usage==
  * A domain that implements this trait usually defines a parameter that is set
- * at construction domain.
+ * at construction time.
  *
  * E.g.,
  * {{{

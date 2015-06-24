@@ -234,17 +234,17 @@ object XHTML {
         )
     }
 
-    private def styles: String =
+    def styles: String =
         process(this.getClass.getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    private def jquery: String =
+    def jquery: String =
         process(this.getClass.getResourceAsStream("jquery.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    private def colResizable: String =
+    def colResizable: String =
         process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )

@@ -45,7 +45,8 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal {
     /**
      * Converts the specified number of nanoseconds into seconds.
      */
-    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    final def toSeconds: Seconds =
+        new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
 
     override def toString: String = timeSpan+" ns"
 }
@@ -57,6 +58,8 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal {
 object Nanoseconds {
 
     final val None: Nanoseconds = new Nanoseconds(0l)
+
+    def apply(timeSpan: Long): Nanoseconds = new Nanoseconds(timeSpan)
 
     /**
      * Converts the specified time span and converts it into seconds.

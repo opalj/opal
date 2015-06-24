@@ -123,7 +123,7 @@ package object util {
 
     /**
      * Inserts the given `pc` before `prefixEnd` in the list unless `pc` is already
-     * contained in the. If the list does not contain
+     * contained in the list. If the list does not contain
      * `prefixEnd`, `pc` is appended to the list. If the list already contains `pc`
      * the original list is returned!
      */

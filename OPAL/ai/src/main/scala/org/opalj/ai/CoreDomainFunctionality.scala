@@ -103,7 +103,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
      * process of performing an abstract interpretation of a method. Hence,
      * a computation should – whenever possible – return (one of) the original object(s) if
      * that value has the same abstract state as the result. Furthermore, if all original
-     * values captures the same abstract state as result of the computation, the "left"
+     * values capture the same abstract state as the result of the computation, the "left"
      * value/the value that was already used in the past should be returned.
      *
      * @return The joined operand stack and registers.

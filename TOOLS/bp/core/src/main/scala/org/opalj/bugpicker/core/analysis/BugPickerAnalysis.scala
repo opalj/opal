@@ -100,9 +100,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
      *
      * @param parameters A list of (optional) parameters. The parameters that are
      *      matched are defined by:
-     *      [[MaxEvalFactorPattern]], [[MaxEvalTimePattern]],
-     *      [[MaxCardinalityOfIntegerRangesPattern]], [[MaxCardinalityOfLonsSetsPattern]],
-     *      [[MaxCallChainLengthPattern]], and "`-debug`".
+     *      [[BugPickerAnalysis$.MaxEvalFactorPattern]],
+     *      [[BugPickerAnalysis$.MaxEvalTimePattern]],
+     *      [[BugPickerAnalysis$.MaxCardinalityOfIntegerRangesPattern]],
+     *      [[BugPickerAnalysis$.MaxCardinalityOfLongSetsPattern]],
+     *      [[BugPickerAnalysis$.MaxCallChainLengthPattern]], and "`-debug`".
      *
      */
     override def analyze(
