@@ -145,6 +145,29 @@ class LocalsTest
         }
     }
 
+    it should ("return \"this\" locals if the merge results in values of \"this\" local") in {
+        for {
+            size ← 1 to 25
+        } {
+            var v1 = Locals[Integer](size)
+            var v2 = Locals[Integer](size)
+            var v3 = Locals[Integer](size)
+            for {
+                i ← 0 until size
+            } {
+                v1 = v1.updated(i, i)
+                v2 = v2.updated(i, i)
+                v3 = v3.updated(i, i + 1)
+            }
+            v1.merge(v2, (a, b) ⇒ a) should be theSameInstanceAs v1
+
+            v1.merge(v3, (a, b) ⇒ b) should be theSameInstanceAs v3
+            v1.merge(v3, (a, b) ⇒ a) should be theSameInstanceAs v1
+            v3.merge(v1, (a, b) ⇒ b) should be theSameInstanceAs v1
+            v3.merge(v1, (a, b) ⇒ a) should be theSameInstanceAs v3
+        }
+    }
+
     it should ("be able to set a locals' value") in {
         for {
             size ← 1 to 25
@@ -197,6 +220,21 @@ class LocalsTest
 
             for { i ← 0 until size } {
                 newV(i) should be(i + 100)
+            }
+        }
+    }
+
+    it should ("be able to map the locals using the index") in {
+        for {
+            size ← 1 to 25
+        } {
+            val v = Locals[Integer](size)
+            for { i ← 0 until size } { v.set(i, i) }
+
+            val newV = v.mapKV[Integer] { (i, v) ⇒ assert(i == v); i }
+
+            for { i ← 0 until size } {
+                newV(i) should be(i)
             }
         }
     }
