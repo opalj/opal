@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,30 +22,38 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-package checking
+package entity.impl
 
-import scala.collection.Set
-
-import org.opalj.br.ClassFile
-import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.SomeProject
+import entity.AbstractEntity
+import entity.annotation.Entity
+import entity.annotation.Table
+import entity.annotation.Column
+import entity.annotation.Transient
+import entity.annotation.Id
 
 /**
- * A class level matcher matches classes and all methods and fields defined by the
- * respective classes.
- *
- * @author Michael Eichberg
+ * @author Marco Torsello
  */
-trait ClassLevelMatcher extends SourceElementsMatcher {
+@Entity
+@Table(name = "Address")
+@SerialVersionUID(100L)
+class Address extends AbstractEntity {
 
-    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
+  @Id
+  @Column(name = "id", nullable = false)
+  var id: Int = _
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
+  @Column(name = "street", nullable = false)
+  var street: String = ""
+
+  @Column(name = "city", nullable = false)
+  var city: String = ""
+  
+  @Column(name = "user_id", nullable = true)
+  var userId: Integer = null
 
 }

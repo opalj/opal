@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,56 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
-
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.concurrent.Locking.withReadLock
-import org.opalj.concurrent.Locking.withWriteLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
+package org.opalj
+package av
+package checking
 
 /**
- * An object that identifies a specific kind of properties. An element in
- * the [[PropertyStore]] must be associated with at most one property per kind/key.
- *
- * To create a property key use the companion object's [[PropertyKey$.create]] method.
- *
  * @author Michael Eichberg
  */
-class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
+case class SimpleNamePredicate(
+    name: String,
+    matchPrefix: Boolean)
+        extends NamePredicate {
 
-    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+    def apply(otherName: String): Boolean = {
+        val binaryName = name.replace('.', '/')
+        otherName.startsWith(binaryName) && (
+            matchPrefix || binaryName.length == otherName.length)
+    }
 }
 
-/**
- * Factory to create [[PropertyKey]] objects.
- *
- * @author Michael Eichberg
- */
-object PropertyKey {
+object SimpleNamePredicate {
 
-    private[this] val lock = new ReentrantReadWriteLock
-
-    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val defaultProperties = ArrayBuffer.empty[Property]
-    private[this] var lastKeyId: Int = -1
-
-    def create(name: String, defaultProperty: Property): PropertyKey =
-        withWriteLock(lock) {
-            lastKeyId += 1
-            propertyKeyNames += name
-            defaultProperties += defaultProperty
-            new PropertyKey(lastKeyId)
-        }
-
-    def name(id: Int): String =
-        withReadLock(lock) {
-            propertyKeyNames(id)
-        }
-
-    def defaultProperty(id: Int): Property =
-        withReadLock(lock) {
-            defaultProperties(id)
-        }
+    def apply(
+        name: String): SimpleNamePredicate = {
+        this(name, false)
+    }
 
 }
 

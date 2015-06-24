@@ -1,6 +1,6 @@
 name := "Bytecode Representation"
 
-version := "0.8.0-SNAPSHOT"
+version := "0.8.1-SNAPSHOT"
 
 // We don't want the build to be aborted by inter-project links that are reported by
 // scaladoc as errors if we publish the projects; hence, we do not use the 

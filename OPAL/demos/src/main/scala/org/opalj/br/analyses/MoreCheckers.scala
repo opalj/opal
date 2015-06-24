@@ -300,15 +300,14 @@ object MoreCheckers {
         //            ) yield (serializableClass, superclass)
         //        }
         val classesWithoutDefaultConstructor = time {
-            for (
-                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"), false);
-                superclass ← classHierarchy.allSupertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-                    {
-                        val superClassFile = getClassFile(superclass)
-                        !superClassFile.isInterfaceDeclaration &&
-                            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-                    }
-            ) yield superclass // there can be at most one method
+            for {
+                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"), false)
+                superclass ← classHierarchy.allSupertypes(serializableClasses)
+                if getClassFile.isDefinedAt(superclass) // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+                superClassFile = getClassFile(superclass)
+                if !superClassFile.isInterfaceDeclaration
+                if !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+            } yield superclass // there can be at most one method
         }(t ⇒ collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
 
@@ -318,10 +317,10 @@ object MoreCheckers {
             for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
                 val declaringClass = classFile.thisType
                 var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-                for (
-                    method ← classFile.methods if method.body.isDefined;
+                for {
+                    method ← classFile.methods if method.body.isDefined
                     instruction ← method.body.get.instructions
-                ) {
+                } {
                     instruction match {
                         case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
                         case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
@@ -365,11 +364,11 @@ object MoreCheckers {
         // Dubious catching of IllegalMonitorStateException.
         val IllegalMonitorStateExceptionType = ObjectType.IllegalMonitorStateException
         val catchesIllegalMonitorStateException = time {
-            for (
-                classFile ← classFiles if classFile.isClassDeclaration;
-                method ← classFile.methods if method.body.isDefined;
-                exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
-            ) yield (classFile, method)
+            for {
+                classFile ← classFiles if classFile.isClassDeclaration
+                method @ MethodWithBody(body) ← classFile.methods
+                exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
+            } yield (classFile, method)
         }(t ⇒ collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +catchesIllegalMonitorStateException.size)
     }

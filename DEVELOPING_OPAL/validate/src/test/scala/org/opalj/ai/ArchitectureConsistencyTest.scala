@@ -102,26 +102,26 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
                 ensemble('Common) { "org.opalj.ai.common.*" }
 
-                'Util is_only_allowed_to_use empty
+                'Util is_only_allowed_to (USE, empty)
 
-                'AI is_only_allowed_to_use ('Util)
+                'AI is_only_allowed_to (USE, 'Util)
 
-                'Domain is_only_allowed_to_use ('Util, 'AI)
+                'Domain is_only_allowed_to (USE, 'Util, 'AI)
 
-                'DomainL0 is_only_allowed_to_use ('Util, 'AI, 'Domain)
-                'DomainL1 is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0)
-                'DomainL2 is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1)
-                'DomainLI is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
+                'DomainL0 is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
+                'DomainL1 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0)
+                'DomainL2 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1)
+                'DomainLI is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
 
-                'DomainTracing is_only_allowed_to_use ('Util, 'AI, 'Domain)
+                'DomainTracing is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
 
-                'Project is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI)
+                'Project is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI)
 
                 // we have a cyclic dependency between code in ..ai.domain.la and
                 // ai.analyses.** which is "intended" since we do fix-point
                 // computations
-                'DomainLA is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'Analyses)
-                'Analyses is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'DomainLA, 'Project)
+                'DomainLA is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'Analyses)
+                'Analyses is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'DomainLA, 'Project)
 
                 // 'Common is allowed to use everything
             }

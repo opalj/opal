@@ -65,7 +65,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                         classes("""org\.opalj\.bi\.reader\..+Test.*""".r)
                 }
 
-                'Bi is_only_allowed_to_use empty
+                'Bi is_only_allowed_to (USE, empty)
 
                 // 'Reader is allowed to use everything
 
