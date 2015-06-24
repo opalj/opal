@@ -50,7 +50,7 @@ case class PUTFIELD(
 
     final def mnemonic: String = "putfield"
 
-    final def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 

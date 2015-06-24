@@ -76,21 +76,24 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         // ALTERNATIVE APPROACH
         // (This approach is if the filtering and sorting functions are complex as
         // both operations are carried out in the calling thread's context.)
-        println("Starting Purity Analysis")
-        val pat = new Thread(new Runnable { def run = PurityAnalysis.analyze(project) });
-        pat.start
-        println("Starting Mutability Analysis")
-        MutablityAnalysis.analyze(project)
-        // Let's make sure that everything is scheduled.
-        pat.join
+        var analysisTime = org.opalj.util.Seconds.None
+        org.opalj.util.PerformanceEvaluation.time {
+            println("Starting Purity Analysis")
+            val pat = new Thread(new Runnable { def run = PurityAnalysis.analyze(project) });
+            pat.start
+            println("Starting Mutability Analysis")
+            MutablityAnalysis.analyze(project)
+            // Let's make sure that everything is scheduled.
+            pat.join
 
-        println("Waiting on analyses to finish")
-        // We have scheduled all analyses that we are going to execute.
-        // DETAILS
-        // projectStore.useDefaultForUnsatisfiableLinearDependencies = true
-        // projectStore.waitOnPropertyComputationCompletion()
-        // ABBREVIATED
-        projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            println("Waiting on analyses to finish")
+            // We have scheduled all analyses that we are going to execute.
+            // DETAILS
+            // projectStore.useDefaultForUnsatisfiableLinearDependencies = true
+            // projectStore.waitOnPropertyComputationCompletion()
+            // ABBREVIATED
+            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+        } { t ⇒ analysisTime = t.toSeconds }
 
         val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.Key)
         val effectivelyFinalFields: Traversable[(Field, Property)] =
@@ -120,7 +123,10 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 "\n",
                 s"\nTotal: ${pureMethods.size}\n"
             )
-        BasicReport(fieldInfo + methodInfo + projectStore)
+        BasicReport(
+            fieldInfo + methodInfo +
+                projectStore+
+                "\nAnalysis time: "+analysisTime)
     }
 }
 

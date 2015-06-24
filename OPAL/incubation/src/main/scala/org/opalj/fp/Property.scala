@@ -42,7 +42,7 @@ trait Property {
      * of the same kind have to use the same key.
      *
      * In general each `Property` kind is expected to have a companion object that
-     * stores the unique [[PropertyKey]].
+     * stores the unique `PropertyKey`.
      */
     def key: PropertyKey
 

@@ -61,7 +61,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     behavior of "the Architecture Validation Framework when checking architectural dependencies"
 
     /*
-     * outgoing is_only_allowed_to_use constraint validations
+     * outgoing is_only_allowed_to constraint validations
      */
     it should "correctly validate a valid specification using is_only_allowed_to_use constraints" in {
         val specification = new Specification(project) {
@@ -71,7 +71,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             ensemble('Mathematics) { "mathematics.Mathematics*" }
             ensemble('Example) { "mathematics.Example*" }
 
-            'Example is_only_allowed_to_use 'Mathematics
+            'Example is_only_allowed_to (USE, 'Mathematics)
         }
 
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
@@ -88,7 +88,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             ensemble('Mathematics) { "mathematics.Mathematics*" }
             ensemble('Example) { "mathematics.Example*" }
 
-            'Mathematics is_only_allowed_to_use 'Rational
+            'Mathematics is_only_allowed_to (USE, 'Rational)
         }
         specification.analyze() should not be (empty) // <= primary test
 
@@ -96,7 +96,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     }
 
     /*
-     * outgoing is_not_allowed_to_use constraint validation
+     * outgoing is_not_allowed_to constraint validation
      */
     it should ("validate the is_not_allowed_to_use constraint with no violations") in {
         val specification = new Specification(project) {
@@ -106,7 +106,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             ensemble('Mathematics) { "mathematics.Mathematics*" }
             ensemble('Example) { "mathematics.Example*" }
 
-            'Example is_not_allowed_to_use 'Rational
+            'Example is_not_allowed_to (USE, 'Rational)
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -122,7 +122,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             ensemble('Mathematics) { "mathematics.Mathematics*" }
             ensemble('Example) { "mathematics.Example*" }
 
-            'Mathematics is_not_allowed_to_use 'Number
+            'Mathematics is_not_allowed_to (USE, 'Number)
         }
         specification.analyze() should not be (empty)
 

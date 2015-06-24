@@ -38,6 +38,8 @@ import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
 import scala.xml.dtd.IntDef
+import scala.xml.dtd.EntityDef
+import scala.xml.dtd.ParsedEntityDecl
 import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
@@ -124,6 +126,7 @@ class BugPicker extends Application {
     var recentProjects: Seq[LoadedFiles] = BugPicker.loadRecentProjectsFromPreferences().getOrElse(Seq.empty)
     var recentAnalyses: Seq[StoredAnalysis] = BugPicker.loadRecentlyUsedAnalyses
     var currentAnalysis: Iterable[Node] = null
+    var currentAnalysisParameters: AnalysisParameters = null
 
     override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
@@ -258,8 +261,10 @@ class BugPicker extends Application {
 
         val bugpickerLogMessages = ObservableBuffer[BugPickerLogMessage]()
         val projectLogMessages = ObservableBuffer[BugPickerLogMessage]()
-        val bugpickerLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(bugpickerLogMessages)
-        val projectLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(projectLogMessages)
+        val bugpickerLogView: TableView[BugPickerLogMessage] =
+            createLogMessagesTableView(bugpickerLogMessages)
+        val projectLogView: TableView[BugPickerLogMessage] =
+            createLogMessagesTableView(projectLogMessages)
         val bugpickerLogSortOrder = ObservableBuffer(bugpickerLogView.sortOrder)
         val projectLogSortOrder = ObservableBuffer(projectLogView.sortOrder)
 
@@ -325,10 +330,11 @@ class BugPicker extends Application {
             onAction = { e: ActionEvent ⇒
                 Platform.runLater {
                     val name = recentProjects.head.projectName
+                    val bpFileSuffix = "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
                     val fsd = new FileChooser {
                         title = "Save Analysis"
                         extensionFilters ++= Seq(
-                            new FileChooser.ExtensionFilter("Bugpicker Analysis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                            new FileChooser.ExtensionFilter("Bugpicker Analysis", bpFileSuffix),
                             new FileChooser.ExtensionFilter("All Files", "*.*"))
                         initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
                         initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
@@ -336,11 +342,18 @@ class BugPicker extends Application {
                     val file = fsd.showSaveDialog(stage)
                     if (file != null) {
                         BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
-                        recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
+                        recentAnalyses =
+                            BugPicker.storeAnalysis(
+                                name,
+                                currentAnalysis,
+                                currentAnalysisParameters,
+                                file)(
+                                    recentAnalyses)
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
                     }
                 }
+
             }
         }
 
@@ -366,7 +379,12 @@ class BugPicker extends Application {
                     BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
                     val oldAnalysis = StoredAnalysis.readFromFile(file)
                     if (oldAnalysis.isDefined) {
-                        val dv = new DiffView(currentAnalysis, oldAnalysis.get)
+                        val dv =
+                            new DiffView(
+                                recentProjects.head.projectName,
+                                currentAnalysis,
+                                currentAnalysisParameters.toStringParameters,
+                                oldAnalysis.get)
                         recentAnalyses = BugPicker.updateRecentlyUsedAnalyses(oldAnalysis.get, recentAnalyses)
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
@@ -462,6 +480,7 @@ class BugPicker extends Application {
                                         val issues = ObjectProperty(Iterable.empty[Issue])
                                         issues.onChange((o, p, q) ⇒ {
                                             currentAnalysis = issues().map(_.asXHTML(false))
+                                            currentAnalysisParameters = parameters
                                             if (currentAnalysis != null) {
                                                 storeCurrentAnalysis.disable = false
                                                 loadAnalysisToDiff.disable = false
@@ -469,8 +488,10 @@ class BugPicker extends Application {
                                                     recentAnalysisToDiffMenu.disable = false
                                             }
                                         })
-                                        AnalysisRunner.runAnalysis(stage, project, sources, parameters,
+                                        AnalysisRunner.runAnalysis(
+                                            stage, project, sources, parameters,
                                             issues, sourceView, byteView, reportView, tabPane)
+
                                         if (!tabPane.selectionModel().isSelected(1)) {
                                             tabPane.selectionModel().select(1)
                                         }
@@ -487,7 +508,8 @@ class BugPicker extends Application {
                                         val dialog = new AnalysisParametersDialog(stage)
                                         val newParameters = dialog.show(parameters)
                                         if (newParameters.isDefined) {
-                                            BugPicker.storeParametersToPreferences(newParameters.get)
+                                            BugPicker.storeParametersToPreferences(
+                                                newParameters.get)
                                         }
                                     }
                                 }
@@ -523,11 +545,16 @@ class BugPicker extends Application {
                     new MenuItem {
                         text = p.analysisName+" - "+p.analysisDate
                         mnemonicParsing = true
-                        if (p == currentAnalysis)
-                            disable = true
+                        disable = p == currentAnalysis
                         onAction = { e: ActionEvent ⇒
-                            val dv = new DiffView(currentAnalysis, p)
-                            dv.show(stage)
+                            Platform.runLater {
+                                new DiffView(
+                                    recentProjects.head.projectName,
+                                    currentAnalysis,
+                                    currentAnalysisParameters.toStringParameters,
+                                    p
+                                ).show(stage)
+                            }
                         }
                     }
                 }) ++ Seq(
@@ -659,7 +686,9 @@ class BugPicker extends Application {
         }
 
         stage.onCloseRequest = { e: WindowEvent ⇒
-            BugPicker.storeWindowSizeInPreferences(stage.width(), stage.height(), stage.x(), stage.y())
+            BugPicker.storeWindowSizeInPreferences(
+                stage.width(), stage.height(),
+                stage.x(), stage.y())
         }
 
         stage.show()
@@ -668,10 +697,12 @@ class BugPicker extends Application {
         val projectLogViewScrollBar: Option[ScrollBar] = extractScrollBar(projectLogView)
 
         bugpickerLogMessages.onChange {
-            logMessagesOnChangeBehaviour(bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar)
+            logMessagesOnChangeBehaviour(
+                bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar)
         }
         projectLogMessages.onChange {
-            logMessagesOnChangeBehaviour(projectLogSortOrder, projectLogView, projectLogViewScrollBar)
+            logMessagesOnChangeBehaviour(
+                projectLogSortOrder, projectLogView, projectLogViewScrollBar)
         }
     }
 }
@@ -794,7 +825,11 @@ object BugPicker {
         val classes = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_CLASSES)
         val libs = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_LIBS)
         val sources = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_SOURCES)
-        Some(LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs))
+        Some(LoadedFiles(
+            projectName = name,
+            projectFiles = classes,
+            projectSources = sources,
+            libraries = libs))
     }
 
     def storeRecentProjectsToPreferences(recentProjects: Seq[LoadedFiles]): Unit = {
@@ -806,10 +841,21 @@ object BugPicker {
         for (loadedFiles ← recentProjects) {
             i = i + 1
             val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
-            PREFERENCES_RECENT_PROJECT.put(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", loadedFiles.projectName)
-            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", loadedFiles.projectFiles, PREFERENCES_RECENT_PROJECT)
-            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", loadedFiles.projectSources, PREFERENCES_RECENT_PROJECT)
-            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", loadedFiles.libraries, PREFERENCES_RECENT_PROJECT)
+            PREFERENCES_RECENT_PROJECT.put(
+                s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i",
+                loadedFiles.projectName)
+            filesToPref(
+                s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i",
+                loadedFiles.projectFiles,
+                PREFERENCES_RECENT_PROJECT)
+            filesToPref(
+                s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i",
+                loadedFiles.projectSources,
+                PREFERENCES_RECENT_PROJECT)
+            filesToPref(
+                s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i",
+                loadedFiles.libraries,
+                PREFERENCES_RECENT_PROJECT)
         }
     }
 
@@ -840,8 +886,14 @@ object BugPicker {
         Some(result)
     }
 
-    def storeAnalysis(name: String, issues: Iterable[Node], file: File)(recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
-        class PE(name: String, entdef: scala.xml.dtd.EntityDef) extends scala.xml.dtd.ParsedEntityDecl(name, entdef) {
+    def storeAnalysis(
+        name: String,
+        issues: Iterable[Node],
+        parameters: AnalysisParameters,
+        file: File)(
+            recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
+
+        class PE(name: String, entdef: EntityDef) extends ParsedEntityDecl(name, entdef) {
             override def toString: String = {
                 val sb = new StringBuilder()
                 return this.buildString(sb).toString
@@ -852,9 +904,14 @@ object BugPicker {
 
         // 2. create XML-output and save it to file
         val data =
-            <issues name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
-                { issues }
-            </issues>
+            <analysis name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
+                <parameters>
+                    { parameters.toStringParameters.map { x ⇒ <parameter>{ x }</parameter> } }
+                </parameters>
+                <issues>
+                    { issues }
+                </issues>
+            </analysis>
         scala.xml.XML.save(file.getAbsolutePath, data, "UTF-8", true, DocType("issues", NoExternalID, Seq(new PE("nbsp", IntDef("&#160;")))))
 
         // 3. update recently used analyses in Prefs

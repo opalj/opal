@@ -27,8 +27,8 @@ object BugPickerBuild extends Build {
 			EclipseKeys.withSource := true
 		) ++
 		Seq(libraryDependencies ++= Seq(
-			"de.opal-project" %% "abstract-interpretation-framework" % "0.0.1-SNAPSHOT",
-			"de.opal-project" %% "bytecode-disassembler" % "0.1.0-SNAPSHOT"
+			"de.opal-project" %% "abstract-interpretation-framework" % "0.0.2-SNAPSHOT",
+			"de.opal-project" %% "bytecode-disassembler" % "0.1.1-SNAPSHOT"
 		)) ++
 		Seq(resolvers ++= Seq(
 			"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"

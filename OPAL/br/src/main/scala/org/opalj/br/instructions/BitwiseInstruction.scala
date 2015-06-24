@@ -41,7 +41,7 @@ abstract class BitwiseInstruction
         extends StackBasedArithmeticInstruction
         with BinaryArithmeticInstruction {
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC: PC,

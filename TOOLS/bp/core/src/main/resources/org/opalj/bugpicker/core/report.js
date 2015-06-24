@@ -182,42 +182,22 @@ var IssueFilter = function () {
                 log("[IssueFilter] Update cancelled. Already updating!", debug_WARNING);
                 return;
             }
-            var shouldCancel = false;
-            setTimeout(function () {
-                shouldCancel = true;
-            }, 15000);
-            var cancel = function () {
-                updating = false;
-                log("[IssueFilter] Update cancelled. Took too long", debug_ERROR);
-            };
             updating = true;
             log("[IssueFilter] Update started.");
             var startTime = performance.now();
             var issue_counter_all = 0;
             log("[IssueFilter] Number of filter functions: " + filterFuns.length);
             packagesWithIssues.forEach(function (packageIssue, pIndex) {
-                if (shouldCancel) {
-                    cancel();
-                    return;
-                }
                 var thePackage = packageIssue[0];
                 var issues = packageIssue[1];
                 var issue_counter_package = 0;
                 issues.forEach(function (issue, index) {
-                    if (shouldCancel) {
-                        cancel();
-                        return;
-                    }
                     log("[IssueFilter] Processing issue " + (index + 1) + "/" +
                         issues.length + " in package " + (pIndex + 1) + "/" +
                         packagesWithIssues.length, debug_TRACE);
                     var display = true;
                     var i = 0;
                     while (display && i < filterFuns.length) {
-                        if (shouldCancel) {
-                            cancel();
-                            return;
-                        }
                         log("[IssueFilter] Starting filter #" + i, debug_TRACE);
                         display = filterFuns[i](issue);
                         if (typeof display !== "boolean") {
@@ -235,10 +215,6 @@ var IssueFilter = function () {
                         issue.classList.remove("issue_visible");
                     }
                 });
-                if (shouldCancel) {
-                    cancel();
-                    return;
-                }
                 if (issue_counter_package > 0) {
                     thePackage.style.display = "block";
                 } else {
@@ -258,10 +234,6 @@ var IssueFilter = function () {
             });
             issuesDisplayNode.innerHTML = " [Relevance &ge; " + inputRelevance.value + "] " +
                 issue_counter_all;
-            if (shouldCancel) {
-                cancel();
-                return;
-            }
             var endTime = performance.now();
             log("[IssueFilter] Update ended. Took " + (endTime - startTime) + " milliseconds.");
             log("[IssueFilter] Applied " + filterFuns.length + " Filter");

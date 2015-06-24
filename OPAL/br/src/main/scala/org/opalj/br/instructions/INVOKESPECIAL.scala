@@ -46,8 +46,7 @@ case class INVOKESPECIAL(
 
     final def mnemonic: String = "invokespecial"
 
-    final def runtimeExceptions: List[ObjectType] =
-        MethodInvocationInstruction.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
 
     final def length: Int = 3
 

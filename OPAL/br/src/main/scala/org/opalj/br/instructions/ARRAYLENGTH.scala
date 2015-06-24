@@ -43,7 +43,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final val mnemonic = "arraylength"
 
-    final val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
+    final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
     final val length = 1
 
