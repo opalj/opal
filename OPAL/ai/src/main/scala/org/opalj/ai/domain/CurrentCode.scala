@@ -31,20 +31,34 @@ package ai
 package domain
 
 import org.opalj.br.Code
+import scala.collection.BitSet
 
 /**
  * Provides information about the code block that is currently analyzed.
  *
  * ==Core Properties==
- *  - Defines the public interface.
+ *  - "Automatically reset" when the domain is used to analyze another method.
+ *  - "Concurrent Usage": "No"
  *
  * @author Michael Eichberg
  */
-trait TheCode {
+trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDomain ⇒
+
+    private[this] var theCode: Code = _
 
     /**
      * Returns the code block that is currently analyzed.
      */
-    def code: Code
+    final def code: Code = theCode
+
+    abstract override def initProperties(
+        code: Code,
+        joinInstructions: BitSet,
+        initialLocals: Locals): Unit = {
+
+        this.theCode = code
+
+        super.initProperties(code, joinInstructions, initialLocals)
+    }
 
 }
