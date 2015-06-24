@@ -87,24 +87,25 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     abstract override def initProperties(
         code: Code,
         joinInstructions: BitSet,
-        locals: Locals) = {
+        locals: Locals): Unit = {
 
-        super.initProperties(code, joinInstructions, locals)
         instructions = code.instructions
         val codeSize = instructions.size
+
         defOps = new Array(codeSize)
         defOps(0) = Nil
-        defLocals = new Array(codeSize)
 
         // initialize initial def-use information based on the parameters
+        defLocals = new Array(codeSize)
         var parametersOffset = 0
         var parameterIndex = -1
         defLocals(0) =
             locals.map { v ⇒
                 if (v ne null) {
                     parametersOffset += 1
-                    Set(parameterIndex)
+                    val localVar = Set(parameterIndex)
                     parameterIndex -= 1
+                    localVar
                 } else {
                     null
                 }
@@ -112,6 +113,8 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         this.parametersOffset = parametersOffset
 
         used = new Array(codeSize + parametersOffset)
+
+        super.initProperties(code, joinInstructions, locals)
     }
 
     abstract override def properties(
