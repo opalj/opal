@@ -105,15 +105,15 @@ object ToJavaLike {
                 code append ";" toString ()
         }
     }
-    
+
     @inline final def toJavaLikeCmpTp(cTp: ComputationalType): String = {
         cTp match {
-          case ComputationalTypeInt ⇒ "int"
-          case ComputationalTypeLong ⇒ "long"
-          case ComputationalTypeFloat ⇒ "float"
-          case ComputationalTypeDouble ⇒ "double"
-          case ComputationalTypeReference ⇒ cTp.toString()
-          case ComputationalTypeReturnAddress ⇒ cTp.toString()
+            case ComputationalTypeInt           ⇒ "int"
+            case ComputationalTypeLong          ⇒ "long"
+            case ComputationalTypeFloat         ⇒ "float"
+            case ComputationalTypeDouble        ⇒ "double"
+            case ComputationalTypeReference     ⇒ cTp.toString()
+            case ComputationalTypeReturnAddress ⇒ cTp.toString()
         }
     }
 
