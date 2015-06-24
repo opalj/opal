@@ -28,6 +28,8 @@
  */
 package tactest;
 
+import java.util.*;
+
 /**
  * Class with simple methods containing cast and typecheck instructions.
  * 
@@ -36,8 +38,12 @@ package tactest;
  */
 public class CastInstructions {
 	
-	void typecheck(String s){
+	void typecheckString(String s){
 		boolean result = s instanceof Object;
+	}
+	
+	void typecheckList(ArrayList l){
+		boolean result = l instanceof List;
 	}
 
 	void d2f(double d){

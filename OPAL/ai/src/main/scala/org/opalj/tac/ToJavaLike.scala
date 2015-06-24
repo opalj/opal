@@ -35,6 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.mutable.Locals
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
 
 /**
  * @author Michael Eichberg
@@ -53,12 +54,12 @@ object ToJavaLike {
             case DoubleConst(_, value)    ⇒ value.toString+"d"
             case ClassConst(_, value)     ⇒ value.toString
             case NullExpr(_)              ⇒ "null"
-            case InstanceOf(trg, cmpTp)   ⇒ s"${trg.toString} instanceof ${cmpTp.toString}"
+            case InstanceOf(trg, cmpTp)   ⇒ s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
             case PrefixExpr(_, _, op, operand) ⇒
                 op.toString()+" "+toJavaLikeExpr(operand)
-            case CastExpr(_, trgTp, operand) ⇒ s"(${trgTp.toString}) ${operand.toString}"
+            case CastExpr(_, trgTp, operand) ⇒ s"(${toJavaLikeCmpTp(trgTp)}) ${toJavaLikeExpr(operand)}"
         }
     }
 
@@ -102,6 +103,17 @@ object ToJavaLike {
                 code append (params map { toJavaLikeExpr(_) } mkString ("(", ", ", ")"))
 
                 code append ";" toString ()
+        }
+    }
+    
+    @inline final def toJavaLikeCmpTp(cTp: ComputationalType): String = {
+        cTp match {
+          case ComputationalTypeInt ⇒ "int"
+          case ComputationalTypeLong ⇒ "long"
+          case ComputationalTypeFloat ⇒ "float"
+          case ComputationalTypeDouble ⇒ "double"
+          case ComputationalTypeReference ⇒ cTp.toString()
+          case ComputationalTypeReturnAddress ⇒ cTp.toString()
         }
     }
 

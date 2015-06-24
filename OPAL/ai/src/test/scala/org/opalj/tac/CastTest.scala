@@ -48,104 +48,220 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class CastTest extends FunSpec with Matchers {
 
-    describe("The quadruples representation of cast instructions") {
+  describe("The quadruples representation of cast instructions") {
 
-        val CastInstructionsType = ObjectType("tactest/CastInstructions")
+    val CastInstructionsType = ObjectType("tactest/CastInstructions")
 
-        val testResources = locateTestResources("classfiles/tactest.jar", "ai")
+    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
-        val project = Project(testResources)
+    val project = Project(testResources)
 
-        val CastInstructionsClassFile = project.classFile(CastInstructionsType).get
+    val CastInstructionsClassFile = project.classFile(CastInstructionsType).get
 
-        val TypecheckMethod = CastInstructionsClassFile.findMethod("typecheck").get
+    val TypecheckStringMethod = CastInstructionsClassFile.findMethod("typecheckString").get
+    val TypecheckListMethod = CastInstructionsClassFile.findMethod("typecheckList").get
 
-        val D2FMethod = CastInstructionsClassFile.findMethod("d2f").get
-        val D2LMethod = CastInstructionsClassFile.findMethod("d2l").get
-        val D2IMethod = CastInstructionsClassFile.findMethod("d2i").get
+    val D2FMethod = CastInstructionsClassFile.findMethod("d2f").get
+    val D2LMethod = CastInstructionsClassFile.findMethod("d2l").get
+    val D2IMethod = CastInstructionsClassFile.findMethod("d2i").get
 
-        val F2DMethod = CastInstructionsClassFile.findMethod("f2d").get
-        val F2IMethod = CastInstructionsClassFile.findMethod("f2i").get
-        val F2LMethod = CastInstructionsClassFile.findMethod("f2l").get
+    val F2DMethod = CastInstructionsClassFile.findMethod("f2d").get
+    val F2IMethod = CastInstructionsClassFile.findMethod("f2i").get
+    val F2LMethod = CastInstructionsClassFile.findMethod("f2l").get
 
-        val L2DMethod = CastInstructionsClassFile.findMethod("l2d").get
-        val L2IMethod = CastInstructionsClassFile.findMethod("l2i").get
-        val L2FMethod = CastInstructionsClassFile.findMethod("l2f").get
+    val L2DMethod = CastInstructionsClassFile.findMethod("l2d").get
+    val L2IMethod = CastInstructionsClassFile.findMethod("l2i").get
+    val L2FMethod = CastInstructionsClassFile.findMethod("l2f").get
 
-        val I2DMethod = CastInstructionsClassFile.findMethod("i2d").get
-        val I2LMethod = CastInstructionsClassFile.findMethod("i2l").get
-        val I2FMethod = CastInstructionsClassFile.findMethod("i2f").get
+    val I2DMethod = CastInstructionsClassFile.findMethod("i2d").get
+    val I2LMethod = CastInstructionsClassFile.findMethod("i2l").get
+    val I2FMethod = CastInstructionsClassFile.findMethod("i2f").get
 
-        describe("using no AI results") {
+    describe("using no AI results") {
 
-          it("should correctly reflect the instanceof instruction") {
-            println(TypecheckMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the d2f instruction") {
-            println(D2FMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the d2i instruction") {
-            println(D2IMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the d2l instruction") {
-            println(D2LMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the f2d instruction") {
-            println(F2DMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the f2l instruction") {
-            println(F2LMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the f2i instruction") {
-            println(F2IMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the l2d instruction") {
-            println(L2DMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the l2f instruction") {
-            println(L2FMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the l2i instruction") {
-            println(L2IMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the i2d instruction") {
-            println(I2DMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the i2l instruction") {
-            println(I2LMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-          
-          it("should correctly reflect the i2f instruction") {
-            println(I2FMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-          }
-        }
+      def longResultJLC(strg: String) = Array(
+        "0: r_0 = this;",
+        "1: r_1 = p_1;",
+        "2: op_0 = r_1;",
+        strg,
+        "4: r_3 = op_2;",
+        "5: return;")
 
-        describe("using AI results") {
+      def shortResultJLC(strg: String) = Array(
+        "0: r_0 = this;",
+        "1: r_1 = p_1;",
+        "2: op_0 = r_1;",
+        strg,
+        "4: r_2 = op_1;",
+        "5: return;")
 
-        }
+      def typecheckResultJLC(strg: String) = Array(
+        "0: r_0 = this;",
+        "1: r_1 = p_1;",
+        "2: op_0 = r_1;",
+        "3: op_1 = op_0 instanceof " + strg + ";",
+        "4: r_2 = op_1;",
+        "5: return;")
+
+      def castResultAST(from: ComputationalType, to: ComputationalType): Array[Stmt] = Array(
+        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+        Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
+        Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
+        Assignment(1, SimpleVar(from.category.toInt, to), CastExpr(1, to, SimpleVar(0, from))),
+        Assignment(2, SimpleVar(-2 - from.category, to), SimpleVar(from.category.toInt, to)),
+        Return(3))
+
+      def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
+        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+        Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+        Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+        Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(SimpleVar(0, ComputationalTypeReference), refTp)),
+        Assignment(4, SimpleVar(-3, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)),
+        Return(5))
+
+      it("should correctly reflect the instanceof Object instruction") {
+        val statements = AsQuadruples(TypecheckStringMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(typecheckResultAST(ObjectType.Object))
+        javaLikeCode.shouldEqual(typecheckResultJLC("Object"))
+      }
+
+      it("should correctly reflect the instanceof List instruction") {
+        val statements = AsQuadruples(TypecheckListMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(typecheckResultAST(ReferenceType.apply("java/util/List")))
+        javaLikeCode.shouldEqual(typecheckResultJLC("List"))
+      }
+
+      it("should correctly reflect the d2f instruction") {
+        val statements = AsQuadruples(D2FMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeFloat))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (float) op_0;"))
+      }
+
+      it("should correctly reflect the d2i instruction") {
+        val statements = AsQuadruples(D2IMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeInt))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (int) op_0;"))
+      }
+
+      it("should correctly reflect the d2l instruction") {
+        val statements = AsQuadruples(D2LMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeLong))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (long) op_0;"))
+      }
+
+      it("should correctly reflect the f2d instruction") {
+        val statements = AsQuadruples(F2DMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeDouble))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (double) op_0;"))
+      }
+
+      it("should correctly reflect the f2l instruction") {
+        val statements = AsQuadruples(F2LMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeLong))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (long) op_0;"))
+      }
+
+      it("should correctly reflect the f2i instruction") {
+        val statements = AsQuadruples(F2IMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeInt))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (int) op_0;"))
+      }
+
+      it("should correctly reflect the l2d instruction") {
+        val statements = AsQuadruples(L2DMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeDouble))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (double) op_0;"))
+      }
+
+      it("should correctly reflect the l2f instruction") {
+        val statements = AsQuadruples(L2FMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeFloat))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (float) op_0;"))
+      }
+
+      it("should correctly reflect the l2i instruction") {
+        val statements = AsQuadruples(L2IMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeInt))
+        javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (int) op_0;"))
+      }
+
+      it("should correctly reflect the i2d instruction") {
+        val statements = AsQuadruples(I2DMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeDouble))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (double) op_0;"))
+      }
+
+      it("should correctly reflect the i2l instruction") {
+        val statements = AsQuadruples(I2LMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeLong))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (long) op_0;"))
+      }
+
+      it("should correctly reflect the i2f instruction") {
+        val statements = AsQuadruples(I2FMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeFloat))
+        javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (float) op_0;"))
+      }
     }
+
+    describe("using AI results") {
+
+    }
+  }
 }
