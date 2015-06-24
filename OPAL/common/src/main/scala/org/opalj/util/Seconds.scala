@@ -37,3 +37,9 @@ class Seconds(val timeSpan: Double) extends AnyVal {
     override def toString: String = f"$timeSpan%.4f s"
 
 }
+
+object Seconds {
+
+    final val None: Seconds = new Seconds(0d)
+
+}

@@ -42,7 +42,7 @@ abstract class StackManagementInstruction
         extends Instruction
         with ConstantLengthInstruction {
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 1
 

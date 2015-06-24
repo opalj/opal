@@ -43,7 +43,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
 
     final def mnemonic: String = "iinc"
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def computationalType: ComputationalType = ComputationalTypeInt
 

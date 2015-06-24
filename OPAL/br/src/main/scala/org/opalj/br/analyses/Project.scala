@@ -219,6 +219,13 @@ class Project[Source] private (
     }
 
     /**
+     * The set of all method names of the given types.
+     */
+    def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
+        objectTypes.map(classFile(_)).flatten.map(_.methods.map(_.name)).flatten.toSet
+    }
+
+    /**
      * Returns the list of all packages that contain at least one class.
      *
      * For example, in case of the JDK the package `java` does not directly contain

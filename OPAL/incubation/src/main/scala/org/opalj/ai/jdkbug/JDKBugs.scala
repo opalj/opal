@@ -125,7 +125,7 @@ object JDKTaintAnalysis
             Seq("unknown parameter: "+parameters.head)
         else if (!{
             val securityFileParameter = parameters.head
-            val javaSecurityFile = securityFileParameter.substring(javaSecurityParameter.length())
+            /*sideeffect*/ javaSecurityFile = securityFileParameter.substring(javaSecurityParameter.length())
             new File(javaSecurityFile).exists()
         })
             Seq("the specified security file is not valid: "+parameters.head)

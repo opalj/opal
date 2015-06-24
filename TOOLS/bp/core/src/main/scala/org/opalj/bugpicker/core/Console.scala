@@ -77,8 +77,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               A value greater than 1.5 can already lead to very long evaluation times.
             |               If the threshold is exceeded the analysis of the method is aborted and no
             |               result can be drawn.]
-            |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis is allowed
-            |               to take for one method before the analysis is terminated.]
+            |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis
+            |               is allowed to take for one method before the analysis is terminated.]
             |[-maxCardinalityOfIntegerRanges=<LongValue [1,4294967295]=16> basically determines for each integer
             |               value how long the value is "precisely" tracked. Internally the analysis
             |               computes the range of values that an integer value may have at runtime. The
@@ -158,7 +158,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         // Generate the HTML report
         //
-        lazy val htmlReport = resultsAsXHTML(parameters, issues, analysisTime).toString
+        lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
         parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
             case Some(fileName) ⇒
                 val file = new File(fileName).toPath

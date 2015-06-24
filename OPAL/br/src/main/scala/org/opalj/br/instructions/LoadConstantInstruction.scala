@@ -46,7 +46,7 @@ abstract class LoadConstantInstruction[T]
      */
     def value: T
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC: PC,

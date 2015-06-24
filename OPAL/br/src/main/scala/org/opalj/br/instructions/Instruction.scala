@@ -57,7 +57,7 @@ trait Instruction {
      * by user code nor errors that may arise due to an invalid code base (e.g.
      * `LinkageError`s).
      */
-    def runtimeExceptions: List[ObjectType]
+    def jvmExceptions: List[ObjectType]
 
     /**
      * The index of the next instruction in the code array.
@@ -96,7 +96,7 @@ trait Instruction {
     def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs
 
     /**
-     * Determines if this instructions is isomorphic to the given instruction.
+     * Determines if this instruction is isomorphic to the given instruction.
      *
      * Two instructions are isomporphic if they access the same operand and register
      * values and if the instructions have the same bytecode representation, except
@@ -211,10 +211,10 @@ object Instruction {
     /**
      * Facilitates the matching of [[Instruction]] objects.
      *
-     * @return Returns the triple `Some((opcode,mnemonic,list of runtime exceptions))`.
+     * @return Returns the triple `Some((opcode,mnemonic,list of jvm exceptions))`.
      */
     def unapply(instruction: Instruction): Some[(Int, String, List[ObjectType])] = {
-        Some((instruction.opcode, instruction.mnemonic, instruction.runtimeExceptions))
+        Some((instruction.opcode, instruction.mnemonic, instruction.jvmExceptions))
     }
 
     /**
@@ -271,4 +271,6 @@ object Instruction {
             case None          ⇒ UShortSet(nextInstruction)
         }
     }
+
+    final val justNullPointerException = List(ObjectType.NullPointerException)
 }

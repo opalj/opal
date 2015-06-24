@@ -27,6 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* details fallback */
+details {
+	display: block;
+}
+
+.noDetails summary {
+	display: inherit;
+}
+
+.noDetails details:not([open]) > *:not(:first-child) {
+	display: none;
+}
+
 /*VIEW SPECIFIC*/
 div#analysis_controls {
 	position: fixed;

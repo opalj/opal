@@ -212,13 +212,13 @@ object ControlFlowGraph {
                 }
             }
 
-            val runtimeExceptions = instructions(currentPC).runtimeExceptions
+            val jvmExceptions = instructions(currentPC).jvmExceptions
 
-            if (runtimeExceptions.nonEmpty) {
+            if (jvmExceptions.nonEmpty) {
                 for (handler ← code.handlersFor(currentPC)) {
                     val catchType = handler.catchType.getOrElse(None)
 
-                    if (catchType == None || runtimeExceptions.contains(catchType)) {
+                    if (catchType == None || jvmExceptions.contains(catchType)) {
 
                         BlocksByPC(nextPC) =
                             if (!isBeginningOfBlock(nextPC))

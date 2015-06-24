@@ -47,7 +47,7 @@ import org.opalj.br.instructions.ReturnInstruction
 object UnusedMethodsAnalysis {
 
     /**
-     * Checks if the given method is used/potentially useable. If the method is not used
+     * Checks if the given method is used/is potentially useable. If the method is not used
      * and is also not potentially useable by future clients then an issue is created
      * and returned.
      *
