@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,50 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
+package org.opalj.fp
 
-import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
-
-/**
- * Very primitive rating of the complexity of methods.
- *
- * @author Michael Eichberg
- */
-object MethodComplexityAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
-
-    val analysis = this
-
-    override def description: String = "Estimates the complexity of interpreting the method."
-
-    def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
-
-        var executionTime = Nanoseconds.None
-
-        val analysisResults = time {
-
-            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
-            TheAnalysis.doAnalyze(project, 100, isInterrupted)
-
-        } { t ⇒ executionTime += t }
-
-        BasicReport(
-            analysisResults.
-                toList.map(m ⇒ (m._2, m._1)).
-                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                mkString("\n")+"\n"+
-                s"rated ${analysisResults.size} methods in ${executionTime.toSeconds}"
-        )
+private[fp] final class EPK(val e: Entity, val pk: PropertyKey) {
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
+            case _         ⇒ false
+        }
     }
+
+    override def hashCode: Int = e.hashCode() * 511 + pk.id
+
+    override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
+}
+
+object EPK {
+
+    def apply(e: Entity, pk: PropertyKey): EPK = new EPK(e, pk)
 }

@@ -43,6 +43,8 @@ import org.opalj.br.{ FloatType, DoubleType }
  */
 sealed trait TypeInformation {
 
+    def unknown: Boolean
+
     def isReferenceValue: Boolean
 
     def isPrimitiveValue: Boolean
@@ -64,6 +66,8 @@ sealed trait TypeInformation {
  */
 case object TypeUnknown extends TypeInformation {
 
+    def unknown: Boolean = true
+
     def isReferenceValue: Boolean = throw DomainException("the type is unknown")
 
     def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
@@ -74,6 +78,8 @@ case object TypeUnknown extends TypeInformation {
  */
 sealed trait IsPrimitiveValue extends TypeInformation {
 
+    final def unknown: Boolean = false
+
     final def isReferenceValue: Boolean = false
 
     final def isPrimitiveValue: Boolean = true
@@ -82,7 +88,9 @@ sealed trait IsPrimitiveValue extends TypeInformation {
 }
 
 object IsPrimitiveValue {
+
     def unapply(answer: IsPrimitiveValue): Option[BaseType] = Some(answer.primitiveType)
+
 }
 
 trait IsBooleanValue extends IsPrimitiveValue {
@@ -260,6 +268,8 @@ trait IsReferenceValue extends TypeInformation with IsAReferenceValue {
      * an upper bound can in turn consist of several interfaces and a class.
      */
     def referenceValues: Traversable[IsAReferenceValue]
+
+    final def unknown: Boolean = false
 
     final def isReferenceValue: Boolean = true
 

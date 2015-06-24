@@ -31,7 +31,7 @@ package br
 package analyses
 
 import java.net.URL
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Basic information about (non-)instantiable classes.
@@ -53,7 +53,7 @@ object NonInstantiableClasses extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean) = {
 
         import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
-        var overallExecutionTime = NanoSeconds.None
+        var overallExecutionTime = Nanoseconds.None
         var memoryUsageInMB = ""
 
         val instantiableClasses =

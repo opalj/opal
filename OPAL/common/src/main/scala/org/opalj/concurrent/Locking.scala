@@ -30,6 +30,7 @@ package org.opalj
 package concurrent
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.TimeUnit
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
@@ -72,11 +73,13 @@ object Locking {
      * the function `f`. Afterwards, the lock is released.
      */
     final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        var isLocked = false
         try {
-            rwLock.writeLock().lock()
+            rwLock.writeLock().lockInterruptibly()
+            isLocked = true
             f
         } finally {
-            rwLock.writeLock().unlock()
+            if (isLocked) rwLock.writeLock().unlock()
         }
     }
 
@@ -85,11 +88,30 @@ object Locking {
      * the function `f`. Afterwards, the lock is released.
      */
     final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        var isLocked = false
         try {
-            rwLock.readLock().lock()
+            rwLock.readLock().lockInterruptibly()
+            isLocked = true
             f
         } finally {
-            rwLock.readLock().unlock()
+            if (isLocked) rwLock.readLock().unlock()
+        }
+    }
+
+    /**
+     * Tries to acquire the read lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): Option[B] = {
+        var isLocked = false
+        try {
+            isLocked = rwLock.readLock().tryLock(100l, TimeUnit.NANOSECONDS)
+            if (isLocked)
+                Some(f)
+            else
+                None
+        } finally {
+            if (isLocked) rwLock.readLock().unlock()
         }
     }
 }

@@ -778,10 +778,10 @@ class ClassHierarchy private (
         supertype: ReferenceType): Answer = {
 
         if ((subtype eq supertype) || (supertype eq Object))
-            return Yes
+            return Yes;
 
         if (subtype eq Object)
-            return No // the given supertype has to be a subtype...
+            return No; // the given supertype has to be a subtype...
 
         subtype match {
             case ot: ObjectType ⇒

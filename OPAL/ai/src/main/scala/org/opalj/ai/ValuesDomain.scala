@@ -417,7 +417,7 @@ trait ValuesDomain {
         final override def computationalType: ComputationalType =
             throw DomainException("the illegal value has no computational type")
 
-        @throws[DomainException]("\"doJoin\" is not defined on illegal values.")
+        @throws[DomainException]("\"doJoin\" is not defined on illegal values")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             throw DomainException("this method is not supported")
 
@@ -427,7 +427,7 @@ trait ValuesDomain {
             else
                 MetaInformationUpdateIllegalValue
 
-        @throws[DomainException]("\"summarize\" is not defined on illegal values.")
+        @throws[DomainException]("\"summarize\" is not defined on illegal values")
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
@@ -465,10 +465,11 @@ trait ValuesDomain {
      * @note This method is solely defined for documentation purposes and to catch
      *      implementation errors early on.
      */
-    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
+    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
         throw new DomainException(
-            "internal error (see documentation of Domain.StructuralUpdateIllegalValue())"
+            "internal error (see documentation of ValuesDomain.StructuralUpdateIllegalValue())"
         )
+    }
 
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
@@ -607,9 +608,8 @@ trait ValuesDomain {
         values.tail foreach { value ⇒
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
-                    case NoUpdate ⇒ /*nothing to do*/
-                    case SomeUpdate(newSummary) ⇒
-                        summary = newSummary.summarize(pc)
+                    case NoUpdate               ⇒ /*nothing to do*/
+                    case SomeUpdate(newSummary) ⇒ summary = newSummary.summarize(pc)
                 }
             }
         }

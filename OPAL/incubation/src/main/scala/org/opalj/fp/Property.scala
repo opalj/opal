@@ -29,6 +29,7 @@
 package org.opalj.fp
 
 import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.mutable.ListBuffer
 
 /**
  * An information associated with an entity. Each property belongs to exactly one
@@ -59,7 +60,7 @@ trait Property {
  */
 class PropertyKey private ( final val id: Int) extends AnyVal {
 
-    override def toString: String = s"PropertyKey($id)"
+    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
 }
 
 /**
@@ -69,8 +70,21 @@ class PropertyKey private ( final val id: Int) extends AnyVal {
  */
 object PropertyKey {
 
-    private[this] final val lastKeyId = new AtomicInteger(-1)
+    private[fp] final val propertyKeyNames = ListBuffer.empty[String]
+    private[this] var lastKeyId: Int = -1
 
-    def next: PropertyKey = new PropertyKey(lastKeyId.incrementAndGet())
+    def create(name: String): PropertyKey = {
+
+        new PropertyKey(
+            propertyKeyNames.synchronized {
+                lastKeyId += 1
+                val key = lastKeyId
+                propertyKeyNames += name
+                key
+            }
+        )
+    }
+
+    def name(id: Int): String = propertyKeyNames.synchronized { propertyKeyNames(id) }
 }
 

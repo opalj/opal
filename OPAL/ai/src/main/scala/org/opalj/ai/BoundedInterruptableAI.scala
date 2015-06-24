@@ -31,6 +31,8 @@ package ai
 
 import org.opalj.br.Code
 import org.opalj.log.LogContext
+import org.opalj.util.Nanoseconds
+import org.opalj.util.Milliseconds
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -50,7 +52,7 @@ import org.opalj.log.LogContext
  */
 class BoundedInterruptableAI[D <: Domain](
     maxEvaluationCount: Int,
-    val maxEvaluationTimeInNS: Long,
+    val maxEvaluationTime: Nanoseconds,
     val doInterrupt: () ⇒ Boolean)
         extends InstructionCountBoundedAI[D](maxEvaluationCount) {
 
@@ -59,16 +61,17 @@ class BoundedInterruptableAI[D <: Domain](
     def this(
         code: Code,
         maxEvaluationFactor: Double,
-        maxEvaluationTimeInMS: Int,
-        doInterrupt: () ⇒ Boolean)(implicit logContext: LogContext) =
+        maxEvaluationTime: Milliseconds,
+        doInterrupt: () ⇒ Boolean)(
+            implicit logContext: LogContext) =
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
-            maxEvaluationTimeInMS * 1000000l,
+            maxEvaluationTime.toNanoseconds,
             doInterrupt)
 
     override def isInterrupted: Boolean = {
         if (super.isInterrupted || doInterrupt())
-            return true
+            return true;
 
         val startTime = this.startTime
         if (startTime == -1l) {
@@ -76,7 +79,7 @@ class BoundedInterruptableAI[D <: Domain](
             false
         } else if (super.currentEvaluationCount % 1000 == 0) {
             val elapsedTime = System.nanoTime() - startTime
-            elapsedTime > maxEvaluationTimeInNS
+            elapsedTime > maxEvaluationTime.timeSpan
         } else
             false
     }

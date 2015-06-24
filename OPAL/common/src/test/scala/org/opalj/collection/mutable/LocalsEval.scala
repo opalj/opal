@@ -32,7 +32,7 @@ package mutable
 
 import java.util.Random
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Evaluates the effectiveness of the locals data structure when compared with an array.
@@ -77,7 +77,7 @@ object LocalsEval extends App {
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
                 lastAvg = avg
-                val avgInSeconds = new NanoSeconds(lastAvg).toSeconds
+                val avgInSeconds = new Nanoseconds(lastAvg).toSeconds
                 println(s"Avg: $avgInSeconds; T: ${t.toSeconds}; Ts: $sTs")
             }
         }
@@ -109,7 +109,7 @@ object LocalsEval extends App {
             val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
                 lastAvg = avg
-                println(s"Avg: ${new NanoSeconds(avg).toSeconds}; T: $t; Ts: $sTs")
+                println(s"Avg: ${new Nanoseconds(avg).toSeconds}; T: $t; Ts: $sTs")
             }
         }
         println(data_a.mkString("Array(", " : ", ")"))

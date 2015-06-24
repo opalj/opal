@@ -34,7 +34,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Nanoseconds
 
 /**
  * Basic field access information.
@@ -65,7 +65,7 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean) = {
 
         import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
-        var overallExecutionTime = NanoSeconds.None
+        var overallExecutionTime = Nanoseconds.None
         var memoryUsageInMB = ""
 
         val accessInformation = memory {
