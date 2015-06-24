@@ -1094,7 +1094,7 @@ class ClassHierarchy private (
             suffix.zip(superSuffix).map(x ⇒ compareTypeArguments(
                 x._1.typeArguments,
                 x._2.typeArguments)
-            ).foldLeft(Answer(true))((acc, value) => Answer(acc.isYes && value.isYes))
+            ).foldLeft(Answer(true))((acc, value) ⇒ Answer(acc.isYes && value.isYes))
         }
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
@@ -1126,7 +1126,7 @@ class ClassHierarchy private (
 
                     (getClassSignature(subtype).flatMap { cs ⇒
                         getSupertypeDeclaration(cs, supertype).map { matchingType ⇒
-                            if(isInnerClass && matchingType.classTypeSignatureSuffix.nonEmpty) compareTypeArguments(matchingType.classTypeSignatureSuffix.last.typeArguments, superTypeArguments)
+                            if (isInnerClass && matchingType.classTypeSignatureSuffix.nonEmpty) compareTypeArguments(matchingType.classTypeSignatureSuffix.last.typeArguments, superTypeArguments)
                             else compareTypeArguments(matchingType.simpleClassTypeSignature.typeArguments, superTypeArguments)
                         } orElse Some(No)
                     } orElse Some(Unknown)).get
@@ -1136,7 +1136,7 @@ class ClassHierarchy private (
                     typeArguments: List[TypeArgument],
                     supertype: ObjectType,
                     superTypeArguments: List[TypeArgument]): Answer = {
-                            
+
                     val cs = getClassSignature(subtype)
                     val superCs = getClassSignature(supertype)
                     if (cs.nonEmpty && superCs.nonEmpty) {
@@ -1151,7 +1151,7 @@ class ClassHierarchy private (
                                 supertypeArgs = superTypeArguments(index) :: supertypeArgs
                             }
                         }
-                        if (typeArgs.isEmpty) 
+                        if (typeArgs.isEmpty)
                             if (cs.get.superClassSignature.classTypeSignatureSuffix.nonEmpty) Yes
                             else haveSameTypeBinding(subtype, supertype, superTypeArguments)
                         else compareTypeArguments(typeArgs, supertypeArgs)
@@ -1166,21 +1166,21 @@ class ClassHierarchy private (
                     case (GenericTypeWithClassSuffix(containerType, elements, _), GenericType(superContainerType, superElements)) ⇒ compareSharedTypeArguments(containerType, elements, superContainerType, superElements)
                     case (GenericTypeWithClassSuffix(containerType, typeArguments, suffix), GenericTypeWithClassSuffix(superContainerType, superTypeArguments, superSuffix)) ⇒ {
                         compareSharedTypeArguments(containerType, subtype.classTypeSignatureSuffix.last.typeArguments,
-                                superContainerType, supertype.classTypeSignatureSuffix.last.typeArguments) match {
-                            case Yes ⇒ compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {
-                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.isEmpty ⇒ Yes
-                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.nonEmpty => {
-                                    val ss = getClassSignature(containerType).flatMap { cs => getSupertypeDeclaration(cs, superContainerType) }
-                                    typeArguments.collectFirst{case x @ ProperTypeArgument(_, TypeVariableSignature(_)) => x}
-                                    if(ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst{case x @ ProperTypeArgument(_, TypeVariableSignature(_)) => x}.size > 0)
+                            superContainerType, supertype.classTypeSignatureSuffix.last.typeArguments) match {
+                                case Yes ⇒ compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {
+                                    case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.isEmpty ⇒ Yes
+                                    case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.nonEmpty ⇒ {
+                                        val ss = getClassSignature(containerType).flatMap { cs ⇒ getSupertypeDeclaration(cs, superContainerType) }
+                                        typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) ⇒ x }
+                                        if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) ⇒ x }.size > 0)
                                             compareTypeArgumentsOfClassSuffixes(List(subtype.simpleClassTypeSignature), List(superSuffix.last))
-                                    else compareTypeArgumentsOfClassSuffixes(List(ss.get.classTypeSignatureSuffix.last), List(superSuffix.last))
+                                        else compareTypeArgumentsOfClassSuffixes(List(ss.get.classTypeSignatureSuffix.last), List(superSuffix.last))
+                                    }
+                                    case Yes    ⇒ compareTypeArgumentsOfClassSuffixes(List(suffix.last), List(superSuffix.last))
+                                    case answer ⇒ answer
                                 }
-                                case Yes =>  compareTypeArgumentsOfClassSuffixes(List(suffix.last), List(superSuffix.last))
                                 case answer ⇒ answer
                             }
-                            case answer ⇒ answer
-                        }
                     }
                     case _ ⇒ No
                 }
@@ -1194,9 +1194,9 @@ class ClassHierarchy private (
      * in the [[FormalTypeParameter]] of `supertype` parameter. The subtype relation is
      * fulfilled if the subtype is a subtype of the class Bound and/or all interface types
      * that are demanded by the formal type specification.
-     * 
+     *
      * @Note This method does consider generics types specified within the [[FormalTypeParamter]].
-     * 
+     *
      * @param subtype Any `ClassTypeSignature`.
      * @param supertype Any `FormalTypeParameter`.
      * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
@@ -1204,18 +1204,18 @@ class ClassHierarchy private (
      *      not conclusive. The latter can happen if the class hierarchy is not
      *      complete and hence precise information about a type's supertypes
      *      is not available.
-     * 
+     *
      */
     def isSubtypeOf(
         subtype: ClassTypeSignature,
         supertype: FormalTypeParameter)(
             implicit project: ClassFileRepository): Answer = {
-       (supertype.classBound.collectFirst({case sig @ ClassTypeSignature(_,_,_) => sig}) ++
-           supertype.interfaceBound.collect({case sig @ ClassTypeSignature(_,_,_) => sig })).
-               map { superCts => isSubtypeOf(subtype, superCts)}.
-                   foldLeft(Answer(true))((acc, value) => Answer(acc.isYes && value.isYes))
+        (supertype.classBound.collectFirst({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }) ++
+            supertype.interfaceBound.collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig })).
+            map { superCts ⇒ isSubtypeOf(subtype, superCts) }.
+            foldLeft(Answer(true))((acc, value) ⇒ Answer(acc.isYes && value.isYes))
     }
-    
+
     //
     //
     // RESOLVING FIELD AND METHOD REFERENCES
