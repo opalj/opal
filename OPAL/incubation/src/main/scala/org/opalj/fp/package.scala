@@ -37,8 +37,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * computations on a fixed set of entities. The framework in particular
  * supports the development of static analyses. In this case, the fixpoint computations/
  * static analyses are generally operating on the code and need to be executed until
- * the computation has reached its (implicit) fixpoint. The fixpiont framework explicitly
- * support cyclic dependenies/computations.
+ * the computation has reached its (implicit) fixpoint. The fixpoint framework explicitly
+ * support cyclic dependencies/computations.
  * A prime use case of the fixpoint framework
  * are all those analyses that may interact with the results of other analyses.
  *
@@ -60,13 +60,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  */
 package object fp {
 
+    /**
+     * A simple type alias to facilitate comprehension of the code.
+     */
     type Entity = AnyRef
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
      *  - a function that will continue computing the result once the information
-     *      about some other entity is available or
+     *      about some other entity is available or,
      *  - an intermediate result.
      */
     type PropertyComputation = (Entity) ⇒ PropertyComputationResult
@@ -128,10 +131,11 @@ package object fp {
      * The type of the value associated with each entity (key) found in the store.
      *
      * We use one reentrant read/write lock for all properties associated with a
-     * single element in the property store. We did not use one lock per property
-     * and per entity.
+     * single element in the property store.
      */
     private[fp]type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
+
+    private[fp]type UpdateType = UpdateTypes.Value
 
 }
 

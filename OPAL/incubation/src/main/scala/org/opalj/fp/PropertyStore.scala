@@ -130,6 +130,10 @@ class PropertyStore private (
         val isInterrupted: () ⇒ Boolean)(
                 implicit val logContext: LogContext) { store ⇒
 
+    import UpdateTypes.FinalUpdate
+    import UpdateTypes.OneStepFinalUpdate
+    import UpdateTypes.IntermediateUpdate
+
     private[this] val propagationCount = new java.util.concurrent.atomic.AtomicLong(0)
 
     // We want to be able to make sure that methods that access the store as
@@ -194,11 +198,78 @@ class PropertyStore private (
             def continue(dependeeE: Entity, dependeeP: Property) = c(dependeeE, dependeeP)
         }
 
-        apply(dependeeE, dependeePK) match {
+        this(dependeeE, dependeePK) match {
             case Some(dependeeP) ⇒ c(dependeeE, dependeeP)
             case None            ⇒ suspend
         }
     }
+
+    /**
+     * Tests if all entities have the given property. If the respective property is
+     * not yet available, the computation will be suspended until the property of
+     * the respective kind is available. Hence, it only makes sense to use this
+     * function if the respective property is computed by an independent analysis or
+     * if it is an inherent property of the analysis that the information about the
+     * dependees is guaranteed to become available without requiring information
+     * about the depender.
+     */
+    def allHaveProperty(
+        dependerE: Entity, dependerPK: PropertyKey,
+        dependees: Traversable[Entity], expectedP: Property)(
+            c: (Boolean) ⇒ PropertyComputationResult): PropertyComputationResult = {
+
+        // The idea is to eagerly try to determine if the answer might be false.
+        val dependeePK = expectedP.key
+        var remainingEs = dependees
+        var unavailableEs: List[Entity] = Nil
+        while (remainingEs.nonEmpty) {
+            val dependeeE = remainingEs.head
+            remainingEs = remainingEs.tail
+            this(dependeeE, dependeePK) match {
+                case Some(dependeeP) ⇒
+                    if (expectedP != dependeeP)
+                        return c(false);
+                case None ⇒
+                    unavailableEs = dependeeE :: unavailableEs
+            }
+        }
+
+        if (unavailableEs.nonEmpty) {
+            // Let's wait on the next result and then try to get as many results as
+            // possible, by using haveProperty again... i.e., we try to minimize the
+            // number of suspended objects that we need to create.
+            val deependeeE = unavailableEs.head
+            new Suspended(dependerE, dependerPK, deependeeE, dependeePK) {
+                def continue(
+                    dependeeE: Entity,
+                    dependeeP: Property): PropertyComputationResult = {
+                    if (expectedP != dependeeP)
+                        c(false);
+                    else {
+                        allHaveProperty(
+                            dependerE, dependerPK,
+                            unavailableEs.tail,
+                            expectedP)(c)
+                    }
+                }
+            }
+        } else {
+            // all information was available and was always as expected
+            c(true)
+        }
+    }
+
+    /**
+     * Associate the given property `p` with given entity `e`.
+     *
+     * This method must not be used if the given entity might already be associated with
+     * a property of the respective kind or if there might be a computation that
+     * computes the property p.
+     *
+     * The primary use case is an analysis that does not use the property store for
+     * executing the analysis, but wants to store some results in the store.
+     */
+    def set(e: Entity, p: Property): Unit = update(e, p, OneStepFinalUpdate)
 
     /**
      * Returns all elements which have a property of the respective kind. This method
@@ -338,21 +409,6 @@ class PropertyStore private (
     //
     //
 
-    private[fp] object UpdateTypes extends Enumeration {
-        val IntermediateUpdate = Value("Intermediate")
-
-        // The result is the final result and was computed using other information.
-        val FinalUpdate = Value("Final")
-
-        // The result is the final result and was computed without requiring any
-        // other information.
-        val OneStepFinalUpdate = Value("FinalWithoutDependencies")
-    }
-    private[fp]type UpdateType = UpdateTypes.Value
-    import UpdateTypes.FinalUpdate
-    import UpdateTypes.OneStepFinalUpdate
-    import UpdateTypes.IntermediateUpdate
-
     private[this] final val threadPool = ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks, 2))
 
     /**
@@ -360,7 +416,7 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
-        @volatile var useDefaultForIncomputableProperties: Boolean = false
+        @volatile var useFallbackForIncomputableProperties: Boolean = false
 
         // ALL ACCESSES ARE SYNCHRONIZED
         private[this] var executed = 0
@@ -571,11 +627,11 @@ class PropertyStore private (
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
-            if (useDefaultForIncomputableProperties) {
+            if (useFallbackForIncomputableProperties) {
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
-                    val defaultP = PropertyKey.defaultProperty(pk.id)
+                    val defaultP = PropertyKey.fallbackProperty(pk.id)
                     OPALLogger.debug(
                         "analysis progress",
                         s"associated default property $defaultP with $e")
@@ -584,9 +640,9 @@ class PropertyStore private (
             }
         }
 
-        def waitOnCompletion(useDefaultForIncomputableProperties: Boolean): Unit =
+        def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit =
             synchronized {
-                this.useDefaultForIncomputableProperties = useDefaultForIncomputableProperties
+                this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
                 while (scheduled > 0) { wait }
             }
     }

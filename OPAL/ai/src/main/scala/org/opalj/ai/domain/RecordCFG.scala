@@ -37,6 +37,8 @@ import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.PC
 import org.opalj.graphs.MutableNode
+import org.opalj.br.Code
+import scala.collection.BitSet
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -48,19 +50,29 @@ import org.opalj.graphs.MutableNode
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''.
- *  - Reusable: '''No'''; state directly associated with the analyzed code block is
- *          collected. Hence, a new instance of the domain needs to be created per
- *          analyzed method.
+ *  - Reusable: '''Yes'''; the state directly associated with the analyzed code block is
+ *          reset when a new method (code block) is analyzed.
  *
  * @author Michael Eichberg
  */
-trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
+trait RecordCFG
+        extends CoreDomainFunctionality
+        with CustomInitialization { domain: TheCode ⇒
 
-    private[this] val regularSuccessors =
-        new Array[UShortSet](domain.code.instructions.size)
+    private[this] var regularSuccessors: Array[UShortSet] = _
+    private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
 
-    private[this] val exceptionHandlerSuccessors =
-        new Array[UShortSet](domain.code.instructions.size)
+    abstract override def initProperties(
+        code: Code,
+        joinInstructions: BitSet,
+        initialLocals: Locals): Unit = {
+
+        val codeSize = code.instructions.size
+        regularSuccessors = new Array[UShortSet](codeSize)
+        exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
+
+        super.initProperties(code, joinInstructions, initialLocals)
+    }
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed next if

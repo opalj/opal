@@ -28,51 +28,13 @@
  */
 package org.opalj.fp
 
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.concurrent.Locking.withReadLock
-import org.opalj.concurrent.Locking.withWriteLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
+private[fp] object UpdateTypes extends Enumeration {
+    val IntermediateUpdate = Value("Intermediate")
 
-/**
- * An object that identifies a specific kind of properties. Every entity in
- * the [[PropertyStore]] must be associated with at most one property per property kind/key.
- *
- * To create a property key use the companion object's [[PropertyKey$.create]] method.
- *
- * @author Michael Eichberg
- */
-class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
+    // The result is the final result and was computed using other information.
+    val FinalUpdate = Value("Final")
 
-    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+    // The result is the final result and was computed without requiring any
+    // other information.
+    val OneStepFinalUpdate = Value("FinalWithoutDependencies")
 }
-
-/**
- * Factory to create [[PropertyKey]] objects.
- *
- * @author Michael Eichberg
- */
-object PropertyKey {
-
-    private[this] val lock = new ReentrantReadWriteLock
-
-    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val fallbackProperties = ArrayBuffer.empty[Property]
-    private[this] var lastKeyId: Int = -1
-
-    def create(name: String, fallback: Property): PropertyKey = withWriteLock(lock) {
-        lastKeyId += 1
-        propertyKeyNames += name
-        fallbackProperties += fallback
-        new PropertyKey(lastKeyId)
-    }
-
-    def name(id: Int): String = withReadLock(lock) {
-        propertyKeyNames(id)
-    }
-
-    def fallbackProperty(id: Int): Property = withReadLock(lock) {
-        fallbackProperties(id)
-    }
-
-}
-
