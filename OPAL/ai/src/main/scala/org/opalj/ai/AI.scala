@@ -308,7 +308,8 @@ trait AI[D <: Domain] {
 
     /**
      * Performs additional initializations of the [[Domain]], if the `Domain` implements
-     * the trait [[TheAI]], [[TheCodeStructure]] or [[TheMemoryLayout]].
+     * the trait [[TheAI]], [[TheCodeStructure]], [[TheMemoryLayout]] or
+     * [[CustomInitialization]].
      *
      * This method is called before the abstract interpretation is started/continued.
      */
@@ -338,6 +339,13 @@ trait AI[D <: Domain] {
                     theOperandsArray.asInstanceOf[d.OperandsArray],
                     theLocalsArray.asInstanceOf[d.LocalsArray],
                     theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]])
+            case _ ⇒ /*nothing to do*/
+        }
+        theDomain match {
+            case d: CustomInitialization ⇒
+                d.initProperties(
+                    code, joinInstructions,
+                    theLocalsArray.asInstanceOf[d.LocalsArray](0))
             case _ ⇒ /*nothing to do*/
         }
     }
@@ -546,7 +554,7 @@ trait AI[D <: Domain] {
              * to an exception.
              *
              * Schedules the evaluation of the exception handler in the context of the
-             * (parent) subroutine to which the handler belongs.
+             * (calling) subroutine to which the handler belongs.
              *
              * @param doSchedule If `false` the instruction will not be scheduled if
              *      it is not already scheduled. In this case we will basically just test
@@ -624,13 +632,13 @@ trait AI[D <: Domain] {
 
             val currentOperands = targetOperandsArray(targetPC)
             val wasJoinPerformed =
-                if (currentOperands == null) {
+                if (currentOperands eq null) {
                     // We analyze the instruction for the first time.
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
-                    if (abruptSubroutineTerminationCount > 0) {
+                    if (abruptSubroutineTerminationCount > 0)
                         handleAbruptSubroutineTermination(doSchedule = true)
-                    } else if (worklist.nonEmpty && joinInstructions.contains(targetPC))
+                    else if (worklist.nonEmpty && joinInstructions.contains(targetPC))
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     else
                         worklist = targetPC :: worklist
@@ -793,10 +801,12 @@ trait AI[D <: Domain] {
                             operandsArray,
                             localsArray,
                             memoryLayoutBeforeSubroutineCall)
-                if (tracer.isDefined)
-                    tracer.get.result(result)
 
-                return result
+                if (tracer.isDefined) {
+                    tracer.get.result(result)
+                }
+
+                return result;
             }
 
             // The central worklist is manipulated at the following places:
@@ -889,7 +899,7 @@ trait AI[D <: Domain] {
 
                         if (tracer.isDefined) tracer.get.result(result)
 
-                        return result
+                        return result;
                     }
                 }
                 // [THE DEFAULT CASE] the PC of the next instruction...
@@ -1079,19 +1089,19 @@ trait AI[D <: Domain] {
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
-                        val catchType = eh.catchType
-                        if (catchType.isEmpty) { // this is a finally handler
+                        val catchTypeOption = eh.catchType
+                        if (catchTypeOption.isEmpty) { // this is a finally handler
                             gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
-                            theDomain.isValueSubtypeOf(exceptionValue, catchType.get) match {
+                            theDomain.isValueSubtypeOf(exceptionValue, catchTypeOption.get) match {
                                 case No ⇒
                                     false
                                 case Yes ⇒
                                     gotoExceptionHandler(pc, branchTarget, None)
                                     true
                                 case Unknown ⇒
-                                    gotoExceptionHandler(pc, branchTarget, Some(catchType.get))
+                                    gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                     false
                             }
                         }
