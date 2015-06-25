@@ -43,7 +43,7 @@ case object MONITOREXIT extends SynchronizationInstruction {
 
     final val mnemonic = "monitorexit"
 
-    final val runtimeExceptions: List[ObjectType] =
+    final val jvmExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
     final def nextInstructions(
@@ -54,5 +54,5 @@ case object MONITOREXIT extends SynchronizationInstruction {
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, runtimeExceptions)
+                this, currentPC, code, jvmExceptions)
 }

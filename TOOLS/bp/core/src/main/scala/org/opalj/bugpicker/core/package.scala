@@ -48,4 +48,10 @@ package object core {
 
     lazy val HTMLJS: String = getAsset("html.js")
 
+    lazy val SearchJS: String = getAsset("search.js")
+
+    lazy val ReportCSS: String = getAsset("report.css")
+
+    lazy val ReportJS: String = getAsset("report.js")
+
 }

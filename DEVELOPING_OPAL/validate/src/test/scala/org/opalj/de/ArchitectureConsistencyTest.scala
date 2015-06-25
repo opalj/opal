@@ -76,7 +76,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                     "org.opalj.de.*" except DependencyExtractorElements
                 }
 
-                'DependencyExtractorCore is_only_allowed_to_use empty
+                'DependencyExtractorCore is_only_allowed_to (USE, empty)
             }
 
         val result = expected.analyze()

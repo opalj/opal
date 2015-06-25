@@ -111,7 +111,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxEvalTimeField.text = DefaultMaxEvalTime.toString
+                        maxEvalTimeField.text = DefaultMaxEvalTime.timeSpan.toString
                     }
                 }, 2, 1)
 

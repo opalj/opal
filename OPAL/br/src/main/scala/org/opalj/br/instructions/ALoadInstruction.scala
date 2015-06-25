@@ -40,6 +40,6 @@ trait ALoadInstruction extends LoadLocalVariableInstruction {
     final def computationalType: ComputationalType = ComputationalTypeReference
 
 }
-object ALoadInstruction {
-
-}
+//object ALoadInstruction {
+//
+//}

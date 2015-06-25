@@ -43,7 +43,7 @@ case object ATHROW extends Instruction {
 
     final val mnemonic = "athrow"
 
-    final val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
+    final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 

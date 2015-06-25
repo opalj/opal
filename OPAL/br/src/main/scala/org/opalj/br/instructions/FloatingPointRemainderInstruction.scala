@@ -40,7 +40,7 @@ import org.opalj.collection.mutable.UShortSet
 abstract class FloatingPointRemainderInstruction
         extends RemainderInstruction {
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC: PC,

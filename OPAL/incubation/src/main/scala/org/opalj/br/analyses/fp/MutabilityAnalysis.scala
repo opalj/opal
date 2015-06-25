@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
+package org.opalj
+package br
 package analyses
+package fp
 
 import scala.language.postfixOps
 import java.net.URL
-import org.opalj.br.Method
-import org.opalj.br.Field
-import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
@@ -65,14 +64,11 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.ClassFile
-import org.opalj.fp.SourceElementsPropertyStoreKey
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.fp.Empty
+import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.ImmediateMultiResult
 
 sealed trait Mutability extends Property {
     final def key = Mutability.Key // All instances have to share the SAME key!
@@ -117,7 +113,7 @@ object MutablityAnalysis {
                         // resolution of the field reference.
                         classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
                         if (effectivelyFinalFields.isEmpty)
-                            return OneStepMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
+                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
                     case _ ⇒
                     /*Nothing to do*/
                 }
@@ -130,7 +126,7 @@ object MutablityAnalysis {
             else
                 (f, NonFinal)
         }
-        OneStepMultiResult(results)
+        ImmediateMultiResult(results)
     }
 
     def analyze(implicit project: Project[URL]): Unit = {

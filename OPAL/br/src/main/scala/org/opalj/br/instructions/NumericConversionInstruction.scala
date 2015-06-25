@@ -42,7 +42,7 @@ abstract class NumericConversionInstruction
         extends Instruction
         with ConstantLengthInstruction {
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 1
 

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,33 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fp
+package av
+package checking
 
-import org.opalj.br.analyses.ProjectInformationKey
-
-import org.opalj.br.analyses.SomeProject
+import scala.util.matching.Regex
 
 /**
- * The ''key'' object to get access to the properties store.
+ * Matches name of class, fields and methods based on their name. The name is matched
+ * against the binary notation.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
 
-    /**
-     * The [[SourceElementsPropertyStore]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
-
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        PropertyStore(
-            project.allSourceElements,
-            () ⇒ Thread.currentThread.isInterrupted())(
-                project.logContext)
+    def apply(otherName: String): Boolean = {
+        matcher.findFirstIn(otherName).isDefined
     }
 }
+

@@ -46,8 +46,8 @@ abstract class CreateNewArrayInstruction
         (this eq other) || (this == other)
     }
 
-    final def runtimeExceptions: List[ObjectType] =
-        CreateNewArrayInstruction.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] =
+        CreateNewArrayInstruction.jvmExceptions
 
     final def nextInstructions(
         currentPC: PC,
@@ -57,14 +57,14 @@ abstract class CreateNewArrayInstruction
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, CreateNewArrayInstruction.runtimeExceptionsAndErrors)
+                this, currentPC, code, CreateNewArrayInstruction.jvmExceptionsAndErrors)
 
 }
 
 object CreateNewArrayInstruction {
 
-    val runtimeExceptions = List(ObjectType.NegativeArraySizeException)
+    val jvmExceptions = List(ObjectType.NegativeArraySizeException)
 
-    val runtimeExceptionsAndErrors = ObjectType.OutOfMemoryError :: runtimeExceptions
+    val jvmExceptionsAndErrors = ObjectType.OutOfMemoryError :: jvmExceptions
 
 }

@@ -29,13 +29,15 @@
 package org.opalj.fp
 
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.concurrent.Locking
+import org.opalj.concurrent.Locking.withReadLock
+import org.opalj.concurrent.Locking.withWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * An object that identifies a specific kind of properties. An element in
  * the [[PropertyStore]] must be associated with at most one property per kind/key.
  *
- * To create a property key use the companion object's [[PropertyKey$.next]] method.
+ * To create a property key use the companion object's [[PropertyKey$.create]] method.
  *
  * @author Michael Eichberg
  */
@@ -49,14 +51,16 @@ class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
  *
  * @author Michael Eichberg
  */
-object PropertyKey extends Locking {
+object PropertyKey {
+
+    private[this] val lock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
     private[this] val defaultProperties = ArrayBuffer.empty[Property]
     private[this] var lastKeyId: Int = -1
 
     def create(name: String, defaultProperty: Property): PropertyKey =
-        withWriteLock {
+        withWriteLock(lock) {
             lastKeyId += 1
             propertyKeyNames += name
             defaultProperties += defaultProperty
@@ -64,12 +68,12 @@ object PropertyKey extends Locking {
         }
 
     def name(id: Int): String =
-        withReadLock {
+        withReadLock(lock) {
             propertyKeyNames(id)
         }
 
     def defaultProperty(id: Int): Property =
-        withReadLock {
+        withReadLock(lock) {
             defaultProperties(id)
         }
 

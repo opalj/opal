@@ -41,7 +41,7 @@ import org.opalj.br.VirtualSourceElement
  */
 case object NoSourceElementsMatcher extends SourceElementsMatcher {
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = Set.empty
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = Set.empty
 
 }
 

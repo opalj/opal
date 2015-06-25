@@ -56,11 +56,11 @@ case class MultiResult(
  * Encapsulates the '''final results''' of the computation of a set of properties that
  * required no intermediate steps.
  *
- * A [[OneStepMultiResult]] is only to be used if no further refinement is possible
+ * A `ImmediateMultiResult` is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class OneStepMultiResult(
+case class ImmediateMultiResult(
     properties: Traversable[(Entity, Property)])
         extends PropertyComputationResult
 
@@ -77,20 +77,20 @@ case class Result(e: Entity, p: Property) extends PropertyComputationResult
  * Encapsulates the '''final result''' of a computation of a property that '''required
  * no intermediate results'''.
  *
- * A [[OneStepResult]] is only to be used if no further refinement is possible
+ * A `ImmediateResult` is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class OneStepResult(e: Entity, p: Property) extends PropertyComputationResult
+case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
- * Factory for [[Result]] and [[OneStepResult]] objects.
+ * Factory for [[Result]] and [[IntermediateResult]] objects.
  */
 object Result {
 
-    def apply(e: Entity, p: Property, oneStep: Boolean): PropertyComputationResult = {
-        if (oneStep)
-            new OneStepResult(e, p)
+    def apply(e: Entity, p: Property, immediate: Boolean): PropertyComputationResult = {
+        if (immediate)
+            new ImmediateResult(e, p)
         else
             new Result(e, p)
     }

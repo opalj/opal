@@ -46,7 +46,7 @@ case class CHECKCAST(
 
     final def mnemonic: String = "checkcast"
 
-    final def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
+    final def jvmExceptions: List[ObjectType] = CHECKCAST.jvmExceptions
 
     final def length: Int = 3
 
@@ -84,6 +84,6 @@ object CHECKCAST {
 
     final val opcode = 192
 
-    val runtimeExceptions = List(ObjectType.ClassCastException)
+    val jvmExceptions = List(ObjectType.ClassCastException)
 
 }
