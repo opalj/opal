@@ -40,7 +40,7 @@ import org.opalj.fp.PropertyStore
 object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
     /**
-     * The [[SourceElementsPropertyStore]] has no special prerequisites.
+     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
      *
      * @return `Nil`.
      */

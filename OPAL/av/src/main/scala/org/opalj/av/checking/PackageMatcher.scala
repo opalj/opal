@@ -30,33 +30,76 @@ package org.opalj
 package av
 package checking
 
+import scala.collection.Set
+
 import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Matches all classes, fields and methods that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation.
- *      (I.e., "/" are used to separate a package name's segments; e.g.,
- *      "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package
- *      name are matched otherwise only classes declared in the given package are matched.
- *
- * @author Michael Eichberg
+ * Matches all classes in the specified package.
+ * @author Marco Torsello
  */
-case class PackageMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
+case class PackageMatcher(
+        namePredicate: NamePredicate,
+        classMatcher: ClassMatcher) extends ClassLevelMatcher {
 
-    def doesMatch(classFile: ClassFile): Boolean = {
+    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName
-        nameMatcher.doesMatch(packageName)
+        namePredicate(packageName) &&
+            classMatcher.doesMatch(classFile)
+    }
+
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
+        matchClasses(project.allClassFiles filter { doesMatch(_) }, classMatcher.matchMethods, classMatcher.matchFields)
     }
 }
 
+/**
+ * Defines several additional factory methods to facilitate the creation of
+ * [[PackageMatcher]]s.
+ *
+ * @author Marco Torsello
+ */
 object PackageMatcher {
 
     def apply(
-        packageName: String,
-        matchSubpackages: Boolean = false): PackageMatcher = {
-        PackageMatcher(SimpleNameMatcher(packageName, matchSubpackages))
+        namePredicate: NamePredicate): PackageMatcher = {
+        new PackageMatcher(namePredicate, AllClassMatcher)
     }
-}
 
+    /**
+     * Creates a PackageMatcher, that relies on a ClassMatcher for matching the classType.
+     *
+     * @param packageName The name of a package in java notation.
+     *      (I.e., "." are used to separate a package name's segments; e.g.,
+     *      "java.lang.Object").
+     * @param classMatcher The [[ClassMatcher]], that will be used to match the class.
+     * @param matchSubpackages If true, all packages, that start with the given package
+     *      name are matched otherwise only classes declared in the given package are matched.
+     *
+     */
+    def apply(
+        packageName: String,
+        classMatcher: ClassMatcher,
+        matchSubpackages: Boolean): PackageMatcher = {
+        new PackageMatcher(SimpleNamePredicate(packageName.replace('.', '/'), matchSubpackages), classMatcher)
+    }
+
+    def apply(
+        packageName: String,
+        matchSubpackages: Boolean): PackageMatcher = {
+        apply(packageName.replace('.', '/'), AllClassMatcher, matchSubpackages)
+    }
+
+    def apply(
+        packageName: String): PackageMatcher = {
+        apply(packageName.replace('.', '/'), AllClassMatcher, false)
+    }
+
+    def apply(
+        packageName: String,
+        classMatcher: ClassMatcher): PackageMatcher = {
+        apply(packageName.replace('.', '/'), classMatcher, false)
+    }
+
+}

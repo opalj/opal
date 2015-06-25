@@ -31,21 +31,59 @@ package av
 package checking
 
 import scala.collection.Set
-
-import org.opalj.br.ClassFile
-import org.opalj.br.VirtualSourceElement
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br._
 
 /**
- * A class level matcher matches classes and all methods and fields defined by the
- * respective classes.
- *
- * @author Michael Eichberg
+ * @author Marco Torsello
  */
-trait ClassLevelMatcher extends SourceElementsMatcher {
+trait AnnotationsPredicate {
 
-    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
+    def apply(others: Annotations): Boolean
 
-    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
+}
+
+/**
+ * @author Marco Torsello
+ */
+case object NoAnnotationsPredicate extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = true
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class AllAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
+    }
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class StrictlyAllAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        others.size == annotationPredicates.size &&
+            annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
+    }
+
+}
+
+/**
+ * @author Marco Torsello
+ */
+case class AnyAnnotationsPredicate(
+        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+
+    def apply(others: Annotations): Boolean = {
+        annotationPredicates.exists(p ⇒ others.exists(a ⇒ p(a)))
+    }
 
 }

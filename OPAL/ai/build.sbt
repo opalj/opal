@@ -1,6 +1,6 @@
 name := "Abstract Interpretation Framework"
 
-version := "0.0.1-SNAPSHOT"
+version := "0.0.2-SNAPSHOT"
 
 // We don't want the build to be aborted by inter-project links that are reported by
 // scaladoc as errors if we publish the projects; hence, we do not use the 

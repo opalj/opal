@@ -84,7 +84,7 @@ case class Result(e: Entity, p: Property) extends PropertyComputationResult
 case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
- * Factory for [[Result]] and [[OneStepResult]] objects.
+ * Factory for [[Result]] and [[IntermediateResult]] objects.
  */
 object Result {
 
