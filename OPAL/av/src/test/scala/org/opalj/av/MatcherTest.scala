@@ -490,13 +490,11 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         ).extension(project).size should be(12)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"),
-            AnnotatedWith("entity.annotation.Transient")
+            ClassMatcher("entity.impl.User"), AnnotatedWith("entity.annotation.Transient")
         ).extension(project).size should be(1)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"),
-            MethodsWithName("getFullName")
+            ClassMatcher("entity.impl.User"), MethodWithName("getFullName")
         ).extension(project).size should be(1)
     }
 
@@ -513,8 +511,7 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         ).extension(project) should be(empty)
 
         MethodMatcher(
-            ClassMatcher("entity.impl.User"),
-            MethodsWithName("getStreet")
+            ClassMatcher("entity.impl.User"), MethodWithName("getStreet")
         ).extension(project) should be(empty)
     }
 

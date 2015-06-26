@@ -470,7 +470,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
         sourceEnsemble: Symbol,
-        methodPredicate: MethodPredicate)
+        methodPredicate: SourceElementPredicate[Method])
             extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription
@@ -573,7 +573,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
-        def is_only_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
+        def is_only_allowed_to(
+            dependencyTypes: Set[DependencyType],
+            targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
                 LocalOutgoingOnlyAllowedConstraint(
                     dependencyTypes,
@@ -581,7 +583,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def is_not_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
+        def is_not_allowed_to(
+            dependencyTypes: Set[DependencyType],
+            targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
                 LocalOutgoingNotAllowedConstraint(
                     dependencyTypes,
@@ -589,14 +593,18 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(annotationPredicate: AnnotationPredicate): Unit = {
+        def every_element_should_be_annotated_with(
+            annotationPredicate: AnnotationPredicate): Unit = {
             architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     Seq(annotationPredicate)) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(property: String, annotationPredicates: Seq[AnnotationPredicate], matchAny: Boolean = false): Unit = {
+        def every_element_should_be_annotated_with(
+            property: String,
+            annotationPredicates: Seq[AnnotationPredicate],
+            matchAny: Boolean = false): Unit = {
             architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
@@ -605,7 +613,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     matchAny) :: architectureCheckers
         }
 
-        def every_element_should_implement_method(methodPredicate: MethodPredicate): Unit = {
+        def every_element_should_implement_method(
+            methodPredicate: SourceElementPredicate[Method]): Unit = {
             architectureCheckers =
                 LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
