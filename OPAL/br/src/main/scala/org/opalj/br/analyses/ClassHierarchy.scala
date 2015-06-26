@@ -956,47 +956,56 @@ class ClassHierarchy private (
             case (arg :: tail, supArg :: supTail) ⇒
                 val isSubtypeOf = isSubtypeOfByTypeArgument(arg, supArg)
                 if (isSubtypeOf.isNoOrUnknown)
-                    No
+                    isSubtypeOf
                 else
                     compareTypeArguments(tail, supTail)
         }
     }
 
     /**
-     * Determines whether the given [[ClassSignature]] of the potential ´subtype´ does implement or extend
-     * the interface or class given with the parameter ´supertype´ of type [[ObjectType]]. In case that the
-     * ´subtype´ does implement or extend the ´supertype´, an [[Option]] of [[ClassTypeSignature]] is returned.
+     * Determines whether the given [[ClassSignature]] of the potential `subtype` does implement or extend
+     * the interface or class given with the parameter `supertype` of type [[ObjectType]]. In case that the
+     * `subtype` does implement or extend the `supertype`, an [[Option]] of [[ClassTypeSignature]] is returned.
      * Otherwise None will be returned.
      *
+     * @example
+     *  ================= START ==================
+     *
+     *  subtype: [[ClassSignature]] from class A where A extends List<String>
+     *  supertype: List as [[ObjectType]]
+     *
+     *  This method scans all super classes and super interfaces of A in order to find
+     *  the concrete class declaration of List where it is bound to String. The above example
+     *  would yield the [[ClassTypeSignature]] of List<String>.
+     *
+     *  ================== END ===================
      *
      * @param subtype Any type or interface.
      * @param supertype Any type or interface.
      *
-     * @return [[Option]] of [[ClassTypeSignature]] if the ´subtype´ extends or implements the given ´supertype´, [[None]] otherwise.
+     * @return [[Option]] of [[ClassTypeSignature]] if the `subtype` extends or implements the given `supertype`, [[None]] otherwise.
      */
     def getSupertypeDeclaration(subtype: ClassSignature,
                                 supertype: ObjectType)(
                                     implicit project: ClassFileRepository): Option[ClassTypeSignature] = {
         import project.classFile
         val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
-        for (cts ← signaturesToCheck) {
-            if (cts.objectType eq supertype)
-                return Some(cts)
-        }
-        for (cts ← signaturesToCheck) {
-            val superCs = getClassSignature(cts.objectType)
-            if (superCs.nonEmpty) {
-                val matchingType = getSupertypeDeclaration(superCs.get, supertype)
-                if (matchingType.nonEmpty)
-                    return matchingType
-            }
-        }
+        for {
+            cts ← signaturesToCheck if cts.objectType eq supertype
+        } { return Some(cts) }
+
+        for {
+            cts ← signaturesToCheck
+            superCs ← getClassSignature(cts.objectType)
+            matchingType ← getSupertypeDeclaration(superCs, supertype)
+        } { return Some(matchingType) }
+
         None
     }
 
     /*
-     * Returns an Option[ClassSignature] according to the given ObjectType. Is the
-     * given ObjectType not resolvable by the project, None is returned.
+     * Returns an [[Option[[ClassSignature]]]] according to the given [[ObjectType]]. Is the
+     * given ObjectType not resolvable by the project, [[None]] is returned.
      */
     @inline private[this] final def getClassSignature(ot: ObjectType)(
         implicit project: ClassFileRepository): Option[ClassSignature] = {
@@ -1005,8 +1014,8 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
-     * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
+     * Determines if the given class or interface type encoded in the [[ClassTypeSignature]] `subtype` is actually a subtype
+     * of the class or interface type encoded in the [[ClassTypeSignature]] of the `supertype`.
      *
      * @note This method relies – in case of a comparison of non generic types – on
      *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
@@ -1032,13 +1041,13 @@ class ClassHierarchy private (
      *  Type definition: List<String, ? extends Number, ?>
      *
      *  ContainerType - A ContainerType is a type with parameters. In the previous type definition
-     *                  is ´List´ the ContainerType.
-     *  TypeArgument - A TypeArgument is one of the parameters of the ContainerType. The above type
-     *                  [[definition has three TypeArgument]]s. (String, Integer extends String and ?)
-     *  VarianceIndicator - A VarianceIndicator can be defined in the context of [[TypeArgument]]s. There
+     *                  is `List` the ContainerType.
+     *  TypeArgument - A [[TypeArgument]] is one of the parameters of the ContainerType. The above type
+     *                  definition has three [[TypeArgument]]s. (String, ? extends Number and ?)
+     *  VarianceIndicator - A [[VarianceIndicator]] is defined in the context of [[TypeArgument]]s. There
      *                      is a [[CovariantIndicator]] which can be defined in the type definition by using the
-     *                      ´extends´ keyword. (? extends Number is a covariant [[TypeArgument]]). The other
-     *                      one is the [[ContravariantIndicator]] which could be defined using the ´super´ keyword.
+     *                      `extends` keyword. (? extends Number is a covariant [[TypeArgument]]). The other
+     *                      one is the [[ContravariantIndicator]] which is defined using the `super` keyword.
      *
      *
      * @example ========= 1 ==========
@@ -1047,8 +1056,8 @@ class ClassHierarchy private (
      *      subtype: List<String> // List<E>
      *      supertype: List<String> // List<E>
      *
-     *      If the ContainerType of the ´subtype´ is equal to the ContainerType of the ´supertype´ and non of the
-     *      [[TypeArguments]] has a [[VarianceIndicator]] then exists a subtype relation if and only if all of the
+     *      If the ContainerType of the `subtype` is equal to the ContainerType of the `supertype` and non of the
+     *      [[TypeArgument]]s has a [[VarianceIndicator]], then exists a subtype relation if and only if all of the
      *      [[TypeArgument]]s are equal.
      *
      * @example ========= 2 =========
@@ -1056,20 +1065,21 @@ class ClassHierarchy private (
      * subtype:     SomeClass // SomeClass extends SomeInterface<String>
      * supertype:   SomeInterface<String> // SomeInterface<E>
      *
-     * Is the ´subtype´ a [[ConcreteType]] without [[FormalTypeParameter]]s and the ´supertype´ is a [[GenericType]] then
-     * we first have to check whether the ´subtype´ is a subtype of the given ´supertype´. If not then is the ´subtype´ not a acctual
-     * subtype of the given ´supertype´. Otherwise we have to find the definition of the ´supertype´ in the type defintion
-     * or the type definiton of a super class or an super interface (interface definiton of SomeInterface<String>).
-     * Once found the ´supertype´ we can compare each [[TypeArgument]]s of the supertype defintion of the ´subtype´ and
-     * the given ´supertype´. If all of them are equal ´subtype´ is a acctual subtype of the ´supertype´.
+     * Is the `subtype` a [[ConcreteType]] without [[FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
+     * we first have to check whether the `subtype` is a subtype of the given `supertype`. If not, then the `subtype` is not an actual
+     * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type defintion
+     * or the type definiton of a super class or a super interface (interface definiton of SomeInterface<String>).
+     * Once found the `supertype`, we can compare all [[TypeArgument]]s of the supertype defintion of the `subtype`
+     * and the given `supertype`. (We are comparing String and String in this example)
+     * If all of them are equal, `subtype` is an actual subtype of the `supertype`.
      *
      * @example ========= 3 =========
      *
      * subtype:     Foo<Integer, String> // Foo<T,E> extends Bar<E>
      * supertype:   Bar<String> // Bar<E>
      *
-     * Does the ´subtype´ and ´supertype´ have [[FormalTypeParameter]]s and the ContainerType of the ´subtype´
-     * is a subtype of the ContainerType of the ´supertype´, we have to compare the shared [[TypeArgument]]s. In
+     * Does the `subtype` and `supertype` have [[FormalTypeParameter]]s and the ContainerType of the `subtype`
+     * is a subtype of the ContainerType of the `supertype`, we have to compare the shared [[TypeArgument]]s. In
      * our example the subtype Foo has two [[FormalTypeParameter]] (T,E) and the supertype Bar has only one
      * [[FormalTypeParameter]] (E). Since both of them specify E in the [[ClassSignature]] of Foo, they share E as
      * [[FormalTypeParameter]]. So it is necessary to check whether the acctual bound [[TypeArgument]] at the
@@ -1078,9 +1088,7 @@ class ClassHierarchy private (
      * of the [[FormalTypeParamter]]s of Foo and at the first postion of the [[FormalTypeParamter]]s of Bar. Second and last
      * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
      * to decide the subtype relation.
-     *
      */
-    //TODO Consider intersection types
     def isSubtypeOf(
         subtype: ClassTypeSignature,
         supertype: ClassTypeSignature)(
@@ -1091,10 +1099,11 @@ class ClassHierarchy private (
             if (suffix == Nil && superSuffix == Nil)
                 return Yes
 
-            suffix.zip(superSuffix).map(x ⇒ compareTypeArguments(
-                x._1.typeArguments,
-                x._2.typeArguments)
-            ).foldLeft(Answer(true))((acc, value) ⇒ Answer(acc.isYes && value.isYes))
+            suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) ⇒ (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
+                case (_, Unknown) | (Unknown, _) ⇒ Unknown
+                case (Yes, No) | (No, Yes)       ⇒ No
+                case (x, y) if x eq y            ⇒ x
+            })
         }
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
@@ -1139,23 +1148,25 @@ class ClassHierarchy private (
 
                     val cs = getClassSignature(subtype)
                     val superCs = getClassSignature(supertype)
-                    if (cs.nonEmpty && superCs.nonEmpty) {
-                        val ftp = cs.get.formalTypeParameters
-                        val superFtp = superCs.get.formalTypeParameters
-                        var typeArgs = List.empty[TypeArgument]
-                        var supertypeArgs = List.empty[TypeArgument]
-                        for (i ← 0 to ftp.size - 1) {
-                            val index = superFtp.indexOf(ftp(i))
-                            if (index >= 0) {
-                                typeArgs = typeArguments(i) :: typeArgs
-                                supertypeArgs = superTypeArguments(index) :: supertypeArgs
-                            }
+                    if (cs.isEmpty || superCs.isEmpty)
+                        return Unknown
+
+                    val ftp = cs.get.formalTypeParameters
+                    val superFtp = superCs.get.formalTypeParameters
+                    var typeArgs = List.empty[TypeArgument]
+                    var supertypeArgs = List.empty[TypeArgument]
+                    for (i ← 0 to ftp.size - 1) {
+                        val index = superFtp.indexOf(ftp(i))
+                        if (index >= 0) {
+                            typeArgs = typeArguments(i) :: typeArgs
+                            supertypeArgs = superTypeArguments(index) :: supertypeArgs
                         }
-                        if (typeArgs.isEmpty)
-                            if (cs.get.superClassSignature.classTypeSignatureSuffix.nonEmpty) Yes
-                            else haveSameTypeBinding(subtype, supertype, superTypeArguments)
-                        else compareTypeArguments(typeArgs, supertypeArgs)
-                    } else Unknown
+                    }
+                    if (typeArgs.isEmpty)
+                        if (cs.get.superClassSignature.classTypeSignatureSuffix.nonEmpty) Yes
+                        else haveSameTypeBinding(subtype, supertype, superTypeArguments)
+                    else compareTypeArguments(typeArgs, supertypeArgs)
+
                 }
                 (subtype, supertype) match {
                     case (ConcreteType(_), ConcreteType(_)) ⇒ Yes
@@ -1212,8 +1223,11 @@ class ClassHierarchy private (
             implicit project: ClassFileRepository): Answer = {
         (supertype.classBound.collectFirst({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }) ++
             supertype.interfaceBound.collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig })).
-            map { superCts ⇒ isSubtypeOf(subtype, superCts) }.
-            foldLeft(Answer(true))((acc, value) ⇒ Answer(acc.isYes && value.isYes))
+            foldLeft(Yes: Answer)((acc, superCts) ⇒ (acc, isSubtypeOf(subtype, superCts)) match {
+                case (_, Unknown) | (Unknown, _) ⇒ Unknown
+                case (Yes, No) | (No, Yes)       ⇒ No
+                case (x, y) if x eq y            ⇒ x
+            })
     }
 
     //

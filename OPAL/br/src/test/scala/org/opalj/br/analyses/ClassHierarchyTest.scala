@@ -643,6 +643,12 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         isSubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithAltBase))) should be(No)
     }
 
+    it should "correctly reflect the type hierarchy related to formal type parameters and should return Unknown" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(unknownContainer, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Unknown)
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // TESTS IF WE HAVE AN INCOMPLETE CLASS HIERARCHY

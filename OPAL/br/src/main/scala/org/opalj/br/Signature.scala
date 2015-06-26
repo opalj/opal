@@ -701,9 +701,9 @@ object GenericType {
 
 /**
  * Matches all [[ClassTypeSignature]]s which consists of
- * a [[SimpleClassTypeSignature]] with a optional List of TypeArguments (
- * which consists of [[Wildcard]]s or [[ProperTypeArgument]]s) and a non-Empty List of
- * [[SimpleClassTypeSignature]] (which encode the suffix of the class type signature for
+ * a [[SimpleClassTypeSignature]] with an optional list of TypeArguments (
+ * which consists of [[Wildcard]]s or [[ProperTypeArgument]]s) and a non-empty list of
+ * [[SimpleClassTypeSignature]] (which encodes the suffix of the [[ClassTypeSignature]] for
  * inner classes)
  *
  * @see For matching signatures see [[Signature]].
