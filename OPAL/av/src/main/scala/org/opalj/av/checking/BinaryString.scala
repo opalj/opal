@@ -31,26 +31,31 @@ package av
 package checking
 
 /**
- * @author Michael Eichberg
+ * Helper class to mark those places where a string using binary notation (i.e.,
+ * where packages are separated using "/" instead of ".") is expected.
+ *
+ * A related implicit conversion is defined in the package object.
  */
-case class SimpleNamePredicate(
-    name: String,
-    matchPrefix: Boolean)
-        extends NamePredicate {
+final class BinaryString private (private val string: String) {
 
-    def apply(otherName: String): Boolean = {
-        val binaryName = name.replace('.', '/')
-        otherName.startsWith(binaryName) && (
-            matchPrefix || binaryName.length == otherName.length)
-    }
-}
+    assert(string.indexOf('.') == -1)
 
-object SimpleNamePredicate {
+    def asString: String = this.string
 
-    def apply(
-        name: String): SimpleNamePredicate = {
-        this(name, false)
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BinaryString ⇒ that.string == this.string
+            case _                  ⇒ false
+        }
     }
 
+    override def hashCode() = string.hashCode()
+
+    override def toString() = string.toString()
 }
 
+object BinaryString {
+
+    def apply(string: String) = new BinaryString(string.replace('.', '/'))
+
+}

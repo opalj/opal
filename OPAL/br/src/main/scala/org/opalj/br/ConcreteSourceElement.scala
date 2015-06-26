@@ -27,21 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
-
-import scala.util.matching.Regex
+package br
 
 /**
- * Matches name of class, fields and methods based on their name. The name is matched
- * against the binary notation.
+ * We treat as a source element every entity that can be referred to
+ * by other class files.
  *
  * @author Michael Eichberg
  */
-case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
+trait ConcreteSourceElement extends SourceElement {
 
-    def apply(otherName: String): Boolean = {
-        matcher.findFirstIn(otherName).isDefined
-    }
+    def accessFlags: Int
+
 }
-

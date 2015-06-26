@@ -47,11 +47,15 @@ import org.opalj.graphs.DefaultMutableNode
 
 /**
  * Collects the Definition-Use information. I.e., makes the information available
- * which variable is accessed where. Here, all variables are identified using int values.
- * The parameters have negative int values.
+ * which variable is accessed where. Here, all variables are identified using int values
+ * where the int value is equivalent to the instruction that initializes the respective
+ * variable. The parameters given to a method have negative int values (the first
+ * parameter has the value -1, the second -2 and so forth; the computational type
+ * category is ignored.).
  *
+ * ==Core Properties==
  * This domain can be reused to successively perform abstract interpretation of different
- * methods. The domain's initProperties method resets the entire state related to
+ * methods. The domain's inherited `initProperties` method resets the entire state related to
  * the abstract interpretation of a method.
  *
  * @author Michael Eichberg
@@ -69,12 +73,15 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     // INSTRUCTION        a_load0   getfield    invokestatic a_store0  getstatic  return
     // STACK              empty     [ -1 ]      [ 1 ]        [ 2 ]     empty      [ 4 ]
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
-    // USED BY  "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
+    // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
     private[this] var instructions: Array[Instruction] = _
 
     // Stores the information where the value defined by the current instruction is
-    // used.
+    // used. The used array basically mirrors the instructions array, but has additional
+    // space for storing the information about the usage of the parameters. The size
+    // of this additional space is `parametersOffset` large and is prepended the part
+    // of the array that mirrors the instructions array.
     private[this] var used: Array[PCs] = _
     private[this] var parametersOffset: Int = _
 
@@ -376,12 +383,10 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                                     o
                                 else if (o eq null)
                                     n
-                                else {
-                                    if (n.subsetOf(o))
-                                        o
-                                    else
-                                        n ++ o
-                                }
+                                else if (n.subsetOf(o))
+                                    o
+                                else
+                                    n ++ o
                             })
                     if (joinedDefLocals ne oldDefLocals) {
                         forceScheduling = true

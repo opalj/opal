@@ -83,7 +83,7 @@ import scala.collection.mutable.ListBuffer
  *      a specific element then the result must be more specific.
  *
  * ===Cyclic Dependencies===
- * In general, it may happen that some anlyses cannot make any progress, because
+ * In general, it may happen that some analyses cannot make any progress, because
  * they are mutually dependent. In this case
  * the computation of a property p of an entity e1 depends
  * on the property p of an entity e2 that requires the property p of the entity e1.

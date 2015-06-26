@@ -93,8 +93,7 @@ final class ClassFile private (
     val fields: Fields,
     val methods: Methods,
     val attributes: Attributes)
-        extends SourceElement
-        with CommonSourceElementAttributes {
+        extends ConcreteSourceElement {
 
     import ClassFile._
 

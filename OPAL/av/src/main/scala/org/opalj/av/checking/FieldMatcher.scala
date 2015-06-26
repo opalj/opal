@@ -39,26 +39,26 @@ import org.opalj.br.VirtualSourceElement
 import org.opalj.br.Annotation
 
 /**
- * Matches fields based on their name, type, annotations and class.
+ * Matches fields based on their name, type, annotations and declaring class.
  *
  * @author Marco Torsello
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-    classLevelMatcher: ClassLevelMatcher,
-    annotationsPredicate: AnnotationsPredicate,
-    fieldType: Option[FieldType],
-    fieldName: Option[NamePredicate])
+    declaringClass: ClassLevelMatcher,
+    annotations: AnnotationsPredicate,
+    theType: Option[FieldType],
+    theName: Option[NamePredicate])
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
-        classLevelMatcher.doesMatch(classFile)
+        declaringClass.doesMatch(classFile)
     }
 
     def doesFieldMatch(field: Field): Boolean = {
-        (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get(field.name))) &&
-            annotationsPredicate(field.annotations)
+        (theType.isEmpty || (theType.get eq field.fieldType)) && (
+            (theName.isEmpty || theName.get(field.name))) &&
+            annotations(field.annotations)
     }
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
@@ -83,19 +83,30 @@ case class FieldMatcher(
 object FieldMatcher {
 
     def apply(
-        classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
-        annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
-        fieldType: Option[String] = None, // java.lang.Object
-        fieldName: Option[String] = None,
+        declaringClass: ClassLevelMatcher = AllClasses,
+        annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
+        theType: Option[String] = None,
+        theName: Option[String] = None,
         matchPrefix: Boolean = false): FieldMatcher = {
 
-        val nameMatcher: Option[SimpleNamePredicate] = fieldName match {
-            case Some(f) ⇒ Some(SimpleNamePredicate(f, matchPrefix))
-            case _       ⇒ None
-        }
+        assert(theName.isDefined || !matchPrefix)
 
-        new FieldMatcher(classLevelMatcher, annotationsPredicate, fieldType.map(ftn ⇒
-            FieldType(ftn.replace('.', '/'))), nameMatcher)
+        val nameMatcher: Option[NamePredicate] =
+            theName match {
+                case Some(f) ⇒
+                    if (matchPrefix)
+                        Some(StartsWith(f))
+                    else
+                        Some(Equals(f))
+                case _ ⇒
+                    None
+            }
+
+        new FieldMatcher(
+            declaringClass,
+            annotationsPredicate,
+            theType.map(fqn ⇒ FieldType(fqn.replace('.', '/'))),
+            nameMatcher)
     }
 
 }

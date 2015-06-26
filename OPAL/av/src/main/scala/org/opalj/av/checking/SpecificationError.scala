@@ -31,7 +31,7 @@ package av
 package checking
 
 /**
- * Used to report errors in the specification.
+ * Used to report errors in the specification itself.
  *
  * @author Michael Eichberg
  */
