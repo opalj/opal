@@ -77,6 +77,9 @@ class CastTest extends FunSpec with Matchers {
         val I2DMethod = CastInstructionsClassFile.findMethod("i2d").get
         val I2LMethod = CastInstructionsClassFile.findMethod("i2l").get
         val I2FMethod = CastInstructionsClassFile.findMethod("i2f").get
+        val I2SMethod = CastInstructionsClassFile.findMethod("i2s").get
+        val I2BMethod = CastInstructionsClassFile.findMethod("i2b").get
+        val I2CMethod = CastInstructionsClassFile.findMethod("i2c").get
 
         describe("using no AI results") {
 
@@ -104,12 +107,12 @@ class CastTest extends FunSpec with Matchers {
                 "4: r_2 = op_1;",
                 "5: return;")
 
-            def castResultAST(from: ComputationalType, to: ComputationalType): Array[Stmt] = Array(
+            def castResultAST(from: ComputationalType, to: BaseType): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
                 Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
-                Assignment(1, SimpleVar(from.category.toInt, to), CastExpr(1, to, SimpleVar(0, from))),
-                Assignment(2, SimpleVar(-2 - from.category, to), SimpleVar(from.category.toInt, to)),
+                Assignment(1, SimpleVar(from.category.toInt, to.computationalType), PrimitiveTypecastExpr(1, to, SimpleVar(0, from))),
+                Assignment(2, SimpleVar(-2 - from.category, to.computationalType), SimpleVar(from.category.toInt, to.computationalType)),
                 Return(3))
 
             def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
@@ -168,7 +171,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeFloat))
+                statements.shouldEqual(castResultAST(ComputationalTypeDouble, FloatType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (float) op_0;"))
             }
 
@@ -178,7 +181,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeInt))
+                statements.shouldEqual(castResultAST(ComputationalTypeDouble, IntegerType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (int) op_0;"))
             }
 
@@ -188,7 +191,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeDouble, ComputationalTypeLong))
+                statements.shouldEqual(castResultAST(ComputationalTypeDouble, LongType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (long) op_0;"))
             }
 
@@ -198,7 +201,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeDouble))
+                statements.shouldEqual(castResultAST(ComputationalTypeFloat, DoubleType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (double) op_0;"))
             }
 
@@ -208,7 +211,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeLong))
+                statements.shouldEqual(castResultAST(ComputationalTypeFloat, LongType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (long) op_0;"))
             }
 
@@ -218,7 +221,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeFloat, ComputationalTypeInt))
+                statements.shouldEqual(castResultAST(ComputationalTypeFloat, IntegerType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (int) op_0;"))
             }
 
@@ -228,7 +231,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeDouble))
+                statements.shouldEqual(castResultAST(ComputationalTypeLong, DoubleType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (double) op_0;"))
             }
 
@@ -238,7 +241,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeFloat))
+                statements.shouldEqual(castResultAST(ComputationalTypeLong, FloatType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (float) op_0;"))
             }
 
@@ -248,7 +251,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeLong, ComputationalTypeInt))
+                statements.shouldEqual(castResultAST(ComputationalTypeLong, IntegerType))
                 javaLikeCode.shouldEqual(longResultJLC("3: op_2 = (int) op_0;"))
             }
 
@@ -258,7 +261,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeDouble))
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, DoubleType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (double) op_0;"))
             }
 
@@ -268,7 +271,7 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeLong))
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, LongType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (long) op_0;"))
             }
 
@@ -278,8 +281,38 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(castResultAST(ComputationalTypeInt, ComputationalTypeFloat))
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, FloatType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (float) op_0;"))
+            }
+            
+            it("should correctly reflect the i2c instruction") {
+                val statements = AsQuadruples(I2CMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, CharType))
+                javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (char) op_0;"))
+            }
+            
+            it("should correctly reflect the i2b instruction") {
+                val statements = AsQuadruples(I2BMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, ByteType))
+                javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (byte) op_0;"))
+            }
+            
+            it("should correctly reflect the i2s instruction") {
+                val statements = AsQuadruples(I2SMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(castResultAST(ComputationalTypeInt, ShortType))
+                javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (short) op_0;"))
             }
         }
 

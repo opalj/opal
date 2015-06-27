@@ -135,11 +135,11 @@ object AsQuadruples {
                 schedule(pcOfNextInstruction(pc), stack)
             }
 
-            def castOperation(cTpe: ComputationalType): Unit = {
+            def castOperation(trgtTpe: BaseType): Unit = {
                 val value :: rest = stack
-                val result = OperandVar(cTpe, stack)
+                val result = OperandVar(trgtTpe.computationalType, stack)
                 statements(pc) = List(
-                    Assignment(pc, result, CastExpr(pc, cTpe, value)))
+                    Assignment(pc, result, PrimitiveTypecastExpr(pc, trgtTpe, value)))
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
@@ -493,10 +493,13 @@ object AsQuadruples {
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
-                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ castOperation(ComputationalTypeFloat)
-                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ castOperation(ComputationalTypeInt)
-                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ castOperation(ComputationalTypeLong)
-                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ castOperation(ComputationalTypeDouble)
+                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ castOperation(FloatType)
+                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ castOperation(IntegerType)
+                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ castOperation(LongType)
+                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ castOperation(DoubleType)
+                case I2C.opcode ⇒ castOperation(CharType)
+                case I2B.opcode ⇒ castOperation(ByteType)
+                case I2S.opcode ⇒ castOperation(ShortType)
                 
                 case WIDE.opcode ⇒
                     statements(pc) = List(EmptyStmt(pc))

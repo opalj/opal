@@ -97,4 +97,18 @@ public class CastInstructions {
 	void i2l(int i){
 		long result = (long) i;
 	}
+	
+	void i2c(int i){
+		char result = (char) i;
+	}
+	
+	void i2b(int i){
+		byte result = (byte) i;
+	}
+	
+	void i2s(int i){
+		short result = (short) i;
+	}
+	
+	
 }

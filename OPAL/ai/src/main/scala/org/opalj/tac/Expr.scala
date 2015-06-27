@@ -107,10 +107,12 @@ case class PrefixExpr(
     op: UnaryArithmeticOperator,
     operand: Expr) extends Expr
 
-case class CastExpr(
+case class PrimitiveTypecastExpr(
     pc: PC,
-    cTpe: ComputationalType,
-    operand: Expr) extends Expr
+    targetTpe: BaseType,
+    operand: Expr) extends Expr {
+  final def cTpe = targetTpe.computationalType
+}
 
 trait Var extends Expr {
 

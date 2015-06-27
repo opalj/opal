@@ -43,109 +43,122 @@ import org.opalj.br._
  */
 object ToJavaLike {
 
-    @inline final def toJavaLikeExpr(expr: Expr): String = {
-        expr match {
-            case dvr: DomainValueBasedVar ⇒ s"${dvr.name} /*${dvr.properties.toString()}*/"
-            case Var(name)                ⇒ name
-            case Param(_ /*cTpe*/ , name) ⇒ name
-            case IntConst(_, value)       ⇒ value.toString
-            case LongConst(_, value)      ⇒ value.toString+"l"
-            case FloatConst(_, value)     ⇒ value.toString
-            case DoubleConst(_, value)    ⇒ value.toString+"d"
-            case ClassConst(_, value)     ⇒ value.toString
-            case NullExpr(_)              ⇒ "null"
-            case InstanceOf(trg, cmpTp)   ⇒ s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
-            case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
-                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
-            case PrefixExpr(_, _, op, operand) ⇒
-                op.toString()+" "+toJavaLikeExpr(operand)
-            case CastExpr(_, trgTp, operand) ⇒ s"(${toJavaLikeCmpTp(trgTp)}) ${toJavaLikeExpr(operand)}"
-        }
+  @inline final def toJavaLikeExpr(expr: Expr): String = {
+    expr match {
+      case dvr: DomainValueBasedVar ⇒ s"${dvr.name} /*${dvr.properties.toString()}*/"
+      case Var(name) ⇒ name
+      case Param(_ /*cTpe*/ , name) ⇒ name
+      case IntConst(_, value) ⇒ value.toString
+      case LongConst(_, value) ⇒ value.toString + "l"
+      case FloatConst(_, value) ⇒ value.toString
+      case DoubleConst(_, value) ⇒ value.toString + "d"
+      case ClassConst(_, value) ⇒ value.toString
+      case NullExpr(_) ⇒ "null"
+      case InstanceOf(trg, cmpTp) ⇒ s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
+      case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
+        toJavaLikeExpr(left) + " " + op.toString() + " " + toJavaLikeExpr(right)
+      case PrefixExpr(_, _, op, operand) ⇒
+        op.toString() + " " + toJavaLikeExpr(operand)
+      case PrimitiveTypecastExpr(_, trgtTpe, operand) ⇒ s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
+    }
+  }
+
+  @inline final def toJavaLikeStmt(stmt: Stmt): String = {
+    stmt match {
+      case If(_, left, cond, right, target) ⇒
+        s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
+      case Goto(_, target) ⇒
+        s"goto $target;"
+      case Assignment(_, variable, expr) ⇒
+        s"${variable.name} = ${toJavaLikeExpr(expr)};"
+      case ReturnValue(_, expr) ⇒
+        s"return ${toJavaLikeExpr(expr)};"
+      case Return(_) ⇒
+        "return;"
+      case Nop(_) ⇒
+        ";"
+      case EmptyStmt(_) ⇒
+        ";"
+      case Checkcast(_, trg, cmpTp) ⇒
+        s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.asObjectType.simpleName};"
+      case MonitorEnter(_, objRef) ⇒
+        s"monitorenter ${objRef.name}"
+      case MonitorExit(_, objRef) ⇒
+        s"monitorexit ${objRef.name}"
+      //            case LookupSwitch(_, _, _, _)   ⇒ "" /*TODO*/
+      //            case TableSwitch(_, _, _, _, _) ⇒ "" /*TODO*/
+      case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
+        val code = new StringBuffer(256)
+
+        if (target.isDefined) code append target.get.name append " = "
+
+        if (receiver.isDefined) {
+          code append toJavaLikeExpr(receiver.get)
+          code append "/*" append declClass.toString append "*/"
+        } else
+          code append declClass.toString
+        code append "." append name
+
+        // TODO Check order...
+        code append (params map { toJavaLikeExpr(_) } mkString ("(", ", ", ")"))
+
+        code append ";" toString ()
+    }
+  }
+
+  @inline final def toJavaLikeCmpTp(cTp: ComputationalType): String = {
+    cTp match {
+      case ComputationalTypeInt ⇒ "int"
+      case ComputationalTypeLong ⇒ "long"
+      case ComputationalTypeFloat ⇒ "float"
+      case ComputationalTypeDouble ⇒ "double"
+      case ComputationalTypeReference ⇒ cTp.toString()
+      case ComputationalTypeReturnAddress ⇒ cTp.toString()
+    }
+  }
+
+  @inline final def toJavaLikeTpe(bTpe: BaseType): String = {
+    bTpe match {
+      case IntegerType ⇒ "int"
+      case LongType ⇒ "long"
+      case FloatType ⇒ "float"
+      case DoubleType ⇒ "double"
+      case ShortType ⇒ "short"
+      case ByteType ⇒ "byte"
+      case CharType ⇒ "char"
+      case BooleanType ⇒ "boolean"
+    }
+  }
+
+  /**
+   * Converts the quadruples representation into Java-like code.
+   */
+  def apply(stmts: Array[Stmt]): String = {
+    apply(stmts, true).mkString("\n")
+  }
+
+  /**
+   * Converts each statement into a Java-like statement.
+   */
+  def apply(stmts: Array[Stmt], indented: Boolean): Array[String] = {
+
+    val max = stmts.size
+    val javaLikeCode = new Array[String](max)
+    var index = 0;
+    while (index < max) {
+      def qualify(javaLikeStmt: String): String = {
+        if (indented)
+          f"$index%5d: $javaLikeStmt"
+        else
+          s"$index: $javaLikeStmt"
+      }
+
+      javaLikeCode(index) = qualify(toJavaLikeStmt(stmts(index)))
+
+      index += 1
     }
 
-    @inline final def toJavaLikeStmt(stmt: Stmt): String = {
-        stmt match {
-            case If(_, left, cond, right, target) ⇒
-                s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
-            case Goto(_, target) ⇒
-                s"goto $target;"
-            case Assignment(_, variable, expr) ⇒
-                s"${variable.name} = ${toJavaLikeExpr(expr)};"
-            case ReturnValue(_, expr) ⇒
-                s"return ${toJavaLikeExpr(expr)};"
-            case Return(_) ⇒
-                "return;"
-            case Nop(_) ⇒
-                ";"
-            case EmptyStmt(_) ⇒
-                ";"
-            case Checkcast(_, trg, cmpTp) ⇒
-                s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.asObjectType.simpleName};"
-            case MonitorEnter(_, objRef) ⇒
-                s"monitorenter ${objRef.name}"
-            case MonitorExit(_, objRef) ⇒
-                s"monitorexit ${objRef.name}"
-            //            case LookupSwitch(_, _, _, _)   ⇒ "" /*TODO*/
-            //            case TableSwitch(_, _, _, _, _) ⇒ "" /*TODO*/
-            case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
-                val code = new StringBuffer(256)
-
-                if (target.isDefined) code append target.get.name append " = "
-
-                if (receiver.isDefined) {
-                    code append toJavaLikeExpr(receiver.get)
-                    code append "/*" append declClass.toString append "*/"
-                } else
-                    code append declClass.toString
-                code append "." append name
-
-                // TODO Check order...
-                code append (params map { toJavaLikeExpr(_) } mkString ("(", ", ", ")"))
-
-                code append ";" toString ()
-        }
-    }
-
-    @inline final def toJavaLikeCmpTp(cTp: ComputationalType): String = {
-        cTp match {
-            case ComputationalTypeInt           ⇒ "int"
-            case ComputationalTypeLong          ⇒ "long"
-            case ComputationalTypeFloat         ⇒ "float"
-            case ComputationalTypeDouble        ⇒ "double"
-            case ComputationalTypeReference     ⇒ cTp.toString()
-            case ComputationalTypeReturnAddress ⇒ cTp.toString()
-        }
-    }
-
-    /**
-     * Converts the quadruples representation into Java-like code.
-     */
-    def apply(stmts: Array[Stmt]): String = {
-        apply(stmts, true).mkString("\n")
-    }
-
-    /**
-     * Converts each statement into a Java-like statement.
-     */
-    def apply(stmts: Array[Stmt], indented: Boolean): Array[String] = {
-
-        val max = stmts.size
-        val javaLikeCode = new Array[String](max)
-        var index = 0;
-        while (index < max) {
-            def qualify(javaLikeStmt: String): String = {
-                if (indented)
-                    f"$index%5d: $javaLikeStmt"
-                else
-                    s"$index: $javaLikeStmt"
-            }
-
-            javaLikeCode(index) = qualify(toJavaLikeStmt(stmts(index)))
-
-            index += 1
-        }
-
-        javaLikeCode
-    }
+    javaLikeCode
+  }
 
 }
