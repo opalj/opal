@@ -80,7 +80,7 @@ object ToJavaLike {
             case EmptyStmt(_) ⇒
                 ";"
             case Checkcast(_, trg, cmpTp) ⇒
-                s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.toString}"
+                s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.asObjectType.simpleName};"
             case MonitorEnter(_, objRef) ⇒
                 s"monitorenter ${objRef.name}"
             case MonitorExit(_, objRef) ⇒

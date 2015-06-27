@@ -45,6 +45,10 @@ public class CastInstructions {
 	void typecheckList(ArrayList l){
 		boolean result = l instanceof List;
 	}
+	
+	void checkcast(Object o){
+		List l = (List) o;
+	}
 
 	void d2f(double d){
 		float result = (float) d;

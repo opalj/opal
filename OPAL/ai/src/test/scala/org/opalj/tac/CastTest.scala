@@ -60,6 +60,7 @@ class CastTest extends FunSpec with Matchers {
 
         val TypecheckStringMethod = CastInstructionsClassFile.findMethod("typecheckString").get
         val TypecheckListMethod = CastInstructionsClassFile.findMethod("typecheckList").get
+        val CheckcastMethod = CastInstructionsClassFile.findMethod("checkcast").get
 
         val D2FMethod = CastInstructionsClassFile.findMethod("d2f").get
         val D2LMethod = CastInstructionsClassFile.findMethod("d2l").get
@@ -137,6 +138,28 @@ class CastTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(typecheckResultAST(ReferenceType.apply("java/util/List")))
                 javaLikeCode.shouldEqual(typecheckResultJLC("List"))
+            }
+            
+            it("should correctly reflect the checkcast instruction") {
+                val statements = AsQuadruples(CheckcastMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+                Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType.apply("java/util/List")),
+                Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                Return(5)))
+                javaLikeCode.shouldEqual(Array(
+                "0: r_0 = this;",
+                "1: r_1 = p_1;",
+                "2: op_0 = r_1;",
+                "3: op_0 checkcast List;",
+                "4: r_2 = op_0;",
+                "5: return;"))
             }
 
             it("should correctly reflect the d2f instruction") {
