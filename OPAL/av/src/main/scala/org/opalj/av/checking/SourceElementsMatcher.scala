@@ -30,10 +30,9 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set, IterableView }
-
-import br._
-import br.analyses.SomeProject
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
+import scala.collection.Set
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.
@@ -41,7 +40,9 @@ import br.analyses.SomeProject
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-trait SourceElementsMatcher { left ⇒
+trait SourceElementsMatcher extends (SomeProject ⇒ Set[VirtualSourceElement]) { left ⇒
+
+    final def apply(project: SomeProject): Set[VirtualSourceElement] = extension(project)
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement]
 
@@ -51,9 +52,7 @@ trait SourceElementsMatcher { left ⇒
                 left.extension ++ right.extension
             }
 
-            override def toString() = { //
-                "("+left+" and "+right+")"
-            }
+            override def toString() = s"($left and $right)"
         }
     }
 
@@ -63,27 +62,7 @@ trait SourceElementsMatcher { left ⇒
                 left.extension -- right.extension
             }
 
-            override def toString() = { //
-                "("+left+" except "+right+")"
-            }
+            override def toString() = s"($left except $right)"
         }
     }
-
-    protected[this] def matchClasses(
-        matchedClassFiles: Traversable[ClassFile],
-        matchMethods: Boolean = true,
-        matchFields: Boolean = true): Set[VirtualSourceElement] = {
-
-        import scala.collection.mutable.HashSet
-        val sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
-
-        matchedClassFiles foreach { classFile ⇒
-            val declaringClassType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
-            if (matchMethods) sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
-            if (matchFields) sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
-        }
-        sourceElements
-    }
-
 }

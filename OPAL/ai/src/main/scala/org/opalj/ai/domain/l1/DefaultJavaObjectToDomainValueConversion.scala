@@ -53,8 +53,8 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
      * (array/object) value.
      */
     def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
-        if (value == null)
-            return NullValue(pc)
+        if (value eq null)
+            return NullValue(pc);
 
         val clazz = value.getClass
         val fqnInBinaryNotation = clazz.getName.replace('.', '/')

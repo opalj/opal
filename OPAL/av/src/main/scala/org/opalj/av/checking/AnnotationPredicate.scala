@@ -31,12 +31,14 @@ package av
 package checking
 
 import org.opalj.br._
+import org.opalj.br.ConcreteSourceElement
 
 /**
  * Matches an annotation of a class, field, method or method parameter.
+ *
  * @author Marco Torsello
  */
-trait AnnotationPredicate {
+trait AnnotationPredicate extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(other: Annotation): Boolean
 
@@ -45,67 +47,97 @@ trait AnnotationPredicate {
 }
 
 /**
- * Matches an annotation of a class, field, method or method parameter.
+ * An annotation matcher that always returns `true`; it matches any annotation.
  *
- * {{{
- * // match the annotation independent of the number of specified annotations
- * scala> val am = org.opalj.av.checking.AnnotationPredicate("java.lang.Foo")
- * am: org.opalj.av.checking.AnnotationPredicate = @java.lang.Foo
- * scala> am(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue(" ")))))
- * res: Boolean = true
- * }}}
  * @author Marco Torsello
  */
-case class FieldTypeAnnotationPredicate(
-        annotationType: FieldType) extends AnnotationPredicate {
+case object AnyAnnotation extends AnnotationPredicate {
 
-    /**
-     * Checks if the given annotation is matched by this matcher.
-     * The given annotation is matched if it has this matcher's specified type.
-     *
-     * ==Example Scenarios==
-     *  - If the matcher's annotation type is `A` and the other annotation's type is `B`
-     *    then the elements will not match.
-     */
-    override def apply(other: Annotation): Boolean = {
-        other.annotationType eq this.annotationType
-    }
+    override def apply(other: Annotation): Boolean = true
 
-    override def toDescription: String = {
-        "@"+annotationType.toJava
-    }
+    override def apply(other: ConcreteSourceElement): Boolean = true
+
+    override def toDescription: String = "/*any annotation*/";
 
 }
 
 /**
- * Matches an annotation of a class, field, method or method parameter.
+ * Matches an annotation of a class, field, method or method parameter that has the
+ * specified type. The annotation is matched independent of the annotation's values.
  *
+ * ==Example==
  * {{{
- * scala> val am = org.opalj.av.checking.AnnotationPredicate("java.lang.Foo",Map("clazz" -> org.opalj.br.StringValue("")))
- * am: org.opalj.av.checking.AnnotationPredicate = @java.lang.Foo(clazz="")
- * scala> am(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue("")))))
+ * scala> import org.opalj.br._
+ * scala> val foo = ObjectType("java/lang/Foo")
+ * scala> val aw = org.opalj.av.checking.AnnotatedWith(foo)
+ * aw: org.opalj.av.checking.AnnotatedWith = @java.lang.Foo
+ * scala> aw(Annotation(foo,IndexedSeq(ElementValuePair("clazz",StringValue(" ")))))
  * res: Boolean = true
- * scala> am(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue("-+-")))))
- * res: Boolean = false
- *
- * // match the annotation only if no values are specified
- * scala> val am = org.opalj.av.checking.DefaultAnnotationPredicate("java.lang.Foo",IndexedSeq.empty)
- * am: org.opalj.av.checking.DefaultAnnotationPredicate = @java.lang.Foo()
- * scala> am(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue(" ")))))
- * res: Boolean = false
  * }}}
  * @author Marco Torsello
  */
-case class DefaultAnnotationPredicate(
-        annotationType: FieldType,
-        elementValuePairs: ElementValuePairs) extends AnnotationPredicate {
+case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate {
 
     /**
-     * Checks if the given annotation is matched by this predicate.
-     * The given annotation is matched if it has this matcher's specified type
-     * and – if this predicate defines an [[org.opalj.br.ElementValuePair]]s matcher -
-     * if all element value pairs are matched.	When matching element value
-     * pairs the order is ignored.
+     * Checks if the type of the given annotation is the same as the type of this
+     * predicate.
+     */
+    def apply(other: Annotation): Boolean = other.annotationType eq this.annotationType
+
+    override def apply(sourceElement: ConcreteSourceElement): Boolean = {
+        sourceElement.annotations.exists(this(_))
+    }
+
+    override def toDescription: String = "@"+annotationType.toJava
+
+}
+/**
+ * Factory methods to create [[AnnotatedWith]] predicates.
+ */
+object HasAnnotation {
+
+    def apply(annotationType: String): HasAnnotation = {
+        new HasAnnotation(ObjectType(annotationType.replace('.', '/')))
+    }
+}
+
+/**
+ * Tests if an annotation of a class, field, method or method parameter is as specified.
+ * The test takes the element values into consideration; if you don't want to take
+ * them into consideration use a [[HasAnnotation]] predicate.
+ *
+ * {{{
+ * scala> import org.opalj.br._
+ * scala> import org.opalj.av.checking._
+ * scala> val foo = ObjectType("java/lang/Foo")
+ *
+ * scala> val am = AnnotationPredicate("java.lang.Foo",Map("clazz" -> StringValue("")))
+ * am: org.opalj.av.checking.AnnotationPredicate = @java.lang.Foo(clazz="")
+ *
+ * scala> am(Annotation(foo,IndexedSeq(ElementValuePair("clazz",StringValue("")))))
+ * res: Boolean = true
+ *
+ * scala> am(Annotation(foo,IndexedSeq(ElementValuePair("clazz",StringValue("-+-")))))
+ * res: Boolean = false
+ *
+ * scala> val am = DefaultAnnotationPredicate("java.lang.Foo",IndexedSeq.empty)
+ * am: org.opalj.av.checking.DefaultAnnotationPredicate = @java.lang.Foo()
+ *
+ * scala> am(Annotation(ObjectType("java/lang/Foo"),IndexedSeq(ElementValuePair("clazz",StringValue(" ")))))
+ * res: Boolean = false
+ * }}}
+ *
+ * @author Marco Torsello
+ */
+case class AnnotatedWith(
+    annotationType: FieldType,
+    elementValuePairs: Seq[ElementValuePair])
+        extends AnnotationPredicate {
+
+    /**
+     * Checks if the given annotation is as specified by this predicate.
+     * Returns `true` if the given annotation has the type `annotationType`and
+     * if all element value pairs are matched independent of their order.
      *
      * ==Example Scenarios==
      *  - If the predicate's annotation type is `A` and the other annotation's type is `B`
@@ -120,30 +152,25 @@ case class DefaultAnnotationPredicate(
      *  	But it will not match if one or both of the two [[org.opalj.br.ElementValuePair]]s are missing or there is
      *  	another [[org.opalj.br.ElementValuePair]] not defined by this predicate.
      */
-    override def apply(other: Annotation): Boolean = {
-        (other.annotationType eq this.annotationType) &&
-            (this.elementValuePairs.isEmpty ||
-                (other.elementValuePairs.size == this.elementValuePairs.size &&
-                    this.elementValuePairs.forall(e ⇒
-                        other.elementValuePairs.exists(_ == e))))
+    override def apply(that: Annotation): Boolean = {
+        (that.annotationType eq this.annotationType) && {
+            val thisEVPs = this.elementValuePairs
+            val thatEVPs = that.elementValuePairs
+
+            thatEVPs.size == thisEVPs.size &&
+                thisEVPs.forall(thisEVP ⇒ thatEVPs.exists(_ == thisEVP))
+        }
+    }
+
+    override def apply(sourceElement: ConcreteSourceElement): Boolean = {
+        sourceElement.annotations.exists(this(_))
     }
 
     override def toDescription: String = {
-        val at = "@"+annotationType.toJava
-        elementValuePairs.map(_.toJava).mkString(at+"(", ",", ")")
+        elementValuePairs.
+            map(_.toJava).
+            mkString("@"+annotationType.toJava+"(", ",", ")")
     }
-
-}
-
-/**
- * Returns always true as there is no predicate to match.
- * @author Marco Torsello
- */
-case object NoAnnotationPredicate extends AnnotationPredicate {
-
-    override def apply(other: Annotation): Boolean = true
-
-    override def toDescription: String = "";
 
 }
 
@@ -153,33 +180,42 @@ case object NoAnnotationPredicate extends AnnotationPredicate {
  *
  * @author Marco Torsello
  */
-object AnnotationPredicate {
+object AnnotatedWith {
 
+    type SomeClass = Class[_]
+
+    /**
+     * @param annotationType The type of the annotation. The given value must not be
+     *      `java.lang.Void.TYPE`.
+     */
     def apply(
-        annotationType: String): AnnotationPredicate = {
-        new FieldTypeAnnotationPredicate(
-            ObjectType(annotationType.replace('.', '/')))
+        annotationType: SomeClass,
+        elementValuePairs: ElementValuePairs): AnnotatedWith = {
+        new AnnotatedWith(Type(annotationType).asFieldType, elementValuePairs)
     }
 
     def apply(
-        annotationType: String,
-        elementValuePairs: ElementValuePairs): AnnotationPredicate = {
-        new DefaultAnnotationPredicate(
-            ObjectType(annotationType.replace('.', '/')),
-            elementValuePairs)
+        annotationTypeName: BinaryString,
+        elementValuePairs: ElementValuePairs): AnnotatedWith = {
+
+        val annotationType = ObjectType(annotationTypeName.asString)
+        new AnnotatedWith(annotationType, elementValuePairs)
     }
 
     def apply(
-        annotationType: String,
-        elementValuePairs: Map[String, ElementValue]): AnnotationPredicate = {
-
-        new DefaultAnnotationPredicate(
-            ObjectType(annotationType.replace('.', '/')),
-            (elementValuePairs.map { kv ⇒
-                val (name, value) = kv
-                ElementValuePair(name, value)
-            }).toIndexedSeq
+        annotationTypeName: BinaryString,
+        elementValuePairs: Map[String, ElementValue]): AnnotatedWith = {
+        new AnnotatedWith(
+            ObjectType(annotationTypeName.asString),
+            elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq
         )
     }
-
+    def apply(
+        annotationTypeName: BinaryString,
+        elementValuePairs: (String, ElementValue)*): AnnotatedWith = {
+        new AnnotatedWith(
+            ObjectType(annotationTypeName.asString),
+            elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq
+        )
+    }
 }

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -104,6 +104,25 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
         val result = repeat({ times = times + 1; times }) { index = (index + 1); index };
         times should be(1)
         result should be(Seq(1))
+    }
+
+    behavior of "The ControlAbstractions.iterate macro"
+
+    it should "do nothing if the range is empty" in {
+        iterate(0, -1) { i ⇒ fail() }
+        iterate(-1, -2) { i ⇒ fail() }
+        iterate(1000, 999) { i ⇒ fail() }
+    }
+
+    it should "iterate over all values in a range" in {
+        var lastResult = -1
+        iterate(0, 10) { i ⇒
+            if (i != lastResult + 1)
+                fail();
+
+            lastResult = i
+        }
+        lastResult should be(10)
     }
 
 }

@@ -128,7 +128,6 @@ object DeadEdgesAnalysis {
         import result.domain.exceptionHandlerSuccessorsOf
         import result.domain.hasMultipleRegularPredecessors
         import result.domain.isRegularPredecessorOf
-        import result.domain.hasRegularSuccessor
 
         /*
          * Helper function to test if this code will always throw – independent

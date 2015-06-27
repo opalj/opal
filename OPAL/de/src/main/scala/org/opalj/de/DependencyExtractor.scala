@@ -68,7 +68,7 @@ import org.opalj.br.instructions._
 class DependencyExtractor(
         protected[this] val dependencyProcessor: DependencyProcessor) {
 
-    import DependencyType._
+    import DependencyTypes._
 
     /**
      * Extracts all inter source element dependencies of the given class file

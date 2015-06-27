@@ -30,7 +30,7 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set ⇒ ASet }
+import scala.collection.Set
 
 /**
  * An architecture checker validates if the implemented architecture
@@ -40,7 +40,7 @@ import scala.collection.{ Set ⇒ ASet }
  */
 sealed trait ArchitectureChecker {
 
-    def violations(): ASet[SpecificationViolation]
+    def violations(): Set[SpecificationViolation]
 
 }
 
@@ -59,15 +59,17 @@ trait DependencyChecker extends ArchitectureChecker {
 }
 
 /**
- * A property checker validates if the elements of the source ensemble also
- * have a specific property or whether there is a difference between the
- * expected/specified properties.
+ * A property checker validates if the elements of an ensemble
+ * have the expected/specified properties.
  *
  * @author Marco Torsello
  */
 trait PropertyChecker extends ArchitectureChecker {
 
+    /**
+     * A textual representation of the property.
+     */
     def property: String
 
-    def sourceEnsembles: Seq[Symbol]
+    def ensembles: Seq[Symbol]
 }

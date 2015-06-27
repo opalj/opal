@@ -109,7 +109,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true
+                return true;
 
             other match {
                 case that: ClassValue ⇒ that.value eq this.value
@@ -137,7 +137,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
     protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
         if (className.length() == 0)
-            return justThrows(ClassNotFoundException(pc))
+            return justThrows(ClassNotFoundException(pc));
 
         val classValue =
             try {
@@ -145,7 +145,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             } catch {
                 case iae: IllegalArgumentException ⇒
                     // if "className" is not a valid descriptor
-                    return justThrows(ClassNotFoundException(pc))
+                    return justThrows(ClassNotFoundException(pc));
             }
 
         if (classValue.isObjectType) {

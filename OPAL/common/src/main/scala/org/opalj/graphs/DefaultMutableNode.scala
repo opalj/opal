@@ -65,10 +65,16 @@ class DefaultMutableNode[I](
         this(
             identifier,
             identifierToString,
-            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
-                getOrElse(Map.empty[String, String]),
+            fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).
+                getOrElse(DefaultMutableMode.BaseVirtualPropertiers),
             List.empty)
     }
 
 }
+object DefaultMutableMode {
 
+    val BaseVirtualPropertiers = Map(
+        "shape" -> "box",
+        "style" -> "filled", "fillcolor" -> "white")
+
+}

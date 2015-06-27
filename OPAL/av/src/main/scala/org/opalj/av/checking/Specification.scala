@@ -47,7 +47,7 @@ import org.opalj.de._
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
-import org.opalj.de.DependencyType.toUsageDescription
+import org.opalj.de.DependencyTypes.toUsageDescription
 
 /**
  * A specification of a project's architectural constraints.
@@ -66,7 +66,7 @@ import org.opalj.de.DependencyType.toUsageDescription
  * @author Samuel Beracasa
  * @author Marco Torsello
  */
-class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
+class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spec ⇒
 
     def this(project: Project[URL]) {
         this(project, useAnsiColors = false)
@@ -410,10 +410,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
             case _       ⇒ annotationPredicates.map(_.toDescription).mkString("(", " - ", ")")
         }
 
-        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+        override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -475,10 +475,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
 
         override def property: String = methodPredicate.toDescription
 
-        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+        override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -516,14 +516,14 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
 
         override def property: String = targetEnsembles.mkString(", ")
 
-        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+        override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
             val allLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble
-                (sourceEnsembleElements /: targetEnsembles)(_ ++ ensembles(_)._2)
+                (sourceEnsembleElements /: targetEnsembles)(_ ++ spec.ensembles(_)._2)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -549,9 +549,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
     }
 
     /**
-     * Represents a set of all [[org.opalj.de.DependencyType]] to use as dependency constraint.
+     * The set of all [[org.opalj.de.DependencyTypes]].
      */
-    val USE: Set[DependencyType] = DependencyType.values
+    final val USE: Set[DependencyType] = DependencyTypes.values
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
 
@@ -708,9 +708,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                         else
                             logInfo(s"   $ensembleSymbol (${extension.size})")
 
-                        Specification.this.synchronized {
-                            matchedSourceElements ++= extension
-                        }
+                        spec.synchronized { matchedSourceElements ++= extension }
                         (ensembleSymbol, (sourceElementMatcher, extension))
                     }
                 }

@@ -346,16 +346,13 @@ object StandardIssue {
     }
 
     /**
-     * Takes a sequence of [[StandardIssues]] and merges all those issues that
+     * Takes a sequence of [[StandardIssue]]s and merges all those issues that
      * refer to the same element (class file, method, pc).
      *
      * @return The sorted (using [[IssueOrdering]]), list of folded [[StandardIssue]]s.
      */
     def fold(issues: Seq[StandardIssue]): Iterable[StandardIssue] = {
-        if (issues.isEmpty)
-            return Iterable.empty;
-
-        if (issues.tail.isEmpty)
+        if (issues.isEmpty || issues.tail.isEmpty)
             return issues;
 
         val sortedIssues = issues.sorted(IssueOrdering)

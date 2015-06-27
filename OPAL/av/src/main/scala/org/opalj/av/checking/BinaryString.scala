@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,53 +26,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
-
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.concurrent.Locking.withReadLock
-import org.opalj.concurrent.Locking.withWriteLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
+package org.opalj
+package av
+package checking
 
 /**
- * An object that identifies a specific kind of properties. Every entity in
- * the [[PropertyStore]] must be associated with at most one property per property kind/key.
+ * Helper class to mark those places where a string using binary notation (i.e.,
+ * where packages are separated using "/" instead of ".") is expected.
  *
- * To create a property key use the companion object's [[PropertyKey$.create]] method.
- *
- * @author Michael Eichberg
+ * A related implicit conversion is defined in the package object.
  */
-class PropertyKey private[fp] ( final val id: Int) extends AnyVal {
+final class BinaryString private (private val string: String) {
 
-    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+    assert(string.indexOf('.') == -1)
+
+    def asString: String = this.string
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BinaryString ⇒ that.string == this.string
+            case _                  ⇒ false
+        }
+    }
+
+    override def hashCode() = string.hashCode()
+
+    override def toString() = string.toString()
 }
 
-/**
- * Factory to create [[PropertyKey]] objects.
- *
- * @author Michael Eichberg
- */
-object PropertyKey {
+object BinaryString {
 
-    private[this] val lock = new ReentrantReadWriteLock
-
-    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val fallbackProperties = ArrayBuffer.empty[Property]
-    private[this] var lastKeyId: Int = -1
-
-    def create(name: String, fallback: Property): PropertyKey = withWriteLock(lock) {
-        lastKeyId += 1
-        propertyKeyNames += name
-        fallbackProperties += fallback
-        new PropertyKey(lastKeyId)
-    }
-
-    def name(id: Int): String = withReadLock(lock) {
-        propertyKeyNames(id)
-    }
-
-    def fallbackProperty(id: Int): Property = withReadLock(lock) {
-        fallbackProperties(id)
-    }
+    def apply(string: String) = new BinaryString(string.replace('.', '/'))
 
 }
-
