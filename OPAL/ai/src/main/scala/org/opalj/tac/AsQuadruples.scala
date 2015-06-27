@@ -392,17 +392,13 @@ object AsQuadruples {
 
                 case POP2.opcode ⇒
                     stack match {
-                        case (val1 @ CTC1()) :: rest ⇒
+                        case (val1 @ CTC1()) :: val2 :: rest ⇒
                             statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), rest)
-                        case val1 :: val2 :: rest ⇒
+                        case _ :: rest ⇒
                             statements(pc) = List(EmptyStmt(pc))
                             schedule(pcOfNextInstruction(pc), rest)
                     }
-
-                case WIDE.opcode ⇒
-                    statements(pc) = List(EmptyStmt(pc))
-                    schedule(pcOfNextInstruction(pc), stack)
 
                 case INSTANCEOF.opcode ⇒
                     val value1 :: rest = stack
@@ -501,6 +497,10 @@ object AsQuadruples {
                 case D2I.opcode | F2I.opcode | L2I.opcode ⇒ castOperation(ComputationalTypeInt)
                 case D2L.opcode | I2L.opcode | F2L.opcode ⇒ castOperation(ComputationalTypeLong)
                 case F2D.opcode | I2D.opcode | L2D.opcode ⇒ castOperation(ComputationalTypeDouble)
+                
+                case WIDE.opcode ⇒
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), stack)
 
                 // TODO Add support for all the other instructions!
 
@@ -560,8 +560,6 @@ object AsQuadruples {
  * {{{
  * case v @ CTC1() => ...
  * }}}
- *
- * @author Michael Eichberg
  */
 object CTC1 {
     def unapply(value: Var): Boolean =
@@ -575,8 +573,6 @@ object CTC1 {
  * {{{
  * case v @ CTC2() => ...
  * }}}
- *
- * @author Michael Eichberg
  */
 object CTC2 {
     def unapply(value: Var): Boolean =

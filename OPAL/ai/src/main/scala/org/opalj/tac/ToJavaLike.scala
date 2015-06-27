@@ -74,11 +74,11 @@ object ToJavaLike {
             case ReturnValue(_, expr) ⇒
                 s"return ${toJavaLikeExpr(expr)};"
             case Return(_) ⇒
-                s"return;"
+                "return;"
             case Nop(_) ⇒
-                s"nop;"
+                ";"
             case EmptyStmt(_) ⇒
-                s";"
+                ";"
             case Checkcast(_, trg, cmpTp) ⇒
                 s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.toString}"
             case MonitorEnter(_, objRef) ⇒
