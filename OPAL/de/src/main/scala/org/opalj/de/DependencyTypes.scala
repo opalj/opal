@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,7 +37,7 @@ package de
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-object DependencyType extends Enumeration(0 /* <= value of first enumeration value*/ ) {
+object DependencyTypes extends Enumeration(0 /* <= value of first enumeration value*/ ) {
 
     val EXTENDS = Value("type declaration EXTENDS class type")
     val IMPLEMENTS = Value("type declaration IMPLEMENTS interface type")
@@ -100,14 +100,14 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
         val dependencies = new scala.collection.mutable.HashSet[DependencyType]
         while (i <= max) {
             if (((set >> i) & 1) == 1)
-                dependencies += DependencyType(i)
+                dependencies += DependencyTypes(i)
             i += 1
         }
         dependencies
     }
 
-    def toUsageDescription(value: Value): String = {
-        value match {
+    def toUsageDescription(dependencyType: DependencyType): String = {
+        dependencyType match {
             case EXTENDS                           ⇒ "extend class type"
             case IMPLEMENTS                        ⇒ "implement interface type"
             case OUTER_CLASS                       ⇒ "be outer class"
@@ -140,7 +140,8 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
             case ANNOTATION_ELEMENT_TYPE           ⇒ "have annotation element value type"
             case USES_ENUM_VALUE                   ⇒ "have enum value as annotation element value"
             case TYPE_IN_TYPE_PARAMETERS           ⇒ "be used in the declaration of a signature"
-            case _                                 ⇒ throw new UnknownError("unknown value")
+            case _ ⇒
+                throw new UnknownError(s"unknown dependency type: $dependencyType")
         }
     }
 }

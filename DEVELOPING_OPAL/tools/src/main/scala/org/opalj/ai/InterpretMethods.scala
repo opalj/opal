@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.control.ControlThrowable
 import org.opalj.br._
 import org.opalj.br.analyses._
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.log.LogContext
 
 /**

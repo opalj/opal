@@ -280,6 +280,29 @@ sealed abstract class Type extends UID with Ordered[Type] {
 
 }
 
+object Type {
+
+    def apply(clazz: Class[_]): Type = {
+        if (clazz.isPrimitive()) {
+            clazz match {
+                case java.lang.Boolean.TYPE   ⇒ BooleanType
+                case java.lang.Byte.TYPE      ⇒ ByteType
+                case java.lang.Character.TYPE ⇒ CharType
+                case java.lang.Short.TYPE     ⇒ ShortType
+                case java.lang.Integer.TYPE   ⇒ IntegerType
+                case java.lang.Long.TYPE      ⇒ LongType
+                case java.lang.Float.TYPE     ⇒ FloatType
+                case java.lang.Double.TYPE    ⇒ DoubleType
+                case java.lang.Void.TYPE      ⇒ VoidType
+                case _ ⇒
+                    throw new UnknownError(s"unknown primitive type $clazz")
+            }
+        } else {
+            ReferenceType(clazz.getName)
+        }
+    }
+}
+
 object ReturnType {
 
     def apply(rt: String): Type = if (rt.charAt(0) == 'V') VoidType else FieldType(rt)

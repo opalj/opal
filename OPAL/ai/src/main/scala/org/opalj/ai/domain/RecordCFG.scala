@@ -35,8 +35,11 @@ import org.opalj.graphs.Node
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.PC
+import org.opalj.br.Code
 import org.opalj.graphs.MutableNode
+import scala.collection.BitSet
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -48,19 +51,29 @@ import org.opalj.graphs.MutableNode
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''.
- *  - Reusable: '''No'''; state directly associated with the analyzed code block is
- *          collected. Hence, a new instance of the domain needs to be created per
- *          analyzed method.
+ *  - Reusable: '''Yes'''; all state directly associated with the analyzed code block is
+ *          reset by the method `initProperties`.
  *
  * @author Michael Eichberg
  */
-trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
+trait RecordCFG
+        extends CoreDomainFunctionality
+        with CustomInitialization { domain: TheCode ⇒
 
-    private[this] val regularSuccessors =
-        new Array[UShortSet](domain.code.instructions.size)
+    private[this] var regularSuccessors: Array[UShortSet] = _
+    private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
 
-    private[this] val exceptionHandlerSuccessors =
-        new Array[UShortSet](domain.code.instructions.size)
+    abstract override def initProperties(
+        code: Code,
+        joinInstructions: BitSet,
+        initialLocals: Locals): Unit = {
+
+        val codeSize = code.instructions.size
+        regularSuccessors = new Array[UShortSet](codeSize)
+        exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
+
+        super.initProperties(code, joinInstructions, initialLocals)
+    }
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed next if
@@ -78,7 +91,26 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
         if (s != null) s else UShortSet.empty
     }
 
-    def hasRegularSuccessor(pc: PC, regularSuccessorsOnly: Boolean, p: PC ⇒ Boolean): Boolean = {
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed next if
+     * the evaluation of this instruction may raise an exception.
+     *
+     * The returned set is always empty for instructions that cannot raise exceptions,
+     * such as the `StackManagementInstruction`s.
+     *
+     * @note The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
+     *      thrown exception is directly handled inside this code block.
+     */
+    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
+        val s = exceptionHandlerSuccessors(pc)
+        if (s != null) s else UShortSet.empty
+    }
+
+    /**
+     * Tests if the instruction with the given `pc` has a successor instruction with
+     * `pc'` that satisfies the given predicate `p`.
+     */
+    def hasSuccessor(pc: PC, regularSuccessorsOnly: Boolean, p: PC ⇒ Boolean): Boolean = {
         var visitedSuccessors = UShortSet(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
@@ -94,21 +126,6 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
                 }
         }
         false
-    }
-
-    /**
-     * Returns the program counter(s) of the instruction(s) that is(are) executed next if
-     * the evaluation of this instruction may raise an exception.
-     *
-     * The returned set is always empty for instructions that cannot raise exceptions,
-     * such as the `StackManagementInstruction`s.
-     *
-     * @note The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
-     *      thrown exception is directly handled inside this code block.
-     */
-    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
-        val s = exceptionHandlerSuccessors(pc)
-        if (s != null) s else UShortSet.empty
     }
 
     /**
@@ -132,11 +149,11 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
      * Returns `true` if the instruction with the given pc has multiple predecessors.
      *
      * @note This function calculates the respective information on demand by traversing
-     * the successors.
+     *      the successors.
      */
     def hasMultipleRegularPredecessors(pc: PC): Boolean = {
         var predecessors = 0
-        var i = domain.code.instructions.size - 1
+        var i = code.instructions.size - 1
         while (i >= 0) {
             val successors = regularSuccessors(i)
             if ((successors ne null) && successors.contains(pc)) {
@@ -150,7 +167,7 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
     }
 
     /**
-     * Test if the instruction with the given pc is a potential predecessor of the
+     * Tests if the instruction with the given pc is a potential predecessor of the
      * given successor instruction.
      */
     def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
@@ -192,7 +209,7 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
                 domain.regularSuccessors
 
         val successorsOfPC = allSuccessors(currentPC)
-        if (successorsOfPC == null)
+        if (successorsOfPC eq null)
             allSuccessors(currentPC) = UShortSet(successorPC)
         else
             allSuccessors(currentPC) = successorPC +≈: successorsOfPC
@@ -206,19 +223,23 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
             tracer)
     }
 
+    /**
+     * Creates a graph representation of the CFG.
+     */
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
-        val code = this.code
-        val nodes = new Array[DefaultMutableNode[List[PC]]](code.instructions.size)
-        val nodePredecessorsCount = new Array[Int](code.instructions.size)
+        val instructions = code.instructions
+        val codeSize = instructions.size
+        val nodes = new Array[DefaultMutableNode[List[PC]]](codeSize)
+        val nodePredecessorsCount = new Array[Int](codeSize)
         // 1. create nodes
         for (pc ← code.programCounters) {
             nodes(pc) = {
                 var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
-                if (domain.code.instructions(pc).isInstanceOf[ReturnInstruction]) {
+                if (instructions(pc).isInstanceOf[ReturnInstruction]) {
                     visualProperties += "fillcolor" -> "green"
                     visualProperties += "style" -> "filled"
-                } else if (domain.code.instructions(pc).isInstanceOf[ATHROW.type]) {
+                } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
                     visualProperties += "fillcolor" -> "yellow"
                     visualProperties += "style" -> "filled"
                 } else if (allSuccessorsOf(pc).isEmpty) {
@@ -258,7 +279,10 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
 
         // 3. fold nodes
         // Nodes that have only one successor and where the successor has only one
-        // predecessors are merged into one node
+        // predecessors are merged into one node; basically, we recreate the
+        // _effective_ basic blocks; an _effective_ basic block is a block where we do
+        // _not observe_ any jumps in and out unless we are at the beginning or end of
+        // the block
         for (pc ← code.programCounters) {
             val currentNode = nodes(pc)
             if (currentNode.hasOneChild) {

@@ -67,7 +67,6 @@ class PerformanceEvaluation extends Locking {
     }
 
     /**
-     *
      * Called by the `time` method.
      *
      * ==Thread Safety==
@@ -96,9 +95,7 @@ class PerformanceEvaluation extends Locking {
     /**
      * Resets the overall time spent by computations with the given symbol.
      */
-    final def reset(s: Symbol): Unit = {
-        withWriteLock { doReset(s) }
-    }
+    final def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
 
     /**
      * Called by the `reset(Symbol)` method.
@@ -106,17 +103,13 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `reset` method takes care of the synchronization.
      */
-    protected[this] def doReset(s: Symbol): Unit = {
-        timeSpans.remove(s)
-    }
+    protected[this] def doReset(s: Symbol): Unit = timeSpans.remove(s)
 
     /**
      * Resets everything. The effect is comparable to creating a new
      * `PerformanceEvaluation` object, but is a bit more efficient.
      */
-    final def resetAll(): Unit = {
-        withWriteLock { doResetAll() }
-    }
+    final def resetAll(): Unit = withWriteLock { doResetAll() }
 
     /**
      * Called by the `resetAll` method.
@@ -124,9 +117,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `resetAll` method takes care of the synchronization.
      */
-    protected[this] def doResetAll(): Unit = {
-        timeSpans.clear()
-    }
+    protected[this] def doResetAll(): Unit = timeSpans.clear()
 
 }
 /**
@@ -136,6 +127,10 @@ class PerformanceEvaluation extends Locking {
  * @author Michael Eichberg
  */
 object PerformanceEvaluation {
+
+    def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
+        Nanoseconds(ts.map(_.timeSpan).sum / ts.size)
+    }
 
     /**
      * Converts the specified number of bytes into the corresponding nubmer of mega bytes
@@ -170,7 +165,7 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f`.
      *
-     * @param r A function that is passed the time (in nano seconds) that it
+     * @param r A function that is passed the time (in nanoseconds) that it
      *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
     def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
@@ -202,13 +197,14 @@ object PerformanceEvaluation {
      *
      * ==Example Usage==
      * {{{
-     * import org.opalj.util.debug.PerformanceEvaluation._
+     * import org.opalj.util.PerformanceEvaluation._
+     * import org.opalj.util._
      *
-     * time[String](2,4,3,{
-     *      Thread.sleep(300).toString
-     * }){ (avg, t, ts) =>
-     *      val sTs = ts.map(t => f"\${ns2sec(t)}%1.4f").mkString(", ")
-     *      println(f"Avg: \${ns2sec(avg.toLong)}%1.4f; T: \${ns2sec(t)}%1.4f; Ts: \$sTs")
+     * import org.opalj.util.PerformanceEvaluation._
+     * import org.opalj.util._
+     * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
+     *            val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *            println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
      * }
      * }}}
      *
@@ -237,7 +233,7 @@ object PerformanceEvaluation {
      * @param r A function that is called back whenever `f` was successfully evaluated.
      *      The signature is:
      *      {{{
-     *      def r(consideredExecutionTimes : Seq[Nanoseconds]) : Unit
+     *      def r(lastExecutionTime:Nanoseconds, consideredExecutionTimes : Seq[Nanoseconds]) : Unit
      *      }}}
      *       1. The first parameter is the last execution time of `f`.
      *       1. The last parameter are the times of the evaluation of `f` that are taken

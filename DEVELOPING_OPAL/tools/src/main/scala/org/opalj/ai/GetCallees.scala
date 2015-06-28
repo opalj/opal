@@ -38,7 +38,7 @@ import scala.Console.RESET
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.ai.analyses.cg.CHACallGraphExtractor
 import org.opalj.ai.analyses.cg.CallGraphCache

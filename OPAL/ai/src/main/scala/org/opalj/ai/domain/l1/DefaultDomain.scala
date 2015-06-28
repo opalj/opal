@@ -96,3 +96,27 @@ class DefaultDomainWithCFG[Source](
         extends DefaultDomain[Source](project, classFile, method)
         with RecordCFG
 
+/**
+ * Configuration of a domain that uses the most capable `l1` domains and
+ * which also records the abstract-interpretation time control flow graph and def/use
+ * information.
+ */
+class DefaultDomainWithCFGAndDefUse[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultDomain[Source](project, classFile, method)
+        with RecordCFG
+        with RecordDefUse
+
+/**
+ * Configuration of a domain that uses the most capable `l1` domains and
+ * which also records the definition use information.
+ */
+class DefaultDomainWithDefUse[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultDomain[Source](project, classFile, method)
+        with RecordDefUse
+

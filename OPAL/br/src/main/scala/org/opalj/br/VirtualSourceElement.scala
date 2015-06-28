@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -64,6 +64,30 @@ sealed trait VirtualSourceElement
      * Returns the best line number information available.
      */
     def getLineNumber(project: SomeProject): Option[Int]
+
+}
+
+/**
+ * Defines common helper functions related to [[VirtualSourceElements]].
+ */
+object VirtualSourceElement {
+
+    def asVirtualSourceElements(
+        classFiles: Traversable[ClassFile],
+        includeMethods: Boolean = true,
+        includeFields: Boolean = true): Set[VirtualSourceElement] = {
+        var sourceElements: Set[VirtualSourceElement] = Set.empty
+
+        classFiles foreach { classFile ⇒
+            val classType = classFile.thisType
+            sourceElements += classFile.asVirtualClass
+            if (includeMethods)
+                sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(classType))
+            if (includeFields)
+                sourceElements ++= classFile.fields.view.map(_.asVirtualField(classType))
+        }
+        sourceElements
+    }
 
 }
 
@@ -166,14 +190,15 @@ final case class VirtualField(
 }
 
 /**
- * Represents a method.
+ * Represents a method of a virtual class.
  *
  * @author Michael Eichberg
  */
 sealed class VirtualMethod(
-        val declaringClassType: ReferenceType,
-        val name: String,
-        val descriptor: MethodDescriptor) extends VirtualClassMember {
+    val declaringClassType: ReferenceType,
+    val name: String,
+    val descriptor: MethodDescriptor)
+        extends VirtualClassMember {
 
     override def isMethod: Boolean = true
 
@@ -227,9 +252,10 @@ sealed class VirtualMethod(
 }
 object VirtualMethod {
 
-    def apply(declaringClassType: ReferenceType,
-              name: String,
-              descriptor: MethodDescriptor): VirtualMethod =
+    def apply(
+        declaringClassType: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor): VirtualMethod =
         new VirtualMethod(declaringClassType, name, descriptor)
 
     def unapply(virtualMethod: VirtualMethod): Option[(ReferenceType, String, MethodDescriptor)] = {
@@ -241,10 +267,11 @@ object VirtualMethod {
 }
 
 final class VirtualForwardingMethod(
-        declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        val target: Method) extends VirtualMethod(declaringClassType, name, descriptor) {
+    declaringClassType: ReferenceType,
+    name: String,
+    descriptor: MethodDescriptor,
+    val target: Method)
+        extends VirtualMethod(declaringClassType, name, descriptor) {
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"

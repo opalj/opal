@@ -27,21 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
+package ai
 
-import scala.util.matching.Regex
+import org.opalj.br.Code
+import scala.collection.BitSet
 
 /**
- * Matches name of class, fields and methods based on their name. The name is matched
- * against the binary notation.
+ * Mixin this trait if a domain needs to perform some custom initialization.
+ *
+ * ==Usage==
+ * It is sufficient to mixin this trait in a [[Domain]] that needs custom initialization.
+ * The abstract interpreter will then perform the initialization.
+ *
+ * This information is set immediately before the abstract interpretation is
+ * started/continued.
  *
  * @author Michael Eichberg
  */
-case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
+trait CustomInitialization { domain: ValuesDomain ⇒
 
-    def apply(otherName: String): Boolean = {
-        matcher.findFirstIn(otherName).isDefined
+    /**
+     * Override this method to perform custom initialization steps.
+     *
+     * Always use `abstract override` and call the super method; it is recommended
+     * to complete the initialization of this domain before calling the super method.
+     */
+    def initProperties(
+        code: Code,
+        joinInstructions: BitSet,
+        initialLocals: Locals): Unit = {
+        // Empty by default.
     }
-}
 
+}

@@ -31,89 +31,44 @@ package av
 package checking
 
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.Attributes
 import org.opalj.br.Method
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.br.Attribute
-import org.opalj.bi.AccessFlagsMatcher
 
 /**
  * @author Marco Torsello
  */
-trait MethodPredicate {
+case object AnyMethod extends SourceElementPredicate[Method] {
 
-    def apply(method: Method): Boolean
+    final override def apply(method: Method): Boolean = true
 
-    def toDescription(): String
+    def toDescription(): String = "/*any method*/"
 
 }
 
 /**
  * @author Marco Torsello
  */
-case object NoMethodPredicate extends MethodPredicate {
-
-    def apply(method: Method): Boolean = true
-
-    def toDescription(): String = ""
-
-}
-
-/**
- * @author Marco Torsello
- */
-case class DefaultMethodPredicate(
-        accessFlags: AccessFlagsMatcher = AccessFlagsMatcher.ALL,
-        name: String,
-        descriptor: Option[MethodDescriptor],
-        attributes: Attributes) extends MethodPredicate {
+case class MethodWithName(name: String) extends SourceElementPredicate[Method] {
 
     def apply(method: Method): Boolean = {
-        accessFlags.unapply(method.accessFlags) &&
-            ((descriptor.isEmpty && method.name == name) ||
-                (descriptor.nonEmpty && method.hasSameSignature(name, descriptor.get))) &&
-                (attributes.isEmpty ||
-                    (method.attributes.size == attributes.size &&
-                        attributes.forall(a ⇒
-                            method.attributes.exists(_ == a))))
+        method.name == name
     }
 
-    def toDescription(): String = {
-        val descriptorString = descriptor match {
-            case Some(d) ⇒ d.toJava(name)
-            case _       ⇒ name
-        }
+    def toDescription(): String = name
 
-        accessFlags.toString + descriptorString +
-            attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
-    }
 }
 
 /**
- * Defines several additional factory methods to facilitate the creation of
- * [[MethodPredicate]]s.
- *
  * @author Marco Torsello
  */
-object MethodPredicate {
-
-    def apply(
-        accessFlags: AccessFlagsMatcher,
+case class MethodWithSignature(
         name: String,
-        descriptor: MethodDescriptor): MethodPredicate = {
-        new DefaultMethodPredicate(accessFlags, name, Some(descriptor), Seq.empty[Attribute])
+        descriptor: MethodDescriptor) extends SourceElementPredicate[Method] {
+
+    def apply(method: Method): Boolean = {
+        method.name == this.name && method.descriptor == this.descriptor
     }
 
-    def apply(
-        accessFlags: AccessFlagsMatcher,
-        name: String): MethodPredicate = {
-        new DefaultMethodPredicate(accessFlags, name, None, Seq.empty[Attribute])
-    }
-
-    def apply(
-        name: String): MethodPredicate = {
-        new DefaultMethodPredicate(name = name, descriptor = None, attributes = Seq.empty[Attribute])
-    }
+    def toDescription(): String = descriptor.toJava(name)
 
 }
+

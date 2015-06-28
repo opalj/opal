@@ -42,9 +42,7 @@ import org.opalj.bi.ACC_SYNTHETIC
  *
  * @author Michael Eichberg
  */
-trait ClassMember extends SourceElement {
-
-    protected def accessFlags: Int
+trait ClassMember extends ConcreteSourceElement {
 
     final def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
