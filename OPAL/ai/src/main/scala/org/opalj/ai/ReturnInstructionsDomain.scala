@@ -30,18 +30,15 @@ package org.opalj
 package ai
 
 /**
- * Defines all return instructions.
+ * Defines the methods that lead to a return from a method.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
 trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
 
-    //
-    // RETURN FROM METHOD
-    //
     /**
-     * Called by OPAL-AI when a return instruction with the given `pc` is reached.
+     * Called when a return instruction with the given `pc` is reached.
      * In other words, when the method returns normally.
      */
     def returnVoid(pc: PC): Unit

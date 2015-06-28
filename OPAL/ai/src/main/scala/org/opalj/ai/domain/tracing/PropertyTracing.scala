@@ -32,7 +32,6 @@ package domain
 package tracing
 
 import org.opalj.br._
-import org.opalj.ai.util.containsInPrefix
 import scala.collection.BitSet
 
 /**
@@ -91,7 +90,9 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
     abstract override def properties(
         pc: Int,
         propertyToString: AnyRef ⇒ String): Option[String] = {
+
         val thisProperty = Option(propertiesArray(pc)).map(_.toString())
+
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) ⇒
                 thisProperty map (_+"; "+description) orElse superProperty
@@ -113,12 +114,10 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
-            if (!wasJoinPerformed /* weaker: || propertiesArray(successorPC) eq null*/ ) {
-                propertiesArray(successorPC) = propertiesArray(currentPC)
-                true // actually, it doesn't matter as we will continue the analysis anyway
-            } else {
+            if (wasJoinPerformed) {
                 propertiesArray(successorPC) join propertiesArray(currentPC) match {
-                    case NoUpdate ⇒ false
+                    case NoUpdate ⇒
+                        false
                     case StructuralUpdate(property) ⇒
                         propertiesArray(successorPC) = property
                         true
@@ -126,54 +125,33 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
                         propertiesArray(successorPC) = property
                         false
                 }
+            } else {
+                propertiesArray(successorPC) = propertiesArray(currentPC)
+                // actually, it doesn't matter as we will continue the analysis anyway
+                // but if the value is false we can omit the test where the value is
+                // scheduled
+                false
             }
         }
 
-        def isUnscheduled(): Boolean = {
-            val relevantWorklist =
-                if (abruptSubroutineTerminationCount > 0) {
-                    var subroutinesToTerminate = abruptSubroutineTerminationCount
-                    worklist.dropWhile { pc ⇒
-                        if (pc == SUBROUTINE) {
-                            subroutinesToTerminate -= 1
-                            subroutinesToTerminate == 0
-                        } else
-                            true
-                    }.tail
-                } else
-                    worklist
-
-            !containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)
-
-        }
-
-        if (forceScheduling && isUnscheduled) {
-            val filteredList = util.removeFirst(worklist, successorPC)
-            if (tracer.isDefined) {
-                if (filteredList eq worklist)
+        val newWorklist =
+            if (forceScheduling) {
+                val newWorklist =
+                    schedule(successorPC, abruptSubroutineTerminationCount, worklist)
+                if ((newWorklist ne worklist) && tracer.isDefined) {
                     // the instruction was not yet scheduled for another evaluation
                     tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
-                else
-                    // the instruction was just moved to the beginning
-                    tracer.get.rescheduled(domain)(currentPC, successorPC, isExceptionalControlFlow)
-
+                }
+                newWorklist
+            } else {
+                worklist
             }
-            // FIXME... this does not schedule the instruction in the correct context!!!!
-            super.flow(
-                currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                successorPC :: filteredList,
-                operandsArray, localsArray,
-                tracer)
-        } else {
-            super.flow(
-                currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                worklist,
-                operandsArray, localsArray,
-                tracer)
-        }
+        super.flow(
+            currentPC, successorPC,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            wasJoinPerformed,
+            newWorklist,
+            operandsArray, localsArray,
+            tracer)
     }
 }

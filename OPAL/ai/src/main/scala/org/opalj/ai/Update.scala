@@ -65,7 +65,7 @@ sealed trait Update[+V] {
     /**
      * The updated value; if available.
      */
-    @throws[java.lang.IllegalStateException]("if the value was not updated")
+    @throws[java.lang.IllegalStateException]("if no value was updated")
     def value: V
 
     /**

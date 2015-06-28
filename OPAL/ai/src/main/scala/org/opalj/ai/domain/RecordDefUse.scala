@@ -697,42 +697,8 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             case _ ⇒ /* let's continue with the standard handling */
         }
 
-        def schedule(): List[PC] = {
-            if (abruptSubroutineTerminationCount > 0) {
-                var header: List[PC] = Nil
-                val relevantWorklist = {
-                    var subroutinesToTerminate = abruptSubroutineTerminationCount
-                    worklist.dropWhile { pc ⇒
-                        if (pc == SUBROUTINE) {
-                            subroutinesToTerminate -= 1
-                            if (subroutinesToTerminate > 0) {
-                                header = pc :: header
-                                true
-                            } else {
-                                false
-                            }
-                        } else {
-                            header = pc :: header
-                            true
-                        }
-                    }.tail /* drop SUBROUTINE MARKER */
-                }
-                if (containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)) {
-                    worklist
-                } else {
-                    header.reverse ::: (SUBROUTINE :: successorPC :: relevantWorklist)
-                }
-            } else {
-                if (containsInPrefix(worklist, successorPC, SUBROUTINE_START)) {
-                    worklist
-                } else {
-                    successorPC :: worklist
-                }
-            }
-        }
-
         if (forceScheduling) {
-            val newWorklist = schedule()
+            val newWorklist = schedule(successorPC, abruptSubroutineTerminationCount, worklist)
             if ((worklist ne newWorklist) && tracer.isDefined) {
                 // the instruction was not yet scheduled for another evaluation
                 tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
@@ -742,6 +708,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             continuation(worklist)
         }
     }
+
 }
 private object NullFunction extends (Int ⇒ ComputationalTypeCategory) {
     def apply(i: Int): Nothing = throw new UnsupportedOperationException

@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import org.opalj.br.instructions.Instruction
+import org.opalj.ai.util.containsInPrefix
 
 /**
  * Defines the core functionality that is shared across all [[Domain]]s that implement
@@ -396,4 +397,46 @@ trait CoreDomainFunctionality extends ValuesDomain {
         /* Nothing */
     }
 
+    /**
+     * This function can be called when the instruction `successorPC` needs to be
+     * scheduled. The function will test if the instruction is already scheduled and
+     * – if so – returns the given worklist unchanged. Otherwise the instruction
+     * is scheduled in the correct context.
+     */
+    protected[this] def schedule(
+        successorPC: PC,
+        abruptSubroutineTerminationCount: Int,
+        worklist: List[PC]): List[PC] = {
+        if (abruptSubroutineTerminationCount > 0) {
+            var header: List[PC] = Nil
+            val relevantWorklist = {
+                var subroutinesToTerminate = abruptSubroutineTerminationCount
+                worklist.dropWhile { pc ⇒
+                    if (pc == SUBROUTINE) {
+                        subroutinesToTerminate -= 1
+                        if (subroutinesToTerminate > 0) {
+                            header = pc :: header
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        header = pc :: header
+                        true
+                    }
+                }.tail /* drop SUBROUTINE MARKER */
+            }
+            if (containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)) {
+                worklist
+            } else {
+                header.reverse ::: (SUBROUTINE :: successorPC :: relevantWorklist)
+            }
+        } else {
+            if (containsInPrefix(worklist, successorPC, SUBROUTINE_START)) {
+                worklist
+            } else {
+                successorPC :: worklist
+            }
+        }
+    }
 }
