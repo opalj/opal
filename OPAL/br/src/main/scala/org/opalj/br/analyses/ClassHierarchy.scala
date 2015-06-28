@@ -1228,13 +1228,22 @@ class ClassHierarchy private (
         subtype: ClassTypeSignature,
         supertype: FormalTypeParameter)(
             implicit project: ClassFileRepository): Answer = {
-        (supertype.classBound.collectFirst({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }) ++
-            supertype.interfaceBound.collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig })).
+
+        (supertype.classBound.map(ftp ⇒ ftp).toList ++
+            supertype.interfaceBound).collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }).
             foldLeft(Yes: Answer)((acc, superCts) ⇒ (acc, isSubtypeOf(subtype, superCts)) match {
                 case (_, Unknown) | (Unknown, _) ⇒ Unknown
                 case (x, y) if x ne y            ⇒ No
                 case (x, _ /*x*/ )               ⇒ x
             })
+
+        //        (supertype.classBound.collectFirst({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }) ++
+        //            supertype.interfaceBound.collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig })).
+        //            foldLeft(Yes: Answer)((acc, superCts) ⇒ (acc, isSubtypeOf(subtype, superCts)) match {
+        //                case (_, Unknown) | (Unknown, _) ⇒ Unknown
+        //                case (x, y) if x ne y            ⇒ No
+        //                case (x, _ /*x*/ )               ⇒ x
+        //            })
     }
 
     //
