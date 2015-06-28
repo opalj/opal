@@ -30,7 +30,7 @@ package org.opalj
 package br
 
 /**
- * Provides pattern matching facilities for methods with bodies.
+ * Provides efficient pattern matching facilities for methods with bodies.
  *
  * @example
  * Matching all methods that have a method body:

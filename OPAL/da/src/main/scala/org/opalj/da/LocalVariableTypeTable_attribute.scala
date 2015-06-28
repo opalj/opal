@@ -45,8 +45,8 @@ case class LocalVariableTypeTable_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
-            <summary>LocalVariableTypeTable:</summary>
-            { local_variable_type_table.map(_.toXHTML(cp)) }
+            <summary>LocalVariableTypeTable</summary>
+            { local_variable_type_table.map(_.toXHTML) }
         </details>
     }
 

@@ -88,7 +88,7 @@ trait RecordCFG
      */
     def regularSuccessorsOf(pc: PC): PCs = {
         val s = regularSuccessors(pc)
-        if (s != null) s else UShortSet.empty
+        if (s != null) s else NoPCs
     }
 
     /**
@@ -103,7 +103,7 @@ trait RecordCFG
      */
     def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
         val s = exceptionHandlerSuccessors(pc)
-        if (s != null) s else UShortSet.empty
+        if (s != null) s else NoPCs
     }
 
     /**
@@ -139,14 +139,20 @@ trait RecordCFG
     def allSuccessorsOf(pc: PC): PCs =
         regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
 
-    def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs =
+    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs =
         if (regularSuccessorOnly)
             regularSuccessorsOf(pc)
         else
             allSuccessorsOf(pc)
 
+    final def foreachSuccessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+        regularSuccessorsOf(pc).foreach { f }
+        exceptionHandlerSuccessorsOf(pc).foreach { f }
+    }
+
     /**
-     * Returns `true` if the instruction with the given pc has multiple predecessors.
+     * Returns `true` if the instruction with the given pc has multiple
+     *  predecessors (more than one).
      *
      * @note This function calculates the respective information on demand by traversing
      *      the successors.
@@ -202,17 +208,20 @@ trait RecordCFG
         localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
-        val allSuccessors =
+        val successors =
             if (isExceptionalControlFlow)
                 domain.exceptionHandlerSuccessors
             else
                 domain.regularSuccessors
 
-        val successorsOfPC = allSuccessors(currentPC)
+        val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            allSuccessors(currentPC) = UShortSet(successorPC)
-        else
-            allSuccessors(currentPC) = successorPC +≈: successorsOfPC
+            successors(currentPC) = UShortSet(successorPC)
+        else {
+            val newSuccessorsOfPC = successorPC +≈: successorsOfPC
+            if (newSuccessorsOfPC ne successorsOfPC)
+                successors(currentPC) = newSuccessorsOfPC
+        }
 
         super.flow(
             currentPC, successorPC,

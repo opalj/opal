@@ -75,12 +75,12 @@ object VirtualSourceElement {
     def asVirtualSourceElements(
         classFiles: Traversable[ClassFile],
         includeMethods: Boolean = true,
-        includeFields: Boolean = true): Set[VirtualSourceElement] = {
-        var sourceElements: Set[VirtualSourceElement] = Set.empty
+        includeFields: Boolean = true): Iterable[VirtualSourceElement] = {
+        var sourceElements: Iterable[VirtualSourceElement] = Iterable.empty
 
         classFiles foreach { classFile ⇒
             val classType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
+            sourceElements ++ Iterable(classFile.asVirtualClass)
             if (includeMethods)
                 sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(classType))
             if (includeFields)

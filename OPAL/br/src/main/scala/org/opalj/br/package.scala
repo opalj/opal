@@ -129,6 +129,8 @@ package object br {
      */
     type PCs = org.opalj.collection.UShortSet
 
+    final def NoPCs = org.opalj.collection.UShortSet.empty
+
     /**
      * Converts a given list of annotations into a Java-like representation.
      */

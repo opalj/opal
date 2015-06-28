@@ -43,7 +43,6 @@ import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.ai.util.XHTML
 import org.opalj.graphs.DefaultMutableNode
-import org.opalj.graphs.DefaultMutableNode
 
 /**
  * Collects the Definition-Use information. I.e., makes the information available
@@ -237,7 +236,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         defSites foreach { lvar ⇒
             val thisNode = nodes(lvar)
             val usages = used(lvar + parametersOffset)
-            if (usages == null || usages.isEmpty)
+            if ((usages eq null) || usages.isEmpty)
                 unusedNode.addChild(thisNode)
             else
                 usages.foreach { usage ⇒
@@ -249,7 +248,6 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                         useNode.addChild(thisNode)
                         nodes += ((usage, useNode))
                     }
-
                 }
         }
 

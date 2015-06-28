@@ -51,7 +51,7 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
     def ++(values: UShortSet): UShortSet
 
     /**
-     * Returns a set object that can safely be mutated.
+     * Returns a (new) set object that can safely be mutated.
      */
     def mutableCopy: mutable.UShortSet
 
@@ -144,4 +144,9 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
     def hasOneElement: Boolean
 
     override def toString: String = iterator.mkString("UShortSet(", ",", ")")
+}
+
+object UShortSet {
+
+    final def empty = org.opalj.collection.mutable.UShortSet.empty
 }

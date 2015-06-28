@@ -35,7 +35,8 @@ import org.opalj.graphs.DefaultMutableNode
 
 /**
  * A memory-efficient, mutable, sorted set of unsigned short values that
- * is tailored for small(er) sets.
+ * is highly tailored for small(er) sets and situations where the set will always
+ * just grow. Removing elements is not possible.
  *
  * @author Michael Eichberg
  */
