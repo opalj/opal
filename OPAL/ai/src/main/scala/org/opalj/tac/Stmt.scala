@@ -69,7 +69,7 @@ case class If(
     def targetStmt: Int = target
 }
 
-case class Goto(pc: PC, private[tac] var target: UShort) extends Stmt {
+case class Goto(pc: PC, private[tac] var target: Int) extends Stmt {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -81,25 +81,15 @@ case class Goto(pc: PC, private[tac] var target: UShort) extends Stmt {
 
 }
 
-//case class LookupSwitch(pc:PC, defaultTarget:Int, npairs:IndexedSeq[(Int, Int)], private[tac] var targets:Seq[Int]) extends Stmt {
-//    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-//        targets = pcToIndex(targets)
-//    }
-//
-//    // Calling this method is only supported after the quadruples representation
-//    // is created and the remapping of pcs to instruction indexes has happened!
-//    def targetStmt: Int = targets
-//}
-//
-//case class TableSwitch(pc:PC, defaultOffset:Int, low:Int, high:Int, jumpOffsets:IndexedSeq[Int]) extends Stmt {
-//    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-//        target = pcToIndex(target)
-//    }
-//
-//    // Calling this method is only supported after the quadruples representation
-//    // is created and the remapping of pcs to instruction indexes has happened!
-//    def targetStmt: Int = target
-//}
+case class Switch(pc:PC, defaultTarget:Int, index:Var, private[tac] var npairs:IndexedSeq[(Int, Int)]) extends Stmt {
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        npairs = npairs.map{x ⇒ (x._1, pcToIndex(x._2))}
+    }
+
+    // Calling this method is only supported after the quadruples representation
+    // is created and the remapping of pcs to instruction indexes has happened!
+    def targetStmt: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
+}
 
 sealed trait SimpleStmt extends Stmt {
 

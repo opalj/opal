@@ -85,8 +85,8 @@ object ToJavaLike {
         s"monitorenter ${objRef.name}"
       case MonitorExit(_, objRef) ⇒
         s"monitorexit ${objRef.name}"
-      //            case LookupSwitch(_, _, _, _)   ⇒ "" /*TODO*/
-      //            case TableSwitch(_, _, _, _, _) ⇒ "" /*TODO*/
+      case Switch(_, defTrg, index, xpairs) ⇒
+        s"switch(${toJavaLikeExpr(index)}){\n${for (x <- xpairs) { "    " + x._1 + ": " + x._2 + "\n" }}}"
       case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
         val code = new StringBuffer(256)
 
@@ -112,8 +112,8 @@ object ToJavaLike {
       case ComputationalTypeLong ⇒ "long"
       case ComputationalTypeFloat ⇒ "float"
       case ComputationalTypeDouble ⇒ "double"
-      case ComputationalTypeReference ⇒ cTp.toString()
-      case ComputationalTypeReturnAddress ⇒ cTp.toString()
+      case ComputationalTypeReference ⇒ cTp.toString
+      case ComputationalTypeReturnAddress ⇒ cTp.toString
     }
   }
 
@@ -127,6 +127,7 @@ object ToJavaLike {
       case ByteType ⇒ "byte"
       case CharType ⇒ "char"
       case BooleanType ⇒ "boolean"
+      case default ⇒ default.toString
     }
   }
 
