@@ -1169,10 +1169,10 @@ trait AI[D <: Domain] {
                     computation: Computation[Nothing, ExceptionValue],
                     rest: Operands): Unit = {
 
-                    if (computation.throwsException)
-                        handleException(computation.exceptions)
                     if (computation.returnsNormally)
                         fallThrough(rest)
+                    if (computation.throwsException)
+                        handleException(computation.exceptions)
                 }
 
                 def computationWithExceptions(
@@ -1201,9 +1201,8 @@ trait AI[D <: Domain] {
 
                     if (computation.hasResult)
                         fallThrough(computation.result :: rest)
-                    if (computation.throwsException) {
+                    if (computation.throwsException)
                         handleExceptions(computation.exceptions)
-                    }
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -2233,18 +2232,15 @@ trait AI[D <: Domain] {
                                     if (isNull.isNo)
                                         handleException(theDomain.VMClassCastException(pc))
                                     else { //isNull is unknown
-                                        if (theDomain.throwClassCastException)
-                                            handleException(theDomain.VMClassCastException(pc))
-
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
+
+                                        if (theDomain.throwClassCastException)
+                                            handleException(theDomain.VMClassCastException(pc))
                                     }
 
                                 case Unknown ⇒
-                                    if (theDomain.throwClassCastException)
-                                        handleException(theDomain.VMClassCastException(pc))
-
                                     val (newOperands, newLocals) =
                                         theDomain.refSetUpperTypeBoundOfTopOperand(
                                             pc,
@@ -2257,6 +2253,9 @@ trait AI[D <: Domain] {
                                             theDomain.isValueSubtypeOf(newOperands.head, supertype)
                                     )
                                     fallThrough(newOperands, newLocals)
+
+                                    if (theDomain.throwClassCastException)
+                                        handleException(theDomain.VMClassCastException(pc))
                             }
                         }
 

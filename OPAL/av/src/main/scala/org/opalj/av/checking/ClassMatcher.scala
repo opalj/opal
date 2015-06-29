@@ -44,24 +44,28 @@ import org.opalj.bi.AccessFlagsMatcher
  */
 trait ClassMatcher extends ClassLevelMatcher {
 
-    val matchMethods: Boolean = true
+    def matchMethods: Boolean
 
-    val matchFields: Boolean = true
+    def matchFields: Boolean
 
 }
 
 /**
- * Matches all classes including inner elements like methods and fields defined by
+ * Matches all project and library classes including inner elements like methods and fields defined by
  * the respective classes.
  *
  * @author Marco Torsello
  */
 case object AllClasses extends ClassMatcher {
 
+    def matchMethods: Boolean = true
+
+    def matchFields: Boolean = true
+
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = true
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
-        asVirtualSourceElements(project.allClassFiles filter { doesMatch(_) })
+        asVirtualSourceElements(project.allClassFiles)
     }
 
 }
@@ -77,8 +81,8 @@ case class DefaultClassMatcher(
         annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
         matchSubclasses: Boolean = false,
         matchImplementingclasses: Boolean = false,
-        override val matchMethods: Boolean = true,
-        override val matchFields: Boolean = true) extends ClassMatcher {
+        val matchMethods: Boolean = true,
+        val matchFields: Boolean = true) extends ClassMatcher {
 
     def isSubClass(classFile: ClassFile, project: SomeProject): Boolean = {
         var sourceClassFile: ClassFile = classFile

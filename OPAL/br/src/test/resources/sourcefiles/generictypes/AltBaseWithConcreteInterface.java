@@ -33,6 +33,6 @@ package classhierarchy;
  * @author Michael Reif
  *
  */
-public class SubGenericTE<T, E> extends SimpleGeneric<E> {
+public class AltBaseWithConcreteInterface implements Interface<AlternativeBase> {
 
 }

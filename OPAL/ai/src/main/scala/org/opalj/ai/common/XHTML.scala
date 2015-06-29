@@ -94,8 +94,8 @@ object XHTML {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > minimumDumpInterval) {
-                    lastDump = currentTime
+                if ((currentTime - this.lastDump) > minimumDumpInterval) {
+                    this.lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
                     val dump =
                         XHTML.dump(
@@ -134,8 +134,8 @@ object XHTML {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > minimumDumpInterval) {
-                    lastDump = currentTime
+                if ((currentTime - this.lastDump) > minimumDumpInterval) {
+                    this.lastDump = currentTime
                     writeAndOpen(
                         dump(
                             classFile.get, method.get,

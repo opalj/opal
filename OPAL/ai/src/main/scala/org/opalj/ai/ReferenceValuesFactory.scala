@@ -204,7 +204,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
     def ClassValue(origin: ValueOrigin, t: Type): DomainReferenceValue
 
     /**
-     * Called by the AI framework for each \"load constant method handle\"
+     * Called by the AI framework for each ''load constant method handle''
      * ([[org.opalj.br.instructions.LoadMethodHandle]]) instruction to
      * get a representation of/a DomainValue that represents the handle.
      *
@@ -217,7 +217,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
         InitializedObjectValue(origin, ObjectType.MethodHandle)
 
     /**
-     * Called by the AI framework for each \"load constant method type\"
+     * Called by the framework for each ''load constant method type''
      * ([[org.opalj.br.instructions.LoadMethodType]]) instruction to
      * get a domain-specific representation of the method descriptor as a `MethodType`.
      *

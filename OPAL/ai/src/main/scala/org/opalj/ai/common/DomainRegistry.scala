@@ -39,9 +39,9 @@ import br.analyses.SomeProject
  *
  * The registry was developed to support tools for debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,
- * an abstract interpretation can be performend.
+ * an abstract interpretation can be performed.
  *
- * The compatible domains that are part of OPAL-AI are already registered.
+ * The compatible domains that are part of OPAL are already registered.
  *
  * ==Thread Safety==
  * The registry is thread safe.
@@ -163,6 +163,14 @@ object DomainRegistry {
         classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[l1.DefaultDomain] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
+        classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
         }
     )
 

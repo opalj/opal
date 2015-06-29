@@ -217,6 +217,20 @@ class CodeAttributeTest
         codeOfPut.localVariable(32, 2) should be(None)
     }
 
+    behavior of "the \"Code\" attribute's pcOfPreviousInstruction method"
+
+    it should "return the current pc - 1 if the previous instruction only occupies one slot in the code array" in {
+        codeOfGet.pcOfPreviousInstruction(1) should be(0)
+    }
+
+    it should "return the pc of the previous instruction even if the previous instruction occupies multiple slots" in {
+        codeOfGet.pcOfPreviousInstruction(4) should be(1)
+    }
+
+    it should "throw an IllegalArgumentException if the pc is 0" in {
+        an[IllegalArgumentException] should be thrownBy codeOfGet.pcOfPreviousInstruction(0)
+    }
+
 }
 private object CodeAttributeTest {
 

@@ -33,6 +33,7 @@ package classhierarchy;
  * @author Michael Reif
  *
  */
-public class SubGenericTE<T, E> extends SimpleGeneric<E> {
+public class SubclassWithInterface extends SubGeneric implements
+        Interface<AlternativeBase> {
 
 }

@@ -57,6 +57,22 @@ import org.opalj.de.DependencyTypes.toUsageDescription
  * class files that should be analyzed. The rules will then automatically be
  * evaluated.
  *
+ * The intended way to create a specification is to create a new anonymous Specification
+ * class that contains the specification of the architecture. Afterwards the specification
+ * object can be used to get the list of architectural violations.
+ *
+ * {{{
+ * new Specification(project) {
+ *            ensemble('Number) { "mathematics.Number*" }
+ *            ensemble('Rational) { "mathematics.Rational*" }
+ *            ensemble('Mathematics) { "mathematics.Mathematics*" }
+ *            ensemble('Example) { "mathematics.Example*" }
+ *
+ *            'Example is_only_allowed_to (USE, 'Mathematics)
+ *       }
+ * }}}
+ *
+ *
  * ===Note===
  * One ensemble is predefined: `Specification.empty` it represents an ensemble that
  * contains no source elements and which can, e.g., be used to specify that no "real"
@@ -68,6 +84,10 @@ import org.opalj.de.DependencyTypes.toUsageDescription
  */
 class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spec ⇒
 
+    /**
+     * Creates a new `Specification` for the given `Project`. Error messages will
+     * not use ANSI colors.
+     */
     def this(project: Project[URL]) {
         this(project, useAnsiColors = false)
     }
@@ -153,12 +173,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     @throws(classOf[SpecificationError])
     def ensemble(
         ensembleSymbol: Symbol)(
-            sourceElementMatcher: SourceElementsMatcher): Unit = {
+            sourceElementsMatcher: SourceElementsMatcher): Unit = {
         if (ensembles.contains(ensembleSymbol))
             throw SpecificationError("the ensemble is already defined: "+ensembleSymbol)
 
         theEnsembles += (
-            (ensembleSymbol, (sourceElementMatcher, Set.empty[VirtualSourceElement]))
+            (ensembleSymbol, (sourceElementsMatcher, Set.empty[VirtualSourceElement]))
         )
     }
 
@@ -204,7 +224,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         else if (matcher.indexOf('*') == -1)
             ClassMatcher(matcher.replace('.', '/'))
         else
-            throw SpecificationError("unsupported matcher pattern: "+matcher);
+            throw SpecificationError("unsupported pattern: "+matcher);
     }
 
     def classes(matcher: Regex): SourceElementsMatcher = ClassMatcher(matcher)
@@ -320,9 +340,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * several target ensembles.
      *
      * ==Example Scenario==
-     * If the ensemble `ex` is only allowed to throw exceptions `ey` and the source element `x` which
-     * belongs to ensemble `ex` throws an exception not belonging to `ey` then
-     * a [[SpecificationViolation]] is generated.
+     * If the ensemble `ex` is only allowed to throw exceptions `ey` and the source
+     * element `x` which belongs to ensemble `ex` throws an exception not belonging
+     * to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingOnlyAllowedConstraint(
         dependencyTypes: Set[DependencyType],
@@ -395,19 +415,26 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *
      * 	@param sourceEnsemble An ensemble containing elements, that should be annotated.
      *  @param annotationPredicates The annotations that should match.
-     *  @param propertyToCheck The property, that should be checked e.g. "validation annotations"
+     *  @param property A description of the property that is checked.
      *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
         sourceEnsemble: Symbol,
         annotationPredicates: Seq[AnnotationPredicate],
-        propertyToCheck: Option[String] = None,
-        matchAny: Boolean = false)
+        property: String,
+        matchAny: Boolean)
             extends PropertyChecker {
 
-        override def property: String = propertyToCheck match {
-            case Some(p) ⇒ p
-            case _       ⇒ annotationPredicates.map(_.toDescription).mkString("(", " - ", ")")
+        def this(
+            sourceEnsemble: Symbol,
+            annotationPredicates: Seq[AnnotationPredicate],
+            matchAny: Boolean = false) {
+            this(
+                sourceEnsemble,
+                annotationPredicates,
+                annotationPredicates.map(_.toDescription).mkString("(", " - ", ")"),
+                matchAny
+            )
         }
 
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
@@ -470,7 +497,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
         sourceEnsemble: Symbol,
-        methodPredicate: MethodPredicate)
+        methodPredicate: SourceElementPredicate[Method])
             extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription
@@ -561,60 +588,69 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
         def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*): Unit = {
             architectureCheckers =
-                GlobalIncomingConstraint(
+                new GlobalIncomingConstraint(
                     contextEnsembleSymbol,
                     sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
         def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*): Unit = {
             architectureCheckers =
-                GlobalIncomingConstraint(
+                new GlobalIncomingConstraint(
                     contextEnsembleSymbol,
                     sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
-        def is_only_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
+        def is_only_allowed_to(
+            dependencyTypes: Set[DependencyType],
+            targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
-                LocalOutgoingOnlyAllowedConstraint(
+                new LocalOutgoingOnlyAllowedConstraint(
                     dependencyTypes,
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def is_not_allowed_to(dependencyTypes: Set[DependencyType], targetEnsembles: Symbol*): Unit = {
+        def is_not_allowed_to(
+            dependencyTypes: Set[DependencyType],
+            targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
-                LocalOutgoingNotAllowedConstraint(
+                new LocalOutgoingNotAllowedConstraint(
                     dependencyTypes,
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(annotationPredicate: AnnotationPredicate): Unit = {
+        def every_element_should_be_annotated_with(
+            annotationPredicate: AnnotationPredicate): Unit = {
             architectureCheckers =
-                LocalOutgoingAnnotatedWithConstraint(
+                new LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     Seq(annotationPredicate)) :: architectureCheckers
         }
 
-        def every_element_should_be_annotated_with(property: String, annotationPredicates: Seq[AnnotationPredicate], matchAny: Boolean = false): Unit = {
+        def every_element_should_be_annotated_with(
+            property: String,
+            annotationPredicates: Seq[AnnotationPredicate],
+            matchAny: Boolean = false): Unit = {
             architectureCheckers =
-                LocalOutgoingAnnotatedWithConstraint(
+                new LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     annotationPredicates,
-                    Some(property),
+                    property,
                     matchAny) :: architectureCheckers
         }
 
-        def every_element_should_implement_method(methodPredicate: MethodPredicate): Unit = {
+        def every_element_should_implement_method(
+            methodPredicate: SourceElementPredicate[Method]): Unit = {
             architectureCheckers =
-                LocalOutgoingShouldImplementMethodConstraint(
+                new LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
                     methodPredicate) :: architectureCheckers
         }
 
         def every_element_should_extend(targetEnsembles: Symbol*): Unit = {
             architectureCheckers =
-                LocalOutgoingShouldExtendConstraint(
+                new LocalOutgoingShouldExtendConstraint(
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: architectureCheckers
         }
