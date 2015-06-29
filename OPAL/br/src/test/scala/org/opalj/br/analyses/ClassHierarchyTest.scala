@@ -508,7 +508,9 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
 
     behavior of "isSubTypeOf method w.r.t. generics"
 
-    it should "correctly reflect the type hierarchy related to primitve generics should return YES" in {
+    it should """return Yes if and only if a generic class with set element types is a subtype of another generic.
+          Therefore also wildcards, covariant elementtypes, contravariant element types and
+                concrete element types have to be considered.""" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isSubtypeOf
         isSubtypeOf(baseContainer, baseContainer) should be(Yes)
