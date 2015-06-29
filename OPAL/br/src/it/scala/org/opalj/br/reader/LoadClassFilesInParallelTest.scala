@@ -41,6 +41,8 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bytecode.JRELibraryFolder
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -56,7 +58,7 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers with ParallelT
         classFile.thisType.fqn should not be null
     }
 
-    private def interfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
+    private def publicInterfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
         commonValidator(classFile, source)
         // the body of no method should be available
         classFile.methods.forall(m ⇒ m.body.isEmpty)
@@ -64,8 +66,8 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers with ParallelT
 
     behavior of "OPAL"
 
-    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
-    val biClassfilesFolder: File = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+    val jreLibFolder: File = JRELibraryFolder
+    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
     for {
         file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
@@ -81,7 +83,7 @@ class LoadClassFilesInParallelTest extends FlatSpec with Matchers with ParallelT
         it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel") in {
             reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
-                interfaceValidator(cf, s)
+                publicInterfaceValidator(cf, s)
             }
         }
     }

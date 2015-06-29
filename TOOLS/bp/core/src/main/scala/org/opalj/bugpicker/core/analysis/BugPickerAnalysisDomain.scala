@@ -49,7 +49,7 @@ import org.opalj.ai.mapOperands
 import org.opalj.ai.TheAI
 import org.opalj.ai.domain.l2.CalledMethodsStore
 import org.opalj.ai.TheMemoryLayout
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
@@ -128,7 +128,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
             parameters: calledMethodDomain.Locals): AIResult { val domain: calledMethodDomain.type } = {
         val result = super.doInvoke(method, calledMethodDomain)(parameters)
         if (debug) {
-            org.opalj.io.writeAndOpen(XHTML.dump(
+            org.opalj.io.writeAndOpen(org.opalj.ai.common.XHTML.dump(
                 Some(project.classFile(method)),
                 Some(method),
                 method.body.get,

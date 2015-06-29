@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -84,7 +84,7 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
             methodDescriptor: MethodDescriptor,
             operands: Operands): MethodCallResult = {
 
-            // let's check if the first parameter (_ == -2) passed to a method is 
+            // let's check if the first parameter (_ == -2) passed to a method is
             // passed to a method called sanitize...
             if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
                 updateProperty(pc, true)
@@ -96,14 +96,14 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
     }
 
     private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit): Unit = {
-        /**
+        /*
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,
          * that the value is passed to a function called sanitizer.
          */
         val method = classFile.findMethod(name).get
         val domain = new AnalysisDomain(method)
-        val result = BaseTracingAI(classFile, method, domain)
+        val result = BaseAI(classFile, method, domain)
         dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),

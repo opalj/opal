@@ -43,7 +43,9 @@ package br
  * @author Michael Eichberg
  * @author Arne Lottmann
  */
-case class Annotation(annotationType: FieldType, elementValuePairs: ElementValuePairs) {
+case class Annotation(
+        annotationType: FieldType,
+        elementValuePairs: ElementValuePairs = IndexedSeq.empty) {
 
     def toJava: String = {
         val name = annotationType.toJava
@@ -56,4 +58,25 @@ case class Annotation(annotationType: FieldType, elementValuePairs: ElementValue
                 elementValuePairs.map(_.toJava).mkString("(\n\t", ",\n\t", "\n)")
         "@"+name + parameters
     }
+}
+
+object Annotation {
+
+    def apply(
+        annotationType: FieldType,
+        elementValuePairs: (String, ElementValue)*): Annotation = {
+        new Annotation(
+            annotationType,
+            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq)
+    }
+
+    def apply(
+        annotationType: FieldType,
+        elementValuePair: ElementValuePair,
+        elementValuePairs: ElementValuePair*): Annotation = {
+        new Annotation(
+            annotationType,
+            (elementValuePair +: elementValuePairs).toIndexedSeq)
+    }
+
 }

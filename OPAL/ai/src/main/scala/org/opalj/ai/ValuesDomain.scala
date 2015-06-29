@@ -631,5 +631,5 @@ trait ValuesDomain {
      */
     def properties(
         pc: PC,
-        valueToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = None
+        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = None
 }

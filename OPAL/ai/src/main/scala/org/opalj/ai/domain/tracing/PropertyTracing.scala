@@ -32,12 +32,12 @@ package domain
 package tracing
 
 import org.opalj.br._
-import org.opalj.ai.util.containsInPrefix
+import scala.collection.BitSet
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
  * A possible property could be, e.g., whether a certain check is performed on
- * all intra-procedural control flows.
+ * all intraprocedural control flows.
  *
  * After the abstract interpretation of a method, the property is associated with
  * all ''executed instructions'' and can be queried. For example to get the information
@@ -45,7 +45,7 @@ import org.opalj.ai.util.containsInPrefix
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
+trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization { domain: Domain ⇒
 
     trait Property {
         def join(otherProperty: DomainProperty): Update[DomainProperty]
@@ -66,22 +66,19 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
      */
     private var propertiesArray: Array[DomainProperty] = _
 
-    def initProperties(
-        code: Code,
-        operandsArray: Operands,
-        localsArray: Locals) = {
+    abstract override def initProperties(
+        code: Code, joinInstructions: BitSet,
+        locals: Locals): Unit = {
+
+        super.initProperties(code, joinInstructions, locals)
 
         this.propertiesArray = new Array(code.instructions.size)
         this.propertiesArray(0) = initialPropertyValue()
     }
 
-    def getProperty(pc: PC): DomainProperty = {
-        propertiesArray(pc)
-    }
+    def getProperty(pc: PC): DomainProperty = propertiesArray(pc)
 
-    def setProperty(pc: PC, property: DomainProperty): Unit = {
-        propertiesArray(pc) = property
-    }
+    def setProperty(pc: PC, property: DomainProperty): Unit = propertiesArray(pc) = property
 
     /**
      * Returns a string representation of the property associated with the given
@@ -90,8 +87,20 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
      *
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
      */
-    override def properties(pc: Int, valueToString: AnyRef ⇒ String): Option[String] =
-        Option(propertiesArray(pc)).map(_.toString())
+    abstract override def properties(
+        pc: Int,
+        propertyToString: AnyRef ⇒ String): Option[String] = {
+
+        val thisProperty = Option(propertiesArray(pc)).map(_.toString())
+
+        super.properties(pc, propertyToString) match {
+            case superProperty @ Some(description) ⇒
+                thisProperty map (_+"; "+description) orElse superProperty
+            case None ⇒
+                thisProperty
+        }
+
+    }
 
     abstract override def flow(
         currentPC: PC,
@@ -105,12 +114,10 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
-            if (!wasJoinPerformed /* weaker: || propertiesArray(successorPC) eq null*/ ) {
-                propertiesArray(successorPC) = propertiesArray(currentPC)
-                true // actually, it doesn't matter as we will continue the analysis anyway
-            } else {
+            if (wasJoinPerformed) {
                 propertiesArray(successorPC) join propertiesArray(currentPC) match {
-                    case NoUpdate ⇒ false
+                    case NoUpdate ⇒
+                        false
                     case StructuralUpdate(property) ⇒
                         propertiesArray(successorPC) = property
                         true
@@ -118,54 +125,33 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
                         propertiesArray(successorPC) = property
                         false
                 }
+            } else {
+                propertiesArray(successorPC) = propertiesArray(currentPC)
+                // actually, it doesn't matter as we will continue the analysis anyway
+                // but if the value is false we can omit the test where the value is
+                // scheduled
+                false
             }
         }
 
-        def isUnscheduled(): Boolean = {
-            val relevantWorklist =
-                if (abruptSubroutineTerminationCount > 0) {
-                    var subroutinesToTerminate = abruptSubroutineTerminationCount
-                    worklist.dropWhile { pc ⇒
-                        if (pc == SUBROUTINE) {
-                            subroutinesToTerminate -= 1
-                            subroutinesToTerminate == 0
-                        } else
-                            true
-                    }.tail
-                } else
-                    worklist
-
-            !containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)
-
-        }
-
-        if (forceScheduling && isUnscheduled) {
-            val filteredList = util.removeFirst(worklist, successorPC)
-            if (tracer.isDefined) {
-                if (filteredList eq worklist)
-                    // the instruction was not yet scheduled for another
-                    // evaluation
+        val newWorklist =
+            if (forceScheduling) {
+                val newWorklist =
+                    schedule(successorPC, abruptSubroutineTerminationCount, worklist)
+                if ((newWorklist ne worklist) && tracer.isDefined) {
+                    // the instruction was not yet scheduled for another evaluation
                     tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
-                else
-                    // the instruction was just moved to the beginning
-                    tracer.get.rescheduled(domain)(currentPC, successorPC, isExceptionalControlFlow)
-
+                }
+                newWorklist
+            } else {
+                worklist
             }
-            super.flow(
-                currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                successorPC :: filteredList,
-                operandsArray, localsArray,
-                tracer)
-        } else {
-            super.flow(
-                currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                worklist,
-                operandsArray, localsArray,
-                tracer)
-        }
+        super.flow(
+            currentPC, successorPC,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            wasJoinPerformed,
+            newWorklist,
+            operandsArray, localsArray,
+            tracer)
     }
 }

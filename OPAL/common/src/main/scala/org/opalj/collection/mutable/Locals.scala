@@ -108,6 +108,16 @@ sealed trait Locals[T >: Null <: AnyRef] {
     /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
 
     /**
+     * Maps every key-value pair to a new value. Note, that the value may very well
+     * be null.
+     */
+    def mapKV[X >: Null <: AnyRef: ClassTag](f: (Int, T) ⇒ X): Locals[X] = mapKV(0, f)
+
+    /* ABSTRACT */ protected[this] def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals[X]
+
+    /**
      * Transforms the values of this locals array. If all values are the same as
      * before `this` is returned otherwise a new Locals object is created which contains
      * the updated values.
@@ -203,7 +213,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
     }
 
     /**
-     * Creates a Scala sequence. The sequence may contain `null` values.
+     * Creates a Scala sequence which is in reverse order!
+     * The sequence may contain `null` values.
      */
     def toSeq: Seq[T] = {
         var seq = List.empty[T]
@@ -294,21 +305,21 @@ private[mutable] final object Locals0 extends Locals[Null] {
     override def indexOf(other: Object): Option[Int] = None
 
     override def apply(index: Int): Nothing =
-        throw new IndexOutOfBoundsException("the vector has size 0")
+        throw new IndexOutOfBoundsException("there are no locals")
 
     override def set(index: Int, value: Null): Unit =
-        throw new IndexOutOfBoundsException("the vector has size 0")
+        throw new IndexOutOfBoundsException("there are no locals")
 
     override def update(f: (Null) ⇒ Null): Unit = { /*nothing to do*/ }
 
     override def updated(index: Int, newValue: Null): Locals0.type =
-        throw new IndexOutOfBoundsException("the vector has size 0")
+        throw new IndexOutOfBoundsException("there are no locals")
 
     def merge(other: Locals[Null], onDiff: (Null, Null) ⇒ Null): this.type =
         if (this eq other)
             this
         else
-            // thrown to make the exception homogenous
+            // thrown to make the exception homogeneous
             throw new ClassCastException(other+" cannot be cast to Locals0")
 
     override def foreach(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
@@ -316,6 +327,12 @@ private[mutable] final object Locals0 extends Locals[Null] {
     override def foreachReverse(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: Null ⇒ X): Locals[X] = {
+        this.asInstanceOf[Locals[X]]
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, Null) ⇒ X): Locals[X] = {
         this.asInstanceOf[Locals[X]]
     }
 
@@ -385,10 +402,10 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         else {
             // Locals1 is left-right stabilized
             val newV = onDiff(thisV, thatV)
-            if (newV eq thatV)
-                that
-            else if (newV eq thisV)
+            if (newV eq thisV)
                 this
+            else if (newV eq thatV)
+                that
             else
                 new Locals1(newV)
         }
@@ -400,6 +417,12 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals1[X] = {
         new Locals1[X](f(v))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals[X] = {
+        new Locals1[X](f(startIndex + 0, v))
     }
 
     override def mapConserve(f: T ⇒ T): Locals1[T] = {
@@ -480,14 +503,20 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
             else new Locals2(newV0, thisV1)
         } else {
             val newV = onDiff(thisV1, thatV1)
-            if ((newV eq thatV1) && useThat) that
-            else if ((newV eq thisV1) && useThis) this
+            if ((newV eq thisV1) && useThis) this
+            else if ((newV eq thatV1) && useThat) that
             else new Locals2(newV0, newV)
         }
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals2[X] = {
         new Locals2[X](f(v0), f(v1))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals2[X] = {
+        new Locals2[X](f(startIndex + 0, v0), f(startIndex + 1, v1))
     }
 
     override def mapConserve(f: T ⇒ T): Locals2[T] = {
@@ -597,16 +626,22 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             }
         }
 
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals3(newV0, newV1, newV2)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals3[X] = {
         new Locals3[X](f(v0), f(v1), f(v2))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals3[X] = {
+        new Locals3[X](f(startIndex + 0, v0), f(startIndex + 1, v1), f(startIndex + 2, v2))
     }
 
     override def mapConserve(f: T ⇒ T): Locals3[T] = {
@@ -736,16 +771,26 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             }
         }
 
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals4(newV0, newV1, newV2, newV3)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals4[X] = {
         new Locals4[X](f(v0), f(v1), f(v2), f(v3))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals4[X] = {
+        new Locals4[X](
+            f(startIndex + 0, v0),
+            f(startIndex + 1, v1),
+            f(startIndex + 2, v2),
+            f(startIndex + 3, v3))
     }
 
     override def mapConserve(f: T ⇒ T): Locals4[T] = {
@@ -825,16 +870,22 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
                 newVs
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals5(newVs1, newVs2)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals5[X] = {
         new Locals5[X](vs1.map(f), vs2.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals5[X] = {
+        new Locals5[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 2, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals5[T] = {
@@ -920,16 +971,22 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals6(newVs1, newVs2)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals6[X] = {
         new Locals6[X](vs1.map(f), vs2.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals6[X] = {
+        new Locals6[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 3, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals6[T] = {
@@ -1008,16 +1065,22 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals7(newVs1, newVs2)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals7[X] = {
         new Locals7[X](vs1.map(f), vs2.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals7[X] = {
+        new Locals7[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 3, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals7[T] = {
@@ -1130,16 +1193,25 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals8(newVs1, newVs2, newVs3)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals8[X] = {
         new Locals8[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals8[X] = {
+        new Locals8[X](
+            vs1.mapKV(startIndex, f),
+            vs2.mapKV(startIndex + 2, f),
+            vs3.mapKV(startIndex + 5, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals8[T] = {
@@ -1254,16 +1326,25 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals9(newVs1, newVs2, newVs3)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals9[X] = {
         new Locals9[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals9[X] = {
+        new Locals9[X](
+            vs1.mapKV(startIndex, f),
+            vs2.mapKV(startIndex + 3, f),
+            vs3.mapKV(startIndex + 6, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals9[T] = {
@@ -1378,16 +1459,23 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals10(newVs1, newVs2, newVs3)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals10[X] = {
         new Locals10[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals10[X] = {
+        new Locals10[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 4, f), vs3.mapKV(startIndex + 7, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals10[T] = {
@@ -1502,16 +1590,25 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
                 newV
             }
         }
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals11(newVs1, newVs2, newVs3)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals11[X] = {
         new Locals11[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals11[X] = {
+        new Locals11[X](
+            vs1.mapKV(startIndex, f),
+            vs2.mapKV(startIndex + 4, f),
+            vs3.mapKV(startIndex + 7, f))
     }
 
     override def mapConserve(f: T ⇒ T): Locals11[T] = {
@@ -1640,17 +1737,24 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
                     newVs12_N
                 }
             }
-
-        if (useThat)
-            that
-        else if (useThis)
+        if (useThis)
             this
+        else if (useThat)
+            that
         else
             new Locals12_N(newVs11, newVs12_N)
     }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals12_N[X] = {
         new Locals12_N[X](vs11.map(f), vs12_N.map(f))
+    }
+
+    override def mapKV[X >: Null <: AnyRef: ClassTag](
+        startIndex: Int,
+        f: (Int, T) ⇒ X): Locals12_N[X] = {
+        def fs(ti: (T, Int)): X = { val (t, i) = ti; f(startIndex + 11 + i, t) }
+
+        new Locals12_N[X](vs11.mapKV(startIndex, f), vs12_N.zipWithIndex.map(fs))
     }
 
     override def mapConserve(f: T ⇒ T): Locals12_N[T] = {

@@ -60,6 +60,8 @@ import org.opalj.br.instructions._
  */
 object XHTML {
 
+    import org.opalj.ai.util.XHTML._
+
     /**
      * Stores the time when the last dump was created.
      *
@@ -92,8 +94,8 @@ object XHTML {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > minimumDumpInterval) {
-                    lastDump = currentTime
+                if ((currentTime - this.lastDump) > minimumDumpInterval) {
+                    this.lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
                     val dump =
                         XHTML.dump(
@@ -132,8 +134,8 @@ object XHTML {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > minimumDumpInterval) {
-                    lastDump = currentTime
+                if ((currentTime - this.lastDump) > minimumDumpInterval) {
+                    this.lastDump = currentTime
                     writeAndOpen(
                         dump(
                             classFile.get, method.get,
@@ -147,27 +149,6 @@ object XHTML {
                 }
                 throw e
         }
-    }
-
-    def createXHTML(
-        htmlTitle: Option[String] = None,
-        body: NodeSeq): Node = {
-        val theTitle = htmlTitle.map(t ⇒ Seq(<title>{ t }</title>)).getOrElse(Seq.empty[Node])
-        // HTML 5 XML serialization (XHTML 5)
-        <html xmlns="http://www.w3.org/1999/xhtml">
-            <head>
-                { theTitle }
-                <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
-                <script type="text/javascript">NodeList.prototype.forEach = Array.prototype.forEach; </script>
-                <script type="text/javascript">{ scala.xml.Unparsed(jquery) }</script>
-                <script type="text/javascript">{ scala.xml.Unparsed(colResizable) }</script>
-                <script type="text/javascript">$(function(){{$('table').colResizable({{ liveDrag:true, minWidth:75 }});}});</script>
-                <style>{ scala.xml.Unparsed(styles) }</style>
-            </head>
-            <body>
-                { body }
-            </body>
-        </html>
     }
 
     def dump(
@@ -233,21 +214,6 @@ object XHTML {
             )
         )
     }
-
-    private def styles: String =
-        process(this.getClass.getResourceAsStream("dump.head.fragment.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
-
-    private def jquery: String =
-        process(this.getClass.getResourceAsStream("jquery.js"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
-
-    private def colResizable: String =
-        process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
 
     private def dumpTable(
         code: Code,
@@ -315,13 +281,6 @@ object XHTML {
         val annotations =
             method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
         annotations.map(_.toJava)
-    }
-
-    def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
-        val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
-        val typeName = classFile.map(_.thisType.toJava).getOrElse("")
-        val methodName = method.map(m ⇒ m.toJava).getOrElse("&lt; method &gt;")
-        modifiers + typeName+"{ "+methodName+" }"
     }
 
     private def indexExceptionHandlers(code: Code) =
@@ -394,15 +353,6 @@ object XHTML {
         </tr>
     }
 
-    def htmlify(s: String): Node = {
-        scala.xml.Unparsed(
-            s.replace("<", "&lt;").
-                replace(">", "&gt;").
-                replace("\n", "<br>").
-                replace("\t", "&nbsp;&nbsp;")
-        )
-    }
-
     def dumpStack(
         operands: Operands[_ <: AnyRef])(
             implicit ids: Option[AnyRef ⇒ Int]): Node =
@@ -434,73 +384,5 @@ object XHTML {
         }
     }
 
-    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String =
-        value.toString + ids.map("@"+_.apply(value)).getOrElse("")
-
-    def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
-        val node =
-            if (throwable.getStackTrace == null ||
-                throwable.getStackTrace.size == 0) {
-                <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
-            } else {
-                val stackElements =
-                    for { stackElement ← throwable.getStackTrace } yield {
-                        <tr>
-                            <td>{ stackElement.getClassName }</td>
-                            <td>{ stackElement.getMethodName }</td>
-                            <td>{ stackElement.getLineNumber }</td>
-                        </tr>
-                    }
-                val summary = throwable.getClass.getSimpleName+" "+throwable.getMessage
-
-                <details>
-                    <summary>{ summary }</summary>
-                    <table>{ stackElements }</table>
-                </details>
-            }
-
-        if (throwable.getCause ne null) {
-            val causedBy = throwableToXHTML(throwable.getCause)
-            <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
-        } else {
-            node
-        }
-    }
-
-    def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions: "+evaluated.count(_ >= 0)+"<br>"
-        val footer = ""
-        val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
-        val subroutineEnd = "</div></details>"
-
-        var openSubroutines = 0
-        val asStrings = evaluated.reverse.map { instruction ⇒
-            instruction match {
-                case SUBROUTINE_START ⇒
-                    openSubroutines += 1
-                    subroutineStart
-                case SUBROUTINE_END ⇒
-                    openSubroutines -= 1
-                    subroutineEnd
-                case _ ⇒ instruction.toString+" "
-            }
-        }
-
-        header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+
-            asStrings.mkString("") +
-            (
-                if (openSubroutines > 0) {
-                    var missingSubroutineEnds = subroutineEnd
-                    openSubroutines -= 1
-                    while (openSubroutines > 0) {
-                        missingSubroutineEnds += subroutineEnd
-                        openSubroutines -= 1
-                    }
-                    missingSubroutineEnds
-                } else
-                    ""
-            ) +
-                footer+"</div>"
-    }
 }
 

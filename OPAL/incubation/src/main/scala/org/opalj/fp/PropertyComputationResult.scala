@@ -56,7 +56,7 @@ case class MultiResult(
  * Encapsulates the '''final results''' of the computation of a set of properties that
  * required no intermediate steps.
  *
- * A `ImmediateMultiResult` is only to be used if no further refinement is possible
+ * An `ImmediateMultiResult` is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
@@ -77,14 +77,14 @@ case class Result(e: Entity, p: Property) extends PropertyComputationResult
  * Encapsulates the '''final result''' of a computation of a property that '''required
  * no intermediate results'''.
  *
- * A `ImmediateResult` is only to be used if no further refinement is possible
+ * An `ImmediateResult` is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
 case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult
 
 /**
- * Factory for [[Result]] and [[IntermediateResult]] objects.
+ * Factory for [[Result]] and [[ImmediateResult]] objects.
  */
 object Result {
 
@@ -100,11 +100,13 @@ object Result {
  * Encapsulates an intermediate result of the computation of a property.
  *
  * Intermediate results are to be used if further refinements are possible and may happen.
- * All current computations
+ *
+ * All current computations (incomming dependencies)
  * depending on the given entry's property remain registered and will be invoked in the future
- * if another `IntermediateResult` or `Result` is computed.
- * Furthermore, if a property of any of the dependees changes, the given given
- * continuation `c` is invoked.
+ * if another `IntermediateResult` or `Result` is computed for the specified entity `e`.
+ *
+ * Furthermore, if a property of any of the dependees changes (outgoing dependencies),
+ *  the given continuation `c` is invoked.
  * (This requires that the given continuation is thread-safe! In most cases the easiest
  * and correct solution is to just wrap it in a synchronized block.)
  */
@@ -114,31 +116,9 @@ case class IntermediateResult(
     c: Continuation)
         extends PropertyComputationResult
 
-///**
-// * Encapsulates the result of the computation of a property which may be refined if
-// *
-// * If the property of any required element is refined, the property computation
-// * function is called again.
-// *
-// * @param dependees A `Traversable` of all entities on which the computation
-// *      depends and – for which a refinement may yield a more precise result.
-// *      The specified property (if any) is the value of the property which was used
-// *      to perform the computation. I.e., the framework will only call the property
-// *      computation function if the property has changed.
-// */
-//case class RefineableResult(
-//    properties: Traversable[(Entity, Property)],
-//    dependees: Traversable[(Entity, PropertyKey, Option[Property], Continuation)])
-//        extends PropertyComputationResult {
-//
-//    assert(dependees.size > 0, "intermediate results must have dependencies")
-//
-//    //private[fp] val dependenciesCount = dependingEntities.size
-//    //private[fp] val unrefinedDependencies = new AtomicInteger(dependenciesCount)
-//
-//}
-
 /**
+ * Represents a suspended computation.
+ *
  * @param dependeeE The entity about which some knowledge is required by this
  *      computation before the computation can be continued.
  * @param dependeePK The property kind of the given entity about which some knowledge

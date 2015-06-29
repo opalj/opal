@@ -30,60 +30,74 @@ package org.opalj
 package av
 package checking
 
+import scala.language.existentials
 import scala.collection.Set
 import org.opalj.br._
 
 /**
  * @author Marco Torsello
  */
-trait AnnotationsPredicate {
+trait AnnotationsPredicate extends (Traversable[Annotation] ⇒ Boolean)
 
-    def apply(others: Annotations): Boolean
+/**
+ * @author Marco Torsello
+ */
+case object NoAnnotations extends AnnotationsPredicate {
+
+    def apply(others: Traversable[Annotation]): Boolean = false
+
+}
+
+/**
+ * @author Michael Eichberg
+ */
+case object AnyAnnotations extends AnnotationsPredicate {
+
+    def apply(others: Traversable[Annotation]): Boolean = true
 
 }
 
 /**
  * @author Marco Torsello
  */
-case object NoAnnotationsPredicate extends AnnotationsPredicate {
+case class HasAtLeastTheAnnotations(
+        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
 
-    def apply(others: Annotations): Boolean = true
-
-}
-
-/**
- * @author Marco Torsello
- */
-case class AllAnnotationsPredicate(
-        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
-
-    def apply(others: Annotations): Boolean = {
+    def apply(others: Traversable[Annotation]): Boolean = {
         annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
     }
+}
+object HasAtLeastTheAnnotations {
 
+    def apply(annotationPredicate: AnnotationPredicate) =
+        new HasAtLeastTheAnnotations(Set(annotationPredicate))
 }
 
 /**
  * @author Marco Torsello
  */
-case class StrictlyAllAnnotationsPredicate(
-        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+case class HasTheAnnotations(
+        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
 
-    def apply(others: Annotations): Boolean = {
+    def apply(others: Traversable[Annotation]): Boolean = {
         others.size == annotationPredicates.size &&
             annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
     }
 
 }
+object HasTheAnnotations {
+
+    def apply(annotationPredicate: AnnotationPredicate) =
+        new HasTheAnnotations(Set(annotationPredicate))
+}
 
 /**
  * @author Marco Torsello
  */
-case class AnyAnnotationsPredicate(
-        annotationPredicates: Set[AnnotationPredicate]) extends AnnotationsPredicate {
+case class HasAtLeastOneAnnotation(
+        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
 
-    def apply(others: Annotations): Boolean = {
-        annotationPredicates.exists(p ⇒ others.exists(a ⇒ p(a)))
+    def apply(annotations: Traversable[Annotation]): Boolean = {
+        annotationPredicates.exists(p ⇒ annotations.exists(a ⇒ p(a)))
     }
-
 }

@@ -27,30 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
+package br
 
 /**
+ * We treat as a source element every entity that can be referred to
+ * by other class files.
+ *
  * @author Michael Eichberg
  */
-case class SimpleNamePredicate(
-    name: String,
-    matchPrefix: Boolean)
-        extends NamePredicate {
+trait ConcreteSourceElement extends SourceElement {
 
-    def apply(otherName: String): Boolean = {
-        val binaryName = name.replace('.', '/')
-        otherName.startsWith(binaryName) && (
-            matchPrefix || binaryName.length == otherName.length)
-    }
-}
-
-object SimpleNamePredicate {
-
-    def apply(
-        name: String): SimpleNamePredicate = {
-        this(name, false)
-    }
+    def accessFlags: Int
 
 }
-

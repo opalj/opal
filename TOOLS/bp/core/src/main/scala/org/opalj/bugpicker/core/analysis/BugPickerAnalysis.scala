@@ -66,7 +66,7 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import scala.xml.NodeSeq
@@ -100,9 +100,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
      *
      * @param parameters A list of (optional) parameters. The parameters that are
      *      matched are defined by:
-     *      [[MaxEvalFactorPattern]], [[MaxEvalTimePattern]],
-     *      [[MaxCardinalityOfIntegerRangesPattern]], [[MaxCardinalityOfLonsSetsPattern]],
-     *      [[MaxCallChainLengthPattern]], and "`-debug`".
+     *      [[BugPickerAnalysis$.MaxEvalFactorPattern]],
+     *      [[BugPickerAnalysis$.MaxEvalTimePattern]],
+     *      [[BugPickerAnalysis$.MaxCardinalityOfIntegerRangesPattern]],
+     *      [[BugPickerAnalysis$.MaxCardinalityOfLongSetsPattern]],
+     *      [[BugPickerAnalysis$.MaxCallChainLengthPattern]], and "`-debug`".
      *
      */
     override def analyze(
@@ -271,7 +273,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             if (!result.wasAborted) {
 
                 if (debug) {
-                    org.opalj.io.writeAndOpen(XHTML.dump(
+                    org.opalj.io.writeAndOpen(org.opalj.ai.common.XHTML.dump(
                         Some(classFile),
                         Some(method),
                         method.body.get,

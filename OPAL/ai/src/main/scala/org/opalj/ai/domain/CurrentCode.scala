@@ -29,39 +29,36 @@
 package org.opalj
 package ai
 package domain
-package tracing
 
-import br._
+import org.opalj.br.Code
+import scala.collection.BitSet
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * Provides information about the code block that is currently analyzed.
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
+ * ==Core Properties==
+ *  - "Automatically reset" when the domain is used to analyze another method.
+ *  - "Concurrent Usage": "No"
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
+trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDomain ⇒
+
+    private[this] var theCode: Code = _
 
     /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
+     * Returns the code block that is currently analyzed.
      */
-    override def performInterpretation(
-        strictfp: Boolean,
+    final def code: Code = theCode
+
+    abstract override def initProperties(
         code: Code,
-        theDomain: D)(
-            initialOperands: theDomain.Operands,
-            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
+        joinInstructions: BitSet,
+        initialLocals: Locals): Unit = {
 
-        theDomain.initProperties(code, initialOperands, initialLocals)
-        super.performInterpretation(
-            strictfp, code, theDomain)(
-                initialOperands, initialLocals)
+        this.theCode = code
+
+        super.initProperties(code, joinInstructions, initialLocals)
     }
-}
 
+}

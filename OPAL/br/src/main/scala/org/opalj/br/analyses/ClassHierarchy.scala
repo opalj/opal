@@ -1003,8 +1003,8 @@ class ClassHierarchy private (
         None
     }
 
-    /*
-     * Returns an [[Option[[ClassSignature]]]] according to the given [[ObjectType]]. Is the
+    /**
+     * Returns an [[Option]] of [[ClassSignature]] according to the given [[ObjectType]]. Is the
      * given ObjectType not resolvable by the project, [[None]] is returned.
      */
     @inline private[this] final def getClassSignature(ot: ObjectType)(
@@ -1014,11 +1014,11 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines if the given class or interface type encoded in the [[ClassTypeSignature]] `subtype` is actually a subtype
+     * Determines if the given class or interface type encoded by the [[ClassTypeSignature]] `subtype` is actually a subtype
      * of the class or interface type encoded in the [[ClassTypeSignature]] of the `supertype`.
      *
      * @note This method relies – in case of a comparison of non generic types – on
-     *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
+     *       [[isSubtypeOf(ObjectType, ObjectType)]] of `Project` which
      *        performs an upwards search only. E.g., given the following
      *      type hierarchy:
      *      `class D inherits from C`
@@ -1101,8 +1101,8 @@ class ClassHierarchy private (
 
             suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) ⇒ (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
                 case (_, Unknown) | (Unknown, _) ⇒ Unknown
-                case (Yes, No) | (No, Yes)       ⇒ No
-                case (x, y) if x eq y            ⇒ x
+                case (x, y) if x ne y            ⇒ No
+                case (x, _ /*x*/ )               ⇒ x
             })
         }
         if (subtype.objectType eq supertype.objectType) {
@@ -1133,12 +1133,15 @@ class ClassHierarchy private (
                                         superTypeArguments: List[TypeArgument],
                                         isInnerClass: Boolean = false): Answer = {
 
-                    (getClassSignature(subtype).flatMap { cs ⇒
+                    getClassSignature(subtype).map { cs ⇒
                         getSupertypeDeclaration(cs, supertype).map { matchingType ⇒
-                            if (isInnerClass && matchingType.classTypeSignatureSuffix.nonEmpty) compareTypeArguments(matchingType.classTypeSignatureSuffix.last.typeArguments, superTypeArguments)
-                            else compareTypeArguments(matchingType.simpleClassTypeSignature.typeArguments, superTypeArguments)
-                        } orElse Some(No)
-                    } orElse Some(Unknown)).get
+                            val classSuffix = matchingType.classTypeSignatureSuffix
+                            if (isInnerClass && classSuffix.nonEmpty)
+                                compareTypeArguments(classSuffix.last.typeArguments, superTypeArguments)
+                            else
+                                compareTypeArguments(matchingType.simpleClassTypeSignature.typeArguments, superTypeArguments)
+                        } getOrElse No
+                    } getOrElse Unknown
                 }
                 def compareSharedTypeArguments(
                     subtype: ObjectType,
@@ -1155,13 +1158,17 @@ class ClassHierarchy private (
                     val superFtp = superCs.get.formalTypeParameters
                     var typeArgs = List.empty[TypeArgument]
                     var supertypeArgs = List.empty[TypeArgument]
-                    for (i ← 0 to ftp.size - 1) {
+
+                    var i = 0
+                    while (i < ftp.size) {
                         val index = superFtp.indexOf(ftp(i))
                         if (index >= 0) {
                             typeArgs = typeArguments(i) :: typeArgs
                             supertypeArgs = superTypeArguments(index) :: supertypeArgs
                         }
+                        i = i + 1
                     }
+
                     if (typeArgs.isEmpty)
                         if (cs.get.superClassSignature.classTypeSignatureSuffix.nonEmpty) Yes
                         else haveSameTypeBinding(subtype, supertype, superTypeArguments)
@@ -1221,12 +1228,13 @@ class ClassHierarchy private (
         subtype: ClassTypeSignature,
         supertype: FormalTypeParameter)(
             implicit project: ClassFileRepository): Answer = {
-        (supertype.classBound.collectFirst({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }) ++
-            supertype.interfaceBound.collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig })).
+
+        (supertype.classBound.map(ftp ⇒ ftp).toList ++
+            supertype.interfaceBound).collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }).
             foldLeft(Yes: Answer)((acc, superCts) ⇒ (acc, isSubtypeOf(subtype, superCts)) match {
                 case (_, Unknown) | (Unknown, _) ⇒ Unknown
-                case (Yes, No) | (No, Yes)       ⇒ No
-                case (x, y) if x eq y            ⇒ x
+                case (x, y) if x ne y            ⇒ No
+                case (x, _ /*x*/ )               ⇒ x
             })
     }
 

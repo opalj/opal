@@ -37,7 +37,7 @@ package br
  */
 trait CommonAttributes {
 
-    protected def attributes: Attributes
+    def attributes: Attributes
 
     def runtimeVisibleTypeAnnotations: TypeAnnotations =
         attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) ⇒ vas } match {
