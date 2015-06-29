@@ -1065,7 +1065,7 @@ class ClassHierarchy private (
      * subtype:     SomeClass // SomeClass extends SomeInterface<String>
      * supertype:   SomeInterface<String> // SomeInterface<E>
      *
-     * Is the `subtype` a [[ConcreteType]] without [[FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
+     * Is the `subtype` a [[ConcreteType]] without [[org.opalj.br.FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
      * we first have to check whether the `subtype` is a subtype of the given `supertype`. If not, then the `subtype` is not an actual
      * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type defintion
      * or the type definiton of a super class or a super interface (interface definiton of SomeInterface<String>).
@@ -1085,7 +1085,7 @@ class ClassHierarchy private (
      * [[FormalTypeParameter]]. So it is necessary to check whether the acctual bound [[TypeArgument]] at the
      * postion of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
      * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second postion
-     * of the [[FormalTypeParamter]]s of Foo and at the first postion of the [[FormalTypeParamter]]s of Bar. Second and last
+     * of the [[FormalTypeParamter]]s of Foo and at the first postion of the [[FormalTypeParameter]]s of Bar. Second and last
      * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
      * to decide the subtype relation.
      */
@@ -1213,7 +1213,7 @@ class ClassHierarchy private (
      * fulfilled if the subtype is a subtype of the class Bound and/or all interface types
      * that are demanded by the formal type specification.
      *
-     * @Note This method does consider generics types specified within the [[FormalTypeParamter]].
+     * @note This method does consider generics types specified within the [[FormalTypeParamter]].
      *
      * @param subtype Any `ClassTypeSignature`.
      * @param supertype Any `FormalTypeParameter`.
