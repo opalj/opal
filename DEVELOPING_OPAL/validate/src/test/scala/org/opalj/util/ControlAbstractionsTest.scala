@@ -45,7 +45,11 @@ import org.scalatest.Matchers
 @RunWith(classOf[JUnitRunner])
 class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    behavior of "The ControlAbstractions.foreachNonNullValueOf macro"
+    //
+    // foreachNonNullValueOf
+    //
+
+    behavior of "the ControlAbstractions.foreachNonNullValueOf macro"
 
     it should "evaluate the expression that passes in the array exactly once" in {
         var initialized = false
@@ -73,7 +77,11 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
         result.reverse should be(List((1, "a"), (3, "b"), (4, "c"), (7, "d")))
     }
 
-    behavior of "The ControlAbstractions.repeat macro"
+    //
+    // REPEAT
+    //
+
+    behavior of "the ControlAbstractions.repeat macro"
 
     it should "return a empty seq when the number of times is 0" in {
         val result = repeat(0) { 1 }
@@ -106,23 +114,46 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
         result should be(Seq(1))
     }
 
-    behavior of "The ControlAbstractions.iterate macro"
+    //
+    // ITERATE
+    //
 
-    it should "do nothing if the range is empty" in {
-        iterate(0, -1) { i ⇒ fail() }
-        iterate(-1, -2) { i ⇒ fail() }
-        iterate(1000, 999) { i ⇒ fail() }
+    behavior of "the ControlAbstractions.iterateTo macro"
+
+    it should "does nothing if the range is empty" in {
+        iterateTo(0, -1) { i ⇒ fail() }
+        iterateTo(-1, -2) { i ⇒ fail() }
+        iterateTo(1000, 999) { i ⇒ fail() }
     }
 
     it should "iterate over all values in a range" in {
         var lastResult = -1
-        iterate(0, 10) { i ⇒
+        iterateTo(0, 10) { i ⇒
             if (i != lastResult + 1)
                 fail();
 
             lastResult = i
         }
         lastResult should be(10)
+    }
+
+    behavior of "the ControlAbstractions.iterateUntil macro"
+
+    it should "does nothing if the range is empty" in {
+        iterateUntil(0, -1) { i ⇒ fail() }
+        iterateUntil(-1, -2) { i ⇒ fail() }
+        iterateUntil(1000, 999) { i ⇒ fail() }
+    }
+
+    it should "iterate over all values in a range" in {
+        var lastResult = -1
+        iterateUntil(0, 10) { i ⇒
+            if (i != lastResult + 1)
+                fail();
+
+            lastResult = i
+        }
+        lastResult should be(9)
     }
 
 }
