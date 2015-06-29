@@ -1100,11 +1100,12 @@ class ClassHierarchy private (
             if (suffix == Nil && superSuffix == Nil)
                 return Yes
 
-            suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) ⇒ (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
-                case (_, Unknown) | (Unknown, _) ⇒ Unknown
-                case (x, y) if x ne y            ⇒ No
-                case (x, _ /*x*/ )               ⇒ x
-            })
+            suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) ⇒
+                (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
+                    case (_, Unknown)     ⇒ return Unknown
+                    case (x, y) if x ne y ⇒ No
+                    case (x, _ /*x*/ )    ⇒ x
+                })
         }
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
@@ -1210,9 +1211,9 @@ class ClassHierarchy private (
     /**
      * Determines if the given class or interface type encoded in a [[ClassTypeSignature]]
      * `subtype` is actually a subtype of the class, interface or intersection type encoded
-     * in the [[FormalTypeParameter]] of `supertype` parameter. The subtype relation is
-     * fulfilled if the subtype is a subtype of the class Bound and/or all interface types
-     * that are demanded by the formal type specification.
+     * in the [[FormalTypeParameter]] of the `supertype` parameter. The subtype relation is
+     * fulfilled if the subtype is a subtype of the class bound and/or all interface types
+     * that are prescriped by the formal type specification.
      *
      * @note This method does consider generics types specified within the [[FormalTypeParamter]].
      *
@@ -1230,12 +1231,12 @@ class ClassHierarchy private (
         supertype: FormalTypeParameter)(
             implicit project: ClassFileRepository): Answer = {
 
-        (supertype.classBound.map(ftp ⇒ ftp).toList ++
-            supertype.interfaceBound).collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }).
-            foldLeft(Yes: Answer)((acc, superCts) ⇒ (acc, isSubtypeOf(subtype, superCts)) match {
-                case (_, Unknown) | (Unknown, _) ⇒ Unknown
-                case (x, y) if x ne y            ⇒ No
-                case (x, _ /*x*/ )               ⇒ x
+        (supertype.classBound.toList ++ supertype.interfaceBound).
+            collect({ case sig @ ClassTypeSignature(_, _, _) ⇒ sig }).
+            foldLeft(Yes: Answer)((currentAnswer, superCts) ⇒ (currentAnswer, isSubtypeOf(subtype, superCts)) match {
+                case (_, Unknown)     ⇒ return Unknown
+                case (x, y) if x ne y ⇒ No
+                case (x, _ /*x*/ )    ⇒ x
             })
     }
 
