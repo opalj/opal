@@ -693,6 +693,7 @@ class ClassHierarchy private (
             else
                 return Unknown
         }
+
         val supertypeIsInterface = isInterface(theSupertype)
 
         if (subtypeIsInterface && !supertypeIsInterface)
