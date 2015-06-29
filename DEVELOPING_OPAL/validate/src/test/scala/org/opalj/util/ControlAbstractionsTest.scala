@@ -120,12 +120,6 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
 
     behavior of "the ControlAbstractions.iterateTo macro"
 
-    it should "does nothing if the range is empty" in {
-        iterateTo(0, -1) { i ⇒ fail() }
-        iterateTo(-1, -2) { i ⇒ fail() }
-        iterateTo(1000, 999) { i ⇒ fail() }
-    }
-
     it should "iterate over all values in a range" in {
         var lastResult = -1
         iterateTo(0, 10) { i ⇒
@@ -138,12 +132,6 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
     }
 
     behavior of "the ControlAbstractions.iterateUntil macro"
-
-    it should "does nothing if the range is empty" in {
-        iterateUntil(0, -1) { i ⇒ fail() }
-        iterateUntil(-1, -2) { i ⇒ fail() }
-        iterateUntil(1000, 999) { i ⇒ fail() }
-    }
 
     it should "iterate over all values in a range" in {
         var lastResult = -1
