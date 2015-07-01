@@ -21,3 +21,4 @@ Icon?
 .history
 local.sbt
 .tmpBin
+.cache-*
