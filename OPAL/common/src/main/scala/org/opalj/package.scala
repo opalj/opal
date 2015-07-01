@@ -87,6 +87,11 @@ import org.opalj.log.OPALLogger
 package object opalj {
 
     /**
+     * The analysis mode.
+     */
+    type AnalysisMode = AnalysisModes.Value
+
+    /**
      * The type of the predefined relational operators.
      *
      * See [[org.opalj.RelationalOperators]] for the list of all defined operators.
