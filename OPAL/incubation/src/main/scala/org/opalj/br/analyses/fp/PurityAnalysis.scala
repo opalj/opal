@@ -181,13 +181,14 @@ object PurityAnalysis {
                         /* Nothing to do; constants do not impede purity! */
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            val c: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒
-                                if (dependeeP == EffectivelyFinal) {
-                                    val nextPC = body.pcOfNextInstruction(currentPC)
-                                    determinePurityCont(method, nextPC, dependees)
-                                } else {
-                                    Result(method, Impure)
-                                }
+                            val c: Continuation =
+                                (dependeeE: Entity, dependeeP: Property) ⇒
+                                    if (dependeeP == EffectivelyFinal) {
+                                        val nextPC = body.pcOfNextInstruction(currentPC)
+                                        determinePurityCont(method, nextPC, dependees)
+                                    } else {
+                                        Result(method, Impure)
+                                    }
                             // We are suspending this computation and wait for the result.
                             // This, however, does not make this a multi-step computation,
                             // as the analysis is only continued when property becomes
@@ -314,7 +315,7 @@ object PurityAnalysis {
 
         // Due to a lack of knowledge, we classify all native methods or methods loaded
         // using a library class loader as impure...
-        if (method.body.isEmpty)
+        if (method.body.isEmpty /*HERE: method.isNative*/ )
             return ImmediateResult(method, Impure);
 
         // We are currently only able to handle simple methods that just take
