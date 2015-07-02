@@ -67,7 +67,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.fp.Empty
-import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.{ Property, PropertyComputationResult, PropertyStore, PropertyKey }
 import org.opalj.fp.ImmediateMultiResult
 
 sealed trait Mutability extends Property {
@@ -88,11 +88,10 @@ object MutablityAnalysis {
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineMutabilityOfNonFinalPrivateStaticFields(
-        entity: Entity)(
+        classFile: ClassFile)(
             implicit project: SomeProject,
             projectStore: PropertyStore): PropertyComputationResult = {
 
-        val classFile = entity.asInstanceOf[ClassFile]
         val thisType = classFile.thisType
         val fields = classFile.fields
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
@@ -131,7 +130,9 @@ object MutablityAnalysis {
 
     def analyze(implicit project: Project[URL]): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore <|< ((e: Entity) ⇒ e.isInstanceOf[ClassFile], determineMutabilityOfNonFinalPrivateStaticFields)
+        projectStore <||< (
+            { case cf: ClassFile ⇒ cf },
+            determineMutabilityOfNonFinalPrivateStaticFields)
     }
 }
 
