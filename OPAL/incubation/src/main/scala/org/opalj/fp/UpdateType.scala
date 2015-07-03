@@ -28,6 +28,11 @@
  */
 package org.opalj.fp
 
+/**
+ * The different types of updates distinguished by OPAL.
+ *
+ * @author Michael Eichberg
+ */
 private[fp] object UpdateTypes extends Enumeration {
 
     val IntermediateUpdate = Value("Intermediate Update")
@@ -39,6 +44,11 @@ private[fp] object UpdateTypes extends Enumeration {
     // other information.
     val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
 
-    private[fp] val FallbackUpdate = Value("Fallback Update")
+
+    // The result was determined by looking up a property kind's fallback property. Hence,
+    // no "real" computation was performed. Furthermore, it may be the case that
+    // the updated – at the point in time when it is handled - is no longer relevant
+    // and has to be dropped.
+    val FallbackUpdate = Value("Fallback Update")
 
 }

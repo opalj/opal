@@ -78,68 +78,12 @@ import org.opalj.fp.ImmediateResult
 import org.opalj.fp.IntermediateResult
 
 /**
- * Common supertrait of all purity properties.
- */
-sealed trait Purity extends Property {
-
-    /**
-     * Returns the key used by all `Purity` properties.
-     */
-    // All instances have to share the SAME key!
-    final def key = Purity.Key
-
-}
-/**
- * Common constants use by all [[Purity]] properties associated with methods.
- */
-object Purity {
-
-    /**
-     * The key associated with every purity property.
-     */
-    final val Key =
-        PropertyKey.create(
-            // The unique name of the property.
-            "Purity",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MaybePure
-        )
-
-}
-
-/**
- * The fallback/default purity.
- *
- * It is only used by the framework in case of a dependency
- * on an element for which no result could be computed.
- */
-case object MaybePure extends Purity { final val isRefineable = true }
-
-/**
- * Used if we know that the pureness of a methods only depends on the pureness
- * of the target methods.
- *
- * A conditionally pure method has to be treated as an inpure methods by clients
- * except that it may be refined later on.
- */
-case object ConditionallyPure extends Purity { final val isRefineable = true }
-
-/**
- * The respective method is pure.
- */
-case object Pure extends Purity { final val isRefineable = false }
-
-/**
- * The respective method is impure.
- */
-case object Impure extends Purity { final val isRefineable = false }
-
-/**
  * This analysis determines whether a method is pure (I.e., Whether the method
  * only operates on the given state.) This simple analysis only tries to compute the
  * purity for methods that
  * only have parameters with a base type.
+ *
+ * @author Michael Eichberg
  */
 object PurityAnalysis {
 
@@ -339,7 +283,7 @@ object PurityAnalysis {
             case m: Method if !m.isAbstract ⇒ m
         }
         // Ordering by size (implicit assumption: methods that are short don't call
-        // too many other methods...); this is extremely efficient and simple.
+        // too many other methods...); this ordering is extremely efficient and simple.
         val methodOrdering = new Ordering[Method] {
             def compare(a: Method, b: Method): Int = {
                 val aBody = a.body

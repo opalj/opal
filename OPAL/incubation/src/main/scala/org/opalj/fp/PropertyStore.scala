@@ -449,7 +449,8 @@ class PropertyStore private (
     //
     //
 
-    private[this] final val threadPool = ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks, 2))
+    val ThreadCount = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
+    private[this] final val threadPool = ThreadPoolN(ThreadCount)
 
     /**
      * General handling of the tasks that are executed.
@@ -734,7 +735,8 @@ class PropertyStore private (
                 try {
                     handleResult(pc(e))
                 } catch {
-                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                    case t: Throwable ⇒
+                        handleUncaughtException(Thread.currentThread(), t)
                 } finally {
                     Tasks.taskCompleted()
                 }
@@ -748,11 +750,12 @@ class PropertyStore private (
     private[this] def bulkScheduleComputations(
         es: Traversable[_ <: Entity],
         pc: PropertyComputation): Unit = {
-        val tasks = es.map { e ⇒
+        val ges = es.toList.grouped(ThreadCount * 4).toArray
+        val tasks = ges.map { es ⇒
             new Runnable {
                 def run() = {
                     try {
-                        handleResult(pc(e))
+                        es foreach { e ⇒ handleResult(pc(e)) }
                     } catch {
                         case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
                     } finally {
@@ -924,6 +927,10 @@ class PropertyStore private (
                                             p,
                                             null /*The list of observers is no longer required!*/
                                         )
+                                } else {
+                                    // Nothing to do... the entity is already associated
+                                    // with a property.
+                                    return ;
                                 }
 
                         }

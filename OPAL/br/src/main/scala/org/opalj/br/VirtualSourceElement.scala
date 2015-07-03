@@ -68,7 +68,7 @@ sealed trait VirtualSourceElement
 }
 
 /**
- * Defines common helper functions related to [[VirtualSourceElements]].
+ * Defines common helper functions related to [[VirtualSourceElement]]s.
  */
 object VirtualSourceElement {
 

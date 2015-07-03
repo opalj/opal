@@ -28,12 +28,19 @@
  */
 package org.opalj.fp
 
+/**
+ * @author Michael Eichberg
+ */
 trait EOptionP {
 
     val e: Entity
 
     def hasProperty: Boolean
 
+    /**
+     * Returns the property if it is available.
+     */
+    @throws[UnsupportedOperationException]("if no property is available")
     def p: Property
 
     def pk: PropertyKey
