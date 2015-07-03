@@ -73,6 +73,8 @@ case class ImmediateMultiResult(
  */
 case class Result(e: Entity, p: Property) extends PropertyComputationResult
 
+private[fp] case class FallbackResult(e: Entity, p: Property) extends PropertyComputationResult
+
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
  * no intermediate results'''.
@@ -112,7 +114,7 @@ object Result {
  */
 case class IntermediateResult(
     e: Entity, p: Property,
-    dependeeEs: Traversable[EP],
+    dependeeEs: Traversable[EOptionP],
     c: Continuation)
         extends PropertyComputationResult
 

@@ -78,9 +78,9 @@ object Mutability {
     final val Key = PropertyKey.create("Mutability", NonFinal)
 }
 
-case object EffectivelyFinal extends Mutability
+case object EffectivelyFinal extends Mutability { final val isRefineable = false }
 
-case object NonFinal extends Mutability
+case object NonFinal extends Mutability { final val isRefineable = false }
 
 object MutablityAnalysis {
 

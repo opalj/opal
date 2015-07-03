@@ -53,9 +53,9 @@ object Instantiability {
     final val Key = PropertyKey.create("Instantiability", Instantiable)
 }
 
-case object NotInstantiable extends Instantiability
+case object NotInstantiable extends Instantiability { final val isRefineable = false }
 
-case object Instantiable extends Instantiability
+case object Instantiable extends Instantiability { final val isRefineable = false }
 
 object InstantiabilityAnalysis {
 

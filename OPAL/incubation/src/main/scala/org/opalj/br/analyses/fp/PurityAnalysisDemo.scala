@@ -66,7 +66,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         // respective analysis. (Technically, it would be possible to schedule
         // it afterwards, but that doesn't make sense.)
         //        println("Starting Mutability Analysis")
-        //        MutablityAnalysis.analyze(project)
+        MutablityAnalysis.analyze(project)
 
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
@@ -82,7 +82,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             val pat = new Thread(new Runnable { def run = PurityAnalysis.analyze(project) });
             pat.start
             println("Starting Mutability Analysis")
-            MutablityAnalysis.analyze(project)
+            //  MutablityAnalysis.analyze(project)
             // Let's make sure that everything is scheduled.
             pat.join
 
@@ -101,7 +101,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         val effectivelyFinalFieldsAsStrings =
             effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
-        val pureEntities: Traversable[(AnyRef, Property)] = projectStore(Purity.Key)
+        val pureEntities: Traversable[(AnyRef, Property)] =
+            projectStore(Purity.Key)
         //            projectStore(Purity.Key).filter { ep ⇒
         //                val purity = ep._2
         //                (purity == Pure || purity == ConditionallyPure)

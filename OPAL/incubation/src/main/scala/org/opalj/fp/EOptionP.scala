@@ -28,30 +28,14 @@
  */
 package org.opalj.fp
 
-/**
- * An information associated with an entity. Each property belongs to exactly one
- * property kind identified by a [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
- *
- * @author Michael Eichberg
- */
-trait Property {
+trait EOptionP {
 
-    /**
-     * The key uniquely identifies this property's category. All property objects
-     * of the same kind have to use the same key.
-     *
-     * In general each `Property` kind is expected to have a companion object that
-     * stores the unique `PropertyKey`.
-     */
-    def key: PropertyKey
+    val e: Entity
 
-    /**
-     * Returns `true` if the current property may be refined in the future and, hence,
-     * it is meaningful to register for update events.
-     */
-    def isRefineable: Boolean
+    def hasProperty: Boolean
 
-    def isFinal = !isRefineable
+    def p: Property
 
+    def pk: PropertyKey
 }
+

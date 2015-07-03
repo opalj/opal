@@ -29,12 +29,16 @@
 package org.opalj.fp
 
 private[fp] object UpdateTypes extends Enumeration {
-    val IntermediateUpdate = Value("Intermediate")
+
+    val IntermediateUpdate = Value("Intermediate Update")
 
     // The result is the final result and was computed using other information.
-    val FinalUpdate = Value("Final")
+    val FinalUpdate = Value("Final Update")
 
     // The result is the final result and was computed without requiring any
     // other information.
-    val OneStepFinalUpdate = Value("FinalWithoutDependencies")
+    val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
+
+    private[fp] val FallbackUpdate = Value("Fallback Update")
+
 }

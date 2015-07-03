@@ -67,7 +67,9 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.EOptionP
 import org.opalj.fp.EP
+import org.opalj.fp.EPK
 import org.opalj.fp.Unchanged
 import org.opalj.fp.Impossible
 import org.opalj.fp.Continuation
@@ -112,7 +114,7 @@ object Purity {
  * It is only used by the framework in case of a dependency
  * on an element for which no result could be computed.
  */
-case object MaybePure extends Purity
+case object MaybePure extends Purity { final val isRefineable = true }
 
 /**
  * Used if we know that the pureness of a methods only depends on the pureness
@@ -121,17 +123,17 @@ case object MaybePure extends Purity
  * A conditionally pure method has to be treated as an inpure methods by clients
  * except that it may be refined later on.
  */
-case object ConditionallyPure extends Purity
+case object ConditionallyPure extends Purity { final val isRefineable = true }
 
 /**
  * The respective method is pure.
  */
-case object Pure extends Purity
+case object Pure extends Purity { final val isRefineable = false }
 
 /**
  * The respective method is impure.
  */
-case object Impure extends Purity
+case object Impure extends Purity { final val isRefineable = false }
 
 /**
  * This analysis determines whether a method is pure (I.e., Whether the method
@@ -154,7 +156,7 @@ object PurityAnalysis {
     private def determinePurityCont(
         method: Method,
         pc: PC,
-        dependees: Set[EP])(
+        dependees: Set[EOptionP])(
             implicit project: SomeProject,
             projectStore: PropertyStore): PropertyComputationResult = {
 
@@ -193,7 +195,8 @@ object PurityAnalysis {
                             // This, however, does not make this a multi-step computation,
                             // as the analysis is only continued when property becomes
                             // available.
-                            return projectStore.require(method, Purity, field, Mutability)(c);
+                            import projectStore.require
+                            return require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
                             return ImmediateResult(method, Impure);
@@ -229,8 +232,11 @@ object PurityAnalysis {
                                     case Some(Impure) ⇒ return ImmediateResult(method, Impure);
 
                                     // Handling cyclic computations
-                                    case Some(ConditionallyPure) | None ⇒
-                                        currentDependees += EP(callee, MaybePure)
+                                    case Some(ConditionallyPure) ⇒
+                                        currentDependees += EP(callee, ConditionallyPure)
+
+                                    case None ⇒
+                                        currentDependees += EPK(callee, Purity)
 
                                     case _ ⇒
                                         val message = s"unknown purity $purity"
@@ -270,7 +276,7 @@ object PurityAnalysis {
 
                 // We use the set of remaining dependencies to test if we have seen
                 // all remaining properties.
-                var remainingDependendees = currentDependees.map(ep ⇒ ep.e)
+                var remainingDependendees = currentDependees.map(eOptionP ⇒ eOptionP.e)
 
                 def apply(e: Entity, p: Property): PropertyComputationResult = this.synchronized {
                     if (remainingDependendees.isEmpty)
