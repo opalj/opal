@@ -40,6 +40,7 @@ import javafx.concurrent.Worker.State
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
 import scalafx.Includes.jfxKeyEvent2sfx
+import scalafx.Includes.jfxWindowEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.application.Platform
 import scalafx.beans.binding.NumberBinding.sfxNumberBinding2jfx
@@ -63,6 +64,7 @@ import scalafx.scene.web.WebView.sfxWebView2jfx
 import scalafx.stage.Modality
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
+import scalafx.stage.WindowEvent
 
 class ProgressManagementDialog(
         owner: Stage,
@@ -89,6 +91,8 @@ class ProgressManagementDialog(
         }
         reportView.getEngine.getLoadWorker.stateProperty.addListener(listener)
     }
+
+    theStage.onCloseRequest = ((we: WindowEvent) ⇒ interrupted() = true)
 
     scene = new Scene {
         root = new BorderPane {
