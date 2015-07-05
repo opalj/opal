@@ -34,8 +34,8 @@ import org.opalj.concurrent.Locking.withWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * An object that identifies a specific kind of properties. An element in
- * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ * An object that identifies a specific kind of properties. Every entity in
+ * the [[PropertyStore]] must be associated with at most one property per property kind/key.
  *
  * To create a property key use the companion object's [[PropertyKey$.create]] method.
  *
@@ -56,26 +56,23 @@ object PropertyKey {
     private[this] val lock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val defaultProperties = ArrayBuffer.empty[Property]
+    private[this] val fallbackProperties = ArrayBuffer.empty[Property]
     private[this] var lastKeyId: Int = -1
 
-    def create(name: String, defaultProperty: Property): PropertyKey =
-        withWriteLock(lock) {
-            lastKeyId += 1
-            propertyKeyNames += name
-            defaultProperties += defaultProperty
-            new PropertyKey(lastKeyId)
-        }
+    def create(name: String, fallback: Property): PropertyKey = withWriteLock(lock) {
+        lastKeyId += 1
+        propertyKeyNames += name
+        fallbackProperties += fallback
+        new PropertyKey(lastKeyId)
+    }
 
-    def name(id: Int): String =
-        withReadLock(lock) {
-            propertyKeyNames(id)
-        }
+    def name(id: Int): String = withReadLock(lock) {
+        propertyKeyNames(id)
+    }
 
-    def defaultProperty(id: Int): Property =
-        withReadLock(lock) {
-            defaultProperties(id)
-        }
+    def fallbackProperty(id: Int): Property = withReadLock(lock) {
+        fallbackProperties(id)
+    }
 
 }
 

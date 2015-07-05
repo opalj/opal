@@ -26,22 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-package checking
-
-import scala.util.matching.Regex
+package classhierarchy;
 
 /**
- * Matches name of class, fields and methods based on their name. The name is matched
- * against the binary notation.
+ * 
+ * @author Michael Reif
  *
- * @author Michael Eichberg
  */
-case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
+public class SubclassWithInterface extends SubGeneric implements
+        Interface<AlternativeBase> {
 
-    def apply(otherName: String): Boolean = {
-        matcher.findFirstIn(otherName).isDefined
-    }
 }
-

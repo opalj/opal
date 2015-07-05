@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -45,7 +45,11 @@ import org.scalatest.Matchers
 @RunWith(classOf[JUnitRunner])
 class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    behavior of "The ControlAbstractions.foreachNonNullValueOf macro"
+    //
+    // foreachNonNullValueOf
+    //
+
+    behavior of "the ControlAbstractions.foreachNonNullValueOf macro"
 
     it should "evaluate the expression that passes in the array exactly once" in {
         var initialized = false
@@ -73,7 +77,11 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
         result.reverse should be(List((1, "a"), (3, "b"), (4, "c"), (7, "d")))
     }
 
-    behavior of "The ControlAbstractions.repeat macro"
+    //
+    // REPEAT
+    //
+
+    behavior of "the ControlAbstractions.repeat macro"
 
     it should "return a empty seq when the number of times is 0" in {
         val result = repeat(0) { 1 }
@@ -104,6 +112,36 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
         val result = repeat({ times = times + 1; times }) { index = (index + 1); index };
         times should be(1)
         result should be(Seq(1))
+    }
+
+    //
+    // ITERATE
+    //
+
+    behavior of "the ControlAbstractions.iterateTo macro"
+
+    it should "iterate over all values in a range" in {
+        var lastResult = -1
+        iterateTo(0, 10) { i ⇒
+            if (i != lastResult + 1)
+                fail();
+
+            lastResult = i
+        }
+        lastResult should be(10)
+    }
+
+    behavior of "the ControlAbstractions.iterateUntil macro"
+
+    it should "iterate over all values in a range" in {
+        var lastResult = -1
+        iterateUntil(0, 10) { i ⇒
+            if (i != lastResult + 1)
+                fail();
+
+            lastResult = i
+        }
+        lastResult should be(9)
     }
 
 }

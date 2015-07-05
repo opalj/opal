@@ -31,13 +31,19 @@ package util
 
 /**
  * Represents a time span of `n` seconds.
+ *
+ * @author Michael Eichberg
  */
 class Seconds(val timeSpan: Double) extends AnyVal {
 
     override def toString: String = f"$timeSpan%.4f s"
 
 }
-
+/**
+ * Common constants related to seconds.
+ *
+ * @author Michael Eichberg
+ */
 object Seconds {
 
     final val None: Seconds = new Seconds(0d)

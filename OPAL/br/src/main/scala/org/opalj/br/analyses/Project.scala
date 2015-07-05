@@ -90,7 +90,7 @@ import org.opalj.log.DefaultLogContext
  * Now, to determine the number of methods that have at least one parameter of type
  * `int`, you can use:
  * {{{
- * p.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
+ * project.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
  * }}}
  *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,

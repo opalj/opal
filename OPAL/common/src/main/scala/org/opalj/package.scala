@@ -87,6 +87,11 @@ import org.opalj.log.OPALLogger
 package object opalj {
 
     /**
+     * The analysis mode.
+     */
+    type AnalysisMode = AnalysisModes.Value
+
+    /**
      * The type of the predefined relational operators.
      *
      * See [[org.opalj.RelationalOperators]] for the list of all defined operators.
@@ -189,6 +194,21 @@ package object opalj {
     // when the number of times that we repeat an operation is small (e.g., 1 to 15 times)
     // (which is very often the case when we read in Java class files)
 
+    /**
+     * Iterates over the given range of integer values `[from,to]` and calls the given
+     * function f for each value.
+     *
+     * If from is smaller than `to` `f` will not be called.
+     */
+    def iterateTo(from: Int, to: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateTo
+
+    /**
+     * Iterates over the given range of integer values `[from,until)` and calls the given
+     * function f for each value.
+     *
+     * If from is smaller than until `f` will not be called.
+     */
+    def iterateUntil(from: Int, until: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateUntil
 }
 
 /**
@@ -235,6 +255,40 @@ private object ControlAbstractionsImplementation {
                     i += 1
                 }
                 array
+            }
+        }
+    }
+
+    def iterateTo(
+        c: Context)(
+            from: c.Expr[Int],
+            to: c.Expr[Int])(
+                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        import c.universe._
+
+        reify {
+            var i = from.splice
+            val max = to.splice // => times is evaluated only once
+            while (i <= max) {
+                f.splice(i) // => we evaluate f the given number of times
+                i += 1
+            }
+        }
+    }
+
+    def iterateUntil(
+        c: Context)(
+            from: c.Expr[Int],
+            until: c.Expr[Int])(
+                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        import c.universe._
+
+        reify {
+            var i = from.splice
+            val max = until.splice // => times is evaluated only once
+            while (i < max) {
+                f.splice(i) // => we evaluate f the given number of times
+                i += 1
             }
         }
     }

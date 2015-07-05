@@ -26,42 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
-package tracing
-
-import br._
+package classhierarchy;
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * 
+ * @author Michael Reif
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
- *
- * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
+public class SubGeneric extends SimpleGeneric<Base> {
 
-    /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
-     */
-    override def performInterpretation(
-        strictfp: Boolean,
-        code: Code,
-        theDomain: D)(
-            initialOperands: theDomain.Operands,
-            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
-
-        theDomain.initProperties(code, initialOperands, initialLocals)
-        super.performInterpretation(
-            strictfp, code, theDomain)(
-                initialOperands, initialLocals)
-    }
 }
-

@@ -37,7 +37,17 @@ package org.opalj.fp.analyses;
  */
 class Demo {
 
+    private static int myValue = -1; /* effectivelyFinal */
+
     private Demo() {/* empty */
+    }
+
+    public static int pureThoughItUsesField(int i, int j) {
+        return i % j * myValue;
+    }
+
+    public static int pureThoughItUsesField2(int i, int j) {
+        return i * j * myValue;
     }
 
     public static int simplyPure(int i, int j) {

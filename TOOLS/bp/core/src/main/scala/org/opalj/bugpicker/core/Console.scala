@@ -37,7 +37,7 @@ import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analysis.IssueKind
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML

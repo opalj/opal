@@ -52,15 +52,15 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val invalidClassPath = Classpath("OPAL/av/src/test/resources/InvalidClasspathFile.txt")
 
     it should "return the expected list of paths that match the given regular expression" in {
-        val scalatestJAR: Iterable[String] = PathToJARs(validClassPath, """.*(scalatest_2.11-2.1.7.jar)""".r)
+        val scalatestJAR = PathToJARs(validClassPath, """.*(scalatest_2.11-2.1.7.jar)""".r)
         val expectedListOfPaths1 = List[String](
-            "/Users/Testuser/.m2/repository/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar"
+            "/root/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar"
         )
         scalatestJAR.toList should equal(expectedListOfPaths1)
 
-        val scalaLibraryJAR: Iterable[String] = PathToJARs(validClassPath, """.*(scala-library-2.11.0.jar)""".r)
+        val scalaLibraryJAR = PathToJARs(validClassPath, """.*(scala-library-2.11.0.jar)""".r)
         val expectedListOfPaths2 = List[String](
-            "/Users/Testuser/.m2/repository/org/scala-lang/scala-library/2.11.0/scala-library-2.11.0.jar"
+            "/root/org/scala-lang/scala-library/2.11.0/scala-library-2.11.0.jar"
         )
         scalaLibraryJAR.toList should equal(expectedListOfPaths2)
     }
@@ -78,9 +78,9 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         val listOfPaths: Iterable[String] = PathToJARs(validClassPath, listOfJARs)
 
         val expectedListOfPaths = List[String](
-            "/Users/Testuser/.m2/repository/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar",
-            "/Users/Testuser/.m2/repository/org/scala-lang/scala-library/2.11.0/scala-library-2.11.0.jar",
-            "/Users/Testuser/.m2/repository/org/scala-lang/modules/scala-xml_2.11/1.0.1/scala-xml_2.11-1.0.1.jar"
+            "/root/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar",
+            "/root/org/scala-lang/scala-library/2.11.0/scala-library-2.11.0.jar",
+            "/root/org/scala-lang/modules/scala-xml_2.11/1.0.1/scala-xml_2.11-1.0.1.jar"
         )
 
         listOfPaths.toList should equal(expectedListOfPaths)

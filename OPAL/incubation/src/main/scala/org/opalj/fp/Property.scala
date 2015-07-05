@@ -46,4 +46,12 @@ trait Property {
      */
     def key: PropertyKey
 
+    /**
+     * Returns `true` if the current property may be refined in the future and, hence,
+     * it is meaningful to register for update events.
+     */
+    def isRefineable: Boolean
+
+    def isFinal = !isRefineable
+
 }

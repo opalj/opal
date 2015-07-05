@@ -30,6 +30,7 @@ package org.opalj
 package av
 package checking
 
+import scala.language.existentials
 import scala.collection.Set
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -43,9 +44,9 @@ import org.opalj.br.Annotation
  * @author Marco Torsello
  */
 case class MethodMatcher(
-    classLevelMatcher: ClassLevelMatcher = AllClassMatcher,
-    annotationsPredicate: AnnotationsPredicate = NoAnnotationsPredicate,
-    methodPredicate: MethodPredicate = NoMethodPredicate)
+    classLevelMatcher: ClassLevelMatcher = AllClasses,
+    annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
+    methodPredicate: SourceElementPredicate[Method] = AnyMethod)
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -78,21 +79,20 @@ case class MethodMatcher(
  */
 object MethodMatcher {
 
+    def apply(methodPredicate: SourceElementPredicate[_ >: Method]): MethodMatcher = {
+        new MethodMatcher(methodPredicate = methodPredicate)
+    }
+
     def apply(
         annotationsPredicate: AnnotationsPredicate,
-        methodPredicate: MethodPredicate): MethodMatcher = {
+        methodPredicate: SourceElementPredicate[_ >: Method]): MethodMatcher = {
         new MethodMatcher(annotationsPredicate = annotationsPredicate, methodPredicate = methodPredicate)
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
-        methodPredicate: MethodPredicate): MethodMatcher = {
+        methodPredicate: SourceElementPredicate[Method]): MethodMatcher = {
         new MethodMatcher(classLevelMatcher, methodPredicate = methodPredicate)
-    }
-
-    def apply(
-        methodPredicate: MethodPredicate): MethodMatcher = {
-        new MethodMatcher(methodPredicate = methodPredicate)
     }
 
     def apply(
@@ -104,15 +104,14 @@ object MethodMatcher {
      * Creates a MethodMatcher, that relies on an AllAnnotationsPredicate for matching
      * the given AnnotationPredicate.
      */
-    def apply(
-        annotationPredicate: AnnotationPredicate): MethodMatcher = {
-        apply(AllAnnotationsPredicate(Set(annotationPredicate)))
+    def apply(annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        apply(HasAtLeastTheAnnotations(annotationPredicate))
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
         annotationPredicate: AnnotationPredicate): MethodMatcher = {
-        new MethodMatcher(classLevelMatcher, AllAnnotationsPredicate(Set(annotationPredicate)))
+        new MethodMatcher(classLevelMatcher, HasAtLeastTheAnnotations(annotationPredicate))
     }
 
 }

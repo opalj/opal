@@ -157,7 +157,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Determines if the runtime object type referred to by the given `values` is always
      * the same. I.e., it determines if all values are precise
-     * and have the same `upperTypeBound`. `Null` values are ignored when determing
+     * and have the same `upperTypeBound`. `Null` values are ignored when determining
      * the precision.
      */
     protected def isPrecise(values: Iterable[AReferenceValue]): Boolean = {

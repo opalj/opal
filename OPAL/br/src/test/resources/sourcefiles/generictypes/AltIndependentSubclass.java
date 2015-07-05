@@ -26,31 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-package checking
+package classhierarchy;
 
 /**
- * @author Michael Eichberg
+ * 
+ * @author Michael Reif
+ *
  */
-case class SimpleNamePredicate(
-    name: String,
-    matchPrefix: Boolean)
-        extends NamePredicate {
-
-    def apply(otherName: String): Boolean = {
-        val binaryName = name.replace('.', '/')
-        otherName.startsWith(binaryName) && (
-            matchPrefix || binaryName.length == otherName.length)
-    }
-}
-
-object SimpleNamePredicate {
-
-    def apply(
-        name: String): SimpleNamePredicate = {
-        this(name, false)
-    }
+public class AltIndependentSubclass<T, V> extends SimpleGeneric<AlternativeBase> {
 
 }
-

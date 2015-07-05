@@ -36,10 +36,14 @@ package org.opalj.fp
  *
  * @author Michael Eichberg
  */
-final class EP(val e: Entity, val p: Property) extends Product2[Entity, Property] {
+final class EP(val e: Entity, val p: Property)
+        extends EOptionP
+        with Product2[Entity, Property] {
 
     def _1 = e
     def _2 = p
+
+    final def hasProperty = true
 
     override def equals(other: Any): Boolean = {
         other match {

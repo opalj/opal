@@ -485,7 +485,6 @@ case class ProperTypeArgument(
             ",signature="+fieldTypeSignature+
             ")"
     }
-
 }
 
 /**
@@ -692,7 +691,33 @@ object GenericType {
                 cpn,
                 SimpleClassTypeSignature(csn, typeArgs),
                 Nil) if typeArgs.nonEmpty ⇒
-                Some((ObjectType(cpn.getOrElse("") + csn), typeArgs))
+                Some((cts.objectType, typeArgs))
+
+            case _ ⇒
+                None
+        }
+    }
+}
+
+/**
+ * Matches all [[ClassTypeSignature]]s which consists of
+ * a [[SimpleClassTypeSignature]] with an optional list of TypeArguments (
+ * which consists of [[Wildcard]]s or [[ProperTypeArgument]]s) and a non-empty list of
+ * [[SimpleClassTypeSignature]] (which encodes the suffix of the [[ClassTypeSignature]] for
+ * inner classes)
+ *
+ * @see For matching signatures see [[Signature]].
+ */
+object GenericTypeWithClassSuffix {
+
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
+        cts match {
+
+            case ClassTypeSignature(
+                cpn,
+                SimpleClassTypeSignature(csn, typeArgs),
+                suffix) if suffix.nonEmpty ⇒
+                Some((cts.objectType, typeArgs, suffix))
 
             case _ ⇒
                 None
