@@ -85,8 +85,8 @@ object ToJavaLike {
         s"monitorenter ${objRef.name}"
       case MonitorExit(_, objRef) ⇒
         s"monitorexit ${objRef.name}"
-      case Switch(_, defTrg, index, xpairs) ⇒
-        s"switch(${toJavaLikeExpr(index)}){\n${for (x <- xpairs) { "    " + x._1 + ": " + x._2 + "\n" }}}"
+      case Switch(_, defTrg, index, npairs) ⇒
+        s"switch(${toJavaLikeExpr(index)}){${switchCases(defTrg, npairs)}}"
       case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
         val code = new StringBuffer(256)
 
@@ -160,6 +160,12 @@ object ToJavaLike {
     }
 
     javaLikeCode
+  }
+
+  def switchCases(defTrg: Int, npairs: IndexedSeq[(Int, Int)]): String = {
+    var result = "\n"
+    for (x <- npairs) { result = result + "    " + x._1 + ": goto " + x._2 + ";\n" }
+    result + "    default: goto " + defTrg + ";\n"
   }
 
 }

@@ -234,6 +234,12 @@ object AsQuadruples {
         case RETURN.opcode ⇒
           statements(pc) = List(Return(pc))
 
+        case BIPUSH.opcode | SIPUSH.opcode ⇒
+          val value = as[LoadConstantInstruction[Int]](instruction).value
+          val targetVar = OperandVar(ComputationalTypeInt, stack)
+          statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
+          schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
         case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
           IF_ICMPLT.opcode | IF_ICMPLE.opcode |
           IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
@@ -428,12 +434,12 @@ object AsQuadruples {
           val tsInst = as[TABLESWITCH](instruction)
           val defaultTarget = pc + tsInst.defaultOffset
           val jumpOffsets = tsInst.jumpOffsets.seq
-          val npairs = 
-            for{i <- tsInst.low to tsInst.high+1} yield (i, jumpOffsets(i) + pc)
+          val npairs =
+            for { i <- (tsInst.low) - 1 to (tsInst.high) - 1 } yield (i, jumpOffsets(i) + pc)
           statements(pc) = List(
             Switch(pc, defaultTarget, index, npairs))
-          schedule(pcOfNextInstruction(pc), rest)
-          for(target <- npairs){
+          schedule(defaultTarget, rest)
+          for (target <- npairs) {
             schedule(target._2, rest)
           }
 
@@ -441,11 +447,11 @@ object AsQuadruples {
           val index :: rest = stack
           val tsInst = as[LOOKUPSWITCH](instruction)
           val defaultTarget = pc + tsInst.defaultOffset
-          val npairs = tsInst.npairs.map{ x ⇒ (x._1, x._2 + pc) }
+          val npairs = tsInst.npairs.map { x ⇒ (x._1, x._2 + pc) }
           statements(pc) = List(
             Switch(pc, defaultTarget, index, npairs))
-          schedule(pcOfNextInstruction(pc), rest)
-          for(target <- npairs){
+          schedule(defaultTarget, rest)
+          for (target <- npairs) {
             schedule(target._2, rest)
           }
 

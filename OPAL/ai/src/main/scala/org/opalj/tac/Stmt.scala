@@ -81,14 +81,19 @@ case class Goto(pc: PC, private[tac] var target: Int) extends Stmt {
 
 }
 
-case class Switch(pc:PC, defaultTarget:Int, index:Var, private[tac] var npairs:IndexedSeq[(Int, Int)]) extends Stmt {
+case class Switch(pc:PC, private[tac] var defaultTarget:Int, index:Var, private[tac] var npairs:IndexedSeq[(Int, Int)]) extends Stmt {
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map{x ⇒ (x._1, pcToIndex(x._2))}
+        defaultTarget = pcToIndex(defaultTarget)
     }
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
     def targetStmt: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
+    
+    // Calling this method is only supported after the quadruples representation
+    // is created and the remapping of pcs to instruction indexes has happened!
+    def defaultStmt: Int = defaultTarget
 }
 
 sealed trait SimpleStmt extends Stmt {

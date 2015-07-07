@@ -54,7 +54,7 @@ public class SwitchStatements {
 		case 1:
 			return 10;
 		case 10:
-			return 100;
+			return 200;
 		default:
 			return 0;
 		}

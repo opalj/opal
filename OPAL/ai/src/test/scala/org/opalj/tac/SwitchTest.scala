@@ -48,25 +48,82 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class SwitchTest extends FunSpec with Matchers {
 
-    val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
+  val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
-    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
+  val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
-    val project = Project(testResources)
+  val project = Project(testResources)
 
-    val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
+  val SwitchStatementsClassFile = project.classFile(SwitchStatementsType).get
 
-    val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").get
-    val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").get
+  val TableSwitchMethod = SwitchStatementsClassFile.findMethod("tableSwitch").get
+  val LookupSwitchMethod = SwitchStatementsClassFile.findMethod("lookupSwitch").get
 
-    describe("preliminary test output") {
-        it("for short switch stmts") {
-            println(TableSwitchMethod.body.get.instructions.mkString("\n"))
-            println("---------------------------")
-        }
+  describe("The quadruples representation of switch instructions") {
+    describe("using no AI results") {
+      it("should correctly reflect tableswitch case") {
+        val statements = AsQuadruples(TableSwitchMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
 
-        it("for long switch stmts") {
-            println(LookupSwitchMethod.body.get.instructions.mkString("\n"))
-        }
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(Array(
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+          Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((0, 4), (1, 6), (2, 8))),
+          Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
+          ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
+          Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
+          ReturnValue(31, SimpleVar(0, ComputationalTypeInt)),
+          Assignment(32, SimpleVar(0, ComputationalTypeInt), IntConst(32, 3)),
+          ReturnValue(33, SimpleVar(0, ComputationalTypeInt)),
+          Assignment(34, SimpleVar(0, ComputationalTypeInt), IntConst(34, 0)),
+          ReturnValue(35, SimpleVar(0, ComputationalTypeInt))))
+        javaLikeCode.shouldEqual(Array(
+          "0: r_0 = this;",
+          "1: r_1 = p_1;",
+          "2: op_0 = r_1;",
+          "3: switch(op_0){\n    0: goto 4;\n    1: goto 6;\n    2: goto 8;\n    default: goto 10;\n}",
+          "4: op_0 = 1;",
+          "5: return op_0;",
+          "6: op_0 = 2;",
+          "7: return op_0;",
+          "8: op_0 = 3;",
+          "9: return op_0;",
+          "10: op_0 = 0;",
+          "11: return op_0;"))
+      }
+
+      it("should correctly reflect lookupswitch case") {
+        val statements = AsQuadruples(LookupSwitchMethod, None)
+        val javaLikeCode = ToJavaLike(statements, false)
+
+        assert(statements.nonEmpty)
+        assert(javaLikeCode.length > 0)
+        statements.shouldEqual(Array(
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+          Switch(1, 8, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (10, 6))),
+          Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
+          ReturnValue(30, SimpleVar(0, ComputationalTypeInt)),
+          Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
+          ReturnValue(34, SimpleVar(0, ComputationalTypeInt)),
+          Assignment(35, SimpleVar(0, ComputationalTypeInt), IntConst(35, 0)),
+          ReturnValue(36, SimpleVar(0, ComputationalTypeInt))))
+        javaLikeCode.shouldEqual(Array(
+          "0: r_0 = this;",
+          "1: r_1 = p_1;",
+          "2: op_0 = r_1;",
+          "3: switch(op_0){\n    1: goto 4;\n    10: goto 6;\n    default: goto 8;\n}",
+          "4: op_0 = 10;",
+          "5: return op_0;",
+          "6: op_0 = 200;",
+          "7: return op_0;",
+          "8: op_0 = 0;",
+          "9: return op_0;"))
+      }
     }
+  }
 }
