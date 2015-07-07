@@ -54,9 +54,9 @@ object EntryPoint {
     final val Key = PropertyKey.create("EntryPoint", DirectlyCallable)
 }
 
-case object DirectlyCallable extends EntryPoint
+case object DirectlyCallable extends EntryPoint { final val isRefineable = false }
 
-case object OnlyIndirectlyCallable extends EntryPoint
+case object OnlyIndirectlyCallable extends EntryPoint { final val isRefineable = false }
 
 object EntryPointsAnalysis {
 

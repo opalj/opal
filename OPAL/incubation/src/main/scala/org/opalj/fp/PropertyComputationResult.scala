@@ -73,6 +73,8 @@ case class ImmediateMultiResult(
  */
 case class Result(e: Entity, p: Property) extends PropertyComputationResult
 
+private[fp] case class FallbackResult(e: Entity, p: Property) extends PropertyComputationResult
+
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
  * no intermediate results'''.
@@ -101,18 +103,18 @@ object Result {
  *
  * Intermediate results are to be used if further refinements are possible and may happen.
  *
- * All current computations (incomming dependencies)
+ * All current computations (incoming dependencies)
  * depending on the given entry's property remain registered and will be invoked in the future
  * if another `IntermediateResult` or `Result` is computed for the specified entity `e`.
  *
  * Furthermore, if a property of any of the dependees changes (outgoing dependencies),
- *  the given continuation `c` is invoked.
+ * the given continuation `c` is invoked.
  * (This requires that the given continuation is thread-safe! In most cases the easiest
  * and correct solution is to just wrap it in a synchronized block.)
  */
 case class IntermediateResult(
     e: Entity, p: Property,
-    dependeeEs: Traversable[EP],
+    dependeeEs: Traversable[EOptionP],
     c: Continuation)
         extends PropertyComputationResult
 

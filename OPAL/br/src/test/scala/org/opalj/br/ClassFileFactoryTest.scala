@@ -791,7 +791,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 val proxy =
                     ClassFileFactory.Proxy(
                         TypeDeclaration(
-                            ObjectType(theType.toJava+"$Proxy"),
+                            ObjectType(theType.toJava + '$'+"Proxy"),
                             false,
                             Some(ObjectType.Object),
                             Set.empty
@@ -810,7 +810,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         describe("should create a bridge method to the forwarding method if so desired") {
             it("the bridge method should stack & cast parameters and call the forwarding method") {
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
-                val proxyType = ObjectType(receiverType.simpleName+"$Proxy")
+                val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
                 val methodDescriptor =
                     MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =

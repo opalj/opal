@@ -67,7 +67,9 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.EOptionP
 import org.opalj.fp.EP
+import org.opalj.fp.EPK
 import org.opalj.fp.Unchanged
 import org.opalj.fp.Impossible
 import org.opalj.fp.Continuation
@@ -76,68 +78,12 @@ import org.opalj.fp.ImmediateResult
 import org.opalj.fp.IntermediateResult
 
 /**
- * Common supertrait of all purity properties.
- */
-sealed trait Purity extends Property {
-
-    /**
-     * Returns the key used by all `Purity` properties.
-     */
-    // All instances have to share the SAME key!
-    final def key = Purity.Key
-
-}
-/**
- * Common constants use by all [[Purity]] properties associated with methods.
- */
-object Purity {
-
-    /**
-     * The key associated with every purity property.
-     */
-    final val Key =
-        PropertyKey.create(
-            // The unique name of the property.
-            "Purity",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MaybePure
-        )
-
-}
-
-/**
- * The fallback/default purity.
- *
- * It is only used by the framework in case of a dependency
- * on an element for which no result could be computed.
- */
-case object MaybePure extends Purity
-
-/**
- * Used if we know that the pureness of a methods only depends on the pureness
- * of the target methods.
- *
- * A conditionally pure method has to be treated as an inpure methods by clients
- * except that it may be refined later on.
- */
-case object ConditionallyPure extends Purity
-
-/**
- * The respective method is pure.
- */
-case object Pure extends Purity
-
-/**
- * The respective method is impure.
- */
-case object Impure extends Purity
-
-/**
  * This analysis determines whether a method is pure (I.e., Whether the method
  * only operates on the given state.) This simple analysis only tries to compute the
  * purity for methods that
  * only have parameters with a base type.
+ *
+ * @author Michael Eichberg
  */
 object PurityAnalysis {
 
@@ -154,7 +100,7 @@ object PurityAnalysis {
     private def determinePurityCont(
         method: Method,
         pc: PC,
-        dependees: Set[EP])(
+        dependees: Set[EOptionP])(
             implicit project: SomeProject,
             projectStore: PropertyStore): PropertyComputationResult = {
 
@@ -181,18 +127,20 @@ object PurityAnalysis {
                         /* Nothing to do; constants do not impede purity! */
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            val c: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒
-                                if (dependeeP == EffectivelyFinal) {
-                                    val nextPC = body.pcOfNextInstruction(currentPC)
-                                    determinePurityCont(method, nextPC, dependees)
-                                } else {
-                                    Result(method, Impure)
-                                }
+                            val c: Continuation =
+                                (dependeeE: Entity, dependeeP: Property) ⇒
+                                    if (dependeeP == EffectivelyFinal) {
+                                        val nextPC = body.pcOfNextInstruction(currentPC)
+                                        determinePurityCont(method, nextPC, dependees)
+                                    } else {
+                                        Result(method, Impure)
+                                    }
                             // We are suspending this computation and wait for the result.
                             // This, however, does not make this a multi-step computation,
                             // as the analysis is only continued when property becomes
                             // available.
-                            return projectStore.require(method, Purity, field, Mutability)(c);
+                            import projectStore.require
+                            return require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
                             return ImmediateResult(method, Impure);
@@ -228,8 +176,11 @@ object PurityAnalysis {
                                     case Some(Impure) ⇒ return ImmediateResult(method, Impure);
 
                                     // Handling cyclic computations
-                                    case Some(ConditionallyPure) | None ⇒
-                                        currentDependees += EP(callee, MaybePure)
+                                    case Some(ConditionallyPure) ⇒
+                                        currentDependees += EP(callee, ConditionallyPure)
+
+                                    case None ⇒
+                                        currentDependees += EPK(callee, Purity)
 
                                     case _ ⇒
                                         val message = s"unknown purity $purity"
@@ -269,7 +220,7 @@ object PurityAnalysis {
 
                 // We use the set of remaining dependencies to test if we have seen
                 // all remaining properties.
-                var remainingDependendees = currentDependees.map(ep ⇒ ep.e)
+                var remainingDependendees = currentDependees.map(eOptionP ⇒ eOptionP.e)
 
                 def apply(e: Entity, p: Property): PropertyComputationResult = this.synchronized {
                     if (remainingDependendees.isEmpty)
@@ -314,7 +265,7 @@ object PurityAnalysis {
 
         // Due to a lack of knowledge, we classify all native methods or methods loaded
         // using a library class loader as impure...
-        if (method.body.isEmpty)
+        if (method.body.isEmpty /*HERE: method.isNative*/ )
             return ImmediateResult(method, Impure);
 
         // We are currently only able to handle simple methods that just take
@@ -332,7 +283,7 @@ object PurityAnalysis {
             case m: Method if !m.isAbstract ⇒ m
         }
         // Ordering by size (implicit assumption: methods that are short don't call
-        // too many other methods...); this is extremely efficient and simple.
+        // too many other methods...); this ordering is extremely efficient and simple.
         val methodOrdering = new Ordering[Method] {
             def compare(a: Method, b: Method): Int = {
                 val aBody = a.body

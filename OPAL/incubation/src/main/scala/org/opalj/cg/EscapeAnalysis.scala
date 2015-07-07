@@ -70,9 +70,9 @@ object SelfReferenceLeakage {
     final val Key = PropertyKey.create("SelfReferenceLeakage", LeaksSelfReference)
 }
 
-case object LeaksSelfReference extends SelfReferenceLeakage
+case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
 
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage
+case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
 
 /**
  * A shallow analysis that determines for each object that is created within a method (new)

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,32 +26,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp
+package org.opalj
 
 /**
- * An information associated with an entity. Each property belongs to exactly one
- * property kind identified by a [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
+ * Enumeration of the modes used by the subsequent analyses.
  *
  * @author Michael Eichberg
  */
-trait Property {
+object AnalysisModes extends Enumeration {
 
     /**
-     * The key uniquely identifies this property's category. All property objects
-     * of the same kind have to use the same key.
+     * This mode is to be used if a library is analyzed and the assumption is made
+     * that other developers do not add classes/contribute to the packages of the
+     * analyzed library and, hence, do not make direct use of package-visible functionality.
      *
-     * In general each `Property` kind is expected to have a companion object that
-     * stores the unique `PropertyKey`.
+     * It is recommended to use this mode when analyzing a library w.r.t. general
+     * programming errors.
      */
-    def key: PropertyKey
+    final val LibraryWithClosedPackagesAssumption =
+        Value("Library with closed packages assumption")
 
     /**
-     * Returns `true` if the current property may be refined in the future and, hence,
-     * it is meaningful to register for update events.
+     * This mode is to be used if a library is analyzed and the assumption is made
+     * that other developers may by purpose/accidentally add classes to this
+     * package and, hence, may make direct use of package-visible functionality.
+     *
+     * It is recommended to use this mode when analyzing a library w.r.t. security
+     * issues.
      */
-    def isRefineable: Boolean
+    final val LibraryWithOpenPackagesAssumption =
+        Value("Library with open packages assumption")
 
-    def isFinal = !isRefineable
-
+    final val Application = Value("Application")
 }

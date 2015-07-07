@@ -66,7 +66,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         Some(ObjectType.Object),
                         Set.empty
                     )
-                val proxyMethodName = m.name+"$proxy"
+                val proxyMethodName = m.name+'$'+"proxy"
                 val invocationInstruction =
                     if (testProject.classFile(t).get.isInterfaceDeclaration) {
                         INVOKEINTERFACE.opcode

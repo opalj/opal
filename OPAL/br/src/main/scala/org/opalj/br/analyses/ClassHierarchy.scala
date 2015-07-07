@@ -917,7 +917,7 @@ class ClassHierarchy private (
      * This is a helper method only. TypeArguments are just a part of a generic
      * `ClassTypeSignature`. Hence, it makes no
      * sense to check subtype relation of incomplete information.
-     * 
+     *
      * @note At the comparison of two [[GenericTypeArgument]]s without [[VarianceIndicator]]s
      * we have to check two different things. First compare the [[ObjectType]]s, if they are equal
      * we still have to care about the [[TypeArgument]]s since we are dealing with generics.
@@ -966,7 +966,7 @@ class ClassHierarchy private (
     /**
      * Determines whether the given [[ClassSignature]] of the potential `subtype` does implement or extend
      * the interface or class given with the parameter `supertype` of type [[ObjectType]]. In case that the
-     * `subtype` does implement or extend the `supertype`, an [[Option]] of [[ClassTypeSignature]] is returned.
+     * `subtype` does implement or extend the `supertype`, an `Option` of [[ClassTypeSignature]] is returned.
      * Otherwise None will be returned.
      *
      * @example
@@ -984,7 +984,8 @@ class ClassHierarchy private (
      * @param subtype Any type or interface.
      * @param supertype Any type or interface.
      *
-     * @return [[Option]] of [[ClassTypeSignature]] if the `subtype` extends or implements the given `supertype`, [[None]] otherwise.
+     * @return `Option` of [[ClassTypeSignature]] if the `subtype` extends or implements
+     *          the given `supertype`, `None` otherwise.
      */
     def getSupertypeDeclaration(subtype: ClassSignature,
                                 supertype: ObjectType)(
@@ -1015,11 +1016,13 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines if the given class or interface type encoded by the [[ClassTypeSignature]] `subtype` is actually a subtype
-     * of the class or interface type encoded in the [[ClassTypeSignature]] of the `supertype`.
+     * Determines if the given class or interface type encoded by the
+     * [[ClassTypeSignature]] `subtype` is actually a subtype
+     * of the class or interface type encoded in the [[ClassTypeSignature]] of the
+     * `supertype`.
      *
      * @note This method relies – in case of a comparison of non generic types – on
-     *       [[isSubtypeOf(ObjectType, ObjectType)]] of `Project` which
+     *       `isSubtypeOf(org.opalj.br.ObjectType,org.opalj.br.ObjectType)` of `Project` which
      *        performs an upwards search only. E.g., given the following
      *      type hierarchy:
      *      `class D inherits from C`
@@ -1086,7 +1089,7 @@ class ClassHierarchy private (
      * [[FormalTypeParameter]]. So it is necessary to check whether the acctual bound [[TypeArgument]] at the
      * postion of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
      * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second postion
-     * of the [[FormalTypeParamter]]s of Foo and at the first postion of the [[FormalTypeParameter]]s of Bar. Second and last
+     * of the [[FormalTypeParameter]]s of Foo and at the first postion of the [[FormalTypeParameter]]s of Bar. Second and last
      * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
      * to decide the subtype relation.
      */
@@ -1215,7 +1218,7 @@ class ClassHierarchy private (
      * fulfilled if the subtype is a subtype of the class bound and/or all interface types
      * that are prescriped by the formal type specification.
      *
-     * @note This method does consider generics types specified within the [[FormalTypeParamter]].
+     * @note This method does consider generics types specified within the [[FormalTypeParameter]].
      *
      * @param subtype Any `ClassTypeSignature`.
      * @param supertype Any `FormalTypeParameter`.
