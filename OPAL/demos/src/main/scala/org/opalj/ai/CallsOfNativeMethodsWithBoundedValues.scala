@@ -126,7 +126,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             callerClassFile = theProject.classFile(caller)
             result = BaseAI(callerClassFile, caller, domain)
         } {
-            val pcs: Seq[UShort] = callerPCs.toSeq
+            val pcs: Seq[UShort] = callerPCs.iterable.toSeq
             for {
                 pc ← pcs
                 operands = result.operandsArray(pc)
