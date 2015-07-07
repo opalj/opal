@@ -43,19 +43,29 @@ import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.ai.util.XHTML
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.collection.mutable.SmallValuesSet
 
 /**
  * Collects the Definition-Use information. I.e., makes the information available
  * which variable is accessed where. Here, all variables are identified using int values
  * where the int value is equivalent to the instruction that initializes the respective
- * variable. The parameters given to a method have negative int values (the first
+ * (virtual) variable. The parameters given to a method have negative int values (the first
  * parameter has the value -1, the second -2 and so forth; the computational type
  * category is ignored.).
  *
  * ==Core Properties==
- * This domain can be reused to successively perform abstract interpretation of different
- * methods. The domain's inherited `initProperties` method resets the entire state related to
- * the abstract interpretation of a method.
+ * This domain can be reused to successively perform abstract interpretations of different
+ * methods. The domain's inherited `initProperties` method resets the entire state related
+ * to the abstract interpretation of a method.
+ *
+ * This domain never directly leads to the scheduling of subsequent instructions; instead
+ * it records which instructions were not scheduled again but should have been;
+ * i.e. it identifies situations where the abstract state does not change, but
+ * where the information about the def-/use chains is not complete. After
+ * the abstract interpretation has ended, the information is then automatically completed
+ * using the abstract interpretation time control-flow graph. This way we have the
+ * advantage that we get complete def-/use information without requiring the
+ * (potentially very costly) abstract interpretation to continue.
  *
  * @author Michael Eichberg
  */
@@ -63,6 +73,16 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     domain: Domain ⇒
 
     type PCs = UShortSet
+
+    type ValueOrigins = SmallValuesSet
+    @inline private[this] final def ValueOrigins(
+        min: Int, max: Int,
+        value: Int): SmallValuesSet =
+        SmallValuesSet.create(min, max, value)
+
+    private[this] var min: Int = _
+    private[this] var max: Int = _
+    //type ValueOrigins = Set[ValueOrigin]
 
     // IDEA:
     // EACH LOCAL VARIABLE IS NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -79,16 +99,16 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     // Stores the information where the value defined by the current instruction is
     // used. The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
-    // of this additional space is `parametersOffset` large and is prepended the part
-    // of the array that mirrors the instructions array.
+    // of this additional space is `parametersOffset` large and is prepended to
+    // the array that mirrors the instructions array.
     private[this] var used: Array[PCs] = _
     private[this] var parametersOffset: Int = _
 
     // This array contains the information where each operand value was defined.
-    private[this] var defOps: Array[List[Set[ValueOrigin]]] = _
+    private[this] var defOps: Array[List[ValueOrigins]] = _
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
-    private[this] var defLocals: Array[Registers[Set[ValueOrigin]]] = _
+    private[this] var defLocals: Array[Registers[ValueOrigins]] = _
 
     abstract override def initProperties(
         code: Code,
@@ -97,26 +117,29 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
 
         instructions = code.instructions
         val codeSize = instructions.size
-
+        // The following value for min  is a conservative approx. which may lead to the
+        // use of a SmallValuesArray that can actually store larger values than
+        // necessary; however, this will occur only in a very small number of cases.
+        val absoluteMin = -code.maxLocals
         defOps = new Array(codeSize)
         defOps(0) = Nil
 
         // initialize initial def-use information based on the parameters
         defLocals = new Array(codeSize)
-        var parametersOffset = 0
-        var parameterIndex = -1
+        var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
                 if (v ne null) {
-                    parametersOffset += 1
-                    val localVar = Set(parameterIndex)
                     parameterIndex -= 1
+                    val localVar = ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                     localVar
                 } else {
                     null
                 }
             }
-        this.parametersOffset = parametersOffset
+        this.min = parameterIndex
+        this.max = codeSize
+        this.parametersOffset = -parameterIndex
 
         used = new Array(codeSize + parametersOffset)
 
@@ -307,39 +330,40 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         var forceScheduling = false
         val instruction = instructions(currentPC)
 
-        def updateUsed(usedVars: Set[Int], useSite: PC): Unit = usedVars.foreach { use ⇒
-            val usedIndex = use + parametersOffset
-            assert(
-                usedIndex >= 0,
-                s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
-                    defLocals(0).mapKV((i, l) ⇒
-                        if (l eq null)
-                            i+": N/A"
-                        else
-                            l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
+        def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit =
+            usedVars.foreach { use ⇒
+                val usedIndex = use + parametersOffset
+                assert(
+                    usedIndex >= 0,
+                    s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
+                        defLocals(0).mapKV((i, l) ⇒
+                            if (l eq null)
+                                i+": N/A"
+                            else
+                                l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
 
-            val oldUsedInfo: PCs = used(usedIndex)
-            if (oldUsedInfo eq null)
-                used(usedIndex) = UShortSet(useSite)
-            else {
-                val newUsedInfo = useSite +≈: oldUsedInfo
-                if (newUsedInfo ne oldUsedInfo)
-                    used(usedIndex) = newUsedInfo
+                val oldUsedInfo: PCs = used(usedIndex)
+                if (oldUsedInfo eq null)
+                    used(usedIndex) = UShortSet(useSite)
+                else {
+                    val newUsedInfo = useSite +≈: oldUsedInfo
+                    if (newUsedInfo ne oldUsedInfo)
+                        used(usedIndex) = newUsedInfo
+                }
             }
-        }
 
         def propagate(
-            newDefOps: List[Set[ValueOrigin]],
-            newDefLocals: Registers[Set[ValueOrigin]]): Unit = {
+            newDefOps: List[ValueOrigins],
+            newDefLocals: Registers[ValueOrigins]): Unit = {
             if (wasJoinPerformed) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
-                    oldDefOps: List[Set[ValueOrigin]],
-                    lDefOps: List[Set[ValueOrigin]],
-                    rDefOps: List[Set[ValueOrigin]],
+                    oldDefOps: List[ValueOrigins],
+                    lDefOps: List[ValueOrigins],
+                    rDefOps: List[ValueOrigins],
                     oldIsSuperset: Boolean = true,
-                    joinedDefOps: List[Set[ValueOrigin]] = Nil): List[Set[ValueOrigin]] = {
+                    joinedDefOps: List[ValueOrigins] = Nil): List[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
                         assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
@@ -351,7 +375,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
 
                     val newHead = lDefOps.head
                     val oldHead = rDefOps.head
-                    if (newHead.subsetOf(oldHead))
+                    if (newHead.isSubsetOf(oldHead))
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
@@ -366,6 +390,9 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 if (newDefOps ne oldDefOps) {
                     val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
                     if (joinedDefOps ne oldDefOps) {
+                        assert(
+                            joinedDefOps != oldDefOps,
+                            s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
                         forceScheduling = true
                         defOps(successorPC) = joinedDefOps
                     }
@@ -381,12 +408,16 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                                     o
                                 else if (o eq null)
                                     n
-                                else if (n.subsetOf(o))
+                                else if (n.isSubsetOf(o))
                                     o
-                                else
+                                else {
                                     n ++ o
+                                }
                             })
                     if (joinedDefLocals ne oldDefLocals) {
+                        assert(
+                            joinedDefLocals != oldDefLocals,
+                            s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
                         forceScheduling = true
                         defLocals(successorPC) = joinedDefLocals
                     }
@@ -418,12 +449,12 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        List(Set(successorPC))
+                        List(ValueOrigins(min, max, successorPC))
                     else
                         successorDefOps
                 } else {
                     if (newVarCreated)
-                        Set(currentPC) :: currentDefOps.drop(usedVarCount)
+                        ValueOrigins(min, max, currentPC) :: currentDefOps.drop(usedVarCount)
                     else
                         currentDefOps.drop(usedVarCount)
                 }
@@ -514,7 +545,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 val invoke = instruction.asInstanceOf[InvocationInstruction]
                 val descriptor = invoke.methodDescriptor
                 stackOp(
-                    invoke.numberOfPoppedOperands(NullFunction),
+                    invoke.numberOfPoppedOperands(UnsupportedFunction),
                     !descriptor.returnType.isVoidType)
 
             case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
@@ -657,7 +688,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     if (isExceptionalControlFlow) {
                         val newDefOps = defOps(successorPC)
                         if (newDefOps eq null)
-                            List(Set(successorPC))
+                            List(ValueOrigins(min, max, successorPC))
                         else
                             newDefOps
                     } else
@@ -670,7 +701,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 updateUsed(currentDefLocals(index), currentPC)
                 propagate(
                     defOps(currentPC),
-                    currentDefLocals.updated(index, Set.empty + currentPC))
+                    currentDefLocals.updated(index, ValueOrigins(min, max, currentPC)))
 
             case 187 /*new*/ ⇒
                 stackOp(0, true)
@@ -708,6 +739,6 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     }
 
 }
-private object NullFunction extends (Int ⇒ ComputationalTypeCategory) {
+private object UnsupportedFunction extends (Int ⇒ ComputationalTypeCategory) {
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 }

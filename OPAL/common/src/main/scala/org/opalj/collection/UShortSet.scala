@@ -34,7 +34,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-trait UShortSet extends scala.collection.Traversable[UShort] {
+trait UShortSet extends SmallValuesSet {
 
     /**
      * Adds the given value to this set's values.
@@ -45,10 +45,19 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
      */
     def +(value: UShort): UShortSet
 
-    /**
-     * Creates a new set that contains this set's values as well as the given one's values.
-     */
-    def ++(values: UShortSet): UShortSet
+    def ++(values: UShortSet): mutable.UShortSet = {
+        super[SmallValuesSet].++(values).asInstanceOf[mutable.UShortSet]
+    }
+
+    def max: Int /* Redefined to avoid ambiguous references. */
+
+    def min: Int /* Redefined to avoid ambiguous references. */
+
+    final override def last: Int = max
+
+    final override def head: Int = min
+
+    final override def nonEmpty: Boolean = super[SmallValuesSet].nonEmpty
 
     /**
      * Returns a (new) set object that can safely be mutated.
@@ -61,18 +70,7 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
      * If the given value is not an unsigned short value ([0..65535]) the
      * result is undefined.
      */
-    def contains(ushortValue: UShort): Boolean
-
-    /**
-     * Executes the given function `f` for each value of this set, starting with
-     * the smallest value.
-     */
-    def foreach[U](f: UShort ⇒ U): Unit
-
-    /**
-     * Returns `true` if the predicate `f` returns true for all values of the set.
-     */
-    def forall(f: UShort ⇒ Boolean): Boolean
+    def contains(value: UShort): Boolean
 
     def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
         val set = scala.collection.mutable.Set.empty[T]
@@ -80,16 +78,26 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
         set
     }
 
+    /**
+     * Maps all values to a list, reversing the order in which the elements occured
+     * in the (sorted) set.
+     */
     def mapToList[T](f: UShort ⇒ T): List[T] = {
         var result = List.empty[T]
         foreach(v ⇒ result = f(v) :: result)
         result
     }
 
-    override def filter(f: UShort ⇒ Boolean): UShortSet = {
+    def filter(f: UShort ⇒ Boolean): mutable.UShortSet = {
         var result: mutable.UShortSet = mutable.UShortSet.empty
         foreach(v ⇒ if (f(v)) result = v +≈: result)
         result
+    }
+
+    def foldLeft[T](i: T)(f: (T, UShort) ⇒ T): T = {
+        var value = i;
+        foreach { v ⇒ value = f(value, v) }
+        value
     }
 
     /**
@@ -111,37 +119,6 @@ trait UShortSet extends scala.collection.Traversable[UShort] {
      *      performance.
      */
     def iterable: Iterable[UShort]
-
-    /**
-     * Returns the maximum value stored in this set.
-     */
-    def max: UShort
-
-    /**
-     * Returns the minimum value stored in this set.
-     */
-    def min: UShort
-
-    override def last: UShort = max
-
-    override def head: UShort = min
-
-    /**
-     * The number of elements of this set (the complexity is O(n)).
-     *
-     * @note The size is calculated on demand and requires a traversal of this
-     *      data structure.
-     */
-    def size: Int
-
-    def isEmpty: Boolean
-
-    override def nonEmpty: Boolean = !isEmpty
-
-    /**
-     * Tests if this collection has exactly one element. Guaranteed complexity: O(1).
-     */
-    def hasOneElement: Boolean
 
     override def toString: String = iterator.mkString("UShortSet(", ",", ")")
 }
