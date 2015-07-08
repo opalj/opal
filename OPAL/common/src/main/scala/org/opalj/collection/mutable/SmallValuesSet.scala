@@ -126,9 +126,9 @@ object SmallValuesSet {
         } else {
             val size = max - min
             if (size <= UByte.MaxValue)
-                new SmallValuesSetBackedByOPALSet(min, EmptyUByteSet)
+                new SmallValuesSetBackedByOPALSet(min, UByteSet(value - min))
             else if (size <= UShort.MaxValue)
-                new SmallValuesSetBackedByOPALSet(min, EmptyUShortSet)
+                new SmallValuesSetBackedByOPALSet(min, UShortSet(value - min))
             else
                 new SmallValuesSetBackedByScalaSet(value)
         }
