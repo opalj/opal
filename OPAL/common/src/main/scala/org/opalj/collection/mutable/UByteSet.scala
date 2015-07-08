@@ -250,47 +250,12 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
         f(value4)
     }
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean =
-        other match {
-            case that: UByteSet4 ⇒
-                val thisValue = this.value
-                val thatValue = that.value
+    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+        if (other.isEmpty)
+            return false;
 
-                if (thisValue == thatValue)
-                    return true;
-
-                if (value4 != 0)
-                    return false;
-
-                val value3 = this.value3
-                if (value3 != 0 && !that.contains(value3))
-                    return false;
-
-                val value2 = this.value2
-                if (value2 != 0 && !that.contains(value2))
-                    return false;
-
-                that.contains(value1)
-
-            case n: UByteSetNode ⇒
-                n.contains(value1) && {
-                    val value2 = this.value2
-                    value2 == 0 || {
-                        n.contains(value2) && {
-                            val value3 = this.value3
-                            value3 == 0 || {
-                                n.contains(value3) && {
-                                    val value4 = this.value4
-                                    value4 == 0 || n.contains(value4)
-                                }
-                            }
-                        }
-                    }
-                }
-
-            case EmptyUByteSet ⇒ false
-            case that          ⇒ this.forall(that.contains)
-        }
+        this.forall(other.contains)
+    }
 
     def foreach[U](f: UByte ⇒ U): Unit = {
         f(value1)
@@ -324,7 +289,7 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
 
                 val value4 = this.value4
                 if (value4 > 0)
-                    f(value4) // RETURN
+                    return f(value4);
             }
         }
 
@@ -335,13 +300,6 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
 
     private[mutable] def asTreeNode: UByteSetNode = throw new ClassCastException()
     private[mutable] def asNonEmptyLeafNode: UByteSet4 = this
-
-    override def hashCode = this.value
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UByteSet4 ⇒ that.value == this.value
-        case _               ⇒ false
-    }
 
     def valuesToString(seperator: String, offset: Int): String = {
         var s = String.valueOf(value1 + offset)
@@ -466,13 +424,6 @@ private class UByteSetNode(
                 new UByteSetNode(set1, newSet2)
             }
         }
-    }
-
-    override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UByteSetNode ⇒ this.set1 == that.set1 && this.set2 == that.set2
-        case _                  ⇒ false
     }
 
     def valuesToString(seperator: String, offset: Int): String =

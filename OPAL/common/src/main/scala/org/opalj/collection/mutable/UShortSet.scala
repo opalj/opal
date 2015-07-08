@@ -197,13 +197,6 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     def iterable: Iterable[UShort] =
         if (notFull) Iterable(value1) else Iterable(value1, value2)
 
-    override def hashCode = value
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSet2 ⇒ that.value == this.value
-        case _                ⇒ false
-    }
-
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
     private[mutable] def asGraph: DefaultMutableNode[Int] =
@@ -377,13 +370,6 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         else
             Iterable(value1.toInt, value2.toInt, value3.toInt, value4.toInt)
 
-    override def hashCode = ((value1 * 37 + value2) * 37 + value3).toInt * 37 + value4.toInt
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSet4 ⇒ that.value == this.value
-        case _                ⇒ false
-    }
-
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
     private[mutable] def asGraph: DefaultMutableNode[Int] =
@@ -500,13 +486,6 @@ private class UShortSetNode(
     override def isEmpty = false
 
     def hasOneElement: Boolean = false
-
-    override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSetNode ⇒ this.set1 == that.set1 && this.set2 == that.set2
-        case _                   ⇒ false
-    }
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount

@@ -42,7 +42,8 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     type MutableSmallValuesSet = mutable.SmallValuesSet
 
     /**
-     * A copy of this set which can be mutated without affecting this set.
+     * Returns a set which can be mutated without affecting this set. The returned
+     * set will be this set, if this set is not mutable.
      */
     def mutableCopy: MutableSmallValuesSet
 
@@ -63,6 +64,9 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      */
     def contains(value: Int): Boolean
 
+    /**
+     * Tests if a value exists for which the given function `f` returns `true`.
+     */
     def exists(f: Int ⇒ Boolean): Boolean
 
     /**
@@ -130,7 +134,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     /**
      * Two SmallValuesSets are equal if they contain the same values.
      */
-    override def equals(other: Any): Boolean = {
+    final override def equals(other: Any): Boolean = {
         other match {
             case that: SmallValuesSet ⇒ this.isSubsetOf(that) && that.isSubsetOf(this)
             case _                    ⇒ false
@@ -141,7 +145,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * Calculates the `hashCode` based on the values in the set. This is a O(n)
      * operation.s
      */
-    override def hashCode(): Int = {
+    final override def hashCode(): Int = {
         var hashCode = -1
         foreach { v ⇒ hashCode = hashCode * v }
         hashCode
