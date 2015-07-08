@@ -39,6 +39,10 @@ import java.util.*;
  */
 public class StackManipulationAndSynchronization {
 
+	static int staticMethod(int arg1, int arg2) {
+		return arg1 + arg2;
+	}
+	
 	int returnInt() {
 		return 1;
 	}
@@ -62,5 +66,14 @@ public class StackManipulationAndSynchronization {
 	void monitorEnterAndExit() {
 		synchronized (this) {
 		}
+	}
+	
+	void invokeStatic() {
+		int res = staticMethod(1, 2);
+	}
+	
+	void invokeInterface() {
+		List l = new ArrayList();
+		l.add(new Object());
 	}
 }

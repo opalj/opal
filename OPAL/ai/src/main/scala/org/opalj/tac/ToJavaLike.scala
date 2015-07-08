@@ -162,6 +162,9 @@ object ToJavaLike {
     javaLikeCode
   }
 
+  /**
+   * Builds string to display the cases part of switch instructions.
+   */
   def switchCases(defTrg: Int, npairs: IndexedSeq[(Int, Int)]): String = {
     var result = "\n"
     for (x <- npairs) { result = result + "    " + x._1 + ": goto " + x._2 + ";\n" }

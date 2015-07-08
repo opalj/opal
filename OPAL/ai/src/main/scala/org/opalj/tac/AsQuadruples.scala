@@ -383,6 +383,25 @@ object AsQuadruples {
           statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
           schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
+        case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode |
+          INVOKEVIRTUAL.opcode ⇒
+          val invoke = as[MethodInvocationInstruction](instruction)
+          val numOps = invoke.numberOfPoppedOperands { x => stack.drop(x).head.cTpe.computationalTypeCategory }
+          val operands = stack.dropRight(stack.length - numOps)
+          statements(pc) = List(
+            MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
+              Some(operands.last), operands.dropRight(1), None))
+          schedule(pcOfNextInstruction(pc), stack.drop(numOps))
+
+        case INVOKESTATIC.opcode ⇒
+          val invoke = as[INVOKESTATIC](instruction)
+          val numOps = invoke.numberOfPoppedOperands { x => stack.drop(x).head.cTpe.computationalTypeCategory }
+          val operands = stack.dropRight(stack.length - numOps)
+          statements(pc) = List(
+            MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
+              None, operands, None))
+          schedule(pcOfNextInstruction(pc), stack.drop(numOps))
+
         case GOTO.opcode | GOTO_W.opcode ⇒
           statements(pc) = List(Goto(pc, pc + as[GOTO](instruction).branchoffset))
           schedule(pcOfNextInstruction(pc), stack)

@@ -62,6 +62,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
   val Pop2Case2Method = StackAndSynchronizeClassFile.findMethod("pop2case2").get
   val DupMethod = StackAndSynchronizeClassFile.findMethod("dup").get
   val MonitorEnterAndExitMethod = StackAndSynchronizeClassFile.findMethod("monitorEnterAndExit").get
+  val InvokeStaticMethod = StackAndSynchronizeClassFile.findMethod("invokeStatic").get
+  val InvokeInterfaceMethod = StackAndSynchronizeClassFile.findMethod("invokeInterface").get
 
   describe("The quadruples representation of stack manipulation and synchronization instructions") {
 
@@ -84,6 +86,16 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
       it("should correctly reflect monitorenter and -exit") {
         println("---------- MonitorEnterAndExitMethod -----------------")
         println(MonitorEnterAndExitMethod.body.get.instructions.mkString("\n"))
+      }
+      
+      it("should correctly reflect invokestatic") {
+        println("---------- InvokeStaticMethod -----------------")
+        println(InvokeStaticMethod.body.get.instructions.mkString("\n"))
+      }
+      
+      it("should correctly reflect invokeinterface") {
+        println("---------- InvokeInterfaceMethod -----------------")
+        println(InvokeInterfaceMethod.body.get.instructions.mkString("\n"))
       }
     }
   }
