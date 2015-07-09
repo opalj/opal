@@ -27,30 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
 
 /**
+ * Properties of unsigned short values.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class LocalVariableTable_attribute(
-        attribute_name_index: Int,
-        local_variable_table: Seq[LocalVariableTableEntry]) extends Attribute {
+object UByte {
 
-    def attribute_length: Int = 2 + (local_variable_table.size * 10)
+    /**
+     * The maximum value of an unsigned byte value (255).
+     */
+    final val MaxValue /*:UByte*/ = 255 // 0xFF
 
-    override def toXHTML(implicit cp: Constant_Pool) = {
-        <details>
-            <summary>LocalVariableTable</summary>
-            { for (local_variable ← local_variable_table) yield local_variable.toXHTML(cp) }
-        </details>
-    }
+    /**
+     * The minimum value of an unsigned byte value (0).
+     */
+    final val MinValue /*: UByte*/ = 0
 }
-object LocalVariableTable_attribute {
-
-    val name = "LocalVariableTable"
-
-}
-

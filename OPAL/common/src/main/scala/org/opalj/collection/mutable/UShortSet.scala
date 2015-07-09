@@ -35,11 +35,12 @@ import org.opalj.graphs.DefaultMutableNode
 
 /**
  * A memory-efficient, mutable, sorted set of unsigned short values that
- * is tailored for small(er) sets.
+ * is highly tailored for small(er) sets and situations where the set will always
+ * just grow. Removing elements is not possible.
  *
  * @author Michael Eichberg
  */
-trait UShortSet extends org.opalj.collection.UShortSet {
+trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.
@@ -51,13 +52,27 @@ trait UShortSet extends org.opalj.collection.UShortSet {
      */
     def +≈:(value: UShort): UShortSet
 
+    override def filter(f: UShort ⇒ Boolean): UShortSet =
+        super[UShortSet].filter(f)
+
+    def ++(values: UShortSet): UShortSet = {
+        var newSet = this.mutableCopy
+        values foreach { v ⇒ newSet = v +≈: newSet }
+        newSet
+    }
+
+    def mutableCopy: UShortSet /* Refined the return type. */
+
     override def +(value: UShort): UShortSet = value +≈: this.mutableCopy
 
-    def ++(values: org.opalj.collection.UShortSet): UShortSet = {
-        var newValues = this.mutableCopy
-        values.foreach { value ⇒ newValues = value +≈: newValues }
-        newValues
+    protected[collection] def mkString(
+        pre: String, sep: String, pos: String,
+        offset: Int): String = {
+        mapToList(_ + offset).mkString(pre, sep, pos)
     }
+
+    def mkString(start: String, sep: String, end: String): String =
+        mkString(start, sep, end, 0)
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
@@ -100,6 +115,18 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         this.value1 == value || (value > 0 && this.value2 == value)
     }
 
+    def exists(f: UShort ⇒ Boolean): Boolean = {
+        f(value1) || { val value2 = this.value2; value2 > 0 && f(value2) }
+    }
+
+    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+        // this set contains at least one element
+        if (that.isEmpty)
+            false
+        else
+            this.forall(that.contains)
+    }
+
     def foreach[U](f: UShort ⇒ U): Unit = {
         f(value1)
         // if this set contains more than one value...
@@ -108,8 +135,10 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     override def forall(f: UShort ⇒ Boolean): Boolean = {
-        val value2 = this.value2
-        f(value1) && ((value2 == 0) || f(value2))
+        f(value1) && {
+            val value2 = this.value2
+            ((value2 == 0) || f(value2))
+        }
     }
 
     def +≈:(newValue: UShort): UShortSet = {
@@ -167,13 +196,6 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     def iterable: Iterable[UShort] =
         if (notFull) Iterable(value1) else Iterable(value1, value2)
-
-    override def hashCode = value
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSet2 ⇒ that.value == this.value
-        case _                ⇒ false
-    }
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
@@ -295,6 +317,19 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             value3 == value || value4 == value
     }
 
+    def exists(f: UShort ⇒ Boolean): Boolean = {
+        f(value1.toInt) || f(value2.toInt) || f(value3.toInt) ||
+            { val value4 = this.value4.toInt; value4 > 0 && f(value4) }
+    }
+
+    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+        // this set contains at least one element
+        if (that.isEmpty)
+            false
+        else
+            this.forall(that.contains)
+    }
+
     def foreach[U](f: UShort ⇒ U): Unit = {
         f(value1.toInt)
         f(value2.toInt)
@@ -335,13 +370,6 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         else
             Iterable(value1.toInt, value2.toInt, value3.toInt, value4.toInt)
 
-    override def hashCode = ((value1 * 37 + value2) * 37 + value3).toInt * 37 + value4.toInt
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSet4 ⇒ that.value == this.value
-        case _                ⇒ false
-    }
-
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
     private[mutable] def asGraph: DefaultMutableNode[Int] =
@@ -359,10 +387,10 @@ private class UShortSetNode(
         private val set1: UShortSet,
         private val set2: UShortSet) extends UShortSet {
 
-    private[this] var currentMax = set2.max
+    private[this] var currentMax = (set2: SmallValuesSet).max
     def max = currentMax
 
-    def min = set1.min
+    def min = (set1: SmallValuesSet).min
 
     def mutableCopy: mutable.UShortSet = {
         val set1Copy = set1.mutableCopy
@@ -401,12 +429,24 @@ private class UShortSetNode(
     override def size: Int = set1.size + set2.size
 
     def contains(value: UShort): Boolean =
-        if (set1.max > value)
+        if ((set1: SmallValuesSet).max > value)
             set1.contains(value)
-        else if (set1.max == value)
+        else if ((set1: SmallValuesSet).max == value)
             true
         else
             set2.contains(value)
+
+    def exists(f: UShort ⇒ Boolean): Boolean = {
+        set1.exists(f) || set2.exists(f)
+    }
+
+    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+        // this set contains at least 7 values...
+        if (that.isEmpty)
+            false
+        else
+            this.forall(that.contains)
+    }
 
     def foreach[U](f: UShort ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
 
@@ -417,9 +457,9 @@ private class UShortSetNode(
             uShortValue >= MinValue && uShortValue <= MaxValue,
             s"no ushort value: $uShortValue")
 
-        val set1Max = set1.max
+        val set1Max = (set1: SmallValuesSet).max
         if (set1Max > uShortValue ||
-            (uShortValue < set2.min &&
+            (uShortValue < (set2: SmallValuesSet).min &&
                 uShortValue > set1Max &&
                 set1.isInstanceOf[UShortSet2])) {
             val newSet1 = uShortValue +≈: set1
@@ -436,7 +476,7 @@ private class UShortSetNode(
         else {
             val newSet2 = uShortValue +≈: set2
             if (newSet2 eq set2) {
-                currentMax = newSet2.max
+                currentMax = (newSet2: SmallValuesSet).max
                 this
             } else
                 new UShortSetNode(set1, newSet2)
@@ -446,13 +486,6 @@ private class UShortSetNode(
     override def isEmpty = false
 
     def hasOneElement: Boolean = false
-
-    override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
-
-    override def equals(other: Any): Boolean = other match {
-        case that: UShortSetNode ⇒ this.set1 == that.set1 && this.set2 == that.set2
-        case _                   ⇒ false
-    }
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
@@ -472,8 +505,10 @@ private object EmptyUShortSet extends UShortSet {
     def iterator = Iterator.empty
     def iterable = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
+    def exists(f: UShort ⇒ Boolean): Boolean = false
     def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
     override def forall(f: UShort ⇒ Boolean): Boolean = true
+    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def max = throw new NoSuchElementException("the set is empty")
     def min = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)

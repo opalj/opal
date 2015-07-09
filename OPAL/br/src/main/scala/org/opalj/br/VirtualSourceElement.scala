@@ -80,7 +80,7 @@ object VirtualSourceElement {
 
         classFiles foreach { classFile ⇒
             val classType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
+            sourceElements ++ Iterable(classFile.asVirtualClass)
             if (includeMethods)
                 sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(classType))
             if (includeFields)

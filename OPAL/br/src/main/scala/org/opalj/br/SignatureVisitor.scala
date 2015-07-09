@@ -57,7 +57,7 @@ trait SignatureVisitor[T] {
     def visit(vt: VoidType): T
 }
 /**
- * This visitor's visit methods completely traverse all elements of a type signature.
+ * This visitor's `visit` methods completely traverse all elements of a type signature.
  */
 trait TraversingVisitor extends SignatureVisitor[Unit] {
 

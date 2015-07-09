@@ -42,9 +42,9 @@ object Disassembler {
     def main(args: Array[String]): Unit = {
 
         if (args.length < 1) {
-            println("Usage: java …Disassembler "+
-                "<JAR file containing class files> "+
-                "[<Name of classfile (incl. path) contained in the JAR file>+]")
+            println("Usage: java …Disassembler \n"+
+                "(1) <JAR file containing class files> [<Name of classfile (incl. path) contained in the JAR file>+]\n"+
+                "(2) <class file>")
             println("Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
         }

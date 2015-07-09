@@ -134,6 +134,12 @@ package object opalj {
     final type UShort = Int
 
     /**
+     * A simple type alias that can be used to communicate that the respective
+     * value will/should only take values in the range of unsigned byte values.
+     */
+    final type UByte = Int
+
+    /**
      * Iterates over a given array `a` and calls the given function `f` for
      * each non-null value in the array.
      *
