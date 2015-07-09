@@ -113,6 +113,25 @@ object AsQuadruples {
         schedule(nextPC, newStack)
       }
 
+      def arrayLoad(tpe: Type): Unit = {
+        val index :: arrayRef :: rest = stack
+        val operandVar = OperandVar(tpe.computationalType, rest)
+        val source = ArrayIndex(pc, index, arrayRef, tpe)
+        statements(pc) = List(Assignment(pc, operandVar, source))
+        val newStack = operandVar :: rest
+        val nextPC = pcOfNextInstruction(pc)
+        schedule(nextPC, newStack)
+      }
+      
+      def arrayStore(tpe: Type): Unit = {
+        val operandVar :: index :: arrayRef :: rest = stack
+        val target = ArrayIndex(pc, index, arrayRef, tpe)
+        statements(pc) = List(Assignment(pc, target, operandVar))
+        val newStack = rest
+        val nextPC = pcOfNextInstruction(pc)
+        schedule(nextPC, newStack)
+      }
+
       // Note:
       // The computational type of the Binary Expression is determined using the
       // first (left) value of the expression. This makes it possible to use
@@ -234,6 +253,24 @@ object AsQuadruples {
         case RETURN.opcode ⇒
           statements(pc) = List(Return(pc))
 
+        case AALOAD.opcode ⇒ arrayLoad(ReferenceType)
+        case DALOAD.opcode ⇒ arrayLoad(DoubleType)
+        case FALOAD.opcode ⇒ arrayLoad(FloatType)
+        case IALOAD.opcode ⇒ arrayLoad(IntegerType)
+        case LALOAD.opcode ⇒ arrayLoad(LongType)
+        case SALOAD.opcode ⇒ arrayLoad(ShortType)
+        case BALOAD.opcode ⇒ arrayLoad(ByteType)
+        case CALOAD.opcode ⇒ arrayLoad(CharType)
+        
+        case AASTORE.opcode ⇒ arrayStore(ReferenceType)
+        case DASTORE.opcode ⇒ arrayStore(DoubleType)
+        case FASTORE.opcode ⇒ arrayStore(FloatType)
+        case IASTORE.opcode ⇒ arrayStore(IntegerType)
+        case LASTORE.opcode ⇒ arrayStore(LongType)
+        case SASTORE.opcode ⇒ arrayStore(ShortType)
+        case BASTORE.opcode ⇒ arrayStore(ByteType)
+        case CASTORE.opcode ⇒ arrayStore(CharType)
+          
         case BIPUSH.opcode | SIPUSH.opcode ⇒
           val value = as[LoadConstantInstruction[Int]](instruction).value
           val targetVar = OperandVar(ComputationalTypeInt, stack)
