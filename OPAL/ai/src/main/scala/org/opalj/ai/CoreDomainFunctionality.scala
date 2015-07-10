@@ -286,12 +286,12 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      by the abstract interpreter.
      *
      * @param successorPC The program counter of an instruction that is a potential
-     *      successor of the instruction with `currentPC`. If the head of the
-     *      given `worklist` is not `successorPC` the abstract interpreter did
-     *      not (again) schedule the evaluation of the instruction with `successorPC`.
-     *      This means that the instruction was evaluated in the past and that
-     *      the abstract state did not change in a way that a reevaluation is –
-     *      from the point of view of the AI framework – necessary.
+     *      successor of the instruction with `currentPC`. In general the AI framework
+     *      adds the pc of the successor instruction to the beginning of the worklist
+     *      unless it is a join instruction. In this case the pc added to the end – in
+     *      the context of the current (sub)routine. Hence, the AI framework first evaluates
+     *      all paths leading to a join instruction before the join instruction will
+     *      be evaluated.
      *
      * @param isExceptionalControlFlow `true` if and only if the evaluation of
      *      the instruction with the program counter `currentPC` threw an exception;
@@ -327,8 +327,8 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      If you want to force the evaluation of the instruction
      *      with the program counter `successorPC` it is sufficient to test whether
      *      the list already contains `successorPC` and – if not – to prepend it.
-     *      If the worklist already contains `successorPC` then the domain is allowed to move
-     *      the PC to the beginning of the worklist.
+     *      If the worklist already contains `successorPC` then the domain is allowed
+     *      to move the PC to the beginning of the worklist.
      *
      *      ==If the code contains subroutines (JSR/RET)==
      *      However, if the PC does not belong to the same (current)
@@ -358,6 +358,8 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      create a shallow copy before updating it.
      *      If this is not done, it may happen that the locals associated
      *      with other instructions are also updated.
+     *      '''A method that overrides this method must always call the super method
+     *      to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
         currentPC: PC,
