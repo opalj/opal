@@ -93,6 +93,8 @@ object ToJavaLike {
         s"switch(${toJavaLikeExpr(index)}){${switchCases(defTrg, npairs)}}"
       case ArrayStore(_, arrayRef, index, operandVar) ⇒
         s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
+      case Throw(_, exc) ⇒
+        s"throw ${toJavaLikeExpr(exc)};"
       case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
         val code = new StringBuffer(256)
 

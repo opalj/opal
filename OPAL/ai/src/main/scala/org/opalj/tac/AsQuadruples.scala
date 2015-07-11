@@ -568,6 +568,9 @@ object AsQuadruples {
         case I2C.opcode ⇒ castOperation(CharType)
         case I2B.opcode ⇒ castOperation(ByteType)
         case I2S.opcode ⇒ castOperation(ShortType)
+        
+        case ATHROW.opcode ⇒ 
+          statements(pc) = List(Throw(pc, stack.head))
 
         case WIDE.opcode ⇒
           statements(pc) = List(EmptyStmt(pc))
