@@ -118,6 +118,10 @@ case class ArrayLoad(
     pc: PC,
     index: Var,
     arrayRef: Var) extends Expr
+    
+case class ArrayLength(
+    pc: PC,
+    arrayRef: Var) extends Expr
 
 trait Var extends Expr {
 

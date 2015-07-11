@@ -64,6 +64,8 @@ object ToJavaLike {
         s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
       case ArrayLoad(_, index, arrayRef) ⇒
         s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
+      case ArrayLength(_, arrayRef) ⇒
+        s"${toJavaLikeExpr(arrayRef)}.length"
     }
   }
 

@@ -259,6 +259,12 @@ object AsQuadruples {
           statements(pc) = List(ArrayStore(pc, arrayRef, index, operandVar))
           schedule(pcOfNextInstruction(pc), rest)
 
+        case ARRAYLENGTH.opcode ⇒ 
+          val arrayRef :: rest = stack
+          val length = OperandVar(ComputationalTypeInt, rest)
+          statements(pc) = List(Assignment(pc, length, ArrayLength(pc, arrayRef)))
+          schedule(pcOfNextInstruction(pc), length :: rest)
+          
         case BIPUSH.opcode | SIPUSH.opcode ⇒
           val value = as[LoadConstantInstruction[Int]](instruction).value
           val targetVar = OperandVar(ComputationalTypeInt, stack)
