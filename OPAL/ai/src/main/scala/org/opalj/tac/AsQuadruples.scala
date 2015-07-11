@@ -412,20 +412,26 @@ object AsQuadruples {
           INVOKEVIRTUAL.opcode ⇒
           val invoke = as[MethodInvocationInstruction](instruction)
           val numOps = invoke.numberOfPoppedOperands { x => stack.drop(x).head.cTpe.computationalTypeCategory }
-          val operands = stack.dropRight(stack.length - numOps)
+          val (operands, rest) = stack.splitAt(stack.length - numOps)
+          val target: Option[Var] = 
+            if(invoke.methodDescriptor.returnType.isVoidType) None 
+            else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-              Some(operands.last), operands.dropRight(1), None))
-          schedule(pcOfNextInstruction(pc), stack.drop(numOps))
+              Some(operands.last), operands.take(numOps - 1), target))
+          schedule(pcOfNextInstruction(pc), rest)
 
         case INVOKESTATIC.opcode ⇒
           val invoke = as[INVOKESTATIC](instruction)
           val numOps = invoke.numberOfPoppedOperands { x => stack.drop(x).head.cTpe.computationalTypeCategory }
-          val operands = stack.dropRight(stack.length - numOps)
+          val (operands, rest) = stack.splitAt(stack.length - numOps)
+          val target: Option[Var] = 
+            if(invoke.methodDescriptor.returnType.isVoidType) None 
+            else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-              None, operands, None))
-          schedule(pcOfNextInstruction(pc), stack.drop(numOps))
+              None, operands, target))
+          schedule(pcOfNextInstruction(pc), rest)
 
         case GOTO.opcode | GOTO_W.opcode ⇒
           statements(pc) = List(Goto(pc, pc + as[GOTO](instruction).branchoffset))
