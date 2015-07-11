@@ -54,12 +54,16 @@ object ToJavaLike {
       case DoubleConst(_, value) ⇒ value.toString + "d"
       case ClassConst(_, value) ⇒ value.toString
       case NullExpr(_) ⇒ "null"
-      case InstanceOf(trg, cmpTp) ⇒ s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
+      case InstanceOf(trg, cmpTp) ⇒
+        s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
       case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
         toJavaLikeExpr(left) + " " + op.toString() + " " + toJavaLikeExpr(right)
       case PrefixExpr(_, _, op, operand) ⇒
         op.toString() + " " + toJavaLikeExpr(operand)
-      case PrimitiveTypecastExpr(_, trgtTpe, operand) ⇒ s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
+      case PrimitiveTypecastExpr(_, trgtTpe, operand) ⇒
+        s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
+      case ArrayLoad(_, index, arrayRef) ⇒
+        s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
     }
   }
 
@@ -82,11 +86,13 @@ object ToJavaLike {
       case Checkcast(_, trg, cmpTp) ⇒
         s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.asObjectType.simpleName};"
       case MonitorEnter(_, objRef) ⇒
-        s"monitorenter ${objRef.name}"
+        s"monitorenter ${objRef.name};"
       case MonitorExit(_, objRef) ⇒
-        s"monitorexit ${objRef.name}"
+        s"monitorexit ${objRef.name};"
       case Switch(_, defTrg, index, npairs) ⇒
         s"switch(${toJavaLikeExpr(index)}){${switchCases(defTrg, npairs)}}"
+      case ArrayStore(_, arrayRef, index, operandVar) ⇒
+        s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
       case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
         val code = new StringBuffer(256)
 

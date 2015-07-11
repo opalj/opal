@@ -120,6 +120,8 @@ case class MonitorEnter(pc: PC, objRef: Var) extends SimpleStmt
 
 case class MonitorExit(pc: PC, objRef: Var) extends SimpleStmt
 
+case class ArrayStore(pc: PC, arrayRef: Var, index: Var, operandVar: Var) extends SimpleStmt
+
 /**
  * Call of a method.
  */

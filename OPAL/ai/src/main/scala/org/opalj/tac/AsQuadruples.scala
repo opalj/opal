@@ -113,23 +113,12 @@ object AsQuadruples {
         schedule(nextPC, newStack)
       }
 
-      def arrayLoad(tpe: Type): Unit = {
+      def arrayLoad(cTpe: ComputationalType): Unit = {
         val index :: arrayRef :: rest = stack
-        val operandVar = OperandVar(tpe.computationalType, rest)
-        val source = ArrayIndex(pc, index, arrayRef, tpe)
+        val operandVar = OperandVar(cTpe, rest) //future: pass precise type
+        val source = ArrayLoad(pc, index, arrayRef)
         statements(pc) = List(Assignment(pc, operandVar, source))
-        val newStack = operandVar :: rest
-        val nextPC = pcOfNextInstruction(pc)
-        schedule(nextPC, newStack)
-      }
-      
-      def arrayStore(tpe: Type): Unit = {
-        val operandVar :: index :: arrayRef :: rest = stack
-        val target = ArrayIndex(pc, index, arrayRef, tpe)
-        statements(pc) = List(Assignment(pc, target, operandVar))
-        val newStack = rest
-        val nextPC = pcOfNextInstruction(pc)
-        schedule(nextPC, newStack)
+        schedule(pcOfNextInstruction(pc), operandVar :: rest)
       }
 
       // Note:
@@ -253,24 +242,23 @@ object AsQuadruples {
         case RETURN.opcode ⇒
           statements(pc) = List(Return(pc))
 
-        case AALOAD.opcode ⇒ arrayLoad(ReferenceType)
-        case DALOAD.opcode ⇒ arrayLoad(DoubleType)
-        case FALOAD.opcode ⇒ arrayLoad(FloatType)
-        case IALOAD.opcode ⇒ arrayLoad(IntegerType)
-        case LALOAD.opcode ⇒ arrayLoad(LongType)
-        case SALOAD.opcode ⇒ arrayLoad(ShortType)
-        case BALOAD.opcode ⇒ arrayLoad(ByteType)
-        case CALOAD.opcode ⇒ arrayLoad(CharType)
-        
-        case AASTORE.opcode ⇒ arrayStore(ReferenceType)
-        case DASTORE.opcode ⇒ arrayStore(DoubleType)
-        case FASTORE.opcode ⇒ arrayStore(FloatType)
-        case IASTORE.opcode ⇒ arrayStore(IntegerType)
-        case LASTORE.opcode ⇒ arrayStore(LongType)
-        case SASTORE.opcode ⇒ arrayStore(ShortType)
-        case BASTORE.opcode ⇒ arrayStore(ByteType)
-        case CASTORE.opcode ⇒ arrayStore(CharType)
-          
+        case AALOAD.opcode ⇒ arrayLoad(ComputationalTypeReference)
+        case DALOAD.opcode ⇒ arrayLoad(ComputationalTypeDouble)
+        case FALOAD.opcode ⇒ arrayLoad(ComputationalTypeFloat)
+        case IALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+        case LALOAD.opcode ⇒ arrayLoad(ComputationalTypeLong)
+        case SALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+        case BALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+        case CALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+
+        case AASTORE.opcode | DASTORE.opcode |
+          FASTORE.opcode | IASTORE.opcode |
+          LASTORE.opcode | SASTORE.opcode |
+          BASTORE.opcode | CASTORE.opcode ⇒
+          val operandVar :: index :: arrayRef :: rest = stack
+          statements(pc) = List(ArrayStore(pc, arrayRef, index, operandVar))
+          schedule(pcOfNextInstruction(pc), rest)
+
         case BIPUSH.opcode | SIPUSH.opcode ⇒
           val value = as[LoadConstantInstruction[Int]](instruction).value
           val targetVar = OperandVar(ComputationalTypeInt, stack)

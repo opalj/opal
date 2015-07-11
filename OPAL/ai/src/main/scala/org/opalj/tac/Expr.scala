@@ -114,13 +114,10 @@ case class PrimitiveTypecastExpr(
   final def cTpe = targetTpe.computationalType
 }
 
-case class ArrayIndex(
+case class ArrayLoad(
     pc: PC,
     index: Var,
-    arrayRef: Var,
-    tpe: Type) extends Expr {
-  final def cTpe = tpe.computationalType
-}
+    arrayRef: Var) extends Expr
 
 trait Var extends Expr {
 
