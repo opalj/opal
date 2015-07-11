@@ -62,6 +62,11 @@ object ToJavaLike {
         op.toString() + " " + toJavaLikeExpr(operand)
       case PrimitiveTypecastExpr(_, trgtTpe, operand) ⇒
         s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
+      case New(_, objTpe) ⇒ s"new ${objTpe.simpleName}"
+      case NewArray(_, count, tpe) ⇒ 
+        s"new ${toJavaLikeTpe(tpe)}[${toJavaLikeExpr(count)}]"
+      case NewMultiArray(_, counts, dims, tpe) ⇒ 
+        "new "+toJavaLikeTpe(tpe)+ multiArrayDims(counts, dims)
       case ArrayLoad(_, index, arrayRef) ⇒
         s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
       case ArrayLength(_, arrayRef) ⇒
@@ -179,6 +184,12 @@ object ToJavaLike {
     var result = "\n"
     for (x <- npairs) { result = result + "    " + x._1 + ": goto " + x._2 + ";\n" }
     result + "    default: goto " + defTrg + ";\n"
+  }
+  
+  def multiArrayDims(counts: List[Var], dims: Int): String = {
+    var result = ""
+    for (i <- dims to 0) { result = result + "["+ counts.drop(i-1).head +"]"}
+    result
   }
 
 }

@@ -160,6 +160,13 @@ object AsQuadruples {
           }.getOrElse(fallback)
         statements(pc) = List(ReturnValue(pc, returnedValue))
       }
+      
+      def newArray(tpe: BaseType): Unit = {
+          val count :: rest = stack
+          val newVal = OperandVar(ComputationalTypeReference, rest)
+          statements(pc) = List(Assignment(pc, newVal, NewArray(pc, count, tpe)))
+          schedule(pcOfNextInstruction(pc), newVal :: rest)
+      }
 
       def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
@@ -438,6 +445,29 @@ object AsQuadruples {
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
               None, operands, target))
           schedule(pcOfNextInstruction(pc), rest)
+          
+        case NEW.opcode ⇒
+          val instr = as[NEW](instruction)
+          val newVal = OperandVar(ComputationalTypeReference, stack)
+          statements(pc) = List(Assignment(pc, newVal, New(pc, instr.objectType)))
+          schedule(pcOfNextInstruction(pc), newVal :: stack)
+          
+        case NEWARRAY.opcode ⇒
+          newArray(as[NEWARRAY](instruction).elementType)
+          
+        case ANEWARRAY.opcode ⇒
+          newArray(as[ANEWARRAY](instruction).componentType.asBaseType)
+          
+        case MULTIANEWARRAY.opcode ⇒
+          val instr = as[MULTIANEWARRAY](instruction)
+          val dimensions = instr.dimensions
+          val (counts, rest) = stack.splitAt(dimensions)
+          val newVal = OperandVar(ComputationalTypeReference, rest)
+          statements(pc) = List(
+              Assignment(pc, newVal, 
+                  NewMultiArray(pc, counts, dimensions, instr.componentType.elementType.asBaseType)))
+          schedule(pcOfNextInstruction(pc), newVal :: rest)
+          
 
         case GOTO.opcode | GOTO_W.opcode ⇒
           statements(pc) = List(Goto(pc, pc + as[GOTO](instruction).branchoffset))

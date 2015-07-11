@@ -114,6 +114,21 @@ case class PrimitiveTypecastExpr(
   final def cTpe = targetTpe.computationalType
 }
 
+case class New(
+    pc: PC,
+    tpe: ObjectType) extends Expr
+    
+case class NewArray(
+    pc: PC, 
+    count: Var, 
+    tpe: BaseType) extends Expr
+    
+case class NewMultiArray(
+    pc: PC, 
+    counts: List[Var], 
+    dimensions: Int, 
+    tpe: BaseType) extends Expr
+
 case class ArrayLoad(
     pc: PC,
     index: Var,
