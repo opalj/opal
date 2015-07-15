@@ -62,7 +62,7 @@ package object br {
             OPALLogger.info("OPAL", "Bytecode Representation - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Bytecode Representation - Assertions are enabled - Development Build.")
+                OPALLogger.info("OPAL", "Bytecode Representation - Development Build (Assertions are enabled)")
         }
         true
     }
