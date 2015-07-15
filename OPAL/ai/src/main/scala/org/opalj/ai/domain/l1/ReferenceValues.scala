@@ -201,7 +201,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         var overallUTB = values.head.upperTypeBound
 
         def currentUTBisUTBForArrays: Boolean =
-            overallUTB.hasOneElement && overallUTB.first.isArrayType
+            overallUTB.isSingletonSet && overallUTB.first.isArrayType
 
         def asUTBForArrays: ArrayType =
             overallUTB.first.asArrayType
@@ -427,7 +427,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             supertypes: UIDSet[ReferenceType]): DomainSingleOriginReferenceValue = {
             assert(supertypes.nonEmpty)
 
-            if (supertypes.hasOneElement) {
+            if (supertypes.isSingletonSet) {
                 doRefineUpperTypeBound(supertypes.first)
             } else {
                 val newSupertypes = supertypes.asInstanceOf[UIDSet[ObjectType]]
@@ -649,7 +649,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newIsNull = this.isNull & that.isNull
             val newIsPrecise =
                 this.isPrecise && that.isPrecise &&
-                    thatUTB.hasOneElement &&
+                    thatUTB.isSingletonSet &&
                     (thisUTB eq thatUTB.first)
             val newUTB = classHierarchy.joinReferenceType(thisUTB, thatUTB)
             ReferenceValue(origin, newIsNull, newIsPrecise, newUTB, newT)
@@ -694,7 +694,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 (this.isNull.isUnknown || that.isNull.isNo) &&
                     (!this.isPrecise || that.isPrecise) && {
                         val thatUTB = that.upperTypeBound
-                        thatUTB.hasOneElement &&
+                        thatUTB.isSingletonSet &&
                             thatUTB.first.isArrayType &&
                             isSubtypeOf(thatUTB.first.asArrayType, this.theUpperTypeBound).isYes
                     }
@@ -1272,7 +1272,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     !refinedValue.isPrecise /*if the value isPrecise then there is nothing (more) to do*/ &&
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
                     classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound).isYes) {
-                    if (thisUpperTypeBound.hasOneElement)
+                    if (thisUpperTypeBound.isSingletonSet)
                         refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first()).asInstanceOf[DomainSingleOriginReferenceValue]
                     else
                         refinedValue =
@@ -1619,7 +1619,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.hasOneElement, "no array type: "+this.upperTypeBound)
+            assert(upperTypeBound.isSingletonSet, "no array type: "+this.upperTypeBound)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound is no array type")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
@@ -1643,7 +1643,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.hasOneElement)
+            assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound is no array type")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
@@ -1667,7 +1667,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return throws(VMNullPointerException(pc)); // <====== early return
 
-            assert(upperTypeBound.hasOneElement)
+            assert(upperTypeBound.isSingletonSet)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound (values=$values)")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {

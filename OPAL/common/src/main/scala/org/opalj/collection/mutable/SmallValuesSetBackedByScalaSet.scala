@@ -60,7 +60,7 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
     def min = set.min
     def max = set.max
     def isEmpty = set.isEmpty
-    def hasOneElement = set.size == 1
+    def isSingletonSet = set.size == 1
     def size = set.size
 
     def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv))

@@ -274,7 +274,7 @@ trait PerformInvocations extends MethodCallsHandling {
             case refValue: IsAReferenceValue if (
                 refValue.isPrecise &&
                 refValue.isNull.isNo && // TODO handle the case that null is unknown
-                refValue.upperTypeBound.hasOneElement &&
+                refValue.upperTypeBound.isSingletonSet &&
                 refValue.upperTypeBound.head.isObjectType) ⇒
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 doInvokeNonVirtual(pc, receiverClass, name, descriptor, operands, fallback)

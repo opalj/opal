@@ -231,7 +231,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     override def size: Int = if (notFull) 3 else 4
 
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
 
     def mutableCopy: mutable.UShortSet = {
         if (notFull)
@@ -485,7 +485,7 @@ private class UShortSetNode(
 
     override def isEmpty = false
 
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
@@ -499,7 +499,7 @@ private class UShortSetNode(
 
 private object EmptyUShortSet extends UShortSet {
     override def isEmpty = true
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterator = Iterator.empty

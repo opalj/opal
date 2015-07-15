@@ -64,7 +64,7 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
             typeOfValue(receiver) match {
                 case refValue: IsAReferenceValue if (
                     refValue.isNull.isNo && // TODO handle the case if the value maybe null
-                    refValue.upperTypeBound.hasOneElement &&
+                    refValue.upperTypeBound.isSingletonSet &&
                     refValue.upperTypeBound.head.isObjectType) ⇒
                     val methods =
                         callees(refValue.upperTypeBound.head.asObjectType, name, descriptor)

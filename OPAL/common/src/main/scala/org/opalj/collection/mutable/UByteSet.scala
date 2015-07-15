@@ -91,7 +91,7 @@ object UByteSet {
 private[mutable] object EmptyUByteSet extends UByteSet {
 
     def isEmpty = true
-    def hasOneElement = false
+    def isSingletonSet = false
     def size: Int = 0
     def min: UByte = throw new UnsupportedOperationException("this set is empty")
     def max: UByte = throw new UnsupportedOperationException("this set is empty")
@@ -152,7 +152,7 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
 
     def isEmpty = false
 
-    def hasOneElement = (value & Value2_3_4Mask) == 0
+    def isSingletonSet = (value & Value2_3_4Mask) == 0
 
     def size: Int = {
         if (value3 == 0) {
@@ -344,7 +344,7 @@ private class UByteSetNode(
     def size = set1.size + set2.size
 
     def isEmpty = false
-    def hasOneElement = false
+    def isSingletonSet = false
 
     private[mutable] def isLeafNode: Boolean = false
     private[mutable] def asTreeNode: UByteSetNode = this

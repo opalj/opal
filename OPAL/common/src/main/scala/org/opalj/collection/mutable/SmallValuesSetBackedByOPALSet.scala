@@ -57,7 +57,7 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     def min = set.min + offset
     def max = set.max + offset
     override def size = set.size
-    def hasOneElement = set.hasOneElement
+    def isSingletonSet = set.isSingletonSet
     override def isEmpty = set.isEmpty
 
     def contains(value: Int): Boolean = set.contains(value - offset)

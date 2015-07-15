@@ -71,7 +71,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         try {
             val receiver = operands.last.asInstanceOf[IsAReferenceValue]
             val receiverUTB = receiver.upperTypeBound
-            if (!receiverUTB.hasOneElement ||
+            if (!receiverUTB.isSingletonSet ||
                 !receiver.upperTypeBound.first.isObjectType)
                 return fallback()
 

@@ -96,7 +96,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     /**
      * Tests if this collection has exactly one element. Guaranteed complexity: O(1).
      */
-    def hasOneElement: Boolean
+    def isSingletonSet: Boolean
 
     /**
      * @return `true` if this set is empty.
