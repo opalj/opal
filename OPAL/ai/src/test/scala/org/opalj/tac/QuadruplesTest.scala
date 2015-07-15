@@ -50,12 +50,17 @@ import org.opalj.ai.domain.l1.DefaultDomain
 class QuadruplesTest extends FunSpec with Matchers {
 
     val BoringCodeType = ObjectType("controlflow/BoringCode")
+    val ExceptionCodeType = ObjectType("controlflow/ExceptionCode")
 
     val testResources = locateTestResources("classfiles/cfgtest8.jar", "br")
     val project = Project(testResources)
+
     val BoringCodeClassFile = project.classFile(BoringCodeType).get
     val SingleBlockMethod = BoringCodeClassFile.findMethod("singleBlock").get
     val ConditionalTwoReturnsMethod = BoringCodeClassFile.findMethod("conditionalTwoReturns").get
+
+    val ExceptionCodeClassFile = project.classFile(ExceptionCodeType).get
+    val TryFinallyMethod = ExceptionCodeClassFile.findMethod("tryFinally").get
 
     if (SingleBlockMethod.body.get.instructions.size == 0) fail()
 
@@ -108,6 +113,23 @@ class QuadruplesTest extends FunSpec with Matchers {
             val aiResult = BaseAI(BoringCodeClassFile, ConditionalTwoReturnsMethod, domain)
 
             val statements = AsQuadruples(ConditionalTwoReturnsMethod, Some(aiResult))
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+
+            //println(conditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
+            //println(statements.mkString("\n"))
+            //            println(javaLikeCode)
+
+            // TODO test that everything is as expected...
+        }
+
+        it("should correctly handle exceptions") {
+            val domain = new DefaultDomain(project, ExceptionCodeClassFile, TryFinallyMethod)
+            val aiResult = BaseAI(ExceptionCodeClassFile, TryFinallyMethod, domain)
+
+            val statements = AsQuadruples(TryFinallyMethod, Some(aiResult))
             val javaLikeCode = ToJavaLike(statements)
 
             assert(statements.nonEmpty)
