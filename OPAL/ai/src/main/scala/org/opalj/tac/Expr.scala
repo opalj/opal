@@ -108,35 +108,45 @@ case class PrefixExpr(
     operand: Expr) extends Expr
 
 case class PrimitiveTypecastExpr(
-    pc: PC,
-    targetTpe: BaseType,
-    operand: Expr) extends Expr {
-  final def cTpe = targetTpe.computationalType
+        pc: PC,
+        targetTpe: BaseType,
+        operand: Expr) extends Expr {
+    final def cTpe = targetTpe.computationalType
 }
 
 case class New(
-    pc: PC,
-    tpe: ObjectType) extends Expr
-    
+        pc: PC,
+        tpe: ObjectType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
 case class NewArray(
-    pc: PC, 
-    count: Var, 
-    tpe: BaseType) extends Expr
-    
+        pc: PC,
+        count: Var,
+        tpe: BaseType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
 case class NewMultiArray(
-    pc: PC, 
-    counts: List[Var], 
-    dimensions: Int, 
-    tpe: BaseType) extends Expr
+        pc: PC,
+        counts: List[Var],
+        dimensions: Int,
+        tpe: BaseType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
 
 case class ArrayLoad(
-    pc: PC,
-    index: Var,
-    arrayRef: Var) extends Expr
-    
+        pc: PC,
+        index: Var,
+        arrayRef: Var) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
 case class ArrayLength(
-    pc: PC,
-    arrayRef: Var) extends Expr
+        pc: PC,
+        arrayRef: Var) extends Expr {
+    final def cTpe = ComputationalTypeInt
+}
 
 trait Var extends Expr {
 

@@ -47,7 +47,7 @@ public class StackManipulationAndSynchronization {
 		return 1;
 	}
 
-	double returnDoube() {
+	double returnDouble() {
 		return 1.0d;
 	}
 
@@ -56,7 +56,7 @@ public class StackManipulationAndSynchronization {
 	}
 
 	void pop2case2() {
-		returnDoube();
+		returnDouble();
 	}
 
 	void dup() {

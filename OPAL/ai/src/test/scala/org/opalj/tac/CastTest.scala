@@ -142,7 +142,7 @@ class CastTest extends FunSpec with Matchers {
                 statements.shouldEqual(typecheckResultAST(ReferenceType.apply("java/util/List")))
                 javaLikeCode.shouldEqual(typecheckResultJLC("List"))
             }
-            
+
             it("should correctly reflect the checkcast instruction") {
                 val statements = AsQuadruples(CheckcastMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
@@ -150,19 +150,19 @@ class CastTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
-                Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType.apply("java/util/List")),
-                Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                Return(5)))
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType.apply("java/util/List")),
+                    Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    Return(5)))
                 javaLikeCode.shouldEqual(Array(
-                "0: r_0 = this;",
-                "1: r_1 = p_1;",
-                "2: op_0 = r_1;",
-                "3: op_0 checkcast List;",
-                "4: r_2 = op_0;",
-                "5: return;"))
+                    "0: r_0 = this;",
+                    "1: r_1 = p_1;",
+                    "2: op_0 = r_1;",
+                    "3: op_0 checkcast List;",
+                    "4: r_2 = op_0;",
+                    "5: return;"))
             }
 
             it("should correctly reflect the d2f instruction") {
@@ -284,7 +284,7 @@ class CastTest extends FunSpec with Matchers {
                 statements.shouldEqual(castResultAST(ComputationalTypeInt, FloatType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (float) op_0;"))
             }
-            
+
             it("should correctly reflect the i2c instruction") {
                 val statements = AsQuadruples(I2CMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
@@ -294,7 +294,7 @@ class CastTest extends FunSpec with Matchers {
                 statements.shouldEqual(castResultAST(ComputationalTypeInt, CharType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (char) op_0;"))
             }
-            
+
             it("should correctly reflect the i2b instruction") {
                 val statements = AsQuadruples(I2BMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
@@ -304,7 +304,7 @@ class CastTest extends FunSpec with Matchers {
                 statements.shouldEqual(castResultAST(ComputationalTypeInt, ByteType))
                 javaLikeCode.shouldEqual(shortResultJLC("3: op_1 = (byte) op_0;"))
             }
-            
+
             it("should correctly reflect the i2s instruction") {
                 val statements = AsQuadruples(I2SMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
@@ -317,7 +317,7 @@ class CastTest extends FunSpec with Matchers {
         }
 
         describe("using AI results") {
-
+//TODO
         }
     }
 }
