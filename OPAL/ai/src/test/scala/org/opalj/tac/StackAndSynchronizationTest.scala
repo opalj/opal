@@ -133,14 +133,41 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect monitorenter and -exit") {
-              println(MonitorEnterAndExitMethod.body.get.instructions.mkString("\n"))
                 val statements = AsQuadruples(MonitorEnterAndExitMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array())
-                javaLikeCode.shouldEqual(Array())
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
+                    EmptyStmt(1),
+                    Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
+                    Assignment(4, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(5, SimpleVar(1, ComputationalTypeReference)),
+                    Goto(6, 0),
+                    Assignment(9, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    Assignment(10, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                    MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
+                    Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
+                    Throw(13, SimpleVar(0, ComputationalTypeReference))
+                ))
+                javaLikeCode.shouldEqual(Array(
+                    "0: r_0 = this;",
+                    "1: op_0 = r_0;",
+                    "2: ;",
+                    "3: r_1 = op_0;",
+                    "4: monitorenter op_0;",
+                    "5: op_1 = r_1;",
+                    "6: monitorexit op_1;",
+                    "7: goto 0;",
+                    "8: r_2 = op_0;",
+                    "9: op_0 = r_1;",
+                    "10: monitorexit op_0;",
+                    "11: op_0 = r_2;",
+                    "12: throw op_0;"
+                ))
             }
 
             it("should correctly reflect invokestatic") {

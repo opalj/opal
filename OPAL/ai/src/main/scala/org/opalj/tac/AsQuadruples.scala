@@ -81,7 +81,7 @@ object AsQuadruples {
         var worklist: List[(PC, Stack)] = List((0, Nil))
         for { exceptionHandler ← code.exceptionHandlers } (
             worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException))))
-
+            
         while (worklist.nonEmpty) {
             val (pc, stack) = worklist.head
             val instruction = instructions(pc)
@@ -544,7 +544,7 @@ object AsQuadruples {
                 case DUP.opcode ⇒
                     val head :: _ = stack
                     statements(pc) = List(EmptyStmt(pc))
-                    schedule(pcOfNextInstruction(pc), head :: stack)
+                    schedule(pcOfNextInstruction(pc), head :: head :: stack)
 
                 case DUP_X1.opcode ⇒
                     val val1 :: val2 :: rest = stack
