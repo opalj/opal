@@ -37,21 +37,28 @@ package mutable
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
     final val offset: Int,
-    private[this] var set: SmallValuesSet)
+    private[this] val set: SmallValuesSet)
         extends SmallValuesSet {
 
     def mutableCopy: SmallValuesSetBackedByOPALSet = {
-        val set = this.set
-        val copy = set.mutableCopy
-        if (copy eq set)
-            this
-        else
-            new SmallValuesSetBackedByOPALSet(offset, copy)
+        new SmallValuesSetBackedByOPALSet(offset, set.mutableCopy)
     }
 
-    def +≈:(value: Int): this.type = {
-        this.set = (value - offset) +≈: this.set
-        this
+    def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
+        val set = this.set
+        if (set.contains(value))
+            this
+        else
+            new SmallValuesSetBackedByOPALSet(offset, (value - offset) +≈: set)
+    }
+
+    def -(value: Int): SmallValuesSet = {
+        val set = this.set
+        val newSet = set - (value - offset)
+        if (newSet eq set)
+            this
+        else
+            new SmallValuesSetBackedByOPALSet(offset, newSet)
     }
 
     def min = set.min + offset
@@ -64,8 +71,12 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean =
-        set.forall(v ⇒ other.contains(v + offset))
+    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+        if (this eq other)
+            true
+        else
+            set.forall(v ⇒ other.contains(v + offset))
+    }
 
     def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv + offset))
 

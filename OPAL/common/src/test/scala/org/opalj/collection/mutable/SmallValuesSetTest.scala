@@ -211,6 +211,10 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
                 val set2 = SmallValuesSet.create(-100, 10310, 300).+≈:(301).+≈:(-5).+≈:(303).+≈:(304)
                 val set2Copy = set2.mutableCopy
                 val set3 = set2.+≈:(304).+≈:(307).+≈:(305).+≈:(309)
+                set2.size should be >= (set2Copy.size)
+                set3.size should be >= (set2.size)
+                set3.size should be > (set2Copy.size)
+                set2Copy should equal(SmallValuesSet.create(-100, 10310, -5).+≈:(300).+≈:(301).+≈:(303).+≈:(304))
 
                 if (!set1.isSubsetOf(set2)) fail(s"$set1 is not a subset of $set2")
                 set1.isSubsetOf(set3) should be(true)
@@ -219,8 +223,9 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
                 set2.isSubsetOf(set1) should be(false)
 
                 set3.isSubsetOf(set1) should be(false)
-                if (!set3.isSubsetOf(set2)) fail(s"$set3 is not a subset of $set2")
-                if (!set2Copy.isSubsetOf(set3)) fail(s"$set2Copy is not a subset of $set3")
+                if (set3.isSubsetOf(set2Copy)) fail(s"$set3 is not a subset of $set2")
+                if (!set2Copy.isSubsetOf(set3)) fail(s"$set2Copy should not be a subset of $set3")
+                if (!set2Copy.isSubsetOf(set2)) fail(s"$set2Copy should not be a subset of $set2")
             }
 
             {

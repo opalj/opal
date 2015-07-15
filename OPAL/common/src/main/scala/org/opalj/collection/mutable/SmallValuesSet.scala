@@ -52,6 +52,8 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
      */
     def +≈:(value: Int): MutableSmallValuesSet
 
+    def -(value: Int): SmallValuesSet /* Redefines the return type. */
+
     override def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
 }
 
