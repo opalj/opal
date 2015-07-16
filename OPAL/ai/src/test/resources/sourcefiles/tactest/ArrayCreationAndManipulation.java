@@ -49,8 +49,8 @@ public class ArrayCreationAndManipulation {
 	
 	void doubleArray(){
 		double[] da = new double[5];
-		da[4] = 2.0d;
-		double d = da[2];
+		da[4] = 1.0d;
+		double d = da[4];
 	}
 	
 	void floatArray(){
@@ -67,7 +67,7 @@ public class ArrayCreationAndManipulation {
 	
 	void longArray(){
 		long[] la = new long[5];
-		la[4] = 2L;
+		la[4] = 1L;
 		long l = la[4];
 	}
 	

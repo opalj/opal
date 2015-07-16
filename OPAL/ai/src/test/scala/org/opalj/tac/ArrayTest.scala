@@ -155,8 +155,8 @@ class ArrayTest extends FunSpec with Matchers {
 
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
-        statements.shouldEqual(Array())
-        javaLikeCode.shouldEqual(Array())
+        statements.shouldEqual(expectedAST(ComputationalTypeDouble, DoubleType, DoubleConst(6, 1.0d)))
+        javaLikeCode.shouldEqual(expectedJLC("double", "1.0d"))
       }
 
       it("should correctly reflect float array instructions") {
@@ -191,8 +191,8 @@ class ArrayTest extends FunSpec with Matchers {
 
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
-        statements.shouldEqual(Array())
-        javaLikeCode.shouldEqual(Array())
+        statements.shouldEqual(expectedAST(ComputationalTypeLong, LongType, LongConst(6, 1)))
+        javaLikeCode.shouldEqual(expectedJLC("long", "1l"))
       }
 
       it("should correctly reflect short array instructions") {
