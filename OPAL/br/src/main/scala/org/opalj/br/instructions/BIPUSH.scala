@@ -46,6 +46,8 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     final def length: Int = 2
 
+    final def computationalType = ComputationalTypeInt
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (

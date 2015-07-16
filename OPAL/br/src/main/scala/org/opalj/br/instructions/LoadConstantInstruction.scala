@@ -46,6 +46,11 @@ abstract class LoadConstantInstruction[T]
      */
     def value: T
 
+    /**
+     * Returns the computational type category of the pushed value.
+     */
+    def computationalType: ComputationalType
+
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(

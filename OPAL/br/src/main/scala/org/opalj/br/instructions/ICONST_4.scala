@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+case object ICONST_4 extends IConstInstruction {
 
     final val value = 4
 

@@ -31,16 +31,10 @@ package br
 package instructions
 
 /**
- * Push int constant value 1.
- *
  * @author Michael Eichberg
  */
-case object ICONST_1 extends IConstInstruction {
+trait FConstInstruction extends LoadConstantInstruction[Float] with ImplicitValue {
 
-    final val value = 1
-
-    final val opcode = 4
-
-    final val mnemonic = "iconst_1"
+    final override def computationalType = ComputationalTypeFloat
 
 }
