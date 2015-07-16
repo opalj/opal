@@ -126,7 +126,7 @@ class SwitchTest extends FunSpec with Matchers {
             }
         }
         
-        describe("using no AI results") {
+        describe("using AI results") {
           //TODO
         }
     }

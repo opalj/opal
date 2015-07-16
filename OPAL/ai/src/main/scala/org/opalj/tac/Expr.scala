@@ -123,7 +123,7 @@ case class New(
 case class NewArray(
         pc: PC,
         count: Var,
-        tpe: BaseType) extends Expr {
+        tpe: Type) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
@@ -131,7 +131,7 @@ case class NewMultiArray(
         pc: PC,
         counts: List[Var],
         dimensions: Int,
-        tpe: BaseType) extends Expr {
+        tpe: Type) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 

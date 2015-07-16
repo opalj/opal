@@ -161,7 +161,7 @@ object AsQuadruples {
                 statements(pc) = List(ReturnValue(pc, returnedValue))
             }
 
-            def newArray(tpe: BaseType): Unit = {
+            def newArray(tpe: Type): Unit = {
                 val count :: rest = stack
                 val newVal = OperandVar(ComputationalTypeReference, rest)
                 statements(pc) = List(Assignment(pc, newVal, NewArray(pc, count, tpe)))
@@ -457,7 +457,7 @@ object AsQuadruples {
                     newArray(as[NEWARRAY](instruction).elementType)
 
                 case ANEWARRAY.opcode ⇒
-                    newArray(as[ANEWARRAY](instruction).componentType.asBaseType)
+                    newArray(as[ANEWARRAY](instruction).componentType)
 
                 case MULTIANEWARRAY.opcode ⇒
                     val instr = as[MULTIANEWARRAY](instruction)
