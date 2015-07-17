@@ -72,43 +72,73 @@ class ArrayTest extends FunSpec with Matchers {
 
     describe("using no AI results") {
       def expectedAST(cTpe: ComputationalType, Tpe: Type, const: Expr) = Array[Stmt](
-            Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-            Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-            Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
-            Assignment(3, SimpleVar(-2, ComputationalTypeReference),SimpleVar(0, ComputationalTypeReference)),
-            Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
-            Assignment(6, SimpleVar(2, cTpe), const),
-            ArrayStore(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, cTpe)),
-            Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
-            Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
-            Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
-            Return(12))
-            
+        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+        Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
+        Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
+        Assignment(3, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+        Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+        Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
+        Assignment(6, SimpleVar(2, cTpe), const),
+        ArrayStore(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, cTpe)),
+        Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+        Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
+        Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+        Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
+        Return(12))
+
       def expectedJLC(tpe: String, value: String) = Array[String](
-            "0: r_0 = this;",
-            "1: op_0 = 5;",
-            "2: op_0 = new "+tpe+"[op_0];",
-            "3: r_1 = op_0;",
-            "4: op_0 = r_1;",
-            "5: op_1 = 4;",
-            "6: op_2 = "+value+";",
-            "7: op_0[op_1] = op_2;",
-            "8: op_0 = r_1;",
-            "9: op_1 = 4;",
-            "10: op_0 = op_0[op_1];",
-            "11: r_2 = op_0;",
-            "12: return;")      
-            
+        "0: r_0 = this;",
+        "1: op_0 = 5;",
+        "2: op_0 = new " + tpe + "[op_0];",
+        "3: r_1 = op_0;",
+        "4: op_0 = r_1;",
+        "5: op_1 = 4;",
+        "6: op_2 = " + value + ";",
+        "7: op_0[op_1] = op_2;",
+        "8: op_0 = r_1;",
+        "9: op_1 = 4;",
+        "10: op_0 = op_0[op_1];",
+        "11: r_2 = op_0;",
+        "12: return;")
+
       it("should correctly reflect reference array instructions") {
         val statements = AsQuadruples(RefArrayMethod, None)
         val javaLikeCode = ToJavaLike(statements, false)
 
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
-        statements.shouldEqual(Array())
-        javaLikeCode.shouldEqual(Array())
+        statements.shouldEqual(Array(
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
+          Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), ObjectType.Object)),
+          Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
+          Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ObjectType.Object)),
+          EmptyStmt(10),
+          MethodCall(11, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(2, ComputationalTypeReference)), List(), None),
+          ArrayStore(14, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, ComputationalTypeReference)),
+          Assignment(15, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
+          Assignment(17, SimpleVar(0, ComputationalTypeReference), ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+          Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Return(19)))
+        javaLikeCode.shouldEqual(Array(
+          "0: r_0 = this;",
+          "1: op_0 = 5;",
+          "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+          "3: r_1 = op_0;",
+          "4: op_0 = r_1;",
+          "5: op_1 = 4;",
+          "6: op_2 = new Object;",
+          "7: ;",
+          "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+          "9: op_0[op_1] = op_2;",
+          "10: op_0 = r_1;",
+          "11: op_1 = 4;",
+          "12: op_0 = op_0[op_1];",
+          "13: r_2 = op_0;",
+          "14: return;"))
       }
 
       it("should correctly reflect multidimensional array instructions") {
@@ -118,28 +148,26 @@ class ArrayTest extends FunSpec with Matchers {
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
         statements.shouldEqual(Array(
-            Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-            Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
-            Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1,2)),
-            Assignment(2, SimpleVar(0, ComputationalTypeReference), 
-                NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
-            Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-            Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
-            Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-            Return(10)
-        ))
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
+          Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
+          Assignment(2, SimpleVar(0, ComputationalTypeReference),
+            NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
+          Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
+          Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+          Return(10)))
         javaLikeCode.shouldEqual(Array(
-            "0: r_0 = this;",
-            "1: op_0 = 4;",
-            "2: op_1 = 2;",
-            "3: op_0 = new int[op_0][op_1];",
-            "4: r_1 = op_0;",
-            "5: op_0 = r_1;",
-            "6: op_0 = op_0.length;",
-            "7: r_2 = op_0;",
-            "8: return;"
-        ))
+          "0: r_0 = this;",
+          "1: op_0 = 4;",
+          "2: op_1 = 2;",
+          "3: op_0 = new int[op_0][op_1];",
+          "4: r_1 = op_0;",
+          "5: op_0 = r_1;",
+          "6: op_0 = op_0.length;",
+          "7: r_2 = op_0;",
+          "8: return;"))
       }
 
       it("should correctly reflect double array instructions") {
@@ -155,7 +183,7 @@ class ArrayTest extends FunSpec with Matchers {
       it("should correctly reflect float array instructions") {
         val statements = AsQuadruples(FloatArrayMethod, None)
         val javaLikeCode = ToJavaLike(statements, false)
-        
+
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
         statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))
@@ -215,35 +243,35 @@ class ArrayTest extends FunSpec with Matchers {
 
     describe("using AI results") {
       def expectedAST(cTpe: ComputationalType, Tpe: Type, const: Expr) = Array[Stmt](
-            Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-            Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-            Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
-            Assignment(3, SimpleVar(-2, ComputationalTypeReference),SimpleVar(0, ComputationalTypeReference)),
-            Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
-            Assignment(6, SimpleVar(2, cTpe), const),
-            ArrayStore(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, cTpe)),
-            Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
-            Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
-            Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
-            Return(12))
-            
+        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+        Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
+        Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
+        Assignment(3, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+        Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+        Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
+        Assignment(6, SimpleVar(2, cTpe), const),
+        ArrayStore(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, cTpe)),
+        Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+        Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
+        Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+        Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
+        Return(12))
+
       def expectedJLC(tpe: String, value: String) = Array[String](
-            "0: r_0 = this;",
-            "1: op_0 = 5;",
-            "2: op_0 = new "+tpe+"[op_0];",
-            "3: r_1 = op_0;",
-            "4: op_0 = r_1;",
-            "5: op_1 = 4;",
-            "6: op_2 = "+value+";",
-            "7: op_0[op_1] = op_2;",
-            "8: op_0 = r_1;",
-            "9: op_1 = 4;",
-            "10: op_0 = op_0[op_1];",
-            "11: r_2 = op_0;",
-            "12: return;")      
-            
+        "0: r_0 = this;",
+        "1: op_0 = 5;",
+        "2: op_0 = new " + tpe + "[op_0];",
+        "3: r_1 = op_0;",
+        "4: op_0 = r_1;",
+        "5: op_1 = 4;",
+        "6: op_2 = " + value + ";",
+        "7: op_0[op_1] = op_2;",
+        "8: op_0 = r_1;",
+        "9: op_1 = 4;",
+        "10: op_0 = op_0[op_1];",
+        "11: r_2 = op_0;",
+        "12: return;")
+
       it("should correctly reflect reference array instructions") {
         val domain = new DefaultDomain(project, ArrayInstructionsClassFile, RefArrayMethod)
         val aiResult = BaseAI(ArrayInstructionsClassFile, RefArrayMethod, domain)
@@ -252,8 +280,38 @@ class ArrayTest extends FunSpec with Matchers {
 
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
-        statements.shouldEqual(Array())
-        javaLikeCode.shouldEqual(Array())
+        statements.shouldEqual(Array(
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
+          Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), ObjectType.Object)),
+          Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
+          Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ObjectType.Object)),
+          EmptyStmt(10),
+          MethodCall(11, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(2, ComputationalTypeReference)), List(), None),
+          ArrayStore(14, SimpleVar(0, ComputationalTypeReference), SimpleVar(1, ComputationalTypeInt), SimpleVar(2, ComputationalTypeReference)),
+          Assignment(15, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
+          Assignment(17, SimpleVar(0, ComputationalTypeReference), ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
+          Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Return(19)))
+        javaLikeCode.shouldEqual(Array(
+          "0: r_0 = this;",
+          "1: op_0 = 5;",
+          "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+          "3: r_1 = op_0;",
+          "4: op_0 = r_1;",
+          "5: op_1 = 4;",
+          "6: op_2 = new Object;",
+          "7: ;",
+          "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+          "9: op_0[op_1] = op_2;",
+          "10: op_0 = r_1;",
+          "11: op_1 = 4;",
+          "12: op_0 = op_0[op_1];",
+          "13: r_2 = op_0;",
+          "14: return;"))
       }
 
       it("should correctly reflect multidimensional array instructions") {
@@ -265,28 +323,26 @@ class ArrayTest extends FunSpec with Matchers {
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
         statements.shouldEqual(Array(
-            Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-            Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
-            Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1,2)),
-            Assignment(2, SimpleVar(0, ComputationalTypeReference), 
-                NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
-            Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-            Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-            Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
-            Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-            Return(10)
-        ))
+          Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+          Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
+          Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
+          Assignment(2, SimpleVar(0, ComputationalTypeReference),
+            NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
+          Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+          Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
+          Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+          Return(10)))
         javaLikeCode.shouldEqual(Array(
-            "0: r_0 = this;",
-            "1: op_0 = 4;",
-            "2: op_1 = 2;",
-            "3: op_0 = new int[op_0][op_1];",
-            "4: r_1 = op_0;",
-            "5: op_0 = r_1;",
-            "6: op_0 = op_0.length;",
-            "7: r_2 = op_0;",
-            "8: return;"
-        ))
+          "0: r_0 = this;",
+          "1: op_0 = 4;",
+          "2: op_1 = 2;",
+          "3: op_0 = new int[op_0][op_1];",
+          "4: r_1 = op_0;",
+          "5: op_0 = r_1;",
+          "6: op_0 = op_0.length;",
+          "7: r_2 = op_0;",
+          "8: return;"))
       }
 
       it("should correctly reflect double array instructions") {
@@ -306,7 +362,7 @@ class ArrayTest extends FunSpec with Matchers {
         val aiResult = BaseAI(ArrayInstructionsClassFile, FloatArrayMethod, domain)
         val statements = AsQuadruples(FloatArrayMethod, Some(aiResult))
         val javaLikeCode = ToJavaLike(statements, false)
-        
+
         assert(statements.nonEmpty)
         assert(javaLikeCode.length > 0)
         statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))

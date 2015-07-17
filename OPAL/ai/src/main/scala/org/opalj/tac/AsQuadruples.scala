@@ -443,7 +443,7 @@ object AsQuadruples {
           INVOKEVIRTUAL.opcode ⇒
           val invoke = as[MethodInvocationInstruction](instruction)
           val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
-          val (operands, rest) = stack.splitAt(stack.length - numOps)
+          val (operands, rest) = stack.splitAt(numOps)
           val (params, receiver) = operands.splitAt(numOps - 1)
           val target: Option[Var] =
             if (invoke.methodDescriptor.returnType.isVoidType) None
@@ -456,7 +456,7 @@ object AsQuadruples {
         case INVOKESTATIC.opcode ⇒
           val invoke = as[INVOKESTATIC](instruction)
           val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
-          val (operands, rest) = stack.splitAt(stack.length - numOps)
+          val (operands, rest) = stack.splitAt(numOps)
           val target: Option[Var] =
             if (invoke.methodDescriptor.returnType.isVoidType) None
             else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
