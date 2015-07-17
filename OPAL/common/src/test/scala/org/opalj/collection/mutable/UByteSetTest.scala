@@ -129,6 +129,117 @@ class UByteSetTest extends FunSpec with Matchers with ParallelTestExecution {
             UByteSet(92).+≈:(100).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
             UByteSet(92).+≈:(34).+≈:(100).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
         }
+
+        it("the same set should be returned if the set does not contain the vaue") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100)
+
+            (set - 1) should be theSameInstanceAs (set)
+            (set - 5) should be theSameInstanceAs (set)
+            (set - 200) should be theSameInstanceAs (set)
+        }
+
+        it("it should be possible to call remove on empty sets") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet.empty
+            val newSet = (set - 3)
+            newSet.size should be(0)
+            newSet should be('empty)
+        }
+
+        it("it should be possible to remove the 1st element of a set with one element") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92)
+            val newSet = (set - 92)
+            if (newSet.size != 0) fail("should be empty: "+newSet)
+            newSet.contains(92) should be(false)
+        }
+
+        it("it should be possible to remove the 1st element of a set with 4 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100)
+            val newSet = (set - 3)
+            if (newSet.size != 3) fail("should contain only three elements: "+newSet)
+            newSet.contains(3) should be(false)
+        }
+
+        it("it should be possible to remove the 2nd element of a set with 4 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100)
+            val newSet = (set - 70)
+            newSet.size should be(3)
+            newSet.contains(70) should be(false)
+        }
+
+        it("it should be possible to remove the 3rd element of a set with 4 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100)
+            val newSet = (set - 92)
+            newSet.size should be(3)
+            newSet.contains(92) should be(false)
+        }
+
+        it("it should be possible to remove the 4th element of a set with 4 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100)
+            val newSet = (set - 100)
+            newSet.size should be(3)
+            newSet.contains(100) should be(false)
+        }
+
+        it("it should be possible to remove the 4th element of a set with 5 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(50)
+            val newSet = (set - 92)
+            newSet.size should be(4)
+            newSet.contains(92) should be(false)
+        }
+
+        it("it should be possible to remove the 5th element of a set with 5 elements") {
+            // HANDLED BY UByteSet4
+            val set = UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(50)
+            val newSet = (set - 100)
+            newSet.size should be(4)
+            newSet.contains(100) should be(false)
+        }
+
+        it("it should be possible to remove one of the four largest values from a corresponding set") {
+            val set = org.opalj.collection.mutable.UByteSet(253).+≈:(254).+≈:(255).+≈:(252)
+            set.size should be(4)
+            val newSet = set - 252
+            if (newSet.size != 3)
+                fail(s"could not remove 252 from $set (index: ${set.asInstanceOf[UByteSet4].indexOf(252)}) => $newSet")
+        }
+
+        it("it should be possible to remove all possible values in the set - starting with the smallest value") {
+            var set = UByteSet.empty
+
+            for (i ← (0 to UByte.MaxValue)) {
+                set = i +≈: set
+            }
+            set.size should be(256)
+
+            for (i ← (0 to UByte.MaxValue)) {
+                set = set - i
+                val expectedSize = (256 - (i + 1))
+                if (set.size != expectedSize) fail(s"expected size is $expectedSize: "+set)
+            }
+
+        }
+
+        it("it should be possible to remove all possible values in the set - starting with the largest value") {
+            var set = UByteSet.empty
+
+            for (i ← (0 to UByte.MaxValue)) {
+                set = i +≈: set
+            }
+            set.size should be(256)
+
+            for (i ← (0 to UByte.MaxValue).reverse) {
+                set = set - i
+                set.size should be(256 - (256 - i))
+            }
+        }
     }
 
 }

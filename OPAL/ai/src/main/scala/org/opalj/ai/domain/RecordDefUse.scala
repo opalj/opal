@@ -46,18 +46,28 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.SmallValuesSet
 
 /**
- * Collects the Definition-Use information. I.e., makes the information available
- * which variable is accessed where. Here, all variables are identified using int values
- * where the int value is equivalent to the instruction that initializes the respective
- * (virtual) variable. The parameters given to a method have negative int values (the first
+ * Collects the abstract interpretation time Definition-Use information.
+ * I.e., makes the information available
+ * which value is accessed where. Here, all values (variables) are identified using int
+ * values where the int value is equivalent to the pc of the instruction that
+ * initializes the respective (virtual) variable.
+ *
+ * The parameters given to a method have negative int values (the first
  * parameter has the value -1, the second -2 and so forth; the computational type
  * category is ignored.).
  *
+ * ==Usage==
+ * This trait uses the `flow` method hook. It needs to be mixed in before all other
+ * domains/traits that use the `flow` method hook and which may change the processed
+ * `worklist`. This domain does not change the worklist.
+ *
  * ==Core Properties==
+ * === Reusability ===
  * This domain can be reused to successively perform abstract interpretations of different
  * methods. The domain's inherited `initProperties` method resets the entire state related
  * to the abstract interpretation of a method.
  *
+ * === Efficiency ===
  * This domain never directly leads to the scheduling of subsequent instructions; instead
  * it records which instructions were not scheduled again but should have been;
  * i.e. it identifies situations where the abstract state does not change, but
@@ -73,21 +83,20 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     domain: Domain ⇒
 
     type PCs = UShortSet
-
     type ValueOrigins = SmallValuesSet
+
     @inline private[this] final def ValueOrigins(
-        min: Int, max: Int,
-        value: Int): SmallValuesSet =
-        SmallValuesSet.create(min, max, value)
+        min: Int = this.min, max: Int = this.max,
+        origin: Int): SmallValuesSet =
+        SmallValuesSet.create(min, max, origin)
 
     private[this] var min: Int = _
     private[this] var max: Int = _
-    //type ValueOrigins = Set[ValueOrigin]
 
     // IDEA:
     // EACH LOCAL VARIABLE IS NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
     //
-    // EXAMPLE
+    // EXAMPLE (AFTER COMPUTING THE DEF/USE INFORMATION)
     // PC:                0:        1:          2:           3:        4:         5:
     // INSTRUCTION        a_load0   getfield    invokestatic a_store0  getstatic  return
     // STACK              empty     [ -1 ]      [ 1 ]        [ 2 ]     empty      [ 4 ]
@@ -121,11 +130,12 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
-        defOps = new Array(codeSize)
-        defOps(0) = Nil
+        val defOps = new Array[List[ValueOrigins]](codeSize)
+        defOps(0) = Nil // the operand stack is empty...
+        this.defOps = defOps
 
         // initialize initial def-use information based on the parameters
-        defLocals = new Array(codeSize)
+        val defLocals = new Array[Registers[ValueOrigins]](codeSize)
         var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
@@ -137,11 +147,12 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     null
                 }
             }
+        this.defLocals = defLocals
         this.min = parameterIndex
         this.max = codeSize
         this.parametersOffset = -parameterIndex
 
-        used = new Array(codeSize + parametersOffset)
+        this.used = new Array(codeSize + parametersOffset)
 
         super.initProperties(code, joinInstructions, locals)
     }
@@ -208,7 +219,12 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         )
     }
 
-    def dumpDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
+    /**
+     * Creates a multi-graph that represents the method's def-use information. I.e.,
+     * in which way a certain value is used by other instructions and who the derived
+     * values are in turn used by further instructions.
+     */
+    def createDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
 
         // 1. create set of all def sites
         var defSites: Set[ValueOrigin] = Set.empty
@@ -223,8 +239,6 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             defSites += valueOrigin
         }
 
-        println("Definition sites:"+defSites)
-
         def instructionToString(vo: ValueOrigin): String = {
             if (vo < 0)
                 s"<parameter:${-vo - 1}>"
@@ -234,9 +248,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
 
         val unusedNode =
             new DefaultMutableNode(
-                Int.MinValue: ValueOrigin,
-                (vo: ValueOrigin) ⇒ "<NONE>",
-                Some("orange")
+                Int.MinValue: ValueOrigin, (vo: ValueOrigin) ⇒ "<NONE>", Some("orange")
             )
 
         // 1. create nodes for all local vars (i.e., the corresponding instructions)
@@ -277,7 +289,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         nodes.values.toSet + unusedNode
     }
 
-    private[this] var lastError = 0l
+    /*DEBUG - DEV TIME*/ private[this] var lastError = 0l
     abstract override def flow(
         currentPC: PC,
         successorPC: PC,
@@ -297,7 +309,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             operandsArray, localsArray,
             tracer)
 
-        try {
+        /*DEBUG - DEV TIME*/ try {
             handleFlow(
                 currentPC, successorPC,
                 isExceptionalControlFlow, abruptSubroutineTerminationCount, wasJoinPerformed,
@@ -305,7 +317,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 operandsArray,
                 tracer,
                 continuation)
-        } catch {
+            /*DEBUG - DEV TIME - START */ } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable ⇒
                 if ((System.currentTimeMillis() - lastError) > 1000l) {
@@ -313,7 +325,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     org.opalj.io.writeAndOpen(dumpDefUseInfo, "DefUseInfo", ".html")
                 }
                 throw t
-        }
+        } /*DEBUG - DEV TIME - END*/
     }
 
     private[this] def handleFlow(
@@ -333,14 +345,14 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit =
             usedVars.foreach { use ⇒
                 val usedIndex = use + parametersOffset
-                assert(
-                    usedIndex >= 0,
-                    s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
-                        defLocals(0).mapKV((i, l) ⇒
-                            if (l eq null)
-                                i+": N/A"
-                            else
-                                l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
+                //                assert(
+                //                    usedIndex >= 0,
+                //                    s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
+                //                        defLocals(0).mapKV((i, l) ⇒
+                //                            if (l eq null)
+                //                                i+": N/A"
+                //                            else
+                //                                l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
 
                 val oldUsedInfo: PCs = used(usedIndex)
                 if (oldUsedInfo eq null)
@@ -365,13 +377,13 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     oldIsSuperset: Boolean = true,
                     joinedDefOps: List[ValueOrigins] = Nil): List[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
-                        assert(rDefOps.isEmpty)
+                        //                        assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
                     }
-                    assert(
-                        rDefOps.nonEmpty,
-                        s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps; original: $oldDefOps"
-                    )
+                    //                    assert(
+                    //                        rDefOps.nonEmpty,
+                    //                        s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps; original: $oldDefOps"
+                    //                    )
 
                     val newHead = lDefOps.head
                     val oldHead = rDefOps.head
@@ -390,9 +402,9 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 if (newDefOps ne oldDefOps) {
                     val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
                     if (joinedDefOps ne oldDefOps) {
-                        assert(
-                            joinedDefOps != oldDefOps,
-                            s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
+                        //                        assert(
+                        //                            joinedDefOps != oldDefOps,
+                        //                            s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
                         forceScheduling = true
                         defOps(successorPC) = joinedDefOps
                     }
@@ -415,9 +427,9 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                                 }
                             })
                     if (joinedDefLocals ne oldDefLocals) {
-                        assert(
-                            joinedDefLocals != oldDefLocals,
-                            s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
+                        //                        assert(
+                        //                            joinedDefLocals != oldDefLocals,
+                        //                            s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
                         forceScheduling = true
                         defLocals(successorPC) = joinedDefLocals
                     }
@@ -449,12 +461,12 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        List(ValueOrigins(min, max, successorPC))
+                        List(ValueOrigins(origin = successorPC))
                     else
                         successorDefOps
                 } else {
                     if (newVarCreated)
-                        ValueOrigins(min, max, currentPC) :: currentDefOps.drop(usedVarCount)
+                        ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedVarCount)
                     else
                         currentDefOps.drop(usedVarCount)
                 }
@@ -688,7 +700,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     if (isExceptionalControlFlow) {
                         val newDefOps = defOps(successorPC)
                         if (newDefOps eq null)
-                            List(ValueOrigins(min, max, successorPC))
+                            List(ValueOrigins(origin = successorPC))
                         else
                             newDefOps
                     } else
@@ -701,7 +713,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 updateUsed(currentDefLocals(index), currentPC)
                 propagate(
                     defOps(currentPC),
-                    currentDefLocals.updated(index, ValueOrigins(min, max, currentPC)))
+                    currentDefLocals.updated(index, ValueOrigins(origin = currentPC)))
 
             case 187 /*new*/ ⇒
                 stackOp(0, true)

@@ -207,7 +207,7 @@ object InterpretMethod {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
 
-                val dotGraph = toDot(duInfo.dumpDefUseGraph(method.body.get)).toString()
+                val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
                 writeAndOpen(dotGraph, "DefUseGraph", ".dot")
             }
             writeAndOpen(dump(

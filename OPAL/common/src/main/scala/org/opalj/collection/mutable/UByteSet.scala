@@ -43,6 +43,8 @@ trait UByteSet extends SmallValuesSet {
 
     override def +≈:(value: Int): UByteSet /* The return type is refined! */
 
+    override def -(value: Int): UByteSet /* The return type is refined! */
+
     /**
      * Converts the values to a string using the given separator and adding offset
      * to each value.
@@ -91,13 +93,14 @@ object UByteSet {
 private[mutable] object EmptyUByteSet extends UByteSet {
 
     def isEmpty = true
-    def hasOneElement = false
+    def isSingletonSet = false
     def size: Int = 0
     def min: UByte = throw new UnsupportedOperationException("this set is empty")
     def max: UByte = throw new UnsupportedOperationException("this set is empty")
 
     def mutableCopy: this.type = this
     def +≈:(value: UByte): UByteSet = new UByteSet4(value)
+    def -(value: Int): UByteSet = this
 
     def contains(value: UByte): Boolean = false
     def exists(f: Int ⇒ Boolean): Boolean = false
@@ -152,7 +155,7 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
 
     def isEmpty = false
 
-    def hasOneElement = (value & Value2_3_4Mask) == 0
+    def isSingletonSet = (value & Value2_3_4Mask) == 0
 
     def size: Int = {
         if (value3 == 0) {
@@ -220,12 +223,47 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
         }
     }
 
-    def contains(value: UByte): Boolean = {
-        val value1 = this.value1
-        if (value < value1) // this test also handles the nonFull case!
-            return false;
+    def indexOf(value: UByte): Int = {
+        val value3 = this.value3
+        if (value3 == 0 || value < value3) {
+            if (value1 == value)
+                0
+            else if ({ val value2 = this.value2; value2 > 0 && value2 == value })
+                1
+            else
+                -1
+        } else {
+            if (value3 == value)
+                2
+            else if (value4 == value)
+                3
+            else
+                -1
+        }
+    }
 
-        value1 == value || value2 == value || value3 == value || value4 == value
+    def -(value: UByte): UByteSet = {
+        val index = indexOf(value)
+        index match {
+            case 0 ⇒
+                if (value2 == 0)
+                    // we remove the last/only element
+                    EmptyUByteSet
+                else
+                    new UByteSet4(this.value >>> 8)
+            case 1  ⇒ new UByteSet4((this.value & Value1Mask) | ((this.value & Value3_4Mask) >>> 8))
+            case 2  ⇒ new UByteSet4((this.value & Value1_2Mask) | ((this.value & Value4Mask) >>> 8))
+            case 3  ⇒ new UByteSet4(this.value & Value1_2_3Mask)
+            case -1 ⇒ this
+        }
+    }
+
+    def contains(value: UByte): Boolean = {
+        val value3 = this.value3
+        if (value3 == 0 || value < value3)
+            value1 == value || { val value2 = this.value2; value2 > 0 && value2 == value }
+        else
+            value3 == value || value4 == value
     }
 
     def exists(f: Int ⇒ Boolean): Boolean = {
@@ -251,10 +289,12 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
     }
 
     def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
-        if (other.isEmpty)
-            return false;
-
-        this.forall(other.contains)
+        if (this eq other)
+            true
+        else if (other.isEmpty)
+            false
+        else
+            this.forall(other.contains)
     }
 
     def foreach[U](f: UByte ⇒ U): Unit = {
@@ -344,7 +384,7 @@ private class UByteSetNode(
     def size = set1.size + set2.size
 
     def isEmpty = false
-    def hasOneElement = false
+    def isSingletonSet = false
 
     private[mutable] def isLeafNode: Boolean = false
     private[mutable] def asTreeNode: UByteSetNode = this
@@ -377,7 +417,9 @@ private class UByteSetNode(
     }
 
     def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
-        if (that.isEmpty)
+        if (this eq that)
+            true
+        else if (that.isEmpty)
             false
         else
             this.forall { that.contains }
@@ -423,6 +465,29 @@ private class UByteSetNode(
             } else {
                 new UByteSetNode(set1, newSet2)
             }
+        }
+    }
+
+    def -(value: UByte): UByteSet = {
+        if (value <= set1.max) {
+            val set1 = this.set1
+            var newSet1 = set1 - value
+            if (newSet1 eq set1)
+                this
+            else {
+                // IMPROVE Simply adding the remaining values is rather expensive and could be optimized, by shifting values...
+                set2.foreach { v ⇒ newSet1 = v +≈: newSet1 }
+                newSet1
+            }
+        } else {
+            val set2 = this.set2
+            val newSet2 = set2 - value
+            if (newSet2 eq set2)
+                this
+            else if (newSet2.isEmpty)
+                set1
+            else
+                new UByteSetNode(set1, newSet2)
         }
     }
 

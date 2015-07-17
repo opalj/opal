@@ -121,7 +121,7 @@ package object opalj {
             OPALLogger.info("OPAL", "Common - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Common - Assertions are enabled - Development Build.")
+                OPALLogger.info("OPAL", "Common - Development Build (Assertions are enabled)")
         }
     }
 

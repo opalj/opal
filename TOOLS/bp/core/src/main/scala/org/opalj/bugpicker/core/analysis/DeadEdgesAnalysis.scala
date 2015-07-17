@@ -223,8 +223,8 @@ object DeadEdgesAnalysis {
             // the meaningful set of successors.
             if opcode != ATHROW.opcode
 
-            // Let's check if a path is not taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true)
+            // Let's check if a path is never taken:
+            (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true).iterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information

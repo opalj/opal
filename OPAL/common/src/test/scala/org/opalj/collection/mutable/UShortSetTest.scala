@@ -208,6 +208,28 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 info(s"for storing $ValuesCount values $nodeCount nodes are required")
             }
         }
+
+        it("it should be possible to add and remove values to sets of different sizes") {
+            val rnd = new java.util.Random(2398472349879l)
+
+            for { size ← 2 to 256 } {
+                var hSet = Set.empty[Int]
+                var sSet = UShortSet.empty
+                for { i ← 1 to size } {
+                    val value = rnd.nextInt(0xFFFF + 1)
+                    hSet = hSet + value
+                    sSet = sSet + value
+                    if (hSet.size != sSet.size) fail(s"adding elements failed $hSet <=> $sSet")
+                }
+                sSet.iterator.toSeq.foreach { v ⇒
+                    hSet = hSet - v
+                    sSet = sSet - v
+                    if (hSet.size != sSet.size) fail(s"sizes (test: $size) are different: $hSet <=> $sSet (tried to remove: $v)")
+                    hSet.forall(sSet.contains)
+                    sSet.forall(hSet.contains)
+                }
+            }
+        }
     }
 
 }

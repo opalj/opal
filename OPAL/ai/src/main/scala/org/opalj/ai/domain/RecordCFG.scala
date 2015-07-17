@@ -45,9 +45,12 @@ import scala.collection.BitSet
  * Records the abstract interpretation time control-flow graph (CFG).
  * This CFG is always a sound approximation.
  *
- * ==Usage==
- * This domain can be stacked on top of other traits that handle [[flow]]s. It requires
- * that it sees all calls to [[flow]].
+ * ==Usage (Mixin-Composition Order)==
+ * This domain overrides the `flow` method and requires that it is mixed in before every
+ * other domain that overrides the `flow` method and which may manipulate the `worklist`.
+ * E.g., the mixin order should be:
+ * {{{ class MyDomain extends Domain with RecordCFG with FlowManipulatingDomain }}}
+ * If the mixin order is not correct, the CFG may not be complete.
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''.

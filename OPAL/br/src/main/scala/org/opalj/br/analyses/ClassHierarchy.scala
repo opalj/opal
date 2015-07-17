@@ -1848,7 +1848,7 @@ class ClassHierarchy private (
         if (upperTypeBoundB.isEmpty)
             return upperTypeBoundB;
 
-        if (upperTypeBoundB.hasOneElement) {
+        if (upperTypeBoundB.isSingletonSet) {
             val upperTypeBound =
                 if (upperTypeBoundA eq upperTypeBoundB.first()) {
                     if (reflexive)
@@ -1928,9 +1928,9 @@ class ClassHierarchy private (
         if (upperTypeBoundB.isEmpty)
             return upperTypeBoundA;
 
-        if (upperTypeBoundA.hasOneElement)
+        if (upperTypeBoundA.isSingletonSet)
             joinReferenceType(upperTypeBoundA.first, upperTypeBoundB)
-        else if (upperTypeBoundB.hasOneElement)
+        else if (upperTypeBoundB.isSingletonSet)
             joinReferenceType(upperTypeBoundB.first, upperTypeBoundA)
         else
             joinUpperTypeBounds(
@@ -2042,7 +2042,7 @@ class ClassHierarchy private (
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 UIDSet(Object)
-            else if (newUpperTypeBound.hasOneElement)
+            else if (newUpperTypeBound.isSingletonSet)
                 UIDSet(newUpperTypeBound.first)
             else
                 newUpperTypeBound
@@ -2146,7 +2146,7 @@ class ClassHierarchy private (
      */
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType]): ObjectType = {
-        if (upperTypeBound.hasOneElement)
+        if (upperTypeBound.isSingletonSet)
             upperTypeBound.first
         else
             upperTypeBound reduce { (c, n) ⇒
@@ -2164,8 +2164,8 @@ class ClassHierarchy private (
             utbB
         else if (utbB.isEmpty)
             utbA
-        else if (utbA.hasOneElement && utbA.first.isArrayType) {
-            if (utbB.hasOneElement) {
+        else if (utbA.isSingletonSet && utbA.first.isArrayType) {
+            if (utbB.isSingletonSet) {
                 if (utbB.first.isArrayType) {
                     val joinedArrayType =
                         joinArrayTypes(
@@ -2186,7 +2186,7 @@ class ClassHierarchy private (
                     utbB.asInstanceOf[UIDSet[ObjectType]]
                 )
             }
-        } else if (utbB.hasOneElement) {
+        } else if (utbB.isSingletonSet) {
             if (utbB.first.isArrayType) {
                 joinAnyArrayTypeWithMultipleTypesBound(
                     utbA.asInstanceOf[UIDSet[ObjectType]]

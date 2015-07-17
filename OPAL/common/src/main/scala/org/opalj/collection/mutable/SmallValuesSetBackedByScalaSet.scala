@@ -47,6 +47,15 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             return new SmallValuesSetBackedByScalaSet(newSet)
     }
 
+    def -(value: Int): SmallValuesSet = {
+        val set = this.set
+        val newSet = set - value
+        if (newSet eq set)
+            this
+        else
+            new SmallValuesSetBackedByScalaSet()
+    }
+
     def mutableCopy: SmallValuesSetBackedByScalaSet =
         this // every subsequent mutation results in a new set object anyway
 
@@ -54,13 +63,17 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
 
     def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean =
-        set.forall(v ⇒ other.contains(v))
+    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+        if (this eq other)
+            true
+        else
+            set.forall(v ⇒ other.contains(v))
+    }
 
     def min = set.min
     def max = set.max
     def isEmpty = set.isEmpty
-    def hasOneElement = set.size == 1
+    def isSingletonSet = set.size == 1
     def size = set.size
 
     def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv))

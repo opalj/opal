@@ -58,9 +58,13 @@ sealed abstract class LDC_W[@specialized(Int, Float) T]
 
 }
 
-final case class LoadInt_W(value: Int) extends LDC_W[Int]
+final case class LoadInt_W(value: Int) extends LDC_W[Int] {
+    final def computationalType = ComputationalTypeInt
+}
 
 final case class LoadFloat_W(value: Float) extends LDC_W[Float] {
+
+    final def computationalType = ComputationalTypeFloat
 
     override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -74,13 +78,21 @@ final case class LoadFloat_W(value: Float) extends LDC_W[Float] {
     }
 }
 
-final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
+final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType] {
+    final def computationalType = ComputationalTypeReference
+}
 
-final case class LoadMethodHandle_W(value: MethodHandle) extends LDC_W[MethodHandle]
+final case class LoadMethodHandle_W(value: MethodHandle) extends LDC_W[MethodHandle] {
+    final def computationalType = ComputationalTypeReference
+}
 
-final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodDescriptor]
+final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodDescriptor] {
+    final def computationalType = ComputationalTypeReference
+}
 
-final case class LoadString_W(value: String) extends LDC_W[String]
+final case class LoadString_W(value: String) extends LDC_W[String] {
+    final def computationalType = ComputationalTypeReference
+}
 
 /**
  * Defines factory and extractor methods for LDC_W instructions.

@@ -57,6 +57,12 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     }
 
     /**
+     * Returns a new set which does not contain the given value unless the set does
+     * not contain the given value, then this set is returned.
+     */
+    def -(value: Int): SmallValuesSet
+
+    /**
      * Returns `true` if this set contains the given value.
      *
      * If `value` is not in the range specified at creation time the result is
@@ -96,7 +102,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     /**
      * Tests if this collection has exactly one element. Guaranteed complexity: O(1).
      */
-    def hasOneElement: Boolean
+    def isSingletonSet: Boolean
 
     /**
      * @return `true` if this set is empty.

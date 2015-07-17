@@ -63,7 +63,7 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     /**
      * Tests if the size of this set is "1" (Guaranteed complexity O(1)).
      */
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
 
     /**
      * Adds the given element, if the element is not already stored in
@@ -302,7 +302,7 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
 
     final override def size = 1
 
-    final override def hasOneElement: Boolean = true
+    final override def isSingletonSet: Boolean = true
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = UIDSet(e, o) // <= factory method
 

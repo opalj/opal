@@ -34,9 +34,9 @@ import org.opalj.UShort.{ MinValue, MaxValue }
 import org.opalj.graphs.DefaultMutableNode
 
 /**
- * A memory-efficient, mutable, sorted set of unsigned short values that
+ * A memory-efficient, semi-mutable, sorted set of unsigned short values that
  * is highly tailored for small(er) sets and situations where the set will always
- * just grow. Removing elements is not possible.
+ * just grow; removing elements is not possible.
  *
  * @author Michael Eichberg
  */
@@ -52,6 +52,8 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
      */
     def +≈:(value: UShort): UShortSet
 
+    def -(value: UByte): UShortSet
+
     override def filter(f: UShort ⇒ Boolean): UShortSet =
         super[UShortSet].filter(f)
 
@@ -61,7 +63,7 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
         newSet
     }
 
-    def mutableCopy: UShortSet /* Refined the return type. */
+    def mutableCopy: UShortSet /* Redefined to refine the return type. */
 
     override def +(value: UShort): UShortSet = value +≈: this.mutableCopy
 
@@ -109,7 +111,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     override def size: Int = if (notFull) 1 else 2
 
-    def hasOneElement: Boolean = notFull
+    def isSingletonSet: Boolean = notFull
 
     def contains(value: UShort): Boolean = {
         this.value1 == value || (value > 0 && this.value2 == value)
@@ -120,8 +122,9 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
-        // this set contains at least one element
-        if (that.isEmpty)
+        if (this eq that)
+            true
+        else if (that.isEmpty) // this set contains at least one element
             false
         else
             this.forall(that.contains)
@@ -182,6 +185,34 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         }
     }
 
+    def indexOf(value: UShort): Int = {
+        if (value == value1)
+            0
+        else if ({ val value2 = this.value2; value2 > 0 && value2 == value })
+            1
+        else
+            -1
+    }
+
+    def -(value: UShort): UShortSet = {
+        val index = indexOf(value)
+        index match {
+            case 0 ⇒
+                if (size == 1)
+                    EmptyUShortSet
+                else
+                    new UShortSet2(value2)
+            case 1 ⇒
+                if (size == 1)
+                    EmptyUShortSet
+                else
+                    new UShortSet2(value1)
+
+            case -1 ⇒
+                this
+        }
+    }
+
     override def isEmpty = false
 
     def iterator: Iterator[UShort] =
@@ -231,7 +262,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     override def size: Int = if (notFull) 3 else 4
 
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
 
     def mutableCopy: mutable.UShortSet = {
         if (notFull)
@@ -309,6 +340,50 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         }
     }
 
+    def indexOf(value: UShort): Int = {
+        val value3 = this.value3
+        if (value < value3) { // this test also handles the nonFull case!
+            if (value1 == value)
+                0
+            else if (value2 == value)
+                1
+            else
+                -1
+        } else {
+            if (value3 == value)
+                2
+            else if (value4 == value)
+                3
+            else
+                -1
+        }
+    }
+
+    def -(value: UShort): UShortSet = {
+        val index = indexOf(value)
+        index match {
+            case 0 ⇒
+                if (size == 3)
+                    new UShortSet2(value2.toInt | value3.toInt << 16)
+                else
+                    new UShortSet4(this.value >>> 16)
+            case 1 ⇒
+                if (size == 3)
+                    new UShortSet2(value1.toInt | value3.toInt << 16)
+                else
+                    new UShortSet4((this.value & Value1Mask) | ((this.value & Value3_4Mask) >>> 16))
+            case 2 ⇒
+                if (size == 3)
+                    new UShortSet2(value1.toInt, value2.toInt)
+                else
+                    new UShortSet4((this.value & Value1_2Mask) | ((this.value & Value4Mask) >>> 16))
+            case 3 ⇒
+                new UShortSet4(this.value & ~Value4Mask)
+
+            case -1 ⇒ this
+        }
+    }
+
     def contains(value: UShort): Boolean = {
         val value3 = this.value3
         if (value < value3) // this test also handles the nonFull case!
@@ -323,8 +398,9 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     }
 
     def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
-        // this set contains at least one element
-        if (that.isEmpty)
+        if (this eq that)
+            true
+        else if (that.isEmpty || that.isInstanceOf[UShortSet2]) // this set contains at least one element
             false
         else
             this.forall(that.contains)
@@ -381,6 +457,8 @@ private object UShortSet4 {
     final val Value2Mask /*: Long*/ = Value1Mask << 16
     final val Value3Mask /*: Long*/ = Value2Mask << 16
     final val Value4Mask /*: Long*/ = Value3Mask << 16
+    final val Value3_4Mask = (Value3Mask | Value4Mask)
+    final val Value1_2Mask = (Value1Mask | Value2Mask)
 }
 
 private class UShortSetNode(
@@ -441,8 +519,9 @@ private class UShortSetNode(
     }
 
     def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
-        // this set contains at least 7 values...
-        if (that.isEmpty)
+        if (this eq that)
+            true
+        else if (that.isEmpty) // this set contains at least 7 values...
             false
         else
             this.forall(that.contains)
@@ -483,9 +562,32 @@ private class UShortSetNode(
         }
     }
 
+    def -(value: UShort): UShortSet = {
+        if (value <= set1.max) {
+            val set1 = this.set1
+            var newSet1 = set1 - value
+            if (newSet1 eq set1)
+                this
+            else {
+                // IMPROVE Simply adding the remaining values is rather expensive and could be optimized, by shifting values...
+                set2.foreach { v ⇒ newSet1 = v +≈: newSet1 }
+                newSet1
+            }
+        } else {
+            val set2 = this.set2
+            val newSet2 = set2 - value
+            if (newSet2 eq set2)
+                this
+            else if (newSet2.isEmpty)
+                set1
+            else
+                new UShortSetNode(set1, newSet2)
+        }
+    }
+
     override def isEmpty = false
 
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
@@ -499,7 +601,7 @@ private class UShortSetNode(
 
 private object EmptyUShortSet extends UShortSet {
     override def isEmpty = true
-    def hasOneElement: Boolean = false
+    def isSingletonSet: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterator = Iterator.empty
@@ -512,6 +614,7 @@ private object EmptyUShortSet extends UShortSet {
     def max = throw new NoSuchElementException("the set is empty")
     def min = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
+    def -(value: UByte): UShortSet = this
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
