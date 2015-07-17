@@ -451,7 +451,7 @@ object AsQuadruples {
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
               receiver.headOption, params, target))
-          schedule(pcOfNextInstruction(pc), rest)
+          schedule(pcOfNextInstruction(pc), if(target.nonEmpty){target.get :: rest}else{rest})
 
         case INVOKESTATIC.opcode ⇒
           val invoke = as[INVOKESTATIC](instruction)
@@ -463,7 +463,7 @@ object AsQuadruples {
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
               None, operands, target))
-          schedule(pcOfNextInstruction(pc), rest)
+          schedule(pcOfNextInstruction(pc), if(target.nonEmpty){target.get :: rest}else{rest})
 
         case NEW.opcode ⇒
           val instr = as[NEW](instruction)
