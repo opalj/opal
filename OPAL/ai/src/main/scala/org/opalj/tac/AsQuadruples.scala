@@ -167,6 +167,41 @@ object AsQuadruples {
         statements(pc) = List(Assignment(pc, newVal, NewArray(pc, count, tpe)))
         schedule(pcOfNextInstruction(pc), newVal :: rest)
       }
+      
+      def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
+          instr.computationalType match {
+          case ComputationalTypeDouble ⇒ {
+            val newVar = OperandVar(ComputationalTypeDouble, stack)
+            statements(pc) = List(Assignment(pc, newVar, 
+                DoubleConst(pc, as[LoadConstantInstruction[Double]](instr).value)))
+            schedule(pcOfNextInstruction(pc), newVar :: stack)
+          } 
+          case ComputationalTypeLong ⇒ {
+            val newVar = OperandVar(ComputationalTypeLong, stack)
+            statements(pc) = List(Assignment(pc, newVar, 
+                LongConst(pc, as[LoadConstantInstruction[Long]](instr).value)))
+            schedule(pcOfNextInstruction(pc), newVar :: stack)
+          }
+          case ComputationalTypeInt ⇒ {
+            val newVar = OperandVar(ComputationalTypeInt, stack)
+            statements(pc) = List(Assignment(pc, newVar, 
+                IntConst(pc, as[LoadConstantInstruction[Int]](instr).value)))
+            schedule(pcOfNextInstruction(pc), newVar :: stack)
+          }
+          case ComputationalTypeFloat ⇒ {
+            val newVar = OperandVar(ComputationalTypeFloat, stack)
+            statements(pc) = List(Assignment(pc, newVar, 
+                FloatConst(pc, as[LoadConstantInstruction[Float]](instr).value)))
+            schedule(pcOfNextInstruction(pc), newVar :: stack)
+          }
+          case ComputationalTypeReference ⇒ {
+            val newVar = OperandVar(ComputationalTypeReference, stack)
+            statements(pc) = List(Assignment(pc, newVar, 
+                ClassConst(pc, as[LoadConstantInstruction[ReferenceType]](instr).value.asObjectType)))
+            schedule(pcOfNextInstruction(pc), newVar :: stack)
+          }
+        }
+      }
 
       def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
@@ -421,23 +456,8 @@ object AsQuadruples {
           statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
           schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-        //                case LDC.opcode ⇒
-        //TODO
-
-        //                case LDC_W.opcode ⇒
-        //TODO
-
-//        case LDC2_W.opcode ⇒
-//          if (instruction.isInstanceOf[LDC2_W[Double]]) {
-//            val target = OperandVar(ComputationalTypeDouble, stack)
-//            statements(pc) = List(Assignment(pc, target, DoubleConst(pc, as[LDC2_W[Double]](instruction).value)))
-//            schedule(pcOfNextInstruction(pc), target :: stack)
-//          } else {
-//            val target = OperandVar(ComputationalTypeLong, stack)
-//            statements(pc) = List(Assignment(pc, target, LongConst(pc, as[LDC2_W[Long]](instruction).value)))
-//            schedule(pcOfNextInstruction(pc), target :: stack)
-//          }
-          
+        case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+          loadConstant(as[LoadConstantInstruction[_]](instruction))
 
         case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode |
           INVOKEVIRTUAL.opcode ⇒
@@ -451,7 +471,7 @@ object AsQuadruples {
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
               receiver.headOption, params, target))
-          schedule(pcOfNextInstruction(pc), if(target.nonEmpty){target.get :: rest}else{rest})
+          schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
 
         case INVOKESTATIC.opcode ⇒
           val invoke = as[INVOKESTATIC](instruction)
@@ -463,7 +483,7 @@ object AsQuadruples {
           statements(pc) = List(
             MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
               None, operands, target))
-          schedule(pcOfNextInstruction(pc), if(target.nonEmpty){target.get :: rest}else{rest})
+          schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
 
         case NEW.opcode ⇒
           val instr = as[NEW](instruction)
@@ -563,7 +583,7 @@ object AsQuadruples {
         case DUP.opcode ⇒
           val head :: _ = stack
           statements(pc) = List(EmptyStmt(pc))
-          schedule(pcOfNextInstruction(pc), head /*:: head */:: stack)
+          schedule(pcOfNextInstruction(pc), head /*:: head */ :: stack)
 
         case DUP_X1.opcode ⇒
           val val1 :: val2 :: rest = stack
