@@ -488,8 +488,9 @@ object AsQuadruples {
           schedule(pcOfNextInstruction(pc), newVal :: rest)
 
         case GOTO.opcode | GOTO_W.opcode ⇒
-          statements(pc) = List(Goto(pc, pc + as[GOTO](instruction).branchoffset))
-          schedule(pcOfNextInstruction(pc), stack)
+          val newPC = pc + as[GOTO](instruction).branchoffset
+          statements(pc) = List(Goto(pc, newPC))
+          schedule(newPC, stack)
 
         case NOP.opcode ⇒
           statements(pc) = List(Nop(pc))

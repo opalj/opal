@@ -142,28 +142,30 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
           EmptyStmt(1),
           Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
           MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
-          Assignment(4, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-          MonitorExit(5, SimpleVar(1, ComputationalTypeReference)),
-          Goto(6, 0),
+          Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          MonitorExit(5, SimpleVar(0, ComputationalTypeReference)),
+          Goto(6, 13),
           Assignment(9, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
           Assignment(10, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
           MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
           Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
-          Throw(13, SimpleVar(0, ComputationalTypeReference))))
+          Throw(13, SimpleVar(0, ComputationalTypeReference)),
+          Return(14)))
         javaLikeCode.shouldEqual(Array(
           "0: r_0 = this;",
           "1: op_0 = r_0;",
           "2: ;",
           "3: r_1 = op_0;",
           "4: monitorenter op_0;",
-          "5: op_1 = r_1;",
-          "6: monitorexit op_1;",
-          "7: goto 0;",
+          "5: op_0 = r_1;",
+          "6: monitorexit op_0;",
+          "7: goto 13;",
           "8: r_2 = op_0;",
           "9: op_0 = r_1;",
           "10: monitorexit op_0;",
           "11: op_0 = r_2;",
-          "12: throw op_0;"))
+          "12: throw op_0;",
+          "13: return;"))
       }
 
       it("should correctly reflect invokestatic") {
@@ -306,28 +308,30 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
           EmptyStmt(1),
           Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
           MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
-          Assignment(4, SimpleVar(1, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-          MonitorExit(5, SimpleVar(1, ComputationalTypeReference)),
-          Goto(6, 0),
+          Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+          MonitorExit(5, SimpleVar(0, ComputationalTypeReference)),
+          Goto(6, 13),
           Assignment(9, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
           Assignment(10, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
           MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
           Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
-          Throw(13, SimpleVar(0, ComputationalTypeReference))))
+          Throw(13, SimpleVar(0, ComputationalTypeReference)),
+          Return(14)))
         javaLikeCode.shouldEqual(Array(
           "0: r_0 = this;",
           "1: op_0 = r_0;",
           "2: ;",
           "3: r_1 = op_0;",
           "4: monitorenter op_0;",
-          "5: op_1 = r_1;",
-          "6: monitorexit op_1;",
-          "7: goto 0;",
+          "5: op_0 = r_1;",
+          "6: monitorexit op_0;",
+          "7: goto 13;",
           "8: r_2 = op_0;",
           "9: op_0 = r_1;",
           "10: monitorexit op_0;",
           "11: op_0 = r_2;",
-          "12: throw op_0;"))
+          "12: throw op_0;",
+          "13: return;"))
       }
 
       it("should correctly reflect invokestatic") {
