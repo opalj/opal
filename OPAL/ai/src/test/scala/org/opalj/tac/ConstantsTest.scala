@@ -63,6 +63,7 @@ class ConstantsTest extends FunSpec with Matchers {
     val FloatConstsMethod = ConstantsClassFile.findMethod("floatConsts").get
     val DoubleConstsMethod = ConstantsClassFile.findMethod("doubleConsts").get
     val NullRefConstMethod = ConstantsClassFile.findMethod("nullReferenceConst").get
+    val LoadConstsInstrMethod = ConstantsClassFile.findMethod("loadConstants").get
 
     describe("The quadruples representation of instructions loading constants") {
 
@@ -182,6 +183,24 @@ class ConstantsTest extends FunSpec with Matchers {
 
             it("should correctly reflect the null reference constants") {
                 val statements = AsQuadruples(NullRefConstMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    Return(2)))
+                javaLikeCode.shouldEqual(
+                    Array("0: r_0 = this;",
+                        "1: op_0 = null;",
+                        "2: r_1 = op_0;",
+                        "3: return;"))
+            }
+
+            it("should correctly reflect the other constant loading instructions") {
+                val statements = AsQuadruples(LoadConstsInstrMethod, None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -325,6 +344,26 @@ class ConstantsTest extends FunSpec with Matchers {
                 val domain = new DefaultDomain(project, ConstantsClassFile, NullRefConstMethod)
                 val aiResult = BaseAI(ConstantsClassFile, NullRefConstMethod, domain)
                 val statements = AsQuadruples(NullRefConstMethod, Some(aiResult))
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
+                    Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                    Return(2)))
+                javaLikeCode.shouldEqual(
+                    Array("0: r_0 = this;",
+                        "1: op_0 = null;",
+                        "2: r_1 = op_0;",
+                        "3: return;"))
+            }
+
+            it("should correctly reflect the other constant loading instructions") {
+                val domain = new DefaultDomain(project, ConstantsClassFile, LoadConstsInstrMethod)
+                val aiResult = BaseAI(ConstantsClassFile, LoadConstsInstrMethod, domain)
+                val statements = AsQuadruples(LoadConstsInstrMethod, Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

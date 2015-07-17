@@ -65,4 +65,11 @@ public class Constants {
 	void nullReferenceConst(){
 		Object nil = null;
 	}
+	
+	void loadConstants(){
+		int intTen = 10;
+		float floatTen = 10.0f;
+		long longTen = 10L;
+		double doubleTen = 10.0d;
+	}
 }
