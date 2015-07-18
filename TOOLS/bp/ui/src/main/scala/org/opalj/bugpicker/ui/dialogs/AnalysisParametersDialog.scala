@@ -156,7 +156,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                         margin = buttonMargin
                         onAction = { e: ActionEvent ⇒
                             maxEvalFactorField.text = DefaultMaxEvalFactor.toString
-                            maxEvalTimeField.text = DefaultMaxEvalTime.toString
+                            maxEvalTimeField.text = DefaultMaxEvalTime.timeSpan.toString
                             maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
                             maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
                             maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
@@ -252,7 +252,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
 
     def show(parameters: AnalysisParameters): Option[AnalysisParameters] = {
         maxEvalFactorField.text = parameters.maxEvalFactor.toString
-        maxEvalTimeField.text = parameters.maxEvalTime.toString
+        maxEvalTimeField.text = parameters.maxEvalTime.timeSpan.toString
         maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
         maxCardinalityOfLongSetsField.text = parameters.maxCardinalityOfLongSets.toString
         maxCallChainLengthField.text = parameters.maxCallChainLength.toString

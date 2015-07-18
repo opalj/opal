@@ -39,6 +39,7 @@ import java.util.Date
 import scala.io.Source
 import scala.xml.Node
 import scala.xml.Unparsed
+import scala.collection._
 
 import org.opalj.bugpicker.core.HTMLCSS
 import org.opalj.bugpicker.core.ReportCSS
@@ -124,6 +125,7 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
                 )
                 alignment = Pos.Center
                 hgrow = Priority.Always
+                resizable = false
             }
         }
     }
@@ -186,15 +188,23 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
     }
 
     def getDiff(): (Iterable[Node], Iterable[Node], Iterable[Node]) = {
-        def isSameIssue(node1: Node, node2: Node): Boolean = {
+        val savedData1 = mutable.Map.empty[Int, Map[String, String]]
+        val savedData2 = mutable.Map.empty[Int, Map[String, String]]
+        val oIssues = oldAnalysis.getIssues.get.toSeq
+        val cIssues = currentIssues.toSeq
+        def isSameIssue(i: Int, j: Int): Boolean = {
             def getData(n: Node) = {
                 val description = n \ "dl" \ "dt"
                 val data = n \ "dl" \ "dd"
                 assert(description.size == data.size)
                 (description.map(_.text.trim) zip (data.map(_.text.trim))).toMap
             }
-            val data1 = getData(node1)
-            val data2 = getData(node2)
+            if (!savedData1.isDefinedAt(i))
+                savedData1 += (i -> getData(cIssues(i)))
+            if (!savedData2.isDefinedAt(j))
+                savedData2 += (j -> getData(oIssues(j)))
+            val data1 = savedData1(i)
+            val data2 = savedData1(j)
             def eqIfExists(s: String) = {
                 val c1 = data1.contains(s)
                 val c2 = data2.contains(s)
@@ -204,8 +214,6 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
             eqIfExists("class") && eqIfExists("method") && eqIfExists("instruction") && eqIfExists("relevance")
         }
 
-        val oIssues = oldAnalysis.getIssues.get.toSeq
-        val cIssues = currentIssues.toSeq
         var i = 0
         var j = 0
 
@@ -215,8 +223,7 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
         while (i < cIssues.size && j < oIssues.size) {
             updateProgress(i, cIssues.size)
             val c1 = cIssues(i)
-            val c2 = oIssues(j)
-            if (isSameIssue(c1, c2)) { // both issues where they are expected, easy ...
+            if (isSameIssue(i, j)) { // both issues where they are expected, easy ...
                 commonIssues = commonIssues :+ c1
                 i += 1
                 j += 1
@@ -224,7 +231,7 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
                 var x = j
                 var found = false
                 while (!found && x < oIssues.size) {
-                    if (isSameIssue(c1, oIssues(x))) { // found the same issue in both, but old one later than expected
+                    if (isSameIssue(i, x)) { // found the same issue in both, but old one later than expected
                         commonIssues = commonIssues :+ c1 // add common issue
                         for (s ← j until x) { // everything between add as missing issues 
                             missingIssues = missingIssues :+ oIssues(s)

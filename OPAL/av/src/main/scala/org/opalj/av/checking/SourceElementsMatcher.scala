@@ -30,57 +30,39 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set, IterableView }
-
-import br._
-import br.analyses.SomeProject
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
+import scala.collection.Set
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
-trait SourceElementsMatcher { left ⇒
+trait SourceElementsMatcher extends (SomeProject ⇒ Set[VirtualSourceElement]) { left ⇒
 
-    def extension(project: SomeProject): Set[VirtualSourceElement]
+    final def apply(project: SomeProject): Set[VirtualSourceElement] = extension(project)
+
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement]
 
     def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) ++ right.extension(project)
+            def extension(implicit project: SomeProject) = {
+                left.extension ++ right.extension
             }
 
-            override def toString() = { //
-                "("+left+" and "+right+")"
-            }
+            override def toString() = s"($left and $right)"
         }
     }
 
     def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) -- right.extension(project)
+            def extension(implicit project: SomeProject) = {
+                left.extension -- right.extension
             }
 
-            override def toString() = { //
-                "("+left+" except "+right+")"
-            }
+            override def toString() = s"($left except $right)"
         }
-    }
-
-    protected[this] def matchCompleteClasses(
-        matchedClassFiles: Traversable[ClassFile]): Set[VirtualSourceElement] = {
-
-        import scala.collection.mutable.HashSet
-        val sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
-
-        matchedClassFiles foreach { classFile ⇒
-            val declaringClassType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
-            sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
-            sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
-        }
-        sourceElements
     }
 }
-

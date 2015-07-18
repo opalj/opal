@@ -52,6 +52,8 @@ sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
 
 final case class LoadLong(value: Long) extends LDC2_W[Long] {
 
+    final def computationalType = ComputationalTypeLong
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (
@@ -63,6 +65,8 @@ final case class LoadLong(value: Long) extends LDC2_W[Long] {
 }
 
 final case class LoadDouble(value: Double) extends LDC2_W[Double] {
+
+    final def computationalType = ComputationalTypeDouble
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)

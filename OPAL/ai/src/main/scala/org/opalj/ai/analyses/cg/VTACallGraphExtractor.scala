@@ -213,7 +213,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
 
                 assert(upperTypeBound.nonEmpty)
 
-                if (upperTypeBound.hasOneElement) {
+                if (upperTypeBound.isSingletonSet) {
                     val theType = upperTypeBound.first
                     if (theType.isArrayType)
                         doNonVirtualCall(

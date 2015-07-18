@@ -30,10 +30,7 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.Set
-
 import org.opalj.br.ClassFile
-import org.opalj.br.VirtualSourceElement
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -41,12 +38,10 @@ import org.opalj.br.analyses.SomeProject
  * respective classes.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 trait ClassLevelMatcher extends SourceElementsMatcher {
 
-    def doesMatch(classFile: ClassFile): Boolean
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] =
-        matchCompleteClasses(project.allClassFiles filter { doesMatch(_) })
+    def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean
 
 }

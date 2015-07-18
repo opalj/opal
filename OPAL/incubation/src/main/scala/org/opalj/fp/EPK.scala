@@ -36,7 +36,12 @@ package org.opalj.fp
  *
  * @author Michael Eichberg
  */
-final class EPK(val e: Entity, val pk: PropertyKey) extends Product2[Entity, PropertyKey] {
+final class EPK(val e: Entity, val pk: PropertyKey)
+        extends EOptionP
+        with Product2[Entity, PropertyKey] {
+
+    final def hasProperty: Boolean = false
+    final def p: Property = throw new UnsupportedOperationException()
 
     def _1 = e
     def _2 = pk

@@ -32,10 +32,11 @@ package ai
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.{ Project, SomeProject }
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.common.XHTML
+import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.graphs.toDot
 import scala.util.control.ControlThrowable
 
@@ -201,6 +202,13 @@ object InterpretMethod {
                 val graph = result.domain.asInstanceOf[RecordCFG]
                 val dotGraph = toDot(Set(graph.cfgAsGraph()), ranksep = "0.3").toString
                 writeAndOpen(dotGraph, "RuntimeCFG", ".dot")
+            }
+            if (result.domain.isInstanceOf[RecordDefUse]) {
+                val duInfo = result.domain.asInstanceOf[RecordDefUse]
+                writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
+
+                val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
+                writeAndOpen(dotGraph, "DefUseGraph", ".dot")
             }
             writeAndOpen(dump(
                 Some(classFile),

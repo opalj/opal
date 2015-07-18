@@ -26,22 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
-package tracing
+package entity.annotation;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * A base abstract interpreter that can be used with any domain that supports
- * the tracing of properties.
- *
- * By default, this interpreter can be interrupted by calling the `interrupt`
- * method of the AI's thread.
- *
- * @author Michael Eichberg
+ * @author Marco Torsello
  */
-object BaseTracingAI extends AIWithPropertyTracing[Domain with PropertyTracing] {
-
-    override def isInterrupted = Thread.interrupted()
-
+@Target({METHOD, FIELD}) 
+@Retention(RUNTIME)
+public @interface Id {
+	
+	String name() default "";
+	
 }

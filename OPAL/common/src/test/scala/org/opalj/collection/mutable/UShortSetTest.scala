@@ -51,6 +51,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             set = 0 +≈: set
 
             set.contains(0) should be(true)
+            set.exists(_ == 0) should be(true)
             for (i ← (1 to UShort.MaxValue))
                 set.contains(i) should be(false)
         }
@@ -60,8 +61,11 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             set = UShort.MaxValue +≈: set
 
             set.contains(UShort.MaxValue) should be(true)
-            for (i ← (0 until UShort.MaxValue))
+            set.exists(_ == UShort.MaxValue) should be(true)
+            for (i ← (0 until UShort.MaxValue)) {
                 set.contains(i) should be(false)
+                set.exists(_ == i) should be(false)
+            }
         }
 
         it("it should be possible to iterate over a set with just one value") {
@@ -96,6 +100,28 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             set = 2 +≈: set
 
             set.iterator.toSet should be(Set(2, 3, 23, 232))
+        }
+
+        it("it should be possible to foldLeft over a set with no value") {
+            val set = UShortSet.empty
+
+            set.foldLeft(100)(_ + _) should be(100)
+        }
+
+        it("it should be possible to foldLeft over a set with just three values") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set = 3 +≈: set
+            set = 23 +≈: set
+
+            set.foldLeft(0)(_ + _) should be(232 + 3 + 23)
+        }
+
+        it("it should be possible to foldLeft over a set with nine values") {
+            val values = (Array[UShort](3, 40033, 23433, 11233, 2, 233, 23, 1233, 55555))
+            var set = UShortSet.empty
+            values.foreach { v ⇒ set = v +≈: set }
+            values.sum should be(set.foldLeft(0)(_ + _))
         }
 
         it("it should be possible – though the datastructure is not intended to be used for that – to store a larger number of different values in the set") {
@@ -180,6 +206,28 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 fail(s"two many nodes: ${uShortSet.nodeCount} (expected << ${ValuesCount / 3})(details: $file)")
             } else {
                 info(s"for storing $ValuesCount values $nodeCount nodes are required")
+            }
+        }
+
+        it("it should be possible to add and remove values to sets of different sizes") {
+            val rnd = new java.util.Random(2398472349879l)
+
+            for { size ← 2 to 256 } {
+                var hSet = Set.empty[Int]
+                var sSet = UShortSet.empty
+                for { i ← 1 to size } {
+                    val value = rnd.nextInt(0xFFFF + 1)
+                    hSet = hSet + value
+                    sSet = sSet + value
+                    if (hSet.size != sSet.size) fail(s"adding elements failed $hSet <=> $sSet")
+                }
+                sSet.iterator.toSeq.foreach { v ⇒
+                    hSet = hSet - v
+                    sSet = sSet - v
+                    if (hSet.size != sSet.size) fail(s"sizes (test: $size) are different: $hSet <=> $sSet (tried to remove: $v)")
+                    hSet.forall(sSet.contains)
+                    sSet.forall(hSet.contains)
+                }
             }
         }
     }

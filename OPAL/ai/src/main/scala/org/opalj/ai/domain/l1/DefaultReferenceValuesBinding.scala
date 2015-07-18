@@ -97,7 +97,7 @@ trait DefaultReferenceValuesBinding
         upperTypeBound: UIDSet[ObjectType],
         t: Timestamp): DomainObjectValue = {
 
-        if (upperTypeBound.hasOneElement) {
+        if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         } else
             new MObjectValue(origin, isNull, upperTypeBound, t)

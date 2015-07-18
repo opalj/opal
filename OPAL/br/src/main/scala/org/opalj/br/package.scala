@@ -62,7 +62,7 @@ package object br {
             OPALLogger.info("OPAL", "Bytecode Representation - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Bytecode Representation - Assertions are enabled - Development Build.")
+                OPALLogger.info("OPAL", "Bytecode Representation - Development Build (Assertions are enabled)")
         }
         true
     }
@@ -128,6 +128,8 @@ package object br {
      * @note This type alias serves comprehension purposes.
      */
     type PCs = org.opalj.collection.UShortSet
+
+    final def NoPCs = org.opalj.collection.UShortSet.empty
 
     /**
      * Converts a given list of annotations into a Java-like representation.

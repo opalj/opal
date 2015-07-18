@@ -100,7 +100,7 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
                     initialStatus,
                     evaluateMethod)
 
-            BaseTracingAI(classFile, method, domain)
+            BaseAI(classFile, method, domain)
 
             domain.getMethodExitStatus()
         }

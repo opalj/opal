@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -46,7 +46,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class DependencyExtractorJava8Test extends FunSuite {
 
-    import DependencyType._
+    import DependencyTypes._
 
     //
     // THE TEST CODE
@@ -773,11 +773,11 @@ class DependencyExtractorJava8Test extends FunSuite {
         //    }
 
         //    package dependencies;
-        //    
+        //
         //    import java.lang.annotation.ElementType;
         //    import java.lang.annotation.Repeatable;
         //    import java.lang.annotation.Target;
-        //    
+        //
         //    @Repeatable(TypeTestAnnotations.class)
         assertDependency("dependencies.TypeTestAnnotation", "java.lang.annotation.Repeatable", ANNOTATED_WITH)
         assertDependency("dependencies.TypeTestAnnotation", "dependencies.TypeTestAnnotations", ANNOTATION_ELEMENT_TYPE)
@@ -812,13 +812,13 @@ class DependencyExtractorJava8Test extends FunSuite {
         //    }
 
         //    package dependencies;
-        //    
+        //
         //    import java.io.FileReader;
         //    import java.util.function.Function;
         //    import java.util.function.Supplier;
-        //    
+        //
         //    import dependencies.OuterClass.InnerClass;
-        //    
+        //
         //    @TypeTestAnnotation
         //    @SuppressWarnings("unused")
         //    public class AnnotationTypeTestClass {
@@ -836,7 +836,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.<init>()", "dependencies.AnnotationTypeTestClass.number", WRITES_FIELD)
         assertDependency("dependencies.AnnotationTypeTestClass.<init>()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
 
-        //    
+        //
         //        @TypeTestAnnotation
         //        int number = 0;
         //// One type annotation and one declaration
@@ -844,7 +844,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.number", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.number", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
 
-        //    
+        //
         //        @TypeTestAnnotation
         //        public void innerClass() {
         assertDependency("dependencies.AnnotationTypeTestClass.innerClass()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -856,7 +856,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.innerClass()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
 
         //        }
-        //    
+        //
         //        @TypeTestAnnotation
         //        @TypeTestAnnotation
         //        public void repeatableAnnotation() {
@@ -873,7 +873,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.repeatableAnnotation()", "dependencies.TypeTestAnnotation", ANNOTATION_ELEMENT_TYPE)
         //            int number = 0;
         //        }
-        //    
+        //
         //        public void array() {
         assertDependency("dependencies.AnnotationTypeTestClass.array()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.AnnotationTypeTestClass.array()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
@@ -885,7 +885,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.array()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.array()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         //        }
-        //    
+        //
         //        public void twoDimArray() {
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
@@ -895,7 +895,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
-        //    
+        //
         //            @TypeTestAnnotation
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         //            int @TypeTestAnnotation [] @TypeTestAnnotation [] array2 = new @TypeTestAnnotation int @TypeTestAnnotation [] @TypeTestAnnotation [] {};
@@ -906,7 +906,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.twoDimArray()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
 
         //        }
-        //    
+        //
         //        public void constructors() {
         assertDependency("dependencies.AnnotationTypeTestClass.constructors()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.AnnotationTypeTestClass.constructors()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
@@ -940,7 +940,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.constructors()", "java.lang.Class", RETURN_TYPE_OF_CALLED_METHOD)
 
         //        }
-        //    
+        //
         //        public void cast() {
         assertDependency("dependencies.AnnotationTypeTestClass.cast()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.cast()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -959,7 +959,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.cast()", "java.lang.String", RETURN_TYPE_OF_CALLED_METHOD)
 
         //        }
-        //    
+        //
         //        public void instance() {
         assertDependency("dependencies.AnnotationTypeTestClass.instance()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.instance()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -974,7 +974,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.instance()", "java.lang.String", DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency("dependencies.AnnotationTypeTestClass.instance()", "java.lang.String", LOCAL_VARIABLE_TYPE)
         //        }
-        //    
+        //
         //        public void genericClass() {
         assertDependency("dependencies.AnnotationTypeTestClass.genericClass()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.genericClass()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -996,7 +996,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.genericClass()", "java.lang.Integer", TYPE_IN_TYPE_PARAMETERS)
 
         //        }
-        //    
+        //
         //        public void boundedTypes() {
         assertDependency("dependencies.AnnotationTypeTestClass.boundedTypes()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.boundedTypes()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -1012,7 +1012,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.boundedTypes()", "java.lang.String", TYPE_IN_TYPE_PARAMETERS)
 
         //        }
-        //    
+        //
         //        public void throwException() throws @TypeTestAnnotation IllegalArgumentException {
         assertDependency("dependencies.AnnotationTypeTestClass.throwException()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.throwException()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
@@ -1025,7 +1025,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.throwException()", "java.lang.IllegalArgumentException.<init>()", CALLS_METHOD)
 
         //        }
-        //    
+        //
         //        public void tryWithResource(String path) {
         assertDependency("dependencies.AnnotationTypeTestClass.tryWithResource(java.lang.String)", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.tryWithResource(java.lang.String)", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -1058,7 +1058,7 @@ class DependencyExtractorJava8Test extends FunSuite {
 
         //            }
         //        }
-        //    
+        //
         //        public void tryCatch() {
         assertDependency("dependencies.AnnotationTypeTestClass.tryCatch()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.tryCatch()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -1068,7 +1068,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         //            } catch (@TypeTestAnnotation Exception e) {
         //            }
         //        }
-        //    
+        //
         //        public void java8() {
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "dependencies.AnnotationTypeTestClass", INSTANCE_MEMBER)
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "dependencies.AnnotationTypeTestClass", LOCAL_VARIABLE_TYPE)
@@ -1094,7 +1094,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "java.lang.invoke.LambdaMetafactory.metafactory(java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)", CALLS_METHOD)
 
         //        }
-        //    
+        //
         //        public static @TypeTestAnnotation String lambdaFunction(
         assertDependency("dependencies.AnnotationTypeTestClass.lambdaFunction(java.lang.String, java.util.function.Function)", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.lambdaFunction(java.lang.String, java.util.function.Function)", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1128,7 +1128,7 @@ class DependencyExtractorJava8Test extends FunSuite {
 
         //        }
 
-        //    
+        //
         //        public class Inheritance implements @TypeTestAnnotation TestInterface {
         assertDependency("dependencies.AnnotationTypeTestClass$Inheritance", "dependencies.AnnotationTypeTestClass", INNER_CLASS)
         assertDependency("dependencies.AnnotationTypeTestClass$Inheritance", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1152,7 +1152,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass$Inheritance.testMethod()", "dependencies.AnnotationTypeTestClass$Inheritance", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.AnnotationTypeTestClass$Inheritance.testMethod()", "dependencies.AnnotationTypeTestClass$Inheritance", INSTANCE_MEMBER)
         //            }
-        //    
+        //
         //            @Override
         //            public String testMethod(Integer i, int j) {
         assertDependency("dependencies.AnnotationTypeTestClass$Inheritance.testMethod(java.lang.Integer, int)", "java.lang.Integer", PARAMETER_TYPE)
@@ -1163,7 +1163,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         //                return null;
         //            }
         //        }
-        //    
+        //
         //        public class GenericTest<@TypeTestAnnotation T extends @TypeTestAnnotation Object> {
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest", "dependencies.AnnotationTypeTestClass", INNER_CLASS)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1182,7 +1182,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.<init>(dependencies.AnnotationTypeTestClass)", "dependencies.AnnotationTypeTestClass$GenericTest.this$0", WRITES_FIELD)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.<init>(dependencies.AnnotationTypeTestClass)", "dependencies.AnnotationTypeTestClass", TYPE_OF_ACCESSED_FIELD)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.<init>(dependencies.AnnotationTypeTestClass)", "dependencies.AnnotationTypeTestClass$GenericTest", INSTANCE_MEMBER)
-        //            
+        //
         //            public <@TypeTestAnnotation U> void inspect(U u){
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.inspect(java.lang.Object)", "java.lang.Object", TYPE_IN_TYPE_PARAMETERS)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.inspect(java.lang.Object)", "java.lang.Object", PARAMETER_TYPE)
@@ -1191,9 +1191,9 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.inspect(java.lang.Object)", "dependencies.AnnotationTypeTestClass$GenericTest", LOCAL_VARIABLE_TYPE)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericTest.inspect(java.lang.Object)", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         //            }
-        //    
+        //
         //        }
-        //    
+        //
         //        public class GenericUpperIntersectionTest<@TypeTestAnnotation T extends @TypeTestAnnotation Object & @TypeTestAnnotation TypeTestAnnotation> {
         assertDependency("dependencies.AnnotationTypeTestClass$GenericUpperIntersectionTest", "dependencies.AnnotationTypeTestClass", INNER_CLASS)
         assertDependency("dependencies.AnnotationTypeTestClass$GenericUpperIntersectionTest", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1216,7 +1216,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass$GenericUpperIntersectionTest.<init>(dependencies.AnnotationTypeTestClass)", "dependencies.AnnotationTypeTestClass$GenericUpperIntersectionTest", INSTANCE_MEMBER)
 
         //        }
-        //    
+        //
         //        public @TypeTestAnnotation class NestedGeneric<@TypeTestAnnotation T extends @TypeTestAnnotation GenericTest<@TypeTestAnnotation U>, @TypeTestAnnotation U> {
         assertDependency("dependencies.AnnotationTypeTestClass$NestedGeneric", "dependencies.AnnotationTypeTestClass", INNER_CLASS)
         assertDependency("dependencies.AnnotationTypeTestClass$NestedGeneric", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
@@ -1241,7 +1241,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass$NestedGeneric.<init>(dependencies.AnnotationTypeTestClass)", "dependencies.AnnotationTypeTestClass$NestedGeneric", INSTANCE_MEMBER)
 
         //        }
-        //    
+        //
         //    }
 
         val remainingDependencies = dependencies.view.filter(_._2 > 0)

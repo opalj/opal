@@ -406,6 +406,25 @@ final class Code private (
     }
 
     /**
+     * Returns the program counter of the previous instruction in the code array.
+     * `currentPC` must be the program counter of an instruction.
+     *
+     * This function is only defined if currentPC is larger than 0; i.e., if there
+     * is a previous instruction! If currentPC is larger than instructions.size the
+     * behavior is undefined.
+     */
+    @inline final def pcOfPreviousInstruction(currentPC: PC): PC = {
+        if (currentPC <= 0)
+            throw new IllegalArgumentException(s"currentPC ($currentPC) needs to > 0")
+        var previousPC = currentPC - 1
+        val instructions = this.instructions
+        while (previousPC > 0 && !instructions(previousPC).isInstanceOf[Instruction]) {
+            previousPC -= 1
+        }
+        previousPC
+    }
+
+    /**
      * Returns the line number table - if any.
      *
      * @note A code attribute is allowed to have multiple line number tables. However, all

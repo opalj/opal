@@ -98,7 +98,7 @@ class BaseMethodReturnValuesAnalysisDomain(
             }
         newValue match {
             case value @ IsAReferenceValue(utb) if value.isNull.isUnknown &&
-                (utb.hasOneElement) &&
+                (utb.isSingletonSet) &&
                 (utb.first eq originalReturnType) &&
                 !value.isPrecise ⇒
                 // the return type will not be more precise than the original type

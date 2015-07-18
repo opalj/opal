@@ -124,6 +124,13 @@ object PrimitiveAccessFlagsMatcher {
  */
 object AccessFlagsMatcher {
 
+    // DEFINED FOR READABILITY PURPOSES:
+    val PUBLIC = ACC_PUBLIC
+    val PRIVATE = ACC_PRIVATE
+    val PROTECTED = ACC_PROTECTED
+
+    val STATIC = ACC_STATIC
+
     val PUBLIC_INTERFACE = ACC_PUBLIC && ACC_INTERFACE
     val PUBLIC_ABSTRACT = ACC_PUBLIC && ACC_ABSTRACT
     val PUBLIC_FINAL = ACC_PUBLIC && ACC_FINAL
@@ -137,9 +144,12 @@ object AccessFlagsMatcher {
     val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
     val NOT_NATIVE = !ACC_NATIVE
     val NOT_ABSTRACT = !ACC_ABSTRACT
+    val NOT_ENUM = !ACC_ENUM
 
     val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
 
     val PUBLIC___OR___PROTECTED_AND_NOT_FINAL = ACC_PUBLIC || (ACC_PROTECTED && NOT_FINAL)
+
+    val ANY = new AccessFlagsMatcher { def unapply(accessFlags: Int): Boolean = true }
 }
 

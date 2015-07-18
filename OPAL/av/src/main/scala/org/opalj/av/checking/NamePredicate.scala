@@ -31,30 +31,45 @@ package av
 package checking
 
 import scala.util.matching.Regex
-import org.opalj.br.ClassFile
+
+/**
+ * Matches a (binary) name of a file, method or class.
+ *
+ * @author Michael Eichberg
+ */
+trait NamePredicate extends (String ⇒ Boolean)
+
+/**
+ * @author Marco Torsello
+ * @author Michael Eichberg
+ */
+case class Equals(name: BinaryString) extends NamePredicate {
+
+    def apply(that: String): Boolean = {
+        this.name.asString == that
+    }
+}
 
 /**
  * @author Michael Eichberg
  */
-case class SimpleClassMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
+case class StartsWith(name: BinaryString) extends NamePredicate {
 
-    def doesMatch(classFile: ClassFile): Boolean = {
-        val classFileName = classFile.thisType.fqn
-        nameMatcher.doesMatch(classFileName)
+    def apply(that: String): Boolean = {
+        that.startsWith(this.name.asString)
     }
-
 }
 
-object SimpleClassMatcher {
+/**
+ * Matches name of class, fields and methods based on their name.
+ *
+ * '''The name is matched against the binary notation.'''
+ *
+ * @author Michael Eichberg
+ */
+case class RegexNamePredicate(matcher: Regex) extends NamePredicate {
 
-    def apply(className: String, matchPrefix: Boolean = false): SimpleClassMatcher = {
-        require(className.indexOf('*') == -1)
-        require(className.indexOf('.') == -1)
-        SimpleClassMatcher(SimpleNameMatcher(className, matchPrefix))
+    def apply(otherName: String): Boolean = {
+        matcher.findFirstIn(otherName).isDefined
     }
-
-    def apply(matcher: Regex): SimpleClassMatcher = {
-        SimpleClassMatcher(RegexNameMatcher(matcher))
-    }
-
 }

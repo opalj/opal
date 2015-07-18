@@ -30,7 +30,8 @@ package org.opalj
 package br
 
 /**
- * Represents a method signature.
+ * Represents a method signature which consists of the name and descriptor of a method;
+ * the signatures of all methods of a class file has to be different.
  *
  * @author Michael Eichberg
  */
@@ -41,8 +42,9 @@ case class MethodSignature(
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodSignature ⇒
-                descriptor == that.descriptor && name == that.name
-            case _ ⇒ false
+                this.descriptor == that.descriptor && this.name == that.name
+            case _ ⇒
+                false
         }
     }
     override val hashCode: Int = name.hashCode * 13 + descriptor.hashCode

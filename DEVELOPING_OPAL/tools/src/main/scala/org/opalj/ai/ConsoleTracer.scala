@@ -100,10 +100,15 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         val os =
             if (operands eq null)
                 "\toperands: not available (null);\n"
-            else
-                operands.map { o ⇒
+            else {
+                val os = operands.map { o ⇒
                     correctIndent(o, printOIDs)
-                }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n")
+                }
+                if (os.isEmpty)
+                    "\toperands <NONE>;\n"
+                else
+                    os.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n")
+            }
 
         val ls =
             if (locals eq null)
@@ -119,7 +124,19 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                     )
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
 
-        println(pc + line(domain, pc)+":"+instruction.toString(pc)+" [\n"+os + ls+"\t]")
+        val ps = {
+            val ps = domain.properties(pc)
+            if ((ps eq null) || ps == None)
+                ""
+            else {
+                s"\tproperties: ${ps.get}\n"
+            }
+        }
+
+        println(
+            pc + line(domain, pc)+":"+instruction.toString(pc)+
+                " [\n"+os + ls + ps+"\t]"
+        )
     }
 
     override def continuingInterpretation(

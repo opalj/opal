@@ -31,34 +31,37 @@ package av
 package checking
 
 import scala.collection.Set
-
 import org.opalj.br.ClassFile
 import org.opalj.br.FieldType
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
+import org.opalj.br.Annotation
 
 /**
+ * Matches fields based on their name, type, annotations and declaring class.
+ *
  * @author Marco Torsello
  * @author Michael Eichberg
  */
 case class FieldMatcher(
-    classLevelMatcher: Option[ClassLevelMatcher],
-    annotation: Option[String], // needs to be reconsidered...
-    fieldType: Option[FieldType],
-    fieldName: Option[NameMatcher])
+    declaringClass: ClassLevelMatcher,
+    annotations: AnnotationsPredicate,
+    theType: Option[FieldType],
+    theName: Option[NamePredicate])
         extends SourceElementsMatcher {
 
-    def doesClassFileMatch(classFile: ClassFile): Boolean = {
-        classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
+    def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
+        declaringClass.doesMatch(classFile)
     }
 
     def doesFieldMatch(field: Field): Boolean = {
-        (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
-            (fieldName.isEmpty || fieldName.get.doesMatch(field.name)))
+        (theType.isEmpty || (theType.get eq field.fieldType)) && (
+            (theName.isEmpty || theName.get(field.name))) &&
+            annotations(field.annotations)
     }
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+    def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
             case classFile if doesClassFileMatch(classFile) ⇒ {
                 classFile.fields collect {
@@ -71,19 +74,39 @@ case class FieldMatcher(
 
 }
 
+/**
+ * Defines several additional factory methods to facilitate the creation of
+ * [[FieldMatcher]]s.
+ *
+ * @author Marco Torsello
+ */
 object FieldMatcher {
 
     def apply(
-        className: Option[ClassLevelMatcher] = None,
-        annotation: Option[String] = None,
-        fieldType: Option[String] = None, // java.lang.Object
-        fieldName: String,
+        declaringClass: ClassLevelMatcher = AllClasses,
+        annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
+        theType: Option[String] = None,
+        theName: Option[String] = None,
         matchPrefix: Boolean = false): FieldMatcher = {
-        this(
-            className,
-            annotation,
-            fieldType.map(ftn ⇒ FieldType(ftn.replace('.', '/'))),
-            Some(SimpleNameMatcher(fieldName, matchPrefix)))
+
+        assert(theName.isDefined || !matchPrefix)
+
+        val nameMatcher: Option[NamePredicate] =
+            theName match {
+                case Some(f) ⇒
+                    if (matchPrefix)
+                        Some(StartsWith(f))
+                    else
+                        Some(Equals(f))
+                case _ ⇒
+                    None
+            }
+
+        new FieldMatcher(
+            declaringClass,
+            annotationsPredicate,
+            theType.map(fqn ⇒ FieldType(fqn.replace('.', '/'))),
+            nameMatcher)
     }
 
 }

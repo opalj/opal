@@ -98,7 +98,7 @@ case class DependencyViolation(
 }
 
 /**
- * Used to report deviations between the specified and the implemented properties.
+ * Used to report source elements that have properties that deviate from the expected ones.
  *
  * @author Marco Torsello
  */
@@ -106,33 +106,36 @@ case class PropertyViolation(
         project: SomeProject,
         propertyChecker: PropertyChecker,
         source: VirtualSourceElement,
-        dependencyType: DependencyType,
+        propertyType: String,
         description: String) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {
 
         val sourceLineNumber = source.getLineNumber(project).getOrElse(1)
-        val javaSourceClass = s"(${source.classType.toJava}.java:${sourceLineNumber})"
-        val javaSource = source match {
-            case field: VirtualField ⇒ javaSourceClass + s" {${field.fieldType.toJava} ${field.name}}"
-            case method: VirtualMethod ⇒
-                if (sourceLineNumber == 1)
-                    javaSourceClass + s" {${method.descriptor.toJava(method.name)}}"
-                else
+        val javaSourceClass = s"(${source.classType.toJava}.java:$sourceLineNumber)"
+        val javaSource =
+            source match {
+                case VirtualField(_, name, fieldType) ⇒
+                    javaSourceClass + s" {${fieldType.toJava} $name}"
+                case VirtualMethod(_, name, descriptor) ⇒
+                    if (sourceLineNumber == 1)
+                        javaSourceClass + s" {${descriptor.toJava(name)}}"
+                    else
+                        javaSourceClass
+                case _ ⇒
                     javaSourceClass
-            case _ ⇒ javaSourceClass
-        }
+            }
 
         if (useAnsiColors)
             RED + description+
-                " between "+BLUE + propertyChecker.sourceEnsembles.mkString(", ") + RED+
+                " between "+BLUE + propertyChecker.ensembles.mkString(", ") + RED+
                 " and "+BLUE + propertyChecker.property + RESET+": "+
-                javaSource+" "+BOLD + dependencyType + RESET+" "+propertyChecker.property
+                javaSource+" "+BOLD + propertyType + RESET+" "+propertyChecker.property
         else
             description+
-                " between "+propertyChecker.sourceEnsembles.mkString(", ")+
+                " between "+propertyChecker.ensembles.mkString(", ")+
                 " and "+propertyChecker.property+": "+
-                javaSource+" "+dependencyType+" "+propertyChecker.property
+                javaSource+" "+propertyType+" "+propertyChecker.property
 
     }
 

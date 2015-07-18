@@ -36,11 +36,12 @@ import scala.collection.immutable.Vector
 import scala.collection.generic.FilterMonadic
 
 /**
- * Conceptually, a map where the keys are int values and the values are non-null values.
+ * Conceptually, a map where the keys are positive int values and the values are non-null.
  * The key values always have to
  * be larger than or equal to 0 and are ideally continues (0,1,2,3,...).
  * The values are stored in a plain array to enable true O(1) access.
- * Furthermore, the array is only as large as it has to be to keep all keys.
+ * Furthermore, the array is only as large as it has to be to keep a value associated
+ * with the largest key.
  *
  * @author Michael Eichberg
  */
@@ -48,21 +49,27 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         private var data: Array[T]) {
 
     /**
-     * Returns the value stored at the given index.
+     * Returns the value stored at the given index or `null` instead.
      *
      * @note If the index is not valid the result is not defined.
      */
     @throws[IndexOutOfBoundsException]("if the index is negative")
     def apply(index: Int): T = {
-        if (index < data.length) { data(index) } else null
+        if (index < data.length)
+            data(index)
+        else
+            null
     }
 
     /**
-     * Sets the value at the given index to the given value.
-     *
+     * Sets the value at the given index to the given value. If the index is larger than
+     * the currently used array, the underlying array is immediately resized to make
+     * it possible to store the new value.
      */
     @throws[IndexOutOfBoundsException]("if the index is negative")
     final def update(index: Int, value: T): Unit = {
+        assert(value ne null, "ArrayMap only supports non-null values")
+
         val max = data.length
         if (index < max)
             data(index) = value
@@ -81,6 +88,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         val max = data.length
         while (i < max) {
             val e = data(i)
+            // Recall that all values have to be non-null...
             if (e != null) f(e)
             i += 1
         }
@@ -92,7 +100,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
 
         new Iterator[(Int, T)] {
 
-            private def getNextIndex(startIndex: Int): Int = {
+            private[this] def getNextIndex(startIndex: Int): Int = {
                 val max = data.length
                 var i = startIndex
                 while (i + 1 < max) {
@@ -103,7 +111,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
                 return max;
             }
 
-            var i = getNextIndex(-1)
+            private[this] var i = getNextIndex(-1)
 
             def hasNext: Boolean = i < data.length
 

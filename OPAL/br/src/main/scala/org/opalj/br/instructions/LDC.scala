@@ -56,9 +56,15 @@ sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstru
     }
 }
 
-final case class LoadInt(value: Int) extends LDC[Int]
+final case class LoadInt(value: Int) extends LDC[Int] {
+
+    final def computationalType = ComputationalTypeInt
+
+}
 
 final case class LoadFloat(value: Float) extends LDC[Float] {
+
+    final def computationalType = ComputationalTypeFloat
 
     override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -70,13 +76,21 @@ final case class LoadFloat(value: Float) extends LDC[Float] {
     }
 }
 
-final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
+final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType] {
+    final def computationalType = ComputationalTypeReference
+}
 
-final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle]
+final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle] {
+    final def computationalType = ComputationalTypeReference
+}
 
-final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescriptor]
+final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescriptor] {
+    final def computationalType = ComputationalTypeReference
+}
 
 final case class LoadString(value: String) extends LDC[String] {
+
+    final def computationalType = ComputationalTypeReference
 
     override def toString: String = "LoadString(\""+value+"\")"
 
