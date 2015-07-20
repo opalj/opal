@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,19 +22,53 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-.root {
-	-fx-font-size: 14px;
-	-fx-font-family: sans-serif;
+package org.opalj
+package bugpicker
+package ui
+package dialogs
+
+import org.opalj.bugpicker.ui.BugPicker
+
+import scalafx.Includes.jfxKeyEvent2sfx
+import scalafx.Includes.observableList2ObservableBuffer
+import scalafx.scene.Scene
+import scalafx.scene.input.KeyCode
+import scalafx.scene.input.KeyEvent
+import scalafx.scene.layout.VBox
+import scalafx.scene.web.WebView
+import scalafx.stage.Stage
+import scalafx.stage.StageStyle
+import scalafx.stage.Window
+
+class WebViewStage extends Stage {
+
+    filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
+        if (e.code == KeyCode.ESCAPE) {
+            close()
+        }
+    }
+
+    initStyle(StageStyle.DECORATED)
 }
 
-#projectExplorer.button {
-	-fx-background-color: transparent;
-}
+object WebViewStage {
 
-.tree-view {
-	-fx-font-size: 12px;
+    def showWebView(theTitle: String, wv: WebView): Unit = {
+        val stage = new WebViewStage {
+            theStage ⇒
+            title = theTitle
+            scene = new Scene {
+                root = new VBox {
+                    prefWidth = 1060
+                    children = Seq(wv)
+                }
+                stylesheets += BugPicker.defaultAppCSSURL
+            }
+        }
+        stage.show()
+    }
 }
