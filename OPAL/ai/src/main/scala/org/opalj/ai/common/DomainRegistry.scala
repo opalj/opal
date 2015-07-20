@@ -167,7 +167,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
+        "[l1.DefaultDomainWithDefUse] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
