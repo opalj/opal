@@ -79,8 +79,7 @@ import org.opalj.collection.mutable.SmallValuesSet
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
-    domain: Domain ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     type PCs = UShortSet
     type ValueOrigins = SmallValuesSet
@@ -105,7 +104,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
 
     private[this] var instructions: Array[Instruction] = _
 
-    // Stores the information where the value defined by the current instruction is
+    // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
     // of this additional space is `parametersOffset` large and is prepended to
@@ -118,6 +117,8 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
+
+    private[this] var remainingPaths: PCs = _
 
     abstract override def initProperties(
         code: Code,
@@ -141,8 +142,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             locals.map { v ⇒
                 if (v ne null) {
                     parameterIndex -= 1
-                    val localVar = ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
-                    localVar
+                    ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                 } else {
                     null
                 }
@@ -153,6 +153,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         this.parametersOffset = -parameterIndex
 
         this.used = new Array(codeSize + parametersOffset)
+        this.remainingPaths = UShortSet.empty
 
         super.initProperties(code, joinInstructions, locals)
     }
@@ -293,6 +294,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     abstract override def flow(
         currentPC: PC,
         successorPC: PC,
+        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
@@ -301,18 +303,22 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
-        def continuation(newWorklist: List[PC]): List[PC] = super.flow(
-            currentPC, successorPC,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
-            wasJoinPerformed,
-            newWorklist,
-            operandsArray, localsArray,
-            tracer)
+        def continuation(isSuccessorScheduled: Answer, worklist: List[PC]): List[PC] =
+            super.flow(
+                currentPC, successorPC,
+                isSuccessorScheduled,
+                isExceptionalControlFlow, abruptSubroutineTerminationCount,
+                wasJoinPerformed,
+                worklist,
+                operandsArray, localsArray,
+                tracer)
 
         /*DEBUG - DEV TIME*/ try {
             handleFlow(
                 currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount, wasJoinPerformed,
+                isSuccessorScheduled,
+                isExceptionalControlFlow, abruptSubroutineTerminationCount,
+                wasJoinPerformed,
                 worklist,
                 operandsArray,
                 tracer,
@@ -320,7 +326,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             /*DEBUG - DEV TIME - START */ } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable ⇒
-                if ((System.currentTimeMillis() - lastError) > 1000l) {
+                if ((System.currentTimeMillis() - lastError) > 2500l) {
                     lastError = System.currentTimeMillis()
                     org.opalj.io.writeAndOpen(dumpDefUseInfo, "DefUseInfo", ".html")
                 }
@@ -331,13 +337,14 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
     private[this] def handleFlow(
         currentPC: PC,
         successorPC: PC,
+        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
         tracer: Option[AITracer],
-        continuation: (List[PC]) ⇒ List[PC]): List[PC] = {
+        continuation: (Answer, List[PC]) ⇒ List[PC]): List[PC] = {
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
@@ -345,14 +352,14 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
         def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit =
             usedVars.foreach { use ⇒
                 val usedIndex = use + parametersOffset
-                //                assert(
-                //                    usedIndex >= 0,
-                //                    s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
-                //                        defLocals(0).mapKV((i, l) ⇒
-                //                            if (l eq null)
-                //                                i+": N/A"
-                //                            else
-                //                                l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
+                // assert(
+                //     usedIndex >= 0,
+                //     s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
+                //         defLocals(0).mapKV((i, l) ⇒
+                //             if (l eq null)
+                //                 i+": N/A"
+                //             else
+                //                 l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
 
                 val oldUsedInfo: PCs = used(usedIndex)
                 if (oldUsedInfo eq null)
@@ -380,10 +387,10 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                         //                        assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
                     }
-                    //                    assert(
-                    //                        rDefOps.nonEmpty,
-                    //                        s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps; original: $oldDefOps"
-                    //                    )
+                    // assert(
+                    //     rDefOps.nonEmpty,
+                    //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps; original: $oldDefOps"
+                    // )
 
                     val newHead = lDefOps.head
                     val oldHead = rDefOps.head
@@ -402,37 +409,78 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                 if (newDefOps ne oldDefOps) {
                     val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
                     if (joinedDefOps ne oldDefOps) {
-                        //                        assert(
-                        //                            joinedDefOps != oldDefOps,
-                        //                            s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
-                        forceScheduling = true
+                        // assert(
+                        //     joinedDefOps != oldDefOps,
+                        //     s"$joinedDefOps is (unexpectedly) equal to $newDefOps join $oldDefOps")
+                        forceScheduling =
+                            // There is nothing to propagate beyond the next
+                            // instruction if the next one is a "return" instruction.
+                            !instructions(successorPC).isInstanceOf[ReturnInstruction]
                         defOps(successorPC) = joinedDefOps
                     }
                 }
 
                 val oldDefLocals = defLocals(successorPC)
                 if (newDefLocals ne oldDefLocals) {
+                    // newUsage is `true` if a new value(variable) may be used somewhere
+                    // (I)
+                    // For example:
+                    // 0: ALOAD_0
+                    // 1: INVOKEVIRTUAL com.sun.media.sound.EventDispatcher dispatchEvents (): void
+                    // 4: GOTO 0↑
+                    // 7: ASTORE_1
+                    // 8: GOTO 0↑
+                    // The last goto leads to some new information regarding the values
+                    // on the stack (e.g., Register 1 now contains an exception), but
+                    // propagating this information is useless - the value is never
+                    // used...
+                    // (II)
+                    // Furthermore, whenever we have a jump back to the first instruction
+                    // (PC == 0) and the joined values are unrelated to the parameters
+                    // - i.e., we do not assign a new value to a register used by a
+                    // parameter -
+                    // then we do not have to force a scheduling of the reevaluation of
+                    // the next instruction
+                    // since there has to be some assignment related to the respective
+                    // variables (there is no load without a previous store).
+                    var newUsage = false
                     val joinedDefLocals =
-                        oldDefLocals.merge(
-                            newDefLocals,
+                        oldDefLocals.merge(newDefLocals,
                             { (o, n) ⇒
-                                if (n eq null)
+                                if ((o eq null) || (n eq null)) {
+                                    null
+                                    // <=> the register variable did not contain any
+                                    // useful information when the  current instruction was
+                                    // reached for the first time, hence there will
+                                    // always be an initialization before the next
+                                    // use of the register value and we can drop all
+                                    // information.
+                                } else if (n.isSubsetOf(o)) {
                                     o
-                                else if (o eq null)
-                                    n
-                                else if (n.isSubsetOf(o))
-                                    o
-                                else {
+                                } else {
+                                    newUsage = true
                                     n ++ o
                                 }
                             })
                     if (joinedDefLocals ne oldDefLocals) {
-                        //                        assert(
-                        //                            joinedDefLocals != oldDefLocals,
-                        //                            s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
-                        forceScheduling = true
+                        // assert(
+                        //      joinedDefLocals != oldDefLocals,
+                        //      s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
+                        forceScheduling = forceScheduling || {
+                            // There is nothing to propagate if the next
+                            // instruction is a "return" instruction.
+                            !instructions(successorPC).isInstanceOf[ReturnInstruction] &&
+                                // There is nothing to do if all joins are related to unused vars...
+                                newUsage
+                        }
                         defLocals(successorPC) = joinedDefLocals
                     }
+                }
+
+                if (!forceScheduling && remainingPaths.contains(successorPC)) {
+                    // previously there was a need to schedule the instruction with
+                    // successor pc, but this need does not exist any longer...
+                    remainingPaths = remainingPaths - successorPC
                 }
             } else {
                 defOps(successorPC) = newDefOps
@@ -442,10 +490,10 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
 
         /*
          * Specifies that the given number of stack values is used and also popped from
-         * the stack and that – optionally – a new value is pushed onto the stack and
-         * associated with a new variable.
+         * the stack and that – optionally – a new value is pushed onto the stack (and
+         * associated with a new variable).
          */
-        def stackOp(usedVarCount: Int, newVarCreated: Boolean): Unit = {
+        def stackOp(usedVarCount: Int, pushesValue: Boolean): Unit = {
             // Usage is independent of the question whether the usage resulted in an
             // exceptional control flow.
             val currentDefOps = defOps(currentPC)
@@ -465,7 +513,7 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
                     else
                         successorDefOps
                 } else {
-                    if (newVarCreated)
+                    if (pushesValue)
                         ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedVarCount)
                     else
                         currentDefOps.drop(usedVarCount)
@@ -738,16 +786,37 @@ trait RecordDefUse extends CoreDomainFunctionality with CustomInitialization {
             case _ ⇒ /* let's continue with the standard handling */
         }
 
-        if (forceScheduling) {
-            val newWorklist = schedule(successorPC, abruptSubroutineTerminationCount, worklist)
-            if ((worklist ne newWorklist) && tracer.isDefined) {
-                // the instruction was not yet scheduled for another evaluation
-                tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
+        if (forceScheduling && isSuccessorScheduled.isNoOrUnknown) {
+            val isScheduled = worklist.contains(successorPC)
+            if (isScheduled) {
+                continuation(Yes /* the successor is scheduled */ , worklist)
+            } else {
+                remainingPaths = successorPC +≈: remainingPaths
+                continuation(
+                    No /* the successor is never directly scheduled by this domain */ ,
+                    worklist)
             }
-            continuation(newWorklist)
         } else {
-            continuation(worklist)
+            continuation(isSuccessorScheduled, worklist)
         }
+    }
+
+    abstract override def abstractInterpretationEnded(
+        aiResult: AIResult { val domain: defUseDomain.type }): Unit = {
+        if (remainingPaths.nonEmpty) {
+            val joinInstructions = code.joinInstructions
+            var is = ""
+            if (remainingPaths.contains(0)) {
+                is += "\n"
+                code.foreach((pc, i) ⇒ is += pc+": "+i.toString(pc)+"\n")
+            }
+            var s = "Remaining paths: "
+            remainingPaths.foreach { pc ⇒
+                s += (pc+" "+instructions(pc).toString(pc)+" "+joinInstructions.contains(pc))
+            }
+            println(s + is)
+        }
+        super.abstractInterpretationEnded(aiResult)
     }
 
 }
