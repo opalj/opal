@@ -37,7 +37,7 @@ package mutable
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
     final val offset: Int,
-    private[this] val set: SmallValuesSet)
+    private val set: SmallValuesSet)
         extends SmallValuesSet {
 
     def mutableCopy: SmallValuesSetBackedByOPALSet = {
