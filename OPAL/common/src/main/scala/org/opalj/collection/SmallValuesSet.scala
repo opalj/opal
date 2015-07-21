@@ -78,7 +78,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     /**
      * Tests if this set is a subset of the given set.
      */
-    def isSubsetOf(other: SmallValuesSet): Boolean
+    def subsetOf(other: SmallValuesSet): Boolean
 
     /**
      * Executes the given function `f` for each value of this set, starting with
@@ -142,7 +142,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      */
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: SmallValuesSet ⇒ this.isSubsetOf(that) && that.isSubsetOf(this)
+            case that: SmallValuesSet ⇒ this.subsetOf(that) && that.subsetOf(this)
             case _                    ⇒ false
         }
     }

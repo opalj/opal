@@ -121,7 +121,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         f(value1) || { val value2 = this.value2; value2 > 0 && f(value2) }
     }
 
-    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq that)
             true
         else if (that.isEmpty) // this set contains at least one element
@@ -397,7 +397,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             { val value4 = this.value4.toInt; value4 > 0 && f(value4) }
     }
 
-    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq that)
             true
         else if (that.isEmpty || that.isInstanceOf[UShortSet2]) // this set contains at least one element
@@ -518,7 +518,7 @@ private class UShortSetNode(
         set1.exists(f) || set2.exists(f)
     }
 
-    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq that)
             true
         else if (that.isEmpty) // this set contains at least 7 values...
@@ -610,7 +610,7 @@ private object EmptyUShortSet extends UShortSet {
     def exists(f: UShort ⇒ Boolean): Boolean = false
     def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
     override def forall(f: UShort ⇒ Boolean): Boolean = true
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
+    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def max = throw new NoSuchElementException("the set is empty")
     def min = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)

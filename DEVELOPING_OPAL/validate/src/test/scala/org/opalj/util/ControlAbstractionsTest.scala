@@ -53,14 +53,14 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
 
     it should "evaluate the expression that passes in the array exactly once" in {
         var initialized = false
-        foreachNonNullValueOf[String] {
+        foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; new Array(0)
         } {
             (i, e) ⇒ /*nothing*/ ;
         }
 
         initialized = false
-        foreachNonNullValueOf[String] {
+        foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
         } {
             (i, e) ⇒ /*nothing*/ ;
@@ -69,7 +69,7 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
 
     it should "evaluate the expression that processes the array elements exactly once per value" in {
         var result = List.empty[(Int, String)]
-        foreachNonNullValueOf[String] {
+        foreachNonNullValue[String] {
             Array(null, "a", null, "b", "c", null, null, "d", null, null)
         } {
             (i, e) ⇒ result = (i, e) :: result;

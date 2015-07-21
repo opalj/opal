@@ -33,7 +33,6 @@ package domain
 import scala.xml.Node
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
-import org.opalj.foreachN
 import org.opalj.br.instructions._
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.br.Code
@@ -402,7 +401,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                     val newHead = lDefOps.head
                     val oldHead = rDefOps.head
-                    if (newHead.isSubsetOf(oldHead))
+                    if (newHead.subsetOf(oldHead))
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
@@ -464,7 +463,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                     // always be an initialization before the next
                                     // use of the register value and we can drop all
                                     // information.
-                                } else if (n isSubsetOf o) {
+                                } else if (n subsetOf o) {
                                     o
                                 } else {
                                     newUsage = true
@@ -507,7 +506,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // exceptional control flow.
             val currentDefOps = defOps(currentPC)
 
-            foreachN(currentDefOps, usedVarCount) { op ⇒ updateUsed(op, currentPC) }
+            forFirstN(currentDefOps, usedVarCount) { op ⇒ updateUsed(op, currentPC) }
 
             val newDefOps =
                 if (isExceptionalControlFlow) {

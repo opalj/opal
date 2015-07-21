@@ -153,9 +153,9 @@ package object opalj {
      * Executes the given function `f` for the first `n` values of the given list.
      * The behavior is undefined if the given list does not have at least `n` elements.
      */
-    final def foreachN[T <: AnyRef](
+    final def forFirstN[T <: AnyRef](
         l: List[T], n: Int)(
-            f: (T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachN[T]
+            f: (T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
      * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
@@ -250,7 +250,7 @@ private object ControlAbstractionsImplementation {
         }
     }
 
-    def foreachN[T <: AnyRef: c.WeakTypeTag](
+    def forFirstN[T <: AnyRef: c.WeakTypeTag](
         c: Context)(
             l: c.Expr[List[T]], n: c.Expr[Int])(
                 f: c.Expr[T ⇒ Unit]): c.Expr[Unit] = {

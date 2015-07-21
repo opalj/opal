@@ -63,7 +63,7 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
 
     def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)
             true
         else
