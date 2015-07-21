@@ -33,6 +33,7 @@ package domain
 import scala.xml.Node
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
+import org.opalj.foreachN
 import org.opalj.br.instructions._
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.br.Code
@@ -174,6 +175,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
     }
 
+    /**
+     * Creates an XHTML document that contains information about the def-/use
+     * information.
+     */
     def dumpDefUseInfo(): Node = {
         val perInstruction =
             defOps.zip(defLocals).zipWithIndex.
@@ -348,6 +353,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
+        val successorInstruction = instructions(successorPC)
 
         def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit =
             usedVars.foreach { use ⇒
@@ -361,9 +367,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 //             else
                 //                 l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
 
-                val oldUsedInfo: PCs = used(usedIndex)
+                val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null)
-                    used(usedIndex) = UShortSet(useSite)
+                    used(usedIndex) = SmallValuesSet.create(max, useSite) // UShortSet(useSite)
                 else {
                     val newUsedInfo = useSite +≈: oldUsedInfo
                     if (newUsedInfo ne oldUsedInfo)
@@ -405,6 +411,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             lDefOps.tail, rDefOps.tail,
                             false, (newHead ++ oldHead) :: joinedDefOps)
                 }
+
                 val oldDefOps = defOps(successorPC)
                 if (newDefOps ne oldDefOps) {
                     val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
@@ -415,7 +422,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         forceScheduling =
                             // There is nothing to propagate beyond the next
                             // instruction if the next one is a "return" instruction.
-                            !instructions(successorPC).isInstanceOf[ReturnInstruction]
+                            !successorInstruction.isInstanceOf[ReturnInstruction]
                         defOps(successorPC) = joinedDefOps
                     }
                 }
@@ -450,12 +457,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 if ((o eq null) || (n eq null)) {
                                     null
                                     // <=> the register variable did not contain any
-                                    // useful information when the  current instruction was
+                                    // useful information when the current instruction was
                                     // reached for the first time, hence there will
                                     // always be an initialization before the next
                                     // use of the register value and we can drop all
                                     // information.
-                                } else if (n.isSubsetOf(o)) {
+                                } else if (n isSubsetOf o) {
                                     o
                                 } else {
                                     newUsage = true
@@ -469,7 +476,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         forceScheduling = forceScheduling || {
                             // There is nothing to propagate if the next
                             // instruction is a "return" instruction.
-                            !instructions(successorPC).isInstanceOf[ReturnInstruction] &&
+                            !successorInstruction.isInstanceOf[ReturnInstruction] &&
                                 // There is nothing to do if all joins are related to unused vars...
                                 newUsage
                         }
@@ -498,8 +505,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // exceptional control flow.
             val currentDefOps = defOps(currentPC)
 
-            val usedOps = currentDefOps.take(usedVarCount)
-            usedOps.foreach { op ⇒ updateUsed(op, currentPC) }
+            foreachN(currentDefOps, usedVarCount) { op ⇒ updateUsed(op, currentPC) }
 
             val newDefOps =
                 if (isExceptionalControlFlow) {
@@ -524,16 +530,18 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         def load(index: Int): Unit = {
             // there will never be an exceptional control flow ...
+            val currentLocals = defLocals(currentPC)
             propagate(
-                defLocals(currentPC)(index) :: defOps(currentPC),
-                defLocals(currentPC))
+                currentLocals(index) :: defOps(currentPC),
+                currentLocals)
         }
 
         def store(index: Int): Unit = {
             // there will never be an exceptional control flow ...
+            val currentOps = defOps(currentPC)
             propagate(
-                defOps(currentPC).tail,
-                defLocals(currentPC).updated(index, defOps(currentPC).head)
+                currentOps.tail,
+                defLocals(currentPC).updated(index, currentOps.head)
             )
         }
 
@@ -777,7 +785,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 throw BytecodeProcessingFailedException(message)
         }
 
-        (instructions(successorPC).opcode: @annotation.switch) match {
+        (successorInstruction.opcode: @annotation.switch) match {
             case ARETURN.opcode |
                 DRETURN.opcode | FRETURN.opcode | IRETURN.opcode | LRETURN.opcode |
                 ATHROW.opcode ⇒

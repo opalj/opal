@@ -145,9 +145,17 @@ package object opalj {
      *
      * @note '''This is a macro.'''
      */
-    final def foreachNonNullValueOf[T <: AnyRef](
+    final def foreachNonNullValue[T <: AnyRef](
         a: Array[T])(
-            f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
+            f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
+
+    /**
+     * Executes the given function `f` for the first `n` values of the given list.
+     * The behavior is undefined if the given list does not have at least `n` elements.
+     */
+    final def foreachN[T <: AnyRef](
+        l: List[T], n: Int)(
+            f: (T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachN[T]
 
     /**
      * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
@@ -224,7 +232,7 @@ package object opalj {
  */
 private object ControlAbstractionsImplementation {
 
-    def foreachNonNullValueOf[T <: AnyRef: c.WeakTypeTag](
+    def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
         c: Context)(
             a: c.Expr[Array[T]])(
                 f: c.Expr[(Int, T) ⇒ Unit]): c.Expr[Unit] = {
@@ -237,6 +245,25 @@ private object ControlAbstractionsImplementation {
             while (i < arrayLength) {
                 val arrayEntry = array(i)
                 if (arrayEntry ne null) f.splice(i, arrayEntry)
+                i += 1
+            }
+        }
+    }
+
+    def foreachN[T <: AnyRef: c.WeakTypeTag](
+        c: Context)(
+            l: c.Expr[List[T]], n: c.Expr[Int])(
+                f: c.Expr[T ⇒ Unit]): c.Expr[Unit] = {
+        import c.universe._
+
+        reify {
+            var remainingList = l.splice
+            val max = n.splice
+            var i = 0
+            while (i < max) {
+                val head = remainingList.head
+                remainingList = remainingList.tail
+                f.splice(head)
                 i += 1
             }
         }
