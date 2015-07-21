@@ -295,7 +295,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         nodes.values.toSet + unusedNode
     }
 
-    /*DEBUG - DEV TIME*/ private[this] var lastError = 0l
+    /*DEBUG - DEV TIME*/ @volatile private[this] var lastError = 0l
     abstract override def flow(
         currentPC: PC,
         successorPC: PC,
@@ -331,9 +331,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             /*DEBUG - DEV TIME - START */ } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable ⇒
-                if ((System.currentTimeMillis() - lastError) > 2500l) {
-                    lastError = System.currentTimeMillis()
-                    org.opalj.io.writeAndOpen(dumpDefUseInfo, "DefUseInfo", ".html")
+                this.synchronized {
+                    if ((System.currentTimeMillis() - lastError) > 2500l) {
+                        lastError = System.currentTimeMillis()
+                        org.opalj.io.writeAndOpen(dumpDefUseInfo, "DefUseInfo", ".html")
+                    }
                 }
                 throw t
         } /*DEBUG - DEV TIME - END*/
@@ -613,7 +615,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val invoke = instruction.asInstanceOf[InvocationInstruction]
                 val descriptor = invoke.methodDescriptor
                 stackOp(
-                    invoke.numberOfPoppedOperands(UnsupportedFunction),
+                    invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
                     !descriptor.returnType.isVoidType)
 
             case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
@@ -828,6 +830,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
 }
-private object UnsupportedFunction extends (Int ⇒ ComputationalTypeCategory) {
+
+private object UnsupportedOperationComputationalTypeCategory extends (Int ⇒ ComputationalTypeCategory) {
+
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
+
 }
