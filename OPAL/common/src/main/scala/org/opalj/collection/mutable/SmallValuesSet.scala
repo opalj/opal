@@ -52,6 +52,22 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
      */
     def +≈:(value: Int): MutableSmallValuesSet
 
+    /**
+     * Adds the values to this set if they are not already contained in this set.
+     * If this set has enough space to hold the additional values, a reference to this
+     * set is returned. Otherwise, a new set is created and a reference to that set
+     * is returned. Hence, '''the return value must not be ignored'''.
+     *
+     * @param value The value that is added. If `value` is not in the range specified at
+     *        creation time the result is undefined.
+     * @return The "new" set with the given value.
+     */
+    def ++≈:(values: SmallValuesSet): MutableSmallValuesSet = {
+        var newSet = this
+        values foreach { v ⇒ newSet = v +≈: newSet }
+        newSet
+    }
+
     def -(value: Int): SmallValuesSet /* Redefines the return type. */
 
     override def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
