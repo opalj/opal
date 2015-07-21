@@ -207,14 +207,26 @@ class ConstantsTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
-                    Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(2)))
+                    Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 10)),
+                    Assignment(2, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(3, SimpleVar(0, ComputationalTypeFloat), FloatConst(3, 10.0f)),
+                    Assignment(5, SimpleVar(-3, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
+                    Assignment(6, SimpleVar(0, ComputationalTypeLong), LongConst(6, 10L)),
+                    Assignment(9, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
+                    Assignment(10, SimpleVar(0, ComputationalTypeDouble), DoubleConst(10, 10.0d)),
+                    Assignment(13, SimpleVar(-6, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
+                    Return(15)))
                 javaLikeCode.shouldEqual(
                     Array("0: r_0 = this;",
-                        "1: op_0 = null;",
+                        "1: op_0 = 10;",
                         "2: r_1 = op_0;",
-                        "3: return;"))
+                        "3: op_0 = 10.0;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 10l;",
+                        "6: r_3 = op_0;",
+                        "7: op_0 = 10.0d;",
+                        "8: r_5 = op_0;",
+                        "9: return;"))
             }
         }
 
@@ -370,14 +382,26 @@ class ConstantsTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
-                    Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(2)))
+                    Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 10)),
+                    Assignment(2, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
+                    Assignment(3, SimpleVar(0, ComputationalTypeFloat), FloatConst(3, 10.0f)),
+                    Assignment(5, SimpleVar(-3, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
+                    Assignment(6, SimpleVar(0, ComputationalTypeLong), LongConst(6, 10L)),
+                    Assignment(9, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
+                    Assignment(10, SimpleVar(0, ComputationalTypeDouble), DoubleConst(10, 10.0d)),
+                    Assignment(13, SimpleVar(-6, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
+                    Return(15)))
                 javaLikeCode.shouldEqual(
                     Array("0: r_0 = this;",
-                        "1: op_0 = null;",
+                        "1: op_0 = 10;",
                         "2: r_1 = op_0;",
-                        "3: return;"))
+                        "3: op_0 = 10.0;",
+                        "4: r_2 = op_0;",
+                        "5: op_0 = 10l;",
+                        "6: r_3 = op_0;",
+                        "7: op_0 = 10.0d;",
+                        "8: r_5 = op_0;",
+                        "9: return;"))
             }
         }
     }
