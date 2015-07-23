@@ -46,7 +46,7 @@ import org.opalj.ai.util.containsInPrefix
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait CoreDomainFunctionality extends ValuesDomain {
+trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
 
     /**
      * Replaces all occurrences of `oldValue` (using
@@ -293,6 +293,13 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      all paths leading to a join instruction before the join instruction will
      *      be evaluated.
      *
+     * @param isSuccessorScheduled `Yes` if the successor instruction is or was scheduled.
+     *      I.e., `Yes` is returned if the worklist contains `successorPC`, `No` if the
+     *      worklist does not contain `successorPC`. `Unknown` is returned if the AI
+     *      framework did not process the worklist and doesn't know anything about
+     *      the scheduled successors. Please note, that the value is independent of the
+     *      subroutine in which the value may be scheduled.
+     *
      * @param isExceptionalControlFlow `true` if and only if the evaluation of
      *      the instruction with the program counter `currentPC` threw an exception;
      *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
@@ -364,6 +371,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
     def flow(
         currentPC: PC,
         successorPC: PC,
+        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
@@ -395,14 +403,14 @@ trait CoreDomainFunctionality extends ValuesDomain {
      * By default this method does nothing.
      */
     def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: CoreDomainFunctionality.this.type }): Unit = {
+        aiResult: AIResult { val domain: coreDomain.type }): Unit = {
         /* Nothing */
     }
 
     /**
      * This function can be called when the instruction `successorPC` needs to be
      * scheduled. The function will test if the instruction is already scheduled and
-     * – if so – returns the given worklist unchanged. Otherwise the instruction
+     * – if so – returns the given worklist. Otherwise the instruction
      * is scheduled in the correct context.
      */
     protected[this] def schedule(

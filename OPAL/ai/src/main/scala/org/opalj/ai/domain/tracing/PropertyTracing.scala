@@ -105,6 +105,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
     abstract override def flow(
         currentPC: PC,
         successorPC: PC,
+        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
@@ -134,8 +135,10 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
             }
         }
 
+        var newIsSuccessorScheduled = isSuccessorScheduled
         val newWorklist =
-            if (forceScheduling) {
+            if (forceScheduling && isSuccessorScheduled.isNoOrUnknown) {
+                newIsSuccessorScheduled = Yes
                 val newWorklist =
                     schedule(successorPC, abruptSubroutineTerminationCount, worklist)
                 if ((newWorklist ne worklist) && tracer.isDefined) {
@@ -148,6 +151,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
             }
         super.flow(
             currentPC, successorPC,
+            newIsSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             newWorklist,

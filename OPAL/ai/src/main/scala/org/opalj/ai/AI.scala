@@ -517,6 +517,8 @@ trait AI[D <: Domain] {
                     targetPC, isExceptionalControlFlow,
                     newOperands, newLocals)
 
+            var isTargetScheduled: Answer = Unknown
+
             // Determine the number of subroutines that are abruptly terminated by
             // an exception that is not handled by the subroutine itself.
             val abruptSubroutineTerminationCount: Int = {
@@ -556,7 +558,7 @@ trait AI[D <: Domain] {
              * Schedules the evaluation of the exception handler in the context of the
              * (calling) subroutine to which the handler belongs.
              *
-             * @param doSchedule If `false` the instruction will not be scheduled if
+             * @param forceSchedule If `false` the instruction will not be scheduled if
              *      it is not already scheduled. In this case we will basically just test
              *      if the instruction was scheduled.
              *
@@ -571,9 +573,7 @@ trait AI[D <: Domain] {
              *      - `doSchedule` is true and true is returned, then the target
              *          instruction was already scheduled.
              */
-            def handleAbruptSubroutineTermination(doSchedule: Boolean): Boolean = {
-                assert(abruptSubroutineTerminationCount > 0)
-
+            def handleAbruptSubroutineTermination(forceSchedule: Boolean): Boolean = {
                 val jumpToSubroutineId = belongsToSubroutine(targetPC)
 
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
@@ -605,8 +605,9 @@ trait AI[D <: Domain] {
 
                 val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
                 val rescheduled = filteredRemainingWorkList ne remainingWorklist
-                if (rescheduled || doSchedule)
+                if (rescheduled || forceSchedule) {
                     remainingWorklist = targetPC :: filteredRemainingWorkList
+                }
                 while (header.nonEmpty) {
                     remainingWorklist = header.head :: remainingWorklist
                     header = header.tail
@@ -634,14 +635,16 @@ trait AI[D <: Domain] {
             val wasJoinPerformed =
                 if (currentOperands eq null) {
                     // We analyze the instruction for the first time.
+                    isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
-                    if (abruptSubroutineTerminationCount > 0)
-                        handleAbruptSubroutineTermination(doSchedule = true)
-                    else if (worklist.nonEmpty && joinInstructions.contains(targetPC))
+                    if (abruptSubroutineTerminationCount > 0) {
+                        handleAbruptSubroutineTermination(forceSchedule = true)
+                    } else if (worklist.nonEmpty && joinInstructions.contains(targetPC)) {
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
-                    else
+                    } else {
                         worklist = targetPC :: worklist
+                    }
 
                     if (tracer.isDefined)
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
@@ -664,12 +667,12 @@ trait AI[D <: Domain] {
                     // branch of the if (e.g., case "B"). However, the "pc" of the
                     // second branch is already scheduled and we don't want/need to
                     // reschedule it again.
+                    isTargetScheduled = Yes // it is already or will be scheduled...
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
                         worklist = targetPC :: worklist
                     }
-
                     if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
@@ -690,15 +693,17 @@ trait AI[D <: Domain] {
                     )
                     mergeResult match {
                         case NoUpdate ⇒ /* nothing to do*/
+                            // Keep default: isTargetScheduled = Unknown
                             if (tracer.isDefined) {
                                 tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                             }
 
                         case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            isTargetScheduled = Yes
                             targetOperandsArray(targetPC) = updatedOperands
                             targetLocalsArray(targetPC) = updatedLocals
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(doSchedule = true)) {
+                                if (handleAbruptSubroutineTermination(forceSchedule = true)) {
                                     // the instruction was just moved to the beginning
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
@@ -737,33 +742,36 @@ trait AI[D <: Domain] {
                             targetLocalsArray(targetPC) = updatedLocals
 
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(doSchedule = false)) {
+                                if (handleAbruptSubroutineTermination(forceSchedule = false)) {
+                                    isTargetScheduled = Yes
                                     if (tracer.isDefined) {
                                         // the instruction was just moved to the beginning
-                                        tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow)
-                                    }
-                                } else {
-                                    if (tracer.isDefined) {
                                         tracer.get.flow(theDomain)(
                                             sourcePC, targetPC, isExceptionalControlFlow)
                                     }
+                                } else {
+                                    // keep default: isTargetScheduled = Unknown
+                                    // (We just know that the instruction is not
+                                    // scheduled in the context of the calling parent
+                                    // routine, but it may be scheduled in a different
+                                    // context!)
+                                    if (tracer.isDefined) {
+                                        tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                                    }
                                 }
                             } else {
-
                                 // we want depth-first evaluation (, but we do not want to
                                 // reschedule instructions that do not belong to the current
-                                // evaluation context/(sub-)routine.)
-                                val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                                if (filteredList ne worklist) {
-                                    // the instruction was scheduled, but not as the next one...
-                                    // let's move the instruction to the beginning
-                                    worklist = targetPC :: filteredList
-
-                                    if (tracer.isDefined)
+                                // evaluation context/(sub-)routine.), but not for
+                                // join instructions...
+                                if (containsInPrefix(worklist, targetPC, SUBROUTINE)) {
+                                    isTargetScheduled = Yes
+                                    if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
                                             sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
                                 } else {
+                                    isTargetScheduled = No
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
@@ -774,20 +782,25 @@ trait AI[D <: Domain] {
                     /*join: */ true
                 }
 
+            assert(
+                (worklist.count(_ == targetPC) != 0) == isTargetScheduled.isYesOrUnknown ||
+                    (worklist.count(_ == targetPC) == 0) == isTargetScheduled.isNoOrUnknown,
+                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled (join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)")
+
             worklist =
                 theDomain.flow(
-                    sourcePC, targetPC,
+                    sourcePC, targetPC, isTargetScheduled,
                     isExceptionalControlFlow, abruptSubroutineTerminationCount,
                     wasJoinPerformed,
                     worklist,
                     targetOperandsArray, targetLocalsArray,
                     tracer)
 
-            assert(
-                abruptSubroutineTerminationCount == 0 ||
-                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-                "an exception handler that handles the abrupt termination of a subroutine "+
-                    "is scheduled to be executed as part of the abruptly terminated subroutine")
+            //            assert(
+            //                abruptSubroutineTerminationCount == 0 ||
+            //                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
+            //                "an exception handler that handles the abrupt termination of a subroutine "+
+            //                    "is scheduled to be executed as part of the abruptly terminated subroutine")
         }
 
         // THIS IS THE MAIN INTERPRETER LOOP
@@ -2246,6 +2259,8 @@ trait AI[D <: Domain] {
                                             pc,
                                             supertype,
                                             operands, locals)
+                                    // The following assert may catch bugs in the
+                                    // implementation of domains!
                                     assert(
                                         theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
@@ -2310,7 +2325,8 @@ trait AI[D <: Domain] {
                     pc, worklist, evaluated, operandsArray, localsArray, tracer)
 
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
+                case ct: ControlThrowable ⇒
+                    throw ct
 
                 case cause: Throwable ⇒
                     throw InterpretationFailedException(

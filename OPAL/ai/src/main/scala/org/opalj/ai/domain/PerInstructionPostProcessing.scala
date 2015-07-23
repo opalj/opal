@@ -56,6 +56,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     abstract override def flow(
         currentPC: PC,
         successorPC: PC,
+        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
@@ -99,6 +100,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
 
         super.flow(
             currentPC, successorPC,
+            isSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,

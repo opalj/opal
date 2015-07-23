@@ -104,7 +104,7 @@ private[mutable] object EmptyUByteSet extends UByteSet {
 
     def contains(value: UByte): Boolean = false
     def exists(f: Int ⇒ Boolean): Boolean = false
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
+    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def foreach[U](f: UShort ⇒ U): Unit = {}
     def forall(f: Int ⇒ Boolean): Boolean = true
 
@@ -288,7 +288,7 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
         f(value4)
     }
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)
             true
         else if (other.isEmpty)
@@ -412,11 +412,12 @@ private class UByteSetNode(
         else
             set2.contains(value)
     }
+
     def exists(f: Int ⇒ Boolean): Boolean = {
         set1.exists(f) || set2.exists(f)
     }
 
-    def isSubsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(that: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq that)
             true
         else if (that.isEmpty)
