@@ -271,6 +271,23 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
             emptySet5.subsetOf(emptySet5) should be(true)
 
         }
+
+        it("should be possible to add the elements of two singleton sets") {
+            {
+                val r = SmallValuesSet.create(-4, 10000, 47) ++ SmallValuesSet.create(-4, 10000, 51)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+            {
+                val r = SmallValuesSet.create(-4, 10000, 51) ++ SmallValuesSet.create(-4, 10000, 47)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+
+        }
+
     }
 
 }
