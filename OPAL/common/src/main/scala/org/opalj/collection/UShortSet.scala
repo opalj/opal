@@ -79,7 +79,7 @@ trait UShortSet extends SmallValuesSet {
     }
 
     /**
-     * Maps all values to a list, reversing the order in which the elements occured
+     * Maps all values to a list, reversing the order in which the elements occurred
      * in the (sorted) set.
      */
     def mapToList[T](f: UShort ⇒ T): List[T] = {
