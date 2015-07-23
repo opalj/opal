@@ -133,7 +133,11 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * @param end The end of the generated string.
      * @param offset A value that is added to all values when the string is created.
      */
-    protected[collection] def mkString(start: String, sep: String, end: String, offset: Int): String
+    protected[collection] def mkString(
+        start: String,
+        sep: String,
+        end: String,
+        offset: Int): String
 
     def mkString(start: String, sep: String, end: String): String
 

@@ -44,6 +44,7 @@ import org.opalj.br.ComputationalTypeCategory
 import org.opalj.ai.util.XHTML
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.SmallValuesSet
+import scala.collection.mutable.Queue
 
 /**
  * Collects the abstract interpretation time Definition-Use information.
@@ -57,25 +58,14 @@ import org.opalj.collection.mutable.SmallValuesSet
  * category is ignored.).
  *
  * ==Usage==
- * This trait uses the `flow` method hook. It needs to be mixed in before all other
- * domains/traits that use the `flow` method hook and which may change the processed
- * `worklist`. This domain does not change the worklist.
+ * This trait collects the def/use information after the abstract interpretation has
+ * ended.
  *
  * ==Core Properties==
  * === Reusability ===
  * This domain can be reused to successively perform abstract interpretations of different
  * methods. The domain's inherited `initProperties` method resets the entire state related
  * to the abstract interpretation of a method.
- *
- * === Efficiency ===
- * This domain never directly leads to the scheduling of subsequent instructions; instead
- * it records which instructions were not scheduled again but should have been;
- * i.e. it identifies situations where the abstract state does not change, but
- * where the information about the def-/use chains is not complete. After
- * the abstract interpretation has ended, the information is then automatically completed
- * using the abstract interpretation time control-flow graph. This way we have the
- * advantage that we get complete def-/use information without requiring the
- * (potentially very costly) abstract interpretation to continue.
  *
  * @author Michael Eichberg
  */
@@ -109,7 +99,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // space for storing the information about the usage of the parameters. The size
     // of this additional space is `parametersOffset` large and is prepended to
     // the array that mirrors the instructions array.
-    private[this] var used: Array[PCs] = _
+    private[this] var used: Array[ValueOrigins] = _
     private[this] var parametersOffset: Int = _
 
     // This array contains the information where each operand value was defined.
@@ -117,8 +107,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
-
-    private[this] var remainingPaths: PCs = _
 
     abstract override def initProperties(
         code: Code,
@@ -153,7 +141,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         this.parametersOffset = -parameterIndex
 
         this.used = new Array(codeSize + parametersOffset)
-        this.remainingPaths = UShortSet.empty
 
         super.initProperties(code, joinInstructions, locals)
     }
@@ -203,7 +190,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     val used = this.used(i + parametersOffset)
                     val usedBy = if (used eq null) "N/A" else used.mkString("{", ", ", "}")
                     <tr>
-                        <td>{ i }</td>
+                        <td>{ i }<br/>{ instructions(i).toString(i) }</td>
                         <td>{ usedBy }</td>
                         <td><ul class="Stack">{ operands }</ul></td>
                         <td><ol start="0" class="registers">{ locals }</ol></td>
@@ -294,70 +281,22 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         nodes.values.toSet + unusedNode
     }
 
-    /*DEBUG - DEV TIME*/ @volatile private[this] var lastError = 0l
-    abstract override def flow(
-        currentPC: PC,
-        successorPC: PC,
-        isSuccessorScheduled: Answer,
-        isExceptionalControlFlow: Boolean,
-        abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = {
-
-        def continuation(isSuccessorScheduled: Answer, worklist: List[PC]): List[PC] =
-            super.flow(
-                currentPC, successorPC,
-                isSuccessorScheduled,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                worklist,
-                operandsArray, localsArray,
-                tracer)
-
-        /*DEBUG - DEV TIME*/ try {
-            handleFlow(
-                currentPC, successorPC,
-                isSuccessorScheduled,
-                isExceptionalControlFlow, abruptSubroutineTerminationCount,
-                wasJoinPerformed,
-                worklist,
-                operandsArray,
-                tracer,
-                continuation)
-            /*DEBUG - DEV TIME - START */ } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable ⇒
-                this.synchronized {
-                    if ((System.currentTimeMillis() - lastError) > 2500l) {
-                        lastError = System.currentTimeMillis()
-                        org.opalj.io.writeAndOpen(dumpDefUseInfo, "DefUseInfo", ".html")
-                    }
-                }
-                throw t
-        } /*DEBUG - DEV TIME - END*/
-    }
-
     private[this] def handleFlow(
         currentPC: PC,
         successorPC: PC,
-        isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
-        abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        tracer: Option[AITracer],
-        continuation: (Answer, List[PC]) ⇒ List[PC]): List[PC] = {
+        joinInstructions: BitSet,
+        operandsArray: OperandsArray): Boolean = {
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
         val successorInstruction = instructions(successorPC)
 
-        def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit =
-            usedVars.foreach { use ⇒
+        def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit = {
+            assert(usedVars ne null)
+            assert(usedVars.nonEmpty)
+
+            usedVars foreach { use ⇒
                 val usedIndex = use + parametersOffset
                 // assert(
                 //     usedIndex >= 0,
@@ -377,11 +316,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         used(usedIndex) = newUsedInfo
                 }
             }
+        }
 
         def propagate(
             newDefOps: List[ValueOrigins],
-            newDefLocals: Registers[ValueOrigins]): Unit = {
-            if (wasJoinPerformed) {
+            newDefLocals: Registers[ValueOrigins]): Boolean = {
+            if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
@@ -406,11 +346,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
                             oldIsSuperset, oldHead :: joinedDefOps)
-                    else
+                    else {
+                        val joinedHead = (newHead ++ oldHead)
+                        assert(newHead.subsetOf(joinedHead))
+                        assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
+                        assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
-                            false, (newHead ++ oldHead) :: joinedDefOps)
+                            false, joinedHead :: joinedDefOps)
+                    }
                 }
 
                 val oldDefOps = defOps(successorPC)
@@ -455,19 +400,38 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     val joinedDefLocals =
                         oldDefLocals.merge(newDefLocals,
                             { (o, n) ⇒
-                                if ((o eq null) || (n eq null)) {
-                                    null
-                                    // <=> the register variable did not contain any
-                                    // useful information when the current instruction was
-                                    // reached for the first time, hence there will
-                                    // always be an initialization before the next
-                                    // use of the register value and we can drop all
-                                    // information.
+                                // In general, if n or o equals null, then
+                                // the register variable did not contain any
+                                // useful information when the current instruction was
+                                // reached for the first time, hence there will
+                                // always be an initialization before the next
+                                // use of the register value and we can drop all
+                                // information.... unless we have a JSR/RET.
+                                if (o eq null) {
+                                    if ((n ne null) &&
+                                        joinInstructions.contains(successorPC) &&
+                                        instructions(currentPC).isInstanceOf[JSRInstruction]) {
+                                        newUsage = true
+                                        n
+                                    } else {
+                                        null
+                                    }
+                                } else if (n eq null) {
+                                    if ((o ne null) &&
+                                        joinInstructions.contains(successorPC) &&
+                                        instructions(currentPC).isInstanceOf[JSRInstruction]) {
+                                        newUsage = true
+                                        o
+                                    } else {
+                                        null
+                                    }
                                 } else if (n subsetOf o) {
                                     o
                                 } else {
                                     newUsage = true
-                                    n ++ o
+                                    val joinedDefLocals = n ++ o
+                                    assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
+                                    joinedDefLocals
                                 }
                             })
                     if (joinedDefLocals ne oldDefLocals) {
@@ -475,24 +439,22 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //      joinedDefLocals != oldDefLocals,
                         //      s"$joinedDefLocals is (unexpectedly) equal to $newDefLocals join $oldDefLocals")
                         forceScheduling = forceScheduling || {
-                            // There is nothing to propagate if the next
-                            // instruction is a "return" instruction.
-                            !successorInstruction.isInstanceOf[ReturnInstruction] &&
-                                // There is nothing to do if all joins are related to unused vars...
-                                newUsage
+                            // There is nothing to do if all joins are related to unused vars...
+                            newUsage &&
+                                // There is nothing to propagate if the next
+                                // instruction is a "return" instruction.
+                                !successorInstruction.isInstanceOf[ReturnInstruction]
+
                         }
                         defLocals(successorPC) = joinedDefLocals
                     }
                 }
 
-                if (!forceScheduling && remainingPaths.contains(successorPC)) {
-                    // previously there was a need to schedule the instruction with
-                    // successor pc, but this need does not exist any longer...
-                    remainingPaths = remainingPaths - successorPC
-                }
+                forceScheduling
             } else {
                 defOps(successorPC) = newDefOps
                 defLocals(successorPC) = newDefLocals
+                true // <=> always schedule the execution of the next instruction
             }
         }
 
@@ -501,7 +463,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
          */
-        def stackOp(usedVarCount: Int, pushesValue: Boolean): Unit = {
+        def stackOp(usedVarCount: Int, pushesValue: Boolean): Boolean = {
             // Usage is independent of the question whether the usage resulted in an
             // exceptional control flow.
             val currentDefOps = defOps(currentPC)
@@ -517,8 +479,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
                         List(ValueOrigins(origin = successorPC))
-                    else
+                    else {
+                        assert(successorDefOps.tail.isEmpty)
                         successorDefOps
+                    }
                 } else {
                     if (pushesValue)
                         ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedVarCount)
@@ -529,7 +493,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             propagate(newDefOps, defLocals(currentPC))
         }
 
-        def load(index: Int): Unit = {
+        def load(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentLocals = defLocals(currentPC)
             propagate(
@@ -537,7 +501,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 currentLocals)
         }
 
-        def store(index: Int): Unit = {
+        def store(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentOps = defOps(currentPC)
             propagate(
@@ -548,7 +512,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         // THE IMPLEMENTATION...
 
-        (instruction.opcode: @annotation.switch) match {
+        val scheduleNextPC: Boolean = (instruction.opcode: @annotation.switch) match {
             case GOTO.opcode | GOTO_W.opcode |
                 NOP.opcode |
                 WIDE.opcode |
@@ -561,7 +525,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case RET.opcode ⇒
                 val RET(lvIndex) = instruction
                 val oldDefLocals = defLocals(currentPC)
-                updateUsed(oldDefLocals(lvIndex), currentPC)
+                val returnAddressValue = oldDefLocals(lvIndex)
+                assert(returnAddressValue.nonEmpty)
+                updateUsed(returnAddressValue, currentPC)
                 propagate(defOps(currentPC), oldDefLocals)
 
             case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
@@ -761,7 +727,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         else
                             newDefOps
                     } else
-                        defOps(currentPC)
+                        currentDefOps
                 propagate(newDefOps, defLocals(currentPC))
 
             case 132 /*iinc*/ ⇒
@@ -795,36 +761,68 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case _ ⇒ /* let's continue with the standard handling */
         }
 
-        if (forceScheduling && isSuccessorScheduled.isNoOrUnknown) {
-            val isScheduled = worklist.contains(successorPC)
-            if (isScheduled) {
-                continuation(Yes /* the successor is scheduled */ , worklist)
-            } else {
-                remainingPaths = successorPC +≈: remainingPaths
-                continuation(
-                    No /* the successor is never directly scheduled by this domain */ ,
-                    worklist)
-            }
-        } else {
-            continuation(isSuccessorScheduled, worklist)
-        }
+        scheduleNextPC
     }
 
     abstract override def abstractInterpretationEnded(
         aiResult: AIResult { val domain: defUseDomain.type }): Unit = {
-        if (remainingPaths.nonEmpty) {
-            val joinInstructions = code.joinInstructions
-            var is = ""
-            if (remainingPaths.contains(0)) {
-                is += "\n"
-                code.foreach((pc, i) ⇒ is += pc+": "+i.toString(pc)+"\n")
+        if (aiResult.wasAborted)
+            return ;
+
+        val operandsArray = aiResult.operandsArray
+        val joinInstructions = aiResult.joinInstructions
+
+        var iterationCount = 0
+        val maxIterationCount = aiResult.code.instructions.size * 50
+        var subroutinePCs = Set.empty[PC]
+        val nextPCs: Queue[PC] = Queue(0)
+
+        while (nextPCs.nonEmpty || { nextPCs ++ subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
+            val currPC = nextPCs.dequeue
+            iterationCount += 1
+            if (iterationCount > maxIterationCount) {
+                var s = "\nThe analysis failed! "
+                s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
+                println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
+                if (iterationCount > 1.1 * maxIterationCount) {
+                    org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
+                    throw new UnknownError(s)
+                }
             }
-            var s = "Remaining paths: "
-            remainingPaths.foreach { pc ⇒
-                s += (pc+" "+instructions(pc).toString(pc)+" "+joinInstructions.contains(pc))
+
+            def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
+                //println(s"$currPC: ${instructions(currPC).toString(currPC)} : $nextPCs ::: $subroutinePCs")
+                val scheduleNextPC = try {
+                    handleFlow(
+                        currPC, succPC, isExceptionalControlFlow,
+                        joinInstructions,
+                        operandsArray)
+
+                } catch {
+                    case e: Throwable ⇒
+                        println("curr: "+currPC+"; succ: "+succPC)
+                        println(defOps(currPC)+" ... "+defLocals(currPC))
+                        println(e.printStackTrace())
+                        org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
+                        throw e
+                }
+
+                assert(defLocals(succPC) ne null)
+                assert(defOps(succPC) ne null)
+
+                if (scheduleNextPC && !nextPCs.contains(succPC)) {
+                    if (instructions(currPC).isInstanceOf[JSRInstruction]) {
+                        subroutinePCs += succPC
+                    } else {
+                        nextPCs.enqueue(succPC)
+                    }
+                }
             }
-            println(s + is)
+
+            regularSuccessorsOf(currPC).foreach { handleSuccessor(false) }
+            exceptionHandlerSuccessorsOf(currPC).foreach { handleSuccessor(true) }
         }
+
         super.abstractInterpretationEnded(aiResult)
     }
 
