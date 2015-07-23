@@ -45,11 +45,12 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     }
 
     def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
+        val shiftedValue = value - offset
         val set = this.set
-        if (set.contains(value))
+        if (set.contains(shiftedValue))
             this
         else
-            new SmallValuesSetBackedByOPALSet(offset, (value - offset) +≈: set)
+            new SmallValuesSetBackedByOPALSet(offset, (shiftedValue) +≈: set)
     }
 
     def -(value: Int): SmallValuesSet = {
