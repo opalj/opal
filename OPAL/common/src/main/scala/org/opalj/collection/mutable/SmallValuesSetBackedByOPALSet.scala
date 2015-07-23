@@ -37,7 +37,7 @@ package mutable
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
     final val offset: Int,
-    private[this] val set: SmallValuesSet)
+    private val set: SmallValuesSet)
         extends SmallValuesSet {
 
     def mutableCopy: SmallValuesSetBackedByOPALSet = {
@@ -45,11 +45,12 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     }
 
     def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
+        val shiftedValue = value - offset
         val set = this.set
-        if (set.contains(value))
+        if (set.contains(shiftedValue))
             this
         else
-            new SmallValuesSetBackedByOPALSet(offset, (value - offset) +≈: set)
+            new SmallValuesSetBackedByOPALSet(offset, (shiftedValue) +≈: set)
     }
 
     def -(value: Int): SmallValuesSet = {
@@ -71,7 +72,7 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def isSubsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)
             true
         else

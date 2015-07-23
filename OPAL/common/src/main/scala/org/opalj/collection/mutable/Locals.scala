@@ -290,7 +290,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
             s + end
     }
 
-    override def toString: String = mkString("Locals(IndexedSeq(", ",", "))")
+    override def toString: String = mkString("Locals(", ",", ")")
 
 }
 

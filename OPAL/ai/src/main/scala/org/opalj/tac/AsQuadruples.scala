@@ -80,8 +80,7 @@ object AsQuadruples {
         processed(0) = true
         var worklist: List[(PC, Stack)] = List((0, Nil))
         for { exceptionHandler ← code.exceptionHandlers } (
-            worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException)))
-        )
+            worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException))))
 
         while (worklist.nonEmpty) {
             val (pc, stack) = worklist.head
@@ -114,6 +113,14 @@ object AsQuadruples {
                 schedule(nextPC, newStack)
             }
 
+            def arrayLoad(cTpe: ComputationalType): Unit = {
+                val index :: arrayRef :: rest = stack
+                val operandVar = OperandVar(cTpe, rest) //future: pass precise type
+                val source = ArrayLoad(pc, index, arrayRef)
+                statements(pc) = List(Assignment(pc, operandVar, source))
+                schedule(pcOfNextInstruction(pc), operandVar :: rest)
+            }
+
             // Note:
             // The computational type of the Binary Expression is determined using the
             // first (left) value of the expression. This makes it possible to use
@@ -124,8 +131,7 @@ object AsQuadruples {
                 val value2 :: value1 :: _ = stack
                 val cTpe = value1.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2))
-                )
+                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2)))
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
 
@@ -133,9 +139,70 @@ object AsQuadruples {
                 val value :: _ = stack
                 val cTpe = value.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value))
-                )
-                schedule(pcOfNextInstruction(pc), stack.tail)
+                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value)))
+                schedule(pcOfNextInstruction(pc), stack)
+            }
+
+            def castOperation(trgtTpe: BaseType): Unit = {
+                val value :: rest = stack
+                val result = OperandVar(trgtTpe.computationalType, stack)
+                statements(pc) = List(
+                    Assignment(pc, result, PrimitiveTypecastExpr(pc, trgtTpe, value)))
+                schedule(pcOfNextInstruction(pc), result :: rest)
+            }
+
+            def returnInstruction(fallback: SimpleVar): Unit = {
+                val returnedValue =
+                    aiResult.flatMap { r ⇒
+                        // We have to be able to handle the case that the operands
+                        // array is empty (i.e., the instruction is dead)
+                        Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
+                    }.getOrElse(fallback)
+                statements(pc) = List(ReturnValue(pc, returnedValue))
+            }
+
+            def newArray(tpe: Type): Unit = {
+                val count :: rest = stack
+                val newVal = OperandVar(ComputationalTypeReference, rest)
+                statements(pc) = List(Assignment(pc, newVal, NewArray(pc, count, tpe)))
+                schedule(pcOfNextInstruction(pc), newVal :: rest)
+            }
+
+            def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
+                instr.computationalType match {
+                    case ComputationalTypeDouble ⇒ {
+                        val newVar = OperandVar(ComputationalTypeDouble, stack)
+                        statements(pc) = List(Assignment(pc, newVar,
+                            DoubleConst(pc, as[LoadConstantInstruction[Double]](instr).value)))
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case ComputationalTypeLong ⇒ {
+                        val newVar = OperandVar(ComputationalTypeLong, stack)
+                        statements(pc) = List(Assignment(pc, newVar,
+                            LongConst(pc, as[LoadConstantInstruction[Long]](instr).value)))
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case ComputationalTypeInt ⇒ {
+                        val newVar = OperandVar(ComputationalTypeInt, stack)
+                        statements(pc) = List(Assignment(pc, newVar,
+                            IntConst(pc, as[LoadConstantInstruction[Int]](instr).value)))
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case ComputationalTypeFloat ⇒ {
+                        val newVar = OperandVar(ComputationalTypeFloat, stack)
+                        statements(pc) = List(Assignment(pc, newVar,
+                            FloatConst(pc, as[LoadConstantInstruction[Float]](instr).value)))
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case ComputationalTypeReference ⇒ {
+                        val newVar = OperandVar(ComputationalTypeReference, stack)
+                        statements(pc) = List(Assignment(pc, newVar,
+                            ClassConst(pc, as[LoadConstantInstruction[ReferenceType]](instr).value.asObjectType)))
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case _ ⇒ throw
+                        BytecodeProcessingFailedException(s"unexpected case for the $instruction: ${instr.computationalType}")
+                }
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -147,6 +214,13 @@ object AsQuadruples {
                 case ALOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeReference)
                 case ALOAD.opcode ⇒
                     loadInstruction(as[ALOAD](instruction).lvIndex, ComputationalTypeReference)
+
+                case ASTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeReference)
+                case ASTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeReference)
+                case ASTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeReference)
+                case ASTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeReference)
+                case ASTORE.opcode ⇒
+                    storeInstruction(as[ASTORE](instruction).lvIndex, ComputationalTypeReference)
 
                 case ILOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeInt)
                 case ILOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeInt)
@@ -162,24 +236,84 @@ object AsQuadruples {
                 case ISTORE.opcode ⇒
                     storeInstruction(as[ISTORE](instruction).lvIndex, ComputationalTypeInt)
 
-                case IRETURN.opcode ⇒
-                    val returnedValue =
-                        aiResult.flatMap { r ⇒
-                            // We have to be able to handle the case that the operands
-                            // array is empty (i.e., the instruction is dead)
-                            Option(r.operandsArray(pc)).map(ops ⇒ DomainValueBasedVar(0, ops.head))
-                        }.getOrElse(OperandVar.IntReturnValue)
-                    statements(pc) = List(ReturnValue(pc, returnedValue))
-                case LRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.LongReturnValue))
-                case FRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.FloatReturnValue))
-                case DRETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.DoubleReturnValue))
-                case ARETURN.opcode ⇒
-                    statements(pc) = List(ReturnValue(pc, OperandVar.ReferenceReturnValue))
+                case DLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeDouble)
+                case DLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeDouble)
+                case DLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeDouble)
+                case DLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeDouble)
+                case DLOAD.opcode ⇒
+                    loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
+
+                case DSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeDouble)
+                case DSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeDouble)
+                case DSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeDouble)
+                case DSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeDouble)
+                case DSTORE.opcode ⇒
+                    storeInstruction(as[DSTORE](instruction).lvIndex, ComputationalTypeDouble)
+
+                case FLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeFloat)
+                case FLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeFloat)
+                case FLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeFloat)
+                case FLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeFloat)
+                case FLOAD.opcode ⇒
+                    loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
+
+                case FSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeFloat)
+                case FSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeFloat)
+                case FSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeFloat)
+                case FSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeFloat)
+                case FSTORE.opcode ⇒
+                    storeInstruction(as[FSTORE](instruction).lvIndex, ComputationalTypeFloat)
+
+                case LLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeLong)
+                case LLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeLong)
+                case LLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeLong)
+                case LLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeLong)
+                case LLOAD.opcode ⇒
+                    loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
+
+                case LSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeLong)
+                case LSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeLong)
+                case LSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeLong)
+                case LSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeLong)
+                case LSTORE.opcode ⇒
+                    storeInstruction(as[LSTORE](instruction).lvIndex, ComputationalTypeLong)
+
+                case IRETURN.opcode ⇒ returnInstruction(OperandVar.IntReturnValue)
+                case LRETURN.opcode ⇒ returnInstruction(OperandVar.LongReturnValue)
+                case FRETURN.opcode ⇒ returnInstruction(OperandVar.FloatReturnValue)
+                case DRETURN.opcode ⇒ returnInstruction(OperandVar.DoubleReturnValue)
+                case ARETURN.opcode ⇒ returnInstruction(OperandVar.ReferenceReturnValue)
                 case RETURN.opcode ⇒
                     statements(pc) = List(Return(pc))
+
+                case AALOAD.opcode ⇒ arrayLoad(ComputationalTypeReference)
+                case DALOAD.opcode ⇒ arrayLoad(ComputationalTypeDouble)
+                case FALOAD.opcode ⇒ arrayLoad(ComputationalTypeFloat)
+                case IALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+                case LALOAD.opcode ⇒ arrayLoad(ComputationalTypeLong)
+                case SALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+                case BALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+                case CALOAD.opcode ⇒ arrayLoad(ComputationalTypeInt)
+
+                case AASTORE.opcode | DASTORE.opcode |
+                    FASTORE.opcode | IASTORE.opcode |
+                    LASTORE.opcode | SASTORE.opcode |
+                    BASTORE.opcode | CASTORE.opcode ⇒
+                    val operandVar :: index :: arrayRef :: rest = stack
+                    statements(pc) = List(ArrayStore(pc, arrayRef, index, operandVar))
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case ARRAYLENGTH.opcode ⇒
+                    val arrayRef :: rest = stack
+                    val length = OperandVar(ComputationalTypeInt, rest)
+                    statements(pc) = List(Assignment(pc, length, ArrayLength(pc, arrayRef)))
+                    schedule(pcOfNextInstruction(pc), length :: rest)
+
+                case BIPUSH.opcode | SIPUSH.opcode ⇒
+                    val value = as[LoadConstantInstruction[Int]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeInt, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
@@ -205,6 +339,26 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                    val ifInstr = as[IFACMPInstruction](instruction)
+                    val value2 :: value1 :: rest = stack
+                    // let's calculate the final address
+                    val targetPC = pc + ifInstr.branchoffset
+                    val stmt = If(pc, value1, ifInstr.condition, value2, targetPC)
+                    statements(pc) = List(stmt)
+                    schedule(pcOfNextInstruction(pc), rest)
+                    schedule(targetPC, rest)
+
+                case IFNONNULL.opcode | IFNULL.opcode ⇒
+                    val ifInstr = as[IFXNullInstruction](instruction)
+                    val value :: rest = stack
+                    // let's calculate the final address
+                    val targetPC = pc + ifInstr.branchoffset
+                    val stmt = If(pc, value, ifInstr.condition, NullExpr(-pc), targetPC)
+                    statements(pc) = List(stmt)
+                    schedule(pcOfNextInstruction(pc), rest)
+                    schedule(targetPC, rest)
+
                 case SWAP.opcode ⇒
                     val value2 :: value1 :: rest = stack
                     val tempVar = TempVar(value2.cTpe)
@@ -213,62 +367,291 @@ object AsQuadruples {
                     statements(pc) = List(
                         Assignment(pc, tempVar, value2),
                         Assignment(pc, newValue2, value1),
-                        Assignment(pc, newValue1, tempVar)
-                    )
+                        Assignment(pc, newValue1, tempVar))
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case DDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case DCMPG.opcode ⇒ arithmeticOperation(Greater)
-                // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case DNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case DMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case DREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case DSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                case DADD.opcode | FADD.opcode |
+                    IADD.opcode | LADD.opcode ⇒ binaryArithmeticOperation(Add)
+                case DDIV.opcode | FDIV.opcode |
+                    IDIV.opcode | LDIV.opcode ⇒ binaryArithmeticOperation(Divide)
 
-                case FADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case FDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case FCMPG.opcode ⇒ arithmeticOperation(Greater)
-                // FIXME case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case FNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case FMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case FREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case FSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                //                case DCMPG.opcode | DCMPL.opcode |
+                //                    FCMPG.opcode | FCMPL.opcode ⇒
+                //                    val value2 :: value1 :: rest = stack
+                //                    val result = OperandVar(ComputationalTypeInt, stack)
+                //                    val nanCompRes = {
+                //                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
+                //                        else IntConst(pc, -1)
+                //                    }
+                //                        //TODO sort out the program counters
+                //                    statements(pc) = List(
+                //                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
+                //                        Assignment(pc, result, nanCompRes),
+                //                        Goto(pc, pc),
+                //                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
+                //                        Assignment(pc, result, nanCompRes),
+                //                        Goto(pc, pc),
+                //                        If(pc, value1, LE, value2, pc),
+                //                        Assignment(pc, result, IntConst(pc, 1)),
+                //                        Goto(pc, pc),
+                //                        If(pc, value1, NE, value2, pc),
+                //                        Assignment(pc, result, IntConst(pc, 0)),
+                //                        Goto(pc, pc),
+                //                        Assignment(pc, result, IntConst(pc, -1))
+                //                    )
+                //                    schedule(pcOfNextInstruction(pc), result :: rest)
 
-                case IADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case IAND.opcode  ⇒ binaryArithmeticOperation(And)
-                case IDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
-                case INEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case IMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case IOR.opcode   ⇒ binaryArithmeticOperation(Or)
-                case IREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case ISHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
-                case ISHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
-                case ISUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
-                case IUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case IXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
+                case DNEG.opcode | FNEG.opcode |
+                    INEG.opcode | LNEG.opcode ⇒ prefixArithmeticOperation(Negate)
+                case DMUL.opcode | FMUL.opcode |
+                    IMUL.opcode | LMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
+                case DREM.opcode | FREM.opcode |
+                    IREM.opcode | LREM.opcode ⇒ binaryArithmeticOperation(Modulo)
+                case DSUB.opcode | FSUB.opcode |
+                    ISUB.opcode | LSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
 
-                case LADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case LAND.opcode  ⇒ binaryArithmeticOperation(And)
-                case LDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                case LNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case LMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case LOR.opcode   ⇒ binaryArithmeticOperation(Or)
-                case LREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case LSHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
-                case LSHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
-                case LSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
-                case LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case LXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
+                case IINC.opcode ⇒
+                    val IINC(index, const) = instruction
+                    val indexReg = RegisterVar(ComputationalTypeInt, index)
+                    statements(pc) = List(
+                        Assignment(pc, indexReg,
+                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const))))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
+                case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
+                case ISHL.opcode | LSHL.opcode   ⇒ binaryArithmeticOperation(ShiftLeft)
+                case ISHR.opcode | LSHR.opcode   ⇒ binaryArithmeticOperation(ShiftRight)
+                case IUSHR.opcode | LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
+                case IXOR.opcode | LXOR.opcode   ⇒ binaryArithmeticOperation(XOr)
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
-                    ICONST_4.opcode ⇒
+                    ICONST_4.opcode | ICONST_5.opcode |
+                    ICONST_M1.opcode ⇒
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
                     statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case ACONST_NULL.opcode ⇒
+                    val targetVar = OperandVar(ComputationalTypeReference, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, NullExpr(pc)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case DCONST_0.opcode | DCONST_1.opcode ⇒
+                    val value = as[LoadConstantInstruction[Double]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeDouble, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, DoubleConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case FCONST_0.opcode | FCONST_1.opcode |
+                    FCONST_2.opcode ⇒
+                    val value = as[LoadConstantInstruction[Float]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeFloat, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, FloatConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case LCONST_0.opcode | LCONST_1.opcode ⇒
+                    val value = as[LoadConstantInstruction[Long]](instruction).value
+                    val targetVar = OperandVar(ComputationalTypeLong, stack)
+                    statements(pc) = List(Assignment(pc, targetVar, LongConst(pc, value)))
+                    schedule(pcOfNextInstruction(pc), targetVar :: stack)
+
+                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+                    loadConstant(as[LoadConstantInstruction[_]](instruction))
+
+                case INVOKEINTERFACE.opcode | INVOKESPECIAL.opcode |
+                    INVOKEVIRTUAL.opcode ⇒
+                    val invoke = as[MethodInvocationInstruction](instruction)
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val (operands, rest) = stack.splitAt(numOps)
+                    val (params, receiver) = operands.splitAt(numOps - 1)
+                    val target: Option[Var] =
+                        if (invoke.methodDescriptor.returnType.isVoidType) None
+                        else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
+                    statements(pc) = List(
+                        MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
+                            receiver.headOption, params, target))
+                    schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
+
+                case INVOKESTATIC.opcode ⇒
+                    val invoke = as[INVOKESTATIC](instruction)
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val (operands, rest) = stack.splitAt(numOps)
+                    val target: Option[Var] =
+                        if (invoke.methodDescriptor.returnType.isVoidType) None
+                        else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
+                    statements(pc) = List(
+                        MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
+                            None, operands, target))
+                    schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
+
+                case NEW.opcode ⇒
+                    val instr = as[NEW](instruction)
+                    val newVal = OperandVar(ComputationalTypeReference, stack)
+                    statements(pc) = List(Assignment(pc, newVal, New(pc, instr.objectType)))
+                    schedule(pcOfNextInstruction(pc), newVal :: stack)
+
+                case NEWARRAY.opcode ⇒
+                    newArray(as[NEWARRAY](instruction).elementType)
+
+                case ANEWARRAY.opcode ⇒
+                    newArray(as[ANEWARRAY](instruction).componentType)
+
+                case MULTIANEWARRAY.opcode ⇒
+                    val instr = as[MULTIANEWARRAY](instruction)
+                    val dimensions = instr.dimensions
+                    val (counts, rest) = stack.splitAt(dimensions)
+                    val newVal = OperandVar(ComputationalTypeReference, rest)
+                    statements(pc) = List(
+                        Assignment(pc, newVal,
+                            NewMultiArray(pc, counts, dimensions, instr.componentType.elementType.asBaseType)))
+                    schedule(pcOfNextInstruction(pc), newVal :: rest)
+
+                case GOTO.opcode | GOTO_W.opcode ⇒
+                    val newPC = pc + as[GOTO](instruction).branchoffset
+                    statements(pc) = List(Goto(pc, newPC))
+                    schedule(newPC, stack)
+
+                case NOP.opcode ⇒
+                    statements(pc) = List(Nop(pc))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case POP.opcode ⇒
+                    val _ :: rest = stack
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case POP2.opcode ⇒
+                    stack match {
+                        case (val1 @ CTC1()) :: val2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), rest)
+                        case _ :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), rest)
+                    }
+
+                case INSTANCEOF.opcode ⇒
+                    val value1 :: rest = stack
+                    val resultVar = OperandVar(ComputationalTypeInt, stack)
+                    statements(pc) = List(
+                        Assignment(pc, resultVar, InstanceOf(value1, as[INSTANCEOF](instruction).referenceType)))
+                    schedule(pcOfNextInstruction(pc), resultVar :: rest)
+
+                case CHECKCAST.opcode ⇒
+                    val value1 :: _ = stack
+                    statements(pc) = List(
+                        Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType))
+                    schedule(pcOfNextInstruction(pc), stack)
+
+                case MONITORENTER.opcode ⇒
+                    val objRef :: rest = stack
+                    statements(pc) = List(MonitorEnter(pc, objRef))
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case MONITOREXIT.opcode ⇒
+                    val objRef :: rest = stack
+                    statements(pc) = List(MonitorExit(pc, objRef))
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case TABLESWITCH.opcode ⇒
+                    val index :: rest = stack
+                    val tsInst = as[TABLESWITCH](instruction)
+                    val defaultTarget = pc + tsInst.defaultOffset
+                    val jumpOffsets = tsInst.jumpOffsets.seq
+                    val npairs =
+                        for { i ← (tsInst.low) - 1 to (tsInst.high) - 1 } yield (i, jumpOffsets(i) + pc)
+                    statements(pc) = List(
+                        Switch(pc, defaultTarget, index, npairs))
+                    schedule(defaultTarget, rest)
+                    for (target ← npairs) {
+                        schedule(target._2, rest)
+                    }
+
+                case LOOKUPSWITCH.opcode ⇒
+                    val index :: rest = stack
+                    val tsInst = as[LOOKUPSWITCH](instruction)
+                    val defaultTarget = pc + tsInst.defaultOffset
+                    val npairs = tsInst.npairs.map { x ⇒ (x._1, x._2 + pc) }
+                    statements(pc) = List(
+                        Switch(pc, defaultTarget, index, npairs))
+                    schedule(defaultTarget, rest)
+                    for (target ← npairs) {
+                        schedule(target._2, rest)
+                    }
+
+                case DUP.opcode ⇒
+                    val head :: _ = stack
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), head /*:: head */ :: stack)
+
+                case DUP_X1.opcode ⇒
+                    val val1 :: val2 :: rest = stack
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), val1 :: val2 :: val1 :: rest)
+
+                case DUP_X2.opcode ⇒
+                    stack match {
+                        case v1 :: (v2 @ CTC1()) :: v3 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
+                        case v1 :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
+
+                case DUP2.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: v2 :: rest)
+                        case v1 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v1 :: rest)
+                    }
+
+                case DUP2_X1.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: v2 :: v3 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                        case v1 :: v2 :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
+
+                case DUP2_X2.opcode ⇒
+                    stack match {
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
+                        case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                        case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                            statements(pc) = List(EmptyStmt(pc))
+                            schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
+                    }
+
+                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ castOperation(FloatType)
+                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ castOperation(IntegerType)
+                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ castOperation(LongType)
+                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ castOperation(DoubleType)
+                case I2C.opcode                           ⇒ castOperation(CharType)
+                case I2B.opcode                           ⇒ castOperation(ByteType)
+                case I2S.opcode                           ⇒ castOperation(ShortType)
+
+                case ATHROW.opcode ⇒
+                    statements(pc) = List(Throw(pc, stack.head))
+
+                case WIDE.opcode ⇒
+                    statements(pc) = List(EmptyStmt(pc))
+                    schedule(pcOfNextInstruction(pc), stack)
 
                 // TODO Add support for all the other instructions!
 
@@ -319,5 +702,31 @@ object AsQuadruples {
         finalStatements.toArray
     }
 
+}
+
+/**
+ * Facilitates matching against values of computational type category 1.
+ *
+ * @example
+ * {{{
+ * case v @ CTC1() => ...
+ * }}}
+ */
+object CTC1 {
+    def unapply(value: Var): Boolean =
+        value.cTpe.category == 1
+}
+
+/**
+ * Facilitates matching against values of computational type category 2.
+ *
+ * @example
+ * {{{
+ * case v @ CTC2() => ...
+ * }}}
+ */
+object CTC2 {
+    def unapply(value: Var): Boolean =
+        value.cTpe.category == 2
 }
 

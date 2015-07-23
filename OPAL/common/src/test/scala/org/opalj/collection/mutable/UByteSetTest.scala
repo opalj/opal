@@ -110,24 +110,24 @@ class UByteSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
         it("it should be possible to test the subtypeOf relation between constructed sets") {
             // HANDLED BY UByteSet4
-            UByteSet.empty.isSubsetOf(UByteSet(92)) should be(true)
-            UByteSet(92).isSubsetOf(UByteSet(92)) should be(true)
-            UByteSet(92).isSubsetOf(UByteSet(92) ++ UByteSet(70)) should be(true)
-            UByteSet(92).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3)) should be(true)
-            UByteSet(92).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet.empty.subsetOf(UByteSet(92)) should be(true)
+            UByteSet(92).subsetOf(UByteSet(92)) should be(true)
+            UByteSet(92).subsetOf(UByteSet(92) ++ UByteSet(70)) should be(true)
+            UByteSet(92).subsetOf(UByteSet(92).+≈:(70).+≈:(3)) should be(true)
+            UByteSet(92).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
 
-            UByteSet(92).+≈:(70).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
-            UByteSet(92).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
-            UByteSet(92).+≈:(70).+≈:(3).+≈:(100).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(70).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(70).+≈:(3).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(70).+≈:(3).+≈:(100).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
 
-            UByteSet(92).+≈:(3).+≈:(100).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
-            UByteSet(92).+≈:(100).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
-            UByteSet(92).+≈:(100).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(3).+≈:(100).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(100).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
+            UByteSet(92).+≈:(100).+≈:(70).+≈:(3).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100)) should be(true)
 
             // Handled by UBytesSetNode
-            UByteSet.empty.isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
-            UByteSet(92).+≈:(100).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
-            UByteSet(92).+≈:(34).+≈:(100).+≈:(70).+≈:(3).isSubsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
+            UByteSet.empty.subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
+            UByteSet(92).+≈:(100).+≈:(70).+≈:(3).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
+            UByteSet(92).+≈:(34).+≈:(100).+≈:(70).+≈:(3).subsetOf(UByteSet(92).+≈:(70).+≈:(3).+≈:(100).+≈:(34)) should be(true)
         }
 
         it("the same set should be returned if the set does not contain the vaue") {

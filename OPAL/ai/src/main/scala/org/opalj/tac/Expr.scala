@@ -52,6 +52,10 @@ trait Expr {
  */
 case class Param(cTpe: ComputationalType, name: String) extends Expr
 
+case class InstanceOf(target: Var, cmpTp: ReferenceType) extends Expr {
+    final def cTpe = ComputationalTypeInt
+}
+
 sealed trait Const extends Expr
 
 case class IntConst(pc: PC, value: Int) extends Expr {
@@ -102,6 +106,47 @@ case class PrefixExpr(
     cTpe: ComputationalType,
     op: UnaryArithmeticOperator,
     operand: Expr) extends Expr
+
+case class PrimitiveTypecastExpr(
+        pc: PC,
+        targetTpe: BaseType,
+        operand: Expr) extends Expr {
+    final def cTpe = targetTpe.computationalType
+}
+
+case class New(
+        pc: PC,
+        tpe: ObjectType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class NewArray(
+        pc: PC,
+        count: Var,
+        tpe: Type) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class NewMultiArray(
+        pc: PC,
+        counts: List[Var],
+        dimensions: Int,
+        tpe: Type) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class ArrayLoad(
+        pc: PC,
+        index: Var,
+        arrayRef: Var) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class ArrayLength(
+        pc: PC,
+        arrayRef: Var) extends Expr {
+    final def cTpe = ComputationalTypeInt
+}
 
 trait Var extends Expr {
 
@@ -162,6 +207,7 @@ object RegisterVar {
     }
 
 }
+
 object OperandVar {
 
     /**

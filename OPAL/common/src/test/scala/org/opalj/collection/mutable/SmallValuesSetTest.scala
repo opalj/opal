@@ -149,37 +149,37 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
                 val set1 = SmallValuesSet.empty(300, 310)
                 val set2 = SmallValuesSet.empty(0, 5)
 
-                set1.isSubsetOf(set2) should be(true)
-                set2.isSubsetOf(set1) should be(true)
+                set1.subsetOf(set2) should be(true)
+                set2.subsetOf(set1) should be(true)
             }
 
             {
                 val set1 = SmallValuesSet.empty(0, 1310)
                 val set2 = SmallValuesSet.empty(0, 5)
 
-                set1.isSubsetOf(set2) should be(true)
-                set2.isSubsetOf(set1) should be(true)
+                set1.subsetOf(set2) should be(true)
+                set2.subsetOf(set1) should be(true)
             }
             {
                 val set1 = SmallValuesSet.empty(-10, 1310)
                 val set2 = SmallValuesSet.empty(-100, 5)
 
-                set1.isSubsetOf(set2) should be(true)
-                set2.isSubsetOf(set1) should be(true)
+                set1.subsetOf(set2) should be(true)
+                set2.subsetOf(set1) should be(true)
             }
             {
                 val set1 = SmallValuesSet.empty(0, 10)
                 val set2 = SmallValuesSet.empty(-100, 5)
 
-                set1.isSubsetOf(set2) should be(true)
-                set2.isSubsetOf(set1) should be(true)
+                set1.subsetOf(set2) should be(true)
+                set2.subsetOf(set1) should be(true)
             }
             {
                 val set1 = SmallValuesSet.empty(0, 10000)
                 val set2 = SmallValuesSet.empty(-100, 5)
 
-                set1.isSubsetOf(set2) should be(true)
-                set2.isSubsetOf(set1) should be(true)
+                set1.subsetOf(set2) should be(true)
+                set2.subsetOf(set1) should be(true)
             }
         }
 
@@ -189,22 +189,22 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
                 val set2 = SmallValuesSet.create(0, 310, 300)
                 assert(set2.contains(300))
 
-                set1.isSubsetOf(set2) should be(true)
-                if (set2.isSubsetOf(set1)) fail(s"$set2 is a subset of $set1")
+                set1.subsetOf(set2) should be(true)
+                if (set2.subsetOf(set1)) fail(s"$set2 is a subset of $set1")
             }
             {
                 val set1 = SmallValuesSet.empty(300, 310).+≈:(303).+≈:(304)
                 val set2 = SmallValuesSet.create(0, 310, 300).+≈:(301).+≈:(303).+≈:(304)
                 val set3 = set2.+≈:(304).+≈:(307).+≈:(305).+≈:(309)
 
-                if (!set1.isSubsetOf(set2)) fail(s"$set1 is not a subset of $set2")
-                set1.isSubsetOf(set3) should be(true)
+                if (!set1.subsetOf(set2)) fail(s"$set1 is not a subset of $set2")
+                set1.subsetOf(set3) should be(true)
 
-                set2.isSubsetOf(set3) should be(true)
-                set2.isSubsetOf(set1) should be(false)
+                set2.subsetOf(set3) should be(true)
+                set2.subsetOf(set1) should be(false)
 
-                set3.isSubsetOf(set1) should be(false)
-                set3.isSubsetOf(set2) should be(false)
+                set3.subsetOf(set1) should be(false)
+                set3.subsetOf(set2) should be(false)
             }
             {
                 val set1 = SmallValuesSet.empty(-10, 310).+≈:(303).+≈:(304).+≈:(-5)
@@ -216,24 +216,24 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
                 set3.size should be > (set2Copy.size)
                 set2Copy should equal(SmallValuesSet.create(-100, 10310, -5).+≈:(300).+≈:(301).+≈:(303).+≈:(304))
 
-                if (!set1.isSubsetOf(set2)) fail(s"$set1 is not a subset of $set2")
-                set1.isSubsetOf(set3) should be(true)
+                if (!set1.subsetOf(set2)) fail(s"$set1 is not a subset of $set2")
+                set1.subsetOf(set3) should be(true)
 
-                set2.isSubsetOf(set3) should be(true)
-                set2.isSubsetOf(set1) should be(false)
+                set2.subsetOf(set3) should be(true)
+                set2.subsetOf(set1) should be(false)
 
-                set3.isSubsetOf(set1) should be(false)
-                if (set3.isSubsetOf(set2Copy)) fail(s"$set3 is not a subset of $set2")
-                if (!set2Copy.isSubsetOf(set3)) fail(s"$set2Copy should not be a subset of $set3")
-                if (!set2Copy.isSubsetOf(set2)) fail(s"$set2Copy should not be a subset of $set2")
+                set3.subsetOf(set1) should be(false)
+                if (set3.subsetOf(set2Copy)) fail(s"$set3 is not a subset of $set2")
+                if (!set2Copy.subsetOf(set3)) fail(s"$set2Copy should not be a subset of $set3")
+                if (!set2Copy.subsetOf(set2)) fail(s"$set2Copy should not be a subset of $set2")
             }
 
             {
                 val set1 = SmallValuesSet.empty(-10, 10).+≈:(3).+≈:(4).+≈:(-5)
                 val set2 = SmallValuesSet.create(-100, 10310, 300).+≈:(301).+≈:(-5).+≈:(3).+≈:(4)
 
-                if (!set1.isSubsetOf(set2)) fail(s"$set1 is not a subset of $set2")
-                set2.isSubsetOf(set1) should be(false)
+                if (!set1.subsetOf(set2)) fail(s"$set1 is not a subset of $set2")
+                set2.subsetOf(set1) should be(false)
 
             }
         }
@@ -244,33 +244,50 @@ class SmallValuesSetTest extends FunSpec with Matchers with ParallelTestExecutio
             val emptySet3 = SmallValuesSet.empty(-10, -2)
             val emptySet4 = SmallValuesSet.empty(10, 300)
             val emptySet5 = SmallValuesSet.empty(-100000, 30000)
-            emptySet1.isSubsetOf(emptySet2) should be(true)
-            emptySet1.isSubsetOf(emptySet2) should be(true)
-            emptySet1.isSubsetOf(emptySet3) should be(true)
-            emptySet1.isSubsetOf(emptySet4) should be(true)
-            emptySet1.isSubsetOf(emptySet5) should be(true)
-            emptySet2.isSubsetOf(emptySet1) should be(true)
-            emptySet2.isSubsetOf(emptySet2) should be(true)
-            emptySet2.isSubsetOf(emptySet3) should be(true)
-            emptySet2.isSubsetOf(emptySet4) should be(true)
-            emptySet2.isSubsetOf(emptySet5) should be(true)
-            emptySet3.isSubsetOf(emptySet1) should be(true)
-            emptySet3.isSubsetOf(emptySet2) should be(true)
-            emptySet3.isSubsetOf(emptySet3) should be(true)
-            emptySet3.isSubsetOf(emptySet4) should be(true)
-            emptySet3.isSubsetOf(emptySet5) should be(true)
-            emptySet4.isSubsetOf(emptySet1) should be(true)
-            emptySet4.isSubsetOf(emptySet2) should be(true)
-            emptySet4.isSubsetOf(emptySet3) should be(true)
-            emptySet4.isSubsetOf(emptySet4) should be(true)
-            emptySet4.isSubsetOf(emptySet5) should be(true)
-            if (!emptySet5.isSubsetOf(emptySet1)) fail(s"$emptySet5 is not a subset of $emptySet1")
-            emptySet5.isSubsetOf(emptySet2) should be(true)
-            emptySet5.isSubsetOf(emptySet3) should be(true)
-            emptySet5.isSubsetOf(emptySet4) should be(true)
-            emptySet5.isSubsetOf(emptySet5) should be(true)
+            emptySet1.subsetOf(emptySet2) should be(true)
+            emptySet1.subsetOf(emptySet2) should be(true)
+            emptySet1.subsetOf(emptySet3) should be(true)
+            emptySet1.subsetOf(emptySet4) should be(true)
+            emptySet1.subsetOf(emptySet5) should be(true)
+            emptySet2.subsetOf(emptySet1) should be(true)
+            emptySet2.subsetOf(emptySet2) should be(true)
+            emptySet2.subsetOf(emptySet3) should be(true)
+            emptySet2.subsetOf(emptySet4) should be(true)
+            emptySet2.subsetOf(emptySet5) should be(true)
+            emptySet3.subsetOf(emptySet1) should be(true)
+            emptySet3.subsetOf(emptySet2) should be(true)
+            emptySet3.subsetOf(emptySet3) should be(true)
+            emptySet3.subsetOf(emptySet4) should be(true)
+            emptySet3.subsetOf(emptySet5) should be(true)
+            emptySet4.subsetOf(emptySet1) should be(true)
+            emptySet4.subsetOf(emptySet2) should be(true)
+            emptySet4.subsetOf(emptySet3) should be(true)
+            emptySet4.subsetOf(emptySet4) should be(true)
+            emptySet4.subsetOf(emptySet5) should be(true)
+            if (!emptySet5.subsetOf(emptySet1)) fail(s"$emptySet5 is not a subset of $emptySet1")
+            emptySet5.subsetOf(emptySet2) should be(true)
+            emptySet5.subsetOf(emptySet3) should be(true)
+            emptySet5.subsetOf(emptySet4) should be(true)
+            emptySet5.subsetOf(emptySet5) should be(true)
 
         }
+
+        it("should be possible to add the elements of two singleton sets") {
+            {
+                val r = SmallValuesSet.create(-4, 10000, 47) ++ SmallValuesSet.create(-4, 10000, 51)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+            {
+                val r = SmallValuesSet.create(-4, 10000, 51) ++ SmallValuesSet.create(-4, 10000, 47)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+
+        }
+
     }
 
 }

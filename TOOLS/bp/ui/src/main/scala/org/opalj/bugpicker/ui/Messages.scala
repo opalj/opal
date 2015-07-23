@@ -38,6 +38,7 @@ object Messages {
     def getMessage(path: String): String =
         process(getClass.getResourceAsStream(path))(Source.fromInputStream(_).mkString)
 
+    final val ABSTRACT_INTERPRETATION_RUNNING = getMessage("/org/opalj/bugpicker/ui/messages/abstractinterpretationrunning.html")
     final val ANALYSIS_RUNNING = getMessage("/org/opalj/bugpicker/ui/messages/analysisrunning.html")
     final val ANALYSIS_FINISHED = getMessage("/org/opalj/bugpicker/ui/messages/analysisfinished.html")
     final val LOADING_FINISHED = getMessage("/org/opalj/bugpicker/ui/messages/projectloadingfinished.html")

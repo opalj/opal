@@ -1673,7 +1673,7 @@ class ClassHierarchy private (
         private val nodes: Map[ObjectType, Node] = {
             val nodes = HashMap.empty[ObjectType, Node]
 
-            foreachNonNullValueOf(knownTypesMap) { (id, aType) ⇒
+            foreachNonNullValue(knownTypesMap) { (id, aType) ⇒
                 val entry: (ObjectType, Node) = (
                     aType,
                     new Node {

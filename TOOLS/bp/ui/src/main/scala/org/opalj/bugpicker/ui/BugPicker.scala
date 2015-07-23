@@ -34,6 +34,7 @@ import java.io.File
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
+
 import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
@@ -41,6 +42,7 @@ import scala.xml.dtd.IntDef
 import scala.xml.dtd.EntityDef
 import scala.xml.dtd.ParsedEntityDecl
 import scala.xml.dtd.NoExternalID
+
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
@@ -55,18 +57,13 @@ import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
 import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
+import org.opalj.util.Milliseconds
+
 import javafx.application.Application
+import javafx.event.EventHandler
 import javafx.scene.control.ScrollBar
-import javafx.scene.control.SeparatorMenuItem
-import scalafx.Includes.eventClosureWrapperWithParam
-import scalafx.Includes.jfxActionEvent2sfx
-import scalafx.Includes.jfxMenuItem2sfx
-import scalafx.Includes.jfxRectangle2D2sfx
-import scalafx.Includes.jfxScreen2sfx
-import scalafx.Includes.jfxStage2sfx
-import scalafx.Includes.jfxTab2sfx
-import scalafx.Includes.jfxWindowEvent2sfx
-import scalafx.Includes.observableList2ObservableBuffer
+
+import scalafx.Includes._
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 import scalafx.collections.ObservableBuffer
@@ -77,13 +74,17 @@ import scalafx.concurrent.Service
 import scalafx.concurrent.Task
 import scalafx.concurrent.Task.sfxTask2jfx
 import scalafx.event.ActionEvent
+import scalafx.geometry.Insets
 import scalafx.geometry.Orientation
+import scalafx.geometry.Pos
 import scalafx.geometry.Rectangle2D
 import scalafx.scene.Scene
+import scalafx.scene.control.Button
 import scalafx.scene.control.Label
 import scalafx.scene.control.Menu
 import scalafx.scene.control.MenuBar
 import scalafx.scene.control.MenuItem
+import scalafx.scene.control.SeparatorMenuItem
 import scalafx.scene.control.SplitPane
 import scalafx.scene.control.Tab
 import scalafx.scene.control.TabPane
@@ -94,10 +95,16 @@ import scalafx.scene.control.TableColumn
 import scalafx.scene.control.TableColumn.sfxTableColumn2jfx
 import scalafx.scene.control.TableView
 import scalafx.scene.control.TableView.sfxTableView2jfx
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.Tooltip
+import scalafx.scene.control.TreeView
+import scalafx.scene.image.ImageView
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
 import scalafx.scene.input.KeyCodeCombination
 import scalafx.scene.input.KeyCombination
+import scalafx.scene.input.MouseEvent
+import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
 import scalafx.scene.paint.Color
@@ -111,7 +118,6 @@ import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
-import org.opalj.util.Milliseconds
 
 /**
  * @author Arne Lottmann
@@ -290,6 +296,81 @@ class BugPicker extends Application {
                 closable = false
             }
         }
+        val projectExplorerShown: VBox = new VBox {
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            alignment = Pos.TopRight
+            padding = Insets(5, 10, 10, 10)
+        }
+        val projectExplorerHidden: VBox = new VBox {
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            alignment = Pos.TopRight
+            padding = Insets(5, 7, 0, 4)
+        }
+        val contentPane = new SplitPane {
+            orientation = Orientation.VERTICAL
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            dividerPositions = 0.45d
+
+            items ++= Seq(reportView, tabPane)
+        }
+        val bugPickerPane = new SplitPane {
+            orientation = Orientation.HORIZONTAL
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            dividerPositions = 0.20d
+
+            items ++= Seq(contentPane)
+        }
+        val restoreProjectExplorerButton = new Button {
+            minWidth = 15
+            maxWidth = 15
+            id = "projectExplorer"
+            tooltip = new Tooltip {
+                text = "Restore"
+            }
+            graphic = new ImageView {
+                image = ProjectExplorer.getImage("/org/opalj/bugpicker/ui/explorer/restore_view.gif")
+            }
+        }
+        val minimizeProjectExplorerButton = new Button {
+            id = "projectExplorer"
+            tooltip = new Tooltip {
+                text = "Minimize"
+            }
+            graphic = new ImageView {
+                image = ProjectExplorer.getImage("/org/opalj/bugpicker/ui/explorer/minimize_view.gif")
+            }
+            onAction = { e: ActionEvent ⇒
+                bugPickerPane.items.remove(0)
+                bugPickerPane.items.add(0, projectExplorerHidden)
+                bugPickerPane.setDividerPositions(0.00d)
+                bugPickerPane.layout
+            }
+        }
+        restoreProjectExplorerButton.onAction = { e: ActionEvent ⇒
+            bugPickerPane.items.remove(0)
+            bugPickerPane.items.add(0, projectExplorerShown)
+            bugPickerPane.setDividerPositions(0.20d)
+            bugPickerPane.layout
+        }
+        val projectExplorerTreeView: TreeView[ProjectExplorerData] = new TreeView[ProjectExplorerData] {
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            minWidth = 150
+            minHeight = 200
+            showRoot = true
+            visible = false
+        }
+        val projectExplorer = new ProjectExplorer(projectExplorerTreeView, stage)
+
+        projectExplorerShown.children = Seq(
+            minimizeProjectExplorerButton,
+            projectExplorerTreeView)
+        projectExplorerHidden.children = Seq(
+            restoreProjectExplorerButton)
 
         OPALLogger.initGlobalContextLogger(new BugPickerOPALLogger(bugpickerLogMessages))
 
@@ -410,6 +491,7 @@ class BugPicker extends Application {
                 byteView.engine.loadContent("")
                 bugpickerLogMessages.clear()
                 reportView.engine.loadContent(Messages.LOADING_STARTED)
+                projectExplorer.reset(results.get.projectName)
                 Service {
                     Task[Unit] {
                         val projectAndSources = ProjectHelper.setupProject(results.get, stage, projectLogMessages)
@@ -421,6 +503,11 @@ class BugPicker extends Application {
                                 tabPane.selectionModel().select(1)
                             }
                             reportView.engine.loadContent(Messages.LOADING_FINISHED)
+                            projectExplorer.buildProjectExplorer(project, sources, results.get.projectName)
+                            if (!projectExplorerTreeView.isVisible()) {
+                                projectExplorerTreeView.visible = true
+                                bugPickerPane.items.add(0, projectExplorerShown)
+                            }
                         }
                     }
                 }.start
@@ -552,8 +639,7 @@ class BugPicker extends Application {
                                     recentProjects.head.projectName,
                                     currentAnalysis,
                                     currentAnalysisParameters.toStringParameters,
-                                    p
-                                ).show(stage)
+                                    p).show(stage)
                             }
                         }
                     }
@@ -598,11 +684,11 @@ class BugPicker extends Application {
                         }
                     }
                 }) ++ Seq(
+                    new SeparatorMenuItem,
                     new MenuItem {
                         text = "_Clear Items"
                         mnemonicParsing = true
                         accelerator = KeyCombination("Shortcut+0")
-                        id = "clearItems"
                         onAction = { e: ActionEvent ⇒
                             Platform.runLater {
                                 recentProjects = Seq.empty
@@ -649,14 +735,7 @@ class BugPicker extends Application {
                 hgrow = Priority.Always
                 children = Seq(
                     createMenuBar(),
-                    new SplitPane {
-                        orientation = Orientation.VERTICAL
-                        vgrow = Priority.Always
-                        hgrow = Priority.Always
-                        dividerPositions = 0.4
-
-                        items ++= Seq(reportView, tabPane)
-                    })
+                    bugPickerPane)
             }
 
             stylesheets += BugPicker.defaultAppCSSURL

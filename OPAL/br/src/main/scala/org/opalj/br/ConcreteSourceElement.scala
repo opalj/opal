@@ -29,6 +29,8 @@
 package org.opalj
 package br
 
+import org.opalj.bi.VisibilityModifier
+
 /**
  * We treat as a source element every entity that can be referred to
  * by other class files.
@@ -38,5 +40,7 @@ package br
 trait ConcreteSourceElement extends SourceElement {
 
     def accessFlags: Int
+
+    def visibilityModifier: Option[VisibilityModifier] = VisibilityModifier.get(accessFlags)
 
 }

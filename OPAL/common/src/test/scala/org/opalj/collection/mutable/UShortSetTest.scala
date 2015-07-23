@@ -230,6 +230,21 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 }
             }
         }
+
+        it("it should be possible to add the elements of two singleton sets") {
+            {
+                val r = UShortSet(47) ++ UShortSet(51)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+            {
+                val r = UShortSet(51) ++ UShortSet(47)
+                r.size should be(2)
+                r.contains(47) should be(true)
+                r.contains(51) should be(true)
+            }
+        }
     }
 
 }
