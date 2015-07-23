@@ -82,14 +82,14 @@ object ProjectExplorerPackageData {
  */
 class ProjectExplorerClassData(
         name: StringProperty,
-        val classFile: Option[ClassFile]) extends ProjectExplorerData(name) {
+        val classFile: ClassFile) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerClassData {
 
     def apply(
         name: String,
-        classFile: Option[ClassFile]): ProjectExplorerClassData = {
+        classFile: ClassFile): ProjectExplorerClassData = {
         new ProjectExplorerClassData(
             new StringProperty(this, "name", name),
             classFile)
@@ -103,8 +103,8 @@ object ProjectExplorerClassData {
  */
 class ProjectExplorerMethodData(
         name: StringProperty,
-        val classFile: Option[ClassFile],
-        val method: Option[Method],
+        val classFile: ClassFile,
+        val method: Method,
         val isStatic: BooleanProperty,
         val isAbstract: BooleanProperty) extends ProjectExplorerData(name) {
 }
@@ -113,8 +113,8 @@ object ProjectExplorerMethodData {
 
     def apply(
         name: String,
-        classFile: Option[ClassFile],
-        method: Option[Method],
+        classFile: ClassFile,
+        method: Method,
         isStatic: Boolean,
         isAbstract: Boolean): ProjectExplorerMethodData = {
         new ProjectExplorerMethodData(

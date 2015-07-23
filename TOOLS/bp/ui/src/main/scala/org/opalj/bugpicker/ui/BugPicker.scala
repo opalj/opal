@@ -34,7 +34,6 @@ import java.io.File
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
-
 import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
@@ -42,7 +41,6 @@ import scala.xml.dtd.IntDef
 import scala.xml.dtd.EntityDef
 import scala.xml.dtd.ParsedEntityDecl
 import scala.xml.dtd.NoExternalID
-
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
@@ -58,11 +56,9 @@ import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
 import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
 import org.opalj.util.Milliseconds
-
 import javafx.application.Application
 import javafx.event.EventHandler
 import javafx.scene.control.ScrollBar
-
 import scalafx.Includes._
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
@@ -118,6 +114,7 @@ import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
+import scalafx.scene.input.MouseButton
 
 /**
  * @author Arne Lottmann
@@ -763,6 +760,14 @@ class BugPicker extends Application {
                 maximizeOnCurrentScreen(stage)
             }
         }
+
+        stage.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, new EventHandler[javafx.scene.input.MouseEvent]() {
+            def handle(e: javafx.scene.input.MouseEvent): Unit = {
+                if (e.button == MouseButton.SECONDARY) {
+                    stage.toFront()
+                }
+            }
+        })
 
         stage.onCloseRequest = { e: WindowEvent ⇒
             BugPicker.storeWindowSizeInPreferences(
