@@ -70,7 +70,7 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
     protected[collection] def mkString(
         pre: String, sep: String, pos: String,
         offset: Int): String = {
-        mapToList(_ + offset).mkString(pre, sep, pos)
+        mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
     def mkString(start: String, sep: String, end: String): String =
