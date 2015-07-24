@@ -59,6 +59,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
     import BinaryArithmeticOperators._
+    import RelationalOperators._
     import UnaryArithmeticOperators._
 
     val FloatAddMethod = ArithmeticExpressionsClassFile.findMethod("floatAdd").get
@@ -67,7 +68,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
     val FloatMulMethod = ArithmeticExpressionsClassFile.findMethod("floatMul").get
     val FloatRemMethod = ArithmeticExpressionsClassFile.findMethod("floatRem").get
     val FloatSubMethod = ArithmeticExpressionsClassFile.findMethod("floatSub").get
-    //            val FloatCmpMethod = ArithmeticExpressionsClassFile.findMethod("floatCmp").get
+    val FloatCmpMethod = ArithmeticExpressionsClassFile.findMethod("floatCmp").get
 
     describe("The quadruples representation of float operations") {
 
@@ -173,17 +174,38 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
-            //            it("should correctly reflect comparison (using no AI results)") {
-            //                val statements = AsQuadruples(FloatCmpMethod, None)
-            //                val javaLikeCode = ToJavaLike(statements)
-            //                TODO
-            //                assert(statements.nonEmpty)
-            //                assert(javaLikeCode.length() > 0)
-            //                statements.shouldEqual(binaryAST(
-            //                    Assignment(2, SimpleVar(0, ComputationalTypeLong),
-            //                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
-            //                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + op_2; \n"+returnJLC)
-            //            }
+            it("should correctly reflect comparison (using no AI results)") {
+                val statements = AsQuadruples(FloatCmpMethod, None)
+                val javaLikeCode = ToJavaLike(statements, false)
+
+                assert(statements.nonEmpty)
+                assert(javaLikeCode.length > 0)
+                statements.shouldEqual(Array(
+                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                    Assignment(-1, SimpleVar(-2, ComputationalTypeFloat), Param(ComputationalTypeFloat, "p_1")),
+                    Assignment(-1, SimpleVar(-3, ComputationalTypeFloat), Param(ComputationalTypeFloat, "p_2")),
+                    Assignment(0, SimpleVar(0, ComputationalTypeFloat), SimpleVar(-2, ComputationalTypeFloat)),
+                    Assignment(1, SimpleVar(1, ComputationalTypeFloat), SimpleVar(-3, ComputationalTypeFloat)),
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt), FloatingPointCompare(2, SimpleVar(0, ComputationalTypeFloat), CMPG, SimpleVar(1, ComputationalTypeFloat))),
+                    If(3, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-3, 0), 9),
+                    Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 1)),
+                    Goto(7, 10),
+                    Assignment(10, SimpleVar(0, ComputationalTypeInt), IntConst(10, 0)),
+                    ReturnValue(11, SimpleVar(0, ComputationalTypeInt))))
+                javaLikeCode.shouldEqual(Array(
+                    "0: r_0 = this;",
+                    "1: r_1 = p_1;",
+                    "2: r_2 = p_2;",
+                    "3: op_0 = r_1;",
+                    "4: op_1 = r_2;",
+                    "5: op_0 = op_0 cmpg op_1;",
+                    "6: if(op_0 >= 0) goto 9;",
+                    "7: op_0 = 1;",
+                    "8: goto 10;",
+                    "9: op_0 = 0;",
+                    "10: return op_0;"
+                ))
+            }
         }
 
         describe("using AI results") {
@@ -305,17 +327,6 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
-            //            it("should correctly reflect comparison (using no AI results)") {
-            //                val statements = AsQuadruples(FloatCmpMethod, None)
-            //                val javaLikeCode = ToJavaLike(statements)
-            //                TODO
-            //                assert(statements.nonEmpty)
-            //                assert(javaLikeCode.length() > 0)
-            //                statements.shouldEqual(binaryAST(
-            //                    Assignment(2, SimpleVar(0, ComputationalTypeLong),
-            //                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
-            //                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + op_2; \n"+returnJLC)
-            //            }
         }
     }
 }

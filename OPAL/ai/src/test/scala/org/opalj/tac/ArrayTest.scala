@@ -126,13 +126,13 @@ class ArrayTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
-                    "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+                    "2: op_0 = new java.lang.Object[op_0];",
                     "3: r_1 = op_0;",
                     "4: op_0 = r_1;",
                     "5: op_1 = 4;",
                     "6: op_2 = new Object;",
                     "7: ;",
-                    "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+                    "8: op_2/*java.lang.Object*/.<init>();",
                     "9: op_0[op_1] = op_2;",
                     "10: op_0 = r_1;",
                     "11: op_1 = 4;",
@@ -187,7 +187,7 @@ class ArrayTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))
-                javaLikeCode.shouldEqual(expectedJLC("float", "2.0"))
+                javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
             }
 
             it("should correctly reflect int array instructions") {
@@ -299,13 +299,13 @@ class ArrayTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
-                    "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+                    "2: op_0 = new java.lang.Object[op_0];",
                     "3: r_1 = op_0;",
                     "4: op_0 = r_1;",
                     "5: op_1 = 4;",
                     "6: op_2 = new Object;",
                     "7: ;",
-                    "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+                    "8: op_2/*java.lang.Object*/.<init>();",
                     "9: op_0[op_1] = op_2;",
                     "10: op_0 = r_1;",
                     "11: op_1 = 4;",
@@ -366,7 +366,7 @@ class ArrayTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))
-                javaLikeCode.shouldEqual(expectedJLC("float", "2.0"))
+                javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
             }
 
             it("should correctly reflect int array instructions") {
