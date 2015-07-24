@@ -149,9 +149,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
+<<<<<<< HEAD
                 // we always decrement parameterIndex to get the same offsets as
                 // used by the AI for parameters
                 parameterIndex -= 1
+=======
+                parameterIndex -= 1 // to get the same offsets as used by the AI for parameters
+>>>>>>> added methods to get def/use information
                 if (v ne null) {
                     ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                 } else {
@@ -237,7 +241,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     /**
      * Returns the instructions which use the value with the given value origin.
      */
+<<<<<<< HEAD
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
+=======
+    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin)
+>>>>>>> added methods to get def/use information
 
     /**
      * Returns the instruction which defined the value used by the instruction with the given `pc` and which
@@ -337,12 +345,29 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val instruction = instructions(currentPC)
         val successorInstruction = instructions(successorPC)
 
+<<<<<<< HEAD
         //
         // HELPER METHODS
         //
         def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
             usedValues foreach { usedValue ⇒
                 val usedIndex = usedValue + parametersOffset
+=======
+        def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit = {
+            //            assert(usedVars ne null)
+            //            assert(usedVars.nonEmpty)
+
+            usedVars foreach { use ⇒
+                val usedIndex = use + parametersOffset
+                // assert(
+                //     usedIndex >= 0,
+                //     s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
+                //         defLocals(0).mapKV((i, l) ⇒
+                //             if (l eq null)
+                //                 i+": N/A"
+                //             else
+                //                 l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
+>>>>>>> added methods to get def/use information
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
