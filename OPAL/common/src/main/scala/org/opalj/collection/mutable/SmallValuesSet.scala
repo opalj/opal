@@ -32,9 +32,11 @@ package mutable
 
 /**
  * A memory-efficient, '''semi-mutable''', sorted set of small values that
- * is highly tailored for small(er) sets of small
- * values, where the set will always
- * just grow but stays small. Removing elements is not possible.
+ * is highly tailored for small(er) sets.
+ *
+ * Compared to a standard Scala set, an Int or Long value is used to store multiple
+ * values (e.g. a long value (64bit) can be used to store up to four unsigned short
+ * values(16bit)).
  *
  * @author Michael Eichberg
  */
@@ -68,9 +70,9 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
         newSet
     }
 
-    def -(value: Int): SmallValuesSet /* Redefines the return type. */
+    def -(value: Int): MutableSmallValuesSet /* Redefines the return type. */
 
-    override def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
+    def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
 }
 
 /**
@@ -83,8 +85,8 @@ object SmallValuesSet {
     /**
      * Creates a new empty set that can store values in the range `[0,max]`.
      *
-     * The behavior of the set is undefined if a value is stored outside the specified
-     * range!
+     * The behavior of the returned set is undefined if a value should be stored in it
+     * which is outside of the specified range!
      */
     def empty(max: Int): SmallValuesSet = {
         if (max <= UByte.MaxValue)
@@ -99,8 +101,8 @@ object SmallValuesSet {
      * Creates a new set that can store values in the range `[0,max]` and which contains
      * the given `value`.
      *
-     * The behavior of the set is undefined if a value is stored outside the specified
-     * range!
+     * The behavior of the returned set is undefined if a value should be stored in it
+     * which is outside of the specified range!
      */
     def create(max: Int, value: Int): SmallValuesSet = {
         if (max <= UByte.MaxValue)
@@ -114,8 +116,8 @@ object SmallValuesSet {
     /**
      * Creates a new empty set that can store values in the range `[min,max]`.
      *
-     * The behavior of the set is undefined if a value is stored outside the specified
-     * range!
+     * The behavior of the returned set is undefined if a value should be stored in it
+     * which is outside of the specified range!
      */
     def empty(min: Int, max: Int): SmallValuesSet = {
         if (min == 0) {
@@ -135,8 +137,8 @@ object SmallValuesSet {
      * Creates a new set that can store values in the range `[min,max]` and which
      * contains the given `value`.
      *
-     * The behavior of the set is undefined if a value is stored outside the specified
-     * range!
+     * The behavior of the returned set is undefined if a value should be stored in it
+     * which is outside of the specified range!
      */
     def create(min: Int, max: Int, value: Int): SmallValuesSet = {
         if (min == 0) {
