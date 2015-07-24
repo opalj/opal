@@ -83,7 +83,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
-                    "2: op_0 = op_0/*ObjectType(tactest/StackManipulationAndSynchronization)*/.returnInt();",
+                    "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
                     "4: return;"))
             }
@@ -103,7 +103,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
-                    "2: op_0 = op_0/*ObjectType(tactest/StackManipulationAndSynchronization)*/.returnDouble();",
+                    "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
                     "4: return;"))
             }
@@ -125,7 +125,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
-                    "3: op_0/*ObjectType(java/lang/Object)*/.<init>();",
+                    "3: op_0/*java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: return;"))
             }
@@ -185,7 +185,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = ObjectType(tactest/StackManipulationAndSynchronization).staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
                     "4: r_1 = op_0;",
                     "5: return;"))
             }
@@ -213,13 +213,13 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
                     "2: ;",
-                    "3: op_0/*ObjectType(java/util/ArrayList)*/.<init>();",
+                    "3: op_0/*java.util.ArrayList*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: op_0 = r_1;",
                     "6: op_1 = new Object;",
                     "7: ;",
-                    "8: op_1/*ObjectType(java/lang/Object)*/.<init>();",
-                    "9: op_0 = op_0/*ObjectType(java/util/List)*/.add(op_1);",
+                    "8: op_1/*java.lang.Object*/.<init>();",
+                    "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
                     "11: return;"))
             }
@@ -243,7 +243,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
-                    "2: op_0 = op_0/*ObjectType(tactest/StackManipulationAndSynchronization)*/.returnInt();",
+                    "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
                     "4: return;"))
             }
@@ -265,7 +265,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
-                    "2: op_0 = op_0/*ObjectType(tactest/StackManipulationAndSynchronization)*/.returnDouble();",
+                    "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
                     "4: return;"))
             }
@@ -289,7 +289,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
-                    "3: op_0/*ObjectType(java/lang/Object)*/.<init>();",
+                    "3: op_0/*java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: return;"))
             }
@@ -353,7 +353,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = ObjectType(tactest/StackManipulationAndSynchronization).staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
                     "4: r_1 = op_0;",
                     "5: return;"))
             }
@@ -383,13 +383,13 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
                     "2: ;",
-                    "3: op_0/*ObjectType(java/util/ArrayList)*/.<init>();",
+                    "3: op_0/*java.util.ArrayList*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: op_0 = r_1;",
                     "6: op_1 = new Object;",
                     "7: ;",
-                    "8: op_1/*ObjectType(java/lang/Object)*/.<init>();",
-                    "9: op_0 = op_0/*ObjectType(java/util/List)*/.add(op_1);",
+                    "8: op_1/*java.lang.Object*/.<init>();",
+                    "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
                     "11: return;"))
             }

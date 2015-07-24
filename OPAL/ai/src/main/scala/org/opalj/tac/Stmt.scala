@@ -81,6 +81,18 @@ case class Goto(pc: PC, private[tac] var target: Int) extends Stmt {
 
 }
 
+case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
+
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+        target = pcToIndex(target)
+    }
+
+    // Calling this method is only supported after the quadruples representation
+    // is created and the remapping of pcs to instruction indexes has happened!
+    def targetStmt: Int = target
+
+}
+
 case class Switch(pc: PC, private[tac] var defaultTarget: Int, index: Var, private[tac] var npairs: IndexedSeq[(Int, Int)]) extends Stmt {
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
@@ -113,8 +125,6 @@ case class Return(pc: PC) extends SimpleStmt
 case class Nop(pc: PC) extends SimpleStmt
 
 case class EmptyStmt(pc: PC) extends SimpleStmt
-
-case class Checkcast(pc: PC, target: Var, cmpTp: ReferenceType) extends SimpleStmt
 
 case class MonitorEnter(pc: PC, objRef: Var) extends SimpleStmt
 

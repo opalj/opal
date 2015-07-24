@@ -150,11 +150,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Return(6)))
                 javaLikeCode.shouldEqual(
                     Array("0: r_0 = this;",
-                        "1: op_0 = 0.0;",
+                        "1: op_0 = 0.0f;",
                         "2: r_1 = op_0;",
-                        "3: op_0 = 1.0;",
+                        "3: op_0 = 1.0f;",
                         "4: r_2 = op_0;",
-                        "5: op_0 = 2.0;",
+                        "5: op_0 = 2.0f;",
                         "6: r_3 = op_0;",
                         "7: return;"))
             }
@@ -220,7 +220,7 @@ class ConstantsTest extends FunSpec with Matchers {
                     Array("0: r_0 = this;",
                         "1: op_0 = 10;",
                         "2: r_1 = op_0;",
-                        "3: op_0 = 10.0;",
+                        "3: op_0 = 10.0f;",
                         "4: r_2 = op_0;",
                         "5: op_0 = 10l;",
                         "6: r_3 = op_0;",
@@ -319,11 +319,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Return(6)))
                 javaLikeCode.shouldEqual(
                     Array("0: r_0 = this;",
-                        "1: op_0 = 0.0;",
+                        "1: op_0 = 0.0f;",
                         "2: r_1 = op_0;",
-                        "3: op_0 = 1.0;",
+                        "3: op_0 = 1.0f;",
                         "4: r_2 = op_0;",
-                        "5: op_0 = 2.0;",
+                        "5: op_0 = 2.0f;",
                         "6: r_3 = op_0;",
                         "7: return;"))
             }
@@ -395,7 +395,7 @@ class ConstantsTest extends FunSpec with Matchers {
                     Array("0: r_0 = this;",
                         "1: op_0 = 10;",
                         "2: r_1 = op_0;",
-                        "3: op_0 = 10.0;",
+                        "3: op_0 = 10.0f;",
                         "4: r_2 = op_0;",
                         "5: op_0 = 10l;",
                         "6: r_3 = op_0;",

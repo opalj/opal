@@ -38,6 +38,7 @@ import org.opalj.ai.Domain
 import org.opalj.br._
 
 trait Expr {
+
     /**
      * An approximation of the type of the underlying value. It is the best
      * type information directly available. The precision of the type information
@@ -52,8 +53,23 @@ trait Expr {
  */
 case class Param(cTpe: ComputationalType, name: String) extends Expr
 
-case class InstanceOf(target: Var, cmpTp: ReferenceType) extends Expr {
+case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeInt
+}
+
+case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class FloatingPointCompare(
+    pc: PC,
+    left: Expr,
+    condition: RelationalOperator,
+    right: Expr)
+        extends Expr {
+
+    final def cTpe: ComputationalType = ComputationalTypeInt
+
 }
 
 sealed trait Const extends Expr

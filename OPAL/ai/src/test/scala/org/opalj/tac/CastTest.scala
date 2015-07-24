@@ -121,7 +121,7 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(SimpleVar(0, ComputationalTypeReference), refTp)),
+                Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(1, SimpleVar(0, ComputationalTypeReference), refTp)),
                 Assignment(4, SimpleVar(-3, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)),
                 Return(5))
 
@@ -132,7 +132,7 @@ class CastTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(typecheckResultAST(ObjectType.Object))
-                javaLikeCode.shouldEqual(typecheckResultJLC("Object"))
+                javaLikeCode.shouldEqual(typecheckResultJLC(ObjectType.Object.toJava))
             }
 
             it("should correctly reflect the instanceof List instruction") {
@@ -141,8 +141,9 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(typecheckResultAST(ReferenceType.apply("java/util/List")))
-                javaLikeCode.shouldEqual(typecheckResultJLC("List"))
+                val listTpe = ReferenceType.apply("java/util/List")
+                statements.shouldEqual(typecheckResultAST(listTpe))
+                javaLikeCode.shouldEqual(typecheckResultJLC(listTpe.toJava))
             }
 
             it("should correctly reflect the checkcast instruction") {
@@ -151,18 +152,19 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
+                val listType = ReferenceType("java/util/List")
+                statements.shouldEqual(Array[Stmt](
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType.apply("java/util/List")),
+                    Assignment(1, SimpleVar(0, ComputationalTypeReference), Checkcast(1, SimpleVar(0, ComputationalTypeReference), listType)),
                     Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Return(5)))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
                     "2: op_0 = r_1;",
-                    "3: op_0 checkcast List;",
+                    s"3: op_0 = (${listType.toJava}) op_0;",
                     "4: r_2 = op_0;",
                     "5: return;"))
             }
@@ -356,7 +358,7 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(SimpleVar(0, ComputationalTypeReference), refTp)),
+                Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(1, SimpleVar(0, ComputationalTypeReference), refTp)),
                 Assignment(4, SimpleVar(-3, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)),
                 Return(5))
 
@@ -369,7 +371,7 @@ class CastTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(typecheckResultAST(ObjectType.Object))
-                javaLikeCode.shouldEqual(typecheckResultJLC("Object"))
+                javaLikeCode.shouldEqual(typecheckResultJLC(ObjectType.Object.toJava))
             }
 
             it("should correctly reflect the instanceof List instruction") {
@@ -380,8 +382,9 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(typecheckResultAST(ReferenceType.apply("java/util/List")))
-                javaLikeCode.shouldEqual(typecheckResultJLC("List"))
+                val listType = ReferenceType.apply("java/util/List")
+                statements.shouldEqual(typecheckResultAST(listType))
+                javaLikeCode.shouldEqual(typecheckResultJLC(listType.toJava))
             }
 
             it("should correctly reflect the checkcast instruction") {
@@ -392,18 +395,26 @@ class CastTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                    Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType.apply("java/util/List")),
-                    Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(5)))
+                val expected =
+                    Array[Stmt](
+                        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                        Assignment(-1, SimpleVar(-2, ComputationalTypeReference), Param(ComputationalTypeReference, "p_1")),
+                        Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
+                        Assignment(1, SimpleVar(0, ComputationalTypeReference), Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType("java/util/List"))),
+                        Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
+                        Return(5))
+                if (!(statements.toSeq == expected.toSeq)) {
+                    fail(expected.
+                        zip(statements).
+                        map(ev ⇒ ev._1.toString()+" == "+ev._2.toString()+" = "+(ev._1 == ev._2)).
+                        mkString("\n")
+                    )
+                }
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
                     "2: op_0 = r_1;",
-                    "3: op_0 checkcast List;",
+                    "3: op_0 = (java.util.List) op_0;",
                     "4: r_2 = op_0;",
                     "5: return;"))
             }
