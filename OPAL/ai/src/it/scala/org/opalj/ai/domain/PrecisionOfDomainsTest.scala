@@ -179,13 +179,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            /*
-			val jreClassFiles = project.classFiles
-            val classFilesPerPackage = jreClassFiles.groupBy(cf ⇒ cf.thisType.packageName)
-            val classFilesPerPackageSorted = classFilesPerPackage.toSeq.sortWith(
-                (v1, v2) ⇒ v1._1 < v2._1
-            )
-			*/
+
             project.parForeachMethodWithBody() { m ⇒
                 val (_, classFile, method) = m
                 val a1 = BaseAI
