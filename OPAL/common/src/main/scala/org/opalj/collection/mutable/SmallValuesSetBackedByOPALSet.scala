@@ -31,6 +31,8 @@ package collection
 package mutable
 
 /**
+ * A small values set backed by an OPAL set.
+ *
  * @param offset The value that needs to is subtracted from every value that is stored
  *          in the set to make sure all values are in the range [0,...]. The offset
  *          is added again before the value is returned.
@@ -40,11 +42,21 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     private val set: SmallValuesSet)
         extends SmallValuesSet {
 
-    def mutableCopy: SmallValuesSetBackedByOPALSet = {
+    override def min = set.min + offset
+
+    override def max = set.max + offset
+
+    override def size = set.size
+
+    override def isSingletonSet = set.isSingletonSet
+
+    override def isEmpty = set.isEmpty
+
+    override def mutableCopy: SmallValuesSetBackedByOPALSet = {
         new SmallValuesSetBackedByOPALSet(offset, set.mutableCopy)
     }
 
-    def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
+    override def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
         val shiftedValue = value - offset
         val set = this.set
         if (set.contains(shiftedValue))
@@ -53,7 +65,7 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
             new SmallValuesSetBackedByOPALSet(offset, (shiftedValue) +≈: set)
     }
 
-    def -(value: Int): SmallValuesSet = {
+    override def -(value: Int): SmallValuesSet = {
         val set = this.set
         val newSet = set - (value - offset)
         if (newSet eq set)
@@ -62,33 +74,27 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
             new SmallValuesSetBackedByOPALSet(offset, newSet)
     }
 
-    def min = set.min + offset
-    def max = set.max + offset
-    override def size = set.size
-    def isSingletonSet = set.isSingletonSet
-    override def isEmpty = set.isEmpty
+    override def contains(value: Int): Boolean = set.contains(value - offset)
 
-    def contains(value: Int): Boolean = set.contains(value - offset)
+    override def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
-
-    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+    override def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)
             true
         else
             set.forall(v ⇒ other.contains(v + offset))
     }
 
-    def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv + offset))
+    override def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv + offset))
 
     override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v + offset))
 
-    protected[collection] def mkString(
+    override protected[collection] def mkString(
         start: String, sep: String, end: String,
         offset: Int): String =
         set.mkString(start, sep, end, offset)
 
-    def mkString(start: String, sep: String, end: String): String =
+    override def mkString(start: String, sep: String, end: String): String =
         mkString(start, sep, end, offset)
 
     override def toString(): String = {
