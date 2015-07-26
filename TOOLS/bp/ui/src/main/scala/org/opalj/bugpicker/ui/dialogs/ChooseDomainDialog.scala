@@ -72,7 +72,7 @@ class ChooseDomainDialog extends Stage {
 
     val self = this
 
-    title = "Choose domain"
+    title = "Choose Domain"
     width = 300
     scene = new Scene {
         root = new BorderPane {
@@ -86,7 +86,7 @@ class ChooseDomainDialog extends Stage {
                             mnemonicParsing = true
                             margin = defaultMargin
                             userData = domain
-                            selected = domain.contains("The most basic domain")
+                            selected = domain.contains("basic domain")
                             tooltip = new Tooltip {
                                 text = domain
                             }

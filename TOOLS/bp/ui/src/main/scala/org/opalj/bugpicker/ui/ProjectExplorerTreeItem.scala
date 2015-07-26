@@ -30,7 +30,6 @@ package org.opalj
 package bugpicker
 package ui
 
-import java.util.Comparator
 import scala.collection.mutable.Map
 
 import org.opalj.br.ClassFile
@@ -98,9 +97,9 @@ class ProjectExplorerTreeItem(
         data match {
             case p: ProjectExplorerPackageData ⇒ sortProjectExplorerTreeItems(
                 addClassFiles(classFileStructure(parent)))
-            case c: ProjectExplorerClassData if (c.classFile.isDefined) ⇒ sortProjectExplorerTreeItems(
-                addClassMembers(c.classFile.get, c.classFile.get.fields, determineFieldIcon) ++
-                    addClassMembers(c.classFile.get, c.classFile.get.methods, determineMethodIcon))
+            case c: ProjectExplorerClassData ⇒ sortProjectExplorerTreeItems(
+                addClassMembers(c.classFile, c.classFile.fields, determineFieldIcon) ++
+                    addClassMembers(c.classFile, c.classFile.methods, determineMethodIcon))
             case _ ⇒ ObservableBuffer.empty
         }
     }
@@ -112,7 +111,7 @@ class ProjectExplorerTreeItem(
             new ProjectExplorerTreeItem(
                 ProjectExplorerClassData(
                     objectType.simpleName,
-                    Some(classFile)),
+                    classFile),
                 new ImageView {
                     image = determineClassIcon(classFile)
                 })
@@ -128,8 +127,8 @@ class ProjectExplorerTreeItem(
                 case m: Method ⇒ {
                     ProjectExplorerMethodData(
                         m.name,
-                        Some(classFile),
-                        Some(m),
+                        classFile,
+                        m,
                         m.isStatic,
                         m.isAbstract)
                 }
