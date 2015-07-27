@@ -38,3 +38,9 @@ trait FConstInstruction extends LoadConstantInstruction[Float] with ImplicitValu
     final override def computationalType = ComputationalTypeFloat
 
 }
+
+object FConstInstruction {
+
+    def unapply(instr: FConstInstruction): Option[Float] = Some(instr.value)
+
+}
