@@ -33,50 +33,68 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.reader
-
 import java.io.File
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import java.io.DataInputStream
-import java.io.ByteArrayInputStream
-import org.opalj.bytecode.BytecodeProcessingFailedException
-
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**
- * Tests the conversion of parsed methods to a quadruple representation
+ * Tests that all methods of the JDK can be converted to a three address representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class JDKTestTAC extends FunSpec with Matchers with ParallelTestExecution {
+class TACJDKTest extends FunSpec with Matchers {
 
-    describe("Behavior of \"OPAL\"") {
+    describe("creating the three-address representation") {
         val jreLibFolder: File = JRELibraryFolder
         val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-        it("should be able to convert all classes to three-address code") {
-            var errors: Seq[Throwable] = Seq.empty
+        it("should be able to convert all methods of the JDK to three-address code") {
+            var errors: List[(String, Throwable)] = Nil
+            val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
+            val mutex = new Object
             for {
-                file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+                file ← (jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()).par
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
             } {
                 reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
                     val (cf, _) = cs
-                    cf.methods.foreach { m ⇒
-                        try AsQuadruples(m, None)
-                        catch {
-                            case e: Throwable ⇒ errors = errors ++ Seq[Throwable](e)
+                    cf.methods.filter(_.body.isDefined) foreach { m ⇒
+                        try {
+                            ToJavaLike(AsQuadruples(m, None))
+                            successfullyCompleted.incrementAndGet()
+                        } catch {
+                            case e: Throwable ⇒ this.synchronized {
+                                val method = m.toJava(cf)
+                                mutex.synchronized {
+                                    println(method)
+                                    e.printStackTrace()
+                                    if (e.getCause != null) {
+                                        println("\tcause:")
+                                        e.getCause.printStackTrace()
+                                    }
+                                    println("\n")
+                                }
+                                errors ::= ((method, e))
+                            }
                         }
                     }
                 }
             }
-            assert(errors.equals(Seq.empty))
+            if (errors.nonEmpty) {
+                val message =
+                    errors.
+                        map(_.toString()+"\n").
+                        mkString(
+                            "Errors thrown:\n",
+                            "\n",
+                            "Number of Successfully completed:"+successfullyCompleted.get+
+                                "; Number of Errors: "+errors.size+"\n")
+                fail(message)
+            }
         }
     }
 }
