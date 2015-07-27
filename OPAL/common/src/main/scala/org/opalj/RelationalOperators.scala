@@ -54,4 +54,9 @@ object RelationalOperators extends Enumeration {
     final val CMPG = Value("cmpg")
     final val CMPL = Value("cmpl")
 
+    //
+    // Operators to compare long values.
+    //
+    final val CMP = Value("cmp")
+
 }
