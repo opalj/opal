@@ -48,7 +48,7 @@ import org.opalj.ai.domain.l1.DefaultDomain
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class SwitchTest extends FunSpec with Matchers {
+class SwitchTest extends TACTest {
 
     val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
 
@@ -69,11 +69,12 @@ class SwitchTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
+
+                val expected = Array[Stmt](
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((0, 4), (1, 6), (2, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -81,12 +82,15 @@ class SwitchTest extends FunSpec with Matchers {
                     Assignment(32, SimpleVar(0, ComputationalTypeInt), IntConst(32, 3)),
                     ReturnValue(33, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(34, SimpleVar(0, ComputationalTypeInt), IntConst(34, 0)),
-                    ReturnValue(35, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(35, SimpleVar(0, ComputationalTypeInt))
+                )
+                compareStatements(expected, statements)
+
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
                     "2: op_0 = r_1;",
-                    "3: switch(op_0){\n    0: goto 4;\n    1: goto 6;\n    2: goto 8;\n    default: goto 10;\n}",
+                    "3: switch(op_0){\n    1: goto 4;\n    2: goto 6;\n    3: goto 8;\n    default: goto 10;\n}",
                     "4: op_0 = 1;",
                     "5: return op_0;",
                     "6: op_0 = 2;",
@@ -141,7 +145,7 @@ class SwitchTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((0, 4), (1, 6), (2, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, DomainValueBasedVar(0, domain.IntegerRange(1) /*int=1*/ )),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -154,7 +158,7 @@ class SwitchTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
                     "2: op_0 = r_1;",
-                    "3: switch(op_0){\n    0: goto 4;\n    1: goto 6;\n    2: goto 8;\n    default: goto 10;\n}",
+                    "3: switch(op_0){\n    1: goto 4;\n    2: goto 6;\n    3: goto 8;\n    default: goto 10;\n}",
                     "4: op_0 = 1;",
                     "5: return op_0 /*int = 1*/;",
                     "6: op_0 = 2;",

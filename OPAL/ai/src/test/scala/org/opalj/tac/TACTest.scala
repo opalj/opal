@@ -26,38 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package tactest;
+package org.opalj
+package tac
+
+import java.util.Arrays
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 /**
- * Class with simple methods containing switch statements.
- * 
- * @author Roberts Kolosovs
- *
+ * @author Michael Eichberg
  */
-public class SwitchStatements {
+class TACTest extends FunSpec with Matchers {
 
-    int tableSwitch(int a) {
-        switch (a) {
-        case 1:
-            return 1;
-        case 2:
-            return 2;
-        case 3:
-            return 3;
-        default:
-            return 0;
+    def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
+        if (!Arrays.equals(expectedStmts.asInstanceOf[Array[Object]], actualStmts.asInstanceOf[Array[Object]])) {
+            val message =
+                actualStmts.zip(expectedStmts).
+                    filter(p ⇒ p._1 != p._2).
+                    map(p ⇒ "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
+                    mkString("Differences:\n", "\n", "\n")
+            fail(message)
         }
     }
-
-    int lookupSwitch(int a) {
-        switch (a) {
-        case 1:
-            return 10;
-        case 10:
-            return 200;
-        default:
-            return 0;
-        }
-    }
-
 }

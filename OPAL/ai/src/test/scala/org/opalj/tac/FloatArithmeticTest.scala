@@ -186,7 +186,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-3, ComputationalTypeFloat), Param(ComputationalTypeFloat, "p_2")),
                     Assignment(0, SimpleVar(0, ComputationalTypeFloat), SimpleVar(-2, ComputationalTypeFloat)),
                     Assignment(1, SimpleVar(1, ComputationalTypeFloat), SimpleVar(-3, ComputationalTypeFloat)),
-                    Assignment(2, SimpleVar(0, ComputationalTypeInt), FloatingPointCompare(2, SimpleVar(0, ComputationalTypeFloat), CMPG, SimpleVar(1, ComputationalTypeFloat))),
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt), Compare(2, SimpleVar(0, ComputationalTypeFloat), CMPG, SimpleVar(1, ComputationalTypeFloat))),
                     If(3, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-3, 0), 9),
                     Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 1)),
                     Goto(7, 10),
