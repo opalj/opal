@@ -1445,6 +1445,23 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     def dimensions: Int =
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
 
+    /**
+     * Returns the type of the nth dimension. E.g., if dimensions is `0`
+     * `this` is returned; if it is `1` then this arraytype's component type is returned.
+     * If the value is larger than `1` then the `componentType` has to be an array type
+     * and `drop(dimensions-1)` will be called on that type.
+     *
+     * @param dimensions The number of dimensions to drop. This values has be equal or
+     *      smaller than the number of dimensions of this array.
+     */
+    def drop(dimensions: Int): FieldType = {
+        dimensions match {
+            case 0 ⇒ this
+            case 1 ⇒ this.componentType
+            case _ ⇒ this.componentType.asArrayType.drop(dimensions - 1)
+        }
+    }
+
     override def toJava: String = componentType.toJava+"[]"
 
     override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
