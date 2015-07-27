@@ -117,3 +117,70 @@ object LoadConstantInstruction {
             case _              ⇒ ACONST_NULL
         }
 }
+
+object LDCFloat {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[Float] = {
+        ldc match {
+            case LoadFloat(value)   ⇒ Some(value)
+            case LoadFloat_W(value) ⇒ Some(value)
+            case _                  ⇒ None
+        }
+    }
+}
+
+object LDCInt {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[Int] = {
+        ldc match {
+            case LoadInt(value)   ⇒ Some(value)
+            case LoadInt_W(value) ⇒ Some(value)
+            case _                ⇒ None
+        }
+    }
+}
+
+object LDCClass {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[ReferenceType] = {
+        ldc match {
+            case LoadClass(value)   ⇒ Some(value)
+            case LoadClass_W(value) ⇒ Some(value)
+            case _                  ⇒ None
+        }
+    }
+}
+
+object LDCString {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[String] = {
+        ldc match {
+            case LoadString(value)   ⇒ Some(value)
+            case LoadString_W(value) ⇒ Some(value)
+            case _                   ⇒ None
+        }
+    }
+}
+
+object LDCMethodHandle {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[MethodHandle] = {
+        ldc match {
+            case LoadMethodHandle(value)   ⇒ Some(value)
+            case LoadMethodHandle_W(value) ⇒ Some(value)
+            case _                         ⇒ None
+        }
+    }
+}
+
+object LDCMethodType {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[MethodDescriptor] = {
+        ldc match {
+            case LoadMethodType(value)   ⇒ Some(value)
+            case LoadMethodType_W(value) ⇒ Some(value)
+            case _                       ⇒ None
+        }
+    }
+}
+

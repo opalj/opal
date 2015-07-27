@@ -38,3 +38,8 @@ trait IConstInstruction extends LoadConstantInstruction[Int] with ImplicitValue 
     final override def computationalType = ComputationalTypeInt
 
 }
+object IConstInstruction {
+
+    def unapply(instr: IConstInstruction): Option[Int] = Some(instr.value)
+
+}
