@@ -60,7 +60,7 @@ object ToJavaLike {
             case Checkcast(_, value, tpe) ⇒
                 s"(${tpe.asReferenceType.toJava}) ${toJavaLikeExpr(value)}"
 
-            case FloatingPointCompare(_, left, op, right) ⇒
+            case Compare(_, left, op, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
 
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
@@ -75,11 +75,13 @@ object ToJavaLike {
             case New(_, objTpe) ⇒
                 s"new ${objTpe.simpleName}"
 
-            case NewArray(_, count, tpe) ⇒
-                s"new ${tpe.toJava}[${toJavaLikeExpr(count)}]"
-
-            case NewMultiArray(_, counts, dims, tpe) ⇒
-                "new "+tpe.toJava + multiArrayDims(counts, dims)
+            case NewArray(_, counts, arrayType) ⇒
+                val initializedDimensions = counts.size
+                val dimensions = arrayType.dimensions
+                val initializer =
+                    counts.map(c ⇒ s"[${toJavaLikeExpr(c)}]").reverse.mkString("") +
+                        ("[]" * (dimensions - initializedDimensions))
+                s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
             case ArrayLoad(_, index, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
@@ -98,8 +100,8 @@ object ToJavaLike {
             case Nop(_)                      ⇒ ";"
             case EmptyStmt(_)                ⇒ ";"
 
-            case MonitorEnter(_, objRef)     ⇒ s"monitorenter ${objRef.name};"
-            case MonitorExit(_, objRef)      ⇒ s"monitorexit ${objRef.name};"
+            case MonitorEnter(_, objRef)     ⇒ s"monitorenter ${toJavaLikeExpr(objRef)};"
+            case MonitorExit(_, objRef)      ⇒ s"monitorexit ${toJavaLikeExpr(objRef)};"
 
             case Goto(_, target)             ⇒ s"goto $target;"
             case JumpToSubroutine(_, target) ⇒ s"jsr $target;"
@@ -113,6 +115,12 @@ object ToJavaLike {
 
             case ArrayStore(_, arrayRef, index, operandVar) ⇒
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
+
+            case PutStatic(_, declaringClass, name, value) ⇒
+                s"${declaringClass.toJava}.$name = ${toJavaLikeExpr(value)}"
+
+            case PutField(_, declaringClass, name, receiver, value) ⇒
+                s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
 
             case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
                 val code = new StringBuffer(256)
@@ -172,12 +180,6 @@ object ToJavaLike {
         var result = "\n"
         for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
         result+"    default: goto "+defTrg+";\n"
-    }
-
-    def multiArrayDims(counts: List[Var], dims: Int): String = {
-        var result = ""
-        for (i ← 0 to (dims - 1)) { result = "["+toJavaLikeExpr(counts.drop(i).head)+"]"+result }
-        result
     }
 
 }

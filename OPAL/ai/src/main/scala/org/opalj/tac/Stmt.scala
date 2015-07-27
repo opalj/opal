@@ -126,13 +126,23 @@ case class Nop(pc: PC) extends SimpleStmt
 
 case class EmptyStmt(pc: PC) extends SimpleStmt
 
-case class MonitorEnter(pc: PC, objRef: Var) extends SimpleStmt
+case class MonitorEnter(pc: PC, objRef: Expr) extends SimpleStmt
 
-case class MonitorExit(pc: PC, objRef: Var) extends SimpleStmt
+case class MonitorExit(pc: PC, objRef: Expr) extends SimpleStmt
 
-case class ArrayStore(pc: PC, arrayRef: Var, index: Var, operandVar: Var) extends SimpleStmt
+case class ArrayStore(pc: PC, arrayRef: Expr, index: Expr, operandVar: Expr) extends SimpleStmt
 
-case class Throw(pc: PC, excption: Var) extends SimpleStmt
+case class Throw(pc: PC, exception: Expr) extends SimpleStmt
+
+case class PutStatic(
+    pc: PC,
+    declaringClass: ObjectType, name: String,
+    value: Expr) extends SimpleStmt
+
+case class PutField(
+    pc: PC,
+    declaringClass: ObjectType, name: String,
+    objRef: Expr, value: Expr) extends SimpleStmt
 
 /**
  * Call of a method.
