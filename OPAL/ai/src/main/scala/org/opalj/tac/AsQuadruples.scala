@@ -162,48 +162,86 @@ object AsQuadruples {
                 statements(pc) = List(ReturnValue(pc, returnedValue))
             }
 
-            def newArray(tpe: Type): Unit = {
+            def newArray(arrayType: ArrayType): Unit = {
                 val count :: rest = stack
                 val newVal = OperandVar(ComputationalTypeReference, rest)
-                statements(pc) = List(Assignment(pc, newVal, NewArray(pc, count, tpe)))
+                statements(pc) = List(Assignment(pc, newVal, NewArray(pc, List(count), arrayType)))
                 schedule(pcOfNextInstruction(pc), newVal :: rest)
             }
 
             def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
-                instr.computationalType match {
-                    case ComputationalTypeDouble ⇒ {
-                        val newVar = OperandVar(ComputationalTypeDouble, stack)
-                        statements(pc) = List(Assignment(pc, newVar,
-                            DoubleConst(pc, as[LoadConstantInstruction[Double]](instr).value)))
-                        schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case ComputationalTypeLong ⇒ {
-                        val newVar = OperandVar(ComputationalTypeLong, stack)
-                        statements(pc) = List(Assignment(pc, newVar,
-                            LongConst(pc, as[LoadConstantInstruction[Long]](instr).value)))
-                        schedule(pcOfNextInstruction(pc), newVar :: stack)
-                    }
-                    case ComputationalTypeInt ⇒ {
+                instr match {
+                    case LDCInt(value) ⇒ {
                         val newVar = OperandVar(ComputationalTypeInt, stack)
-                        statements(pc) = List(Assignment(pc, newVar,
-                            IntConst(pc, as[LoadConstantInstruction[Int]](instr).value)))
+                        statements(pc) = List(
+                            Assignment(pc, newVar, IntConst(pc, value))
+                        )
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
                     }
-                    case ComputationalTypeFloat ⇒ {
+                    case LDCFloat(value) ⇒ {
                         val newVar = OperandVar(ComputationalTypeFloat, stack)
-                        statements(pc) = List(Assignment(pc, newVar,
-                            FloatConst(pc, as[LoadConstantInstruction[Float]](instr).value)))
+                        statements(pc) = List(
+                            Assignment(pc, newVar, FloatConst(pc, value))
+                        )
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
                     }
-                    case ComputationalTypeReference ⇒ {
+                    case LDCClass(value) ⇒ {
                         val newVar = OperandVar(ComputationalTypeReference, stack)
-                        statements(pc) = List(Assignment(pc, newVar,
-                            ClassConst(pc, as[LoadConstantInstruction[ReferenceType]](instr).value.asObjectType)))
+                        statements(pc) = List(
+                            Assignment(pc, newVar, ClassConst(pc, value))
+                        )
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
                     }
-                    case _ ⇒ throw
-                        BytecodeProcessingFailedException(s"unexpected case for the $instruction: ${instr.computationalType}")
+                    case LDCString(value) ⇒ {
+                        val newVar = OperandVar(ComputationalTypeReference, stack)
+                        statements(pc) = List(
+                            Assignment(pc, newVar, StringConst(pc, value))
+                        )
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case LDCMethodHandle(value) ⇒ {
+                        val newVar = OperandVar(ComputationalTypeReference, stack)
+                        statements(pc) = List(
+                            Assignment(pc, newVar, MethodHandleConst(pc, value))
+                        )
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case LDCMethodType(value) ⇒ {
+                        val newVar = OperandVar(ComputationalTypeReference, stack)
+                        statements(pc) = List(
+                            Assignment(pc, newVar, MethodTypeConst(pc, value))
+                        )
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+
+                    case LoadDouble(value) ⇒ {
+                        val newVar = OperandVar(ComputationalTypeDouble, stack)
+                        statements(pc) = List(
+                            Assignment(pc, newVar, DoubleConst(pc, value))
+                        )
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+                    case LoadLong(value) ⇒ {
+                        val newVar = OperandVar(ComputationalTypeLong, stack)
+                        statements(pc) = List(
+                            Assignment(pc, newVar, LongConst(pc, value))
+                        )
+                        schedule(pcOfNextInstruction(pc), newVar :: stack)
+                    }
+
+                    case _ ⇒
+                        val message = s"unexpected constant $instr"
+                        throw BytecodeProcessingFailedException(message)
                 }
+            }
+
+            def compare(op: RelationalOperator): Unit = {
+                val value2 :: value1 :: rest = stack
+                val result = OperandVar(ComputationalTypeInt, rest)
+                statements(pc) = List(
+                    Assignment(pc, result, Compare(pc, value1, op, value2))
+                )
+                schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -360,21 +398,9 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
-                case DCMPG.opcode | FCMPG.opcode ⇒
-                    val value2 :: value1 :: rest = stack
-                    val result = OperandVar(ComputationalTypeInt, rest)
-                    statements(pc) = List(
-                        Assignment(pc, result, FloatingPointCompare(pc, value1, CMPG, value2))
-                    )
-                    schedule(pcOfNextInstruction(pc), result :: rest)
-
-                case DCMPL.opcode | FCMPL.opcode ⇒
-                    val value2 :: value1 :: rest = stack
-                    val result = OperandVar(ComputationalTypeInt, rest)
-                    statements(pc) = List(
-                        Assignment(pc, result, FloatingPointCompare(pc, value1, CMPL, value2))
-                    )
-                    schedule(pcOfNextInstruction(pc), result :: rest)
+                case DCMPG.opcode | FCMPG.opcode ⇒ compare(CMPG)
+                case DCMPL.opcode | FCMPL.opcode ⇒ compare(CMPL)
+                case LCMP.opcode                 ⇒ compare(CMP)
 
                 case SWAP.opcode ⇒
                     val value2 :: value1 :: rest = stack
@@ -476,7 +502,44 @@ object AsQuadruples {
                     statements(pc) = List(
                         MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
                             None, operands, target))
-                    schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
+                    val newStack = if (target.nonEmpty) { target.get :: rest } else { rest }
+                    schedule(pcOfNextInstruction(pc), newStack)
+
+                case PUTSTATIC.opcode ⇒
+                    val value :: rest = stack
+                    val instr = as[PUTSTATIC](instruction)
+                    statements(pc) = List(
+                        PutStatic(pc, instr.declaringClass, instr.name, value)
+                    )
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case PUTFIELD.opcode ⇒
+                    val value :: objRef :: rest = stack
+                    val instr = as[PUTFIELD](instruction)
+                    statements(pc) = List(
+                        PutField(pc, instr.declaringClass, instr.name, objRef, value)
+                    )
+                    schedule(pcOfNextInstruction(pc), rest)
+
+                case GETSTATIC.opcode ⇒
+                    val instr = as[GETSTATIC](instruction)
+                    val newVal = OperandVar(ComputationalTypeReference, stack)
+                    statements(pc) = List(
+                        Assignment(pc, newVal,
+                            GetStatic(pc, instr.declaringClass, instr.name))
+                    )
+                    schedule(pcOfNextInstruction(pc), newVal :: stack)
+
+                case GETFIELD.opcode ⇒
+                    val objRef :: rest = stack
+                    val instr = as[GETFIELD](instruction)
+                    //val newVal = OperandVar(ComputationalTypeReference, rest)
+                    val newVal = objRef
+                    statements(pc) = List(
+                        Assignment(pc, newVal,
+                            GetField(pc, instr.declaringClass, instr.name, objRef))
+                    )
+                    schedule(pcOfNextInstruction(pc), newVal :: rest)
 
                 case NEW.opcode ⇒
                     val instr = as[NEW](instruction)
@@ -485,10 +548,10 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
                 case NEWARRAY.opcode ⇒
-                    newArray(as[NEWARRAY](instruction).elementType)
+                    newArray(ArrayType(as[NEWARRAY](instruction).elementType))
 
                 case ANEWARRAY.opcode ⇒
-                    newArray(as[ANEWARRAY](instruction).componentType)
+                    newArray(ArrayType(as[ANEWARRAY](instruction).componentType))
 
                 case MULTIANEWARRAY.opcode ⇒
                     val instr = as[MULTIANEWARRAY](instruction)
@@ -497,7 +560,7 @@ object AsQuadruples {
                     val newVal = OperandVar(ComputationalTypeReference, rest)
                     statements(pc) = List(
                         Assignment(pc, newVal,
-                            NewMultiArray(pc, counts, dimensions, instr.componentType.elementType.asBaseType)))
+                            NewArray(pc, counts, instr.componentType)))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
@@ -567,9 +630,10 @@ object AsQuadruples {
                     val index :: rest = stack
                     val tsInst = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tsInst.defaultOffset
-                    val jumpOffsets = tsInst.jumpOffsets.seq
+                    val jumpOffsets = tsInst.jumpOffsets
+                    var caseValue = tsInst.low
                     val npairs =
-                        for { i ← (tsInst.low) - 1 to (tsInst.high) - 1 } yield (i, jumpOffsets(i) + pc)
+                        jumpOffsets map { jo ⇒ val r = (caseValue, jo + pc); caseValue += 1; r }
                     statements(pc) = List(
                         Switch(pc, defaultTarget, index, npairs))
                     schedule(defaultTarget, rest)

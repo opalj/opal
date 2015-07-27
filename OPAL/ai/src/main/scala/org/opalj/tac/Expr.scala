@@ -61,7 +61,7 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class FloatingPointCompare(
+case class Compare(
     pc: PC,
     left: Expr,
     condition: RelationalOperator,
