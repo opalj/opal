@@ -174,7 +174,14 @@ case class GetField(
     final def cTpe = ComputationalTypeInt
 }
 
+<<<<<<< HEAD
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
+=======
+case class GetStatic(
+    pc: PC,
+    declaringClass: ObjectType, name: String)
+        extends Expr {
+>>>>>>> fixed and improved the tests
     final def cTpe = ComputationalTypeInt
 }
 

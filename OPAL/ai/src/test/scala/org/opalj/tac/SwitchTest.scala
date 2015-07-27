@@ -74,7 +74,11 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+<<<<<<< HEAD
                     Switch(1, SimpleVar(0, ComputationalTypeInt), 10, IndexedSeq((1, 4), (2, 6), (3, 8))),
+=======
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
+>>>>>>> fixed and improved the tests
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
