@@ -119,7 +119,7 @@ import scala.collection.mutable.ListBuffer
 // ps = Properties
 // pk = PropertyKey
 // pc = (Property)Computation
-// c = Continuation (The rest of a computation if a specific, dependend property was computed.)
+// c = Continuation (The rest of a computation if a specific, dependent property was computed.)
 // o = (Property)Observer
 // os = (Property)Observers
 // EPK = An entity and a property key
@@ -189,6 +189,29 @@ class PropertyStore private (
             Option(pos._1 /*property*/ )
         else
             None
+    }
+    
+    /**
+     * Returns an iterator of the different properties associated with the given element.
+     * 
+     * This method is the preferred way to get all properties of an entity and should be used,
+     * if you know that all properties are already computed.
+     * 
+     * @note The returned value may change over time but only such that it
+     *      is strictly more precise.
+     * 
+     * @param e An entity sotred in the property store.
+     * @return `Iterator[Property]` independently if properties are stored or not.
+     */
+    def apply(e: Entity): Iterator[Property] = {
+        accessEntity {
+            val (lock, properties) = data.get(e)
+            withReadLock(lock) {
+                properties.values collect { 
+                    case (p, _) if p ne null => p
+                }
+            }
+        }
     }
 
     /**
