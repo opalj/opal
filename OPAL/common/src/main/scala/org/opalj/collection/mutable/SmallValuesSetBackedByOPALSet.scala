@@ -76,7 +76,7 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override def contains(value: Int): Boolean = set.contains(value - offset)
 
-    override def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
+    override def exists(f: Int ⇒ Boolean): Boolean = set.exists(rv ⇒ f(rv + offset))
 
     override def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)

@@ -53,7 +53,7 @@ import scala.collection.mutable.Queue
  * values where the int value is equivalent to the pc of the instruction that
  * initializes the respective (virtual) variable.
  *
- * The parameters given to a method have negative int values (the first
+ * The parameters given to a method have negative `int` values (the first
  * parameter has the value -1, the second -2 and so forth; the computational type
  * category is ignored.).
  *
@@ -64,23 +64,13 @@ import scala.collection.mutable.Queue
  * ==Core Properties==
  * === Reusability ===
  * This domain can be reused to successively perform abstract interpretations of different
- * methods. The domain's inherited `initProperties` method resets the entire state related
+ * methods. The domain's inherited `initProperties` method – which is called by the AI
+ * framework –  resets the entire state related
  * to the abstract interpretation of a method.
  *
  * @author Michael Eichberg
  */
 trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
-
-    type PCs = UShortSet
-    type ValueOrigins = SmallValuesSet
-
-    @inline private[this] final def ValueOrigins(
-        min: Int = this.min, max: Int = this.max,
-        origin: Int): SmallValuesSet =
-        SmallValuesSet.create(min, max, origin)
-
-    private[this] var min: Int = _
-    private[this] var max: Int = _
 
     // IDEA:
     // EACH LOCAL VARIABLE IS NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -92,17 +82,33 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    private[this] var instructions: Array[Instruction] = _
+    type PCs = UShortSet
+    type ValueOrigins = SmallValuesSet
+
+    /**
+     * Creates a new set for storing value origins that contains the given origin value.
+     */
+    @inline private[this] final def ValueOrigins(
+        min: Int = this.min,
+        max: Int = this.max,
+        origin: Int): SmallValuesSet =
+        SmallValuesSet.create(min, max, origin)
+
+    private[this] var min: Int = _ // initialized by initProperties
+    private[this] var max: Int = _ // initialized by initProperties
+
+    private[this] var instructions: Array[Instruction] = _ // initialized by initProperties
 
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
     // of this additional space is `parametersOffset` large and is prepended to
     // the array that mirrors the instructions array.
-    private[this] var used: Array[ValueOrigins] = _
-    private[this] var parametersOffset: Int = _
+    private[this] var used: Array[ValueOrigins] = _ // initialized by initProperties
+    private[this] var parametersOffset: Int = _ // initialized by initProperties
 
-    // This array contains the information where each operand value was defined.
+    // This array contains the information where each operand value found at a
+    // specific instruction was defined.
     private[this] var defOps: Array[List[ValueOrigins]] = _
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
@@ -214,7 +220,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     /**
      * Returns the instructions which use the value with the given value origin.
      */
-    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin)
+    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
      * Returns the instruction which defined the value used by the instruction with the given `pc` and which
@@ -299,6 +305,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         nodes.values.toSet + unusedNode
     }
 
+    /**
+     * The method which computes the def/use information when the instruction with
+     * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
+     */
     private[this] def handleFlow(
         currentPC: PC,
         successorPC: PC,
@@ -310,25 +320,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val instruction = instructions(currentPC)
         val successorInstruction = instructions(successorPC)
 
-        def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit = {
-            //            assert(usedVars ne null)
-            //            assert(usedVars.nonEmpty)
-
-            usedVars foreach { use ⇒
-                val usedIndex = use + parametersOffset
-                // assert(
-                //     usedIndex >= 0,
-                //     s"unexpected use: $use + $parametersOffset = $usedIndex; initial locals: "+
-                //         defLocals(0).mapKV((i, l) ⇒
-                //             if (l eq null)
-                //                 i+": N/A"
-                //             else
-                //                 l.mkString(s"$i: {", ", ", "}")).mkString("", "; ", ""))
+        //
+        // HELPER METHODS
+        //
+        def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
+            usedValues foreach { usedValue ⇒
+                val usedIndex = usedValue + parametersOffset
 
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
-                if (oldUsedInfo eq null)
-                    used(usedIndex) = SmallValuesSet.create(max, useSite) // UShortSet(useSite)
-                else {
+                if (oldUsedInfo eq null) {
+                    used(usedIndex) = SmallValuesSet.create(max, useSite)
+                } else {
                     val newUsedInfo = useSite +≈: oldUsedInfo
                     if (newUsedInfo ne oldUsedInfo)
                         used(usedIndex) = newUsedInfo
@@ -481,12 +483,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
          */
-        def stackOp(usedVarCount: Int, pushesValue: Boolean): Boolean = {
+        def stackOp(usedValues: Int, pushesValue: Boolean): Boolean = {
             // Usage is independent of the question whether the usage resulted in an
             // exceptional control flow.
             val currentDefOps = defOps(currentPC)
-
-            forFirstN(currentDefOps, usedVarCount) { op ⇒ updateUsed(op, currentPC) }
+            forFirstN(currentDefOps, usedValues) { op ⇒
+                updateUsageInformation(op, currentPC)
+            }
 
             val newDefOps =
                 if (isExceptionalControlFlow) {
@@ -503,9 +506,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     }
                 } else {
                     if (pushesValue)
-                        ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedVarCount)
+                        ValueOrigins(origin = currentPC) :: currentDefOps.drop(usedValues)
                     else
-                        currentDefOps.drop(usedVarCount)
+                        currentDefOps.drop(usedValues)
                 }
 
             propagate(newDefOps, defLocals(currentPC))
@@ -514,22 +517,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         def load(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentLocals = defLocals(currentPC)
-            propagate(
-                currentLocals(index) :: defOps(currentPC),
-                currentLocals)
+            propagate(currentLocals(index) :: defOps(currentPC), currentLocals)
         }
 
         def store(index: Int): Boolean = {
             // there will never be an exceptional control flow ...
             val currentOps = defOps(currentPC)
-            propagate(
-                currentOps.tail,
-                defLocals(currentPC).updated(index, currentOps.head)
-            )
+            val newDefLocals = defLocals(currentPC).updated(index, currentOps.head)
+            propagate(currentOps.tail, newDefLocals)
         }
 
+        //
         // THE IMPLEMENTATION...
-
+        //
         val scheduleNextPC: Boolean = (instruction.opcode: @annotation.switch) match {
             case GOTO.opcode | GOTO_W.opcode |
                 NOP.opcode |
@@ -544,8 +544,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val RET(lvIndex) = instruction
                 val oldDefLocals = defLocals(currentPC)
                 val returnAddressValue = oldDefLocals(lvIndex)
-                //                assert(returnAddressValue.nonEmpty)
-                updateUsed(returnAddressValue, currentPC)
+                updateUsageInformation(returnAddressValue, currentPC)
                 propagate(defOps(currentPC), oldDefLocals)
 
             case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
@@ -563,32 +562,44 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // we have an internally thrown exception...
                 stackOp(1, false)
 
-            case NEWARRAY.opcode | ANEWARRAY.opcode | ARRAYLENGTH.opcode ⇒
-                stackOp(1, true)
+            //
+            // ARRAYS
+            //
+            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒
+                stackOp(1 /*count*/ , pushesValue = true)
+
+            case ARRAYLENGTH.opcode ⇒ stackOp(1, pushesValue = true)
 
             case MULTIANEWARRAY.opcode ⇒
-                val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
-                stackOp(multianewarray.dimensions, true)
+                val dimensions = instruction.asInstanceOf[MULTIANEWARRAY].dimensions
+                stackOp(dimensions, pushesValue = true)
 
             case 50 /*aaload*/ |
                 49 /*daload*/ | 48 /*faload*/ |
                 51 /*baload*/ |
                 52 /*caload*/ | 46 /*iaload*/ | 47 /*laload*/ | 53 /*saload*/ ⇒
-                stackOp(2, true)
+                stackOp(2, pushesValue = true)
 
             case 83 /*aastore*/ |
                 84 /*bastore*/ |
                 85 /*castore*/ | 79 /*iastore*/ | 80 /*lastore*/ | 86 /*sastore*/ |
                 82 /*dastore*/ | 81 /*fastore*/ ⇒
-                stackOp(3, false)
+                stackOp(3, pushesValue = false)
 
-            case 180 /*getfield*/     ⇒ stackOp(1, true)
-            case 178 /*getstatic*/    ⇒ stackOp(0, true)
-            case 181 /*putfield*/     ⇒ stackOp(2, false)
-            case 179 /*putstatic*/    ⇒ stackOp(1, false)
+            //
+            // FIELD ACCESS
+            //
+            case 180 /*getfield*/     ⇒ stackOp(1, pushesValue = true)
+            case 178 /*getstatic*/    ⇒ stackOp(0, pushesValue = true)
+            case 181 /*putfield*/     ⇒ stackOp(2, pushesValue = false)
+            case 179 /*putstatic*/    ⇒ stackOp(1, pushesValue = false)
 
-            case 194 /*monitorenter*/ ⇒ stackOp(1, false)
-            case 195 /*monitorexit*/  ⇒ stackOp(1, false)
+            //
+            // MONITOR
+            //
+
+            case 194 /*monitorenter*/ ⇒ stackOp(1, pushesValue = false)
+            case 195 /*monitorexit*/  ⇒ stackOp(1, pushesValue = false)
 
             //
             // METHOD INVOCATIONS
@@ -601,54 +612,80 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
                     !descriptor.returnType.isVoidType)
 
+            //
+            // LOAD AND STORE INSTRUCTIONS
+            //
             case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
-                val lvIndex = instruction.asInstanceOf[LoadLocalVariableInstruction].lvIndex
-                load(lvIndex)
-            case 42 /*aload_0*/ | 38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
+                load(instruction.asInstanceOf[LoadLocalVariableInstruction].lvIndex)
+            case 42 /*aload_0*/ |
+                38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
                 load(0)
-            case 43 /*aload_1*/ | 39 /*dload_1*/ | 35 /*fload_1*/ | 27 /*iload_1*/ | 31 /*lload_1*/ ⇒
+            case 43 /*aload_1*/ |
+                39 /*dload_1*/ | 35 /*fload_1*/ | 27 /*iload_1*/ | 31 /*lload_1*/ ⇒
                 load(1)
-            case 44 /*aload_2*/ | 40 /*dload_2*/ | 36 /*fload_2*/ | 28 /*iload_2*/ | 32 /*lload_2*/ ⇒
+            case 44 /*aload_2*/ |
+                40 /*dload_2*/ | 36 /*fload_2*/ | 28 /*iload_2*/ | 32 /*lload_2*/ ⇒
                 load(2)
-            case 45 /*aload_3*/ | 41 /*dload_3*/ | 37 /*fload_3*/ | 29 /*iload_3*/ | 33 /*lload_3*/ ⇒
+            case 45 /*aload_3*/ |
+                41 /*dload_3*/ | 37 /*fload_3*/ | 29 /*iload_3*/ | 33 /*lload_3*/ ⇒
                 load(3)
 
-            case 58 /*astore*/ | 57 /*dstore*/ | 56 /*fstore*/ | 54 /*istore*/ | 55 /*lstore*/ ⇒
-                val lvIndex = instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex
-                store(lvIndex)
-            case 75 /*astore_0*/ | 71 /*dstore_0*/ | 67 /*fstore_0*/ | 63 /*lstore_0*/ | 59 /*istore_0*/ ⇒
+            case 58 /*astore*/ |
+                57 /*dstore*/ | 56 /*fstore*/ | 54 /*istore*/ | 55 /*lstore*/ ⇒
+                store(instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex)
+            case 75 /*astore_0*/ |
+                71 /*dstore_0*/ | 67 /*fstore_0*/ | 63 /*lstore_0*/ | 59 /*istore_0*/ ⇒
                 store(0)
-            case 76 /*astore_1*/ | 72 /*dstore_1*/ | 68 /*fstore_1*/ | 64 /*lstore_1*/ | 60 /*istore_1*/ ⇒
+            case 76 /*astore_1*/ |
+                72 /*dstore_1*/ | 68 /*fstore_1*/ | 64 /*lstore_1*/ | 60 /*istore_1*/ ⇒
                 store(1)
-            case 77 /*astore_2*/ | 73 /*dstore_2*/ | 69 /*fstore_2*/ | 65 /*lstore_2*/ | 61 /*istore_2*/ ⇒
+            case 77 /*astore_2*/ |
+                73 /*dstore_2*/ | 69 /*fstore_2*/ | 65 /*lstore_2*/ | 61 /*istore_2*/ ⇒
                 store(2)
-            case 78 /*astore_3*/ | 74 /*dstore_3*/ | 70 /*fstore_3*/ | 66 /*lstore_3*/ | 62 /*istore_3*/ ⇒
+            case 78 /*astore_3*/ |
+                74 /*dstore_3*/ | 70 /*fstore_3*/ | 66 /*lstore_3*/ | 62 /*istore_3*/ ⇒
                 store(3)
 
             //
             // PUSH CONSTANT VALUE
             //
-
-            case 1 /*aconst_null*/ | 16 /*bipush*/ |
-                14 /*dconst_0*/ | 15 /*dconst_1*/ |
-                11 /*fconst_0*/ | 12 /*fconst_1*/ | 13 /*fconst_2*/ |
+            case 1 /*aconst_null*/ |
                 2 /*iconst_m1*/ |
-                3 /*iconst_0*/ | 4 /*iconst_1*/ | 5 /*iconst_2*/ | 6 /*iconst_3*/ | 7 /*iconst_4*/ | 8 /*iconst_5*/ |
+                3 /*iconst_0*/ | 4 /*iconst_1*/ |
+                5 /*iconst_2*/ | 6 /*iconst_3*/ | 7 /*iconst_4*/ | 8 /*iconst_5*/ |
                 9 /*lconst_0*/ | 10 /*lconst_1*/ |
-                18 /*ldc*/ | 19 /*ldc_w*/ | 20 /*ldc2_w*/ | 17 /*sipush*/ ⇒
-                stackOp(0, true)
+                11 /*fconst_0*/ | 12 /*fconst_1*/ | 13 /*fconst_2*/ |
+                14 /*dconst_0*/ | 15 /*dconst_1*/ |
+                16 /*bipush*/ | 17 /*sipush*/ |
+                18 /*ldc*/ | 19 /*ldc_w*/ | 20 /*ldc2_w*/ ⇒
+                stackOp(0, pushesValue = true)
 
             //
             // RELATIONAL OPERATORS
             //
-            case 150 /*fcmpg*/ | 149 /*fcmpl*/ | 152 /*dcmpg*/ | 151 /*dcmpl*/ | 148 /*lcmp*/ ⇒
-                stackOp(2, true)
+            case 148 /*lcmp*/ |
+                150 /*fcmpg*/ | 149 /*fcmpl*/ |
+                152 /*dcmpg*/ | 151 /*dcmpl*/ ⇒
+                stackOp(2, pushesValue = true)
 
             //
             // UNARY EXPRESSIONS
             //
             case 116 /*ineg*/ | 117 /*lneg*/ | 119 /*dneg*/ | 118 /*fneg*/ ⇒
-                stackOp(1, true)
+                stackOp(1, pushesValue = true)
+
+            case NEW.opcode ⇒ stackOp(0, pushesValue = true)
+
+            //
+            // BINARY EXPRESSIONS
+            //
+            case IINC.opcode ⇒
+                val IINC(index, _) = instruction
+                val currentDefLocals = defLocals(currentPC)
+                updateUsageInformation(currentDefLocals(index), currentPC)
+                val newOrigin = ValueOrigins(origin = currentPC)
+                val newDefLocals = currentDefLocals.updated(index, newOrigin)
+                propagate(defOps(currentPC), newDefLocals)
 
             case 99 /*dadd*/ | 111 /*ddiv*/ | 107 /*dmul*/ | 115 /*drem*/ | 103 /*dsub*/ |
                 98 /*fadd*/ | 110 /*fdiv*/ | 106 /*fmul*/ | 114 /*frem*/ | 102 /*fsub*/ |
@@ -658,7 +695,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 127 /*land*/ | 129 /*lor*/ | 131 /*lxor*/ |
                 120 /*ishl*/ | 122 /*ishr*/ | 124 /*iushr*/ |
                 121 /*lshl*/ | 123 /*lshr*/ | 125 /*lushr*/ ⇒
-                stackOp(2, true)
+                stackOp(2, pushesValue = true)
 
             //
             // GENERIC STACK MANIPULATION
@@ -726,6 +763,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 propagate(v2 :: v1 :: rest, defLocals(currentPC))
             }
 
+            //
+            // VALUE CONVERSIONS
+            //
             case 144 /*d2f*/ | 142 /*d2i*/ | 143 /*d2l*/ |
                 141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
@@ -736,7 +776,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case CHECKCAST.opcode ⇒
                 // we "just" inspect the top-most stack value
                 val currentDefOps = defOps(currentPC)
-                updateUsed(currentDefOps.head, currentPC)
+                updateUsageInformation(currentDefOps.head, currentPC)
                 val newDefOps =
                     if (isExceptionalControlFlow) {
                         val newDefOps = defOps(successorPC)
@@ -748,33 +788,24 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         currentDefOps
                 propagate(newDefOps, defLocals(currentPC))
 
-            case 132 /*iinc*/ ⇒
-                val IINC(index, _) = instruction
-                val currentDefLocals = defLocals(currentPC)
-                updateUsed(currentDefLocals(index), currentPC)
-                propagate(
-                    defOps(currentPC),
-                    currentDefLocals.updated(index, ValueOrigins(origin = currentPC)))
-
-            case 187 /*new*/ ⇒
-                stackOp(0, true)
-
-            // Should never occur...
+            //
+            // "ERROR" HANDLING
+            //
             case 176 /*areturn*/ |
                 175 /*dreturn*/ | 174 /*freturn*/ | 172 /*ireturn*/ | 173 /*lreturn*/ ⇒
-                val message = s"unexpected return instruction"
+                val message =
+                    s"a return instruction ($instruction) cannot be the source of a flow"
                 throw BytecodeProcessingFailedException(message)
 
             case opcode ⇒
-                val message = s"unknown opcode: $opcode"
-                throw BytecodeProcessingFailedException(message)
+                throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
         }
 
         (successorInstruction.opcode: @annotation.switch) match {
             case ARETURN.opcode |
                 DRETURN.opcode | FRETURN.opcode | IRETURN.opcode | LRETURN.opcode |
                 ATHROW.opcode ⇒
-                updateUsed(defOps(successorPC).head, successorPC)
+                updateUsageInformation(defOps(successorPC).head, successorPC)
 
             case _ ⇒ /* let's continue with the standard handling */
         }

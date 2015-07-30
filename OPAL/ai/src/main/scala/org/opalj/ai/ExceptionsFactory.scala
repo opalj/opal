@@ -74,7 +74,7 @@ trait ExceptionsFactory extends ValuesDomain { domain ⇒
      * Creates a non-null object that represent a `NullPointerException` and that has the
      * given `origin`.
      * If the `NullPointerException` was created by the VM while evaluating an instruction
-     * with the program counter `pc` you use the method [[ValueOriginForVMLevelValue]] to
+     * with the program counter `pc` you should use the method [[ValueOriginForVMLevelValue]] to
      * translate that `pc` to the appropriate [[ValueOrigin]].
      */
     def NullPointerException(origin: ValueOrigin): ExceptionValue

@@ -93,7 +93,12 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
 
 }
 
-case class Switch(pc: PC, private[tac] var defaultTarget: Int, index: Var, private[tac] var npairs: IndexedSeq[(Int, Int)]) extends Stmt {
+case class Switch(
+        pc: PC,
+        index: Expr,
+        private[tac] var defaultTarget: PC,
+        private[tac] var npairs: IndexedSeq[(Int, PC)]) extends Stmt {
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
         defaultTarget = pcToIndex(defaultTarget)

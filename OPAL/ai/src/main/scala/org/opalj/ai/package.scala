@@ -160,7 +160,7 @@ package object ai {
 
     /**
      * Creates the origin information for a VM level value (typically an exception) that
-     * was (implicitly) created while evaluating the instruction with given
+     * was (implicitly) created while evaluating the instruction with the given
      * program counter (`pc`).
      *
      * @see [[PCOfVMLevelValue]] for further information.

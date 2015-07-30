@@ -63,6 +63,8 @@ import scalafx.scene.layout.Priority
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.tac.AsQuadruples
+import org.opalj.tac.ToJavaLike
 
 /**
  * Given a TreeView and a Project[URL] creates a visual representation of the project structure
@@ -93,7 +95,10 @@ class ProjectExplorer(
                         val bc = new MenuItem("Show Bytecode") {
                             onAction = showBytecode(classFile, None)
                         }
-                        setContextMenu(new ContextMenu(sc, bc))
+                        val tac = new MenuItem("Show 3-Address Code") {
+                            onAction = showTAC(classFile, None)
+                        }
+                        setContextMenu(new ContextMenu(sc, bc, tac))
                     }
                     case m: ProjectExplorerMethodData ⇒ {
                         val method: Method = m.method
@@ -104,10 +109,14 @@ class ProjectExplorer(
                         val bc = new MenuItem("Show Bytecode") {
                             onAction = showBytecode(classFile, Some(method))
                         }
+                        val tac = new MenuItem("Show 3-Address Code") {
+                            onAction = showTAC(classFile, Some(method))
+                        }
                         setContextMenu(if (!m.isAbstract.apply)
                             new ContextMenu(
                             sc,
                             bc,
+                            tac,
                             new MenuItem("Run abstract interpretation") {
                                 onAction = { e: ActionEvent ⇒
                                     val dia = new ChooseDomainDialog
@@ -233,7 +242,7 @@ class ProjectExplorer(
         chosenDomain: String,
         classFile: ClassFile,
         method: Method): Unit = {
-        // WebView for AI result, independent of domain 
+        // WebView for AI result, independent of domain
         val aiDefaultView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
@@ -249,12 +258,11 @@ class ProjectExplorer(
             project,
             classFile,
             method)
-        val ai = new BaseAI
-        val aiResultXHTML = XHTML.dump(
-            classFile,
-            method,
-            "Result of Abstract Interpretation",
-            ai.apply(classFile, method, domain)).toString
+        val aiResult = BaseAI(classFile, method, domain)
+        val aiResultXHTML =
+            XHTML.dump(
+                classFile, method, "Result of Abstract Interpretation", aiResult
+            ).toString
         aiDefaultView.engine.loadContent(aiResultXHTML.toString())
         // open additional WebViews depending on domain
         if (domain.isInstanceOf[RecordDefUse]) {
@@ -330,10 +338,38 @@ class ProjectExplorer(
             methodOption = methodId,
             pcOption = None, lineOption = None)
 
-        val methodString = if (methodId.isDefined) ("{ "+methodId.get+" }") else ""
-        WebViewStage.showWebView(
-            "Byte Code for "+cf.fqn + methodString,
-            byteView, 175d, 100d)
+        val title = "Byte Code for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        WebViewStage.showWebView(title, byteView, 175d, 100d)
+    }
+
+    private def showTAC(
+        cf: ClassFile,
+        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        val tacView: WebView = new WebView {
+            contextMenuEnabled = false
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+        }
+
+        if (method.isDefined && method.get.body.isEmpty) {
+            tacView.engine.loadContent(Messages.METHOD_WITHOUT_BODY)
+        } else {
+            val methods = method.map(Seq(_)).getOrElse(cf.methods.filter(_.body.isDefined))
+            tacView.engine.loadContent(
+                s"class <b>${cf.thisType.toJava}</b> {<br/>"+
+                    methods.
+                    map { m ⇒
+                        val method = scala.xml.Text(m.toJava)
+                        s"<i>${method.toString}</i><pre>{\n${
+                            scala.xml.Text(ToJavaLike(AsQuadruples(m, None), indented = true).mkString("\n")).toString
+                        }\n}</pre>"
+                    }.
+                    mkString("<br/>")+
+                    "\n}"
+            )
+        }
+        val title = "3-Address Code for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        WebViewStage.showWebView(title, tacView, 175d, 100d)
     }
 
     private def findSourceFile(

@@ -120,7 +120,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
             receiverIsNull match {
                 case Yes ⇒
                     // That's it!
-                    return justThrows(NullPointerException(pc));
+                    return justThrows(VMNullPointerException(pc));
 
                 case Unknown if throwNullPointerExceptionOnMethodCall ⇒
                     VMNullPointerException(pc) :: getPotentialExceptions(pc)

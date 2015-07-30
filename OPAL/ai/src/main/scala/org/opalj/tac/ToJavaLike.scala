@@ -51,7 +51,8 @@ object ToJavaLike {
             case LongConst(_, value)      ⇒ value.toString+"l"
             case FloatConst(_, value)     ⇒ value.toString+"f"
             case DoubleConst(_, value)    ⇒ value.toString+"d"
-            case ClassConst(_, value)     ⇒ value.toString
+            case ClassConst(_, value)     ⇒ value.toString+".class"
+            case StringConst(_, value)    ⇒ s""""$value""""
             case NullExpr(_)              ⇒ "null"
 
             case InstanceOf(_, value, tpe) ⇒
@@ -88,6 +89,12 @@ object ToJavaLike {
 
             case ArrayLength(_, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}.length"
+
+            case GetStatic(_, declaringClass, name) ⇒
+                s"${declaringClass.toJava}.$name"
+
+            case GetField(_, declaringClass, name, receiver) ⇒
+                s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name"
         }
     }
 
@@ -107,8 +114,12 @@ object ToJavaLike {
             case JumpToSubroutine(_, target) ⇒ s"jsr $target;"
             case If(_, left, cond, right, target) ⇒
                 s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
-            case Switch(_, defTrg, index, npairs) ⇒
-                s"switch(${toJavaLikeExpr(index)}){${switchCases(defTrg, npairs)}}"
+
+            case Switch(_, index, defaultTarget, npairs) ⇒
+                var result = "\n"
+                for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
+                result = result+"    default: goto "+defaultTarget+";\n"
+                s"switch(${toJavaLikeExpr(index)}){$result}"
 
             case Assignment(_, variable, expr) ⇒
                 s"${variable.name} = ${toJavaLikeExpr(expr)};"
@@ -171,15 +182,6 @@ object ToJavaLike {
         }
 
         javaLikeCode
-    }
-
-    /**
-     * Builds string to display the cases part of switch instructions.
-     */
-    def switchCases(defTrg: Int, npairs: IndexedSeq[(Int, Int)]): String = {
-        var result = "\n"
-        for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
-        result+"    default: goto "+defTrg+";\n"
     }
 
 }

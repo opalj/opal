@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,6 +47,7 @@ object Messages {
     final val ANALYSES_CANCELLING = getMessage("/org/opalj/bugpicker/ui/messages/analysescancelling.html")
     final val LOAD_CLASSES_FIRST = getMessage("/org/opalj/bugpicker/ui/messages/loadclassesfirst.html")
     final val NO_BYTECODE_FOUND = getMessage("/org/opalj/bugpicker/ui/messages/nobytecodefound.html")
+    final val METHOD_WITHOUT_BODY = getMessage("/org/opalj/bugpicker/ui/messages/methodwithoutbody.html")
     final val GENERATING_DIFF = getMessage("/org/opalj/bugpicker/ui/messages/creatingdiff.html")
     final val GET_HELP = getMessage("/org/opalj/bugpicker/ui/messages/gethelp.html")
     final val PREFERENCES = getMessage("/org/opalj/bugpicker/ui/messages/preferences.html")

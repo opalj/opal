@@ -1446,7 +1446,8 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
 
     /**
-     * Returns the type of the nth dimension. E.g., if dimensions is `0`
+     * Returns the component type of this array type after dropping the given number
+     * of dimensions. E.g., if dimensions is `0`
      * `this` is returned; if it is `1` then this arraytype's component type is returned.
      * If the value is larger than `1` then the `componentType` has to be an array type
      * and `drop(dimensions-1)` will be called on that type.

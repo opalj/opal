@@ -127,6 +127,9 @@ case class BinaryExpr(
     op: BinaryArithmeticOperator,
     left: Expr, right: Expr) extends Expr
 
+/**
+ * @param cTpe The computational type of the result of the prefix expression.
+ */
 case class PrefixExpr(
     pc: PC,
     cTpe: ComputationalType,
@@ -134,22 +137,25 @@ case class PrefixExpr(
     operand: Expr) extends Expr
 
 case class PrimitiveTypecastExpr(
-        pc: PC,
-        targetTpe: BaseType,
-        operand: Expr) extends Expr {
+    pc: PC,
+    targetTpe: BaseType,
+    operand: Expr)
+        extends Expr {
     final def cTpe = targetTpe.computationalType
 }
 
 case class New(
-        pc: PC,
-        tpe: ObjectType) extends Expr {
+    pc: PC,
+    tpe: ObjectType)
+        extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
 case class NewArray(
-        pc: PC,
-        counts: List[Expr],
-        tpe: ArrayType) extends Expr {
+    pc: PC,
+    counts: List[Expr],
+    tpe: ArrayType)
+        extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
@@ -168,10 +174,7 @@ case class GetField(
     final def cTpe = ComputationalTypeInt
 }
 
-case class GetStatic(
-    pc: PC,
-    declaringClass: ObjectType, name: String)
-        extends Expr {
+case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
@@ -189,11 +192,7 @@ trait Var extends Expr {
     def updated(cTpe: ComputationalType): Var
 }
 
-object Var {
-
-    def unapply(variable: Var): Some[String] = Some(variable.name)
-
-}
+object Var { def unapply(variable: Var): Some[String] = Some(variable.name) }
 
 trait IdBasedVar extends Var {
 
@@ -204,9 +203,7 @@ trait IdBasedVar extends Var {
         else if (id >= 0) "op_"+id.toString
         else "r_"+(-(id + 1))
 
-    def updated(cTpe: ComputationalType): SimpleVar = {
-        new SimpleVar(id, cTpe)
-    }
+    def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
 }
 
 /**
@@ -215,24 +212,22 @@ trait IdBasedVar extends Var {
  * If the id is Int.MinValue then the variable is an intermediate variable that
  * was artificially generated.
  */
-case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar {
+case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
 
-}
 case class DomainValueBasedVar(id: Int, properties: Domain#DomainValue) extends IdBasedVar {
-
     final override def cTpe = properties.computationalType
 }
+
 object TempVar {
 
     def apply(cTpe: ComputationalType): SimpleVar = SimpleVar(Int.MinValue, cTpe)
 
 }
-object RegisterVar {
 
+object RegisterVar {
     def apply(cTpe: ComputationalType, index: UShort): SimpleVar = {
         SimpleVar(-index - 1, cTpe)
     }
-
 }
 
 object OperandVar {
