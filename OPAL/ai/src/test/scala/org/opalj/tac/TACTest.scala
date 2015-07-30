@@ -38,6 +38,10 @@ import org.scalatest.Matchers
  */
 class TACTest extends FunSpec with Matchers {
 
+    def compareStatements(expectedStmts: IndexedSeq[Stmt], actualStmts: IndexedSeq[Stmt]): Unit = {
+        compareStatements(expectedStmts.toArray, actualStmts.toArray)
+    }
+
     def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
         if (!Arrays.equals(expectedStmts.asInstanceOf[Array[Object]], actualStmts.asInstanceOf[Array[Object]])) {
             val message =

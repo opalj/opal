@@ -52,7 +52,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *  - it only defines private constructors and these constructors are not called
  *    by any static method.
  *
- * @note This analysis does not consider protected and/or package visible constructor as
+ * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
  *      assumption.)
  *

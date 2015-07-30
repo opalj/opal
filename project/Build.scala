@@ -36,6 +36,7 @@ object OPALBuild extends Build {
 		bi,
 		br,
 		ai,
+		fpa,
 		da,
 		de,
 		av,
@@ -85,6 +86,13 @@ object OPALBuild extends Build {
 		settings = buildSettings
 	).dependsOn(br % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
+
+  	lazy val fpa = Project(
+  		id = "FixpointAnalyses",
+  		base = file("OPAL/fpa"),
+  		settings = buildSettings
+  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  	 .configs(IntegrationTest)
 
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to

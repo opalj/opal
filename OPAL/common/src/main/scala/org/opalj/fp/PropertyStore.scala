@@ -50,7 +50,6 @@ import org.opalj.concurrent.handleUncaughtException
 import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
-import org.opalj.br.analyses.AnalysisException
 import org.opalj.collection.mutable.ArrayMap
 import java.util.concurrent.locks.ReentrantLock
 import scala.collection.mutable.ListBuffer

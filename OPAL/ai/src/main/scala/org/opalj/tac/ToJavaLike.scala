@@ -184,4 +184,11 @@ object ToJavaLike {
         javaLikeCode
     }
 
+    /**
+     * Converts each statement into a Java-like statement.
+     */
+    def apply(stmts: IndexedSeq[Stmt], indented: Boolean = true): Array[String] = {
+        apply(stmts.toArray, indented)
+    }
+
 }
