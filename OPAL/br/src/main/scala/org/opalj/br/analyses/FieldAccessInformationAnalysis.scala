@@ -123,7 +123,7 @@ object FieldAccessInformationAnalysis {
             writeAccesses.foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
-                    val currentAccesses = allReadAccesses.get(key)
+                    val currentAccesses = allWriteAccesses.get(key)
                     if (currentAccesses == null)
                         allWriteAccesses.put(key, (method, pcs) :: Nil)
                     else
