@@ -135,7 +135,7 @@ class PropertyStore private (
     import UpdateTypes.FallbackUpdate
 
     /**
-     * Counts how often some observer was notified.
+     * Counts how often some observer was notified. (Primarily for debugging purposes.)
      */
     private[this] val propagationCount = new java.util.concurrent.atomic.AtomicLong(0)
 
@@ -200,16 +200,14 @@ class PropertyStore private (
      * @note The returned value may change over time but only such that it
      *      is strictly more precise.
      *
-     * @param e An entity sotred in the property store.
+     * @param e An entity stored in the property store.
      * @return `Iterator[Property]` independently if properties are stored or not.
      */
     def apply(e: Entity): Iterator[Property] = {
         accessEntity {
             val (lock, properties) = data.get(e)
             withReadLock(lock) {
-                properties.values collect {
-                    case (p, _) if p ne null ⇒ p
-                }
+                properties.values collect { case (p, _) if p ne null ⇒ p }
             }
         }
     }
