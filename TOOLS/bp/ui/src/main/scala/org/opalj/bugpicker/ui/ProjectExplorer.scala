@@ -65,6 +65,15 @@ import scalafx.stage.Stage
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.AsQuadruples
 import org.opalj.tac.ToJavaLike
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fp.Property
+import org.opalj.br.analyses.fp.ProjectAccessibility
+import org.opalj.br.analyses.fp.PackageLocal
+import org.opalj.bi.VisibilityModifier
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.fp.PropertyKey
 
 /**
  * Given a TreeView and a Project[URL] creates a visual representation of the project structure
@@ -98,7 +107,10 @@ class ProjectExplorer(
                         val tac = new MenuItem("Show 3-Address Code") {
                             onAction = showTAC(classFile, None)
                         }
-                        setContextMenu(new ContextMenu(sc, bc, tac))
+                        val prop = new MenuItem("Show Properties") {
+                            onAction = showProperties(classFile, None)
+                        }
+                        setContextMenu(new ContextMenu(sc, bc, tac, prop))
                     }
                     case m: ProjectExplorerMethodData ⇒ {
                         val method: Method = m.method
@@ -112,11 +124,15 @@ class ProjectExplorer(
                         val tac = new MenuItem("Show 3-Address Code") {
                             onAction = showTAC(classFile, Some(method))
                         }
+                        val prop = new MenuItem("Show Properties") {
+                            onAction = showProperties(classFile, Some(method))
+                        }
                         setContextMenu(if (!m.isAbstract.apply)
                             new ContextMenu(
                             sc,
                             bc,
                             tac,
+                            prop,
                             new MenuItem("Run abstract interpretation") {
                                 onAction = { e: ActionEvent ⇒
                                     val dia = new ChooseDomainDialog
@@ -372,6 +388,56 @@ class ProjectExplorer(
         WebViewStage.showWebView(title, tacView, 175d, 100d)
     }
 
+    private def showProperties(
+        cf: ClassFile,
+        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        val propView: WebView = new WebView {
+            contextMenuEnabled = false
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+        }
+
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+
+        @inline def propertiesNotFound() = propView.engine.loadContent(Messages.NO_PROPERTIES_FOUND)
+
+        if (method.isEmpty) {
+            val properties = propertyStore(cf)
+            if (properties.size == 0)
+                propertiesNotFound
+            else
+                propView.engine.loadContent(
+                    s"class <b>${cf.thisType.toJava}</b> {<br/>"+
+                        properties.map { p ⇒
+                            val property = scala.xml.Text(p.toString())
+                            s" <pre> ${property.toString()} </pre>"
+                        }.mkString("<br/>")+
+                        "\n}"
+                )
+        } else if (method.get.body.isEmpty) {
+            propertiesNotFound
+        } else {
+            val properties = propertyStore(method.get)
+            if (properties.isEmpty)
+                propertiesNotFound
+            else {
+                val lineSep = System.getProperty("line.separator")
+                val methodAsJava = scala.xml.Text(method.get.toJava())
+                propView.engine.loadContent(
+                    s"class <b>${cf.thisType.toJava}</b> <i>${methodAsJava}</i>{<br/>"+
+                        "<ul>"+
+                        properties.map { p ⇒
+                            val property = scala.xml.Text(p.toString())
+                            s" <li> <b> ${PropertyKey.name(p.key.id)}:</b> ${property.toString()} </li>"
+                        }.mkString(lineSep)+
+                        "</ul>\n}"
+                )
+            }
+        }
+
+        val title = "Computed properties for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        WebViewStage.showWebView(title, propView, 175d, 100d)
+    }
     private def findSourceFile(
         classFile: ClassFile,
         lineOption: Option[String]): Option[SourceFileWrapper] = {

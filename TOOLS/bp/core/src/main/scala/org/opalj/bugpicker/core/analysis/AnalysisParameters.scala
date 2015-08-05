@@ -39,12 +39,14 @@ case class AnalysisParameters(
         maxEvalFactor: Double = DefaultMaxEvalFactor,
         maxCardinalityOfIntegerRanges: Long = DefaultMaxCardinalityOfIntegerRanges,
         maxCardinalityOfLongSets: Int = DefaultMaxCardinalityOfLongSets,
-        maxCallChainLength: Int = DefaultMaxCallChainLength) {
+        maxCallChainLength: Int = DefaultMaxCallChainLength,
+        fixpointAnalyses: Seq[String] = DefaultFixpointAnalyses) {
 
     def toStringParameters: Seq[String] = Seq(
         s"-maxEvalFactor=$maxEvalFactor",
         s"-maxEvalTime=$maxEvalTime",
         s"-maxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges",
         s"-maxCardinalityOfLongSets=$maxCardinalityOfLongSets",
-        s"-maxCallChainLength=$maxCallChainLength")
+        s"-maxCallChainLength=$maxCallChainLength",
+        s"-fixpointAnalyses=${fixpointAnalyses.mkString(";")}")
 }

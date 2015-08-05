@@ -50,11 +50,19 @@ import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.stage.Stage
 import org.opalj.util.Milliseconds
+import scalafx.scene.control.ToggleButton
+import scalafx.scene.control.ListView
+import org.opalj.fpa.common.FixpointAnalysesRegistry
+import org.opalj.br.analyses.fp.ShadowingAnalysis
+import scalafx.collections.ObservableBuffer
+import scalafx.scene.control.MultipleSelectionModel
+import scalafx.scene.control.SelectionMode
 
 /**
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author David Becker
+ * @author Michael Reif
  */
 class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     theStage ⇒
@@ -90,6 +98,27 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     val maxCallChainLengthField = new TextField {
         hgrow = Priority.Always
         alignment = Pos.BaselineRight
+    }
+
+    val toggleFixpointAnalysesField = new ToggleButton("disabled") {
+        hgrow = Priority.Always
+        alignment = Pos.BaselineLeft
+
+        onAction = { e: ActionEvent ⇒
+            val active = selected.value
+            text = if (active) "enabled" else "disabled"
+            fixpointAnalysesView.disable = !active
+        }
+    }
+
+    val fixpointAnalyses = ObservableBuffer[String](
+        FixpointAnalysesRegistry.analysisDescriptions().toSeq.sorted
+    )
+
+    val fixpointAnalysesView = new ListView(fixpointAnalyses) {
+        hgrow = Priority.Always
+        disable = true
+        selectionModel().selectionModeProperty().setValue(SelectionMode.MULTIPLE)
     }
 
     import BugPickerAnalysis._
@@ -142,6 +171,26 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 4)
 
+                add(new Label("Enable/Disable Fixpoint analyses:"), 0, 5)
+                add(toggleFixpointAnalysesField, 1, 5)
+                add(new Button {
+                    text = "Default"
+                    onAction = { e: ActionEvent ⇒
+                        toggleFixpointAnalysesField.text = "disabled"
+                        toggleFixpointAnalysesField.selected_=(false)
+                        fixpointAnalysesView.disable_=(true)
+                    }
+                }, 2, 5)
+
+                add(new Label("Fixpoint analyses:"), 0, 6)
+                add(fixpointAnalysesView, 1, 6)
+                add(new Button {
+                    text = "Default"
+                    onAction = { e: ActionEvent ⇒
+                        fixpointAnalysesView.selectionModel.get.clearSelection()
+                    }
+                }, 2, 6)
+
                 children foreach (c ⇒ GridPane.setMargin(c, Insets(10)))
 
                 style = "-fx-border-width: 0 0 1 0; -fx-border-color: #ccc;"
@@ -160,6 +209,9 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
                             maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
                             maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
+                            toggleFixpointAnalysesField.selected_=(false)
+                            fixpointAnalysesView.disable_=(false)
+                            fixpointAnalysesView.selectionModel().clearSelection()
                         }
                     },
                     new Button {
@@ -233,13 +285,19 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 }
                             }
 
+                            val fpas: Seq[String] = toggleFixpointAnalysesField.selected.value match {
+                                case true ⇒ fixpointAnalysesView.selectionModel().getSelectedItems
+                                case _    ⇒ Seq.empty[String]
+                            }
+
                             if (!interrupt) {
                                 parameters = Some(new AnalysisParameters(
                                     maxEvalTime = maxEvalTime,
                                     maxEvalFactor = maxEvalFactor,
                                     maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
                                     maxCardinalityOfLongSets = maxCardinalityOfLongSets,
-                                    maxCallChainLength = maxCallChainLength))
+                                    maxCallChainLength = maxCallChainLength,
+                                    fixpointAnalyses = fpas))
                                 close()
                             }
                         }
@@ -256,6 +314,18 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
         maxCardinalityOfLongSetsField.text = parameters.maxCardinalityOfLongSets.toString
         maxCallChainLengthField.text = parameters.maxCallChainLength.toString
+        if (parameters.fixpointAnalyses.size == 0) {
+            toggleFixpointAnalysesField.text = "disabled"
+            toggleFixpointAnalysesField.selected = false
+            fixpointAnalysesView.disable = true
+        } else {
+            var i = 0
+            val selection = fixpointAnalysesView.selectionModel()
+            while (i < parameters.fixpointAnalyses.size) {
+                selection.select(i)
+                i += 1
+            }
+        }
         showAndWait()
         this.parameters
     }

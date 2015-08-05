@@ -582,6 +582,35 @@ class BugPicker extends Application {
                                     }
                                 }
                             },
+//                            new MenuItem {
+//                                text = "_Run Property Analysis"
+//                                mnemonicParsing = true
+//                                accelerator = KeyCombination("Shortcut+Q")
+//                                onAction = { e: ActionEvent ⇒
+//                                    Platform.runLater {
+//                                        val parameters = BugPicker.loadParametersFromPreferences()
+//                                        storeCurrentAnalysis.disable = true
+//                                        val issues = ObjectProperty(Iterable.empty[Issue])
+//                                        issues.onChange((o, p, q) ⇒ {
+//                                            currentAnalysis = issues().map(_.asXHTML(false))
+//                                            currentAnalysisParameters = parameters
+//                                            if (currentAnalysis != null) {
+//                                                storeCurrentAnalysis.disable = false
+//                                                loadAnalysisToDiff.disable = false
+//                                                if (!recentAnalysisToDiffMenu.items.isEmpty)
+//                                                    recentAnalysisToDiffMenu.disable = false
+//                                            }
+//                                        })
+//                                        AnalysisRunner.runAnalysis(
+//                                            stage, project, sources, parameters,
+//                                            issues, sourceView, byteView, reportView, tabPane)
+//
+//                                        if (!tabPane.selectionModel().isSelected(1)) {
+//                                            tabPane.selectionModel().select(1)
+//                                        }
+//                                    }
+//                                }
+//                            },
                             new MenuItem {
                                 text = "_Preferences"
                                 mnemonicParsing = true
@@ -813,6 +842,7 @@ object BugPicker {
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS = "maxCardinalityOfLongSets"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
+    final val PREFERENCES_KEY_FIXPOINT_ANALYSES = "fixpointAnalyses"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
     final val PREFERENCES_KEY_LAST_DIRECTORY = "lastDirectory"
 
@@ -862,12 +892,16 @@ object BugPicker {
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             DefaultMaxCallChainLength)
+        val fixpointAnalyses = PREFERENCES.get(
+            PREFERENCES_KEY_FIXPOINT_ANALYSES,
+            DefaultFixpointAnalyses.mkString(";"))
         new AnalysisParameters(
             maxEvalTime,
             maxEvalFactor,
             maxCardinalityOfIntegerRanges,
             maxCardinalityOfLongSets,
-            maxCallChainLength)
+            maxCallChainLength,
+            fixpointAnalyses.split(";"))
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
@@ -886,6 +920,10 @@ object BugPicker {
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             parameters.maxCallChainLength)
+        PREFERENCES.put(
+            PREFERENCES_KEY_FIXPOINT_ANALYSES,
+            parameters.fixpointAnalyses.mkString(";")
+        )
     }
 
     def storeFilesToPreferences(loadedFiles: LoadedFiles): Unit = {

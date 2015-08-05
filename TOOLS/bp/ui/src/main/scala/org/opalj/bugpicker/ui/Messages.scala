@@ -47,6 +47,7 @@ object Messages {
     final val ANALYSES_CANCELLING = getMessage("/org/opalj/bugpicker/ui/messages/analysescancelling.html")
     final val LOAD_CLASSES_FIRST = getMessage("/org/opalj/bugpicker/ui/messages/loadclassesfirst.html")
     final val NO_BYTECODE_FOUND = getMessage("/org/opalj/bugpicker/ui/messages/nobytecodefound.html")
+    final val NO_PROPERTIES_FOUND = getMessage("/org/opalj/bugpicker/ui/messages/nopropertiesfound.html")
     final val METHOD_WITHOUT_BODY = getMessage("/org/opalj/bugpicker/ui/messages/methodwithoutbody.html")
     final val GENERATING_DIFF = getMessage("/org/opalj/bugpicker/ui/messages/creatingdiff.html")
     final val GET_HELP = getMessage("/org/opalj/bugpicker/ui/messages/gethelp.html")

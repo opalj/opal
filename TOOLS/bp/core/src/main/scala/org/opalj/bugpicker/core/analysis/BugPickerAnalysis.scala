@@ -70,6 +70,11 @@ import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import scala.xml.NodeSeq
+import org.opalj.fpa.FixpointAnalysis
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.fp.ShadowingAnalysis
+import org.opalj.fpa.common.FixpointAnalysesRegistry
+import org.opalj.fpa.AnalysisEngine
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -145,6 +150,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 collectFirst { case MaxCallChainLengthPattern(i) ⇒ parseInt(i) }.
                 getOrElse(DefaultMaxCallChainLength)
 
+        val fixpointAnalyses: Seq[FixpointAnalysis] = {
+            parameters.collectFirst {
+                case FixpointAnalysesPattern(i) ⇒
+                    var fpas = Seq.empty[FixpointAnalysis]
+                    for (fpa ← i.split(";"))
+                        fpas = fpas :+ FixpointAnalysesRegistry.newFixpointAnalysis(fpa)
+                    fpas
+            }.getOrElse(Seq.empty[FixpointAnalysis])
+        }
+
         val debug = parameters.contains("-debug")
         if (debug) {
             val cp = System.getProperty("java.class.path")
@@ -182,6 +197,25 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         }
         val callGraphEntryPoints = callGraph.entryPoints().toSet
 
+        //
+        //
+        // Compute Fixpoint properties
+        //
+        //
+
+        if (fixpointAnalyses.nonEmpty) {
+            val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
+
+            fixpointAnalyses foreach { fpa ⇒
+                val fpaThread = new Thread(new Runnable {
+                    def run = fpa.asInstanceOf[AnalysisEngine[_]].analyze(theProject)
+                })
+                fpaThread.start
+                fpaThread.join()
+            }
+
+            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+        }
         //
         //
         // MAIN ANALYSIS
@@ -489,6 +523,9 @@ object BugPickerAnalysis {
     final val MaxCardinalityOfLongSetsPattern =
         """-maxCardinalityOfLongSets=(\d+)""".r
     final val DefaultMaxCardinalityOfLongSets = 2
+
+    final val FixpointAnalysesPattern = """-fixpointAnalyses=(.*)""".r
+    final val DefaultFixpointAnalyses = Seq.empty[String]
 
     def resultsAsXHTML(
         parameters: Seq[String],
