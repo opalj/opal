@@ -48,25 +48,38 @@ import scala.collection.mutable.Queue
 
 /**
  * Collects the abstract interpretation time Definition-Use information.
- * I.e., makes the information available
- * which value is accessed where. Here, all values (variables) are identified using int
- * values where the int value is equivalent to the pc of the instruction that
- * initializes the respective (virtual) variable.
+ * I.e., makes the information available which value is accessed where/where a used
+ * value is defined.
+ * In general, all regular values are identified using `Int`
+ * values where the `Int` value identifies the instruction or parameter responsible for
+ * the value. In case of exception values the `Int` value identifies the exception
+ * handlers that caught the respective exception. This information can then be used –
+ * in combination with the AICFG - to identify the origin instruction that caused
+ * the exception.
  *
+ * ==General Usage==
+ * This trait collects the def/use information after the abstract interpretation has
+ * successfully completed and the control-flow graph is available. The information
+ * is automatically made available, when this plug-in is mixed in.
+ *
+ * ==Special Values==
+ *
+ * ===Parameters===
  * The parameters given to a method have negative `int` values (the first
  * parameter has the value -1, the second -2 and so forth; the computational type
  * category is ignored.).
  *
- * ==Usage==
- * This trait collects the def/use information after the abstract interpretation has
- * ended.
+ * ===Exceptions===
+ * Exceptions are generally using the
+ *
  *
  * ==Core Properties==
- * === Reusability ===
- * This domain can be reused to successively perform abstract interpretations of different
- * methods. The domain's inherited `initProperties` method – which is called by the AI
- * framework –  resets the entire state related
- * to the abstract interpretation of a method.
+ *
+ * ===Reusability===
+ * An instance of this domain can be reused to successively perform abstract
+ * interpretations of different methods.
+ * The domain's inherited `initProperties` method – which is called by the AI
+ * framework –  resets the entire state related to the method.
  *
  * @author Michael Eichberg
  */
@@ -129,12 +142,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         defOps(0) = Nil // the operand stack is empty...
         this.defOps = defOps
 
+        // TODO code.exceptionHandlers
+
         // initialize initial def-use information based on the parameters
         val defLocals = new Array[Registers[ValueOrigins]](codeSize)
         var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
-                parameterIndex -= 1 // to get the same offsets as used by the AI for parameters
+                // we always decrement parameterIndex to get the same offsets as
+                // used by the AI for parameters
+                parameterIndex -= 1
                 if (v ne null) {
                     ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                 } else {
@@ -171,7 +188,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Creates an XHTML document that contains information about the def-/use
      * information.
      */
-    def dumpDefUseInfo(): Node = {
+    def dumpDefUseInfo(): Node =
+        XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
+
+    def dumpDefUseTable(): Node = {
         val perInstruction =
             defOps.zip(defLocals).zipWithIndex.
                 filter(e ⇒ (e._1._1 != null || e._1._2 != null)).
@@ -203,18 +223,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     </tr>
                 }
 
-        XHTML.createXHTML(
-            Some("Definition/Use Information"),
-            <table>
-                <tr>
-                    <th class="pc">PC</th>
-                    <th class="pc">Used By</th>
-                    <th class="stack">Stack</th>
-                    <th class="registers">Locals</th>
-                </tr>
-                { perInstruction }
-            </table>
-        )
+        <table>
+            <tr>
+                <th class="pc">PC</th>
+                <th class="pc">Used By</th>
+                <th class="stack">Stack</th>
+                <th class="registers">Locals</th>
+            </tr>
+            { perInstruction }
+        </table>
     }
 
     /**
@@ -237,8 +254,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     /**
      * Creates a multi-graph that represents the method's def-use information. I.e.,
-     * in which way a certain value is used by other instructions and who the derived
-     * values are in turn used by further instructions.
+     * in which way a certain value is used by other instructions and where the derived
+     * values are then used by further instructions.
      */
     def createDefUseGraph(code: Code): Set[DefaultMutableNode[ValueOrigin]] = {
 
