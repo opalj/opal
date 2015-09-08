@@ -209,7 +209,7 @@ class PropertyStore private (
             val (lock, properties) = data.get(e)
             withReadLock(lock) {
                 properties.values collect {
-                    case (p, _) if p ne null => p
+                    case (p, _) if p ne null ⇒ p
                 }
             }
         }
