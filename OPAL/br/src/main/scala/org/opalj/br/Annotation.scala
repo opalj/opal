@@ -32,13 +32,13 @@ package br
 /**
  * An annotation of a class, field, method or method parameter.
  *
- * Annotations are associated with a class, field, or method using a
- * [[org.opalj.br.RuntimeInvisibleAnnotationTable]] or a
- * [[org.opalj.br.RuntimeVisibleAnnotationTable]] attribute.
+ * Annotations are associated with a class, field, or method using the attribute
+ * [[org.opalj.br.RuntimeInvisibleAnnotationTable]] or
+ * [[org.opalj.br.RuntimeVisibleAnnotationTable]].
  *
- * Annotations are associated with a method parameter using a
+ * Annotations are associated with a method parameter using the attribute
  * [[org.opalj.br.RuntimeInvisibleParameterAnnotationTable]] or
- * a [[org.opalj.br.RuntimeVisibleParameterAnnotationTable]] attribute.
+ * a [[org.opalj.br.RuntimeVisibleParameterAnnotationTable]].
  *
  * @author Michael Eichberg
  * @author Arne Lottmann

@@ -51,14 +51,15 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     def asCPNode(implicit cp: Constant_Pool): Node
 
     /**
-     * Creates a resolved (i.e., a representation that contains no more
-     * pointers in the CP)
-     * representation of this constant pool entry that is well-suited as an
+     * Creates a resolved representation of this constant pool entry that is well-suited as an
      * output in combination with an instruction (e.g., an `ldc`, `get|putfield`,
-     * `invokXYZ`,...).
+     * `invokXYZ`,...). I.e., a representation that contains no more
+     * pointers in the CP.
      *
      * @note This operation is only supported by constant pool entries related to
-     *      load constant instructions (ldc(2)(_W)).
+     *      load constant instructions (ldc(2)(_W)). In case of the `invoke` or
+     *      `put|getfield` instructions the transformation is handled by the respective
+     *      instruction.
      */
     def asInlineNode(implicit cp: Constant_Pool): Node
 
