@@ -33,10 +33,11 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+import org.opalj.io.writeAndOpen
 
 /**
- * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods. It basically tests if we can load and
+ * This system test(suite) just loads a very large number of class files and creates
+ * an HTML representation of the bytecode. It basically tests if we can load and
  * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
@@ -53,13 +54,12 @@ class DisassemblerTest extends FlatSpec with Matchers {
 
         val Lock = new Object
         var exceptions: List[Throwable] = Nil
+        val exceptionHandler = (source: AnyRef, exception: Throwable) ⇒ {
+            Lock.synchronized { exceptions = exception :: exceptions }
+        }
 
-        val classFiles =
-            ClassFileReader.ClassFiles(
-                files,
-                (source: AnyRef, exception: Throwable) ⇒
-                    Lock.synchronized { exceptions = exception :: exceptions }
-            )
+        val classFiles = ClassFileReader.ClassFiles(files, exceptionHandler)
+
         exceptions should be('empty)
         classFiles.isEmpty should be(false)
         info(s"loaded ${classFiles.size} class files")
@@ -75,9 +75,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
         info(s"identified ${classFilesGroupedByPackage.size} packages")
 
         val transformationCounter = new java.util.concurrent.atomic.AtomicInteger(0)
-        for {
-            groupedClassFiles ← classFilesGroupedByPackage
-        } yield {
+        for (groupedClassFiles ← classFilesGroupedByPackage) {
             val (packageName, classFiles) = groupedClassFiles
             info("processing package "+packageName)
             val parClassFiles = classFiles.par
@@ -89,12 +87,11 @@ class DisassemblerTest extends FlatSpec with Matchers {
                     transformationCounter.incrementAndGet()
                     // ideally: should be valid HTML
                 } catch {
-                    case e: Exception ⇒
-                        Lock.synchronized {
-                            exceptions =
-                                new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::
-                                    exceptions
-                        }
+                    case e: Exception ⇒ Lock.synchronized {
+                        val message = s"failed: $url; message:"+e.getMessage()
+                        val newException = new RuntimeException(message, e)
+                        exceptions = newException :: exceptions
+                    }
                 }
             }
         }
@@ -107,11 +104,9 @@ class DisassemblerTest extends FlatSpec with Matchers {
                 writer.println("\n")
             }
             writer.flush()
-            val file =
-                org.opalj.io.writeAndOpen(
-                    new String(out.toByteArray()),
-                    "bytecode disassembler - exceptions", ".txt"
-                )
+            val exceptionsAsText = new String(out.toByteArray())
+            val fileName = "bytecode disassembler - exceptions"
+            val file = writeAndOpen(exceptionsAsText, fileName, ".txt")
 
             fail(exceptions.map(_.getMessage()).
                 mkString("Exceptions:\n", "\n", "Details: "+file))
