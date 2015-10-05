@@ -789,7 +789,8 @@ trait AI[D <: Domain] {
 
             worklist =
                 theDomain.flow(
-                    sourcePC, targetPC, isTargetScheduled,
+                    sourcePC, sourceOperands, sourceLocals,
+                    targetPC, isTargetScheduled,
                     isExceptionalControlFlow, abruptSubroutineTerminationCount,
                     wasJoinPerformed,
                     worklist,

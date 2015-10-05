@@ -253,7 +253,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
     }
 
     /**
-     * ''Called by the framework after performing a computation''. That is, after
+     * Called by the framework after performing a computation to inform the domain
+     * about the result. That is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and (if necessary) joining the updated stack and registers with the stack
      * and registers associated with the instruction `successorPC`. (Hence, this method
@@ -284,6 +285,12 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *
      * @param currentPC The program counter of the instruction that is currently evaluated
      *      by the abstract interpreter.
+     *
+     * @param currentOperands The current operands. I.e., the operand stack before the
+     *  	instruction is evaluated.
+     *
+     * @param currentLocals The current locals. I.e., the locals before the instruction is
+     * 		evaluated.
      *
      * @param successorPC The program counter of an instruction that is a potential
      *      successor of the instruction with `currentPC`. In general the AI framework
@@ -321,6 +328,11 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      evaluated in the past; the other elements are `null`. Furthermore,
      *      it identifies the `operandsArray` of the subroutine that will executed the
      *      instruction with `successorPC`.
+     *      '''The operandsArray may be `null` for the ''current'' instruction (not the successor
+     *      instruction) if the execution of the current instruction leads to the termination
+     *      of the current subroutine. In this case the information about the operands
+     *      and locals associated with all instructions belonging to the subroutine is
+     *      reset.'''
      *
      * @param localsArray The array that associates every instruction with its current
      *      register values. Note, that only those elements of the
@@ -328,6 +340,11 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      the past. The other elements are `null`. Furthermore,
      *      it identifies the `localsArray` of the subroutine that will executed the
      *      instruction with `successorPC`.
+     *      '''The localsArray may be `null` for the ''current'' instruction (not the successor
+     *      instruction) if the execution of the current instruction leads to the termination
+     *      of the current subroutine. In this case the information about the operands
+     *      and locals associated with all instructions belonging to the subroutine is
+     *      reset.'''
      *
      * @param worklist The current list of instructions that will be evaluated next.
      *      ==If subroutines are not used (i.e., Java >= 6)==
@@ -370,6 +387,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      */
     def flow(
         currentPC: PC,
+        currentOperands: Operands,
+        currentLocals: Locals,
         successorPC: PC,
         isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,

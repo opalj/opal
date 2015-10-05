@@ -202,6 +202,8 @@ trait RecordCFG
      */
     abstract override def flow(
         currentPC: PC,
+        currentOperands: Operands,
+        currentLocals: Locals,
         successorPC: PC,
         isSuccessorSchedulued: Answer,
         isExceptionalControlFlow: Boolean,
@@ -228,8 +230,8 @@ trait RecordCFG
         }
 
         super.flow(
-            currentPC, successorPC,
-            isSuccessorSchedulued,
+            currentPC, currentOperands, currentLocals,
+            successorPC, isSuccessorSchedulued,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,

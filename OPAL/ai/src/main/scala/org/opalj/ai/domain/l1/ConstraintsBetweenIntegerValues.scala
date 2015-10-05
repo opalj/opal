@@ -173,6 +173,8 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def flow(
         currentPC: PC,
+        currentOperands: Operands,
+        currentLocals: Locals,
         successorPC: PC,
         isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
@@ -235,8 +237,8 @@ trait ConstraintsBetweenIntegerValues
         this.lastConstraint = None
 
         super.flow(
-            currentPC, successorPC,
-            isSuccessorScheduled,
+            currentPC, currentOperands, currentLocals,
+            successorPC, isSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
