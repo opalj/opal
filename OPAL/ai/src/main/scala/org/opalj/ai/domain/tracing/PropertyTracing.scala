@@ -104,6 +104,8 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
 
     abstract override def flow(
         currentPC: PC,
+        currentOperands: Operands,
+        currentLocals: Locals,
         successorPC: PC,
         isSuccessorScheduled: Answer,
         isExceptionalControlFlow: Boolean,
@@ -150,8 +152,8 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
                 worklist
             }
         super.flow(
-            currentPC, successorPC,
-            newIsSuccessorScheduled,
+            currentPC, currentOperands, currentLocals,
+            successorPC, newIsSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             newWorklist,
