@@ -35,20 +35,14 @@ import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey
 import org.opalj.br.analyses.Project
 import java.net.URL
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.Method
-import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.ImmediateResult
 import org.opalj.fp.Result
-import scala.collection.immutable.HashSet
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
 import org.opalj.AnalysisModes
-import org.opalj.fpa.FixpointAnalysis
 import org.opalj.fpa.FilterEntities
-import org.opalj.fpa.AssumptionDependentAnalysis
+import org.opalj.fp.Entity
+import org.opalj.fpa.AssumptionBasedFixpointAnalysis
 
 /**
  * @author Michael Reif
@@ -68,9 +62,9 @@ case object PackageLocal extends ProjectAccessibility { final val isRefineable =
 
 case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
 
-object ShadowingAnalysis extends FixpointAnalysis
-        with FilterEntities[Method]
-        with AssumptionDependentAnalysis[Method] {
+object ShadowingAnalysis
+        extends AssumptionBasedFixpointAnalysis
+        with FilterEntities[Method] {
 
     val propertyKey = ProjectAccessibility.Key
 
@@ -94,9 +88,7 @@ object ShadowingAnalysis extends FixpointAnalysis
         if (method.isPrivate)
             return Result(method, ClassLocal)
 
-        val opa = mode.equals(AnalysisModes.LibraryWithOpenPackagesAssumption)
-
-        if (opa)
+        if (isOpenPackagesAssumption)
             return Result(method, Global)
 
         val declaringClass = project.classFile(method)
@@ -119,7 +111,7 @@ object ShadowingAnalysis extends FixpointAnalysis
             project.classFile(subtype) map { classFile ⇒
                 if (classFile.isPublic) {
                     val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
-                    val hasMethod = potentialMethod.nonEmpty || potentialMethod.map { curMethod ⇒
+                    val hasMethod = potentialMethod.nonEmpty && potentialMethod.map { curMethod ⇒
                         curMethod.visibilityModifier.equals(method.visibilityModifier)
                     }.getOrElse(false)
 

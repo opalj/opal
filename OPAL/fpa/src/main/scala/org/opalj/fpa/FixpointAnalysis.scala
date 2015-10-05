@@ -27,12 +27,32 @@ import org.opalj.fp.PropertyKey
  */
 trait FixpointAnalysis {
     this: AnalysisEngine[_] ⇒
+
     /**
      * Returns the unique [[org.opalj.fp.PropertyKey]] of the computed [[org.opalj.fp.Property]] which is shared between
      * all properties of the same kind.
      */
     val propertyKey: PropertyKey
 
+    /**
+     * An initialization method that can be used by subclasses to introduce new state into a
+     * concrete analysis. This method should be used by subclasses that need to create state
+     * depending on the analyzed project.
+     *
+     * @note E.g. the configuration file is available over the implicit project parameter.
+     *       If you want to check some configured value, you can do this within this method.
+     *
+     */
+    def initializeAssumptions(implicit project: Project[URL]): Unit = Nil
+
+    /**
+     * This method triggers the analysis which is composed by the [[AnalysisEngine]].
+     */
+    final def analyze(implicit project: Project[URL]): Unit = {
+        implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        initializeAssumptions
+        triggerPropertyCalculation
+    }
 }
 
 /**
@@ -66,13 +86,6 @@ trait AnalysisEngine[E <: Entity] {
             implicit project: Project[URL],
             store: PropertyStore): PropertyComputationResult
 
-    /**
-     * This method triggers the analysis which is composed by the [[AnalysisEngine]].
-     */
-    def analyze(implicit project: Project[URL]): Unit = {
-        implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        triggerPropertyCalculation
-    }
 }
 
 /**
@@ -89,22 +102,30 @@ trait AllEntities[E <: Entity] extends AnalysisEngine[E] {
      */
     def triggerPropertyCalculation(
         implicit project: Project[URL],
-        propertyStore: PropertyStore) = propertyStore << (determineProperty _).
-        asInstanceOf[Object ⇒ PropertyComputationResult]
+        propertyStore: PropertyStore) =
+        propertyStore << (determineProperty _).
+            asInstanceOf[Object ⇒ PropertyComputationResult]
 }
 
-trait AssumptionDependentAnalysis[E <: Entity] extends AnalysisEngine[E] {
+trait AssumptionBasedFixpointAnalysis extends FixpointAnalysis {
+    this: AnalysisEngine[_] ⇒
 
-    var mode: AnalysisModes.Value = null
+    private[this] var analysisMode: Option[AnalysisModes.Value] = None
 
-    /**
-     * This method triggers the analysis which is composed by the [[AnalysisEngine]].
-     */
-    final override def analyze(implicit project: Project[URL]): Unit = {
-        implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        mode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
-        triggerPropertyCalculation
+    override def initializeAssumptions(implicit project: Project[URL]): Unit = {
+        analysisMode = Some(AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode")))
     }
+
+    private[this] val OPA = AnalysisModes.LibraryWithOpenPackagesAssumption
+    private[this] val CPA = AnalysisModes.LibraryWithClosedPackagesAssumption
+    private[this] val APPLICATION = AnalysisModes.Application
+
+    def isOpenPackagesAssumption = analysisMode.get.equals(CPA)
+
+    def isClosedPackagesAssumption = analysisMode.get.equals(OPA)
+
+    def isApplication = analysisMode.get.equals(APPLICATION)
+
 }
 
 /**

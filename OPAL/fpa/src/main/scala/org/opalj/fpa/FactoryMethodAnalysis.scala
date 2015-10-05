@@ -43,7 +43,6 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.fp.Continuation
 import org.opalj.fpa.FixpointAnalysis
 import org.opalj.fpa.FilterEntities
-import org.opalj.fpa.AssumptionDependentAnalysis
 import java.net.URL
 
 /**
@@ -77,10 +76,7 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
 case object NonFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
 object FactoryMethodAnalysis extends FixpointAnalysis
-        with FilterEntities[Method]
-        with AssumptionDependentAnalysis[Method] {
-
-    private val opInvokeSpecial = INVOKESPECIAL.opcode
+        with FilterEntities[Method] {
 
     val propertyKey = FactoryMethod.Key
 
@@ -88,9 +84,11 @@ object FactoryMethodAnalysis extends FixpointAnalysis
         case m: Method if m.isStatic && !m.isAbstract ⇒ m
     }
 
-    //    private val opInvokeStatic = INVOKESTATIC.opcode
+    private val opInvokeSpecial = INVOKESPECIAL.opcode
 
-    private[this] def evaluateViaNativeContinuation(method: Method): Continuation = {
+    private[this] val projectAccessibilityKey = ProjectAccessibility.Key
+
+    private def evaluateViaNativeContinuation(method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
             if (dependeeP == Global)
                 Result(method, IsFactoryMethod)
@@ -110,8 +108,8 @@ object FactoryMethodAnalysis extends FixpointAnalysis
 
         if (method.isNative) {
             import store.require
-            return require(method, FactoryMethod.Key,
-                method, ProjectAccessibility.Key)(evaluateViaNativeContinuation(method))
+            return require(method, propertyKey,
+                method, projectAccessibilityKey)(evaluateViaNativeContinuation(method))
         }
 
         val body = method.body.get
@@ -122,17 +120,19 @@ object FactoryMethodAnalysis extends FixpointAnalysis
             val instruction = instructions(pc)
 
             if (instruction.opcode == opInvokeSpecial) {
-                val call = instruction.asInstanceOf[INVOKESPECIAL]
-                if ((call.declaringClass eq classType) && call.name == "<init>") {
-                    import store.require
-                    return require(method, FactoryMethod.Key,
-                        method, ProjectAccessibility.Key)(evaluateViaNativeContinuation(method))
+                instruction match {
+                    case INVOKESPECIAL(declClass, "<init>", _) if classType eq declClass ⇒
+                        import store.require
+                        return require(method, propertyKey,
+                            method, projectAccessibilityKey)(
+                                evaluateViaNativeContinuation(method))
+                    case _ ⇒
                 }
             }
 
             //TODO: model that the method could be called by an accessible method
 
-            pc = instruction.indexOfNextInstruction(pc, body)
+            pc = body.pcOfNextInstruction(pc)
         }
 
         ImmediateResult(method, NonFactoryMethod)
