@@ -8,6 +8,7 @@ import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.bi.VisibilityModifier
 
 /**
  * @author Michael Reif
@@ -33,11 +34,19 @@ trait MethodAnalysisDemo extends AnalysisDemo {
         withJarInfo: Boolean = false)(
             implicit project: Project[URL]): Traversable[String] = entities.map { e ⇒
         val method = e._1.asInstanceOf[Method]
+        val methodString = getVisibilityModifier(method)+" "+method.name
         val classFile = project.classFile(method)
         val jarInfo = if (withJarInfo)
             project.source(classFile.thisType)
         else ""
-        jarInfo+"\n\t "+classFile.thisType.toJava+" "+method.name
+        val classVisibility = if (classFile.isPublic) "public" else ""
+        jarInfo + s"\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+    }
+
+    private[this] def getVisibilityModifier(method: Method): String = {
+        method.visibilityModifier map { mod ⇒
+            if (mod.javaName.nonEmpty) mod.javaName.get else ""
+        } getOrElse ""
     }
 }
 

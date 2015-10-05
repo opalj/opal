@@ -30,6 +30,9 @@ case object NonOverridden extends Overridden { final val isRefineable = false }
 
 /**
  * @author Michael Reif
+ *
+ * This Analysis determines the ´Overridden´ property of a method. A method is considered as overridden
+ * if it is overridden in every subclass.
  */
 object OverridingAnalysis
         extends AssumptionBasedFixpointAnalysis
@@ -38,7 +41,7 @@ object OverridingAnalysis
     val propertyKey = ProjectAccessibility.Key
 
     /**
-     * Determines the [[ProjectAccessibility]] property of static methods considering shadowing of methods
+     * Determines the [[Overridden]] property of static methods considering shadowing of methods
      * provided by super classes. It is tailored to entry point set computation where we have to consider different kind
      * of assumption depending on the analyzed program.
      *
@@ -61,8 +64,7 @@ object OverridingAnalysis
         // but if you want to have a dedicated looking at the isOverridden property,
         // it will lead to incorrect results
         /*if (isOpenPackagesAssumption)
-            return Result(method, Global)
-            method.toJava()*/
+            return Result(method, Global) */
 
         val declaringClass = project.classFile(method)
 
@@ -76,9 +78,6 @@ object OverridingAnalysis
 
         val visibleClass: ClassFile ⇒ Boolean = _.isPublic || isOpenPackagesAssumption
 
-        if (subtypes.size == 0 && visibleClass(declaringClass))
-            return Result(method, PotentiallyOverridden)
-
         subtypes foreach { subtype ⇒
             project.classFile(subtype) map { classFile ⇒
                 val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
@@ -89,9 +88,12 @@ object OverridingAnalysis
                 if (couldInheritMethod) {
                     val superuperTypes = project.classHierarchy.allSupertypes(subtype, false)
 
+                    // the check, if the superclass is visible, leads to wrong results in terms
+                    // of the Overridden property
                     val inheritsMethod = !superuperTypes.exists { supertype ⇒
                         project.classFile(supertype).map { supClassFile ⇒
-                            supClassFile.findMethod(methodName, methodDescriptor).nonEmpty
+                            supClassFile.findMethod(methodName, methodDescriptor).nonEmpty &&
+                                visibleClass(supClassFile)
                         }.getOrElse(true) && (supertype ne declaringClass.thisType)
                     }
 
@@ -100,6 +102,9 @@ object OverridingAnalysis
                 }
             }
         }
+
+        if (visibleClass(declaringClass))
+            return Result(method, PotentiallyOverridden)
 
         // If no subtype is found, the method is not accessible
         Result(method, IsOverridden)
