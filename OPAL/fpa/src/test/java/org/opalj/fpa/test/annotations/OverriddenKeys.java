@@ -31,7 +31,7 @@ package org.opalj.fpa.test.annotations;
 /**
  * 
  * Represents all possible property variants of the [[Overridden]] property
- * defined in the the [[OverridingAnalysis]].
+ * defined in the [[OverridingAnalysis]].
  * 
  * @Note This enum is used for test-only purposes. It is used as parameter in
  * the [[OverriddenProperty]] annotation. Make sure, that the names

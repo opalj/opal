@@ -37,7 +37,9 @@ public class NonOverridingSubclass extends Superclass {
 		privateMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	private void privateMethod(){
 		privateMethod();
 	}

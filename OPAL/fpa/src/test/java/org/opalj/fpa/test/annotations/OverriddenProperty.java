@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.opalj.fpa.test.annotations;
 
 import java.lang.annotation.*;
@@ -44,5 +43,21 @@ import static java.lang.annotation.ElementType.METHOD;
 @Target(METHOD)
 public @interface OverriddenProperty {
 	
-	OverriddenKeys value() default OverriddenKeys.NonOverridden;
+	/**
+	 * This refers to the OverriddenProperty when the property is computed for
+	 * a library under the open package assumption. 
+	 */
+	OverriddenKeys opa() default OverriddenKeys.NonOverridden;
+	
+	/**
+	 * This refers to the OverriddenProperty when the property is computed for
+	 * a library under the closed package assumption. 
+	 */
+	OverriddenKeys cpa() default OverriddenKeys.NonOverridden;
+	
+	/**
+	 * This refers to the OverriddenProperty when the property is computed for
+	 * an application.
+	 */
+	OverriddenKeys application() default OverriddenKeys.NonOverridden;
 }

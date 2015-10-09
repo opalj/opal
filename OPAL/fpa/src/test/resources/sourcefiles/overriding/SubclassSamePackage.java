@@ -33,12 +33,14 @@ import org.opalj.fpa.test.annotations.OverriddenProperty;
 
 public class SubclassSamePackage extends ASuperclass {
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	private void privateMethod(){
 		System.out.println("private");
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -46,13 +48,13 @@ public class SubclassSamePackage extends ASuperclass {
 		System.out.println("public");
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	void packagePrivateMethod(){
 		System.out.println("package private");
 	}
 	
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}

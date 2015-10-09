@@ -41,102 +41,157 @@ import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import com.typesafe.config.ConfigFactory
+import org.opalj.AnalysisModes
+import com.typesafe.config.Config
 
 /**
- * 
+ * Simple factory that can create a new Config by a given analysis mode. This is necessary
+ * for test purposes because the analysis mode, which is configured in the configuration file,
+ * has to be ignored to implement config file independet tests.
+ */
+object TestConfigFactory {
+
+    private[this] final val cpaConfig =
+        "org.opalj { analysisMode = \"Library with closed packages assumption\"}"
+
+    private[this] final val opaConfig =
+        "org.opalj { analysisMode = \"Library with open packages assumption\"}"
+
+    private[this] final val appConfig =
+        "org.opalj { analysisMode = \"application\"}"
+
+    def createConfig(value: AnalysisModes.Value): Config = {
+        value match {
+            case AnalysisModes.LibraryWithOpenPackagesAssumption   ⇒ ConfigFactory.parseString(opaConfig)
+            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒ ConfigFactory.parseString(cpaConfig)
+            case AnalysisModes.Application                         ⇒ ConfigFactory.parseString(appConfig)
+        }
+    }
+}
+
+/**
+ *
+ * Tests a fix-point analysis implementation using the classes in the configured
+ * class file.
+ *
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
 abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
-  
+
     /*
      * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES 
      */
-    
+
     val analysisName: String
-    
+
     def testFileName: String
-    
+
     def testFilePath: String
-    
+
     /**
      * This method has to be implement in the subclasses. This is in particular import for
-     * analyses that hardly depend on the output of other analyses. 
+     * analyses that hardly depend on the output of other analyses.
      */
-    def runAnalysis(project: Project[URL]) : Unit
-    
+    def runAnalysis(project: Project[URL]): Unit
+
     def propertyKey: PropertyKey
-    
-    def propertyAnnotation : ObjectType
-    
+
+    def propertyAnnotation: ObjectType
+
+    /**
+     * Common default value of the annoation `propertyAnnotation` uses for the different
+     * kinds of analysis assumptions. This value is used, if the annotated entity does not
+     * provide an explicitly assigned value.
+     */
+    val defaultValue: String
+
+    def analysisMode: AnalysisModes.Value
+
     /*
      * PROJECT SETUP
      */
-    
+
     def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
     val project = org.opalj.br.analyses.Project(file)
-    
+
+    project.config.resolveWith(TestConfigFactory.createConfig(analysisMode))
+
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
      */
-    
+
     runAnalysis(project)
-    
+
     val propertyStore = project.get(SourceElementsPropertyStoreKey)
     propertyStore.waitOnPropertyComputationCompletion()
-    
+
     /*
      * PROPERTY VALIDATION
      */
-    
+
     def validateProperty(method: Method, annotation: Annotation): Unit = {
-        val annotatedOProperty = annotation.elementValuePairs collectFirst (
-                {case ElementValuePair("value", EnumValue(_, stringValue)) => stringValue})
-        
-        val annotatedProperty = annotatedOProperty.get
-        
+
+        val annotatedOProperty = analysisMode match {
+            case AnalysisModes.LibraryWithOpenPackagesAssumption ⇒
+                annotation.elementValuePairs collectFirst (
+                    { case ElementValuePair("opa", EnumValue(_, property)) ⇒ property })
+            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒
+                annotation.elementValuePairs collectFirst (
+                    { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property })
+            case AnalysisModes.Application ⇒
+                annotation.elementValuePairs collectFirst (
+                    { case ElementValuePair("application", EnumValue(_, property)) ⇒ property })
+
+        }
+
+        val annotatedProperty = annotatedOProperty getOrElse (defaultValue)
+
         val computedOProperty = propertyStore(method, propertyKey)
-        
-        if(computedOProperty.isEmpty) {
+
+        if (computedOProperty.isEmpty) {
             val className = project.classFile(method).fqn
-            val message = 
-                    "Method not found in PropertyStore:\n\t" + 
-                    className + 
-                    s" { ${method.toJava} }\n\t\t has no property mapped to the respecting key: ${propertyKey};" +
+            val message =
+                "Method not found in PropertyStore:\n\t"+
+                    className +
+                    s" { ${method.toJava} }\n\t\t has no property mapped to the respecting key: ${propertyKey};"+
+                    s"\n\tclass name:      $className"+
+                    s"\n\tmethod:          ${method.toJava}"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
-        
+
         val computedProperty = computedOProperty.get.toString
-        
-        if(computedProperty != annotatedProperty) {
+
+        if (computedProperty != annotatedProperty) {
             val className = project.classFile(method).fqn
-            val message = 
-                    "Wrong property computeted:\n\t" + 
-                    className + 
-                    s" { $method } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;" +
-                    s"\n\tactual property:   $computedProperty" +
+            val message =
+                "Wrong property computeted:\n\t"+
+                    className +
+                    s" { $method } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;"+
+                    s"\n\tclass name:        $className"+
+                    s"\n\tmethod:            ${method.toJava}"+
+                    s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)
         }
-        
-//        computedProperty.get.toString should be (annotatedProperty.get)
     }
-    
+
     /*
      * TESTS - test every method with the corresponding annotation
      */
-    
-    for {
-        classFile <- project.allClassFiles
-        method <- classFile.methods
-        annotation <- method.runtimeVisibleAnnotations 
-            if annotation.annotationType == propertyAnnotation
-    } {
-        analysisName should ("correctly calculate the property of the method " + 
-                method.toJava + " in class " + classFile.fqn) in {
 
-            validateProperty(method, annotation)
-        }
+    for {
+        classFile ← project.allClassFiles
+        method ← classFile.methods
+        annotation ← method.runtimeVisibleAnnotations
+        if annotation.annotationType == propertyAnnotation
+    } {
+        analysisName should ("correctly calculate the property of the method "+
+            method.toJava+" in class "+classFile.fqn) in {
+
+                validateProperty(method, annotation)
+            }
     }
 }

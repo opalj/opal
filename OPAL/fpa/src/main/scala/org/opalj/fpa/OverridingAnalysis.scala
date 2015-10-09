@@ -29,7 +29,6 @@
 
 package org.opalj.fpa
 
-import org.opalj.br.analyses.fp.ProjectAccessibility
 import org.opalj.fp.Result
 import java.net.URL
 import org.opalj.fp.PropertyStore
@@ -69,9 +68,9 @@ object OverridingAnalysis
         with FilterEntities[Method] {
 
     val propertyKey = ProjectAccessibility.Key
-    
+
     val objectType = ObjectType.Object
-    
+
     /**
      * Determines the [[Overridden]] property of static methods considering shadowing of methods
      * provided by super classes. It is tailored to entry point set computation where we have to consider different kind
@@ -102,17 +101,17 @@ object OverridingAnalysis
 
         if (declaringClass.isFinal)
             return Result(method, CantNotBeOverridden)
-            
-        val declClassType = declaringClass.thisType    
+
+        val declClassType = declaringClass.thisType
         val methodDescriptor = method.descriptor
         val methodName = method.name
         val packageVisible = method.isPackagePrivate
-        
+
         val subtypes = project.classHierarchy.allSubtypes(declClassType, false)
-        
-        if(subtypes.size == 0)
+
+        if (subtypes.size == 0)
             return Result(method, NonOverridden)
-            
+
         subtypes foreach { subtype ⇒
             project.classFile(subtype) map { classFile ⇒
                 val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
@@ -120,19 +119,19 @@ object OverridingAnalysis
                     curMethod.visibilityModifier.equals(method.visibilityModifier)
                 }.getOrElse(false)
 
-                val packagePrivateCondition = 
-                    if(packageVisible) subtype.packageName == declClassType.packageName
+                val packagePrivateCondition =
+                    if (packageVisible) subtype.packageName == declClassType.packageName
                     else true
-                
+
                 if (couldInheritMethod && packagePrivateCondition) {
                     val superuperTypes = project.classHierarchy.allSupertypes(subtype, false)
 
                     val inheritsMethod = !superuperTypes.exists { supertype ⇒
-                        (supertype ne declClassType) && 
-                        (supertype ne objectType) && 
-                        project.classFile(supertype).map { supClassFile ⇒
-                            supClassFile.findMethod(methodName, methodDescriptor).nonEmpty
-                        }.getOrElse(true)
+                        (supertype ne declClassType) &&
+                            (supertype ne objectType) &&
+                            project.classFile(supertype).map { supClassFile ⇒
+                                supClassFile.findMethod(methodName, methodDescriptor).nonEmpty
+                            }.getOrElse(true)
                     }
 
                     if (inheritsMethod)

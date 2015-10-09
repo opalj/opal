@@ -29,7 +29,6 @@
 
 package overriding;
 
-import org.opalj.fpa.test.annotations.OverriddenKeys;
 import org.opalj.fpa.test.annotations.OverriddenProperty;
 
 /**
@@ -43,17 +42,17 @@ import org.opalj.fpa.test.annotations.OverriddenProperty;
  */
 public class TransitiveOverridingSubclass extends LayerSubclass {
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	public void publicMethod(){
 		protectedMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	protected void protectedMethod(){
 		publicMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	void packagePrivateMethod(){
 		publicFinalMethod();
 	}

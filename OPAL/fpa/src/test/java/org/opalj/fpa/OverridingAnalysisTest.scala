@@ -33,12 +33,14 @@ import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
+import org.opalj.fpa.test.annotations.OverriddenKeys
+import org.opalj.AnalysisModes
 
 
 /**
  * @author Michael Reif
  */
-class OverridingAnalysisTest extends AbstractFixpointAnalysisTest {
+abstract class OverridingAnalysisTest extends AbstractFixpointAnalysisTest {
 
     lazy val analysisName = "OverridingAnalysis"
 
@@ -58,4 +60,14 @@ class OverridingAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpa/test/annotations/OverriddenProperty")
+    
+    lazy val defaultValue = OverriddenKeys.NonOverridden.toString    
+}
+
+class OverridingAnalysisCPATest extends OverridingAnalysisTest {
+    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
+}
+
+class OverridingAnalysisOPATest extends OverridingAnalysisTest {
+    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }

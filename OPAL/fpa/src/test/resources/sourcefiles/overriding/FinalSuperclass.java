@@ -42,12 +42,16 @@ import org.opalj.fpa.test.annotations.OverriddenProperty;
  */
 public final class FinalSuperclass {
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	private void privateMethod(){
 		System.out.println("private");
 	}
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -55,12 +59,16 @@ public final class FinalSuperclass {
 		System.out.println("public");
 	}
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}

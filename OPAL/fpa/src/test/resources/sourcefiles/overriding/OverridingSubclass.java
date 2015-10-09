@@ -33,23 +33,25 @@ import org.opalj.fpa.test.annotations.OverriddenProperty;
 
 public class OverridingSubclass extends Superclass{
 
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	public void publicMethod(){
 		protectedMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	protected void protectedMethod(){
 		publicMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.NonOverridden)
+	@OverriddenProperty
 	void packagePrivateMethod(){
 		publicFinalMethod();
 		privteMethod();
 	}
 	
-	@OverriddenProperty(OverriddenKeys.CantNotBeOverridden)
+	@OverriddenProperty(
+			opa=OverriddenKeys.CantNotBeOverridden,
+			cpa=OverriddenKeys.CantNotBeOverridden)
 	private void privteMethod(){
 		publicFinalMethod();
 	}
