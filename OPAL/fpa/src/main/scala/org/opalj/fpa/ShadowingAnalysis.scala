@@ -26,10 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-package fp
+package org.opalj.fpa
 
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey
@@ -40,9 +37,7 @@ import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
 import org.opalj.fp.Result
 import org.opalj.AnalysisModes
-import org.opalj.fpa.FilterEntities
 import org.opalj.fp.Entity
-import org.opalj.fpa.AssumptionBasedFixpointAnalysis
 
 /**
  * @author Michael Reif
@@ -87,10 +82,10 @@ object ShadowingAnalysis
 
         if (method.isPrivate)
             return Result(method, ClassLocal)
-
+            
         if (isOpenPackagesAssumption)
             return Result(method, Global)
-
+            
         val declaringClass = project.classFile(method)
         val pgkVisibleMethod = method.isPackagePrivate
 
