@@ -32,7 +32,7 @@ import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * This class used for test purpose only. The annotations are only valid under
+ * This class is used for test purpose only. The annotations are only valid under
  * the closed packages assumption.
  * 
  * @author Michael Reif
