@@ -171,27 +171,46 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                val newLocals =
-                    thisLocals.merge(
-                        otherLocals,
-                        (thisLocal, otherLocal) ⇒ {
-                            if ((thisLocal eq null) || (otherLocal eq null)) {
-                                localsUpdated = localsUpdated &: MetaInformationUpdateType
-                                TheIllegalValue
-                            } else {
-                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
-                                if (updatedLocal eq NoUpdate) {
-                                    thisLocal
-                                } else {
-                                    localsUpdated = localsUpdated &: updatedLocal
-                                    val value = updatedLocal.value
-                                    if (value ne TheIllegalValue)
-                                        localsUpdateIsRelevant = true
-                                    value
-                                }
-                            }
+                def mergeLocals(thisLocal: DomainValue, otherLocal: DomainValue) = {
+                    if ((thisLocal eq null) || (otherLocal eq null)) {
+                        localsUpdated = localsUpdated &: MetaInformationUpdateType
+                        TheIllegalValue
+                    } else {
+                        val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                        if (updatedLocal eq NoUpdate) {
+                            thisLocal
+                        } else {
+                            localsUpdated = localsUpdated &: updatedLocal
+                            val value = updatedLocal.value
+                            if (value ne TheIllegalValue)
+                                localsUpdateIsRelevant = true
+                            value
                         }
-                    )
+                    }
+
+                }
+                val newLocals = thisLocals.merge(otherLocals, mergeLocals)
+                //                val newLocals =
+                //                    thisLocals.merge(
+                //                        otherLocals,
+                //                        (thisLocal, otherLocal) ⇒ {
+                //                            if ((thisLocal eq null) || (otherLocal eq null)) {
+                //                                localsUpdated = localsUpdated &: MetaInformationUpdateType
+                //                                TheIllegalValue
+                //                            } else {
+                //                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                //                                if (updatedLocal eq NoUpdate) {
+                //                                    thisLocal
+                //                                } else {
+                //                                    localsUpdated = localsUpdated &: updatedLocal
+                //                                    val value = updatedLocal.value
+                //                                    if (value ne TheIllegalValue)
+                //                                        localsUpdateIsRelevant = true
+                //                                    value
+                //                                }
+                //                            }
+                //                        }
+                //                    )
                 if (localsUpdated.noUpdate)
                     thisLocals
                 else
