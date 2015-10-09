@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,24 +33,30 @@ import org.opalj.br.Code
 /**
  * @author Erich Wittenbeck
  */
+
+/**
+ * Represents the entry-point of a control flow graph.
+ *
+ * ==Thread-Safety==
+ * This class is thread-safe
+ *
+ */
 class StartBlock extends CFGBlock {
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case _: StartBlock ⇒ true // TODO This is questionable (how about the id field!)
-            case _             ⇒ false
-        }
-    }
+    override def id: Int = -65536
 
-    override def hashCode(): Int = 323125; // TODO This is questionable (how about the id field!)
+    override def toHRR: Option[String] = {
+        Some("start")
+    }
 
     def toDot(code: Code): String = {
 
-        var res: String = ID+" [shape=box, label=\""+ID+"\"];\n"
+        var res: String = this.toHRR.get+" [shape=box, label=\""+this.toHRR.get+"\"];\n"
 
         for (succ ← successors) {
-            res = res + ID+" -> "+succ.ID+";\n"
+            res = res + this.toHRR.get+" -> "+succ.toHRR.get+";\n"
         }
         res
     }
+
 }

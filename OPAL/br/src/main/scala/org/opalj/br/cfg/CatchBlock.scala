@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,7 +33,16 @@ import org.opalj.br.PC
 import org.opalj.br.ExceptionHandler
 
 /**
+ *
  * @author Erich Wittenbeck
+ */
+
+/**
+ * Represents the entry-point for a exception-handlers handling-code in a
+ * control flow graph
+ *
+ * ==Thread-Safety==
+ * This class is thread-safe
  */
 class CatchBlock(val handler: ExceptionHandler) extends CFGBlock {
 
@@ -41,22 +50,20 @@ class CatchBlock(val handler: ExceptionHandler) extends CFGBlock {
     final def endPC: PC = handler.endPC
     final def handlerPC: PC = handler.handlerPC
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case that: CatchBlock ⇒ this.handler == that.handler // TODO This is questionable (how about the id field!)
-            case _                ⇒ false
-        }
+    override def id: Int = handlerPC * (-1)
+
+    override def toHRR: Option[String] = {
+        Some("cb"+handlerPC)
     }
 
-    override def hashCode(): Int = handler.hashCode * 51; // TODO This is questionable (how about the id field!)
-
     def toDot(code: Code): String = {
-        var res: String = ID+" [shape=box, label=\""+ID+"\"];\n"
+        var res: String = this.toHRR.get+" [shape=box, label=\""+this.toHRR.get+"\"];\n"
 
         for (succ ← successors) {
-            res = res + ID+" -> "+succ.ID+";\n"
+            res = res + this.toHRR.get+" -> "+succ.toHRR.get+";\n"
         }
 
         res
     }
+
 }

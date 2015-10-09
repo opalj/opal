@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,32 +29,42 @@
 package org.opalj.br.cfg
 
 import org.opalj.br.Code
+import org.opalj.graphs.Node
 
 /**
  * @author Erich Wittenbeck
  */
-trait CFGBlock {
 
-    // TODO [design] make immutable
+/**
+ * A common trait for all nodes, called 'blocks', of a control flow graph
+ *
+ */
+trait CFGBlock extends Node {
+
+    override def hasSuccessors: Boolean = successors != Nil
+
+    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+        for (successor ← successors)
+            f(successor)
+    }
 
     private[cfg] var predecessors: List[CFGBlock] = Nil
 
     private[cfg] var successors: List[CFGBlock] = Nil
 
-    private[cfg] var ID: String = _
-
-    // TODO [design] what is the purpose of these two methods (?)
-    private[cfg] def addPred(block: CFGBlock): Unit = predecessors = block :: predecessors
-    private[cfg] def addSucc(block: CFGBlock): Unit = successors = block :: successors
-
-    // TODO [rename] returnAllSuccessorBlocks (???)
-    def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
+    /**
+     * Returns a Set with all CFGBlocks that are reachable from this one
+     */
+    def returnAllDescendants(visited: Set[CFGBlock]): Set[CFGBlock] = {
         var res: Set[CFGBlock] = visited + this
         for (block ← successors if (!visited.contains(block)))
-            res = res ++ block.returnAllBlocks(res)
+            res = res ++ block.returnAllDescendants(res)
         res
     }
 
-    // TODO Needs explanation
+    /**
+     * Returns a representation of this Block in the GraphViz-DOT format
+     */
     def toDot(code: Code): String
+
 }

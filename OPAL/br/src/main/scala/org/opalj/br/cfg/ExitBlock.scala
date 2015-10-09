@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,21 +33,27 @@ import org.opalj.br.Code
 /**
  * @author Erich Wittenbeck
  */
+
+/**
+ * Represents the exit-point of a control flow graph
+ *
+ * ==Thread-Safety==
+ * This class is thread-safe
+ *
+ */
 class ExitBlock extends CFGBlock {
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case _: ExitBlock ⇒ true // TODO This is questionable (how about the id field!)
-            case _            ⇒ false
-        }
-    }
+    override def id: Int = 65536
 
-    override def hashCode(): Int = 121334; // TODO This is questionable (how about the id field!)
+    override def toHRR: Option[String] = {
+        Some("exit")
+    }
 
     def toDot(code: Code): String = {
 
-        val res: String = ID+" [shape=box, label=\""+ID+"\"];\n"
+        val res: String = this.toHRR.get+" [shape=box, label=\""+this.toHRR.get+"\"];\n"
 
         res
     }
+
 }

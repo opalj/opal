@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,13 +28,25 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.immutable.HashSet
-import scala.collection.immutable.TreeSet
 import org.opalj.br.PC
 import org.opalj.br.Code
 
 /**
+ *
  * @author Erich Wittenbeck
+ */
+
+/**
+ * Represents a basic block of bytecode in a control flow graph.
+ * It stores the program counters implicitly by having a reference to the PC
+ * at it's start- and end-point
+ *
+ * Parameters:
+ *
+ * @param startPC The initial starting PC of this BasicBlock
+ *
+ * ==Thread-Safety==
+ * This class is thread-safe
  */
 class BasicBlock(val startPC: PC) extends CFGBlock {
 
@@ -42,14 +54,16 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
 
     private[cfg] var endPC: PC = startPC
 
-    private[cfg] def addPC(pc: PC): Unit = endPC = pc // TODO Rename: setEndPC
+    private[cfg] def setEndPC(pc: PC): Unit = endPC = pc
 
-    private[cfg] override def addSucc(block: CFGBlock): Unit = block match {
-        case cb: CatchBlock ⇒ { catchBlockSuccessors = catchBlockSuccessors :+ cb }
-        case _              ⇒ super.addSucc(block)
-    }
-
-    def programCounters(code: Code): Seq[PC] = { // TODO Return an iterator (this give the caller more opportunities!)
+    /**
+     * Returns the program counters contained within this BasicBlock
+     *
+     * Parameters:
+     *
+     * @param code The code-object of the CFG
+     */
+    def programCounters(code: Code): Seq[PC] = {
         var res: List[PC] = Nil
         var pc: PC = startPC
 
@@ -61,45 +75,41 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
         res
     }
 
-    // TODO add documentation
-    def indexOfPC(pc: PC, code: Code): Int = {
-        var res = 0 // TODO rename: index
+    /**
+     * Returns the index of a given PC, if PCs were stored explicitly in an Array
+     * or a similar structure
+     *
+     * Example:
+     *
+     * Presume this Block contains PCs 0,1,3,5 and 6.
+     *
+     * For input 3, it will return 2. For 5 it will return 3 etc.
+     *
+     * Parameters
+     *
+     * @param pc The program counter whose position is to be determined
+     * @param code The code-object of the CFG
+     */
+    def positionOfPCwithinBlock(pc: PC, code: Code): Int = {
+        var index = 0
         var currentPC = startPC
 
         while (currentPC < pc) {
             currentPC = code.pcOfNextInstruction(currentPC)
-            res += 1
+            index += 1
         }
 
-        res
+        index
     }
 
-    private[cfg] def split(
-        block: BasicBlock,
-        newBlockStartPC: PC,
-        oldBlockEndPC: PC): BasicBlock = {
-
-        val newBlock = new BasicBlock(newBlockStartPC)
-        newBlock.endPC = endPC
-        newBlock.successors = successors
-        newBlock.catchBlockSuccessors = catchBlockSuccessors
-        newBlock.addPred(this)
-
-        for (successor ← newBlock.successors) {
-            val oldBlock = this
-            successor.predecessors =
-                successor.predecessors.map {
-                    case `oldBlock` ⇒ newBlock
-                    case aBlock     ⇒ aBlock
-                }
-        }
-
-        successors = List(newBlock)
-        endPC = oldBlockEndPC
-
-        newBlock
-    }
-
+    /**
+     * Applies a given function to all Program Counters in the BasicBlock
+     *
+     * Parameters:
+     *
+     * @param f The function to be applied
+     * @param code The code-object on which the CFG is based
+     */
     def foreach[U](f: (PC) ⇒ U)(implicit code: Code): Unit = {
         var pc = this.startPC
 
@@ -109,48 +119,42 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
         }
     }
 
-    override def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
+    override def returnAllDescendants(visited: Set[CFGBlock]): Set[CFGBlock] = {
 
         var res = visited + this
         val worklist = (successors ++ catchBlockSuccessors)
         for (block ← worklist if !visited.contains(block))
-            res = res ++ block.returnAllBlocks(res)
+            res = res ++ block.returnAllDescendants(res)
         res
     }
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case that: BasicBlock ⇒ this.startPC == that.startPC // TODO This is questionable (how about the id field!)
-            case _                ⇒ false
-        }
-    }
+    override def id: Int = startPC
 
-    override def hashCode(): Int = startPC * 171; // TODO This is questionable (how about the id field!)
+    override def toHRR: Option[String] = {
+        Some("bb"+startPC)
+    }
 
     def toDot(code: Code): String = {
 
-        var blockLabel: String = ID+"\n"+"_____________________"+"\n"
+        var blockLabel: String = this.toHRR.get+"\n"+"_____________________"+"\n"
 
-        if (startPC == endPC) { // Sonderfall : 1 Instruktion
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"
-        } else {
-            val padding: String = if (code.instructions(startPC).indexOfNextInstruction(startPC, code) == endPC) { "" } else { "\t***\n" } // Sonderfall: 2 Instructions
+        this.foreach { pc: PC ⇒
+            {
+                blockLabel = blockLabel + pc+": "+code.instructions(pc).toString(pc).replaceAll("\"", "")+"\n"
+            }
+        }(code)
 
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"+
-                padding + endPC+":\t"+code.instructions(endPC).toString(endPC).replaceAll("\"", "")+"\n"
-        }
-
-        var res = ID+" [shape=box, label=\""+blockLabel+"\"];\n"
+        var res = this.toHRR.get+" [shape=box, label=\""+blockLabel+"\"];\n"
 
         val worklist = (successors ++ catchBlockSuccessors)
 
         for (succ ← worklist) {
             succ match {
                 case cb: CatchBlock ⇒ {
-                    res = res + ID+" -> "+succ.ID+"[color=red];\n"
+                    res = res + this.toHRR.get+" -> "+succ.toHRR.get+"[color=red];\n"
                 }
                 case _ ⇒ {
-                    res = res + ID+" -> "+succ.ID+";\n"
+                    res = res + this.toHRR.get+" -> "+succ.toHRR.get+";\n"
                 }
             }
         }
@@ -160,4 +164,5 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
     override def toString: String = {
         "bb@"+startPC+"to"+endPC
     }
+
 }
