@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,27 +32,26 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+//import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
+import org.opalj.br.ClassFile
+//import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.ObjectType
 
 /**
+ *
  * @author Erich Wittenbeck
  */
 
 /**
- * We merely construct CFGs for various, self-made methods and check their blocks
- * for various properties.
- *
- * E.g.:
- *
- * - Does each block have the correct amount of predecessors and successors?
- * - Does it have the correct amount of catchBlock-successors?
+ * The same as BasicCFGJava8Test, but for class-files compiled with Eclipse Luna's
+ * internal compiler
  */
 @RunWith(classOf[JUnitRunner])
-class BasicCFGJava8Test extends FunSpec with Matchers {
+class BasicCFGLunaTest extends FunSpec with Matchers {
 
-    val testJAR = "classfiles/cfgtest8.jar"
+    val testJAR = "classfiles/cfgtestLuna.jar"
     val testFolder = TestSupport.locateTestResources(testJAR, "br")
     val testProject = Project(testFolder)
 
@@ -125,32 +124,30 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                 block match {
                     case bb: BasicBlock ⇒ {
                         bb.startPC match {
-                            case 18 ⇒ {
-                                bb.predecessors.size should be(1)
-                                bb.successors.size should be(1)
-                                bb.predecessors(0) should be(bb.predecessors(0))
-                                bb.successors(0) should be(new BasicBlock(14))
-                            }
                             case 32 ⇒ {
-                                bb.predecessors.size should be(1)
-                                bb.successors.size should be(1)
-                                bb.predecessors(0) should be(new BasicBlock(14))
-                                bb.successors(0) should be(new BasicBlock(5))
-                            }
-                            case 11 ⇒ {
-                                bb.predecessors.size should be(1)
-                                bb.successors.size should be(1)
-                                bb.predecessors(0) should be(new BasicBlock(5))
-                                bb.successors(0) should be(new BasicBlock(14))
+                                bb.predecessors.size should be(2)
+                                bb.successors.size should be(2)
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 38 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
                                 bb.successors(0) should be(new ExitBlock())
                             }
-                            case 5 ⇒ {
-                                bb.predecessors.size should be(2)
-                                bb.successors.size should be(2)
+                            case 14 ⇒ {
+                                bb.predecessors.size should be(1)
+                                bb.successors.size should be(1)
+                                bb.successors(0) should be(bb.predecessors(0))
+                            }
+                            case 8 ⇒ {
+                                bb.predecessors.size should be(1)
+                                bb.successors.size should be(1)
+                                bb.successors(0) should be(new BasicBlock(25))
+                            }
+                            case 0 ⇒ {
+                                bb.predecessors.size should be(1)
+                                bb.successors.size should be(1)
+                                bb.successors(0) should be(new BasicBlock(32))
                             }
                             case _ ⇒ {}
                         }
@@ -331,6 +328,13 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                                 bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 51 ⇒ {
+                                bb.successors(0) should be(new BasicBlock(54))
+
+                                bb.predecessors.size should be(2)
+                                bb.successors.size should be(1)
+                                bb.predecessors(1) should be(new BasicBlock(0))
+                            }
+                            case 54 ⇒ {
                                 bb.successors(0) should be(new BasicBlock(56))
 
                                 bb.predecessors.size should be(2)
@@ -338,19 +342,13 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                                 bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 56 ⇒ {
-                                bb.successors(0) should be(new BasicBlock(58))
-
-                                bb.predecessors.size should be(2)
-                                bb.successors.size should be(1)
-                                bb.predecessors(1) should be(new BasicBlock(0))
-                            }
-                            case 58 ⇒ {
                                 bb.successors(0) should be(new ExitBlock)
 
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
                                 bb.predecessors(1) should be(new BasicBlock(0))
                             }
+
                         }
                     }
                     case eb: ExitBlock ⇒ {
@@ -457,9 +455,10 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         it("Code with multiple try-catch-blocks and a finally-block") {
 
             val multipleCatchCFG = ControlFlowGraph(testClass.findMethod("multipleCatchAndFinally").get)
+            multipleCatchCFG.toDot
             val BlockList = multipleCatchCFG.allBlocks
 
-            BlockList.size should be(11)
+            BlockList.size should be(12)
 
             var numberOfCatchBlocks: Int = 0
 
@@ -476,11 +475,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                                 bb.predecessors.size should be(1)
                                 bb.catchBlockSuccessors.size should be(2)
                             }
-                            case 26 ⇒ {
-                                bb.predecessors.size should be(1)
-                                bb.catchBlockSuccessors.size should be(1)
-                            }
-                            case 30 | 36 ⇒ {
+                            case 31 | 38 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.predecessors(0).isInstanceOf[CatchBlock] should be(true)
                             }
@@ -488,15 +483,21 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                                 bb.predecessors.size should be(1)
                                 bb.predecessors(0) should be(new BasicBlock(26))
                             }
-                            case 42 ⇒ {
-
+                            case 45 ⇒ {
+                                bb.successors.size should be(1)
                                 bb.predecessors.size should be(1)
                                 bb.predecessors(0).isInstanceOf[CatchBlock] should be(true)
                             }
+                            case 46 ⇒ {
+                                bb.predecessors.size should be(4)
+                                bb.successors.size should be(1)
+                                bb.successors(0) should be(new ExitBlock)
+                            }
+                            case _ ⇒ {}
                         }
                     }
                     case eb: ExitBlock ⇒ {
-                        eb.predecessors.size should be(4)
+                        eb.predecessors.size should be(1)
                     }
                     case _ ⇒ {}
                 }
@@ -511,7 +512,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
             val nestedExceptionCFG = ControlFlowGraph(testClass.findMethod("nestedExceptions").get)
             val BlockList = nestedExceptionCFG.allBlocks
 
-            BlockList.size should be(14)
+            BlockList.size should be(13)
 
             var numberOfCatchBlocks: Int = 0
 
@@ -520,13 +521,13 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                     case cb: CatchBlock ⇒ {
                         numberOfCatchBlocks += 1
                         cb.predecessors.size should be(1)
-                        if (cb.handlerPC == 70)
+                        if (cb.handlerPC == 63)
                             cb.predecessors(0).predecessors(0).isInstanceOf[CatchBlock] should be(true)
-                        if (cb.handlerPC == 52)
-                            cb.successors(0).asInstanceOf[BasicBlock].catchBlockSuccessors(0).handlerPC should be(70)
+                        if (cb.handlerPC == 45)
+                            cb.successors(0).asInstanceOf[BasicBlock].catchBlockSuccessors(0).handlerPC should be(63)
                     }
                     case bb: BasicBlock ⇒ {
-                        if (bb.startPC == 74)
+                        if (bb.startPC == 67)
                             bb.predecessors.size should be(2)
                         else
                             bb.predecessors.size should be(1)
@@ -552,7 +553,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
             val catchWithLoopCFG = ControlFlowGraph(testClass.findMethod("loopExceptionWithFinallyReturn").get)
             val BlockList = catchWithLoopCFG.allBlocks
 
-            BlockList.size should be(13)
+            BlockList.size should be(14)
 
             var numberOfCatchBlocks: Int = 0
 
@@ -560,36 +561,22 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                 block match {
                     case cb: CatchBlock ⇒ {
                         numberOfCatchBlocks += 1
+                        if (cb.handlerPC == 37)
+                            cb.predecessors.size should be(3)
+                        else
+                            cb.predecessors.size should be(1)
                     }
                     case bb: BasicBlock ⇒ {
                         bb.startPC match {
-                            case 35 ⇒ {
-                                bb.predecessors.size should be(2)
-                                for (pred ← bb.predecessors)
-                                    pred.isInstanceOf[CatchBlock] should be(true)
-                            }
-                            case 13 ⇒ {
-                                bb.predecessors.size should be(2)
-                                for (pred ← bb.predecessors)
-                                    pred.isInstanceOf[BasicBlock] should be(true)
-                                bb.successors.size should be(1)
-                                bb.catchBlockSuccessors.size should be(1)
-                                bb.catchBlockSuccessors(0).handlerPC should be(35)
-                            }
-                            case 0 ⇒ {
-                                bb.catchBlockSuccessors.size should be(2)
-                            }
-                            case 20 ⇒ {
+                            case 5 | 17 | 34 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.catchBlockSuccessors.size should be(1)
-                                bb.catchBlockSuccessors(0).handlerPC should be(35)
                             }
                             case _ ⇒ {}
                         }
                     }
                     case eb: ExitBlock ⇒ {
-                        eb.predecessors.size should be(3)
+                        eb.predecessors.size should be(1)
                     }
                     case sb: StartBlock ⇒ {
 
@@ -648,7 +635,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
             val highlyNestedCFG = ControlFlowGraph(testClass.findMethod("highlyNestedFinally").get)
             val BlockList = highlyNestedCFG.allBlocks
 
-            BlockList.size should be(23)
+            BlockList.size should be(24)
 
             var numberOfCatchBlocks: Int = 0
 
@@ -658,25 +645,25 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                         numberOfCatchBlocks += 1
 
                         cb.handlerPC match {
-                            case 112 ⇒ {
-                                cb.predecessors.size should be(1)
-                            }
-                            case 95 ⇒ {
-                                cb.predecessors.size should be(1)
-                            }
-                            case 72 ⇒ {
+                            case 35 ⇒ {
                                 cb.predecessors.size should be(1)
                             }
                             case 43 ⇒ {
                                 cb.predecessors.size should be(1)
                             }
-                            case 119 ⇒ {
+                            case 47 ⇒ {
                                 cb.predecessors.size should be(1)
                             }
-                            case 105 ⇒ {
+                            case 55 ⇒ {
                                 cb.predecessors.size should be(1)
                             }
-                            case 85 ⇒ {
+                            case 67 ⇒ {
+                                cb.predecessors.size should be(1)
+                            }
+                            case 71 ⇒ {
+                                cb.predecessors.size should be(1)
+                            }
+                            case 79 ⇒ {
                                 cb.predecessors.size should be(1)
                             }
                             case 59 ⇒ {
@@ -685,27 +672,22 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
                         }
                     }
                     case bb: BasicBlock ⇒ {
-                        bb.predecessors.size should be(1)
                         bb.successors.size should be(1)
 
                         bb.startPC match {
-                            case 0 ⇒ {
+                            case 0 | 6 | 14 | 22 ⇒ {
+                                bb.predecessors.size should be(1)
                                 bb.catchBlockSuccessors.size should be(2)
                             }
-                            case 6 ⇒ {
-                                bb.catchBlockSuccessors.size should be(2)
-                            }
-                            case 14 ⇒ {
-                                bb.catchBlockSuccessors.size should be(2)
-                            }
-                            case 22 ⇒ {
-                                bb.catchBlockSuccessors.size should be(2)
+                            case 80 ⇒ {
+                                bb.predecessors.size should be(9)
+                                bb.successors(0) should be(new ExitBlock)
                             }
                             case _ ⇒ {}
                         }
                     }
                     case eb: ExitBlock ⇒ {
-                        eb.predecessors.size should be(9)
+                        eb.predecessors.size should be(1)
                     }
                     case sb: StartBlock ⇒ {
 
@@ -716,5 +698,4 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
             numberOfCatchBlocks should be(8)
         }
     }
-
 }
