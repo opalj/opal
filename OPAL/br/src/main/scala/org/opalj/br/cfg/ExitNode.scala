@@ -28,35 +28,47 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.Code
-
 /**
+ * Represents the artificial exit node of a control flow graph. The graph contains
+ * an explicit exit node to make it trivial to navigate to all instructions that may
+ * cause a(n ab)normal return from the method.
+ *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
+class ExitNode(normalReturn: Boolean) extends CFGNode {
 
-/**
- * Represents the entry-point of a control flow graph.
- *
- * ==Thread-Safety==
- * This class is thread-safe
- *
- */
-class StartBlock extends CFGBlock {
+    override private[cfg] def addSuccessor(successor: CFGNode): Unit =
+        throw new UnsupportedOperationException
 
-    override def id: Int = -65536
+    override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit =
+        throw new UnsupportedOperationException()
 
-    override def toHRR: Option[String] = {
-        Some("start")
-    }
+    //
+    // FOR DEBUGING/VISUALIZATION PURPOSES
+    //
 
-    def toDot(code: Code): String = {
+    override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1l
 
-        var res: String = this.toHRR.get+" [shape=box, label=\""+this.toHRR.get+"\"];\n"
+    override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
 
-        for (succ ← successors) {
-            res = res + this.toHRR.get+" -> "+succ.toHRR.get+";\n"
-        }
-        res
+    override def toHRR: Option[String] =
+        Some(if (normalReturn) "Normal Return" else "Abnormal Return")
+
+    override def visualProperties: Map[String, String] = {
+        if (normalReturn)
+            Map(
+                "labelloc" -> "l",
+                "fillcolor" -> "green",
+                "style" -> "filled"
+            )
+        else
+            Map(
+                "labelloc" -> "l",
+                "fillcolor" -> "red",
+                "style" -> "filled",
+                "shape" -> "octagon"
+            )
     }
 
 }

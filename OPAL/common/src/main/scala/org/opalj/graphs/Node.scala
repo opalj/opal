@@ -30,7 +30,6 @@ package org.opalj
 package graphs
 
 import scala.collection.Map
-import org.opalj.collection.UID
 
 /**
  * Represents a node of some graph.
@@ -42,10 +41,10 @@ import org.opalj.collection.UID
  *
  * @author Michael Eichberg
  */
-trait Node extends UID {
+trait Node {
 
     /**
-     * Returns a humane readable representation (HRR) of this node.
+     * Returns a human readable representation (HRR) of this node.
      */
     def toHRR: Option[String]
 
@@ -56,7 +55,7 @@ trait Node extends UID {
      * node belongs. By default two nodes are considered equal if they have the same
      * unique id.
      */
-    override def id: Int
+    def nodeId: Long
 
     /**
      * Returns `true` if this node has successor nodes.
@@ -71,11 +70,11 @@ trait Node extends UID {
     /**
      * The hash code of this node. By default the hash code is the unique id.
      */
-    override def hashCode(): Int = id
+    override def hashCode(): Int = java.lang.Long.hashCode(nodeId)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: Node ⇒ this.id == that.id
+            case that: Node ⇒ this.nodeId == that.nodeId
             case _          ⇒ false
         }
     }

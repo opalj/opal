@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,42 +29,44 @@
 package org.opalj.br.cfg
 
 import org.opalj.br.Code
-import org.opalj.graphs.Node
+import org.opalj.br.ExceptionHandler
+import org.opalj.br.PC
 
 /**
- * @author Erich Wittenbeck
- */
-
-/**
- * A common trait for all nodes, called 'blocks', of a control flow graph
+ * This node represents an exception handler.
  *
+ * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
-trait CFGBlock extends Node {
+class CatchNode(val handler: ExceptionHandler) extends CFGNode {
 
-    override def hasSuccessors: Boolean = successors != Nil
+    final def startPC: PC = handler.startPC
 
-    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-        for (successor ← successors)
-            f(successor)
-    }
+    final def endPC: PC = handler.endPC
 
-    private[cfg] var predecessors: List[CFGBlock] = Nil
+    final def handlerPC: PC = handler.handlerPC
 
-    private[cfg] var successors: List[CFGBlock] = Nil
+    //
+    // FOR DEBUGING/VISUALIZATION PURPOSES
+    //
 
-    /**
-     * Returns a Set with all CFGBlocks that are reachable from this one
-     */
-    def returnAllDescendants(visited: Set[CFGBlock]): Set[CFGBlock] = {
-        var res: Set[CFGBlock] = visited + this
-        for (block ← successors if (!visited.contains(block)))
-            res = res ++ block.returnAllDescendants(res)
-        res
-    }
+    override def nodeId: Long =
+        startPC.toLong |
+            (endPC.toLong << 16) |
+            (handlerPC.toLong << 32) |
+            // ObjectTypes have positive ids; Any can hence be associated with -1
+            (handler.catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
 
-    /**
-     * Returns a representation of this Block in the GraphViz-DOT format
-     */
-    def toDot(code: Code): String
+    override def toHRR: Option[String] = Some(
+        s"try[$startPC,$endPC) ⇒ $handlerPC{${handler.catchType.map(_.toJava).getOrElse("Any")}}"
+    )
+
+    override def visualProperties: Map[String, String] = Map(
+        "shape" -> "box",
+        "labelloc" -> "l",
+        "fillcolor" -> "orange",
+        "style" -> "filled",
+        "shape" -> "rectangle"
+    )
 
 }
