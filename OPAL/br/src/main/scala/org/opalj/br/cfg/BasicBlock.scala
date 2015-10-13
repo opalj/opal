@@ -28,141 +28,101 @@
  */
 package org.opalj.br.cfg
 
+import scala.collection.mutable
 import org.opalj.br.PC
 import org.opalj.br.Code
 
 /**
+ * Represents a basic block of a method's control flow graph (CFG). The basic block
+ * is identified by referring to the first and last instruction belonging to the
+ * basic block.
+ *
+ * @param startPC The pc of the first instruction belonging to the `BasicBlock`.
  *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
+class BasicBlock(val startPC: PC) extends CFGNode {
 
-/**
- * Represents a basic block of bytecode in a control flow graph.
- * It stores the program counters implicitly by having a reference to the PC
- * at it's start- and end-point
- *
- * Parameters:
- *
- * @param startPC The initial starting PC of this BasicBlock
- *
- * ==Thread-Safety==
- * This class is thread-safe
- */
-class BasicBlock(val startPC: PC) extends CFGBlock {
-
-    private[cfg] var catchBlockSuccessors: List[CatchBlock] = Nil
-
-    private[cfg] var endPC: PC = startPC
-
-    private[cfg] def setEndPC(pc: PC): Unit = endPC = pc
-
-    /**
-     * Returns the program counters contained within this BasicBlock
-     *
-     * Parameters:
-     *
-     * @param code The code-object of the CFG
-     */
-    def programCounters(code: Code): Seq[PC] = {
-        var res: List[PC] = Nil
-        var pc: PC = startPC
-
-        while (pc <= endPC) {
-            res = res :+ pc // this is expensive (as said: return an iterator)
-            pc = code.pcOfNextInstruction(pc)
-        }
-
-        res
+    private[this] var _endPC: PC = 0 // will be initialized at construction time
+    private[cfg] def endPC_=(pc: PC): Unit = {
+        assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
+        _endPC = pc
     }
+    /**
+     * The pc of the last instruction belonging to this basic block.
+     */
+    def endPC: PC = _endPC
 
     /**
-     * Returns the index of a given PC, if PCs were stored explicitly in an Array
-     * or a similar structure
+     * Returns the index of an instruction – identified by its program counter (pc) –
+     * in a basic block.
      *
-     * Example:
+     * ==Example==
+     * Given a basic block which has five instructions which have the following
+     * program counters: {0,1,3,5,6}. In this case the index of the instruction with
+     * program counter 3 will be 2 and in case of the instruction with pc 6 the index
+     * will be 4.
      *
-     * Presume this Block contains PCs 0,1,3,5 and 6.
-     *
-     * For input 3, it will return 2. For 5 it will return 3 etc.
-     *
-     * Parameters
-     *
-     * @param pc The program counter whose position is to be determined
-     * @param code The code-object of the CFG
+     * @param pc The program counter of the instruction for which the index is needed.
+     * 	`pc` has to satisfy: `startPC <= pc <= endPC`.
+     * @param code The code to which this basic block belongs.
      */
-    def positionOfPCwithinBlock(pc: PC, code: Code): Int = {
+    def index(pc: PC)(implicit code: Code): Int = {
+        assert(pc >= startPC && pc <= endPC)
+
         var index = 0
         var currentPC = startPC
-
         while (currentPC < pc) {
             currentPC = code.pcOfNextInstruction(currentPC)
             index += 1
         }
-
         index
     }
 
     /**
-     * Applies a given function to all Program Counters in the BasicBlock
+     * Calls the function `f` for all instructions - indentified by their respective
+     * pcs - of a basic block.
      *
-     * Parameters:
-     *
-     * @param f The function to be applied
-     * @param code The code-object on which the CFG is based
+     * @param f The function that will be called.
+     * @param code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     * 		belongs.
      */
-    def foreach[U](f: (PC) ⇒ U)(implicit code: Code): Unit = {
-        var pc = this.startPC
+    def foreach[U](f: PC ⇒ U)(implicit code: Code): Unit = {
+        val instructions = code.instructions
 
+        var pc = this.startPC
+        val endPC = this.endPC
         while (pc <= endPC) {
             f(pc)
-            pc = code.instructions(pc).indexOfNextInstruction(pc, code)
+            pc = instructions(pc).indexOfNextInstruction(pc, code)
         }
     }
 
-    override def returnAllDescendants(visited: Set[CFGBlock]): Set[CFGBlock] = {
+    //
+    // FOR DEBUGING/VISUALIZATION PURPOSES
+    //
 
-        var res = visited + this
-        val worklist = (successors ++ catchBlockSuccessors)
-        for (block ← worklist if !visited.contains(block))
-            res = res ++ block.returnAllDescendants(res)
-        res
-    }
+    override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
 
-    override def id: Int = startPC
+    override def nodeId: Long = startPC.toLong
 
-    override def toHRR: Option[String] = {
-        Some("bb"+startPC)
-    }
+    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]")
 
-    def toDot(code: Code): String = {
+    override def visualProperties: Map[String, String] = {
+        var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
-        var blockLabel: String = this.toHRR.get+"\n"+"_____________________"+"\n"
-
-        this.foreach { pc: PC ⇒
-            {
-                blockLabel = blockLabel + pc+": "+code.instructions(pc).toString(pc).replaceAll("\"", "")+"\n"
-            }
-        }(code)
-
-        var res = this.toHRR.get+" [shape=box, label=\""+blockLabel+"\"];\n"
-
-        val worklist = (successors ++ catchBlockSuccessors)
-
-        for (succ ← worklist) {
-            succ match {
-                case cb: CatchBlock ⇒ {
-                    res = res + this.toHRR.get+" -> "+succ.toHRR.get+"[color=red];\n"
-                }
-                case _ ⇒ {
-                    res = res + this.toHRR.get+" -> "+succ.toHRR.get+";\n"
-                }
-            }
+        if (startPC == 0) {
+            visualProperties += "fillcolor" -> "green"
+            visualProperties += "style" -> "filled"
         }
-        res
-    }
 
-    override def toString: String = {
-        "bb@"+startPC+"to"+endPC
-    }
+        if (!hasSuccessors) { // in this case something is very broken (internally)...
+            visualProperties += "shape" -> "octagon"
+            visualProperties += "fillcolor" -> "gray"
+            visualProperties += "style" -> "filled"
+        }
 
+        visualProperties
+    }
 }

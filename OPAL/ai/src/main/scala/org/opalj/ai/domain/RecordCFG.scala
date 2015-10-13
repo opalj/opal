@@ -295,7 +295,7 @@ trait RecordCFG
 
         // 3. fold nodes
         // Nodes that have only one successor and where the successor has only one
-        // predecessors are merged into one node; basically, we recreate the
+        // predecessor are merged into one node; basically, we recreate the
         // _effective_ basic blocks; an _effective_ basic block is a block where we do
         // _not observe_ any jumps in and out unless we are at the beginning or end of
         // the block
