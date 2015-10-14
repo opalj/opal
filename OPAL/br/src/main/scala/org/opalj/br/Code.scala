@@ -106,6 +106,10 @@ final class Code private (
      * belongs to – if any. This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
+     * @note Calling this method only makes sense for Java bytecode that actually contains
+     * 		[[org.opalj.br.instruction.JSR]] and [[org.opalj.br.instruction.RET]]
+     * 		instructions.
+     *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
      *      subroutine.
      *      For each instruction (with a specific `pc`) the `pc` of the first instruction
@@ -209,6 +213,17 @@ final class Code private (
     /**
      * Returns the set of all program counters where two or more control flow
      * paths joins.
+     *
+     * ==Example==
+     * {{{
+     * 	0: iload_1
+     * 	1: ifgt	6
+     * 	2: iconst_1
+     * 	5: goto 10
+     * 	6: ...
+     * 	9: iload_1
+     *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
+     * }}}
      *
      * In case of exceptions handlers the sound over approximation is made that
      * all exception handlers may be reached on multiple paths.
@@ -410,12 +425,10 @@ final class Code private (
      * `currentPC` must be the program counter of an instruction.
      *
      * This function is only defined if currentPC is larger than 0; i.e., if there
-     * is a previous instruction! If currentPC is larger than instructions.size the
+     * is a previous instruction! If currentPC is larger than `instructions.size` the
      * behavior is undefined.
      */
     @inline final def pcOfPreviousInstruction(currentPC: PC): PC = {
-        if (currentPC <= 0)
-            throw new IllegalArgumentException(s"currentPC ($currentPC) needs to > 0")
         var previousPC = currentPC - 1
         val instructions = this.instructions
         while (previousPC > 0 && !instructions(previousPC).isInstanceOf[Instruction]) {
@@ -926,7 +939,8 @@ final class Code private (
      * [[instructions.ATHROW]] instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means
-     * that evaluating the instruction may result in multiple control flows.
+     * that evaluating the instruction may result in multiple control flows. If the
+     * sequence contains complex logic, `false` will be returned.
      *
      * One use case of this method is to, e.g., check if the code
      * of the default case of a switch
@@ -940,6 +954,9 @@ final class Code private (
      * }}}
      * This is a typical idiom used in Java programs and which may be relevant for
      * certain analyses to detect.
+     *
+     * @note If complex control flows should also be considered it is possible to compute
+     * 		a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
      * @param pc The program counter of an instruction that strictly dominates all
      *      succeeding instructions up until the next join instruction (as determined
@@ -957,6 +974,11 @@ final class Code private (
      *      `ATHROW` instruction then this function is called (callback) to let the
      *      caller decide if the "expected" exception is thrown. This analysis will
      *      return with the result of this call.
+     *
+     * @return `true` if the bytecode sequence starting with the instruction with the
+     * 		given `pc` always ends with an [[ATHROW]] instruction. `false` in all other
+     * 		cases (i.e., the sequence does not end with an `athrow` instruction or
+     * 		the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
         pc: PC,
