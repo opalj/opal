@@ -28,44 +28,28 @@
  */
 package org.opalj.br.cfg
 
-//import scala.collection.mutable
 import scala.collection.{ Set ⇒ SomeSet }
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Method
 import org.opalj.br.PC
-//import org.opalj.br.Code
-//import org.opalj.br.ExceptionHandler
-//import org.opalj.bytecode.BytecodeProcessingFailedException
-//import org.opalj.br.instructions.Instruction
-//import org.opalj.br.instructions.ControlTransferInstruction
-//import org.opalj.br.instructions.ReturnInstruction
-//import org.opalj.br.instructions.InvocationInstruction
-//import org.opalj.br.instructions.StoreLocalVariableInstruction
-//import org.opalj.br.instructions.LoadLocalVariableInstruction
-//import org.opalj.br.instructions.UnconditionalBranchInstruction
-//import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-//import org.opalj.br.instructions.AStoreInstruction
-//import org.opalj.br.instructions.ATHROW
-//import org.opalj.br.instructions.JSR
-//import org.opalj.br.instructions.RET
-//import org.opalj.br.instructions.GOTO
-//import org.opalj.br.instructions.GOTO_W
 
 /**
- * Represents a control flow graph.
+ * Represents the control flow graph of a method.
+ *
+ * To compute a `CFG` use the [[CFGFactory]].
  *
  * ==Thread-Safety==
- * This class is technically not thread-safe, due to the basicBlocks-array.
- * However, this array is not supposed to be altered by the user.
+ * This class is thread-safe; all data is effectively immutable.
  *
  * @param method The method for which the CFG was build.
- * @param normalReturnNode The unique exit node of the control flow graph if the m
+ * @param normalReturnNode The unique exit node of the control flow graph if the
  * 		method returns normally.
- * @param abnormalReturnNode The unique exit node of the control flow graph if the m
+ * @param abnormalReturnNode The unique exit node of the control flow graph if the
  * 		method returns abnormally (throws an exception).
  * @param basicBlocks An implicit map between a program counter and its associated
  * 		[[BasicBlock]].
- * @param catchNodes Maps exception-handlers to their catchNodes
+ * @param catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
+ * 		[[org.opalj.br.ExceptionHandler]].
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -80,13 +64,22 @@ case class CFG(
     final def startBlock: BasicBlock = basicBlocks(0)
 
     /**
+     * Returns the basic block to which the instruction with the given `pc` belongs.
+     */
+    def bb(pc: PC): BasicBlock = basicBlocks(pc)
+
+    /**
      * Returns the set of all reachable [[CFGNode]]s of the control flow graph.
      */
     lazy val reachableBBs: SomeSet[CFGNode] = basicBlocks(0).reachable(reflexive = true)
 
+    /**
+     * Returns the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
+     * not returned.)
+     *
+     * @note The returned set is recomputed every time this method is called.
+     */
     def allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
-
-    def bb(pc: PC): BasicBlock = basicBlocks(pc)
 
     /**
      * Determines and returns the set of CFGNodes that are dominated by a given node.

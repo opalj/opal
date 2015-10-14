@@ -63,7 +63,19 @@ object CFGFactory {
     /**
      * Constructs the control flow graph for a given method.
      *
+     * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
+     * an artificial exit node is added to facilitate the navigation to all normal
+     * return instructions. A second artificial node is added that enables the navigation
+     * to all instructions that led to an abnormal return. Exception handlers are
+     * directly added to the graph using [[CatchNode]]s. Each exception handler is
+     * associated with exactly one [[CatchNode]] and all instructions that may throw
+     * a corresponding exception will have the respective [[CatchNode]] as a successor.
+     *
+     * @note The algorithm supports all Java bytecode instructions.
+     *
      * @param method A method with a body (i.e., with some code.)
+     * @param classHierarchy The class hierarchy that will be used to determine
+     * 		if a certain exception is potentially handled by an exception handler.
      */
     def apply(
         method: Method,
@@ -80,9 +92,9 @@ object CFGFactory {
 
         // 1. basic initialization
         val bbs = new Array[BasicBlock](codeSize)
+        // BBs is a sparse array; only those fields are used that are related to an instruction
 
-        var exceptionHandlers = Map.empty[ExceptionHandler, CatchNode]
-
+        var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
         for (exceptionHandler ← code.exceptionHandlers) {
             val catchNode = new CatchNode(exceptionHandler)
             exceptionHandlers += (exceptionHandler -> catchNode)
@@ -100,8 +112,8 @@ object CFGFactory {
 
         // 2. iterate over the code to determine basic block boundaries
         var runningBB: BasicBlock = null
-        var previousPC = 0
-        var subroutineReturnPCs = collection.immutable.Map.empty[PC, UShortSet]
+        var previousPC: PC = 0
+        var subroutineReturnPCs = HashMap.empty[PC, UShortSet]
         code.foreach { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
@@ -180,7 +192,9 @@ object CFGFactory {
             (instruction.opcode: @scala.annotation.switch) match {
 
                 case RET.opcode ⇒
-                    // we cannot determine the targets at the moment.
+                    // We cannot determine the target instructions at the moment;
+                    // we first need to be able to connect the ret instruction with
+                    // some jsr instructions.
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     runningBB = null // <=> the next instruction gets a new bb
@@ -225,26 +239,22 @@ object CFGFactory {
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     val GOTO = instruction.asInstanceOf[UnconditionalBranchInstruction]
-                    val targetPC = pc + GOTO.branchoffset
-                    connect(currentBB, targetPC)
+                    connect(currentBB, pc + GOTO.branchoffset)
                     runningBB = null
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
                     val IF = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
-
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // jump
-                    val targetPC = pc + IF.branchoffset
-                    connect(currentBB, targetPC)
+                    connect(currentBB, pc + IF.branchoffset)
                     // fall through case
                     runningBB = connect(currentBB, code.pcOfNextInstruction(pc))
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
                     val SWITCH = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
-
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     connect(currentBB, pc + SWITCH.defaultOffset)
@@ -259,7 +269,7 @@ object CFGFactory {
                     runningBB = null
 
                 case _ /*ALL STANDARD INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
-
+                    assert(instruction.nextInstructions(pc, code, regularSuccessorsOnly = true).size == 1)
                     val currentBB = useRunningBB
                     val jvmExceptions = instruction.jvmExceptions
                     val isMethodInvoke = instruction.isInstanceOf[MethodInvocationInstruction]
@@ -287,19 +297,16 @@ object CFGFactory {
                             } else {
                                 jvmExceptions
                             }
-                        //[DEBUG] println(s"$pc[handle]: "+exceptionsToHandle.mkString(","))
                         exceptionsToHandle.foreach { thrownException ⇒
                             val isHandled = code.handlersFor(pc).exists { eh ⇒
                                 if (eh.catchType.isEmpty) {
                                     linkWithExceptionHandler(eh)
-                                    //[DEBUG] println(s"[$pc] finally:"+jvmException+"   "+eh)
-                                    true
+                                    true // also aborts the evaluation
                                 } else {
                                     val isCaught = isSubtypeOf(thrownException, eh.catchType.get)
-                                    //[DEBUG] println(s"[$pc] isCaught:"+isCaught + jvmException+"   "+eh)
                                     if (isCaught.isYes) {
                                         linkWithExceptionHandler(eh)
-                                        true
+                                        true // also aborts the evaluation
                                     } else if (isCaught.isUnknown) {
                                         linkWithExceptionHandler(eh)
                                         false
@@ -325,6 +332,8 @@ object CFGFactory {
             previousPC = pc
         }
 
+        // Analyze the control flow graphs of all subroutines to connect the ret
+        // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
             for ((subroutinePC, returnAddresses) ← subroutineReturnPCs) {
                 val returnBBs = returnAddresses.map(bbs(_)).toSet[CFGNode]
