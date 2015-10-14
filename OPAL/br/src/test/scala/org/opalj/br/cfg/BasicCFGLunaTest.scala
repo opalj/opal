@@ -32,82 +32,60 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
+import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.collection.mutable.UShortSet
-
-import scala.collection.immutable.HashSet
 
 /**
+ * The same as BasicCFGJava8Test, but for class-files compiled with Eclipse Luna's
+ * internal compiler
  *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CFGCorrespondanceTest extends FunSpec with Matchers {
+class BasicCFGLunaTest extends FunSpec with Matchers {
 
-    val testJAR = "classfiles/cfgtest8.jar"
+    val testJAR = "classfiles/cfgtestLuna.jar"
     val testFolder = TestSupport.locateTestResources(testJAR, "br")
     val testProject = Project(testFolder)
 
-    val testClass = testProject.classFile(ObjectType("controlflow/ExceptionCode")).get
+    describe("cfgs with very simple control flow") {
 
-    describe("Testing Correspondances on the PC-Level") {
+        val testClass = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
-        ignore("with only an if-clause in the finally-handler") {
+        it("a cfg with no control flow statemts should consists of a single basic block") {
 
-            val testCFG = ControlFlowGraph(testClass.findMethod("tryFinally").get)
+            val cfg = CFGFactory(testClass.findMethod("singleBlock").get)
+            val bbs = cfg.allBBs
 
-            var pcs = testCFG.correspondingPCsTo(44)
-
-            pcs should be(UShortSet(7))
-
-            pcs = testCFG.correspondingPCsTo(42)
-
-            pcs should be(UShortSet.empty)
-
-            pcs = testCFG.correspondingPCsTo(78)
-
-            pcs should be(UShortSet.empty)
-
-            pcs = testCFG.correspondingPCsTo(76)
-
-            pcs should be(UShortSet(37))
+            bbs.size should be(1)
+            cfg.startBlock.successors.size should be(1)
+            cfg.normalReturnNode.predecessors.size should be(1)
+            cfg.abnormalReturnNode.predecessors.size should be(0)
         }
 
-        ignore("also with loops") {
+        it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
 
-            val method = testClass.findMethod("loopExceptionWithCatchReturn").get
-            // just to make sure the code has the expected shape..
-            assert(method.body.get.instructions(85) ne null)
+            val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").get)
+            val bbs = cfg.allBBs
 
-            val testCFG = ControlFlowGraph(method)
-
-            var pcs = testCFG.correspondingPCsTo(85)
-
-            pcs should be(UShortSet(26))
-
-            pcs = testCFG.correspondingPCsTo(85)
-
-            pcs should be(UShortSet(26))
-
-            pcs = testCFG.correspondingPCsTo(12)
-
-            pcs should be(UShortSet(71))
-
-            pcs = testCFG.correspondingPCsTo(29)
-
-            pcs should be(UShortSet.empty)
-
-            pcs = testCFG.correspondingPCsTo(90)
-
-            pcs should be(UShortSet.empty)
-
-            pcs = testCFG.correspondingPCsTo(23)
-
-            pcs should be(UShortSet(82))
+            bbs.size should be(11)
+            cfg.startBlock.successors.size should be(2)
+            cfg.normalReturnNode.predecessors.size should be(1)
+            cfg.abnormalReturnNode.predecessors.size should be(1)
         }
 
+        it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
+
+            val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").get)
+            val bbs = cfg.allBBs
+
+            bbs.size should be(6)
+            cfg.startBlock.successors.size should be(2)
+            cfg.normalReturnNode.predecessors.size should be(3)
+            cfg.abnormalReturnNode.predecessors.size should be(1)
+        }
     }
 }

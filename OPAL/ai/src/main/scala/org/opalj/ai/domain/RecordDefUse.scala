@@ -128,8 +128,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
+                parameterIndex -= 1 // to get the same offsets as used by the AI for parameters
                 if (v ne null) {
-                    parameterIndex -= 1
                     ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                 } else {
                     null
@@ -210,6 +210,24 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             </table>
         )
     }
+
+    /**
+     * Returns the instructions which use the value with the given value origin.
+     */
+    def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin)
+
+    /**
+     * Returns the instruction which defined the value used by the instruction with the given `pc` and which
+     * is stored at the stack position with the given valueIndex. The first value on
+     * the stack has index 0.
+     */
+    def operandOrigin(pc: PC, valueIndex: Int): ValueOrigins = defOps(pc)(valueIndex)
+
+    /**
+     * Returns the instructions which define the value found in the register variable with
+     * index `valueIndex` and the program counter `pc`.
+     */
+    def localOrigin(pc: PC, valueIndex: Int): ValueOrigins = defLocals(pc)(valueIndex)
 
     /**
      * Creates a multi-graph that represents the method's def-use information. I.e.,
@@ -293,8 +311,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val successorInstruction = instructions(successorPC)
 
         def updateUsed(usedVars: ValueOrigins, useSite: PC): Unit = {
-            assert(usedVars ne null)
-            assert(usedVars.nonEmpty)
+            //            assert(usedVars ne null)
+            //            assert(usedVars.nonEmpty)
 
             usedVars foreach { use ⇒
                 val usedIndex = use + parametersOffset
@@ -348,9 +366,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             oldIsSuperset, oldHead :: joinedDefOps)
                     else {
                         val joinedHead = (newHead ++ oldHead)
-                        assert(newHead.subsetOf(joinedHead))
-                        assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
-                        assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
+                        //                        assert(newHead.subsetOf(joinedHead))
+                        //                        assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
+                        //                        assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
@@ -430,7 +448,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else {
                                     newUsage = true
                                     val joinedDefLocals = n ++ o
-                                    assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
+                                    //                                    assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
                                     joinedDefLocals
                                 }
                             })
@@ -480,7 +498,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (successorDefOps eq null)
                         List(ValueOrigins(origin = successorPC))
                     else {
-                        assert(successorDefOps.tail.isEmpty)
+                        //                        assert(successorDefOps.tail.isEmpty)
                         successorDefOps
                     }
                 } else {
@@ -526,7 +544,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val RET(lvIndex) = instruction
                 val oldDefLocals = defLocals(currentPC)
                 val returnAddressValue = oldDefLocals(lvIndex)
-                assert(returnAddressValue.nonEmpty)
+                //                assert(returnAddressValue.nonEmpty)
                 updateUsed(returnAddressValue, currentPC)
                 propagate(defOps(currentPC), oldDefLocals)
 
@@ -807,8 +825,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         throw e
                 }
 
-                assert(defLocals(succPC) ne null)
-                assert(defOps(succPC) ne null)
+                //                assert(defLocals(succPC) ne null)
+                //                assert(defOps(succPC) ne null)
 
                 if (scheduleNextPC && !nextPCs.contains(succPC)) {
                     if (instructions(currPC).isInstanceOf[JSRInstruction]) {

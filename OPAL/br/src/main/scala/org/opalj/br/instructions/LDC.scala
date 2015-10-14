@@ -56,12 +56,18 @@ sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstru
     }
 }
 
+/**
+ * @note To match [[LoadInt]] and [[LoadInt_W]] instructions you can use [[LDCInt]].
+ */
 final case class LoadInt(value: Int) extends LDC[Int] {
 
     final def computationalType = ComputationalTypeInt
 
 }
 
+/**
+ * @note To match [[LoadFloat]] and [[LoadFloat_W]] instructions you can use [[LDCFloat]].
+ */
 final case class LoadFloat(value: Float) extends LDC[Float] {
 
     final def computationalType = ComputationalTypeFloat
@@ -76,18 +82,32 @@ final case class LoadFloat(value: Float) extends LDC[Float] {
     }
 }
 
+/**
+ * @note To match [[LoadClass]] and [[LoadClass_W]] instructions you can use [[LDCClass]].
+ */
 final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType] {
     final def computationalType = ComputationalTypeReference
 }
 
+/**
+ * @note To match [[LoadMethodHandle]] and [[LoadMethodHandle_W]] instructions you
+ * can use [[LDCMethodHandle]].
+ */
 final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle] {
     final def computationalType = ComputationalTypeReference
 }
 
+/**
+ * @note To match [[LoadMethodType]] and [[LoadMethodType_W]] instructions you can use
+ * [[LDCMethodType]].
+ */
 final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescriptor] {
     final def computationalType = ComputationalTypeReference
 }
 
+/**
+ * @note To match [[LoadString]] and [[LoadString_W]] instructions you can use [[LDCString]].
+ */
 final case class LoadString(value: String) extends LDC[String] {
 
     final def computationalType = ComputationalTypeReference

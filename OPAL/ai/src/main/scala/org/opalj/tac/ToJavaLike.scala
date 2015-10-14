@@ -35,7 +35,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.mutable.Locals
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br._
 
 /**
  * @author Michael Eichberg
@@ -50,31 +49,43 @@ object ToJavaLike {
             case Param(_ /*cTpe*/ , name) ⇒ name
             case IntConst(_, value)       ⇒ value.toString
             case LongConst(_, value)      ⇒ value.toString+"l"
-            case FloatConst(_, value)     ⇒ value.toString
+            case FloatConst(_, value)     ⇒ value.toString+"f"
             case DoubleConst(_, value)    ⇒ value.toString+"d"
             case ClassConst(_, value)     ⇒ value.toString
             case NullExpr(_)              ⇒ "null"
-            case InstanceOf(trg, cmpTp) ⇒
-                s"${toJavaLikeExpr(trg)} instanceof ${cmpTp.asObjectType.simpleName}"
+
+            case InstanceOf(_, value, tpe) ⇒
+                s"${toJavaLikeExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
+
+            case Checkcast(_, value, tpe) ⇒
+                s"(${tpe.asReferenceType.toJava}) ${toJavaLikeExpr(value)}"
+
+            case Compare(_, left, op, right) ⇒
+                toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+
             case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+
             case PrefixExpr(_, _, op, operand) ⇒
                 op.toString()+" "+toJavaLikeExpr(operand)
-            case PrimitiveTypecastExpr(_, trgtTpe, operand) ⇒
-                s"(${toJavaLikeTpe(trgtTpe)}) ${toJavaLikeExpr(operand)}"
-            case New(_, objTpe) ⇒ s"new ${objTpe.simpleName}"
-            case NewArray(_, count, tpe) ⇒
-                s"new ${
-                    if (tpe.isBaseType) toJavaLikeTpe(tpe.asBaseType)
-                    else tpe.toString()
-                }[${toJavaLikeExpr(count)}]"
-            case NewMultiArray(_, counts, dims, tpe) ⇒
-                "new "+{
-                    if (tpe.isBaseType) toJavaLikeTpe(tpe.asBaseType)
-                    else tpe.toString()
-                } + multiArrayDims(counts, dims)
+
+            case PrimitiveTypecastExpr(_, baseTpe, operand) ⇒
+                s"(${baseTpe.toJava}) ${toJavaLikeExpr(operand)}"
+
+            case New(_, objTpe) ⇒
+                s"new ${objTpe.simpleName}"
+
+            case NewArray(_, counts, arrayType) ⇒
+                val initializedDimensions = counts.size
+                val dimensions = arrayType.dimensions
+                val initializer =
+                    counts.map(c ⇒ s"[${toJavaLikeExpr(c)}]").reverse.mkString("") +
+                        ("[]" * (dimensions - initializedDimensions))
+                s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
+
             case ArrayLoad(_, index, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}]"
+
             case ArrayLength(_, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}.length"
         }
@@ -82,32 +93,35 @@ object ToJavaLike {
 
     @inline final def toJavaLikeStmt(stmt: Stmt): String = {
         stmt match {
+            case Return(_)                   ⇒ "return;"
+            case ReturnValue(_, expr)        ⇒ s"return ${toJavaLikeExpr(expr)};"
+            case Throw(_, exc)               ⇒ s"throw ${toJavaLikeExpr(exc)};"
+
+            case Nop(_)                      ⇒ ";"
+            case EmptyStmt(_)                ⇒ ";"
+
+            case MonitorEnter(_, objRef)     ⇒ s"monitorenter ${toJavaLikeExpr(objRef)};"
+            case MonitorExit(_, objRef)      ⇒ s"monitorexit ${toJavaLikeExpr(objRef)};"
+
+            case Goto(_, target)             ⇒ s"goto $target;"
+            case JumpToSubroutine(_, target) ⇒ s"jsr $target;"
             case If(_, left, cond, right, target) ⇒
                 s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
-            case Goto(_, target) ⇒
-                s"goto $target;"
-            case Assignment(_, variable, expr) ⇒
-                s"${variable.name} = ${toJavaLikeExpr(expr)};"
-            case ReturnValue(_, expr) ⇒
-                s"return ${toJavaLikeExpr(expr)};"
-            case Return(_) ⇒
-                "return;"
-            case Nop(_) ⇒
-                ";"
-            case EmptyStmt(_) ⇒
-                ";"
-            case Checkcast(_, trg, cmpTp) ⇒
-                s"${toJavaLikeExpr(trg)} checkcast ${cmpTp.asObjectType.simpleName};"
-            case MonitorEnter(_, objRef) ⇒
-                s"monitorenter ${objRef.name};"
-            case MonitorExit(_, objRef) ⇒
-                s"monitorexit ${objRef.name};"
             case Switch(_, defTrg, index, npairs) ⇒
                 s"switch(${toJavaLikeExpr(index)}){${switchCases(defTrg, npairs)}}"
+
+            case Assignment(_, variable, expr) ⇒
+                s"${variable.name} = ${toJavaLikeExpr(expr)};"
+
             case ArrayStore(_, arrayRef, index, operandVar) ⇒
                 s"${toJavaLikeExpr(arrayRef)}[${toJavaLikeExpr(index)}] = ${toJavaLikeExpr(operandVar)};"
-            case Throw(_, exc) ⇒
-                s"throw ${toJavaLikeExpr(exc)};"
+
+            case PutStatic(_, declaringClass, name, value) ⇒
+                s"${declaringClass.toJava}.$name = ${toJavaLikeExpr(value)}"
+
+            case PutField(_, declaringClass, name, receiver, value) ⇒
+                s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
+
             case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
                 val code = new StringBuffer(256)
 
@@ -115,40 +129,16 @@ object ToJavaLike {
 
                 if (receiver.isDefined) {
                     code append toJavaLikeExpr(receiver.get)
-                    code append "/*" append declClass.toString append "*/"
-                } else
-                    code append declClass.toString
+                    code append "/*" append declClass.toJava append "*/"
+                } else {
+                    code append declClass.toJava // we have a static method call
+                }
                 code append "." append name
 
                 // TODO Check order...
                 code append (params map { toJavaLikeExpr(_) } mkString ("(", ", ", ")"))
 
                 code append ";" toString ()
-        }
-    }
-
-    @inline final def toJavaLikeCmpTp(cTp: ComputationalType): String = {
-        cTp match {
-            case ComputationalTypeInt           ⇒ "int"
-            case ComputationalTypeLong          ⇒ "long"
-            case ComputationalTypeFloat         ⇒ "float"
-            case ComputationalTypeDouble        ⇒ "double"
-            case ComputationalTypeReference     ⇒ cTp.toString
-            case ComputationalTypeReturnAddress ⇒ cTp.toString
-        }
-    }
-
-    @inline final def toJavaLikeTpe(bTpe: BaseType): String = {
-        bTpe match {
-            case IntegerType ⇒ "int"
-            case LongType    ⇒ "long"
-            case FloatType   ⇒ "float"
-            case DoubleType  ⇒ "double"
-            case ShortType   ⇒ "short"
-            case ByteType    ⇒ "byte"
-            case CharType    ⇒ "char"
-            case BooleanType ⇒ "boolean"
-            case default     ⇒ default.toString
         }
     }
 
@@ -190,12 +180,6 @@ object ToJavaLike {
         var result = "\n"
         for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
         result+"    default: goto "+defTrg+";\n"
-    }
-
-    def multiArrayDims(counts: List[Var], dims: Int): String = {
-        var result = ""
-        for (i ← 0 to (dims - 1)) { result = "["+toJavaLikeExpr(counts.drop(i).head)+"]"+result }
-        result
     }
 
 }

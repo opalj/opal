@@ -39,45 +39,43 @@ import org.opalj.io.OpeningFileFailedException
  */
 object Disassembler {
 
+    private final val Usage =
+        "Usage: java …Disassembler \n"+
+            "(1) <JAR file containing class files> [<Name of classfile (incl. path) contained in the JAR file>+]\n"+
+            "(2) <class file>\n"+
+            "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class"
+
+    def process(jarName: String, classFileName: String): Unit = {
+        val fileName =
+            if (classFileName.endsWith(".class"))
+                classFileName
+            else
+                classFileName.replace('.', '/')+".class"
+
+        val classFile = ClassFileReader.ClassFile(jarName, fileName).head
+        processClassFile(classFile)
+    }
+
+    def processClassFile(classFile: ClassFile): Unit = {
+        try {
+            val file = writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
+            println(s"Generated the HTML documentation $file.")
+        } catch {
+            case OpeningFileFailedException(file, cause) ⇒
+                println(s"Opening the html file $file failed: ${cause.getMessage()}")
+        }
+    }
+
     def main(args: Array[String]): Unit = {
 
         if (args.length < 1) {
-            println("Usage: java …Disassembler \n"+
-                "(1) <JAR file containing class files> [<Name of classfile (incl. path) contained in the JAR file>+]\n"+
-                "(2) <class file>")
-            println("Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList.class")
+            println(Usage)
             sys.exit(-1)
         }
 
-        def process(classFileName: String): Unit = {
-            val fileName =
-                if (classFileName.endsWith(".class"))
-                    classFileName
-                else {
-                    (
-                        if (classFileName.contains("."))
-                            classFileName.replace('.', '/')
-                        else
-                            classFileName
-                    )+".class"
-                }
-
-            val classFile = ClassFileReader.ClassFile(args(0), fileName).head
-            processClassFile(classFile)
-        }
-
-        def processClassFile(classFile: ClassFile): Unit = {
-            try {
-                val file = writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
-                println(s"Generated the HTML documentation $file.")
-            } catch {
-                case OpeningFileFailedException(file, cause) ⇒
-                    println(s"Opening the html file $file failed: ${cause.getMessage()}")
-            }
-        }
-
+        val jarName = args(0)
         if (args.length == 1) {
-            val classFiles = ClassFileReader.ClassFiles(new java.io.File(args(0)))
+            val classFiles = ClassFileReader.ClassFiles(new java.io.File(jarName))
             if (classFiles.isEmpty) {
                 println(s"No classfiles found in ${args(0)}")
             } else {
@@ -85,9 +83,9 @@ object Disassembler {
                     processClassFile(classFile)
                 }
             }
-        } else
-            for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
-                process(classFileName)
-            }
+        } else {
+            val classFileNames = args.drop(1) /* drop the name of the jar file */
+            for (classFileName ← classFileNames) process(jarName, classFileName)
+        }
     }
 }

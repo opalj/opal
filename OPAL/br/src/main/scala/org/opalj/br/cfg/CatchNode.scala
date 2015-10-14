@@ -29,32 +29,44 @@
 package org.opalj.br.cfg
 
 import org.opalj.br.Code
+import org.opalj.br.ExceptionHandler
+import org.opalj.br.PC
 
 /**
+ * This node represents an exception handler.
+ *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
-trait CFGBlock {
+class CatchNode(val handler: ExceptionHandler) extends CFGNode {
 
-    // TODO [design] make immutable
+    final def startPC: PC = handler.startPC
 
-    private[cfg] var predecessors: List[CFGBlock] = Nil
+    final def endPC: PC = handler.endPC
 
-    private[cfg] var successors: List[CFGBlock] = Nil
+    final def handlerPC: PC = handler.handlerPC
 
-    private[cfg] var ID: String = _
+    //
+    // FOR DEBUGING/VISUALIZATION PURPOSES
+    //
 
-    // TODO [design] what is the purpose of these two methods (?)
-    private[cfg] def addPred(block: CFGBlock): Unit = predecessors = block :: predecessors
-    private[cfg] def addSucc(block: CFGBlock): Unit = successors = block :: successors
+    override def nodeId: Long =
+        startPC.toLong |
+            (endPC.toLong << 16) |
+            (handlerPC.toLong << 32) |
+            // ObjectTypes have positive ids; Any can hence be associated with -1
+            (handler.catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
 
-    // TODO [rename] returnAllSuccessorBlocks (???)
-    def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
-        var res: Set[CFGBlock] = visited + this
-        for (block ← successors if (!visited.contains(block)))
-            res = res ++ block.returnAllBlocks(res)
-        res
-    }
+    override def toHRR: Option[String] = Some(
+        s"try[$startPC,$endPC) ⇒ $handlerPC{${handler.catchType.map(_.toJava).getOrElse("Any")}}"
+    )
 
-    // TODO Needs explanation
-    def toDot(code: Code): String
+    override def visualProperties: Map[String, String] = Map(
+        "shape" -> "box",
+        "labelloc" -> "l",
+        "fillcolor" -> "orange",
+        "style" -> "filled",
+        "shape" -> "rectangle"
+    )
+
 }

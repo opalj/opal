@@ -41,20 +41,20 @@ abstract class SimpleConditionalBranchInstruction
         extends ConditionalBranchInstruction
         with ConstantLengthInstruction {
 
-    def branchoffset: Int
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-        (this eq other) || (this == other)
-    }
-
     /**
      * The comparison operator (incl. the constant) underlying the if instruction.
      * E.g., `<`, `< 0` or `!= null`.
      */
     def operator: String
 
+    def branchoffset: Int
+
     final def length: Int = 3
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
+    }
 
     final def nextInstructions(
         currentPC: PC,

@@ -85,14 +85,24 @@ class ProjectExplorer(
             super.updateItem(item, empty)
             if (!empty) {
                 item match {
-                    case m: ProjectExplorerMethodData ⇒ {
-                        val method: Method = m.method.get
-                        val classFile: ClassFile = m.classFile.get
+                    case c: ProjectExplorerClassData ⇒ {
+                        val classFile: ClassFile = c.classFile
                         val sc = new MenuItem("Show Source code") {
-                            onAction = showSourceCode(classFile, method)
+                            onAction = showSourceCode(classFile, None)
                         }
                         val bc = new MenuItem("Show Bytecode") {
-                            onAction = showBytecode(classFile, method)
+                            onAction = showBytecode(classFile, None)
+                        }
+                        setContextMenu(new ContextMenu(sc, bc))
+                    }
+                    case m: ProjectExplorerMethodData ⇒ {
+                        val method: Method = m.method
+                        val classFile: ClassFile = m.classFile
+                        val sc = new MenuItem("Show Source code") {
+                            onAction = showSourceCode(classFile, Some(method))
+                        }
+                        val bc = new MenuItem("Show Bytecode") {
+                            onAction = showBytecode(classFile, Some(method))
                         }
                         setContextMenu(if (!m.isAbstract.apply)
                             new ContextMenu(
@@ -223,18 +233,30 @@ class ProjectExplorer(
         chosenDomain: String,
         classFile: ClassFile,
         method: Method): Unit = {
+        // WebView for AI result, independent of domain 
+        val aiDefaultView: WebView = new WebView {
+            contextMenuEnabled = false
+            vgrow = Priority.Always
+            hgrow = Priority.Always
+            engine.loadContent(Messages.ABSTRACT_INTERPRETATION_RUNNING)
+        }
+        val domainName: String = chosenDomain.split(']')(0).drop(1)
+        WebViewStage.showWebView(
+            s"Result of Abstract Interpretation[$domainName]: "+classFile.fqn + s"{ $method }",
+            aiDefaultView, 125d, 50d)
         val domain: Domain = DomainRegistry.newDomain(
             chosenDomain,
             project,
             classFile,
             method)
         val ai = new BaseAI
-        val aiResult = ai.apply(classFile, method, domain)
         val aiResultXHTML = XHTML.dump(
             classFile,
             method,
             "Result of Abstract Interpretation",
-            aiResult).toString
+            ai.apply(classFile, method, domain)).toString
+        aiDefaultView.engine.loadContent(aiResultXHTML.toString())
+        // open additional WebViews depending on domain
         if (domain.isInstanceOf[RecordDefUse]) {
             val defUse = domain.asInstanceOf[RecordDefUse]
             val aiDefUseView: WebView = new WebView {
@@ -243,34 +265,30 @@ class ProjectExplorer(
                 hgrow = Priority.Always
                 engine.loadContent(defUse.dumpDefUseInfo().toString())
             }
-            WebViewStage.showWebView("Result of AI[DefUse]", aiDefUseView)
+            WebViewStage.showWebView(
+                "DefUse Info: "+classFile.fqn + s"{ $method }",
+                aiDefUseView, 175d, 100d)
         }
-        val aiView: WebView = new WebView {
-            contextMenuEnabled = false
-            vgrow = Priority.Always
-            hgrow = Priority.Always
-            engine.loadContent(Messages.ABSTRACT_INTERPRETATION_RUNNING)
-        }
-        WebViewStage.showWebView("Abstract interpretation results", aiView)
-        aiView.engine.loadContent(aiResultXHTML.toString())
     }
 
     private def showSourceCode(
-        classFile: ClassFile,
-        method: Method): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        cf: ClassFile,
+        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val sourceView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
             hgrow = Priority.Always
         }
-        val methodId = method.name + method.descriptor.toJVMDescriptor
-        val firstLineOfMethod =
-            method.body.flatMap(_.firstLineNumber.map { ln ⇒
+        val methodId: Option[String] =
+            method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
+
+        val firstLineOfMethod: Option[String] =
+            method.flatMap(_.body.flatMap(_.firstLineNumber.map { ln ⇒
                 (if (ln > 2) (ln - 2) else 0).toString
-            })
-        val sourceFile = findSourceFile(classFile, firstLineOfMethod)
+            }))
+        val sourceFile = findSourceFile(cf, firstLineOfMethod)
         if (!sourceFile.isDefined) {
-            val fqn = classFile.fqn
+            val fqn = cf.fqn
             val msg = s"Could not find source code for type $fqn."
             DialogStage.showMessage("Info", msg, stage)
         } else {
@@ -278,23 +296,27 @@ class ProjectExplorer(
 
             new JumpToProblemListener(
                 webview = sourceView,
-                methodOption = Some(methodId),
+                methodOption = methodId,
                 pcOption = None,
                 lineOption = firstLineOfMethod)
 
-            WebViewStage.showWebView("SourceCode", sourceView)
+            val methodString = if (methodId.isDefined) ("{ "+methodId.get+" }") else ""
+            WebViewStage.showWebView(
+                "SourceCode for "+cf.fqn + methodString,
+                sourceView, 125d, 50d)
         }
     }
 
     private def showBytecode(
         cf: ClassFile,
-        method: Method): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val byteView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
             hgrow = Priority.Always
         }
-        val methodId = method.name + method.descriptor.toJVMDescriptor
+        val methodId: Option[String] =
+            method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
         val classFile = decompileClassFile(project, cf.thisType)
         if (classFile.isDefined) {
             val content = classFile.get.toXHTML.toString
@@ -305,10 +327,13 @@ class ProjectExplorer(
 
         new JumpToProblemListener(
             webview = byteView,
-            methodOption = Some(methodId),
+            methodOption = methodId,
             pcOption = None, lineOption = None)
 
-        WebViewStage.showWebView("Bytecode", byteView)
+        val methodString = if (methodId.isDefined) ("{ "+methodId.get+" }") else ""
+        WebViewStage.showWebView(
+            "Byte Code for "+cf.fqn + methodString,
+            byteView, 175d, 100d)
     }
 
     private def findSourceFile(

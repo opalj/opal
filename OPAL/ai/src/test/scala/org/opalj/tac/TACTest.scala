@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,28 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj
+package tac
 
-import org.opalj.br.Code
+import java.util.Arrays
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 /**
- * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
-class ExitBlock extends CFGBlock {
+class TACTest extends FunSpec with Matchers {
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case _: ExitBlock ⇒ true // TODO This is questionable (how about the id field!)
-            case _            ⇒ false
+    def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
+        if (!Arrays.equals(expectedStmts.asInstanceOf[Array[Object]], actualStmts.asInstanceOf[Array[Object]])) {
+            val message =
+                actualStmts.zip(expectedStmts).
+                    filter(p ⇒ p._1 != p._2).
+                    map(p ⇒ "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
+                    mkString("Differences:\n", "\n", "\n")
+            fail(message)
         }
-    }
-
-    override def hashCode(): Int = 121334; // TODO This is questionable (how about the id field!)
-
-    def toDot(code: Code): String = {
-
-        val res: String = ID+" [shape=box, label=\""+ID+"\"];\n"
-
-        res
     }
 }

@@ -29,11 +29,11 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
+import java.util.Arrays
 
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
@@ -48,7 +48,7 @@ import org.opalj.ai.domain.l1.DefaultDomain
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class ArrayTest extends FunSpec with Matchers {
+class ArrayTest extends TACTest {
 
     val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
 
@@ -71,10 +71,10 @@ class ArrayTest extends FunSpec with Matchers {
     describe("The quadruples representation of array creation and manipulation instructions") {
 
         describe("using no AI results") {
-            def expectedAST(cTpe: ComputationalType, Tpe: Type, const: Expr) = Array[Stmt](
+            def expectedAST(cTpe: ComputationalType, arrayType: ArrayType, const: Expr) = Array[Stmt](
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
+                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), arrayType)),
                 Assignment(3, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
@@ -110,7 +110,7 @@ class ArrayTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                    Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), ObjectType.Object)),
+                    Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObjects)),
                     Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
@@ -126,13 +126,13 @@ class ArrayTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
-                    "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+                    "2: op_0 = new java.lang.Object[op_0];",
                     "3: r_1 = op_0;",
                     "4: op_0 = r_1;",
                     "5: op_1 = 4;",
                     "6: op_2 = new Object;",
                     "7: ;",
-                    "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+                    "8: op_2/*java.lang.Object*/.<init>();",
                     "9: op_0[op_1] = op_2;",
                     "10: op_0 = r_1;",
                     "11: op_1 = 4;",
@@ -152,7 +152,7 @@ class ArrayTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
                     Assignment(2, SimpleVar(0, ComputationalTypeReference),
-                        NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
+                        NewArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), ArrayType(ArrayType(IntegerType)))),
                     Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
@@ -176,7 +176,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeDouble, DoubleType, DoubleConst(6, 1.0d)))
+                statements.shouldEqual(expectedAST(ComputationalTypeDouble, ArrayType(DoubleType), DoubleConst(6, 1.0d)))
                 javaLikeCode.shouldEqual(expectedJLC("double", "1.0d"))
             }
 
@@ -186,8 +186,8 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))
-                javaLikeCode.shouldEqual(expectedJLC("float", "2.0"))
+                statements.shouldEqual(expectedAST(ComputationalTypeFloat, ArrayType(FloatType), FloatConst(6, 2.0f)))
+                javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
             }
 
             it("should correctly reflect int array instructions") {
@@ -196,7 +196,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, IntegerType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(IntegerType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("int", "2"))
             }
 
@@ -206,7 +206,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeLong, LongType, LongConst(6, 1)))
+                statements.shouldEqual(expectedAST(ComputationalTypeLong, ArrayType(LongType), LongConst(6, 1)))
                 javaLikeCode.shouldEqual(expectedJLC("long", "1l"))
             }
 
@@ -216,7 +216,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, ShortType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ShortType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("short", "2"))
             }
 
@@ -226,7 +226,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, ByteType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ByteType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("byte", "2"))
             }
 
@@ -236,16 +236,16 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, CharType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(CharType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("char", "2"))
             }
         }
 
         describe("using AI results") {
-            def expectedAST(cTpe: ComputationalType, Tpe: Type, const: Expr) = Array[Stmt](
+            def expectedAST(cTpe: ComputationalType, arrayType: ArrayType, const: Expr) = Array[Stmt](
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), Tpe)),
+                Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), arrayType)),
                 Assignment(3, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(5, SimpleVar(1, ComputationalTypeInt), IntConst(5, 4)),
@@ -283,7 +283,7 @@ class ArrayTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
-                    Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, SimpleVar(0, ComputationalTypeInt), ObjectType.Object)),
+                    Assignment(1, SimpleVar(0, ComputationalTypeReference), NewArray(1, List(SimpleVar(0, ComputationalTypeInt)), ArrayType.ArrayOfObjects)),
                     Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
@@ -299,13 +299,13 @@ class ArrayTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
-                    "2: op_0 = new ObjectType(java/lang/Object)[op_0];",
+                    "2: op_0 = new java.lang.Object[op_0];",
                     "3: r_1 = op_0;",
                     "4: op_0 = r_1;",
                     "5: op_1 = 4;",
                     "6: op_2 = new Object;",
                     "7: ;",
-                    "8: op_2/*ObjectType(java/lang/Object)*/.<init>();",
+                    "8: op_2/*java.lang.Object*/.<init>();",
                     "9: op_0[op_1] = op_2;",
                     "10: op_0 = r_1;",
                     "11: op_1 = 4;",
@@ -322,17 +322,19 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(Array(
+                val expected = Array[Stmt](
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
                     Assignment(2, SimpleVar(0, ComputationalTypeReference),
-                        NewMultiArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), 2, IntegerType)),
+                        NewArray(2, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), ArrayType(ArrayType(IntegerType)))),
                     Assignment(6, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
                     Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(10)))
+                    Return(10)
+                )
+                compareStatements(expected, statements)
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 4;",
@@ -353,7 +355,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeDouble, DoubleType, DoubleConst(6, 1.0d)))
+                statements.shouldEqual(expectedAST(ComputationalTypeDouble, ArrayType(DoubleType), DoubleConst(6, 1.0d)))
                 javaLikeCode.shouldEqual(expectedJLC("double", "1.0d"))
             }
 
@@ -365,8 +367,8 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeFloat, FloatType, FloatConst(6, 2.0f)))
-                javaLikeCode.shouldEqual(expectedJLC("float", "2.0"))
+                statements.shouldEqual(expectedAST(ComputationalTypeFloat, ArrayType(FloatType), FloatConst(6, 2.0f)))
+                javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
             }
 
             it("should correctly reflect int array instructions") {
@@ -377,7 +379,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, IntegerType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(IntegerType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("int", "2"))
             }
 
@@ -389,7 +391,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeLong, LongType, LongConst(6, 1)))
+                statements.shouldEqual(expectedAST(ComputationalTypeLong, ArrayType(LongType), LongConst(6, 1)))
                 javaLikeCode.shouldEqual(expectedJLC("long", "1l"))
             }
 
@@ -401,7 +403,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, ShortType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ShortType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("short", "2"))
             }
 
@@ -413,7 +415,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, ByteType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ByteType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("byte", "2"))
             }
 
@@ -425,7 +427,7 @@ class ArrayTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
-                statements.shouldEqual(expectedAST(ComputationalTypeInt, CharType, IntConst(6, 2)))
+                statements.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(CharType), IntConst(6, 2)))
                 javaLikeCode.shouldEqual(expectedJLC("char", "2"))
             }
         }

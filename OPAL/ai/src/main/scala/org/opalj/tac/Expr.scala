@@ -38,6 +38,7 @@ import org.opalj.ai.Domain
 import org.opalj.br._
 
 trait Expr {
+
     /**
      * An approximation of the type of the underlying value. It is the best
      * type information directly available. The precision of the type information
@@ -52,8 +53,23 @@ trait Expr {
  */
 case class Param(cTpe: ComputationalType, name: String) extends Expr
 
-case class InstanceOf(target: Var, cmpTp: ReferenceType) extends Expr {
+case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeInt
+}
+
+case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
+    final def cTpe = ComputationalTypeReference
+}
+
+case class Compare(
+    pc: PC,
+    left: Expr,
+    condition: RelationalOperator,
+    right: Expr)
+        extends Expr {
+
+    final def cTpe: ComputationalType = ComputationalTypeInt
+
 }
 
 sealed trait Const extends Expr
@@ -83,7 +99,17 @@ case class StringConst(pc: PC, value: String) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class ClassConst(pc: PC, value: ObjectType) extends Expr {
+case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Expr {
+    final def tpe = ObjectType.MethodType
+    final def cTpe = ComputationalTypeReference
+}
+
+case class MethodHandleConst(pc: PC, value: MethodHandle) extends Expr {
+    final def tpe = ObjectType.MethodHandle
+    final def cTpe = ComputationalTypeReference
+}
+
+case class ClassConst(pc: PC, value: ReferenceType) extends Expr {
     final def tpe = ObjectType.Class
     final def cTpe = ComputationalTypeReference
 }
@@ -122,29 +148,30 @@ case class New(
 
 case class NewArray(
         pc: PC,
-        count: Var,
-        tpe: Type) extends Expr {
+        counts: List[Expr],
+        tpe: ArrayType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class NewMultiArray(
-        pc: PC,
-        counts: List[Var],
-        dimensions: Int,
-        tpe: Type) extends Expr {
+case class ArrayLoad(pc: PC, index: Var, arrayRef: Var) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class ArrayLoad(
-        pc: PC,
-        index: Var,
-        arrayRef: Var) extends Expr {
-    final def cTpe = ComputationalTypeReference
+case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
+    final def cTpe = ComputationalTypeInt
 }
 
-case class ArrayLength(
-        pc: PC,
-        arrayRef: Var) extends Expr {
+case class GetField(
+    pc: PC,
+    declaringClass: ObjectType, name: String, objRef: Expr)
+        extends Expr {
+    final def cTpe = ComputationalTypeInt
+}
+
+case class GetStatic(
+    pc: PC,
+    declaringClass: ObjectType, name: String)
+        extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 

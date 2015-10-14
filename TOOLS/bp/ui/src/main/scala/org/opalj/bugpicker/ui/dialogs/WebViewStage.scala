@@ -32,7 +32,6 @@ package ui
 package dialogs
 
 import org.opalj.bugpicker.ui.BugPicker
-
 import scalafx.Includes.jfxKeyEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.scene.Scene
@@ -57,10 +56,16 @@ class WebViewStage extends Stage {
 
 object WebViewStage {
 
-    def showWebView(theTitle: String, wv: WebView): Unit = {
+    def showWebView(
+        theTitle: String,
+        wv: WebView,
+        screenX: Double,
+        screenY: Double): Unit = {
         val stage = new WebViewStage {
             theStage ⇒
             title = theTitle
+            x = screenX
+            y = screenY
             scene = new Scene {
                 root = new VBox {
                     prefWidth = 1060

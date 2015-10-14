@@ -1678,8 +1678,8 @@ class ClassHierarchy private (
                     aType,
                     new Node {
                         private val directSubtypes = directSubtypesOf(aType)
-                        def id = aType.id
-                        def toHRR: Option[String] = Some(aType.toJava)
+                        override def nodeId: Long = aType.id.toLong
+                        override def toHRR: Option[String] = Some(aType.toJava)
                         override val visualProperties: Map[String, String] = {
                             Map("shape" -> "box") ++ (
                                 if (isInterface(aType))
@@ -1702,9 +1702,9 @@ class ClassHierarchy private (
         }
 
         // a virtual root node
-        def id = -1
-        def toHRR = None
-        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+        override def nodeId = -1l
+        override def toHRR = None
+        override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
@@ -1713,7 +1713,7 @@ class ClassHierarchy private (
             val rootTypes = nodes filter { case (t, _) ⇒ superclassTypeMap(t.id) eq null }
             rootTypes.values.foreach(f)
         }
-        def hasSuccessors: Boolean = nodes.nonEmpty
+        override def hasSuccessors: Boolean = nodes.nonEmpty
     }
 
     // -----------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,35 +28,47 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.Code
-import org.opalj.br.PC
-import org.opalj.br.ExceptionHandler
-
 /**
+ * Represents the artificial exit node of a control flow graph. The graph contains
+ * an explicit exit node to make it trivial to navigate to all instructions that may
+ * cause a(n ab)normal return from the method.
+ *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
-class CatchBlock(val handler: ExceptionHandler) extends CFGBlock {
+class ExitNode(normalReturn: Boolean) extends CFGNode {
 
-    final def startPC: PC = handler.startPC
-    final def endPC: PC = handler.endPC
-    final def handlerPC: PC = handler.handlerPC
+    override private[cfg] def addSuccessor(successor: CFGNode): Unit =
+        throw new UnsupportedOperationException
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case that: CatchBlock ⇒ this.handler == that.handler // TODO This is questionable (how about the id field!)
-            case _                ⇒ false
-        }
+    override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit =
+        throw new UnsupportedOperationException()
+
+    //
+    // FOR DEBUGING/VISUALIZATION PURPOSES
+    //
+
+    override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1l
+
+    override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
+
+    override def toHRR: Option[String] =
+        Some(if (normalReturn) "Normal Return" else "Abnormal Return")
+
+    override def visualProperties: Map[String, String] = {
+        if (normalReturn)
+            Map(
+                "labelloc" -> "l",
+                "fillcolor" -> "green",
+                "style" -> "filled"
+            )
+        else
+            Map(
+                "labelloc" -> "l",
+                "fillcolor" -> "red",
+                "style" -> "filled",
+                "shape" -> "octagon"
+            )
     }
 
-    override def hashCode(): Int = handler.hashCode * 51; // TODO This is questionable (how about the id field!)
-
-    def toDot(code: Code): String = {
-        var res: String = ID+" [shape=box, label=\""+ID+"\"];\n"
-
-        for (succ ← successors) {
-            res = res + ID+" -> "+succ.ID+";\n"
-        }
-
-        res
-    }
 }

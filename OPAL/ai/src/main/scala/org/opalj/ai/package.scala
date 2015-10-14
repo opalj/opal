@@ -426,7 +426,7 @@ package object ai {
     def foreachPCWithOperands[U](
         domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
-                f: Function[(PC, Instruction, domain.Operands), U]): Unit = {
+                f: Function3[PC, Instruction, domain.Operands, U]): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size
         var pc = 0
@@ -434,8 +434,7 @@ package object ai {
             val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
-                val params = (pc, instruction, operands)
-                f(params)
+                f(pc, instruction, operands)
             }
             pc = instruction.indexOfNextInstruction(pc, code)
         }

@@ -34,11 +34,19 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
     private[this] var set: Set[Int] = Set.empty)
         extends SmallValuesSet {
 
-    def this(value: Int) {
-        this(Set(value))
-    }
+    def this(value: Int) { this(Set(value)) }
 
-    def +≈:(value: Int): SmallValuesSetBackedByScalaSet = {
+    override def min = set.min
+
+    override def max = set.max
+
+    override def isEmpty = set.isEmpty
+
+    override def isSingletonSet = set.size == 1
+
+    override def size = set.size
+
+    override def +≈:(value: Int): SmallValuesSetBackedByScalaSet = {
         val set = this.set
         val newSet = set + value
         if (newSet eq set /* <=> the value was already stored in the set */ )
@@ -47,7 +55,7 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             return new SmallValuesSetBackedByScalaSet(newSet)
     }
 
-    def -(value: Int): SmallValuesSet = {
+    override def -(value: Int): SmallValuesSet = {
         val set = this.set
         val newSet = set - value
         if (newSet eq set)
@@ -56,36 +64,30 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             new SmallValuesSetBackedByScalaSet()
     }
 
-    def mutableCopy: SmallValuesSetBackedByScalaSet =
+    override def mutableCopy: SmallValuesSetBackedByScalaSet =
         this // every subsequent mutation results in a new set object anyway
 
-    def contains(value: Int): Boolean = set.contains(value)
+    override def contains(value: Int): Boolean = set.contains(value)
 
-    def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
+    override def exists(f: Int ⇒ Boolean): Boolean = set.exists(f)
 
-    def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
+    override def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = {
         if (this eq other)
             true
         else
             set.forall(v ⇒ other.contains(v))
     }
 
-    def min = set.min
-    def max = set.max
-    def isEmpty = set.isEmpty
-    def isSingletonSet = set.size == 1
-    def size = set.size
+    override def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv))
 
-    def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv))
+    override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v))
 
-    def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v))
-
-    protected[collection] def mkString(
+    override protected[collection] def mkString(
         pre: String, sep: String, pos: String,
         offset: Int): String =
         set.view.map(_ + offset).mkString(pre, sep, pos)
 
-    def mkString(start: String, sep: String, end: String): String =
+    override def mkString(start: String, sep: String, end: String): String =
         mkString(start, sep, end, 0)
 
     override def toString(): String = {

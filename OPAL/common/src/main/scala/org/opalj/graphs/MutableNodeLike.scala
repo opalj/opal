@@ -74,7 +74,7 @@ class MutableNodeLike[I, N <: Node](
 
     override def toHRR = Some(identifierToString(identifier))
 
-    override def id: Int = identifier.hashCode()
+    override def nodeId: Long = identifier.hashCode().toLong
 
     def addChild(node: N): Unit = {
         this.synchronized(theChildren = node :: children)

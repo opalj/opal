@@ -47,4 +47,16 @@ object RelationalOperators extends Enumeration {
     final val == = EQ
     final val NE = Value("!=")
     final val != = NE
+
+    //
+    // Operators to compare floating point numbers.
+    //
+    final val CMPG = Value("cmpg")
+    final val CMPL = Value("cmpl")
+
+    //
+    // Operators to compare long values.
+    //
+    final val CMP = Value("cmp")
+
 }
