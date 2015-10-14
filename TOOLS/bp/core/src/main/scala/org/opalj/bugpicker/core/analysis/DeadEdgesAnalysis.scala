@@ -97,7 +97,6 @@ import org.opalj.br.instructions.ReturnInstructions
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
-import org.opalj.br.cfg.ControlFlowGraph
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.domain.Origin
 import org.opalj.br.ExceptionHandler
