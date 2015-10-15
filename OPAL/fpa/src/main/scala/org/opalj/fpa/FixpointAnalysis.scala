@@ -120,8 +120,8 @@ trait AssumptionBasedFixpointAnalysis extends FixpointAnalysis {
     private[this] val CPA = AnalysisModes.LibraryWithClosedPackagesAssumption
     private[this] val APPLICATION = AnalysisModes.Application
 
-    def getAnalysisMode : Option[AnalysisModes.Value] = analysisMode
-    
+    def getAnalysisMode: Option[AnalysisModes.Value] = analysisMode
+
     def isOpenPackagesAssumption = analysisMode.get == OPA
 
     def isClosedPackagesAssumption = analysisMode.get == CPA
