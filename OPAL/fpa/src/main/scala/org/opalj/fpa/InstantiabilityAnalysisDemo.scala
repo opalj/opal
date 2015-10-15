@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-package fp
+package org.opalj.fpa
 
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.fp.Property
+import org.opalj.br.ClassFile
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
  * @author Michael Reif

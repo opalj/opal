@@ -39,11 +39,16 @@ trait FixpointAnalysis {
      * concrete analysis. This method should be used by subclasses that need to create state
      * depending on the analyzed project.
      *
+     * @note Since multiple different subclasses could be mixed in, make sure that
+     *  `super.initializeAssumptions` is called somewhere in the overridden method.
+     * 
      * @note E.g. the configuration file is available over the implicit project parameter.
      *       If you want to check some configured value, you can do this within this method.
      *
      */
-    def initializeAssumptions(implicit project: Project[URL]): Unit = Nil
+    def initializeAssumptions(implicit project: Project[URL]): Unit = { 
+        /* do nothing */
+    }
 
     /**
      * This method triggers the analysis which is composed by the [[AnalysisEngine]].
@@ -112,7 +117,8 @@ trait AssumptionBasedFixpointAnalysis extends FixpointAnalysis {
 
     private[this] var analysisMode: Option[AnalysisModes.Value] = None
 
-    override def initializeAssumptions(implicit project: Project[URL]): Unit = {
+    abstract override def initializeAssumptions(implicit project: Project[URL]): Unit = {
+        super.initializeAssumptions
         analysisMode = Some(AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode")))
     }
 

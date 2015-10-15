@@ -51,8 +51,6 @@ object Overridden {
 
 case object IsOverridden extends Overridden { final val isRefineable = false }
 
-case object PotentiallyOverridden extends Overridden { final val isRefineable = false }
-
 case object NonOverridden extends Overridden { final val isRefineable = false }
 
 case object CantNotBeOverridden extends Overridden { final val isRefineable = false }

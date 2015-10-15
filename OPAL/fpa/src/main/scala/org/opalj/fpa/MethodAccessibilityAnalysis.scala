@@ -65,12 +65,17 @@ object MethodAccessibilityAnalysis
             return ImmediateResult(method, Global)
 
         val declClass = project.classFile(method)
+        val finalClass = declClass.isFinal
+        val publicClass = declClass.isPublic
 
-        if (declClass.isPublic && method.isPublic)
-            ImmediateResult(method, Global)
+        val isPublic = method.isPublic
+        val isProtected = method.isProtected
+
+        if (publicClass && (isPublic || (!finalClass && isProtected)))
+            return ImmediateResult(method, Global)
 
         val numSubtypes = project.classHierarchy.allSubtypes(declClass.thisType, false).size
-        if ((method.isPublic || method.isProtected) &&
+        if ((isPublic || isProtected) &&
             numSubtypes > 0) {
             val c: Continuation =
                 (dependeeE: Entity, dependeeP: Property) ⇒

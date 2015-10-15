@@ -1,4 +1,5 @@
-/* BSD 2-Clause License:
+/**
+ * BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,8 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package cg
+package org.opalj.fpa
 
 import scala.language.postfixOps
 import java.net.URL

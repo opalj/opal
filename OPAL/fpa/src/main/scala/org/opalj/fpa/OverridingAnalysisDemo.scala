@@ -5,9 +5,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import java.net.URL
-import org.opalj.br.analyses.NonOverridden
-import org.opalj.br.analyses.IsOverridden
-import org.opalj.br.analyses.OverridingAnalysis
 
 /**
  * @author Michael Reif
@@ -36,17 +33,17 @@ object OverridingAnalysisDemo extends MethodAnalysisDemo {
         } { t ⇒ analysisTime = t.toSeconds }
 
         val nonOverriddenMethods = entitiesByProperty(NonOverridden)(propertyStore)
-        val nonOverriddenInfo = buildMethodInfo(nonOverriddenMethods)(project)
+        val nonOverriddenInfo = buildMethodInfo(nonOverriddenMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
 
-        val overriddenMethods = entitiesByProperty(IsOverridden)(propertyStore)
-        val overriddenInfo = buildMethodInfo(overriddenMethods)(project)
+        //        val overriddenMethods = entitiesByProperty(IsOverridden)(propertyStore)
+        //        val overriddenInfo = buildMethodInfo(overriddenMethods)(project) filter { str ⇒ str.trim.startsWith("java.") }
 
         val nonOverriddenInfoString = finalReport(nonOverriddenInfo, "Found non-overridden methods")
-        val overriddenInfoString = finalReport(overriddenInfo, "Found overridden methods")
+        //        val overriddenInfoString = finalReport(overriddenInfo, "Found overridden methods")
 
         BasicReport(
-            overriddenInfoString +
-                nonOverriddenInfoString +
+            //            overriddenInfoString +
+            nonOverriddenInfoString +
                 propertyStore+
                 "\nAnalysis time: "+analysisTime
         )
