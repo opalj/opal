@@ -62,14 +62,11 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 
 case class Compare(
-    pc: PC,
-    left: Expr,
-    condition: RelationalOperator,
-    right: Expr)
-        extends Expr {
-
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
+        pc: PC,
+        left: Expr,
+        condition: RelationalOperator,
+        right: Expr) extends Expr {
+    final def cTpe = ComputationalTypeInt
 }
 
 sealed trait Const extends Expr
@@ -174,14 +171,7 @@ case class GetField(
     final def cTpe = ComputationalTypeInt
 }
 
-<<<<<<< HEAD
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
-=======
-case class GetStatic(
-    pc: PC,
-    declaringClass: ObjectType, name: String)
-        extends Expr {
->>>>>>> fixed and improved the tests
     final def cTpe = ComputationalTypeInt
 }
 
@@ -262,4 +252,3 @@ object OperandVar {
 
     final val HandledException = OperandVar.bottom(ComputationalTypeReference)
 }
-

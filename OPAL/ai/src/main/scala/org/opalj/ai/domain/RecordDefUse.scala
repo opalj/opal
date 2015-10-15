@@ -149,13 +149,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         var parameterIndex = 0
         defLocals(0) =
             locals.map { v ⇒
-<<<<<<< HEAD
                 // we always decrement parameterIndex to get the same offsets as
                 // used by the AI for parameters
                 parameterIndex -= 1
-=======
-                parameterIndex -= 1 // to get the same offsets as used by the AI for parameters
->>>>>>> added methods to get def/use information
                 if (v ne null) {
                     ValueOrigins(absoluteMin, /*max*/ codeSize, parameterIndex)
                 } else {
