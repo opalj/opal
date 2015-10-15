@@ -1,8 +1,8 @@
 package org.opalj.fpa.common
 
 import org.opalj.fpa.FixpointAnalysis
-import org.opalj.br.analyses.fp.ShadowingAnalysis
-import org.opalj.br.analyses.fp.FactoryMethodAnalysis
+import org.opalj.fpa.ShadowingAnalysis
+import org.opalj.fpa.FactoryMethodAnalysis
 
 /**
  * The fixpoint analyses registry is a registry for all analyses that need
