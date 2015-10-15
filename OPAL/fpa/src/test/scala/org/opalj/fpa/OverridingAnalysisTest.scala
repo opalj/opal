@@ -28,49 +28,37 @@
  */
 package org.opalj.fpa
 
-import org.opalj.br.analyses.Project
-import java.net.URL
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fp.PropertyKey
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
+import org.opalj.br.ObjectType
+import org.opalj.fpa.test.annotations.OverriddenKeys
 import org.opalj.AnalysisModes
 
+
 /**
- * 
- * 
  * @author Michael Reif
  */
-abstract class ShadowingAnalysisTest extends AbstractFixpointAnalysisTest {
-    
-    lazy val analysisName = "ShadowingAnalysis"
-    
-    override def testFileName = "classfiles/shadowingTest.jar"
-    
+abstract class OverridingAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+
+    def analysisName = "OverridingAnalysis"
+
+    override def testFileName = "classfiles/overridingTest.jar"
+
     override def testFilePath = "fpa"
-        
-    override def runAnalysis(project: Project[URL]) : Unit = {
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val fmat = new Thread(new Runnable { def run = ShadowingAnalysis.analyze(project) });
-        fmat.start
-        fmat.join
-        propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
-    }
     
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
+    override def analysisType = OverridingAnalysis
     
+    override def propertyKey: PropertyKey = Overridden.Key
+
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
+        ObjectType("org/opalj/fpa/test/annotations/OverriddenProperty")
     
-    lazy val defaultValue = ProjectAccessibilityKeys.Global.toString
+    def defaultValue = OverriddenKeys.NonOverridden.toString    
 }
 
-class ShadowingAnalysisCPATest extends ShadowingAnalysisTest {
-    
+class OverridingAnalysisCPATest extends OverridingAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class ShadowingAnalysisOPATest extends ShadowingAnalysisTest {
-    
+class OverridingAnalysisOPATest extends OverridingAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }

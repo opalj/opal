@@ -26,10 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-package fp
+package org.opalj.fpa
 
 import org.opalj.fp.Result
 import org.opalj.fp.Entity
@@ -42,11 +39,14 @@ import org.opalj.br.ObjectType
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.analyses.Project
 import java.net.URL
-import org.opalj.fp.Continuation
 import org.opalj.fp.IntermediateResult
 import org.opalj.br.Method
-import org.opalj.fpa.FixpointAnalysis
-import org.opalj.fpa.FilterEntities
+import org.opalj.fp.ImmediateResult
+import org.opalj.fp.IntermediateResult
+import org.opalj.fp.EOptionP
+import org.opalj.fp.EP
+import org.opalj.fp.EPK
+import org.opalj.fp.Unchanged
 
 sealed trait Instantiability extends Property {
     final def key = Instantiability.Key // All instances have to share the SAME key!
@@ -56,9 +56,11 @@ object Instantiability {
     final val Key = PropertyKey.create("Instantiability", Instantiable)
 }
 
-case object NonInstantiable extends Instantiability { final val isRefineable = true }
+case object NonInstantiable extends Instantiability { final val isRefineable = false }
 
-case object Instantiable extends Instantiability { final val isRefineable = true }
+case object Instantiable extends Instantiability { final val isRefineable = false }
+
+case object MaybeInstantiable extends Instantiability { final val isRefineable = true }
 
 object InstantiabilityAnalysis
         extends FixpointAnalysis
@@ -66,29 +68,60 @@ object InstantiabilityAnalysis
 
     val propertyKey = Instantiability.Key
 
-    private val factoryPropertyKey = org.opalj.br.analyses.fp.FactoryMethod.Key
-    private val isFactoryMethodProperty = org.opalj.br.analyses.fp.IsFactoryMethod
+    private final val factoryPropertyKey = FactoryMethod.Key
+    //    private final val isFactoryMethodProperty = IsFactoryMethod
 
-    private val serializableType = ObjectType.Serializable
-
-    private def evaluateFactoryInstantiablity(classFile: ClassFile): Continuation = {
-        (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == isFactoryMethodProperty)
-                Result(classFile, Instantiable)
-            else Result(classFile, NonInstantiable)
-    }
+    private final val serializableType = ObjectType.Serializable
 
     private def determineInstantiabilityByFactoryMethod(
-        classFile: ClassFile,
-        method: Method)(
+        classFile: ClassFile)(
             implicit project: Project[URL],
-            propertyStore: PropertyStore): Option[PropertyComputationResult] = {
-        import propertyStore.require
-        return require(method, factoryPropertyKey,
-            classFile, propertyKey)(evaluateFactoryInstantiablity(classFile)) match {
-                case res @ Result(_, Instantiable) ⇒ Some(res)
-                case _                             ⇒ None
+            propertyStore: PropertyStore): PropertyComputationResult = {
+
+        val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
+        var dependees = Set.empty[EOptionP]
+
+        var i = 0
+        while (i < methods.length) {
+            val curMethod = methods(i)
+            val instantiability = propertyStore(curMethod, factoryPropertyKey)
+            instantiability match {
+                case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable)
+                case Some(NonFactoryMethod) ⇒ dependees += EPK(curMethod, factoryPropertyKey)
+                case None                   ⇒ dependees += EPK(curMethod, factoryPropertyKey)
+                case _ ⇒
+                    val message = s"unknown instantiability $instantiability"
+                    throw new UnknownError(message)
             }
+            i += 1
+        }
+
+        val continuation = new ((Entity, Property) ⇒ PropertyComputationResult) {
+
+            // We use the set of remaining dependencies to test if we have seen
+            // all remaining properties.
+            var remainingDependendees = dependees.map(eOptionP ⇒ eOptionP.e)
+
+            def apply(e: Entity, p: Property): PropertyComputationResult = this.synchronized {
+                if (remainingDependendees.isEmpty)
+                    return Unchanged;
+
+                p match {
+                    case IsFactoryMethod ⇒
+                        remainingDependendees = Set.empty
+                        Result(classFile, Instantiable)
+
+                    case NonFactoryMethod ⇒
+                        remainingDependendees -= e
+                        if (remainingDependendees.isEmpty) {
+                            Result(classFile, NonInstantiable)
+                        } else
+                            Unchanged
+                }
+            }
+        }
+
+        IntermediateResult(classFile, MaybeInstantiable, dependees, continuation)
     }
 
     /**
@@ -103,7 +136,7 @@ object InstantiabilityAnalysis
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration)
-            return Result(classFile, NonInstantiable)
+            return ImmediateResult(classFile, NonInstantiable)
 
         val declaringType = classFile.thisType
 
@@ -111,27 +144,15 @@ object InstantiabilityAnalysis
             classFile.constructors.exists { i ⇒
                 i.descriptor.parametersCount == 0
             })
-            return Result(classFile, Instantiable)
+            return ImmediateResult(classFile, Instantiable)
 
-        val subClassInstantiable = classFile.isFinal && _
+        val subClassInstantiable = !classFile.isFinal && _
 
         if (classFile.constructors.exists { i ⇒ i.isPublic || subClassInstantiable(i.isProtected) })
-            return Result(classFile, Instantiable)
+            return ImmediateResult(classFile, Instantiable)
 
-        if (isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown && classFile.constructors.exists { i ⇒ i.descriptor.parametersCount == 0 })
-            return Result(classFile, Instantiable)
-
-        classFile.methods foreach { method ⇒
-            if (method.isStatic && !method.isStaticInitializer) {
-                val res = determineInstantiabilityByFactoryMethod(classFile, method)
-                if (res.isDefined)
-                    return res.get
-                //                require(method, factoryPropertyKey,
-                //                    classFile, propertyKey)(evaluateFactoryInstantiablity(classFile))
-            }
-        }
-
-        Result(classFile, NonInstantiable)
+        val instantiability = determineInstantiabilityByFactoryMethod(classFile)
+        instantiability
     }
 
     val entitySelector: PartialFunction[Entity, ClassFile] = {

@@ -26,10 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-package fp
+package org.opalj.fpa
 
 import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
@@ -37,13 +34,13 @@ import org.opalj.fp.Entity
 import org.opalj.br.Method
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.Result
-import org.opalj.fp.ImmediateResult
+//import org.opalj.fp.ImmediateResult
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.fp.Continuation
-import org.opalj.fpa.FixpointAnalysis
-import org.opalj.fpa.FilterEntities
+import org.opalj.br.analyses.Project
 import java.net.URL
+import org.opalj.fp.Result
+//import org.opalj.fp.IntermediateResult
 
 /**
  * Common supertrait of all factory method properties.
@@ -103,6 +100,8 @@ object FactoryMethodAnalysis extends FixpointAnalysis
             implicit project: Project[URL],
             store: PropertyStore): PropertyComputationResult = {
 
+        //TODO use escape analysis (still have to be implemented).
+
         val classFile = project.classFile(method)
         val classType = classFile.thisType
 
@@ -122,10 +121,7 @@ object FactoryMethodAnalysis extends FixpointAnalysis
             if (instruction.opcode == opInvokeSpecial) {
                 instruction match {
                     case INVOKESPECIAL(declClass, "<init>", _) if classType eq declClass ⇒
-                        import store.require
-                        return require(method, propertyKey,
-                            method, projectAccessibilityKey)(
-                                evaluateViaNativeContinuation(method))
+                        return Result(method, IsFactoryMethod)
                     case _ ⇒
                 }
             }
@@ -135,17 +131,6 @@ object FactoryMethodAnalysis extends FixpointAnalysis
             pc = body.pcOfNextInstruction(pc)
         }
 
-        ImmediateResult(method, NonFactoryMethod)
+        Result(method, NonFactoryMethod)
     }
-
-    //    def analyze(implicit project: Project[URL]): Unit = {
-    //        implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-    //        val filter: PartialFunction[Entity, Method] = {
-    //            case m: Method if m.isStatic && !m.isAbstract ⇒ m
-    //        }
-    //
-    //        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
-    //
-    //        projectStore <||< (filter, determineUsageAsFactory(analysisMode))
-    //    }
 }

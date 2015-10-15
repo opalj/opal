@@ -32,48 +32,25 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.fp.PropertyKey
-import org.opalj.br.ObjectType
 import org.opalj.br.Annotation
-import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fp.PropertyKey
+import org.opalj.br.ObjectType
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import com.typesafe.config.ConfigFactory
-import org.opalj.AnalysisModes
-import com.typesafe.config.Config
-
-/**
- * Simple factory that can create a new Config by a given analysis mode. This is necessary
- * for test purposes because the analysis mode, which is configured in the configuration file,
- * has to be ignored to implement config file independet tests.
- */
-object TestConfigFactory {
-
-    private[this] final val cpaConfig =
-        "org.opalj { analysisMode = \"Library with closed packages assumption\"}"
-
-    private[this] final val opaConfig =
-        "org.opalj { analysisMode = \"Library with open packages assumption\"}"
-
-    private[this] final val appConfig =
-        "org.opalj { analysisMode = \"application\"}"
-
-    def createConfig(value: AnalysisModes.Value): Config = {
-        value match {
-            case AnalysisModes.LibraryWithOpenPackagesAssumption   ⇒ ConfigFactory.parseString(opaConfig)
-            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒ ConfigFactory.parseString(cpaConfig)
-            case AnalysisModes.Application                         ⇒ ConfigFactory.parseString(appConfig)
-        }
-    }
-}
 
 /**
  *
  * Tests a fix-point analysis implementation using the classes in the configured
  * class file.
+ *
+ * @note This test supports only property tests where only one annotation field
+ *       is used. It's not possible to check multiple values.
  *
  * @author Michael Reif
  */
@@ -84,17 +61,39 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * GENERIC TEST PARAMETERS - THESE HAVE TO BE OVERWRITTEN BY SUBCLASSES 
      */
 
-    val analysisName: String
+    def analysisName: String
 
     def testFileName: String
 
     def testFilePath: String
 
     /**
-     * This method has to be implement in the subclasses. This is in particular import for
-     * analyses that hardly depend on the output of other analyses.
+     * This method has to be overridden in subclasses that want to start a analysis
+     * that depends on at least one other analysis. All analyses that are defined
+     * within this sequence gets executed with the test.
      */
-    def runAnalysis(project: Project[URL]): Unit
+    def dependees: Seq[_ <: FixpointAnalysis] = Seq.empty
+
+    /**
+     * This method has to be overridden in a subclass to define the analysis that
+     * is going to be tested
+     */
+    def analysisType: FixpointAnalysis
+
+    def runAnalysis(project: Project[URL]): Unit = {
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        var fpaThreads = Seq.empty[Thread]
+        dependees foreach { fpa ⇒
+            fpaThreads = fpaThreads :+ new Thread(
+                new Runnable { def run = fpa.analyze(project) })
+        }
+        fpaThreads = fpaThreads :+ new Thread(
+            new Runnable { def run = analysisType.analyze(project) })
+
+        fpaThreads foreach (_.start)
+        fpaThreads foreach (_.join)
+        propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+    }
 
     def propertyKey: PropertyKey
 
@@ -105,19 +104,18 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * kinds of analysis assumptions. This value is used, if the annotated entity does not
      * provide an explicitly assigned value.
      */
-    val defaultValue: String
-
-    def analysisMode: AnalysisModes.Value
+    def defaultValue: String
 
     /*
      * PROJECT SETUP
      */
 
     def file = org.opalj.bi.TestSupport.locateTestResources(testFileName, testFilePath)
-    val project = org.opalj.br.analyses.Project(file)
 
-    project.config.resolveWith(TestConfigFactory.createConfig(analysisMode))
+    def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
+    val project = loadProject
+    
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
      */
@@ -131,20 +129,66 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * PROPERTY VALIDATION
      */
 
+    /**
+     * This method extracts the default property, namely the ´value´ property
+     * from the annotation and returns an option with a string. If the value
+     * has no property or the default property has been set, the resulting
+     * option will be empty.
+     *
+     * @note Subclasses should override this method when they use non-default
+     * named values within their annotation. Please note that this extraction
+     * mechanism can only be used if a single value has to be extracted.
+     */
+    def propertyExtraction(annotation: Annotation): Option[String] = {
+        annotation.elementValuePairs collectFirst (
+            { case ElementValuePair("value", EnumValue(_, property)) ⇒ property })
+    }
+
+    /**
+     * This method belongs to the first for comprehension at the bottom of this test class.
+     * It takes an annotated class and compares the annotated class property with the
+     * computed property of the property store.
+     */
+    def validateProperty(classFile: ClassFile, annotation: Annotation): Unit = {
+
+        val annotatedOProperty = propertyExtraction(annotation)
+
+        val annotatedProperty = annotatedOProperty getOrElse (defaultValue)
+
+        val computedOProperty = propertyStore(classFile, propertyKey)
+
+        if (computedOProperty.isEmpty) {
+            val className = classFile.fqn
+            val message =
+                "Class not found in PropertyStore:\n\t"+
+                    s" { $className }\n\t\t has no property mapped to the respecting key: ${propertyKey};"+
+                    s"\n\tclass name:      $className"+
+                    s"\nexpected property: $annotatedProperty"
+            fail(message)
+        }
+
+        val computedProperty = computedOProperty.get.toString
+
+        if (computedProperty != annotatedProperty) {
+            val className = classFile.fqn
+            val message =
+                "Wrong property computeted:\n\t"+
+                    s" { $className } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;"+
+                    s"\n\tclass name:        $className"+
+                    s"\n\tactual property:   $computedProperty"+
+                    s"\n\texpected property: $annotatedProperty"
+            fail(message)
+        }
+    }
+
+    /**
+     * This method belongs to the second for comprehension at the bottom of this test class.
+     * It takes an annotated method and compares the annotated method property with the
+     * computed property of the property store.
+     */
     def validateProperty(method: Method, annotation: Annotation): Unit = {
 
-        val annotatedOProperty = analysisMode match {
-            case AnalysisModes.LibraryWithOpenPackagesAssumption ⇒
-                annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("opa", EnumValue(_, property)) ⇒ property })
-            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒
-                annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property })
-            case AnalysisModes.Application ⇒
-                annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("application", EnumValue(_, property)) ⇒ property })
-
-        }
+        val annotatedOProperty = propertyExtraction(annotation)
 
         val annotatedProperty = annotatedOProperty getOrElse (defaultValue)
 
@@ -181,6 +225,17 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     /*
      * TESTS - test every method with the corresponding annotation
      */
+
+    for {
+        classFile ← project.allClassFiles
+        annotation ← classFile.runtimeVisibleAnnotations
+        if annotation.annotationType == propertyAnnotation
+    } {
+        analysisName should ("correctly calculate the property of the class "+classFile.fqn) in {
+
+            validateProperty(classFile, annotation)
+        }
+    }
 
     for {
         classFile ← project.allClassFiles

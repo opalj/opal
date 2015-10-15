@@ -82,10 +82,10 @@ object ShadowingAnalysis
 
         if (method.isPrivate)
             return Result(method, ClassLocal)
-            
+
         if (isOpenPackagesAssumption)
             return Result(method, Global)
-            
+
         val declaringClass = project.classFile(method)
         val pgkVisibleMethod = method.isPackagePrivate
 

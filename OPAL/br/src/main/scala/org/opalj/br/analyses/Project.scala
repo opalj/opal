@@ -700,6 +700,26 @@ object Project {
     }
 
     /**
+     * Creates a new `Project` that consists of the source files of the previous
+     * project and only updates the configuration of the project. The old project
+     * configuration is by default used as fallback, so not all values have to be updated.
+     */
+    def updateConfig[Source](
+        project: Project[Source],
+        config: Config,
+        useOldConfigAsFallback: Boolean = true) = {
+
+        apply(
+            project.projectClassFilesWithSources,
+            project.libraryClassFilesWithSources,
+            virtualClassFiles = Traversable.empty)(
+                if (useOldConfigAsFallback) config.withFallback(project.config)
+                else config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
+    }
+
+    /**
      * The type of the function that is called if an inconsistent project is detected.
      */
     type HandleInconsistenProject = (LogContext, InconsistentProjectException) ⇒ Unit
