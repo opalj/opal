@@ -37,31 +37,31 @@ import org.opalj.AnalysisModes
  * @author Michael Reif
  */
 abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
-  
+
     def analysisName = "MethodvisibilityAnalysis"
 
     override def testFileName = "classfiles/methodvisibilityTest.jar"
 
     override def testFilePath = "fpa"
-    
+
     override def analysisType = MethodAccessibilityAnalysis
-    
+
     override def dependees = Seq(ShadowingAnalysis, OverridingAnalysis)
-    
+
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-    
+
     def defaultValue = ProjectAccessibilityKeys.Global.toString
 }
 
 class MethodvisibilityCPATest extends MethodvisibilityTest {
-    
+
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
 class MethodvisibilityOPATest extends MethodvisibilityTest {
-    
+
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

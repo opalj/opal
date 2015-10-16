@@ -27,21 +27,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj
+package fpa
 
-import scala.language.postfixOps
 import java.net.URL
-import org.opalj.fp.Result
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.Result
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.Method

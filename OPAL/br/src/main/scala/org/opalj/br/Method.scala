@@ -167,6 +167,8 @@ final class Method private (
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
+    final def isNotAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) == 0
+
     final def isConstructor: Boolean = name == "<init>"
 
     final def isStaticInitializer: Boolean = name == "<clinit>"

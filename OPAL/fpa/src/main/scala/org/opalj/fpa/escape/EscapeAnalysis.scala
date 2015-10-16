@@ -27,25 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package cg
+package fpa
+package escape
 
-import scala.language.postfixOps
 import java.net.URL
-import org.opalj.fp.Result
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.Result
+import org.opalj.fp.ImmediateResult
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fp.ImmediateResult
 import org.opalj.br.Method
-import org.opalj.ai.AI
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.INVOKEDYNAMIC
@@ -60,7 +57,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * This property determines if an object leaks it's self reference (`this`) by passing
- *  it to methods or assigning it to fields.
+ * it to methods or assigning it to fields.
  */
 sealed trait SelfReferenceLeakage extends Property {
     final def key = SelfReferenceLeakage.Key
@@ -81,7 +78,7 @@ case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val is
  * An object escapes the scope of a method if:
  *  - ... it is assigned to a field,
  *  - ... it is passed to a method,
- *  - ... it is stored in a field,
+ *  - ... it is stored in an array,
  *  - ... it is returned,
  *  - ... the object itself leaks it's self reference (`this`) by:
  *      - ... storing `this` in some static field or,
@@ -92,10 +89,12 @@ case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val is
  * This analysis can be used as a foundation for an analysis that determines whether
  * all instances created for a specific class never escape the creating method and,
  * hence, respective types cannot occur.
+ *
+ * @author Michael Eichberg
  */
 object EscapeAnalysis {
 
-    val SelfReferenceLeakage = org.opalj.cg.SelfReferenceLeakage.Key
+    val SelfReferenceLeakage = org.opalj.fpa.escape.SelfReferenceLeakage.Key
 
     /**
      * Determines for the given class file if any method may leak the self reference (`this`).
@@ -110,7 +109,7 @@ object EscapeAnalysis {
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
 
-        def isSubtype(otherType: ObjectType): Boolean = {
+        def thisIsSubtypeOf(otherType: ObjectType): Boolean = {
             classHierarchy.isSubtypeOf(classType, otherType.asObjectType).isYesOrUnknown
         }
 
@@ -119,7 +118,7 @@ object EscapeAnalysis {
         // true, a more thorough analysis is useful/necessary.
         def potentiallyLeaksSelfReference(method: Method): Boolean = {
             val returnType = method.returnType
-            if (returnType.isObjectType && isSubtype(returnType.asObjectType))
+            if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
                 return true;
             val body = method.body.get
             val instructions = body.instructions
@@ -130,7 +129,7 @@ object EscapeAnalysis {
                 instruction.opcode match {
                     case AASTORE.opcode ⇒
                         return true;
-                    case ATHROW.opcode if isSubtype(ObjectType.Throwable) ⇒
+                    case ATHROW.opcode if thisIsSubtypeOf(ObjectType.Throwable) ⇒
                         // the exception throws itself...
                         return true;
                     case INVOKEDYNAMIC.opcode ⇒
@@ -141,11 +140,11 @@ object EscapeAnalysis {
                         INVOKEVIRTUAL.opcode ⇒
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                         val parameterTypes = invoke.methodDescriptor.parameterTypes
-                        if (parameterTypes.exists { pt ⇒ pt.isObjectType && isSubtype(pt.asObjectType) })
+                        if (parameterTypes.exists { pt ⇒ pt.isObjectType && thisIsSubtypeOf(pt.asObjectType) })
                             return true;
                     case PUTSTATIC.opcode | PUTFIELD.opcode ⇒
                         val fieldType = instruction.asInstanceOf[FieldWriteAccess].fieldType
-                        if (fieldType.isObjectType && isSubtype(fieldType.asObjectType))
+                        if (fieldType.isObjectType && thisIsSubtypeOf(fieldType.asObjectType))
                             return true;
                     case _ ⇒ /*nothing to do*/
                 }
@@ -161,10 +160,10 @@ object EscapeAnalysis {
         }
 
         val doesLeakSelfReference =
-            classFile.methods.exists { m ⇒
-                !m.isStatic &&
-                    !m.isAbstract &&
-                    (m.isNative || (potentiallyLeaksSelfReference(m) && leaksSelfReference(m)))
+            classFile.methods exists { m ⇒
+                m.isNative ||
+                    (m.isNotStatic && m.isNotAbstract &&
+                        (potentiallyLeaksSelfReference(m) && leaksSelfReference(m)))
             }
         if (doesLeakSelfReference)
             ImmediateResult(classFile, LeaksSelfReference);
@@ -179,13 +178,15 @@ object EscapeAnalysis {
         if (classFile.thisType eq ObjectType.Object)
             return ImmediateResult(classFile, DoesNotLeakSelfReference);
 
-        // let's check the supertypes w.r.t. their leakage property
+        // Let's check the supertypes w.r.t. their leakage property.
         val superclassFileOption = project.classFile(classFile.superclassType.get)
         val interfaceTypesOption = classFile.interfaceTypes.map(project.classFile(_))
         if (superclassFileOption.isEmpty || interfaceTypesOption.exists(_ == None))
             // The project is not complete, hence, we have to use the fallback.
             return ImmediateResult(classFile, LeaksSelfReference);
 
+        // Given that we have Java 8, we may have a default method that leaks
+        // the self reference.
         val superClassFiles = superclassFileOption.get +: interfaceTypesOption.map(_.get)
 
         store.allHaveProperty(

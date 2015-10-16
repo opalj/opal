@@ -38,6 +38,7 @@ import bi.ACC_FINAL
 import bi.ACC_PUBLIC
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import bi.AccessFlagsMatcher
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
@@ -209,9 +210,7 @@ final class ClassFile private (
                     // it does not give information about some other inner class of this type:
                     (
                         innerClass.outerClassType.isEmpty ||
-                        (innerClass.outerClassType.get eq thisType)
-                    )
-            ).map(_.innerClassType)
+                        (innerClass.outerClassType.get eq thisType))).map(_.innerClassType)
         }.getOrElse {
             Nil
         }
@@ -379,6 +378,10 @@ final class ClassFile private (
         }
     }
 
+    def hasDefaultConstructor: Boolean = {
+        constructors exists { _.parametersCount == 0 }
+    }
+
     /**
      * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
@@ -504,6 +507,17 @@ final class ClassFile private (
         findMethod(0, methods.size - 1)
     }
 
+    def findMethod(
+        name: String,
+        descriptor: MethodDescriptor,
+        matcher: AccessFlagsMatcher): Option[Method] = {
+        val candidateMethod = findMethod(name, descriptor)
+        if (candidateMethod exists { m ⇒ matcher.unapply(m.accessFlags) })
+            candidateMethod
+        else
+            None
+    }
+
     /**
      * This class file's `hasCode`. The `hashCode` is (by purpose) identical to
      * the id of the `ObjectType` it implements.
@@ -544,8 +558,7 @@ final class ClassFile private (
         new ClassFile(
             this.version, this.accessFlags,
             this.thisType, this.superclassType, this.interfaceTypes,
-            this.fields, this.methods, newAttributes
-        )
+            this.fields, this.methods, newAttributes)
     }
 }
 /**

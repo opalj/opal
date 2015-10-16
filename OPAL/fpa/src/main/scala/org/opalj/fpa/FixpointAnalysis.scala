@@ -1,14 +1,16 @@
-package org.opalj.fpa
+package org.opalj
+package fpa
+
+import java.net.URL
 
 import org.opalj.fp.PropertyComputationResult
-import java.net.URL
 import org.opalj.br.analyses.Project
 import org.opalj.fp.Entity
 import org.opalj.br.SourceElement
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyStore
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.AnalysisModes
+import org.opalj.AnalysisModes._
 import net.ceedubs.ficus.Ficus._
 import org.opalj.fp.PropertyKey
 
@@ -41,12 +43,12 @@ trait FixpointAnalysis {
      *
      * @note Since multiple different subclasses could be mixed in, make sure that
      *  `super.initializeAssumptions` is called somewhere in the overridden method.
-     * 
+     *
      * @note E.g. the configuration file is available over the implicit project parameter.
      *       If you want to check some configured value, you can do this within this method.
      *
      */
-    def initializeAssumptions(implicit project: Project[URL]): Unit = { 
+    def initializeAssumptions(implicit project: Project[URL]): Unit = {
         /* do nothing */
     }
 
@@ -115,24 +117,26 @@ trait AllEntities[E <: Entity] extends AnalysisEngine[E] {
 trait AssumptionBasedFixpointAnalysis extends FixpointAnalysis {
     this: AnalysisEngine[_] ⇒
 
-    private[this] var analysisMode: Option[AnalysisModes.Value] = None
+    private[this] var _analysisMode: AnalysisMode = null
+
+    private[this] def analysisMode_=(analysisMode: AnalysisMode): Unit = { _analysisMode = analysisMode }
+
+    def analysisMode = _analysisMode
+
+    /**
+     * The project is a library which may be extended by adding classes to the project's packages.
+     */
+    def isOpenLibrary = analysisMode eq OPA
+
+    def isClosedLibrary = analysisMode eq CPA
+
+    def isApplication = analysisMode eq APP
 
     abstract override def initializeAssumptions(implicit project: Project[URL]): Unit = {
         super.initializeAssumptions
-        analysisMode = Some(AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode")))
+        assert(this._analysisMode eq null)
+        analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
     }
-
-    private[this] val OPA = AnalysisModes.LibraryWithOpenPackagesAssumption
-    private[this] val CPA = AnalysisModes.LibraryWithClosedPackagesAssumption
-    private[this] val APPLICATION = AnalysisModes.Application
-
-    def getAnalysisMode: Option[AnalysisModes.Value] = analysisMode
-
-    def isOpenPackagesAssumption = analysisMode.get == OPA
-
-    def isClosedPackagesAssumption = analysisMode.get == CPA
-
-    def isApplication = analysisMode.get == APPLICATION
 
 }
 

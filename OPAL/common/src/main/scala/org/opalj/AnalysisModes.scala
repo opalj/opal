@@ -46,6 +46,8 @@ object AnalysisModes extends Enumeration {
     final val LibraryWithClosedPackagesAssumption =
         Value("Library with closed packages assumption")
 
+    final val CPA = LibraryWithClosedPackagesAssumption
+
     /**
      * This mode is to be used if a library is analyzed and the assumption is made
      * that other developers may by purpose/accidentally add classes to this
@@ -57,5 +59,9 @@ object AnalysisModes extends Enumeration {
     final val LibraryWithOpenPackagesAssumption =
         Value("Library with open packages assumption")
 
+    final val OPA = LibraryWithOpenPackagesAssumption
+
     final val Application = Value("Application")
+
+    final val APP = Application
 }

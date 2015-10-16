@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj
+package fpa
 
+import java.net.URL
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
-import java.net.URL
 import org.opalj.fp.ImmediateResult
 import org.opalj.fp.Continuation
 import org.opalj.fp.Property
@@ -61,7 +62,7 @@ object MethodAccessibilityAnalysis
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal)
 
-        if (isOpenPackagesAssumption)
+        if (isOpenLibrary)
             return ImmediateResult(method, Global)
 
         val declClass = project.classFile(method)

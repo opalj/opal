@@ -26,7 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj
+package fpa
+
+import java.net.URL
 
 import org.opalj.fp.Result
 import org.opalj.fp.Entity
@@ -38,15 +41,13 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.analyses.Project
-import java.net.URL
-import org.opalj.fp.IntermediateResult
 import org.opalj.br.Method
-import org.opalj.fp.ImmediateResult
 import org.opalj.fp.IntermediateResult
 import org.opalj.fp.EOptionP
 import org.opalj.fp.EP
 import org.opalj.fp.EPK
 import org.opalj.fp.Unchanged
+import org.opalj.fp.Continuation
 
 sealed trait Instantiability extends Property {
     final def key = Instantiability.Key // All instances have to share the SAME key!
@@ -96,8 +97,7 @@ object InstantiabilityAnalysis
             i += 1
         }
 
-        val continuation = new ((Entity, Property) ⇒ PropertyComputationResult) {
-
+        val continuation = new Continuation {
             // We use the set of remaining dependencies to test if we have seen
             // all remaining properties.
             var remainingDependendees = dependees.map(eOptionP ⇒ eOptionP.e)
@@ -141,14 +141,11 @@ object InstantiabilityAnalysis
         val declaringType = classFile.thisType
 
         if (isSubtypeOf(declaringType, serializableType).isYesOrUnknown &&
-            classFile.constructors.exists { i ⇒
-                i.descriptor.parametersCount == 0
-            })
+            classFile.hasDefaultConstructor)
             return ImmediateResult(classFile, Instantiable)
 
-        val subClassInstantiable = !classFile.isFinal && _
-
-        if (classFile.constructors.exists { i ⇒ i.isPublic || subClassInstantiable(i.isProtected) })
+        // TODO 
+        if (classFile.constructors.exists { i ⇒ i.isPublic || (!classFile.isFinal && i.isProtected) })
             return ImmediateResult(classFile, Instantiable)
 
         val instantiability = determineInstantiabilityByFactoryMethod(classFile)

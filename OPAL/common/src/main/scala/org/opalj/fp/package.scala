@@ -33,7 +33,7 @@ import org.opalj.collection.mutable.{ ArrayMap ⇒ OArrayMap }
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * The fixpoint computations framework is a general framework to perform fixpoint
+ * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
  * computations on a fixed set of entities. The framework in particular
  * supports the development of static analyses. In this case, the fixpoint computations/
  * static analyses are generally operating on the code and need to be executed until

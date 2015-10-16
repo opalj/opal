@@ -33,7 +33,6 @@ import org.opalj.br.ObjectType
 import org.opalj.fpa.test.annotations.OverriddenKeys
 import org.opalj.AnalysisModes
 
-
 /**
  * @author Michael Reif
  */
@@ -44,15 +43,15 @@ abstract class OverridingAnalysisTest extends AbstractFixpointAnalysisAssumption
     override def testFileName = "classfiles/overridingTest.jar"
 
     override def testFilePath = "fpa"
-    
+
     override def analysisType = OverridingAnalysis
-    
+
     override def propertyKey: PropertyKey = Overridden.Key
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpa/test/annotations/OverriddenProperty")
-    
-    def defaultValue = OverriddenKeys.NonOverridden.toString    
+
+    def defaultValue = OverriddenKeys.NonOverridden.toString
 }
 
 class OverridingAnalysisCPATest extends OverridingAnalysisTest {

@@ -115,7 +115,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
     val project = loadProject
-    
+
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
      */

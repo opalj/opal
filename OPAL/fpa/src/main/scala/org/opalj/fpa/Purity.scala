@@ -27,9 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-package fp
+package fpa
 
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey

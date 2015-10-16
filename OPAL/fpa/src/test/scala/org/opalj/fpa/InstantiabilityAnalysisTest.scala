@@ -32,16 +32,15 @@ import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
 import org.opalj.fpa.test.annotations.InstantiabilityKeys
 
-
 /**
- * 
- * This class tests the [[InstantiabilityAnalysis]]. 
- * 
+ *
+ * This class tests the [[InstantiabilityAnalysis]].
+ *
  * @author Michael Reif
  */
-class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest{
-    
-  override def analysisName = "InstantiabilityAnalysis"
+class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest {
+
+    override def analysisName = "InstantiabilityAnalysis"
 
     override def testFileName = "classfiles/factorymethodTest.jar"
 

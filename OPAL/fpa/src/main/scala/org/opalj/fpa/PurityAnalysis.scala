@@ -27,12 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-package fp
+package fpa
 
 import scala.language.postfixOps
 import java.net.URL
+import org.opalj.br.PC
+import org.opalj.br.Method
+import org.opalj.br.analyses.{ Project, SomeProject }
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
@@ -87,9 +89,9 @@ import org.opalj.fp.IntermediateResult
  */
 object PurityAnalysis {
 
-    final val Purity = org.opalj.br.analyses.fp.Purity.Key
+    final val Purity = org.opalj.fpa.Purity.Key
 
-    final val Mutability = org.opalj.br.analyses.fp.Mutability.Key
+    final val Mutability = org.opalj.fpa.Mutability.Key
 
     /*
      * Determines the purity of the method starting with the instruction with the given

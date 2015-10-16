@@ -34,34 +34,34 @@ import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
 import org.opalj.AnalysisModes
 
 /**
- * 
- * 
+ *
+ *
  * @author Michael Reif
  */
 abstract class ShadowingAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
-    
+
     override def analysisName = "ShadowingAnalysis"
-    
+
     override def testFileName = "classfiles/shadowingTest.jar"
-    
+
     override def testFilePath = "fpa"
-        
+
     override def analysisType = ShadowingAnalysis
-    
+
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
-    
+
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-    
+
     override def defaultValue = ProjectAccessibilityKeys.Global.toString
 }
 
 class ShadowingAnalysisCPATest extends ShadowingAnalysisTest {
-    
+
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
 class ShadowingAnalysisOPATest extends ShadowingAnalysisTest {
-    
+
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

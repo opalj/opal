@@ -27,18 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package cg
+package fpa
+package escape
 
-import scala.language.postfixOps
+import java.net.URL
+
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import java.net.URL
-import org.opalj.br.Method
-import org.opalj.br.Field
-import org.opalj.fp.Property
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
+import org.opalj.fp.Property
+import org.opalj.fpa.escape.EscapeAnalysis
+import org.opalj.fpa.escape.DoesNotLeakSelfReference
+import org.opalj.fpa.escape.SelfReferenceLeakage
 
 /**
  * Demonstrates how to run the purity analysis.

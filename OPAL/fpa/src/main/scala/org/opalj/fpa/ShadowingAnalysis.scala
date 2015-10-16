@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj
+package fpa
 
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey
@@ -83,7 +84,7 @@ object ShadowingAnalysis
         if (method.isPrivate)
             return Result(method, ClassLocal)
 
-        if (isOpenPackagesAssumption)
+        if (isOpenLibrary)
             return Result(method, Global)
 
         val declaringClass = project.classFile(method)
@@ -103,7 +104,7 @@ object ShadowingAnalysis
         val subtypes = project.classHierarchy.allSubtypes(declaringClassType, false)
 
         subtypes foreach { subtype ⇒
-            project.classFile(subtype) map { classFile ⇒
+            project.classFile(subtype) foreach { classFile ⇒
                 if (classFile.isPublic) {
                     val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
                     val hasMethod = potentialMethod.nonEmpty && potentialMethod.map { curMethod ⇒

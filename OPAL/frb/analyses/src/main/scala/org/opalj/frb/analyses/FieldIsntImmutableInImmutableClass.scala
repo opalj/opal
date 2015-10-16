@@ -392,7 +392,7 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
          */
         def fieldIsMutable(classFile: ClassFile, field: Field): Option[String] = {
             if (field.isPublic || field.isProtected) {
-                if (field.isNonFinal) {
+                if (field.isNotFinal) {
                     Some("is mutable, because it is not private, and not final.")
                 } else if (!fieldTypeIsImmutable(field.fieldType)) {
                     Some("is mutable, because it is a non private final reference"+

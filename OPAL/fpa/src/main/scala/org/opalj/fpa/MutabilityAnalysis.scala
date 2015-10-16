@@ -27,12 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-package fp
+package fpa
 
 import scala.language.postfixOps
 import java.net.URL
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.analyses.{ Project, SomeProject }
+import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
