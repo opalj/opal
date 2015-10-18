@@ -406,23 +406,26 @@ class PropertyStore private (
         bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
     }
 
-    /**
-     * Registers a function that calculates a property for those elements
-     * of the store that pass the filter and which are sorted by the given function `s`.
-     * The given function `s`
-     *
-     * @param pf A filter that selects those entities that are relevant to the analysis.
-     *      For which the analysis may compute some property.
-     * @param s An ordering defined on the selected entities.
-     */
-    def <||~<[E <: Entity](
-        pf: PartialFunction[Entity, E],
-        s: Ordering[E],
-        c: E ⇒ PropertyComputationResult): Unit = {
-        import scala.collection.JavaConverters._
-        val es = keys.iterator().asScala.collect(pf).toSeq.sorted(s)
-        bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
-    }
+    // SORTING IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT 
+    // THE INIDIVUAL ENTITIES
+    //    /**
+    //     * Registers a function that calculates a property for those elements
+    //     * of the store that pass the filter and which are sorted by the given function `s`.
+    //     * The given function `s`
+    //     *
+    //     * The filter and sorting is evaluated as part of this method; i.e., the calling thread.
+    //     *
+    //     * @param pf A filter that selects those entities that are relevant to the analysis.
+    //     *      For which the analysis may compute some property.
+    //     * @param s An ordering defined on the selected entities.
+    //     */
+    //    def <||~<[E <: Entity](
+    //        pf: PartialFunction[Entity, E],
+    //        s: Ordering[E],
+    //        c: E ⇒ PropertyComputationResult): Unit = {
+    //        val es = keysList.collect(pf).sorted(s)
+    //        bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
+    //    }
 
     /**
      * Awaits the completion of the computation of all

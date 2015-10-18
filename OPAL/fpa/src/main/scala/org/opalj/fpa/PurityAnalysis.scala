@@ -284,18 +284,20 @@ object PurityAnalysis {
         val entitySelector: PartialFunction[Entity, Method] = {
             case m: Method if !m.isAbstract ⇒ m
         }
-        // Ordering by size (implicit assumption: methods that are short don't call
-        // too many other methods...); this ordering is extremely efficient and simple.
-        val methodOrdering = new Ordering[Method] {
-            def compare(a: Method, b: Method): Int = {
-                val aBody = a.body
-                val bBody = b.body
-                val aSize = if (aBody.isEmpty) -1 else aBody.get.instructions.size
-                val bSize = if (bBody.isEmpty) -1 else bBody.get.instructions.size
-                bSize - aSize
-            }
-        }
-        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
+        projectStore <||< (entitySelector, determinePurity)
+
+        //        // Ordering by size (implicit assumption: methods that are short don't call
+        //        // too many other methods...); this ordering is extremely efficient and simple.
+        //        val methodOrdering = new Ordering[Method] {
+        //            def compare(a: Method, b: Method): Int = {
+        //                val aBody = a.body
+        //                val bBody = b.body
+        //                val aSize = if (aBody.isEmpty) -1 else aBody.get.instructions.size
+        //                val bSize = if (bBody.isEmpty) -1 else bBody.get.instructions.size
+        //                bSize - aSize
+        //            }
+        //        }
+        //        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
 
     }
 }
