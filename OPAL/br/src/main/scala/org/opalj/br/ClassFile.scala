@@ -543,9 +543,9 @@ final class ClassFile private (
                 thisType.toJava+"\n"+
                 superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
                 superIntefaces +
-                annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
-                annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
-                "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+                annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
+                annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
+                "\t[version="+majorVersion+"."+minorVersion+"]\n)"
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: Exception ⇒
