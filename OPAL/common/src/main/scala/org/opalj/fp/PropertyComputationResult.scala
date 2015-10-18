@@ -134,7 +134,7 @@ private[fp] abstract class Suspended(
         extends PropertyComputationResult {
 
     /**
-     * Called by the framework if the property of the element this computation is
+     * Called by the framework when the property of the element this computation is
      * depending on was computed.
      */
     def continue(
