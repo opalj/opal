@@ -161,12 +161,27 @@ object OPALLogger extends OPALLogger {
     }
 
     /**
-     * Debug message are only included in the code if assertions are turned. If
+     * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
      */
     @elidable(ASSERTION)
     final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = {
         log(Info(category, message))
+    }
+
+    /**
+     * Debug message are only included in the code if assertions are turned on and the predicate `p`
+     * evaluates to `true`. If
+     * debug message are logged, then they are logged as Info-level messages.
+     */
+    @elidable(ASSERTION)
+    final def debug(
+        p: ⇒ Boolean,
+        category: String,
+        message: ⇒ String)(implicit ctx: LogContext): Unit = {
+        if (p) {
+            log(Info(category, message))
+        }
     }
 
     /**
