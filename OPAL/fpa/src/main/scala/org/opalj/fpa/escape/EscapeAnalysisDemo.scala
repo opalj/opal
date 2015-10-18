@@ -38,9 +38,6 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.fp.Property
-import org.opalj.fpa.escape.EscapeAnalysis
-import org.opalj.fpa.escape.DoesNotLeakSelfReference
-import org.opalj.fpa.escape.SelfReferenceLeakage
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -80,15 +77,14 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
             if (project.classHierarchy.isInterface(classType))
                 "interface "+className
             else
-                className
+                "class "+className
         }
 
         val leakageInfo =
             notLeakingClasses.toList.sorted.mkString(
                 "\nClasses not leaking self reference:\n",
                 "\n",
-                s"\nTotal: ${notLeakingEntities.size}\n"
-            )
+                s"\nTotal: ${notLeakingEntities.size}\n")
         BasicReport(
             leakageInfo +
                 projectStore+
