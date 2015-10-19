@@ -144,8 +144,8 @@ object InstantiabilityAnalysis
             classFile.hasDefaultConstructor)
             return ImmediateResult(classFile, Instantiable)
 
-        // TODO 
-        if (classFile.constructors.exists { i ⇒ i.isPublic || (!classFile.isFinal && i.isProtected) })
+        // TODO FIXME ....
+        if (classFile.constructors.exists { c ⇒ c.isPublic || (!classFile.isFinal && c.isProtected) })
             return ImmediateResult(classFile, Instantiable)
 
         val instantiability = determineInstantiabilityByFactoryMethod(classFile)

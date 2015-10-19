@@ -77,7 +77,7 @@ private[fp] case class FallbackResult(e: Entity, p: Property) extends PropertyCo
 
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
- * no intermediate results'''.
+ * no intermediate results'''; i.e., if no properties of other entities were queried.
  *
  * An `ImmediateResult` is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all

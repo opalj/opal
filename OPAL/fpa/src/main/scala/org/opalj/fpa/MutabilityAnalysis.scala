@@ -101,7 +101,8 @@ object MutablityAnalysis {
             return Empty;
 
         val concreteMethods = classFile.methods filter { m ⇒
-            !m.isStaticInitializer && !m.isNative && !m.isAbstract
+            !m.isStaticInitializer /*the static initializer is only executed once and at the beginning */ &&
+                !m.isNative && !m.isAbstract
         }
         concreteMethods foreach { m ⇒
             m.body.get foreach { (pc, instruction) ⇒
@@ -111,7 +112,8 @@ object MutablityAnalysis {
                         // class hierarchy since we are only concerned about private
                         // fields so far... so we don't have to do a full
                         // resolution of the field reference.
-                        classFile.findField(fieldName) foreach { f ⇒ effectivelyFinalFields -= f }
+                        val field = classFile.findField(fieldName)
+                        if (field.isDefined) { effectivelyFinalFields -= field.get }
                         if (effectivelyFinalFields.isEmpty)
                             return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
                     case _ ⇒
