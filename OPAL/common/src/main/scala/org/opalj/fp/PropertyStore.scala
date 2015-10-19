@@ -796,7 +796,7 @@ class PropertyStore private (
     private[this] def bulkScheduleComputations(
         es: List[_ <: Entity],
         pc: PropertyComputation): Unit = {
-        val ges = es.grouped(es.size / (ThreadCount * 2)).toList
+        val ges = es.grouped(Math.max(es.size / (ThreadCount * 2),ThreadCount)).toList
         val tasks = ges.map { es ⇒
             new Runnable {
                 def run() = {
