@@ -41,6 +41,7 @@ import org.opalj.fp.PropertyKey
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
+import org.opalj.fp.ImmediateResult
 
 sealed trait Overridden extends Property {
     final def key = Overridden.Key
@@ -57,10 +58,18 @@ case object NonOverridden extends Overridden { final val isRefineable = false }
 case object CantNotBeOverridden extends Overridden { final val isRefineable = false }
 
 /**
- * @author Michael Reif
- *
  * This Analysis determines the ´Overridden´ property of a method. A method is considered as overridden
- * if it is overridden in every subclass.
+ * if it is overridden in every (immediate non-abstract? ) subclass.
+ *
+ * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
+ * also always overridden. 
+ * {{{
+ * /*package visible*/ class C { public Object m() }
+ * /*package visible*/ abstract class A extends C { /*empty*/ }
+ * public class B extends A { public Object m() }
+ * }}}
+ *
+ *  @author Michael Reif
  */
 object OverridingAnalysis
         extends AssumptionBasedFixpointAnalysis
@@ -88,7 +97,7 @@ object OverridingAnalysis
             store: PropertyStore): PropertyComputationResult = {
 
         if (method.isPrivate || method.isFinal)
-            return Result(method, CantNotBeOverridden)
+            return ImmediateResult(method, CantNotBeOverridden)
 
         // this would be way more efficient when caluclating entry points
         // but if you want to have a dedicated looking at the isOverridden property,
@@ -99,7 +108,7 @@ object OverridingAnalysis
         val declaringClass = project.classFile(method)
 
         if (declaringClass.isFinal)
-            return Result(method, CantNotBeOverridden)
+            return ImmediateResult(method, CantNotBeOverridden)
 
         val declClassType = declaringClass.thisType
         val methodDescriptor = method.descriptor
@@ -108,12 +117,13 @@ object OverridingAnalysis
 
         val subtypes = project.classHierarchy.allSubtypes(declClassType, false)
 
-        if (subtypes.size == 0)
-            return Result(method, NonOverridden)
+        if (subtypes.isEmpty)
+            return ImmediateResult(method, NonOverridden)
 
         subtypes foreach { subtype ⇒
             project.classFile(subtype) map { classFile ⇒
                 val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
+                // TODO FIXME
                 val couldInheritMethod = potentialMethod.isEmpty || !potentialMethod.map { curMethod ⇒
                     curMethod.visibilityModifier.equals(method.visibilityModifier)
                 }.getOrElse(false)
@@ -147,6 +157,6 @@ object OverridingAnalysis
     }
 
     val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && m.body.isDefined ⇒ m
+        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 }
