@@ -46,7 +46,7 @@ abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTe
 
     override def analysisType = MethodAccessibilityAnalysis
 
-    override def dependees = Seq(ShadowingAnalysis, OverridingAnalysis)
+    override def dependees = Seq(StaticMethodAccessibilityAnalysis, OverridingAnalysis)
 
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
 

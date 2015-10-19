@@ -46,7 +46,7 @@ class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "fpa"
 
-    override def dependees = Seq(ShadowingAnalysis, FactoryMethodAnalysis)
+    override def dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
 
     override def analysisType: FixpointAnalysis = InstantiabilityAnalysis
 

@@ -62,7 +62,7 @@ object ShadowingAnalysisDemo
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            ShadowingAnalysis.analyze(project)
+            StaticMethodAccessibilityAnalysis.analyze(project)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 

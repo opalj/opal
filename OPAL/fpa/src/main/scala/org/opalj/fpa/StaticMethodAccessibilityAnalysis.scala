@@ -36,9 +36,9 @@ import java.net.URL
 import org.opalj.br.Method
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.Result
 import org.opalj.AnalysisModes
 import org.opalj.fp.Entity
+import org.opalj.fp.ImmediateResult
 
 /**
  * @author Michael Reif
@@ -58,7 +58,7 @@ case object PackageLocal extends ProjectAccessibility { final val isRefineable =
 
 case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
 
-object ShadowingAnalysis
+object StaticMethodAccessibilityAnalysis
         extends AssumptionBasedFixpointAnalysis
         with FilterEntities[Method] {
 
@@ -82,19 +82,19 @@ object ShadowingAnalysis
             store: PropertyStore): PropertyComputationResult = {
 
         if (method.isPrivate)
-            return Result(method, ClassLocal)
+            return ImmediateResult(method, ClassLocal)
 
         if (isOpenLibrary)
-            return Result(method, Global)
+            return ImmediateResult(method, Global)
 
         val declaringClass = project.classFile(method)
         val pgkVisibleMethod = method.isPackagePrivate
 
         if (pgkVisibleMethod)
-            return Result(method, PackageLocal)
+            return ImmediateResult(method, PackageLocal)
 
         if (declaringClass.isPublic && (method.isPublic || method.isProtected))
-            return Result(method, Global)
+            return ImmediateResult(method, Global)
 
         val declaringClassType = declaringClass.thisType
 
@@ -106,11 +106,12 @@ object ShadowingAnalysis
         subtypes foreach { subtype ⇒
             project.classFile(subtype) foreach { classFile ⇒
                 if (classFile.isPublic) {
+                    //the visibility does not have to match, since subclasses can change the visibility
+                    // of methods and they are still overridden
                     val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
-                    val hasMethod = potentialMethod.nonEmpty && potentialMethod.map { curMethod ⇒
-                        curMethod.visibilityModifier.equals(method.visibilityModifier)
-                    }.getOrElse(false)
-
+                    val hasMethod = potentialMethod.nonEmpty
+                    
+                    
                     if (!hasMethod) {
                         val curSuperTypes = project.classHierarchy.allSupertypes(subtype, false)
 
@@ -121,14 +122,14 @@ object ShadowingAnalysis
                         }
 
                         if (inheritsMethod)
-                            return Result(method, Global)
+                            return ImmediateResult(method, Global)
                     }
                 }
             }
         }
 
         // If no subtype is found, the method is not accessible
-        Result(method, PackageLocal)
+        ImmediateResult(method, PackageLocal)
     }
 
     val entitySelector: PartialFunction[Entity, Method] = {

@@ -43,7 +43,7 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "fpa"
 
-    override def dependees = Seq(ShadowingAnalysis)
+    override def dependees = Seq(StaticMethodAccessibilityAnalysis)
 
     override def analysisType: FixpointAnalysis = FactoryMethodAnalysis
 

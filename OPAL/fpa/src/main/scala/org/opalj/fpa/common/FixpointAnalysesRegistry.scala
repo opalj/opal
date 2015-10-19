@@ -31,7 +31,7 @@ package fpa
 package common
 
 import org.opalj.fpa.FixpointAnalysis
-import org.opalj.fpa.ShadowingAnalysis
+import org.opalj.fpa.StaticMethodAccessibilityAnalysis
 import org.opalj.fpa.FactoryMethodAnalysis
 
 /**
@@ -103,7 +103,7 @@ object FixpointAnalysesRegistry {
 
     register(
         "[ShadowingAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
-        ShadowingAnalysis
+        StaticMethodAccessibilityAnalysis
     )
 
     register(

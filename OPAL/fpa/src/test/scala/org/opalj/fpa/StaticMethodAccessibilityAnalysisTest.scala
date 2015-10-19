@@ -38,7 +38,7 @@ import org.opalj.AnalysisModes
  *
  * @author Michael Reif
  */
-abstract class ShadowingAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class StaticMethodAccessibilityAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
     override def analysisName = "ShadowingAnalysis"
 
@@ -46,7 +46,7 @@ abstract class ShadowingAnalysisTest extends AbstractFixpointAnalysisAssumptionT
 
     override def testFilePath = "fpa"
 
-    override def analysisType = ShadowingAnalysis
+    override def analysisType = StaticMethodAccessibilityAnalysis
 
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
 
@@ -56,12 +56,12 @@ abstract class ShadowingAnalysisTest extends AbstractFixpointAnalysisAssumptionT
     override def defaultValue = ProjectAccessibilityKeys.Global.toString
 }
 
-class ShadowingAnalysisCPATest extends ShadowingAnalysisTest {
+class StaticMethodAccessibilityAnalysisCPATest extends StaticMethodAccessibilityAnalysisTest {
 
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class ShadowingAnalysisOPATest extends ShadowingAnalysisTest {
+class StaticMethodAccessibilityAnalysisOPATest extends StaticMethodAccessibilityAnalysisTest {
 
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

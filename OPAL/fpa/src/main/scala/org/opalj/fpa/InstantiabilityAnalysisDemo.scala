@@ -47,7 +47,7 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def description: String = "determines the instantiable classes of a library/application"
 
-    private val dependees = Seq(ShadowingAnalysis, FactoryMethodAnalysis)
+    private val dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
 
     override def doAnalyze(
         project: Project[URL],
