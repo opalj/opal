@@ -80,8 +80,8 @@ object FieldAccessInformationAnalysis {
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode ⇒
-                        val FieldReadAccess(declaringClassType, fieldName, fieldType) = instruction
-                        classHierarchy.resolveFieldReference(declaringClassType, fieldName, fieldType, project) match {
+                        val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
+                        classHierarchy.resolveFieldReference(fieldReadAccess, project) match {
                             case Some(field) ⇒
                                 val key = field
                                 readAccesses.update(
@@ -93,8 +93,8 @@ object FieldAccessInformationAnalysis {
                         }
 
                     case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
-                        val FieldWriteAccess(declaringClassType, fieldName, fieldType) = instruction
-                        classHierarchy.resolveFieldReference(declaringClassType, fieldName, fieldType, project) match {
+                        val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
+                        classHierarchy.resolveFieldReference(fieldWriteAccess, project) match {
                             case Some(field) ⇒
                                 val key = field
                                 writeAccesses.update(

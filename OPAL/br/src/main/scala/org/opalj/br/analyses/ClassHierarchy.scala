@@ -36,6 +36,7 @@ import scala.collection.mutable.HashSet
 import org.opalj.io.processSource
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
+import org.opalj.br.instructions.FieldAccess
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.graphs.Node
@@ -1301,6 +1302,19 @@ class ClassHierarchy private (
                 }
             }
         }
+    }
+
+    /**
+     * @see [[#resolveFieldReference(ObjectType,String,FieldType)]]
+     */
+    final def resolveFieldReference(
+        fieldAccess: FieldAccess,
+        project: ClassFileRepository): Option[Field] = {
+        resolveFieldReference(
+            fieldAccess.declaringClass,
+            fieldAccess.name,
+            fieldAccess.fieldType,
+            project)
     }
 
     /**
