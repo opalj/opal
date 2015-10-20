@@ -38,6 +38,7 @@ import org.opalj.AnalysisModes
 import org.opalj.fp.Entity
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.ImmediateMultiResult
 
 /**
  * @author Michael Reif
@@ -100,30 +101,22 @@ object StaticMethodAccessibilityAnalysis
         val methodDescriptor = method.descriptor
         val methodName = method.name
 
-        val subtypes = project.classHierarchy.allSubtypes(declaringClassType, false)
-
-        subtypes foreach { subtype ⇒
-            project.classFile(subtype) foreach { classFile ⇒
-                if (classFile.isPublic) {
-                    //the visibility does not have to match, since subclasses can change the visibility
-                    // of methods and they are still overridden
-                    val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
-                    val hasMethod = potentialMethod.nonEmpty
-
-                    if (!hasMethod) {
-                        val curSuperTypes = project.classHierarchy.allSupertypes(subtype, false)
-
-                        val inheritsMethod = curSuperTypes.exists { supertype ⇒
-                            project.classFile(supertype).map { supClassFile ⇒
-                                supClassFile.findMethod(methodName, methodDescriptor).nonEmpty
-                            }.getOrElse(true) && (supertype ne declaringClassType)
-                        }
-
-                        if (inheritsMethod)
-                            return ImmediateResult(method, Global)
-                    }
+        var subtypes = project.classHierarchy.directSubtypesOf(declaringClassType)
+        while (subtypes.nonEmpty) {
+            val curSubtype = subtypes.head
+            val classFileO = project.classFile(curSubtype)
+            if (classFileO.isDefined) {
+                val classFile = classFileO.get
+                val declMethod = classFile.findMethod(methodName, methodDescriptor)
+                if (declMethod.isEmpty) {
+                    if (classFile.isPublic)
+                        return ImmediateResult(method, Global)
+                    else
+                        subtypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
                 }
-            }
+            } else return ImmediateResult(method, Global)
+
+            subtypes -= curSubtype
         }
 
         // If no subtype is found, the method is not accessible
