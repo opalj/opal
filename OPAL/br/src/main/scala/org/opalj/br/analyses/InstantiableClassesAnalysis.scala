@@ -50,7 +50,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *
  * A class is not instantiable if:
  *  - it only defines private constructors and these constructors are not called
- *    by any static method.
+ *    by any static method and the method is not Serializable.
  *
  * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
@@ -97,6 +97,9 @@ object InstantiableClassesAnalysis {
                 return ;
 
             val thisClassType = cf.thisType
+
+            if (project.classHierarchy.isSubtypeOf(thisClassType, ObjectType.Serializable).isYesOrUnknown)
+                return ;
 
             for {
                 method ← cf.methods
