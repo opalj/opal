@@ -39,6 +39,8 @@ import scala.collection.Map
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *
+ * This index can be used, e.g., to resolve method calls based on the methods names.
+ *
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
  *
