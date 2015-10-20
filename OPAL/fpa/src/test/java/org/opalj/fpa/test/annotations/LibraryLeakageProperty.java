@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,36 +28,36 @@
  */
 package org.opalj.fpa.test.annotations;
 
+import java.lang.annotation.*;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.ElementType.METHOD;
+
 /**
  * 
- * Represents all possible property variants of the [[Overridden]] property
- * defined in the [[OverridingAnalysis]].
- * 
- * @Note This enum is used for test-only purposes. It is used as parameter in
- * the [[OverriddenProperty]] annotation. Make sure, that the names
- * of the different variants of the Overridden property matches the enumeration
- * names exactly.
+ * Describes the MethodLeakage property of the OPAL FixpointAnalysis.
  * 
  * @author Michael Reif
  *
  */
-public enum OverriddenKeys {
+@Retention(RUNTIME)
+@Target(METHOD)
+public @interface LibraryLeakageProperty {
 	
 	/**
-	 * This has to be used if a method can't be inherit by any subclass and due
-	 * to this is overridden in every subclass.
+	 * This refers to the LibraryLeakageProperty when the property is computed for
+	 * a library under the open package assumption. 
 	 */
-	IsOverridden, 
+	LibraryLeakageKeys opa() default LibraryLeakageKeys.Leakage;
 	
 	/**
-	 * This has to be used if there is a subclass that inherits that method and the method
-	 * is not overridden by every existing subclass.
+	 * This refers to the LibraryLeakageProperty when the property is computed for
+	 * a library under the closed package assumption. 
 	 */
-	NonOverridden,
+	LibraryLeakageKeys cpa() default LibraryLeakageKeys.Leakage;
 	
 	/**
-	 * This kind has to be used if a method definitely can not be overridden. This is the case
-	 * for private methods, final methods or methods in final classes.
+	 * This refers to the LibraryLeakageProperty when the property is computed for
+	 * an application.
 	 */
-	CantNotBeOverridden
+	LibraryLeakageKeys application() default LibraryLeakageKeys.Leakage;
 }

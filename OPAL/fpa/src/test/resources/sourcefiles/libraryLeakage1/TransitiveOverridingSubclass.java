@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,42 +26,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
 
-import org.opalj.fp.PropertyKey
-import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
-import org.opalj.AnalysisModes
+package libraryLeakage1;
+
+import org.opalj.fpa.test.annotations.LibraryLeakageKeys;
+import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
 
 /**
+ * 
+ * This class overrides transitive reachable methods of the superclass which
+ * otherwise would be disclosed to the client user if met. Thus, most methods
+ * must have the IsOverridden property
+ * 
  * @author Michael Reif
+ *
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
-
-    def analysisName = "MethodvisibilityAnalysis"
-
-    override def testFileName = "classfiles/methodvisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisType = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+public class TransitiveOverridingSubclass extends LayerSubclass {
+	
+	@LibraryLeakageProperty
+	public void publicMethod(){
+		protectedMethod();
+	}
+	
+	@LibraryLeakageProperty
+	protected void protectedMethod(){
+		publicMethod();
+	}
+	
+	@LibraryLeakageProperty(
+			cpa=LibraryLeakageKeys.NoLeakage)
+	void packagePrivateMethod(){
+		publicFinalMethod();
+	}
 }

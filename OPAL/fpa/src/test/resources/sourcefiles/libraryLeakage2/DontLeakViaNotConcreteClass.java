@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,42 +26,57 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package libraryLeakage2;
 
-import org.opalj.fp.PropertyKey
-import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
-import org.opalj.AnalysisModes
+import org.opalj.fpa.test.annotations.LibraryLeakageKeys;
+import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
 
 /**
+ *
+ * This class is package private, hence, in a closed library scenario aclient can not
+ * access the the methods of this class. There are 2 subclasses in that example:
+ * 	- DontLeakViaAbstractClass
+ *  - DontLeakViaInterface 
+ * 
+ * This Tests, that the methods does not leak via non-abstract classes.
+ *  
  * @author Michael Reif
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+class DontLeakViaNotConcreteClass {
 
-    def analysisName = "MethodvisibilityAnalysis"
-
-    override def testFileName = "classfiles/methodvisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisType = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
+	/**
+	 * This is weird. This method should be exposed to the client by the
+	 * DontLeakViaAbstractClass but the compiler somehow introduces a method with
+	 * the same name that prevent that method from being exposed.
+	 */
+	@LibraryLeakageProperty(
+			cpa=LibraryLeakageKeys.NoLeakage)
+	public void iDoNotLeak(){
+	}
+	
+	/**
+	 * Package visible methods can not leak when the closed packages assumption is met.
+	 */
+	@LibraryLeakageProperty(
+			cpa=LibraryLeakageKeys.NoLeakage)
+	void iCanNotLeakUnderCPA(){
+		
+	}
+	
+	/**
+	 * This method can not leak because it is overridden
+	 * in one subclass and the other one is package private.
+	 */
+	@LibraryLeakageProperty(
+			cpa=LibraryLeakageKeys.NoLeakage)
+	protected void iDoNotLeakToo(){
+		
+	}
 }
 
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+abstract class YouCantInheritFromMe extends DontLeakViaNotConcreteClass {
+  
+	protected void iDoNotLeakToo(){
+		
+	}
 }

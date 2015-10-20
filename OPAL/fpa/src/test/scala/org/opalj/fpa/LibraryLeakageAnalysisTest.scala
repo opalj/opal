@@ -30,38 +30,34 @@ package org.opalj.fpa
 
 import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpa.test.annotations.LibraryLeakageKeys
 import org.opalj.AnalysisModes
 
 /**
  * @author Michael Reif
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class LibraryLeakageAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
-    def analysisName = "MethodvisibilityAnalysis"
+    def analysisName = "LibraryLeakageAnalysis"
 
-    override def testFileName = "classfiles/methodvisibilityTest.jar"
+    override def testFileName = "classfiles/libraryLeakageTest.jar"
 
     override def testFilePath = "fpa"
 
-    override def analysisType = MethodAccessibilityAnalysis
+    override def analysisType = LibraryLeakageAnalysis
 
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
+    override def propertyKey: PropertyKey = LibraryLeakage.Key
 
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
+        ObjectType("org/opalj/fpa/test/annotations/LibraryLeakageProperty")
 
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
+    def defaultValue = LibraryLeakageKeys.Leakage.toString
 }
 
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
+class LibraryLeakageAnalysisCPATest extends LibraryLeakageAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+class LibraryLeakageAnalysisOPATest extends LibraryLeakageAnalysisTest {
+    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }

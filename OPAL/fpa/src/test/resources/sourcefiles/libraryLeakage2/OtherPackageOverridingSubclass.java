@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,38 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
 
-import org.opalj.fp.PropertyKey
-import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.OverriddenKeys
-import org.opalj.AnalysisModes
+package libraryLeakage2;
+
+import libraryLeakage1.Superclass;
 
 /**
+ * 
+ * 
  * @author Michael Reif
+ *
  */
-abstract class OverridingAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+public class OtherPackageOverridingSubclass extends Superclass {
 
-    def analysisName = "OverridingAnalysis"
-
-    override def testFileName = "classfiles/overridingTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisType = OverridingAnalysis
-
-    override def propertyKey: PropertyKey = Overridden.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/OverriddenProperty")
-
-    def defaultValue = OverriddenKeys.NonOverridden.toString
-}
-
-class OverridingAnalysisCPATest extends OverridingAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class OverridingAnalysisOPATest extends OverridingAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }

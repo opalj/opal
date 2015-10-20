@@ -36,7 +36,6 @@ import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fp.ImmediateResult
@@ -95,7 +94,7 @@ object EntryPointsAnalysis {
         return ImmediateResult(method, DirectlyCallable);
     }
 
-    def analyze(implicit project: Project[URL]): Unit = {
+    def analyze(implicit project: SomeProject): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
         val filter: PartialFunction[Entity, Method] = {
             case m: Method if !m.isAbstract ⇒ m

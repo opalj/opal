@@ -2,7 +2,6 @@ package org.opalj
 package fpa
 
 import java.net.URL
-
 import org.opalj.fp.PropertyComputationResult
 import org.opalj.br.analyses.Project
 import org.opalj.fp.Entity
@@ -13,6 +12,7 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.AnalysisModes._
 import net.ceedubs.ficus.Ficus._
 import org.opalj.fp.PropertyKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The fixpoint analysis trait is a common supertrait for all analyses that leverage the
@@ -48,14 +48,14 @@ trait FixpointAnalysis {
      *       If you want to check some configured value, you can do this within this method.
      *
      */
-    def initializeAssumptions(implicit project: Project[URL]): Unit = {
+    def initializeAssumptions(implicit project: SomeProject): Unit = {
         /* do nothing */
     }
 
     /**
      * This method triggers the analysis which is composed by the [[AnalysisEngine]].
      */
-    final def analyze(implicit project: Project[URL]): Unit = {
+    final def analyze(implicit project: SomeProject): Unit = {
         implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
         initializeAssumptions
         triggerPropertyCalculation
@@ -79,7 +79,7 @@ trait AnalysisEngine[E <: Entity] {
      * of the property store is invoked here, the ´determineProperty´ function has
      * to be passed here to chosen calculation function.
      */
-    def triggerPropertyCalculation(implicit project: Project[URL], propertyStore: PropertyStore): Unit
+    def triggerPropertyCalculation(implicit project: SomeProject, propertyStore: PropertyStore): Unit
 
     /**
      * This function takes an entity as input and calculates the property of this analysis
@@ -90,7 +90,7 @@ trait AnalysisEngine[E <: Entity] {
      */
     def determineProperty(
         entity: E)(
-            implicit project: Project[URL],
+            implicit project: SomeProject,
             store: PropertyStore): PropertyComputationResult
 
 }
@@ -108,7 +108,7 @@ trait AllEntities[E <: Entity] extends AnalysisEngine[E] {
      * @note see [org.opalj.fp.PropertyStore#<<]
      */
     def triggerPropertyCalculation(
-        implicit project: Project[URL],
+        implicit project: SomeProject,
         propertyStore: PropertyStore) =
         propertyStore << (determineProperty _).
             asInstanceOf[Object ⇒ PropertyComputationResult]
@@ -132,7 +132,7 @@ trait AssumptionBasedFixpointAnalysis extends FixpointAnalysis {
 
     def isApplication = analysisMode eq APP
 
-    abstract override def initializeAssumptions(implicit project: Project[URL]): Unit = {
+    abstract override def initializeAssumptions(implicit project: SomeProject): Unit = {
         super.initializeAssumptions
         assert(this._analysisMode eq null)
         analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
@@ -165,7 +165,7 @@ trait FilterEntities[E <: Entity] extends AnalysisEngine[E] {
      *
      * @note see [[org.opalj.fp.PropertyStore#<||<]]
      */
-    def triggerPropertyCalculation(implicit project: Project[URL], propertyStore: PropertyStore) = {
+    def triggerPropertyCalculation(implicit project: SomeProject, propertyStore: PropertyStore) = {
         val propertyCalculation = (determineProperty _).
             asInstanceOf[Object ⇒ PropertyComputationResult]
         propertyStore <||< (entitySelector, propertyCalculation)

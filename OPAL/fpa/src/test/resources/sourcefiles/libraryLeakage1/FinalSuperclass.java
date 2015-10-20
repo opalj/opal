@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,42 +22,54 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa.test.annotations;
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static java.lang.annotation.ElementType.METHOD;
+package libraryLeakage1;
 
-/**
+import org.opalj.fpa.test.annotations.LibraryLeakageKeys;
+import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
+
+
+/*
  * 
- * Describes the Overridden property of the OPAL FixpointAnalysis.
+ * This class is cannot be overridden because it is final. Hence,
+ * all contained methods must have the property NonOverridden.
  * 
  * @author Michael Reif
- *
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface OverriddenProperty {
+public final class FinalSuperclass {
 	
-	/**
-	 * This refers to the OverriddenProperty when the property is computed for
-	 * a library under the open package assumption. 
-	 */
-	OverriddenKeys opa() default OverriddenKeys.NonOverridden;
+	@LibraryLeakageProperty(
+			opa=LibraryLeakageKeys.NoLeakage,
+			cpa=LibraryLeakageKeys.NoLeakage)
+	private void privateMethod(){
+		System.out.println("private");
+	}
 	
-	/**
-	 * This refers to the OverriddenProperty when the property is computed for
-	 * a library under the closed package assumption. 
-	 */
-	OverriddenKeys cpa() default OverriddenKeys.NonOverridden;
+	@LibraryLeakageProperty(
+			opa=LibraryLeakageKeys.NoLeakage,
+			cpa=LibraryLeakageKeys.NoLeakage)
+	public void publicMethod(){
+		privateMethod();
+		protectedMethod();
+		publicFinalMethod();
+		System.out.println("public");
+	}
 	
-	/**
-	 * This refers to the OverriddenProperty when the property is computed for
-	 * an application.
-	 */
-	OverriddenKeys application() default OverriddenKeys.NonOverridden;
+	@LibraryLeakageProperty(
+			opa=LibraryLeakageKeys.NoLeakage,
+			cpa=LibraryLeakageKeys.NoLeakage)
+	protected void protectedMethod(){
+		System.out.println("protected");
+	}
+	
+	@LibraryLeakageProperty(
+			opa=LibraryLeakageKeys.NoLeakage,
+			cpa=LibraryLeakageKeys.NoLeakage)
+	public final void publicFinalMethod(){
+		System.out.println("public and final");
+	}
 }

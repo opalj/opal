@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,42 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
-
-import org.opalj.fp.PropertyKey
-import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys
-import org.opalj.AnalysisModes
+package libraryLeakage2;
 
 /**
+ * 
+ * This class inherits the public method "iDoNotLeak" from the package private class
+ * DontLeakViaNotConcreteClass. Since this class is abstract, "iDoNotLeak" is not
+ * already exposed to the client but it can potentially be later on.
+ * 
  * @author Michael Reif
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+public abstract class DontLeakViaAbstractClass extends
+		DontLeakViaNotConcreteClass {
 
-    def analysisName = "MethodvisibilityAnalysis"
-
-    override def testFileName = "classfiles/methodvisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisType = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+	protected void iDoNotLeakToo(){
+		
+	}
 }

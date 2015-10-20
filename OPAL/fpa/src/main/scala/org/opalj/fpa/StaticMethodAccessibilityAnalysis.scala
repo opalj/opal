@@ -31,14 +31,13 @@ package fpa
 
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey
-import org.opalj.br.analyses.Project
-import java.net.URL
 import org.opalj.br.Method
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
 import org.opalj.AnalysisModes
 import org.opalj.fp.Entity
 import org.opalj.fp.ImmediateResult
+import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Reif
@@ -78,7 +77,7 @@ object StaticMethodAccessibilityAnalysis
      */
     def determineProperty(
         method: Method)(
-            implicit project: Project[URL],
+            implicit project: SomeProject,
             store: PropertyStore): PropertyComputationResult = {
 
         if (method.isPrivate)
@@ -110,8 +109,7 @@ object StaticMethodAccessibilityAnalysis
                     // of methods and they are still overridden
                     val potentialMethod = classFile.findMethod(methodName, methodDescriptor)
                     val hasMethod = potentialMethod.nonEmpty
-                    
-                    
+
                     if (!hasMethod) {
                         val curSuperTypes = project.classHierarchy.allSupertypes(subtype, false)
 

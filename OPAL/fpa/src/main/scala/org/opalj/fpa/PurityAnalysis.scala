@@ -279,7 +279,7 @@ object PurityAnalysis {
         purity
     }
 
-    def analyze(implicit project: Project[URL]): Unit = {
+    def analyze(implicit project: SomeProject): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
         val entitySelector: PartialFunction[Entity, Method] = {
             case m: Method if !m.isAbstract ⇒ m

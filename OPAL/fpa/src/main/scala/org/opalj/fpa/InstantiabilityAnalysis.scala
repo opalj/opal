@@ -29,8 +29,6 @@
 package org.opalj
 package fpa
 
-import java.net.URL
-
 import org.opalj.fp.Result
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
@@ -40,7 +38,6 @@ import org.opalj.fp.PropertyComputationResult
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.fp.ImmediateResult
-import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.fp.IntermediateResult
 import org.opalj.fp.EOptionP
@@ -48,6 +45,7 @@ import org.opalj.fp.EP
 import org.opalj.fp.EPK
 import org.opalj.fp.Unchanged
 import org.opalj.fp.Continuation
+import org.opalj.br.analyses.SomeProject
 
 sealed trait Instantiability extends Property {
     final def key = Instantiability.Key // All instances have to share the SAME key!
@@ -76,7 +74,7 @@ object InstantiabilityAnalysis
 
     private def determineInstantiabilityByFactoryMethod(
         classFile: ClassFile)(
-            implicit project: Project[URL],
+            implicit project: SomeProject,
             propertyStore: PropertyStore): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
@@ -129,7 +127,7 @@ object InstantiabilityAnalysis
      */
     def determineProperty(
         classFile: ClassFile)(
-            implicit project: Project[URL],
+            implicit project: SomeProject,
             propertyStore: PropertyStore): PropertyComputationResult = {
         //TODO: check further method visibility according to the computed property. 
         //    -> classes with only non-visible constructors are not instantiable by the client

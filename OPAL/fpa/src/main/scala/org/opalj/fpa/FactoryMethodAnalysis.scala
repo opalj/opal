@@ -35,12 +35,10 @@ import org.opalj.fp.Entity
 import org.opalj.br.Method
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
-//import org.opalj.fp.ImmediateResult
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.fp.Continuation
-import org.opalj.br.analyses.Project
-import java.net.URL
 import org.opalj.fp.Result
+import org.opalj.br.analyses.SomeProject
 //import org.opalj.fp.IntermediateResult
 
 /**
@@ -98,7 +96,7 @@ object FactoryMethodAnalysis extends FixpointAnalysis
      */
     def determineProperty(
         method: Method)(
-            implicit project: Project[URL],
+            implicit project: SomeProject,
             store: PropertyStore): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).

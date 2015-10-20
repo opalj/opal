@@ -131,7 +131,7 @@ object MutablityAnalysis {
         ImmediateMultiResult(results)
     }
 
-    def analyze(implicit project: Project[URL]): Unit = {
+    def analyze(implicit project: SomeProject): Unit = {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
         projectStore <||< (
             { case cf: ClassFile ⇒ cf },
