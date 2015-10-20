@@ -62,7 +62,7 @@ case object CantNotBeOverridden extends Overridden { final val isRefineable = fa
  * if it is overridden in every (immediate non-abstract? ) subclass.
  *
  * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
- * also always overridden. 
+ * also always overridden.
  * {{{
  * /*package visible*/ class C { public Object m() }
  * /*package visible*/ abstract class A extends C { /*empty*/ }
