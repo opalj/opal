@@ -68,7 +68,7 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
 /**
  * The respective method is not a factory method.
  */
-case object NonFactoryMethod extends FactoryMethod { final val isRefineable = false }
+case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
 object FactoryMethodAnalysis extends FixpointAnalysis
         with FilterEntities[Method] {
@@ -122,6 +122,6 @@ object FactoryMethodAnalysis extends FixpointAnalysis
             pc = body.pcOfNextInstruction(pc)
         }
 
-        ImmediateResult(method, NonFactoryMethod)
+        ImmediateResult(method, NotFactoryMethod)
     }
 }

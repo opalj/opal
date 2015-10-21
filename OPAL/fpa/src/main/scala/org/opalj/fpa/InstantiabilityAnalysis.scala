@@ -55,7 +55,7 @@ object Instantiability {
     final val Key = PropertyKey.create("Instantiability", Instantiable)
 }
 
-case object NonInstantiable extends Instantiability { final val isRefineable = false }
+case object NotInstantiable extends Instantiability { final val isRefineable = false }
 
 case object Instantiable extends Instantiability { final val isRefineable = false }
 
@@ -86,7 +86,7 @@ object InstantiabilityAnalysis
             val factoryMethod = propertyStore(curMethod, factoryPropertyKey)
             factoryMethod match {
                 case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable)
-                case Some(NonFactoryMethod) ⇒ dependees += EPK(curMethod, factoryPropertyKey)
+                case Some(NotFactoryMethod) ⇒ dependees += EPK(curMethod, factoryPropertyKey)
                 case None                   ⇒ dependees += EPK(curMethod, factoryPropertyKey)
                 case _ ⇒
                     val message = s"unknown factory method $factoryMethod"
@@ -103,7 +103,7 @@ object InstantiabilityAnalysis
             instantiability match {
                 case Some(Instantiable) ⇒ return ImmediateResult(classFile, Instantiable)
                 case Some(MaybeInstantiable) |
-                    Some(NonInstantiable) |
+                    Some(NotInstantiable) |
                     None ⇒ dependees += EPK(cf, propertyKey)
                 case _ ⇒
                     val message = s"unknown instantiability $instantiability"
@@ -129,19 +129,19 @@ object InstantiabilityAnalysis
 
                     case MaybeInstantiable ⇒ Unchanged
 
-                    case NonInstantiable ⇒
+                    case NotInstantiable ⇒
                         remainingDependendees -= e
-                        if (remainingDependendees.isEmpty) Result(classFile, NonInstantiable)
+                        if (remainingDependendees.isEmpty) Result(classFile, NotInstantiable)
                         else Unchanged
 
                     case IsFactoryMethod ⇒
                         remainingDependendees = Set.empty
                         Result(classFile, Instantiable)
 
-                    case NonFactoryMethod ⇒
+                    case NotFactoryMethod ⇒
                         remainingDependendees -= e
                         if (remainingDependendees.isEmpty) {
-                            Result(classFile, NonInstantiable)
+                            Result(classFile, NotInstantiable)
                         } else
                             Unchanged
                     case _ ⇒
@@ -166,7 +166,7 @@ object InstantiabilityAnalysis
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration)
-            return ImmediateResult(classFile, NonInstantiable)
+            return ImmediateResult(classFile, NotInstantiable)
 
         val declaringType = classFile.thisType
 

@@ -68,7 +68,7 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
             propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val nonFactoryMethods = entitiesByProperty(NonFactoryMethod)(propertyStore)
+        val nonFactoryMethods = entitiesByProperty(NotFactoryMethod)(propertyStore)
         val nonFactoryInfo = buildMethodInfo(nonFactoryMethods)(project)
 
         val factoryMethods = entitiesByProperty(IsFactoryMethod)(propertyStore)

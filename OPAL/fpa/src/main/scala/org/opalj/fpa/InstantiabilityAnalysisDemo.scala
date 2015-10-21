@@ -72,7 +72,7 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         val instantiableClasses: Traversable[(AnyRef, Property)] =
             propertyStore(Instantiability.Key).filter { ep ⇒
                 val isInstantiable = ep._2
-                isInstantiable == NonInstantiable
+                isInstantiable == NotInstantiable
             }
 
         val classInfo = instantiableClasses.map { e ⇒
