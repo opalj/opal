@@ -30,76 +30,86 @@
 package org.opalj
 package fpa
 
-import java.net.URL
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyComputationResult
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.Method
+import org.opalj.fp.Continuation
+import org.opalj.br.ObjectType
 
 sealed trait EntryPoint extends Property {
-    final def key = Instantiability.Key // All instances have to share the SAME key!
+    final def key = EntryPoint.Key // All instances have to share the SAME key!
 }
 
 object EntryPoint {
-    final val Key = PropertyKey.create("EntryPoint", DirectlyCallable)
+    final val Key = PropertyKey.create("EntryPoint", IsEntryPoint)
 }
 
-case object DirectlyCallable extends EntryPoint { final val isRefineable = false }
+case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
 
-case object OnlyIndirectlyCallable extends EntryPoint { final val isRefineable = false }
+case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 
-object EntryPointsAnalysis {
+object EntryPointsAnalysis
+        extends AssumptionBasedFixpointAnalysis
+        with FilterEntities[Method] {
+
+    private[this] final val accessKey = ProjectAccessibility.Key
+    private[this] final val instantiabilityKey = Instantiability.Key
+
+    private[this] final val serializableType = ObjectType.Serializable
+
+    val propertyKey = EntryPoint.Key
+
+    val entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract ⇒ m
+    }
 
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
      */
-    def determineEntryPoints(
+    def determineProperty(
         method: Method)(
             implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+            propertyStore: PropertyStore): PropertyComputationResult = {
 
-        //import project.classHierarchy.isSubtypeOf
+        val classFile = project.classFile(method)
 
-        val declClass = project.classFile(method)
-        val declClassIsPublic = declClass.isPublic
-        val declClassIsFinal = declClass.isFinal
+        /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
+        if (Method.isObjectSerializationRelated(method) &&
+            (
+                !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
+                project.classHierarchy.isSubtypeOf(
+                    classFile.thisType,
+                    serializableType).isYesOrUnknown
+            ))
+            return ImmediateResult(method, IsEntryPoint)
 
-        /*rule 1.1*/ if (method.isStaticInitializer && declClassIsPublic)
-            return ImmediateResult(method, DirectlyCallable);
+        import propertyStore.require
+        val c_inst: Continuation =
+            (dependeeE: Entity, dependeeP: Property) ⇒ {
 
-        val isStatic = method.isStatic
-        val isPublic = method.isPublic
+                val isInstantiable = dependeeP == Instantiable
+                if (isInstantiable) {
+                    if (method.isStaticInitializer)
+                        return ImmediateResult(method, IsEntryPoint)
+                }
 
-        /*rule 2*/ if (isStatic && isPublic)
-            return ImmediateResult(method, DirectlyCallable);
+                val c_vis: Continuation =
+                    (dependeeE: Entity, dependeeP: Property) ⇒
+                        if (dependeeP == Global &&
+                            (isInstantiable && !method.isStatic) ||
+                            (method.isStatic || method.isConstructor))
+                            ImmediateResult(method, IsEntryPoint)
+                        else ImmediateResult(method, NoEntryPoint)
 
-        val isConstructor = method.isConstructor
+                return require(method, propertyKey, method, accessKey)(c_vis)
+            }
 
-        /*rule 4*/ if (isConstructor && isPublic)
-            return ImmediateResult(method, DirectlyCallable);
-
-        val isProtected = method.isProtected
-
-        /*rule 3*/ if (isStatic && isProtected && !declClassIsFinal)
-            return ImmediateResult(method, DirectlyCallable);
-
-        ///*rule 5*/ if (isConstructor && isProtected && !declClassIsFinal)
-
-        // Fallback
-        return ImmediateResult(method, DirectlyCallable);
-    }
-
-    def analyze(implicit project: SomeProject): Unit = {
-        implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        val filter: PartialFunction[Entity, Method] = {
-            case m: Method if !m.isAbstract ⇒ m
-        }
-        projectStore <||< (filter, determineEntryPoints)
+        return require(method, propertyKey, method, instantiabilityKey)(c_inst)
     }
 }
 
