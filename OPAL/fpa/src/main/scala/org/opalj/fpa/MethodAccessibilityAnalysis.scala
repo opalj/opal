@@ -33,6 +33,7 @@ import org.opalj.br.Method
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
+import org.opalj.fp.Result
 import org.opalj.fp.ImmediateResult
 import org.opalj.fp.Continuation
 import org.opalj.fp.Property
@@ -80,8 +81,8 @@ object MethodAccessibilityAnalysis
             val c: Continuation =
                 (dependeeE: Entity, dependeeP: Property) ⇒
                     if (dependeeP == NoLeakage)
-                        ImmediateResult(method, PackageLocal)
-                    else ImmediateResult(method, Global)
+                        Result(method, PackageLocal)
+                    else Result(method, Global)
 
             import propertyStore.require
             return require(method, propertyKey,
