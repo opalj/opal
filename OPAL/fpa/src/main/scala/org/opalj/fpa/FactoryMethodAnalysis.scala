@@ -36,9 +36,8 @@ import org.opalj.br.Method
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyComputationResult
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.fp.Continuation
-import org.opalj.fp.Result
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.ImmediateResult
 //import org.opalj.fp.IntermediateResult
 
 /**
@@ -82,17 +81,16 @@ object FactoryMethodAnalysis extends FixpointAnalysis
 
     private val opInvokeSpecial = INVOKESPECIAL.opcode
 
-    private[this] val projectAccessibilityKey = ProjectAccessibility.Key
-
-    private def evaluateViaNativeContinuation(method: Method): Continuation = {
-        (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == Global)
-                Result(method, IsFactoryMethod)
-            else Result(method, NonFactoryMethod)
-    }
-
     /**
-     * Determines if the given method is used as effective factory method.
+     * Approximates if the given method is used as factory method. Any
+     * native method is considered as factory method, because we have to
+     * assume, that it creates an instance of the class. 
+     * This checks not for effective factory methods, since the return type
+     * of the method is ignored. A method is either native or the constructor
+     * of the declaring class is invoked.
+     * 
+     * Possible improvements:
+     *  - check if the methods returns an instance of the class or some superclass.
      */
     def determineProperty(
         method: Method)(
@@ -101,35 +99,29 @@ object FactoryMethodAnalysis extends FixpointAnalysis
 
         //TODO use escape analysis (still have to be implemented).
 
-        val classFile = project.classFile(method)
-        val classType = classFile.thisType
-
-        if (method.isNative) {
-            import store.require
-            return require(method, propertyKey,
-                method, projectAccessibilityKey)(evaluateViaNativeContinuation(method))
-        }
-
+        if (method.isNative) 
+            return ImmediateResult(method, IsFactoryMethod)
+            
+        val classType = project.classFile(method).thisType
+        
         val body = method.body.get
         val instructions = body.instructions
         val max = instructions.length
         var pc = 0
         while (pc < max) {
             val instruction = instructions(pc)
-
             if (instruction.opcode == opInvokeSpecial) {
                 instruction match {
-                    case INVOKESPECIAL(declClass, "<init>", _) if classType eq declClass ⇒
-                        return Result(method, IsFactoryMethod)
+                    case INVOKESPECIAL(`classType`, "<init>", _) ⇒
+                        return ImmediateResult(method, IsFactoryMethod)
                     case _ ⇒
                 }
             }
 
             //TODO: model that the method could be called by an accessible method
-
             pc = body.pcOfNextInstruction(pc)
         }
 
-        Result(method, NonFactoryMethod)
+        ImmediateResult(method, NonFactoryMethod)
     }
 }
