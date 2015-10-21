@@ -62,7 +62,7 @@ case object Instantiable extends Instantiability { final val isRefineable = fals
 case object MaybeInstantiable extends Instantiability { final val isRefineable = true }
 
 object InstantiabilityAnalysis
-        extends FixpointAnalysis
+        extends AssumptionBasedFixpointAnalysis
         with FilterEntities[ClassFile] {
 
     val propertyKey = Instantiability.Key
@@ -83,16 +83,34 @@ object InstantiabilityAnalysis
         var i = 0
         while (i < methods.length) {
             val curMethod = methods(i)
-            val instantiability = propertyStore(curMethod, factoryPropertyKey)
-            instantiability match {
+            val factoryMethod = propertyStore(curMethod, factoryPropertyKey)
+            factoryMethod match {
                 case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable)
                 case Some(NonFactoryMethod) ⇒ dependees += EPK(curMethod, factoryPropertyKey)
                 case None                   ⇒ dependees += EPK(curMethod, factoryPropertyKey)
                 case _ ⇒
-                    val message = s"unknown instantiability $instantiability"
+                    val message = s"unknown factory method $factoryMethod"
                     throw new UnknownError(message)
             }
             i += 1
+        }
+
+        var subTypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
+        while (subTypes.nonEmpty) {
+            val curSubtype = subTypes.head
+            val cf = project.classFile(curSubtype)
+            val instantiability = propertyStore(curSubtype, propertyKey)
+            instantiability match {
+                case Some(Instantiable) ⇒ return ImmediateResult(classFile, Instantiable)
+                case Some(MaybeInstantiable) |
+                    Some(NonInstantiable) |
+                    None ⇒ dependees += EPK(cf, propertyKey)
+                case _ ⇒
+                    val message = s"unknown instantiability $instantiability"
+                    throw new UnknownError(message)
+            }
+            subTypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
+            subTypes -= curSubtype
         }
 
         val continuation = new Continuation {
@@ -105,6 +123,17 @@ object InstantiabilityAnalysis
                     return Unchanged;
 
                 p match {
+                    case Instantiable ⇒
+                        remainingDependendees = Set.empty
+                        Result(classFile, Instantiable)
+
+                    case MaybeInstantiable ⇒ Unchanged
+
+                    case NonInstantiable ⇒
+                        remainingDependendees -= e
+                        if (remainingDependendees.isEmpty) Result(classFile, NonInstantiable)
+                        else Unchanged
+
                     case IsFactoryMethod ⇒
                         remainingDependendees = Set.empty
                         Result(classFile, Instantiable)
@@ -115,6 +144,9 @@ object InstantiabilityAnalysis
                             Result(classFile, NonInstantiable)
                         } else
                             Unchanged
+                    case _ ⇒
+                        val message = s"unknown property $p"
+                        throw new UnknownError(message)
                 }
             }
         }
@@ -142,8 +174,13 @@ object InstantiabilityAnalysis
             classFile.hasDefaultConstructor)
             return ImmediateResult(classFile, Instantiable)
 
-        // TODO FIXME ....
-        if (classFile.constructors.exists { c ⇒ c.isPublic || (!classFile.isFinal && c.isProtected) })
+        val nonfinalClass = !classFile.isFinal
+
+        if (classFile.isPublic && classFile.constructors.exists {
+            cons ⇒
+                cons.isPublic || (nonfinalClass && (
+                    isOpenLibrary || cons.isProtected))
+        })
             return ImmediateResult(classFile, Instantiable)
 
         val instantiability = determineInstantiabilityByFactoryMethod(classFile)
