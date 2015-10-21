@@ -84,11 +84,11 @@ object FactoryMethodAnalysis extends FixpointAnalysis
     /**
      * Approximates if the given method is used as factory method. Any
      * native method is considered as factory method, because we have to
-     * assume, that it creates an instance of the class. 
+     * assume, that it creates an instance of the class.
      * This checks not for effective factory methods, since the return type
      * of the method is ignored. A method is either native or the constructor
      * of the declaring class is invoked.
-     * 
+     *
      * Possible improvements:
      *  - check if the methods returns an instance of the class or some superclass.
      */
@@ -99,11 +99,11 @@ object FactoryMethodAnalysis extends FixpointAnalysis
 
         //TODO use escape analysis (still have to be implemented).
 
-        if (method.isNative) 
+        if (method.isNative)
             return ImmediateResult(method, IsFactoryMethod)
-            
+
         val classType = project.classFile(method).thisType
-        
+
         val body = method.body.get
         val instructions = body.instructions
         val max = instructions.length

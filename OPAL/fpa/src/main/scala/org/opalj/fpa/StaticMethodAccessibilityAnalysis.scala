@@ -89,13 +89,13 @@ object StaticMethodAccessibilityAnalysis
 
         val declClass = project.classFile(method)
         val pgkVisibleMethod = method.isPackagePrivate
-        
+
         if (pgkVisibleMethod)
             return ImmediateResult(method, PackageLocal)
 
-        if (declClass.isPublic && 
-                (method.isPublic || 
-                        (!declClass.isFinal && method.isProtected)))
+        if (declClass.isPublic &&
+            (method.isPublic ||
+                (!declClass.isFinal && method.isProtected)))
             return ImmediateResult(method, Global)
 
         val declaringClassType = declClass.thisType

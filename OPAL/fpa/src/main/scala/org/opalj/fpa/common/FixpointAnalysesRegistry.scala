@@ -89,7 +89,7 @@ object FixpointAnalysesRegistry {
     /**
      * Return the [[FixpointAnalysis]] object that can be used to analyze a project later on.
      *
-     * @Note This registry does only support scala `object`s. Fixpoint analyses implemented in an class
+     * @note This registry does only support scala `object`s. Fixpoint analyses implemented in an class
      * are currently not (directly) supported by the registry.
      */
     def newFixpointAnalysis(
