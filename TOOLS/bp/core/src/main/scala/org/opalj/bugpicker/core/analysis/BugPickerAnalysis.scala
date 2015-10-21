@@ -206,16 +206,18 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         if (fixpointAnalyses.nonEmpty) {
             val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
 
-            fixpointAnalyses foreach { fpa ⇒
-                val fpaThread = new Thread(new Runnable {
+            val threads = fixpointAnalyses map { fpa ⇒
+                new Thread(new Runnable {
                     def run = fpa.asInstanceOf[AnalysisEngine[_]].analyze(theProject)
                 })
-                fpaThread.start
-                fpaThread.join()
             }
+
+            threads foreach (_.start)
+            threads foreach (_.join)
 
             propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         }
+
         //
         //
         // MAIN ANALYSIS

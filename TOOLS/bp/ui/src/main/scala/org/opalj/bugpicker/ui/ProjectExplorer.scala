@@ -414,8 +414,6 @@ class ProjectExplorer(
                         }.mkString("<br/>")+
                         "\n}"
                 )
-        } else if (method.get.body.isEmpty) {
-            propertiesNotFound
         } else {
             val properties = propertyStore(method.get)
             if (properties.isEmpty)

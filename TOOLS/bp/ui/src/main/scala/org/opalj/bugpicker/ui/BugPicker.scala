@@ -582,35 +582,35 @@ class BugPicker extends Application {
                                     }
                                 }
                             },
-//                            new MenuItem {
-//                                text = "_Run Property Analysis"
-//                                mnemonicParsing = true
-//                                accelerator = KeyCombination("Shortcut+Q")
-//                                onAction = { e: ActionEvent ⇒
-//                                    Platform.runLater {
-//                                        val parameters = BugPicker.loadParametersFromPreferences()
-//                                        storeCurrentAnalysis.disable = true
-//                                        val issues = ObjectProperty(Iterable.empty[Issue])
-//                                        issues.onChange((o, p, q) ⇒ {
-//                                            currentAnalysis = issues().map(_.asXHTML(false))
-//                                            currentAnalysisParameters = parameters
-//                                            if (currentAnalysis != null) {
-//                                                storeCurrentAnalysis.disable = false
-//                                                loadAnalysisToDiff.disable = false
-//                                                if (!recentAnalysisToDiffMenu.items.isEmpty)
-//                                                    recentAnalysisToDiffMenu.disable = false
-//                                            }
-//                                        })
-//                                        AnalysisRunner.runAnalysis(
-//                                            stage, project, sources, parameters,
-//                                            issues, sourceView, byteView, reportView, tabPane)
-//
-//                                        if (!tabPane.selectionModel().isSelected(1)) {
-//                                            tabPane.selectionModel().select(1)
-//                                        }
-//                                    }
-//                                }
-//                            },
+                            //                            new MenuItem {
+                            //                                text = "_Run Property Analysis"
+                            //                                mnemonicParsing = true
+                            //                                accelerator = KeyCombination("Shortcut+Q")
+                            //                                onAction = { e: ActionEvent ⇒
+                            //                                    Platform.runLater {
+                            //                                        val parameters = BugPicker.loadParametersFromPreferences()
+                            //                                        storeCurrentAnalysis.disable = true
+                            //                                        val issues = ObjectProperty(Iterable.empty[Issue])
+                            //                                        issues.onChange((o, p, q) ⇒ {
+                            //                                            currentAnalysis = issues().map(_.asXHTML(false))
+                            //                                            currentAnalysisParameters = parameters
+                            //                                            if (currentAnalysis != null) {
+                            //                                                storeCurrentAnalysis.disable = false
+                            //                                                loadAnalysisToDiff.disable = false
+                            //                                                if (!recentAnalysisToDiffMenu.items.isEmpty)
+                            //                                                    recentAnalysisToDiffMenu.disable = false
+                            //                                            }
+                            //                                        })
+                            //                                        AnalysisRunner.runAnalysis(
+                            //                                            stage, project, sources, parameters,
+                            //                                            issues, sourceView, byteView, reportView, tabPane)
+                            //
+                            //                                        if (!tabPane.selectionModel().isSelected(1)) {
+                            //                                            tabPane.selectionModel().select(1)
+                            //                                        }
+                            //                                    }
+                            //                                }
+                            //                            },
                             new MenuItem {
                                 text = "_Preferences"
                                 mnemonicParsing = true
