@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,20 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing2;
+package shadowing1;
 
+import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
 import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * This class used for test purpose only. The annotations are only valid under
- * the closed packages assumption.
+ * Inherits from the class defined below and make this methods visible to the client.
  * 
  * @author Michael Reif
  *
  */
-public class PublicIndirectSubclass extends IndirectSubclass {
+public class FinalMethodCanBeExposed extends IDontWantToShowEveryoneWhatIHave {
+
+}
+
+class IDontWantToShowEveryoneWhatIHave {
 	
-	@ProjectAccessibilityProperty
-	static public void publicMethod(){}
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.Global)
+	public final static void finalPublicMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.Global)
+	protected final static void finalProtectedMethod(){
+	}
 }
