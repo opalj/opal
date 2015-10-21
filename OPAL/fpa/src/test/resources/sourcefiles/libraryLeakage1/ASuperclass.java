@@ -65,9 +65,13 @@ public abstract class ASuperclass {
 	}
 	
 	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+			opa=LibraryLeakageKeys.Leakage,
+			cpa=LibraryLeakageKeys.Leakage)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}
+	
+	@LibraryLeakageProperty(
+			cpa=LibraryLeakageKeys.Leakage)
+	public native void nativeLeak();
 }

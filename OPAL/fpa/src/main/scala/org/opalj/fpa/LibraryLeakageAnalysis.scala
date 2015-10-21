@@ -97,7 +97,7 @@ object LibraryLeakageAnalysis
             implicit project: SomeProject,
             store: PropertyStore): PropertyComputationResult = {
 
-        if (method.isPrivate || method.isFinal || method.isConstructor)
+        if (method.isPrivate || method.isConstructor)
             return ImmediateResult(method, NoLeakage)
 
         val declClass = project.classFile(method)

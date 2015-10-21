@@ -60,8 +60,8 @@ public class Superclass {
 	}
 	
 	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+			opa=LibraryLeakageKeys.Leakage,
+			cpa=LibraryLeakageKeys.Leakage)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}
