@@ -36,6 +36,7 @@ import org.opalj.fp.PropertyKey
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyComputationResult
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.Result
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.Method
 import org.opalj.fp.Continuation
@@ -92,7 +93,7 @@ object EntryPointsAnalysis
         val c_inst: Continuation =
             (dependeeE: Entity, dependeeP: Property) ⇒ {
 
-                val isInstantiable = dependeeP == Instantiable
+                val isInstantiable = (dependeeP eq Instantiable)
                 if (isInstantiable) {
                     if (method.isStaticInitializer)
                         return ImmediateResult(method, IsEntryPoint)
@@ -103,13 +104,12 @@ object EntryPointsAnalysis
                         if (dependeeP == Global &&
                             (isInstantiable && !method.isStatic) ||
                             (method.isStatic || method.isConstructor))
-                            ImmediateResult(method, IsEntryPoint)
-                        else ImmediateResult(method, NoEntryPoint)
+                            Result(method, IsEntryPoint)
+                        else Result(method, NoEntryPoint)
 
                 return require(method, propertyKey, method, accessKey)(c_vis)
             }
 
-        return require(method, propertyKey, method, instantiabilityKey)(c_inst)
+        return require(method, propertyKey, classFile, instantiabilityKey)(c_inst)
     }
 }
-

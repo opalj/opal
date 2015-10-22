@@ -6,7 +6,7 @@ import org.opalj.fpa.test.annotations.EntryPointKeys
 import org.opalj.AnalysisModes
 
 /**
- * 
+ *
  * @author Michael Reif
  */
 abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
