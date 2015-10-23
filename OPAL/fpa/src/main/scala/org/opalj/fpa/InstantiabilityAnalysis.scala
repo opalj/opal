@@ -46,6 +46,7 @@ import org.opalj.fp.EPK
 import org.opalj.fp.Unchanged
 import org.opalj.fp.Continuation
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.ImmediateResult
 
 sealed trait Instantiability extends Property {
     final def key = Instantiability.Key // All instances have to share the SAME key!
@@ -73,7 +74,7 @@ object InstantiabilityAnalysis
     private final val SerializableType = ObjectType.Serializable
 
     // TOOD Method name..?
-    private def determineInstantiabilityByFactoryMethod(
+    private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile)(
             implicit project: SomeProject,
             propertyStore: PropertyStore): PropertyComputationResult = {
@@ -86,15 +87,11 @@ object InstantiabilityAnalysis
             val curMethod = methods(i)
             val factoryMethod = propertyStore(curMethod, FactoryPropertyKey)
             factoryMethod match {
-                case Some(IsFactoryMethod) ⇒ return ImmediateResult(classFile, Instantiable);
+                case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable);
+                case Some(NotFactoryMethod) ⇒ /* Do nothing */
                 case _ ⇒
-                    assert(factoryMethod.isEmpty || factoryMethod.get == NotFactoryMethod)
+                    assert(factoryMethod.isEmpty)
                     dependees += EPK(curMethod, FactoryPropertyKey)
-                //                case Some(NotFactoryMethod) ⇒ dependees += EPK(curMethod, FactoryPropertyKey)
-                //                case None                   ⇒ dependees += EPK(curMethod, FactoryPropertyKey)
-                //                case _ ⇒
-                //                    val message = s"unknown factory method $factoryMethod"
-                //                    throw new UnknownError(message)
             }
             i += 1
         }
@@ -105,18 +102,19 @@ object InstantiabilityAnalysis
             val cf = project.classFile(curSubtype)
             val instantiability = propertyStore(curSubtype, propertyKey)
             instantiability match {
-                case Some(Instantiable) ⇒ return ImmediateResult(classFile, Instantiable);
-                case Some(MaybeInstantiable) |
-                    None ⇒ dependees += EPK(cf, propertyKey)
+                case Some(Instantiable)    ⇒ return ImmediateResult(classFile, Instantiable);
+                case Some(NotInstantiable) ⇒ /* Do nothing */
                 case _ ⇒
-                    val message = s"unknown instantiability $instantiability"
-                    throw new UnknownError(message)
+                    assert(instantiability.isEmpty || instantiability == MaybeInstantiable)
+                    dependees += EPK(cf, propertyKey)
             }
             subTypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
             subTypes -= curSubtype
         }
         // Now: the class is not public has no (yet known) factory method, has no known instantiable subtype,... 
-        //if(dependees.isEmpty)... return ;
+        // If the class has no dependees, we know that it is not instantiable
+        if (dependees.isEmpty)
+            return ImmediateResult(classFile, NotInstantiable)
 
         val continuation = new Continuation {
             // We use the set of remaining dependencies to test if we have seen
@@ -178,22 +176,21 @@ object InstantiabilityAnalysis
 
         val nonFinalClass = !classFile.isFinal
 
-        // FIXME Handle just private constructors...
-        //        if(nonFinalClass && isPublic && isOpenLibrary...)
-        //            ...
-        // if(...) {
-        //        if(isOpenLibrary)
-        //                return;
-        //        else...     
-        //}
-        if (classFile.isPublic && classFile.constructors.exists {
-            cons ⇒
-                cons.isPublic || (nonFinalClass && (
-                    isOpenLibrary || cons.isProtected))
-        })
-            return ImmediateResult(classFile, Instantiable)
+        if (classFile.isPublic)
+            classFile.constructors foreach { cons ⇒
+                if (cons.isPublic)
+                    return ImmediateResult(classFile, Instantiable)
+                else if (nonFinalClass &&
+                    ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+                    return ImmediateResult(classFile, Instantiable)
+            }
 
-        val instantiability = determineInstantiabilityByFactoryMethod(classFile)
+        // NOW: 
+        //  - the type is neither abstract nor an interface declaration
+        //  - the class does not inherit from Serializable
+        //  - the class has no globally visible constructors
+
+        val instantiability = instantiableThroughFactoryOrSubclass(classFile)
         instantiability
     }
 
