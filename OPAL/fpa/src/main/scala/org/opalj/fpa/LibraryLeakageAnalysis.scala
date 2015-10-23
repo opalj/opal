@@ -112,6 +112,9 @@ object LibraryLeakageAnalysis
         if (isClosedLibrary && method.isPackagePrivate)
             return ImmediateResult(method, NoLeakage)
 
+        if (declClass.isPublic && (method.isPublic || method.isProtected))
+            return ImmediateResult(method, Leakage)
+
         var relevantSubtypes = project.classHierarchy.directSubtypesOf(declClass.thisType)
 
         /*
@@ -120,7 +123,7 @@ object LibraryLeakageAnalysis
          *  - A method can't be package visible.
          *  - A method can't be private or final.
          */
-        if (relevantSubtypes.isEmpty && declClass.isPublic)
+        if (declClass.isPublic && !declClass.isFinal)
             return ImmediateResult(method, Leakage)
 
         while (relevantSubtypes.nonEmpty) {

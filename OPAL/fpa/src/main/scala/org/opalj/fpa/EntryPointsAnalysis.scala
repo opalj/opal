@@ -60,6 +60,7 @@ object EntryPointsAnalysis
 
     private[this] final val accessKey = ProjectAccessibility.Key
     private[this] final val instantiabilityKey = Instantiability.Key
+    private[this] final val libraryLeakageKey = LibraryLeakage.Key
 
     private[this] final val serializableType = ObjectType.Serializable
 
@@ -79,6 +80,22 @@ object EntryPointsAnalysis
 
         val classFile = project.classFile(method)
 
+        if (classFile.isInterfaceDeclaration)
+            if (isOpenLibrary)
+                return ImmediateResult(method, IsEntryPoint)
+            else if (classFile.isPublic && (method.isStatic || method.isPublic))
+                return ImmediateResult(method, IsEntryPoint)
+            else {
+                val c_leak: Continuation =
+                    (dependeeE: Entity, dependeeP: Property) ⇒
+                        if (dependeeP == Leakage)
+                            Result(method, IsEntryPoint)
+                        else
+                            Result(method, NoEntryPoint)
+                import propertyStore.require
+                require(method, propertyKey, method, libraryLeakageKey)(c_leak)
+            }
+
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
         if (Method.isObjectSerializationRelated(method) &&
             (
@@ -94,20 +111,19 @@ object EntryPointsAnalysis
             (dependeeE: Entity, dependeeP: Property) ⇒ {
 
                 val isInstantiable = (dependeeP eq Instantiable)
-                if (isInstantiable) {
-                    if (method.isStaticInitializer)
-                        return ImmediateResult(method, IsEntryPoint)
+                if (isInstantiable && method.isStaticInitializer)
+                    Result(method, IsEntryPoint)
+                else {
+                    val c_vis: Continuation =
+                        (dependeeE: Entity, dependeeP: Property) ⇒
+                            if (dependeeP == Global &&
+                                (isInstantiable && !method.isStatic) ||
+                                (method.isStatic || method.isConstructor))
+                                Result(method, IsEntryPoint)
+                            else Result(method, NoEntryPoint)
+
+                    require(method, propertyKey, method, accessKey)(c_vis)
                 }
-
-                val c_vis: Continuation =
-                    (dependeeE: Entity, dependeeP: Property) ⇒
-                        if (dependeeP == Global &&
-                            (isInstantiable && !method.isStatic) ||
-                            (method.isStatic || method.isConstructor))
-                            Result(method, IsEntryPoint)
-                        else Result(method, NoEntryPoint)
-
-                return require(method, propertyKey, method, accessKey)(c_vis)
             }
 
         return require(method, propertyKey, classFile, instantiabilityKey)(c_inst)
