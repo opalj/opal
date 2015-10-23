@@ -67,11 +67,12 @@ object InstantiabilityAnalysis
 
     val propertyKey = Instantiability.Key
 
-    private final val factoryPropertyKey = FactoryMethod.Key
+    private final val FactoryPropertyKey = FactoryMethod.Key
     //    private final val isFactoryMethodProperty = IsFactoryMethod
 
-    private final val serializableType = ObjectType.Serializable
+    private final val SerializableType = ObjectType.Serializable
 
+    // TOOD Method name..?
     private def determineInstantiabilityByFactoryMethod(
         classFile: ClassFile)(
             implicit project: SomeProject,
@@ -83,14 +84,17 @@ object InstantiabilityAnalysis
         var i = 0
         while (i < methods.length) {
             val curMethod = methods(i)
-            val factoryMethod = propertyStore(curMethod, factoryPropertyKey)
+            val factoryMethod = propertyStore(curMethod, FactoryPropertyKey)
             factoryMethod match {
-                case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable)
-                case Some(NotFactoryMethod) ⇒ dependees += EPK(curMethod, factoryPropertyKey)
-                case None                   ⇒ dependees += EPK(curMethod, factoryPropertyKey)
+                case Some(IsFactoryMethod) ⇒ return ImmediateResult(classFile, Instantiable);
                 case _ ⇒
-                    val message = s"unknown factory method $factoryMethod"
-                    throw new UnknownError(message)
+                    assert(factoryMethod.isEmpty || factoryMethod.get == NotFactoryMethod)
+                    dependees += EPK(curMethod, FactoryPropertyKey)
+                //                case Some(NotFactoryMethod) ⇒ dependees += EPK(curMethod, FactoryPropertyKey)
+                //                case None                   ⇒ dependees += EPK(curMethod, FactoryPropertyKey)
+                //                case _ ⇒
+                //                    val message = s"unknown factory method $factoryMethod"
+                //                    throw new UnknownError(message)
             }
             i += 1
         }
@@ -101,9 +105,8 @@ object InstantiabilityAnalysis
             val cf = project.classFile(curSubtype)
             val instantiability = propertyStore(curSubtype, propertyKey)
             instantiability match {
-                case Some(Instantiable) ⇒ return ImmediateResult(classFile, Instantiable)
+                case Some(Instantiable) ⇒ return ImmediateResult(classFile, Instantiable);
                 case Some(MaybeInstantiable) |
-                    Some(NotInstantiable) |
                     None ⇒ dependees += EPK(cf, propertyKey)
                 case _ ⇒
                     val message = s"unknown instantiability $instantiability"
@@ -112,6 +115,8 @@ object InstantiabilityAnalysis
             subTypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
             subTypes -= curSubtype
         }
+        // Now: the class is not public has no (yet known) factory method, has no known instantiable subtype,... 
+        //if(dependees.isEmpty)... return ;
 
         val continuation = new Continuation {
             // We use the set of remaining dependencies to test if we have seen
@@ -154,9 +159,6 @@ object InstantiabilityAnalysis
         IntermediateResult(classFile, MaybeInstantiable, dependees, continuation)
     }
 
-    /**
-     * Identifies those private static non-final fields that are initialized exactly once.
-     */
     def determineProperty(
         classFile: ClassFile)(
             implicit project: SomeProject,
@@ -168,17 +170,25 @@ object InstantiabilityAnalysis
         if (classFile.isAbstract || classFile.isInterfaceDeclaration)
             return ImmediateResult(classFile, NotInstantiable)
 
-        val declaringType = classFile.thisType
+        val classType = classFile.thisType
 
-        if (isSubtypeOf(declaringType, serializableType).isYesOrUnknown &&
+        if (isSubtypeOf(classType, SerializableType).isYesOrUnknown &&
             classFile.hasDefaultConstructor)
             return ImmediateResult(classFile, Instantiable)
 
-        val nonfinalClass = !classFile.isFinal
+        val nonFinalClass = !classFile.isFinal
 
+        // FIXME Handle just private constructors...
+        //        if(nonFinalClass && isPublic && isOpenLibrary...)
+        //            ...
+        // if(...) {
+        //        if(isOpenLibrary)
+        //                return;
+        //        else...     
+        //}
         if (classFile.isPublic && classFile.constructors.exists {
             cons ⇒
-                cons.isPublic || (nonfinalClass && (
+                cons.isPublic || (nonFinalClass && (
                     isOpenLibrary || cons.isProtected))
         })
             return ImmediateResult(classFile, Instantiable)
