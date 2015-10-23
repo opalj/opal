@@ -44,7 +44,7 @@ object AnalysisModes extends Enumeration {
      * programming errors.
      */
     final val LibraryWithClosedPackagesAssumption =
-        Value("Library with closed packages assumption")
+        Value("library with closed packages assumption")
 
     final val CPA = LibraryWithClosedPackagesAssumption
 
@@ -57,7 +57,7 @@ object AnalysisModes extends Enumeration {
      * issues.
      */
     final val LibraryWithOpenPackagesAssumption =
-        Value("Library with open packages assumption")
+        Value("library with open packages assumption")
 
     final val OPA = LibraryWithOpenPackagesAssumption
 
