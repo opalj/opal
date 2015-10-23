@@ -74,8 +74,10 @@ trait LogMessage {
                     Console.RESET
                 )
             } else {
-                (s"[${level.id}]${categoryToConsoleOutput} ",
-                    "")
+                (
+                    s"[${level.id}]${categoryToConsoleOutput} ",
+                    ""
+                )
             }
 
         message.split('\n').map(ln ⇒ lnStart + ln + lnEnd).mkString("\n")

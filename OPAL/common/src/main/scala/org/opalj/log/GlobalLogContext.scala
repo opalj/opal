@@ -36,10 +36,7 @@ package log
  */
 case object GlobalLogContext extends LogContext {
 
-    OPALLogger.globalContextMutex.synchronized {
-        OPALLogger.globalContextCreated = true
-        OPALLogger.register(this, OPALLogger.globalContextLogger)
-    }
+    OPALLogger.register(this, new ConsoleOPALLogger(ansiColored = true))
 
     def newInstance: LogContext = throw new UnsupportedOperationException
 }

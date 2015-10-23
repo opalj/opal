@@ -187,7 +187,9 @@ class PropertyStore private (
      */
     def apply(e: Entity, pk: PropertyKey): Option[Property] = {
         val pos = accessEntity {
-            val (lock, properties) = data.get(e)
+            val lps = data.get(e)
+            assert(lps ne null, s"the entity $e is unknown to the property store")
+            val (lock, properties) = lps
             withReadLock(lock) { properties(pk.id) }
         }
         if (pos ne null)
@@ -706,11 +708,11 @@ class PropertyStore private (
                     }
                 }
             }
-
-            println("Store..."+store.toString)
-            println("Directly..."+directlyIncomputableEPKs)
-            println("Indirectly..."+indirectlyIncomputableEPKs)
-            println("Cyclic..."+cyclicComputableEPKCandidates)
+            //
+            //            println("Store..."+store.toString)
+            //            println("Directly..."+directlyIncomputableEPKs)
+            //            println("Indirectly..."+indirectlyIncomputableEPKs)
+            //            println("Cyclic..."+cyclicComputableEPKCandidates)
 
             // Now
 
@@ -722,7 +724,7 @@ class PropertyStore private (
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
                     val defaultP = PropertyKey.fallbackProperty(pk.id)
-                    println(s"Assigning $e the default property $defaultP")
+                    OPALLogger.debug("analysis result", s"Assigning $e the default property $defaultP")
                     scheduleHandleFallbackResult(e, defaultP)
                 }
             }

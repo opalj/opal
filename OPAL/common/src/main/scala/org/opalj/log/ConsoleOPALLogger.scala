@@ -44,13 +44,15 @@ class ConsoleOPALLogger(
         this(ansiColored, minLogLevel.value)
     }
 
+    println(s"ConsoleLogger($ansiColored,$minLogLevel,$hashCode)")
+
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         val messageLevel = message.level
         if (messageLevel.value < minLogLevel)
             return ;
 
         val stream = if (messageLevel == Error) Console.err else Console.out
-        stream.println(message.toConsoleOutput(ansiColored))
+        stream.println("#"+hashCode+":"+message.toConsoleOutput(ansiColored))
     }
 
 }

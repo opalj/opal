@@ -96,11 +96,11 @@ object InstantiabilityAnalysis
             i += 1
         }
 
-        var subTypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
-        while (subTypes.nonEmpty) {
-            val curSubtype = subTypes.head
-            val cf = project.classFile(curSubtype)
-            val instantiability = propertyStore(curSubtype, propertyKey)
+        var subtypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
+            val subclass = project.classFile(subtype).get
+            val instantiability = propertyStore(subclass, propertyKey)
             instantiability match {
                 case Some(Instantiable)    ⇒ return ImmediateResult(classFile, Instantiable);
                 case Some(NotInstantiable) ⇒ /* Do nothing */
@@ -108,8 +108,8 @@ object InstantiabilityAnalysis
                     assert(instantiability.isEmpty || instantiability == MaybeInstantiable)
                     dependees += EPK(cf, propertyKey)
             }
-            subTypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
-            subTypes -= curSubtype
+            subtypes ++= project.classHierarchy.directSubtypesOf(subtype)
+            subtypes -= subtype
         }
         // Now: the class is not public has no (yet known) factory method, has no known instantiable subtype,... 
         // If the class has no dependees, we know that it is not instantiable

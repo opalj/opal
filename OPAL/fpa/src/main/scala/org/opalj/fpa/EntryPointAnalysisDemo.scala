@@ -40,18 +40,13 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.ai.domain.LogContextProvider
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Warn
-import org.opalj.log.ConsoleOPALLogger
 
 /**
  * @author Michael Reif
  */
 object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
-    override def SetupLogContext: LogContext = {
-        val logger = new ConsoleOPALLogger(true, Warn)
-        org.opalj.log.OPALLogger.initGlobalContextLogger(logger)
-        GlobalLogContext
-    }
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
     override def title: String =
         "entry point computation"
@@ -70,8 +65,6 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         project: org.opalj.br.analyses.Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
-
-        OPALLogger.unregister(GlobalLogContext)
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 

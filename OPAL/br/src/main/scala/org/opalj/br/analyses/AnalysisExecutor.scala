@@ -68,25 +68,6 @@ import org.opalj.log.LogContext
 trait AnalysisExecutor {
 
     /**
-     * Returns the log context that is to be used at initialization time. I.e.,
-     * before the project is created. You can override this method if you
-     * want to use a different log context.
-     *
-     * @example
-     * E.g., if you just want to log warning and error level messages:
-     * {{{
-     * override def SetupLogContext: LogContext = {
-     * 	val logger = new ConsoleOPALLogger(true, Warn)
-     * 	org.opalj.log.OPALLogger.initGlobalContextLogger(logger)
-     * 	GlobalLogContext
-     * }
-     * }}}
-     *
-     * This method is called by the `main` method.
-     */
-    def SetupLogContext: LogContext = org.opalj.log.GlobalLogContext
-
-    /**
      * The analysis that will be executed.
      *
      * The `analyze` method implemented by the analysis will be called after loading
@@ -266,7 +247,7 @@ trait AnalysisExecutor {
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File]): Project[URL] = {
 
-        OPALLogger.info("creating project", "reading project class files")(SetupLogContext)
+        OPALLogger.info("creating project", "reading project class files")(GlobalLogContext)
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -275,16 +256,16 @@ trait AnalysisExecutor {
             reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(SetupLogContext)
+                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
             )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                OPALLogger.info("creating project", "reading library class files")(SetupLogContext)
+                OPALLogger.info("creating project", "reading library class files")(GlobalLogContext)
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(SetupLogContext))
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
