@@ -38,11 +38,20 @@ import org.opalj.log.DefaultLogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.ai.domain.LogContextProvider
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Warn
+import org.opalj.log.ConsoleOPALLogger
 
 /**
  * @author Michael Reif
  */
 object EntryPointAnalysisDemo extends MethodAnalysisDemo {
+
+    override def SetupLogContext: LogContext = {
+        val logger = new ConsoleOPALLogger(true, Warn)
+        org.opalj.log.OPALLogger.initGlobalContextLogger(logger)
+        GlobalLogContext
+    }
 
     override def title: String =
         "entry point computation"
