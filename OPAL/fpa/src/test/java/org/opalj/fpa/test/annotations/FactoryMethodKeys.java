@@ -44,5 +44,5 @@ public enum FactoryMethodKeys {
 	
 	IsFactoryMethod,
 	
-	NonFactoryMethod
+	NotFactoryMethod
 }

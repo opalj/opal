@@ -44,6 +44,6 @@ import static java.lang.annotation.ElementType.METHOD;
 @Target(METHOD)
 public @interface FactoryMethodProperty {
 	
-	FactoryMethodKeys value() default FactoryMethodKeys.NonFactoryMethod;
+	FactoryMethodKeys value() default FactoryMethodKeys.NotFactoryMethod;
 }
 

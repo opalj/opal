@@ -45,5 +45,5 @@ public enum InstantiabilityKeys {
 
 	Instantiable,
 	
-	NonInstantiable
+	NotInstantiable
 }
