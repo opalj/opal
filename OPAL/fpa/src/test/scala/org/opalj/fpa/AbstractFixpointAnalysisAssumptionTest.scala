@@ -45,13 +45,13 @@ import com.typesafe.config.Config
 object TestConfigFactory {
 
     private[this] final val cpaConfig =
-        "org.opalj { analysisMode = \"Library with closed packages assumption\"}"
+        "org.opalj { analysisMode = \"library with closed packages assumption\"}"
 
     private[this] final val opaConfig =
-        "org.opalj { analysisMode = \"Library with open packages assumption\"}"
+        "org.opalj { analysisMode = \"library with open packages assumption\"}"
 
     private[this] final val appConfig =
-        "org.opalj { analysisMode = \"application\"}"
+        "org.opalj { analysisMode = \"Application\"}"
 
     def createConfig(value: AnalysisModes.Value): Config = {
         value match {
