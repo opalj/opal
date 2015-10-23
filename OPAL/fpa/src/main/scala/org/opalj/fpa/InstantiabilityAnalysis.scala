@@ -105,8 +105,8 @@ object InstantiabilityAnalysis
                 case Some(Instantiable)    ⇒ return ImmediateResult(classFile, Instantiable);
                 case Some(NotInstantiable) ⇒ /* Do nothing */
                 case _ ⇒
-                    assert(instantiability.isEmpty || instantiability == MaybeInstantiable)
-                    dependees += EPK(cf, propertyKey)
+                    assert(instantiability.isEmpty || instantiability.get == MaybeInstantiable)
+                    dependees += EPK(subclass, propertyKey)
             }
             subtypes ++= project.classHierarchy.directSubtypesOf(subtype)
             subtypes -= subtype
