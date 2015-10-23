@@ -58,11 +58,11 @@ object EntryPointsAnalysis
         extends AssumptionBasedFixpointAnalysis
         with FilterEntities[Method] {
 
-    private[this] final val accessKey = ProjectAccessibility.Key
-    private[this] final val instantiabilityKey = Instantiability.Key
-    private[this] final val libraryLeakageKey = LibraryLeakage.Key
+    private[this] final val AccessKey = ProjectAccessibility.Key
+    private[this] final val InstantiabilityKey = Instantiability.Key
+    private[this] final val LibraryLeakageKey = LibraryLeakage.Key
 
-    private[this] final val serializableType = ObjectType.Serializable
+    private[this] final val SerializableType = ObjectType.Serializable
 
     val propertyKey = EntryPoint.Key
 
@@ -93,7 +93,7 @@ object EntryPointsAnalysis
                         else
                             Result(method, NoEntryPoint)
                 import propertyStore.require
-                require(method, propertyKey, method, libraryLeakageKey)(c_leak)
+                require(method, propertyKey, method, LibraryLeakageKey)(c_leak)
             }
 
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
@@ -102,7 +102,7 @@ object EntryPointsAnalysis
                 !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
                 project.classHierarchy.isSubtypeOf(
                     classFile.thisType,
-                    serializableType).isYesOrUnknown
+                    SerializableType).isYesOrUnknown
             ))
             return ImmediateResult(method, IsEntryPoint)
 
@@ -122,10 +122,10 @@ object EntryPointsAnalysis
                                 Result(method, IsEntryPoint)
                             else Result(method, NoEntryPoint)
 
-                    require(method, propertyKey, method, accessKey)(c_vis)
+                    require(method, propertyKey, method, AccessKey)(c_vis)
                 }
             }
 
-        return require(method, propertyKey, classFile, instantiabilityKey)(c_inst)
+        return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
     }
 }

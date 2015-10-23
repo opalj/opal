@@ -30,7 +30,6 @@ package org.opalj.fpa
 
 import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.FactoryMethodKeys
 
 /**
  * @author Michael Reif
@@ -52,5 +51,5 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpa/test/annotations/FactoryMethodProperty")
 
-    override def defaultValue = FactoryMethodKeys.NonFactoryMethod.toString
+    override def defaultValue = NotFactoryMethod.toString
 }
