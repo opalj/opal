@@ -781,8 +781,7 @@ class PropertyStore private (
                 try {
                     handleResult(pc(e))
                 } catch {
-                    case t: Throwable ⇒
-                        handleUncaughtException(Thread.currentThread(), t)
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
                 } finally {
                     Tasks.taskCompleted()
                 }
