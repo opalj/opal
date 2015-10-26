@@ -125,6 +125,11 @@ import scala.collection.mutable.ListBuffer
 // pos = A pair consisting of a property and its observers
 // EPK = An entity and a property key
 // EP = An entity and an associated property
+// 
+// REMARKS:
+// ========
+// SORTING IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT 
+// THE INIDIVUAL ENTITIES
 class PropertyStore private (
         private[this] val data: JIDMap[Entity, PropertyStoreValue],
         val isInterrupted: () ⇒ Boolean)(
@@ -174,7 +179,7 @@ class PropertyStore private (
      * have the respective property we will immediately schedule respective
      * computations to take place.
      */
-    def <+[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
+    def >+[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
         val spId = sp.id
         Locking.withWriteLock(theSetPropertyObserversLock) {
             theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
@@ -226,6 +231,9 @@ class PropertyStore private (
     // PER ENTITY PROPERTIES
     //
     //
+
+    // access to this field needs to be synchronized using the store's (global) lock
+    private[this] final val theOnPropertyComputations = ArrayMap[List[(Entity, Property) ⇒ Unit]](5)
 
     // The list of observers used by the entity e to compute the property of kind k (EPK).
     // In other words: the mapping between a Depender and its Observers!
@@ -294,7 +302,7 @@ class PropertyStore private (
     }
 
     /**
-     * Returns the property associated with the respective dependee.
+     * Returns the property associated with the respective `dependeeE`.
      *
      * The function `c` is the function that is called when the property becomes
      * available and which computes – and then returns – the property for the depender.
@@ -428,6 +436,29 @@ class PropertyStore private (
     }
 
     /**
+     * The function `f` is called whenever an element `e` is associated with a property of
+     * the respective kind (`pk`). For those elements that are already associated with a
+     * respective property `p`,  `f` will immediately be scheduled (i.e., `f` will not be exeucted
+     * concurrently.)
+     */
+    def >>(pk: PropertyKey)(f: (Entity, Property) ⇒ Unit): Unit = {
+        val pkId = pk.id
+        accessStore {
+            // We need exclusive access to make sure that `f` is called for all existing values
+            // only once! 
+
+            // register `f`
+            theOnPropertyComputations(pkId) = f :: theOnPropertyComputations.getOrElse(pkId, Nil)
+
+            // call `f` for all entities with a respective property
+            this(pk) foreach { ep ⇒
+                val (e, p) = ep
+                scheduleTask(new Runnable { override def run = f(e, p) })
+            }
+        }
+    }
+
+    /**
      * Registers a function that calculates a property for all or some elements
      * of the store.
      *
@@ -479,27 +510,6 @@ class PropertyStore private (
         val es = keysList.collect(pf)
         bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
     }
-
-    // SORTING IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT 
-    // THE INIDIVUAL ENTITIES
-    //    /**
-    //     * Registers a function that calculates a property for those elements
-    //     * of the store that pass the filter and which are sorted by the given function `s`.
-    //     * The given function `s`
-    //     *
-    //     * The filter and sorting is evaluated as part of this method; i.e., the calling thread.
-    //     *
-    //     * @param pf A filter that selects those entities that are relevant to the analysis.
-    //     *      For which the analysis may compute some property.
-    //     * @param s An ordering defined on the selected entities.
-    //     */
-    //    def <||~<[E <: Entity](
-    //        pf: PartialFunction[Entity, E],
-    //        s: Ordering[E],
-    //        c: E ⇒ PropertyComputationResult): Unit = {
-    //        val es = keysList.collect(pf).sorted(s)
-    //        bulkScheduleComputations(es, c.asInstanceOf[Object ⇒ PropertyComputationResult])
-    //    }
 
     /**
      * Awaits the completion of the computation of all
@@ -967,10 +977,7 @@ class PropertyStore private (
      */
     // Invariant: always only at most one function exists that will compute/update
     // the property p belonging to property kind k of an element e.
-    private[this] def update(
-        e: Entity,
-        p: Property,
-        updateType: UpdateType): Unit = {
+    private[this] def update(e: Entity, p: Property, updateType: UpdateType): Unit = {
         accessEntity {
 
             val (lock, properties) = data.get(e)
@@ -1076,6 +1083,9 @@ class PropertyStore private (
 
             // inform all (previously registered) observers about the value
             os foreach { o ⇒ o(e, p) }
+
+            // inform all onPropertyComputations about the value
+            theOnPropertyComputations.getOrElse(pk.id, Nil) foreach { f ⇒ f(e, p) }
         }
     }
 
