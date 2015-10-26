@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj.fpcf
+package analysis
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -38,7 +39,6 @@ import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.ClassFile

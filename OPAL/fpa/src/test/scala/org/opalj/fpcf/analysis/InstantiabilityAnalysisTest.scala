@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpa
+package org.opalj.fpcf
+package analysis
 
-import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.InstantiabilityKeys
+import org.opalj.fpcf.test.annotations.InstantiabilityKeys
 
 /**
  *

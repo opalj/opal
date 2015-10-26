@@ -1,9 +1,9 @@
-package org.opalj.fpa
+package org.opalj.fpcf
+package analysis
 
-import org.opalj.fp.PropertyKey
 import org.opalj.br.ObjectType
-import org.opalj.fpa.test.annotations.EntryPointKeys
 import org.opalj.AnalysisModes
+import org.opalj.fpcf.test.annotations.EntryPointKeys
 
 /**
  *
