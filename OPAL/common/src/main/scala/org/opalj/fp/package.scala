@@ -33,7 +33,7 @@ import org.opalj.collection.mutable.{ ArrayMap ⇒ OArrayMap }
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
+ * The fixpoint computations framework (`fcf`) is a general framework to perform fixpoint
  * computations on a fixed set of entities. The framework in particular
  * supports the development of static analyses. In this case, the fixpoint computations/
  * static analyses are generally operating on the code and need to be executed until
@@ -52,9 +52,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * @note The dependency relation is as follows:
  *      “A depends on B”
  *          `===`
- *      “B is depended on by A”
- *          `===`
  *      “A is the depender, B is the dependee”.
+ *          `===`
+ *      “B is depended on by A”
  *
  * @author Michael Eichberg
  */
@@ -75,9 +75,8 @@ package object fp {
     type PropertyComputation = (Entity) ⇒ PropertyComputationResult
 
     /**
-     * A function that continues the computation of a property. It takes:
-     *  1. The current property that the computation computes/is going to refine.
-     *  1. The entity + property of the entity on which the computation depends.
+     * A function that continues the computation of a property. It takes
+     * the entity + property of the entity on which the computation depends.
      */
     type Continuation = (Entity, Property) ⇒ PropertyComputationResult
 

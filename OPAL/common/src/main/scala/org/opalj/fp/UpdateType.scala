@@ -45,8 +45,9 @@ private[fp] object UpdateTypes extends Enumeration {
     val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
 
     // The result was determined by looking up a property kind's fallback property. Hence,
-    // no "real" computation was performed. Furthermore, it may be the case that
-    // the updated – at the point in time when it is handled - is no longer relevant
+    // no "real" computation was performed.
+    // TODO Is the following statement true: Furthermore, it may be the case that
+    // the updated value – at the point in time when it is handled - is no longer relevant
     // and has to be dropped.
     val FallbackUpdate = Value("Fallback Update")
 

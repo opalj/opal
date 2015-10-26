@@ -29,29 +29,28 @@
 package org.opalj.fp
 
 /**
- * An entity and (optionally) a specific associated property.
+ * A set property is a property that is shared by a set of entities. A set property is
+ * generally not refineable and not revokable.
+ *
+ * A [[SetProperty]] is compared with other properties using reference comparison. Hence, in
+ * general a new [[SetProperty]] is created by creating an object that inherits from
+ * [[SetProperty]]. For example:
+ * {{{
+ * object IsReachable extends SetProperty[Method]
+ * }}}
  *
  * @author Michael Eichberg
  */
-trait EOptionP {
+trait SetProperty[E <: AnyRef] {
 
-    /**
-     * The entity.
-     */
-    val e: Entity
+    // the id is used to efficiently get the respective (identity) set
+    private[fp] final val id = SetProperty.nextId.getAndIncrement()
 
-    /**
-     * @return `true` if the entity is associated with a property.
-     */
-    def hasProperty: Boolean
-
-    /**
-     * Returns the property if it is available otherwise an `UnsupportedOperationException` is
-     * thrown.
-     */
-    @throws[UnsupportedOperationException]("if no property is available")
-    def p: Property
-
-    def pk: PropertyKey
+    private[fp] final val mutex = new Object
 }
 
+private[fp] object SetProperty {
+
+    val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
+
+}

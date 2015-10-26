@@ -62,8 +62,8 @@ import scala.collection.mutable.ListBuffer
  * The general strategy when using the PropertyStore is to always
  * continue computing the property
  * of an entity and to collect the dependencies on those elements that are relevant.
- * I.e., if some information is not/
- * or not completely available, the analysis should still continue using
+ * I.e., if some information is not or just not completely available, the analysis should
+ * still continue using
  * the provided information and (internally) records the dependency. Later on, when
  * the analysis has computed its result it reports the same and informs the framework
  * about its dependencies.
@@ -75,7 +75,7 @@ import scala.collection.mutable.ListBuffer
  *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
  *      entities have to compute result sets that are disjoint.
  *      For example, an analysis that performs a computation on class files and
- *      that derives properties of specific kind related to a class file's methods must ensure
+ *      that derives properties of a specific kind related to a class file's methods must ensure
  *      that no two analysis of two different class files derive information about
  *      the same method.
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new )property for
@@ -84,8 +84,8 @@ import scala.collection.mutable.ListBuffer
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses cannot make any progress, because
  * they are mutually dependent. In this case
- * the computation of a property p of an entity e1 depends
- * on the property p of an entity e2 that requires the property p of the entity e1.
+ * the computation of a property `p` of an entity `e1` depends
+ * on the property `p` of an entity `e2` that requires the property `p` of the entity `e1`.
  * In this case the [[PropertyKey]]'s strategy is used to resolve such a cyclic dependency.
  *
  * ==Thread Safety==
@@ -142,11 +142,92 @@ class PropertyStore private (
 
     // We want to be able to make sure that methods that access the store as
     // a whole always get a consistent snapshot view
-    private[this] val storeLock = new ReentrantReadWriteLock
-    @inline private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(storeLock)(f)
-    @inline private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(storeLock)(f)
+    private[this] final val StoreLock = new ReentrantReadWriteLock
+    @inline final private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(StoreLock)(f)
+    @inline final private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(StoreLock)(f)
 
-    // The list of observers used by the entity to compute the property of kind k (EPK).
+    /**
+     * The final set of all stored elements.
+     */
+    // This set is not mutated.
+    private[this] final val keys: JSet[Entity] = data.keySet()
+    // An (immutable) list view of all keys.
+    private[this] final val keysList: List[Entity] = {
+        import scala.collection.JavaConverters._
+        keys.asScala.toList
+    }
+
+    // =============================================================================================
+    //
+    // SET PROPERTIES
+    //
+    //
+
+    private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
+    // access to this field needs to be synchronized!
+    private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
+    private[this] final val theSetProperties = ArrayMap[Set[AnyRef]](5)
+
+    /**
+     * Adds the given function `f` to the set of functions that will be called
+     * when an entity `e` gets the [[SetProperty]] `sp`. If some entities already
+     * have the respective property we will immediately schedule respective
+     * computations to take place.
+     */
+    def <+[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
+        val spId = sp.id
+        Locking.withWriteLock(theSetPropertyObserversLock) {
+            theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
+            sp.mutex.synchronized {
+                accessEntity { // <= we don't need a overall consistent view
+                    theSetProperties.getOrElse(spId, Set.empty) foreach { e ⇒
+                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Directly associates the given [[SetProperty]] `sp` with the given entity `e`.
+     *
+     * If the given entity already has the associated property nothing will happen;
+     * if not, we will immediately schedule the execution of all functions that
+     * are interested in this property.
+     */
+    def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = accessEntity {
+        val spId = sp.id
+        Locking.withReadLock(theSetPropertyObserversLock) {
+            sp.mutex.synchronized {
+                accessEntity {
+                    theSetProperties(spId) = theSetProperties.getOrElse(spId, Set.empty) + e
+                    theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
+                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
+                    }
+                }
+            }
+        }
+    }
+
+    //    /**
+    //     * Returns `true` if the given entity has the given property.
+    //     * Returns `false` if the given entity does not have the property or if the
+    //     * underlying analysis has not yet analyzed the respective method.
+    //     *
+    //     * Calling this method generally only makes sense if the corresponding analysis
+    //     * is guaranteed to have finish (see [[#waitOnPropertyComputationCompletion]]).
+    //     */
+    //    def hasProperty(e: Entity, sp: SetProperty): Boolean = {
+    //
+    //    }
+
+    // =============================================================================================
+    //
+    // PER ENTITY PROPERTIES
+    //
+    //
+
+    // The list of observers used by the entity e to compute the property of kind k (EPK).
     // In other words: the mapping between a Depender and its Observers!
     // The list of observers needs to be maintained whenever:
     //  1. A computation of a property finishes. In this kind all observers need to
@@ -156,26 +237,17 @@ class PropertyStore private (
     private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
 
     /**
-     * The final set of all stored elements.
-     */
-    // This set is not mutated.
-    private[this] final val keys: JSet[Entity] = data.keySet()
-    private[this] final val keysList: List[Entity] = {
-        import scala.collection.JavaConverters._
-        keys.asScala.toList
-    }
-
-    /**
-     * Returns the property of the respective property kind currently associated
-     * with the given element.
+     * Returns the property of the respective property kind `pk` currently associated
+     * with the given element `e`.
      *
      * This is most basic method to get some property and it is the preferred way
      * if (a) you know that the property is already available – e.g., because some
      * property computation function was strictly run before the current one – or
-     * if (b) the running computation
-     * has a huge, complex state that is not completely required if the computation
+     * if (b) the running computation has a comparatively
+     * huge, complex state that is not completely required if the computation
      * needs to be suspended because the property is not (yet) available. In the latter
-     * case it may be beneficial to only store the strictly necessary information and
+     * case it may be beneficial to only store the strictly necessary information and to rerun
+     * the entire computation on demand.
      *
      * @note The returned value may change over time but only such that it
      *      is strictly more precise.

@@ -27,10 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpa
+package fpcf
+package analysis
 package escape
 
 import java.net.URL
+import net.ceedubs.ficus.Ficus._
 import org.opalj.fp.Entity
 import org.opalj.fp.PropertyStore
 import org.opalj.fp.PropertyKey
@@ -94,9 +96,9 @@ case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val is
  *
  * @author Michael Eichberg
  */
-class EscapeAnalysis(val debugAnalysis: Boolean) {
+class EscapeAnalysis(val debug: Boolean) {
 
-    val SelfReferenceLeakage = org.opalj.fpa.escape.SelfReferenceLeakage.Key
+    val SelfReferenceLeakage = org.opalj.fpcf.analysis.escape.SelfReferenceLeakage.Key
 
     /**
      * Determines for the given class file if any method may leak the self reference (`this`).
@@ -171,13 +173,13 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
                 if (m.isNative ||
                     (m.isNotStatic && m.isNotAbstract &&
                         (potentiallyLeaksSelfReference(m) && leaksSelfReference(m)))) {
-                    if (debugAnalysis)
+                    if (debug)
                         OPALLogger.debug(
                             "analysis result",
                             s"${m.toJava(classFile)} leaks its self reference")
                     true
                 } else {
-                    if (debugAnalysis)
+                    if (debug)
                         OPALLogger.debug(
                             "analysis result",
                             s"${m.toJava(classFile)} does not leak its self reference")
@@ -186,7 +188,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
 
             }
         if (doesLeakSelfReference) {
-            if (debugAnalysis)
+            if (debug)
                 OPALLogger.debug(
                     "analysis result",
                     s"${classFile.thisType.toJava} leaks its self reference")
@@ -195,7 +197,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
             else
                 Result(classFile, LeaksSelfReference)
         } else {
-            if (debugAnalysis)
+            if (debug)
                 OPALLogger.debug(
                     "analysis result",
                     s"${classFile.thisType.toJava} does not leak its self reference")
@@ -212,7 +214,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
         import project.logContext
 
         if (classFile.thisType eq ObjectType.Object) {
-            if (debugAnalysis)
+            if (debug)
                 OPALLogger.debug(
                     "analysis result",
                     "java.lang.Object does not leak its self reference [configured]")
@@ -226,7 +228,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
         val hasUnknownSuperClass = (superclassFileOption.isEmpty && (superclassType ne ObjectType.Object))
         if (hasUnknownSuperClass || interfaceTypesOption.exists(_ == None)) {
             // The project is not complete, hence, we have to use the fallback.
-            if (debugAnalysis)
+            if (debug)
                 OPALLogger.debug(
                     "analysis result",
                     s"${classFile.thisType.toJava} leaks self reference [super type information is incomplete]")
@@ -242,7 +244,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
                 interfaceTypesOption.map(_.get)
 
         if (superClassFiles.nonEmpty) {
-            if (debugAnalysis)
+            if (debug)
                 OPALLogger.debug(
                     "analysis progress",
                     s"${classFile.thisType.toJava} waiting on leakage information about: ${superClassFiles.map(_.thisType.toJava).mkString(", ")}")
@@ -252,7 +254,7 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
                     if (haveProperty) {
                         determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
                     } else {
-                        if (debugAnalysis)
+                        if (debug)
                             OPALLogger.debug(
                                 "analysis result",
                                 s"${classFile.thisType.toJava} leaks its self reference [a supertype already leaks the self reference]")
@@ -263,14 +265,15 @@ class EscapeAnalysis(val debugAnalysis: Boolean) {
             determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
         }
     }
-
 }
+
 object EscapeAnalysis {
 
-    def analyze(implicit project: Project[URL]): Unit = {
+    def analyze(implicit project: SomeProject): Unit = {
         implicit val store = project.get(SourceElementsPropertyStoreKey)
         val filter: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
-        val analysis = new EscapeAnalysis(debugAnalysis = false)
+        val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.escape.debug")
+        val analysis = new EscapeAnalysis(debug.getOrElse(false))
         store <||< (filter, analysis.determineSelfReferenceLeakage)
     }
 }
