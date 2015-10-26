@@ -61,6 +61,22 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
             null
     }
 
+    @throws[IndexOutOfBoundsException]("if the index is negative")
+    def get(index: Int): Option[T] = {
+        if (index < data.length)
+            Some(data(index))
+        else
+            None
+    }
+
+    @throws[IndexOutOfBoundsException]("if the index is negative")
+    def getOrElse(index: Int, f: ⇒ T): T = {
+        if (index < data.length)
+            data(index)
+        else
+            f
+    }
+
     /**
      * Sets the value at the given index to the given value. If the index is larger than
      * the currently used array, the underlying array is immediately resized to make

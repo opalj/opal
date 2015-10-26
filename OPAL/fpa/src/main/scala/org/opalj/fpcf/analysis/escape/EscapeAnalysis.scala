@@ -27,7 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fcf
+package fpcf
+package analysis
 package escape
 
 import java.net.URL
@@ -97,7 +98,7 @@ case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val is
  */
 class EscapeAnalysis(val debug: Boolean) {
 
-    val SelfReferenceLeakage = org.opalj.fpa.escape.SelfReferenceLeakage.Key
+    val SelfReferenceLeakage = org.opalj.fpcf.analysis.escape.SelfReferenceLeakage.Key
 
     /**
      * Determines for the given class file if any method may leak the self reference (`this`).
@@ -271,7 +272,7 @@ object EscapeAnalysis {
     def analyze(implicit project: SomeProject): Unit = {
         implicit val store = project.get(SourceElementsPropertyStoreKey)
         val filter: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
-        val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.escape.debug")
+        val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.escape.debug")
         val analysis = new EscapeAnalysis(debug.getOrElse(false))
         store <||< (filter, analysis.determineSelfReferenceLeakage)
     }

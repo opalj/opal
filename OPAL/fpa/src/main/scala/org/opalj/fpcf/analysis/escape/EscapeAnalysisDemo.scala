@@ -27,7 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpa
+package fpcf
+package analysis
 package escape
 
 import java.net.URL

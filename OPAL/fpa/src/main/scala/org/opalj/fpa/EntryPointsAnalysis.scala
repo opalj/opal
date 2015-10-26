@@ -52,6 +52,7 @@ object EntryPoint {
 
 case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
 
+//
 case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 
 object EntryPointsAnalysis
@@ -80,21 +81,23 @@ object EntryPointsAnalysis
 
         val classFile = project.classFile(method)
 
-        if (classFile.isInterfaceDeclaration)
+        if (classFile.isInterfaceDeclaration) {
             if (isOpenLibrary)
                 return ImmediateResult(method, IsEntryPoint)
             else if (classFile.isPublic && (method.isStatic || method.isPublic))
                 return ImmediateResult(method, IsEntryPoint)
             else {
-                val c_leak: Continuation =
-                    (dependeeE: Entity, dependeeP: Property) ⇒
-                        if (dependeeP == Leakage)
-                            Result(method, IsEntryPoint)
-                        else
-                            Result(method, NoEntryPoint)
+                val c_leak: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                    if (dependeeP == Leakage)
+                        Result(method, IsEntryPoint)
+                    else
+                        Result(method, NoEntryPoint)
+                }
+
                 import propertyStore.require
                 require(method, propertyKey, method, LibraryLeakageKey)(c_leak)
             }
+        }
 
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
         if (Method.isObjectSerializationRelated(method) &&
@@ -118,9 +121,11 @@ object EntryPointsAnalysis
                         (dependeeE: Entity, dependeeP: Property) ⇒
                             if (dependeeP == Global &&
                                 (isInstantiable && !method.isStatic) ||
-                                (method.isStatic || method.isConstructor))
+                                // LOOKS SUSPICIOUS
+                                method.isStatic || method.isConstructor)
                                 Result(method, IsEntryPoint)
-                            else Result(method, NoEntryPoint)
+                            else
+                                Result(method, NoEntryPoint)
 
                     require(method, propertyKey, method, AccessKey)(c_vis)
                 }

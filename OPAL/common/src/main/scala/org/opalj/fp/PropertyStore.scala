@@ -62,7 +62,7 @@ import scala.collection.mutable.ListBuffer
  * The general strategy when using the PropertyStore is to always
  * continue computing the property
  * of an entity and to collect the dependencies on those elements that are relevant.
- * I.e., if some information is not or just not completely available, the analysis should 
+ * I.e., if some information is not or just not completely available, the analysis should
  * still continue using
  * the provided information and (internally) records the dependency. Later on, when
  * the analysis has computed its result it reports the same and informs the framework
@@ -142,18 +142,9 @@ class PropertyStore private (
 
     // We want to be able to make sure that methods that access the store as
     // a whole always get a consistent snapshot view
-    private[this] val storeLock = new ReentrantReadWriteLock
-    @inline final private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(storeLock)(f)
-    @inline final private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(storeLock)(f)
-
-    // The list of observers used by the entity e to compute the property of kind k (EPK).
-    // In other words: the mapping between a Depender and its Observers!
-    // The list of observers needs to be maintained whenever:
-    //  1. A computation of a property finishes. In this kind all observers need to
-    //     be notified and removed from this map afterwards.
-    //  1. A computation of a property generates an [[IntermediatResult]], but the
-    //     the observer is one-time observer. (Such observers are only used internally.
-    private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+    private[this] final val StoreLock = new ReentrantReadWriteLock
+    @inline final private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(StoreLock)(f)
+    @inline final private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(StoreLock)(f)
 
     /**
      * The final set of all stored elements.
@@ -166,6 +157,85 @@ class PropertyStore private (
         keys.asScala.toList
     }
 
+    // =============================================================================================
+    //
+    // SET PROPERTIES
+    //
+    //
+
+    private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
+    // access to this field needs to be synchronized!
+    private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
+    private[this] final val theSetProperties = ArrayMap[Set[AnyRef]](5)
+
+    /**
+     * Adds the given function `f` to the set of functions that will be called
+     * when an entity `e` gets the [[SetProperty]] `sp`. If some entities already
+     * have the respective property we will immediately schedule respective
+     * computations to take place.
+     */
+    def <+[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
+        val spId = sp.id
+        Locking.withWriteLock(theSetPropertyObserversLock) {
+            theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
+            sp.mutex.synchronized {
+                accessEntity { // <= we don't need a overall consistent view
+                    theSetProperties.getOrElse(spId, Set.empty) foreach { e ⇒
+                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Directly associates the given [[SetProperty]] `sp` with the given entity `e`.
+     *
+     * If the given entity already has the associated property nothing will happen;
+     * if not, we will immediately schedule the execution of all functions that
+     * are interested in this property.
+     */
+    def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = accessEntity {
+        val spId = sp.id
+        Locking.withReadLock(theSetPropertyObserversLock) {
+            sp.mutex.synchronized {
+                accessEntity {
+                    theSetProperties(spId) = theSetProperties.getOrElse(spId, Set.empty) + e
+                    theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
+                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
+                    }
+                }
+            }
+        }
+    }
+
+    //    /**
+    //     * Returns `true` if the given entity has the given property.
+    //     * Returns `false` if the given entity does not have the property or if the
+    //     * underlying analysis has not yet analyzed the respective method.
+    //     *
+    //     * Calling this method generally only makes sense if the corresponding analysis
+    //     * is guaranteed to have finish (see [[#waitOnPropertyComputationCompletion]]).
+    //     */
+    //    def hasProperty(e: Entity, sp: SetProperty): Boolean = {
+    //
+    //    }
+
+    // =============================================================================================
+    //
+    // PER ENTITY PROPERTIES
+    //
+    //
+
+    // The list of observers used by the entity e to compute the property of kind k (EPK).
+    // In other words: the mapping between a Depender and its Observers!
+    // The list of observers needs to be maintained whenever:
+    //  1. A computation of a property finishes. In this kind all observers need to
+    //     be notified and removed from this map afterwards.
+    //  1. A computation of a property generates an [[IntermediatResult]], but the
+    //     the observer is one-time observer. (Such observers are only used internally.
+    private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+
     /**
      * Returns the property of the respective property kind `pk` currently associated
      * with the given element `e`.
@@ -173,7 +243,7 @@ class PropertyStore private (
      * This is most basic method to get some property and it is the preferred way
      * if (a) you know that the property is already available – e.g., because some
      * property computation function was strictly run before the current one – or
-     * if (b) the running computation has a comparatively 
+     * if (b) the running computation has a comparatively
      * huge, complex state that is not completely required if the computation
      * needs to be suspended because the property is not (yet) available. In the latter
      * case it may be beneficial to only store the strictly necessary information and to rerun
