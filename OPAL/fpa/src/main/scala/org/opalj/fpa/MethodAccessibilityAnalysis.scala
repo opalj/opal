@@ -65,9 +65,9 @@ object MethodAccessibilityAnalysis
         if (isOpenLibrary)
             return ImmediateResult(method, Global)
 
-        val declClass = project.classFile(method)
-        val finalClass = declClass.isFinal
-        val publicClass = declClass.isPublic
+        val classFile = project.classFile(method)
+        val finalClass = classFile.isFinal
+        val publicClass = classFile.isPublic
 
         val isPublic = method.isPublic
         val isProtected = method.isProtected
@@ -75,7 +75,7 @@ object MethodAccessibilityAnalysis
         if (publicClass && (isPublic || (!finalClass && isProtected)))
             return ImmediateResult(method, Global)
 
-        val numSubtypes = project.classHierarchy.allSubtypes(declClass.thisType, false).size
+        val numSubtypes = project.classHierarchy.allSubtypes(classFile.thisType, false).size
         if ((isPublic || isProtected) &&
             numSubtypes > 0) {
             val c: Continuation =

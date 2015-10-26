@@ -87,38 +87,38 @@ object StaticMethodAccessibilityAnalysis
         if (isOpenLibrary)
             return ImmediateResult(method, Global)
 
-        val declClass = project.classFile(method)
+        val classFile = project.classFile(method)
         val pgkVisibleMethod = method.isPackagePrivate
 
         if (pgkVisibleMethod)
             return ImmediateResult(method, PackageLocal)
 
-        if (declClass.isPublic &&
+        if (classFile.isPublic &&
             (method.isPublic ||
-                (!declClass.isFinal && method.isProtected)))
+                (!classFile.isFinal && method.isProtected)))
             return ImmediateResult(method, Global)
 
-        val declaringClassType = declClass.thisType
+        val classType = classFile.thisType
 
         val methodDescriptor = method.descriptor
         val methodName = method.name
 
-        var subtypes = project.classHierarchy.directSubtypesOf(declaringClassType)
+        var subtypes = project.classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
-            val curSubtype = subtypes.head
-            val classFileO = project.classFile(curSubtype)
-            if (classFileO.isDefined) {
-                val classFile = classFileO.get
-                val declMethod = classFile.findMethod(methodName, methodDescriptor)
+            val subtype = subtypes.head
+            val subclassAsOption = project.classFile(subtype)
+            if (subclassAsOption.isDefined) {
+                val subclass = subclassAsOption.get
+                val declMethod = subclass.findMethod(methodName, methodDescriptor)
                 if (declMethod.isEmpty) {
-                    if (classFile.isPublic)
+                    if (subclass.isPublic)
                         return ImmediateResult(method, Global)
                     else
-                        subtypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
+                        subtypes ++= project.classHierarchy.directSubtypesOf(subtype)
                 }
             } else return ImmediateResult(method, Global)
 
-            subtypes -= curSubtype
+            subtypes -= subtype
         }
 
         // If no subtype is found, the method is not accessible
