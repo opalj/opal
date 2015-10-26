@@ -52,7 +52,7 @@ class ConsoleOPALLogger(
             return ;
 
         val stream = if (messageLevel == Error) Console.err else Console.out
-        stream.println("#"+hashCode+":"+message.toConsoleOutput(ansiColored))
+        stream.println(message.toConsoleOutput(ansiColored))
     }
 
 }
