@@ -50,6 +50,8 @@ object MethodAccessibilityAnalysis
 
     val propertyKey = ProjectAccessibility.Key
 
+    private[this] final val ObjectType = org.opalj.br.ObjectType.Object
+
     val entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStatic && m.body.nonEmpty ⇒ m
     }
@@ -75,9 +77,13 @@ object MethodAccessibilityAnalysis
         if (publicClass && (isPublic || (!finalClass && isProtected)))
             return ImmediateResult(method, Global)
 
-        val numSubtypes = project.classHierarchy.allSubtypes(classFile.thisType, false).size
+        val numSubtypes = project.classHierarchy.directSubtypesOf(classFile.thisType).size
+
+        val numSupertypes = project.classHierarchy.directSupertypes(classFile.thisType).
+            filter { supertype ⇒ supertype ne ObjectType }.size
+
         if ((isPublic || isProtected) &&
-            numSubtypes > 0) {
+            numSubtypes > 0 || numSupertypes > 0) {
             val c: Continuation =
                 (dependeeE: Entity, dependeeP: Property) ⇒
                     if (dependeeP == NoLeakage)
@@ -88,11 +94,6 @@ object MethodAccessibilityAnalysis
             return require(method, propertyKey,
                 method, LibraryLeakage.Key)(c)
         }
-
-        /*
-         * declClass could also escape through a supertype that also has a method with
-         * the same signature. In that case, the method could be called indirectly over a supertype.
-         */
 
         ImmediateResult(method, PackageLocal)
     }

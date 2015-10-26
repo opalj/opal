@@ -41,8 +41,8 @@ public abstract class ASuperclass {
 	}
 	
 	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+			opa=LibraryLeakageKeys.Leakage,
+			cpa=LibraryLeakageKeys.Leakage)
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -51,14 +51,13 @@ public abstract class ASuperclass {
 	}
 	
 	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+			opa=LibraryLeakageKeys.Leakage,
+			cpa=LibraryLeakageKeys.Leakage)
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}
 	
 	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
 			cpa=LibraryLeakageKeys.NoLeakage)
 	void packagePrivateMethod(){
 		System.out.println("package private");

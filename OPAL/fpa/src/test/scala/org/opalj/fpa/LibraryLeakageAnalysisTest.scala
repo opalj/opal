@@ -59,5 +59,5 @@ class LibraryLeakageAnalysisCPATest extends LibraryLeakageAnalysisTest {
 }
 
 class LibraryLeakageAnalysisOPATest extends LibraryLeakageAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
+    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

@@ -37,9 +37,9 @@ import org.opalj.fp.Entity
 import org.opalj.fp.Property
 import org.opalj.fp.PropertyKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.ObjectType
 import org.opalj.fp.ImmediateResult
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fp.ImmediateResult
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -80,7 +80,7 @@ object LibraryLeakageAnalysis
 
     val propertyKey = ProjectAccessibility.Key
 
-    val objectType = ObjectType.Object
+    private[this] final val ObjectType = org.opalj.br.ObjectType.Object
 
     /**
      * Determines the [[LibraryLeakage]] property of non-static methods. It is tailored to entry point
@@ -100,9 +100,9 @@ object LibraryLeakageAnalysis
         if (method.isPrivate || method.isConstructor)
             return ImmediateResult(method, NoLeakage)
 
-        val declClass = project.classFile(method)
+        val classFile = project.classFile(method)
 
-        if (declClass.isFinal)
+        if (classFile.isFinal)
             return ImmediateResult(method, NoLeakage)
 
         if (isOpenLibrary)
@@ -112,10 +112,8 @@ object LibraryLeakageAnalysis
         if (isClosedLibrary && method.isPackagePrivate)
             return ImmediateResult(method, NoLeakage)
 
-        if (declClass.isPublic && (method.isPublic || method.isProtected))
+        if (classFile.isPublic && (method.isPublic || method.isProtected))
             return ImmediateResult(method, Leakage)
-
-        var relevantSubtypes = project.classHierarchy.directSubtypesOf(declClass.thisType)
 
         /*
          * At this point: 
@@ -123,26 +121,52 @@ object LibraryLeakageAnalysis
          *  - A method can't be package visible.
          *  - A method can't be private or final.
          */
-        if (declClass.isPublic && !declClass.isFinal)
+        if (classFile.isPublic && !classFile.isFinal)
             return ImmediateResult(method, Leakage)
 
+        var relevantSubtypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
+
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
+
         while (relevantSubtypes.nonEmpty) {
-            val curSubtype = relevantSubtypes.head
-            val classFileO = project.classFile(curSubtype)
-            if (classFileO.isDefined) {
-                val classFile = classFileO.get
-                val declMethod = classFile.findMethod(method.name, method.descriptor)
-                if (declMethod.isDefined) {
-                    relevantSubtypes -= curSubtype
-                } else {
-                    if (!classFile.isPublic || method.isPackagePrivate) {
-                        relevantSubtypes -= curSubtype
-                        relevantSubtypes ++= project.classHierarchy.directSubtypesOf(curSubtype)
+            val subtype = relevantSubtypes.head
+            val subclassAsOption = project.classFile(subtype)
+            if (subclassAsOption.isDefined) {
+                val subclass = subclassAsOption.get
+                val declMethod = subclass.findMethod(methodName, methodDescriptor)
+                if (declMethod.isEmpty) {
+                    if (!subclass.isPublic || method.isPackagePrivate) {
+                        relevantSubtypes ++= project.classHierarchy.directSubtypesOf(subtype)
                     } else return ImmediateResult(method, Leakage)
                 }
             } else return ImmediateResult(method, Leakage)
+            relevantSubtypes -= subtype
         }
 
+        //Now: A method does not leak through a subclass, but we also have to check the superclass
+
+        var relevantSupertypes = project.classHierarchy.directSupertypes(classFile.thisType)
+        
+        while (relevantSupertypes.nonEmpty) {
+            val supertype = relevantSupertypes.head
+            if (supertype != ObjectType) {
+                val superclassAsOption = project.classFile(supertype)
+                if (superclassAsOption.isDefined) {
+                    val superclass = superclassAsOption.get
+                    val declMethod = superclass.findMethod(methodName, methodDescriptor)
+                    if (declMethod.isDefined) {
+                        val m = declMethod.get
+                        if (m.isPublic && superclass.isPublic
+                            || (!m.isPrivate && isOpenLibrary))
+                            return ImmediateResult(method, Leakage)
+
+                        relevantSubtypes ++= project.classHierarchy.directSupertypes(supertype)
+                    }
+                } else return ImmediateResult(method, Leakage)
+            }
+            relevantSupertypes -= supertype
+        }
         ImmediateResult(method, NoLeakage)
     }
 

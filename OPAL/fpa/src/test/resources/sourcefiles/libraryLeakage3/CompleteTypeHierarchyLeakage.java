@@ -1,4 +1,4 @@
-/* BSD 2Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,60 +22,48 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package libraryLeakage2;
+package libraryLeakage3;
 
 import org.opalj.fpa.test.annotations.LibraryLeakageKeys;
 import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
 
 /**
- *
- * This class is package private, hence, in a closed library scenario a client
- * can not access the the methods of this class. There are 2 subclasses in that
- * example:
- *  - DontLeakViaAbstractClass 
- *  - DontLeakViaInterface
  * 
- * This Tests, that the methods does not leak via non-abstract classes.
+ * This class is for test purpose only. It shall reflect the case of a leakage
+ * though the superclass.
+ * 
+ * @note The method names refer to the closed packages assumption.
  * 
  * @author Michael Reif
  */
-class DontLeakViaNotConcreteClass {
+public class CompleteTypeHierarchyLeakage extends SuperclassLeakage {
 
-	/**
-	 * This is weird. This method should be exposed to the client by the
-	 * DontLeakViaAbstractClass but the compiler somehow introduces a method
-	 * with the same name that prevent that method from being exposed.
-	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
-	public void iDoNotLeak() {
+	public CompleteTypeHierarchyLeakage() {
+		privateMethodWithoutSuperclassLeakege(); // suppress warning of unused
+													// private method.
 	}
 
-	/**
-	 * Package visible methods can not leak when the closed packages assumption
-	 * is met.
-	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
-	void iCanNotLeakUnderCPA() {
+	@LibraryLeakageProperty
+	public void publicMethodWithSuperclassLeakage() {
 
 	}
 
-	/**
-	 * This method can not leak because it is overridden in one subclass and the
-	 * other one is package private.
-	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
-	protected void iDoNotLeakToo() {
+	@LibraryLeakageProperty
+	protected void protectedMethodWithSuperclassLeakage() {
 
 	}
-}
 
-abstract class YouCantInheritFromMe extends DontLeakViaNotConcreteClass {
+	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
+	void packagePrivateMethodWithoutSuperclassLeakage() {
 
-	protected void iDoNotLeakToo() {
+	}
+
+	@LibraryLeakageProperty(opa = LibraryLeakageKeys.NoLeakage, cpa = LibraryLeakageKeys.NoLeakage)
+	private void privateMethodWithoutSuperclassLeakege() {
 
 	}
 }
