@@ -33,13 +33,6 @@ package escape
 
 import java.net.URL
 import net.ceedubs.ficus.Ficus._
-import org.opalj.fp.Entity
-import org.opalj.fp.PropertyStore
-import org.opalj.fp.PropertyKey
-import org.opalj.fp.Property
-import org.opalj.fp.PropertyComputationResult
-import org.opalj.fp.ImmediateResult
-import org.opalj.fp.Result
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile

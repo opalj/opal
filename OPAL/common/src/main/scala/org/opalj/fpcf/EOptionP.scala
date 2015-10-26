@@ -26,31 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * An entity and (optionally) a specific associated property.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+trait EOptionP {
 
     /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
+     * The entity.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    val e: Entity
 
     /**
-     * Creates a new empty property store.
+     * @return `true` if the entity is associated with a property.
      */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
+    def hasProperty: Boolean
+
+    /**
+     * Returns the property if it is available otherwise an `UnsupportedOperationException` is
+     * thrown.
+     */
+    @throws[UnsupportedOperationException]("if no property is available")
+    def p: Property
+
+    def pk: PropertyKey
 }
+

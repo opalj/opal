@@ -1,4 +1,5 @@
-/* BSD 2-Clause License:
+/**
+ * BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -27,30 +28,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package fpcf
+package analysis
 
-import org.opalj.fpcf.PropertyStore
+//import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
+//import org.opalj.br.ObjectType
 
-/**
- * The ''key'' object to get access to the properties store.
- *
- * @author Michael Eichberg
- */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
-
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
-
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
-}
+case object IsReachable extends SetProperty[Method]
+//
+//object IsReachableDemo extends DefaultOneStepAnalysis {
+//
+//    override def title: String =
+//        "all reachable methods"
+//
+//    override def description: String =
+//        "determines escape information related to object belonging to a specific class"
+//
+//    override def doAnalyze(
+//        project: SomeProject,
+//        parameters: Seq[String],
+//        isInterrupted: () ⇒ Boolean): BasicReport = {
+//        //
+//        //        val projectStore = project.get(SourceElementsPropertyStoreKey)
+//        //        projectStore >> (EntryPoint.Key) { (e:Entity, p:Property) ⇒ 
+//        //                if(p == IsEntryPoint)
+//        //                    projectStore.
+//        //        }
+//        null
+//    }
+//}

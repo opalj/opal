@@ -27,30 +27,64 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package fpcf
+package analysis
 
 /**
- * The ''key'' object to get access to the properties store.
- *
- * @author Michael Eichberg
+ * Common supertrait of all purity properties.
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+sealed trait Purity extends Property {
 
     /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
+     * Returns the key used by all `Purity` properties.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    // All instances have to share the SAME key!
+    final def key = Purity.Key
 
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
 }
+/**
+ * Common constants use by all [[Purity]] properties associated with methods.
+ */
+object Purity {
+
+    /**
+     * The key associated with every purity property.
+     */
+    final val Key =
+        PropertyKey.create(
+            // The unique name of the property.
+            "Purity",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            MaybePure
+        )
+
+}
+
+/**
+ * The fallback/default purity.
+ *
+ * It is only used by the framework in case of a dependency
+ * on an element for which no result could be computed.
+ */
+case object MaybePure extends Purity { final val isRefineable = true }
+
+/**
+ * Used if we know that the pureness of a methods only depends on the pureness
+ * of the target methods.
+ *
+ * A conditionally pure method has to be treated as an inpure methods by clients
+ * except that it may be refined later on.
+ */
+case object ConditionallyPure extends Purity { final val isRefineable = true }
+
+/**
+ * The respective method is pure.
+ */
+case object Pure extends Purity { final val isRefineable = false }
+
+/**
+ * The respective method is impure.
+ */
+case object Impure extends Purity { final val isRefineable = false }
+

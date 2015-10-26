@@ -26,31 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * The different types of updates distinguished by OPAL.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+private[fpcf] object UpdateTypes extends Enumeration {
 
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    val IntermediateUpdate = Value("Intermediate Update")
 
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
+    // The result is the final result and was computed using other information.
+    val FinalUpdate = Value("Final Update")
+
+    // The result is the final result and was computed without requiring any
+    // other information.
+    val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
+
+    // The result was determined by looking up a property kind's fallback property. Hence,
+    // no "real" computation was performed.
+    // TODO Is the following statement true: Furthermore, it may be the case that
+    // the updated value – at the point in time when it is handled - is no longer relevant
+    // and has to be dropped.
+    val FallbackUpdate = Value("Fallback Update")
+
 }

@@ -26,31 +26,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * A PropertyObserver is a function that is called if the property associated
+ * with the respective entity is computed or refined.
+ *
+ * The parameters of the function are the observed element (dependee) and its
+ * (then available/refined) property.
+ *
+ * ==Core Properties==
+ * A PropertyObserver never directly executes/continues the analysis but schedules it if
+ * necessary.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+private[fpcf] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
     /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
+     * The entity and property key for which the property of the observed element
+     * is necessary.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    def depender: EPK
 
     /**
-     * Creates a new empty property store.
+     * If `true` the observer is immediately deregistered when it is called (for the
+     * first time).
      */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
+    def removeAfterNotification: Boolean
+}
+
+private[fpcf] abstract class DefaultPropertyObserver(
+    final val depender: EPK,
+    final val removeAfterNotification: Boolean)
+        extends PropertyObserver {
+
+    override def toString: String = {
+        val id = System.identityHashCode(this).toHexString
+        s"PropertyObserver(depender=$depender,oneTimeOnly=$removeAfterNotification,id=$id)"
     }
 }

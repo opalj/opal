@@ -63,17 +63,25 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
 
     @throws[IndexOutOfBoundsException]("if the index is negative")
     def get(index: Int): Option[T] = {
-        if (index < data.length)
-            Some(data(index))
-        else
+        if (index < data.length) {
+            val entry = data(index)
+            if (entry ne null)
+                Some(entry)
+            else
+                None
+        } else
             None
     }
 
     @throws[IndexOutOfBoundsException]("if the index is negative")
     def getOrElse(index: Int, f: ⇒ T): T = {
-        if (index < data.length)
-            data(index)
-        else
+        if (index < data.length) {
+            val entry = data(index)
+            if (entry ne null)
+                entry
+            else
+                f
+        } else
             f
     }
 

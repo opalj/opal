@@ -26,31 +26,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
+ *
+ * Compared to a standard `Tuple2` the implementation of equals differ. Here,
+ * the entities are compared using reference comparison and not equality.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+final class EPK(val e: Entity, val pk: PropertyKey)
+        extends EOptionP
+        with Product2[Entity, PropertyKey] {
 
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    final def hasProperty: Boolean = false
+    final def p: Property = throw new UnsupportedOperationException()
 
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
+    def _1 = e
+    def _2 = pk
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
+            case _         ⇒ false
+        }
+    }
+
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
+
+    override val hashCode: Int = e.hashCode() * 511 + pk.id
+
+    override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
+}
+
+/**
+ * Factory and extractor for [[EPK]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object EPK {
+
+    def apply(e: Entity, pk: PropertyKey): EPK = new EPK(e, pk)
+
+    def unapply(that: EPK): Option[(Entity, PropertyKey)] = {
+        that match {
+            case null ⇒ None
+            case epk  ⇒ Some((epk.e, epk.pk))
+        }
     }
 }

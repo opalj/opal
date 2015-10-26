@@ -26,31 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * An information associated with an entity. Each property belongs to exactly one
+ * property kind identified by a [[PropertyKey]]. Furthermore, each property
+ * is associated with at most one property per property kind.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+trait Property {
 
     /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
+     * The key uniquely identifies this property's category. All property objects
+     * of the same kind have to use the same key.
      *
-     * @return `Nil`.
+     * In general each `Property` kind is expected to have a companion object that
+     * stores the unique `PropertyKey`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    def key: PropertyKey
 
     /**
-     * Creates a new empty property store.
+     * Returns `true` if the current property may be refined in the future and, hence,
+     * it is meaningful to register for update events.
      */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
+    def isRefineable: Boolean
+
+    def isFinal = !isRefineable
+
 }

@@ -26,31 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * A set property is a property that is shared by a set of entities. A set property is
+ * generally not refineable and not revokable.
+ *
+ * A [[SetProperty]] is compared with other properties using reference comparison. Hence, in
+ * general a new [[SetProperty]] is created by creating an object that inherits from
+ * [[SetProperty]]. For example:
+ * {{{
+ * object IsReachable extends SetProperty[Method]
+ * }}}
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+trait SetProperty[E <: AnyRef] {
 
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    // the id is used to efficiently get the respective (identity) set
+    private[fpcf] final val id = SetProperty.nextId.getAndIncrement()
 
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
-    }
+    private[fpcf] final val mutex = new Object
+}
+
+private[fpcf] object SetProperty {
+
+    val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
+
 }

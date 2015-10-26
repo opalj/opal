@@ -29,66 +29,62 @@
 package org.opalj
 package fpcf
 package analysis
-package escape
 
 import java.net.URL
 
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
- * Demonstrates how to run the purity analysis.
- *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "shallow escape analysis"
+    override def title: String = "class instantiablility computation"
 
-    override def description: String =
-        "determins escape information related to object belonging to a specific class"
+    override def description: String = "determines the instantiable classes of a library/application"
+
+    private val dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
 
     override def doAnalyze(
         project: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
         var analysisTime = org.opalj.util.Seconds.None
+
         org.opalj.util.PerformanceEvaluation.time {
-            EscapeAnalysis.analyze(project)
-            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+
+            var fpaThreads = Seq.empty[Thread]
+            dependees foreach { fpa ⇒ fpaThreads = fpaThreads :+ new Thread(new Runnable { def run = fpa.analyze(project) }) }
+            fpaThreads = fpaThreads :+ new Thread(new Runnable { def run = InstantiabilityAnalysis.analyze(project) })
+
+            fpaThreads foreach (_.start)
+            fpaThreads foreach (_.join)
+            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakingEntities: Traversable[(AnyRef, Property)] =
-            projectStore(SelfReferenceLeakage.Key).filter { ep ⇒
-                val leakage = ep._2
-                leakage == DoesNotLeakSelfReference
+        val instantiableClasses: Traversable[(AnyRef, Property)] =
+            propertyStore(Instantiability.Key).filter { ep ⇒
+                val isInstantiable = ep._2
+                isInstantiable == NotInstantiable
             }
-        val notLeakingClasses = notLeakingEntities.map { e ⇒
+
+        val classInfo = instantiableClasses.map { e ⇒
             val classFile = e._1.asInstanceOf[ClassFile]
-            val classType = classFile.thisType
-            val className = classFile.thisType.toJava
-            if (project.classHierarchy.isInterface(classType))
-                "interface "+className
-            else
-                "class "+className
+            classFile.thisType.toJava
         }
 
-        val leakageInfo =
-            notLeakingClasses.toList.sorted.mkString(
-                "\nClasses not leaking self reference:\n",
-                "\n",
-                s"\nTotal: ${notLeakingEntities.size}\n")
-        BasicReport(
-            leakageInfo +
-                projectStore+
-                "\nAnalysis time: "+analysisTime)
+        BasicReport(classInfo.mkString(
+            "\ninstantiable classes:\n\n\t",
+            "\n\t",
+            s"\nTotal: ${instantiableClasses.size}\n\n") +
+            propertyStore+
+            "\nanalysis time: "+analysisTime)
     }
 }
-

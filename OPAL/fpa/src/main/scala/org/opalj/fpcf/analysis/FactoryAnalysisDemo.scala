@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -29,66 +29,61 @@
 package org.opalj
 package fpcf
 package analysis
-package escape
 
-import java.net.URL
-
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.ClassFile
+import org.opalj.fpcf.MethodAnalysisDemo
 
 /**
- * Demonstrates how to run the purity analysis.
- *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object FactoryAnalysisDemo extends MethodAnalysisDemo {
 
     override def title: String =
-        "shallow escape analysis"
+        "factory method computation"
 
     override def description: String =
-        "determins escape information related to object belonging to a specific class"
+        "determines the factory methods of a library"
 
     override def doAnalyze(
         project: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        // RECOMMENDED
+        // The factory method analysis requires information about the accessibility
+        // of static methods. Hence, we have to schedule the
+        // respective analysis. (Technically, it would be possible to schedule
+        // it afterwards, but that doesn't make sense.)
+        // ShadowingAnalysis.analyze(project)
+
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            EscapeAnalysis.analyze(project)
-            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            val fmat = new Thread(new Runnable { def run = FactoryMethodAnalysis.analyze(project) });
+            fmat.start
+            fmat.join
+            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakingEntities: Traversable[(AnyRef, Property)] =
-            projectStore(SelfReferenceLeakage.Key).filter { ep ⇒
-                val leakage = ep._2
-                leakage == DoesNotLeakSelfReference
-            }
-        val notLeakingClasses = notLeakingEntities.map { e ⇒
-            val classFile = e._1.asInstanceOf[ClassFile]
-            val classType = classFile.thisType
-            val className = classFile.thisType.toJava
-            if (project.classHierarchy.isInterface(classType))
-                "interface "+className
-            else
-                "class "+className
-        }
+        val nonFactoryMethods = entitiesByProperty(NotFactoryMethod)(propertyStore)
+        val nonFactoryInfo = buildMethodInfo(nonFactoryMethods)(project)
 
-        val leakageInfo =
-            notLeakingClasses.toList.sorted.mkString(
-                "\nClasses not leaking self reference:\n",
-                "\n",
-                s"\nTotal: ${notLeakingEntities.size}\n")
+        val factoryMethods = entitiesByProperty(IsFactoryMethod)(propertyStore)
+        val factoryInfo = buildMethodInfo(factoryMethods)(project)
+
+        val nonFactoryInfoString = finalReport(nonFactoryInfo, "Found non-factory methods")
+        val factoryInfoString = finalReport(factoryInfo, "Found factory methods")
+
         BasicReport(
-            leakageInfo +
-                projectStore+
-                "\nAnalysis time: "+analysisTime)
+            factoryInfoString +
+                nonFactoryInfoString +
+                propertyStore+
+                "\nAnalysis time: "+analysisTime
+
+        )
     }
 }
-

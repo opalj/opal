@@ -26,31 +26,54 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the properties store.
+ * A pairing of an [[Entity]] and an associated [[Property]].
+ *
+ * Compared to a standard `Tuple2` the equality of two EP objects is based on
+ * comparing the entities using reference equality.
  *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+final class EP(val e: Entity, val p: Property)
+        extends EOptionP
+        with Product2[Entity, Property] {
 
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    def _1 = e
+    def _2 = p
 
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
+    final def hasProperty = true
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: EP ⇒ (that.e eq this.e) && this.p == that.p
+            case _        ⇒ false
+        }
+    }
+
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP]
+
+    def pk: PropertyKey = p.key
+
+    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
+
+    override def toString: String = s"EK($e,$p)"
+}
+
+/**
+ * Provides a factory and an extractor for [[EP]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object EP {
+
+    def apply(e: Entity, p: Property): EP = new EP(e, p)
+
+    def unapply(that: EP): Option[(Entity, Property)] = {
+        that match {
+            case null ⇒ None
+            case ep   ⇒ Some((ep.e, ep.p))
+        }
     }
 }
