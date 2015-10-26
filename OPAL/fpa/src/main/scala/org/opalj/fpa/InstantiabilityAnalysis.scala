@@ -69,11 +69,8 @@ object InstantiabilityAnalysis
     val propertyKey = Instantiability.Key
 
     private final val FactoryPropertyKey = FactoryMethod.Key
-    //    private final val isFactoryMethodProperty = IsFactoryMethod
-
     private final val SerializableType = ObjectType.Serializable
 
-    // TOOD Method name..?
     private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile)(
             implicit project: SomeProject,
