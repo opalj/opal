@@ -29,16 +29,25 @@
 package org.opalj.fp
 
 /**
+ * An entity and (optionally) a specific associated property.
+ *
  * @author Michael Eichberg
  */
 trait EOptionP {
 
+    /**
+     * The entity.
+     */
     val e: Entity
 
+    /**
+     * @return `true` if the entity is associated with a property.
+     */
     def hasProperty: Boolean
 
     /**
-     * Returns the property if it is available.
+     * Returns the property if it is available otherwise an `UnsupportedOperationException` is
+     * thrown.
      */
     @throws[UnsupportedOperationException]("if no property is available")
     def p: Property

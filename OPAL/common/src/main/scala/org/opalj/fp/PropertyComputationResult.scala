@@ -143,6 +143,9 @@ private[fp] abstract class Suspended(
 
 }
 
+/**
+ * Factory for creating [[Suspended]] computations.
+ */
 private[fp] object Suspended {
 
     def unapply(c: Suspended): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
