@@ -70,6 +70,18 @@ object EntryPointsAnalysis
         case m: Method if !m.isAbstract ⇒ m
     }
 
+    private[this] final def visibilityContinuation(
+        method: Method,
+        instantiable: Boolean)(
+            implicit propertyStore: PropertyStore): Continuation = {
+        (dependeeE: Entity, dependeeP: Property) ⇒
+            if (dependeeP == Global &&
+                (instantiable || method.isStatic || method.isConstructor))
+                Result(method, IsEntryPoint)
+            else
+                Result(method, NoEntryPoint)
+    }
+
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
      */
@@ -106,6 +118,9 @@ object EntryPointsAnalysis
             ))
             return ImmediateResult(method, IsEntryPoint)
 
+        // Now: the method is neither an (static or default) interface method nor and method
+        // which relates somehow to object serialization.
+
         import propertyStore.require
         val c_inst: Continuation =
             (dependeeE: Entity, dependeeP: Property) ⇒ {
@@ -113,17 +128,9 @@ object EntryPointsAnalysis
                 val isInstantiable = (dependeeP eq Instantiable)
                 if (isInstantiable && method.isStaticInitializer)
                     Result(method, IsEntryPoint)
-                else {
-                    val c_vis: Continuation =
-                        (dependeeE: Entity, dependeeP: Property) ⇒
-                            if (dependeeP == Global &&
-                                (isInstantiable && !method.isStatic) ||
-                                (method.isStatic || method.isConstructor))
-                                Result(method, IsEntryPoint)
-                            else Result(method, NoEntryPoint)
-
-                    require(method, propertyKey, method, AccessKey)(c_vis)
-                }
+                else
+                    require(method, propertyKey, method, AccessKey)(
+                        visibilityContinuation(method, isInstantiable))
             }
 
         return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
