@@ -76,6 +76,10 @@ object LibraryLeakageAnalysis
 
     private[this] final val ObjectType = org.opalj.br.ObjectType.Object
 
+    val entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
+    }
+
     /**
      * Determines the [[LibraryLeakage]] property of non-static methods. It is tailored to entry point
      *  set computation where we have to consider different kind of program/library usage scenarios.
@@ -164,7 +168,4 @@ object LibraryLeakageAnalysis
         ImmediateResult(method, NoLeakage)
     }
 
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
-    }
 }
