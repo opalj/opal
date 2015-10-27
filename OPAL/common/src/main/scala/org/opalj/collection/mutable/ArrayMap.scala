@@ -85,6 +85,20 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
             f
     }
 
+    @throws[IndexOutOfBoundsException]("if the index is negative")
+    def getOrElseUpdate(index: Int, f: ⇒ T): T = {
+        if (index < data.length) {
+            val entry = data(index)
+            if (entry ne null)
+                return entry;
+        }
+
+        // orElseUpdate
+        val v: T = f
+        update(index, v)
+        v
+    }
+
     /**
      * Sets the value at the given index to the given value. If the index is larger than
      * the currently used array, the underlying array is immediately resized to make
