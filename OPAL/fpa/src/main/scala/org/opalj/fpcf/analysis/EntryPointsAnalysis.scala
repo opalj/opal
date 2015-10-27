@@ -116,8 +116,6 @@ object EntryPointsAnalysis
                     Result(method, IsEntryPoint)
 
                 val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (method.name == "publicMethod")
-                        println("hit")
                     if (dependeeP == Global &&
                         (isInstantiable || method.isStatic || method.isConstructor))
                         Result(method, IsEntryPoint)
