@@ -277,8 +277,7 @@ class ClassHierarchy private (
 
     /**
      * Retuns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
-     * it contains no subtypes. `Unknown` is returned if the given
-     * type is not known.
+     * it contains no subtypes. `Unknown` is returned if the given type is not known.
      *
      * Please note, that the answer maybe `No` even though the (running) project will
      * contain (in)direct subtypes of the given type.
