@@ -31,30 +31,69 @@ package org.opalj
 package fpcf
 package analysis
 
-//import org.opalj.br.analyses.SomeProject
+import java.net.URL
+import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-//import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 case object IsReachable extends SetProperty[Method]
-//
-//object IsReachableDemo extends DefaultOneStepAnalysis {
-//
-//    override def title: String =
-//        "all reachable methods"
-//
-//    override def description: String =
-//        "determines escape information related to object belonging to a specific class"
-//
-//    override def doAnalyze(
-//        project: SomeProject,
-//        parameters: Seq[String],
-//        isInterrupted: () ⇒ Boolean): BasicReport = {
-//        //
-//        //        val projectStore = project.get(SourceElementsPropertyStoreKey)
-//        //        projectStore >> (EntryPoint.Key) { (e:Entity, p:Property) ⇒ 
-//        //                if(p == IsEntryPoint)
-//        //                    projectStore.
-//        //        }
-//        null
-//    }
-//}
+
+object IsReachableDemo extends DefaultOneStepAnalysis {
+
+    override def title: String =
+        "all reachable methods"
+
+    override def description: String =
+        "determines if a method is reachable"
+
+    override def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): BasicReport = {
+        implicit val theProject = project
+        implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+
+        val isReachableCount = new java.util.concurrent.atomic.AtomicInteger(0)
+        theProjectStore.onPropertyDerivation(IsReachable) { e ⇒
+            // LET'S do something meaningful:    println("is reachable: "+e)
+            isReachableCount.incrementAndGet()
+        }
+
+        theProjectStore.onPropertyChange(EntryPoint.Key) { (e: Entity, p: Property) ⇒
+            p match {
+                case IsEntryPoint ⇒ theProjectStore.add(IsReachable)(e.asInstanceOf[Method])
+                case _            ⇒ // don't care
+            }
+        }
+
+        theProjectStore <||< (StaticMethodAccessibilityAnalysis.entitySelector, StaticMethodAccessibilityAnalysis.determineProperty _) //.asInstanceOf[Object ⇒ PropertyComputationResult]
+        theProjectStore <||< (LibraryLeakageAnalysis.entitySelector, LibraryLeakageAnalysis.determineProperty _)
+        theProjectStore <||< (FactoryMethodAnalysis.entitySelector, FactoryMethodAnalysis.determineProperty _)
+        theProjectStore <||< (InstantiabilityAnalysis.entitySelector, InstantiabilityAnalysis.determineProperty _)
+        theProjectStore <||< (MethodAccessibilityAnalysis.entitySelector, MethodAccessibilityAnalysis.determineProperty _)
+        theProjectStore <||< (EntryPointsAnalysis.entitySelector, EntryPointsAnalysis.determineProperty _)
+        theProjectStore.waitOnPropertyComputationCompletion(true)
+
+        println(theProjectStore.toString)
+
+        //        
+        //        theProjectStore.onPropertyDerivation(IsReachable) { e ⇒
+        //            // LET'S do something meaningful:    
+        //            //      println("is reachable: "+e)
+        //            isReachableCount.incrementAndGet()
+        //        }
+        //        theProjectStore.onPropertyChange(EntryPoint.Key) { (e: Entity, p: Property) ⇒
+        //            p match {
+        //                case IsEntryPoint ⇒ theProjectStore.add(IsReachable)(e.asInstanceOf[Method])
+        //                case _            ⇒ // don't care
+        //            }
+        //        }
+        //        theProjectStore.waitOnPropertyComputationCompletion(true)
+
+        println(theProjectStore.toString)
+
+        BasicReport("IsReachable: "+isReachableCount.get)
+    }
+}
