@@ -57,6 +57,10 @@ object StaticMethodAccessibilityAnalysis
 
     val propertyKey = ProjectAccessibility.Key
 
+    val entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if m.isStatic && !m.isStaticInitializer ⇒ m
+    }
+
     /**
      * Determines the [[ProjectAccessibility]] property of static methods considering shadowing of methods
      * provided by super classes. It is tailored to entry point set computation where we have to consider different kind
@@ -118,7 +122,4 @@ object StaticMethodAccessibilityAnalysis
         ImmediateResult(method, PackageLocal)
     }
 
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.isStatic && !m.isStaticInitializer ⇒ m
-    }
 }
