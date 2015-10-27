@@ -160,7 +160,7 @@ object InstantiabilityAnalysis
 
         val nonFinalClass = !classFile.isFinal
 
-        if (classFile.isPublic)
+        if (classFile.isPublic || isOpenLibrary) {
             classFile.constructors foreach { cons ⇒
                 if (cons.isPublic)
                     return ImmediateResult(classFile, Instantiable)
@@ -168,6 +168,7 @@ object InstantiabilityAnalysis
                     ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
                     return ImmediateResult(classFile, Instantiable)
             }
+        }
 
         // NOW: 
         //  - the type is neither abstract nor an interface declaration

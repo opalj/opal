@@ -64,13 +64,10 @@ object EntryPointsAnalysis
         case m: Method if !m.isAbstract ⇒ m
     }
 
-    private[this] final def visibilityContinuation(
-        method: Method,
-        instantiable: Boolean)(
-            implicit propertyStore: PropertyStore): Continuation = {
+    @inline private[this] def leakageContinuation(
+        method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == Global &&
-                (instantiable || method.isStatic || method.isConstructor))
+            if (dependeeP == Leakage)
                 Result(method, IsEntryPoint)
             else
                 Result(method, NoEntryPoint)
@@ -92,15 +89,9 @@ object EntryPointsAnalysis
             else if (classFile.isPublic && (method.isStatic || method.isPublic))
                 return ImmediateResult(method, IsEntryPoint)
             else {
-                val c_leak: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (dependeeP == Leakage)
-                        Result(method, IsEntryPoint)
-                    else
-                        Result(method, NoEntryPoint)
-                }
-
                 import propertyStore.require
-                require(method, propertyKey, method, LibraryLeakageKey)(c_leak)
+                require(method, propertyKey, method, LibraryLeakageKey)(
+                    leakageContinuation(method))
             }
         }
 
@@ -120,13 +111,23 @@ object EntryPointsAnalysis
         import propertyStore.require
         val c_inst: Continuation =
             (dependeeE: Entity, dependeeP: Property) ⇒ {
-
-                val isInstantiable = (dependeeP eq Instantiable)
+                val isInstantiable = (dependeeP == Instantiable)
                 if (isInstantiable && method.isStaticInitializer)
                     Result(method, IsEntryPoint)
-                else
-                    require(method, propertyKey, method, AccessKey)(
-                        visibilityContinuation(method, isInstantiable))
+
+                val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                    if (method.name == "publicMethod")
+                        println("hit")
+                    if (dependeeP == Global &&
+                        (isInstantiable || method.isStatic || method.isConstructor))
+                        Result(method, IsEntryPoint)
+                    else
+                        require(method, propertyKey, method, LibraryLeakageKey)(
+                            leakageContinuation(method))
+                }
+
+                require(method, propertyKey, method, AccessKey)(c_vis)
+
             }
 
         return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
