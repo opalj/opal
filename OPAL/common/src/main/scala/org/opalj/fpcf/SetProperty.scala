@@ -28,6 +28,8 @@
  */
 package org.opalj.fpcf
 
+import org.opalj.collection.mutable.ArrayMap
+
 /**
  * A set property is a property that is shared by a set of entities. A set property is
  * generally not refineable and not revokable.
@@ -44,13 +46,26 @@ package org.opalj.fpcf
 trait SetProperty[E <: AnyRef] {
 
     // the id is used to efficiently get the respective (identity) set
-    private[fpcf] final val id = SetProperty.nextId.getAndIncrement()
+    private[fpcf] final val id = SetProperty.nextId(this.getClass().getSimpleName)
 
-    private[fpcf] final val mutex = new Object
+    private[fpcf] final val mutex = new java.util.concurrent.Semaphore(1, true) // a binary semaphore
 }
 
 private[fpcf] object SetProperty {
 
-    val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
+    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
+
+    private[this] val theSetPropertyNames = ArrayMap[String](5)
+
+    def name(id: Int): String = {
+        theSetPropertyNames.synchronized { theSetPropertyNames(id) }
+    }
+
+    def nextId(name: String): Int = {
+        val n = if (name.endsWith("$")) name.substring(0, name.length() - 1) else name
+        val nextId = idGenerator.getAndIncrement
+        theSetPropertyNames.synchronized { theSetPropertyNames(nextId) = n }
+        nextId
+    }
 
 }
