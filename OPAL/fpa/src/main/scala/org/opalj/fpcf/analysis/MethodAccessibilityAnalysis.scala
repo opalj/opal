@@ -47,7 +47,7 @@ object MethodAccessibilityAnalysis
     private[this] final val ObjectType = org.opalj.br.ObjectType.Object
 
     val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && m.body.nonEmpty ⇒ m
+        case m: Method if !m.isStatic && m.body.nonEmpty /*FIXME.... native methods are also filtered*/ ⇒ m
     }
 
     override def determineProperty(
@@ -56,37 +56,37 @@ object MethodAccessibilityAnalysis
             propertyStore: PropertyStore): PropertyComputationResult = {
 
         if (method.isPrivate)
-            return ImmediateResult(method, ClassLocal)
+            return ImmediateResult(method, ClassLocal);
 
         if (isOpenLibrary)
-            return ImmediateResult(method, Global)
+            return ImmediateResult(method, Global);
 
         val classFile = project.classFile(method)
-        val finalClass = classFile.isFinal
-        val publicClass = classFile.isPublic
+        val isFinalClass = classFile.isFinal
+        val isPublicClass = classFile.isPublic
 
-        val isPublic = method.isPublic
-        val isProtected = method.isProtected
+        val isPublicMethod = method.isPublic
+        val isProtectedMethod = method.isProtected
 
-        if (publicClass && (isPublic || (!finalClass && isProtected)))
-            return ImmediateResult(method, Global)
+        if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
+            return ImmediateResult(method, Global);
 
-        val numSubtypes = project.classHierarchy.directSubtypesOf(classFile.thisType).size
+        val classHierarchy = project.classHierarchy
+        val classType = classFile.thisType
+        val hasSubtypes = classHierarchy.hasSubtypes(classType).isYesOrUnknown
 
-        val numSupertypes = project.classHierarchy.directSupertypes(classFile.thisType).
-            filter { supertype ⇒ supertype ne ObjectType }.size
+        val numSupertypes = classHierarchy.directSupertypes(classType).
+            filter { supertype ⇒ supertype ne ObjectType }.size // FIXME Smells
 
-        if ((isPublic || isProtected) &&
-            numSubtypes > 0 || numSupertypes > 0) {
-            val c: Continuation =
-                (dependeeE: Entity, dependeeP: Property) ⇒
-                    if (dependeeP == NoLeakage)
-                        Result(method, PackageLocal)
-                    else Result(method, Global)
+        if ((isPublicMethod || isProtectedMethod) && hasSubtypes || numSupertypes > 0) {
+            def c(dependeeE: Entity, dependeeP: Property) = {
+                if (dependeeP == NoLeakage)
+                    Result(method, PackageLocal)
+                else
+                    Result(method, Global)
+            }
 
-            import propertyStore.require
-            return require(method, propertyKey,
-                method, LibraryLeakage.Key)(c)
+            return propertyStore.require(method, propertyKey, method, LibraryLeakage.Key)(c);
         }
 
         ImmediateResult(method, PackageLocal)
