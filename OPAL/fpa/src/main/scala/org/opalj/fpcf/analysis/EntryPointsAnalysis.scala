@@ -102,8 +102,9 @@ object EntryPointsAnalysis
                 project.classHierarchy.isSubtypeOf(
                     classFile.thisType,
                     SerializableType).isYesOrUnknown
-            ))
+            )) {
             return ImmediateResult(method, IsEntryPoint)
+        }
 
         // Now: the method is neither an (static or default) interface method nor and method
         // which relates somehow to object serialization.
