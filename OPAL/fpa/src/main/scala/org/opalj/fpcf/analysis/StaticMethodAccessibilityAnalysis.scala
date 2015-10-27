@@ -31,7 +31,6 @@ package fpcf
 package analysis
 
 import org.opalj.br.Method
-import org.opalj.AnalysisModes
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -62,9 +61,10 @@ object StaticMethodAccessibilityAnalysis
     }
 
     /**
-     * Determines the [[ProjectAccessibility]] property of static methods considering shadowing of methods
-     * provided by super classes. It is tailored to entry point set computation where we have to consider different kind
-     * of assumption depending on the analyzed program.
+     * Determines the [[ProjectAccessibility]] property of static methods considering shadowing
+     * of methods implemented by super classes.
+     * It is tailored to entry point set computation where we have to consider different kind
+     * of assumption (FIXME which one???) depending on the analyzed program.
      *
      * Computational differences regarding static methods are :
      *  - private methods can be handled equal in every context
@@ -79,46 +79,62 @@ object StaticMethodAccessibilityAnalysis
             store: PropertyStore): PropertyComputationResult = {
 
         if (method.isPrivate)
-            return ImmediateResult(method, ClassLocal)
+            return ImmediateResult(method, ClassLocal);
 
         if (isOpenLibrary)
-            return ImmediateResult(method, Global)
+            return ImmediateResult(method, Global);
+
+        // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
+        //
+
+        if (method.isPackagePrivate)
+            return ImmediateResult(method, PackageLocal);
 
         val classFile = project.classFile(method)
-        val pgkVisibleMethod = method.isPackagePrivate
+        if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
+            return ImmediateResult(method, Global);
 
-        if (pgkVisibleMethod)
-            return ImmediateResult(method, PackageLocal)
-
-        if (classFile.isPublic &&
-            (method.isPublic ||
-                (!classFile.isFinal && method.isProtected)))
-            return ImmediateResult(method, Global)
+        val classHierarchy = project.classHierarchy
 
         val classType = classFile.thisType
-
         val methodDescriptor = method.descriptor
         val methodName = method.name
 
-        var subtypes = project.classHierarchy.directSubtypesOf(classType)
-        while (subtypes.nonEmpty) {
-            val subtype = subtypes.head
-            val subclassAsOption = project.classFile(subtype)
-            if (subclassAsOption.isDefined) {
-                val subclass = subclassAsOption.get
-                val declMethod = subclass.findMethod(methodName, methodDescriptor)
-                if (declMethod.isEmpty) {
+        classHierarchy.foreachSubtype(classType) { subtype ⇒
+            project.classFile(subtype) match {
+                case Some(subclass) ⇒
                     if (subclass.isPublic)
-                        return ImmediateResult(method, Global)
-                    else
-                        subtypes ++= project.classHierarchy.directSubtypesOf(subtype)
-                }
-            } else return ImmediateResult(method, Global)
-
-            subtypes -= subtype
+                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                            // the original method is now visible (and not shadowed)
+                            return ImmediateResult(method, Global);
+                // we need to continue our search for a class that makes the method visible
+                case None ⇒
+                    // The type hierarchy is obviously not downwards closed; i.e.,
+                    // the project configuration is rather strange! 
+                    return ImmediateResult(method, Global);
+            }
         }
 
-        // If no subtype is found, the method is not accessible
+        //        var subtypes = classHierarchy.directSubtypesOf(classType)
+        //        while (subtypes.nonEmpty) {
+        //            val subtype = subtypes.head
+        //            val subclassAsOption = project.classFile(subtype)
+        //            if (subclassAsOption.isDefined) {
+        //                val subclass = subclassAsOption.get
+        //                val declMethod = subclass.findMethod(methodName, methodDescriptor)
+        //                if (declMethod.isEmpty) {
+        //                    if (subclass.isPublic)
+        //                        return ImmediateResult(method, Global)
+        //                    else
+        //                        subtypes ++= classHierarchy.directSubtypesOf(subtype)
+        //                }
+        //            } else
+        //                return ImmediateResult(method, Global)
+        //
+        //            subtypes -= subtype
+        //        }
+
+        // If no subtype is found, then the method is not accessible
         ImmediateResult(method, PackageLocal)
     }
 

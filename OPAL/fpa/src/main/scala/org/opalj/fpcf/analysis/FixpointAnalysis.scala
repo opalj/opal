@@ -156,7 +156,7 @@ trait FilterEntities[E <: Entity] extends AnalysisEngine[E] {
      *
      * @note This function is passed to the chosen calculation function of the property store.
      */
-    val entitySelector: PartialFunction[Entity, E]
+    protected[this] val entitySelector: PartialFunction[Entity, E]
 
     /**
      * Triggers the property computation on the propertyStore.
