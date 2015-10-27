@@ -53,6 +53,7 @@ import org.opalj.log.LogContext
 import org.opalj.collection.mutable.ArrayMap
 import java.util.concurrent.locks.ReentrantLock
 import scala.collection.mutable.ListBuffer
+import java.util.Collections
 
 /**
  * The central store which manages the execution of all
@@ -141,15 +142,22 @@ class PropertyStore private (
     import UpdateTypes.FallbackUpdate
 
     /**
-     * Counts how often some observer was notified.
+     * Counts how often some observer was notified. I.e., how often an analysis reacted
+     * upon the update of a value and was no able to directly use a/the value.
      */
     private[this] val propagationCount = new java.util.concurrent.atomic.AtomicLong(0)
+
+    /**
+     * Counts how often a default property was effectively assigned to an entity.
+     */
+    private[this] val effectiveDefaultPropertiesCount = new java.util.concurrent.atomic.AtomicLong(0)
+    private[this] val candidateDefaultPropertiesCount = new java.util.concurrent.atomic.AtomicLong(0)
 
     // We want to be able to make sure that methods that access the store as
     // a whole always get a consistent snapshot view
     private[this] final val StoreLock = new ReentrantReadWriteLock
-    @inline final private[this] def accessEntity[B](f: ⇒ B) = Locking.withReadLock(StoreLock)(f)
-    @inline final private[this] def accessStore[B](f: ⇒ B) = Locking.withWriteLock(StoreLock)(f)
+    @inline final private[this] def accessEntity[B](f: ⇒ B) = withReadLock(StoreLock)(f)
+    @inline final private[this] def accessStore[B](f: ⇒ B) = withWriteLock(StoreLock)(f)
 
     /**
      * The final set of all stored elements.
@@ -171,24 +179,50 @@ class PropertyStore private (
     private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
     // access to this field needs to be synchronized!
     private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
-    private[this] final val theSetProperties = ArrayMap[Set[AnyRef]](5)
+    private[this] final val theSetProperties = ArrayMap[JSet[AnyRef]](5)
+
+    private[this] def createIdentityHashSet(): JSet[AnyRef] = {
+        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]());
+    }
+
+    private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
+        val runnable = new Runnable {
+            override def run(): Unit = {
+                try {
+                    f(e)
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        }
+        scheduleTask(runnable)
+    }
 
     /**
+     * Registers the callback function `f` that is called if any entity is added to the set
+     * identified by the given [[SetProperty]].
+     *
      * Adds the given function `f` to the set of functions that will be called
      * when an entity `e` gets the [[SetProperty]] `sp`. If some entities already
      * have the respective property we will immediately schedule respective
      * computations to take place.
      */
-    def >+[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
+    def onPropertyDerivation[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
         val spId = sp.id
-        Locking.withWriteLock(theSetPropertyObserversLock) {
+        val spMutex = sp.mutex
+        withWriteLock(theSetPropertyObserversLock) {
             theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
-            sp.mutex.synchronized {
-                accessEntity { // <= we don't need a overall consistent view
-                    theSetProperties.getOrElse(spId, Set.empty) foreach { e ⇒
-                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
-                    }
+            spMutex.acquire()
+            try {
+                accessEntity { // <= we don't need an overall consistent view
+                    import scala.collection.JavaConversions._
+                    val spSet = theSetProperties.getOrElseUpdate(spId, createIdentityHashSet())
+                    spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
                 }
+            } finally {
+                spMutex.release()
             }
         }
     }
@@ -200,31 +234,27 @@ class PropertyStore private (
      * if not, we will immediately schedule the execution of all functions that
      * are interested in this property.
      */
-    def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = accessEntity {
+    def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
         val spId = sp.id
-        Locking.withReadLock(theSetPropertyObserversLock) {
-            sp.mutex.synchronized {
+        val spMutex = sp.mutex
+        withReadLock(theSetPropertyObserversLock) {
+            spMutex.acquire()
+            try {
                 accessEntity {
-                    theSetProperties(spId) = theSetProperties.getOrElse(spId, Set.empty) + e
-                    theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
-                        scheduleTask(new Runnable { override def run = f(e.asInstanceOf[E]) })
+                    val currentEs = theSetProperties.getOrElse(spId, createIdentityHashSet())
+                    if (!currentEs.contains(e)) {
+                        currentEs.add(e)
+                        theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
+                            propagationCount.incrementAndGet()
+                            scheduleFforE(e, f)
+                        }
                     }
                 }
+            } finally {
+                spMutex.release()
             }
         }
     }
-
-    //    /**
-    //     * Returns `true` if the given entity has the given property.
-    //     * Returns `false` if the given entity does not have the property or if the
-    //     * underlying analysis has not yet analyzed the respective method.
-    //     *
-    //     * Calling this method generally only makes sense if the corresponding analysis
-    //     * is guaranteed to have finish (see [[#waitOnPropertyComputationCompletion]]).
-    //     */
-    //    def hasProperty(e: Entity, sp: SetProperty): Boolean = {
-    //
-    //    }
 
     // =============================================================================================
     //
@@ -436,12 +466,12 @@ class PropertyStore private (
     }
 
     /**
-     * The function `f` is called whenever an element `e` is associated with a property of
-     * the respective kind (`pk`). For those elements that are already associated with a
-     * respective property `p`,  `f` will immediately be scheduled (i.e., `f` will not be exeucted
+     * Registers the function `f`  that is called whenever an element `e` is associated with
+     * a property of the respective kind (`pk`). For those elements that are already associated with a
+     * respective property `p`,  `f` will immediately be scheduled (i.e., `f` will not be executed
      * concurrently.)
      */
-    def >>(pk: PropertyKey)(f: (Entity, Property) ⇒ Unit): Unit = {
+    def onPropertyChange(pk: PropertyKey)(f: (Entity, Property) ⇒ Unit): Unit = {
         val pkId = pk.id
         accessStore {
             // We need exclusive access to make sure that `f` is called for all existing values
@@ -453,7 +483,18 @@ class PropertyStore private (
             // call `f` for all entities with a respective property
             this(pk) foreach { ep ⇒
                 val (e, p) = ep
-                scheduleTask(new Runnable { override def run = f(e, p) })
+                val task = new Runnable {
+                    override def run(): Unit = {
+                        try {
+                            f(e, p)
+                        } catch {
+                            case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                        } finally {
+                            Tasks.taskCompleted()
+                        }
+                    }
+                }
+                scheduleTask(task)
             }
         }
     }
@@ -530,39 +571,58 @@ class PropertyStore private (
     /**
      * Returns a string representation of the stored properties.
      */
-    def toString(printProperties: Boolean): String = {
-        accessStore /* <=> Exclusive Access*/ {
-            val properties = new StringBuilder
-            var propertiesCount = 0
-            var unsatisfiedPropertyDependencies = 0
-            val it = data.entrySet().iterator()
-            while (it.hasNext()) {
-                val entry = it.next()
-                val ps = entry.getValue._2.map { (pk, pos) ⇒
-                    val (p, os) = pos
-                    (
-                        if (p eq null) {
-                            unsatisfiedPropertyDependencies += 1
-                            s"<Unsatisfied: ${PropertyKey.name(pk)}>"
-                        } else {
-                            propertiesCount += 1
-                            p.toString
-                        }
-                    )+"["+(if (os eq null) 0 else os.size)+"]"
-                }
-                if (printProperties && ps.nonEmpty) {
-                    val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
-                    properties.append(s)
-                }
-            }
-            "PropertyStore(\n"+
-                s"\tentitiesCount=${data.size()},\n"+
-                s"\texecutedComputations=${Tasks.executedComputations}\n"+
-                s"\tpropagations=${propagationCount.get}\n"+
-                s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
-                s"\tproperties[$propertiesCount]"+
-                (if (printProperties) s"=\n$properties)" else ")")
+    def toString(printProperties: Boolean): String = accessStore /* <=> Exclusive Access*/ {
+
+        val entitiesPerSetPropertyCount = theSetProperties map { (key, entities) ⇒
+            (SetProperty.name(key), entities.size)
         }
+        val overallSetPropertyCount = entitiesPerSetPropertyCount.map(_._2).sum
+        val setPropertiesStatistics =
+            s"∑$overallSetPropertyCount: "+
+                entitiesPerSetPropertyCount.map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
+
+        val perPropertyKeyEntities = new Array[Int](PropertyKey.maxId + 1)
+        var perEntityPropertiesCount = 0
+        var unsatisfiedPropertyDependencies = 0
+        val properties = new StringBuilder
+        val it = data.entrySet().iterator()
+        while (it.hasNext()) {
+            val entry = it.next()
+            val ps = entry.getValue._2.map { (pk, pos) ⇒
+                val (p, os) = pos
+                (
+                    if (p eq null) {
+                        unsatisfiedPropertyDependencies += 1
+                        s"<Unsatisfied: ${PropertyKey.name(pk)}>"
+                    } else {
+                        perEntityPropertiesCount += 1
+                        perPropertyKeyEntities(pk) = perPropertyKeyEntities(pk) + 1
+                        p.toString
+                    }
+                )+"["+(if (os eq null) 0 else os.size)+"]"
+            }
+            if (printProperties && ps.nonEmpty) {
+                val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
+                properties.append(s)
+            }
+        }
+
+        val perEntityPropertiesStatistics = s"∑$perEntityPropertiesCount: "+
+            (perPropertyKeyEntities.zipWithIndex.filter(_._1 > 0) map { e ⇒
+                val (sum, pk) = e
+                (PropertyKey.name(pk), sum)
+            }).map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
+
+        "PropertyStore(\n"+
+            s"\tentitiesCount=${data.size()},\n"+
+            s"\texecutedComputations=${Tasks.executedComputations}\n"+
+            s"\tpropagations=${propagationCount.get}\n"+
+            s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
+            s"\tcandidateDefaultPropertiesCount=$candidateDefaultPropertiesCount\n"+
+            s"\teffectiveDefaultPropertiesCount=$effectiveDefaultPropertiesCount\n"+
+            s"\tperEntityProperties[$perEntityPropertiesStatistics]\n"+
+            (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "") +
+            (if (printProperties) s"=$properties)" else ")")
     }
 
     override def toString: String = toString(false)
@@ -802,11 +862,11 @@ class PropertyStore private (
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (useFallbackForIncomputableProperties) {
+                println(store.toString)
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
                     val defaultP = PropertyKey.fallbackProperty(pk.id)
-                    OPALLogger.debug("analysis result", s"Assigning $e the default property $defaultP")
                     scheduleHandleFallbackResult(e, defaultP)
                 }
             }
@@ -815,7 +875,13 @@ class PropertyStore private (
         def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit =
             synchronized {
                 this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
-                while (scheduled > 0) { wait }
+                while (scheduled > 0) {
+                    OPALLogger.debug(
+                        "analysis progress",
+                        "all previously scheduled tasks finished"+
+                            s" (newly scheduled tasks: $scheduled)")
+                    wait
+                }
             }
     }
 
@@ -824,8 +890,9 @@ class PropertyStore private (
      */
     private[this] def scheduleHandleFallbackResult(e: Entity, p: Property): Unit = {
         scheduleTask(new Runnable {
-            def run() = {
+            override def run(): Unit = {
                 try {
+                    candidateDefaultPropertiesCount.incrementAndGet()
                     handleResult(FallbackResult(e, p))
                 } catch {
                     case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
@@ -844,7 +911,7 @@ class PropertyStore private (
         dependeeP: Property,
         c: Continuation): Unit = {
         scheduleTask(new Runnable {
-            def run() = {
+            override def run(): Unit = {
                 try {
                     handleResult(c(dependeeE, dependeeP))
                 } catch {
@@ -861,7 +928,7 @@ class PropertyStore private (
      */
     private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
         scheduleTask(new Runnable {
-            def run() = {
+            override def run() = {
                 try {
                     handleResult(pc(e))
                 } catch {
@@ -882,7 +949,7 @@ class PropertyStore private (
         val ges = es.grouped(Math.max(es.size / (ThreadCount * 2), ThreadCount)).toList
         val tasks = ges.map { es ⇒
             new Runnable {
-                def run() = {
+                override def run(): Unit = {
                     try {
                         es foreach { e ⇒ handleResult(pc(e)) }
                     } catch {
@@ -909,12 +976,9 @@ class PropertyStore private (
         try {
             threadPool.submit(r)
         } catch {
-            case reh: RejectedExecutionException ⇒
-                Tasks.taskCompleted()
-
-            case t: Throwable ⇒
-                Tasks.taskCompleted()
-                handleUncaughtException(t);
+            // exceptions thrown by "r" do not end up here... here, we handle threadpool exceptions
+            case reh: RejectedExecutionException ⇒ Tasks.taskCompleted()
+            case t: Throwable                    ⇒ Tasks.taskCompleted(); handleUncaughtException(t)
         }
     }
 
@@ -932,7 +996,6 @@ class PropertyStore private (
         } catch {
             case reh: RejectedExecutionException ⇒
                 Tasks.tasksAborted(allTasksCount - startedTasksCount)
-
             case t: Throwable ⇒
                 Tasks.tasksAborted(allTasksCount - startedTasksCount)
                 handleUncaughtException(t);
@@ -978,13 +1041,19 @@ class PropertyStore private (
     // Invariant: always only at most one function exists that will compute/update
     // the property p belonging to property kind k of an element e.
     private[this] def update(e: Entity, p: Property, updateType: UpdateType): Unit = {
+        val pk = p.key
+        val pkId = pk.id
+
         accessEntity {
-
             val (lock, properties) = data.get(e)
-            val pk = p.key
-
             var obsoleteOs: List[PropertyObserver] = Nil
             val os = withWriteLock(lock) {
+
+                // 1. inform all onPropertyComputations about the value
+                val onPropertyComputations = theOnPropertyComputations.getOrElse(pkId, Nil)
+                onPropertyComputations foreach { opc ⇒ opc(e, p) }
+
+                // 2. update the property
                 properties(pk.id) match {
                     case null ⇒ // No one was interested in this property so far...
                         updateType match {
@@ -992,14 +1061,20 @@ class PropertyStore private (
                                 assert(
                                     clearDependeeObservers(e, pk) == false,
                                     s"the analysis returned an immediate result for $e($pk) though it relied on other properties")
-                                properties(pk.id) = (p, null)
+                                properties(pkId) = (p, null)
+
                             case FinalUpdate ⇒
                                 // We (still) may have a hard dependency on another entity...
                                 clearDependeeObservers(e, pk)
-                                properties(pk.id) = (p, null)
+                                properties(pkId) = (p, null)
+
                             case _ ⇒
+                                assert(
+                                    updateType ne FallbackUpdate,
+                                    "fallback property assigned to an element that is not a dependee")
+
                                 val os = Buffer.empty[PropertyObserver]
-                                properties(pk.id) = (p, os)
+                                properties(pkId) = (p, os)
                         }
                         return ;
 
@@ -1021,13 +1096,13 @@ class PropertyStore private (
                                 assert(
                                     clearDependeeObservers(e, pk) == false,
                                     s"the analysis returned an immediate result for $e($pk) though it had intermediate dependencies")
-                                properties(pk.id) = (p, null /*The list of observers is no longer required!*/ )
+                                properties(pkId) = (p, null /*The list of observers is no longer required!*/ )
 
                             case FinalUpdate ⇒
                                 // We still may observe other entities... we have to clear
                                 // these dependencies.
                                 clearDependeeObservers(e, pk)
-                                properties(pk.id) = (p, null /*The list of (incoming) observers is no longer required!*/ )
+                                properties(pkId) = (p, null /*The incoming observers are no longer required!*/ )
 
                             case IntermediateUpdate ⇒
                                 // We still continue observing all other entities;
@@ -1040,15 +1115,30 @@ class PropertyStore private (
                                         true
                                     }
                                 }
-                                properties(p.key.id) = (p, newOs)
+                                properties(pkId) = (p, newOs)
 
                             case FallbackUpdate ⇒
                                 if (oldP eq null) {
                                     OPALLogger.debug(
                                         "analysis progress",
                                         s"associated default property $p with $e")
-                                    properties(pk.id) =
-                                        (p, null /*The list of observers is no longer required!*/ )
+                                    effectiveDefaultPropertiesCount.incrementAndGet()
+                                    val newOs =
+                                        if (p.isFinal) {
+                                            clearDependeeObservers(e, pk)
+                                            null /*The incoming observers are no longer required!*/
+                                        } else {
+                                            // the fallback property is refineable...
+                                            os.filter { o ⇒
+                                                if (o.removeAfterNotification) {
+                                                    obsoleteOs = o :: obsoleteOs
+                                                    false
+                                                } else {
+                                                    true
+                                                }
+                                            }
+                                        }
+                                    properties(pkId) = (p, newOs)
                                 } else {
                                     // Nothing to do... the entity is already associated
                                     // with a property.
@@ -1064,7 +1154,7 @@ class PropertyStore private (
                         os
                 }
             }
-            // ... non-exclusive access
+            // ... non-exclusive access (just clear the observers)
             if (obsoleteOs.nonEmpty) {
                 val dependeeEPK = EPK(e, pk)
                 val data = store.data
@@ -1083,12 +1173,6 @@ class PropertyStore private (
 
             // inform all (previously registered) observers about the value
             os foreach { o ⇒ o(e, p) }
-
-            // inform all onPropertyComputations about the value
-            val onPropertyComputations = theOnPropertyComputations.getOrElse(pk.id, Nil)
-            onPropertyComputations foreach { opc ⇒
-                opc(e, p)
-            }
         }
     }
 
@@ -1145,8 +1229,6 @@ class PropertyStore private (
 
             r match {
 
-                case FallbackResult(e, p)  ⇒ update(e, p, FallbackUpdate)
-
                 case NoResult              ⇒ // Nothing to do..
 
                 case ImmediateResult(e, p) ⇒ update(e, p, OneStepFinalUpdate)
@@ -1158,6 +1240,8 @@ class PropertyStore private (
 
                 case MultiResult(results) ⇒
                     results foreach { ep ⇒ val (e, p) = ep; update(e, p, FinalUpdate) }
+
+                case FallbackResult(e, p) ⇒ update(e, p, FallbackUpdate)
 
                 case IntermediateResult(e, p, dependees: Traversable[EOptionP], c) ⇒
                     val dependerEPK = EPK(e, p.key)
@@ -1196,25 +1280,6 @@ class PropertyStore private (
                         }
                     }
                     update(e, p, IntermediateUpdate)
-
-                //            case result @ RefineableResult(results, dependingEntities) ⇒
-                //                // 1) Store the results
-                //                //
-                //                results foreach { result ⇒ val (e, p) = result; update(e, p, false) }
-                //                // 2) Register the observers
-                //                //
-                //                dependingEntities foreach { dependingEntity ⇒
-                //                    val (e, pk, pOption, c) = dependingEntity
-                //                    val o = new DefaultPropertyObserver(None) {
-                //                        def apply(e: Entity, p: Property): Unit = {
-                //                            // ... for each dependent property we have a refinement;
-                //                            // let's reschedule the computation
-                //                            scheduleContinuation(e, p, c)
-                //                        }
-                //                    }
-                //
-                //                    handleDependency(e, pk, pOption, o)
-                //                }
 
                 case suspended @ Suspended(dependerE, dependerPK, dependeeE, dependeePK) ⇒
 
