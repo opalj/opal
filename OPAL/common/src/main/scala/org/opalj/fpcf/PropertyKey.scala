@@ -74,5 +74,7 @@ object PropertyKey {
         fallbackProperties(id)
     }
 
+    private[fpcf] def maxId = withReadLock(lock) { lastKeyId }
+
 }
 
