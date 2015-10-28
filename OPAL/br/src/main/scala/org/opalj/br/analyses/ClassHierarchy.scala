@@ -1304,7 +1304,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * @see [[ClassHierarchy#resolveFieldReference(ObjectType,String,FieldType)]]
+     * @see `resolveFieldReference(org.opalj.br.ObjectType,java.lang.String,org.opalj.br.FieldType,org.opalj.br.ClassFileRepository):scala.Option[org.opalj.br.Field]`
      */
     final def resolveFieldReference(
         fieldAccess: FieldAccess,
