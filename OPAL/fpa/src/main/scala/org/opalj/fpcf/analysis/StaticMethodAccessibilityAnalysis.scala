@@ -50,6 +50,64 @@ case object PackageLocal extends ProjectAccessibility { final val isRefineable =
 
 case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
 
+class StaticMethodAccessibilityAnalysisEx private (
+    project: SomeProject)
+        extends FPCFAnalysisModeAnalysis[Method](
+            project, StaticMethodAccessibilityAnalysis.entitySelector) {
+
+    def determineProperty(
+        method: Method): PropertyComputationResult = {
+        if (method.isPrivate)
+            return ImmediateResult(method, ClassLocal);
+
+        if (isOpenLibrary)
+            return ImmediateResult(method, Global);
+
+        // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
+        //
+
+        if (method.isPackagePrivate)
+            return ImmediateResult(method, PackageLocal);
+
+        val classFile = project.classFile(method)
+        if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
+            return ImmediateResult(method, Global);
+
+        val classHierarchy = project.classHierarchy
+
+        val classType = classFile.thisType
+        val methodDescriptor = method.descriptor
+        val methodName = method.name
+
+        classHierarchy.foreachSubtype(classType) { subtype ⇒
+            project.classFile(subtype) match {
+                case Some(subclass) ⇒
+                    if (subclass.isPublic)
+                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                            // the original method is now visible (and not shadowed)
+                            return ImmediateResult(method, Global);
+                // we need to continue our search for a class that makes the method visible
+                case None ⇒
+                    // The type hierarchy is obviously not downwards closed; i.e.,
+                    // the project configuration is rather strange! 
+                    return ImmediateResult(method, Global);
+            }
+        }
+        ImmediateResult(method, PackageLocal)
+    }
+}
+
+object StaticMethodAccessibilityAnalysisEx {
+
+    private[analysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if m.isStatic ⇒ m
+    }
+
+    def apply(project: SomeProject): StaticMethodAccessibilityAnalysisEx = {
+        new StaticMethodAccessibilityAnalysisEx(project)
+    }
+}
+
 object StaticMethodAccessibilityAnalysis
         extends AssumptionBasedFixpointAnalysis
         with FilterEntities[Method] {

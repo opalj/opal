@@ -62,15 +62,9 @@ object ShadowingAnalysisDemo
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            StaticMethodAccessibilityAnalysis.analyze(project)
+            StaticMethodAccessibilityAnalysisEx(project)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
-
-        //        val visibleByClient: Traversable[(AnyRef, Property)] =
-        //            projectStore(AccessibleBySubtype.key).filter { ep ⇒
-        //                val shadowed = ep._2
-        //                shadowed == IsAccessible
-        //            }
 
         val nonVisibleByClient: Traversable[(AnyRef, Property)] =
             projectStore(ProjectAccessibility.Key).filter { ep ⇒
@@ -92,7 +86,6 @@ object ShadowingAnalysisDemo
             methods.map { e ⇒
                 val method = e._1.asInstanceOf[Method]
                 val classFile = project.classFile(method)
-                /*project.source(classFile.thisType)+" "+*/
                 classFile.thisType.toJava+" "+methodVisibility(method.visibilityModifier)+" "+method.name
             }
         }
