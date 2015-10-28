@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 package analysis
 
 import org.opalj.br.Annotation
@@ -35,7 +36,6 @@ import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
 import com.typesafe.config.ConfigFactory
-import org.opalj.AnalysisModes
 import com.typesafe.config.Config
 
 /**
@@ -54,7 +54,7 @@ object TestConfigFactory {
     private[this] final val appConfig =
         "org.opalj { analysisMode = \"Application\"}"
 
-    def createConfig(value: AnalysisModes.Value): Config = {
+    def createConfig(value: AnalysisMode): Config = {
         value match {
             case AnalysisModes.LibraryWithOpenPackagesAssumption   ⇒ ConfigFactory.parseString(opaConfig)
             case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒ ConfigFactory.parseString(cpaConfig)
@@ -72,7 +72,7 @@ object TestConfigFactory {
  */
 abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAnalysisTest {
 
-    def analysisMode: AnalysisModes.Value
+    def analysisMode: AnalysisMode
 
     /*
      * PROJECT SETUP
