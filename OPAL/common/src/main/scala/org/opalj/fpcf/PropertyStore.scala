@@ -587,20 +587,20 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is a copy of the original set.
      */
-    def entities(propertyFilter: Property ⇒ Boolean): JSet[Entity] = accessStore {
-        import scala.collection.JavaConversions._
-        val entities = new JHSet[Entity]()
-        for {
-            entry ← data.entrySet()
-            entity = entry.getKey
-            (_, properties) = entry.getValue
-            properties.values
-        } {
-
-        }
-
-        entities
-    }
+    //    def entities(propertyFilter: Property ⇒ Boolean): JSet[Entity] = accessStore {
+    //        import scala.collection.JavaConversions._
+    //        val entities = new JHSet[Entity]()
+    //        for {
+    //            entry ← data.entrySet()
+    //            entity = entry.getKey
+    //            (_, properties) = entry.getValue
+    //            properties.values
+    //        } {
+    //
+    //        }
+    //
+    //        entities
+    //    }
 
     /**
      * Returns a string representation of the stored properties.
