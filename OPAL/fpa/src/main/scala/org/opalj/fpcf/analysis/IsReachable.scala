@@ -76,8 +76,6 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
         theProjectStore <||< (EntryPointsAnalysis.entitySelector, EntryPointsAnalysis.determineProperty _)
         theProjectStore.waitOnPropertyComputationCompletion(true)
 
-        println(theProjectStore.toString)
-
         //        
         //        theProjectStore.onPropertyDerivation(IsReachable) { e ⇒
         //            // LET'S do something meaningful:    
@@ -92,8 +90,14 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
         //        }
         //        theProjectStore.waitOnPropertyComputationCompletion(true)
 
+        //import scala.collection.JavaConversions._
+        //println(theProjectStore.entities(IsReachable).mkString("\n"))
+        val entitiesThatAreEntryPoints = theProjectStore.entities { (p: Property) ⇒
+            p == IsEntryPoint
+        }
+
         println(theProjectStore.toString)
 
-        BasicReport("IsReachable: "+isReachableCount.get)
+        BasicReport("IsReachable: "+isReachableCount.get+" <=> IsEntryPoint: "+entitiesThatAreEntryPoints.size)
     }
 }

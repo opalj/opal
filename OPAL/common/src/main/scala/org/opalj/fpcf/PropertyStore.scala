@@ -585,22 +585,18 @@ class PropertyStore private (
     /**
      * The set of all entities which have the given [[SetProperty]].
      *
-     * This is a blocking operation; the returned set is a copy of the original set.
+     * This is a blocking operation; the returned set is independent of the store.
      */
-    //    def entities(propertyFilter: Property ⇒ Boolean): JSet[Entity] = accessStore {
-    //        import scala.collection.JavaConversions._
-    //        val entities = new JHSet[Entity]()
-    //        for {
-    //            entry ← data.entrySet()
-    //            entity = entry.getKey
-    //            (_, properties) = entry.getValue
-    //            properties.values
-    //        } {
-    //
-    //        }
-    //
-    //        entities
-    //    }
+    def entities(propertyFilter: Property ⇒ Boolean): scala.collection.Set[AnyRef] = accessStore {
+        import scala.collection.JavaConversions._
+        for {
+            entry ← data.entrySet()
+            (property, _ /*observers*/ ) ← entry.getValue._2.values
+            if propertyFilter(property)
+        } yield {
+            entry.getKey
+        }
+    }
 
     /**
      * Returns a string representation of the stored properties.
