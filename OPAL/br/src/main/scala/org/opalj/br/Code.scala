@@ -936,7 +936,7 @@ final class Code private (
     /**
      * Tests if the sequence of instructions that starts with the given `pc` always ends
      * with an
-     * [[org.opalj.br.instructions.ATHROW]] instruction or a method call that always throws an
+     * [[org.opalj.br.instructions.ATHROW$]] instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means
      * that evaluating the instruction may result in multiple control flows. If the
