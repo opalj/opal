@@ -1304,7 +1304,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * @see [[#resolveFieldReference(ObjectType,String,FieldType)]]
+     * @see [[ClassHiearchy#resolveFieldReference(ObjectType,String,FieldType)]]
      */
     final def resolveFieldReference(
         fieldAccess: FieldAccess,
