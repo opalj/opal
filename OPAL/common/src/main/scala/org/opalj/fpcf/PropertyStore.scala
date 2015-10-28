@@ -30,6 +30,8 @@ package org.opalj.fpcf
 
 import java.util.{ IdentityHashMap ⇒ JIDMap }
 import java.util.{ Set ⇒ JSet }
+import java.util.{ Map ⇒ JMap }
+import java.util.{ HashSet ⇒ JHSet }
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.RejectedExecutionException
@@ -214,15 +216,12 @@ class PropertyStore private (
         val spMutex = sp.mutex
         withWriteLock(theSetPropertyObserversLock) {
             theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
-            spMutex.acquire()
-            try {
+            spMutex.synchronized {
                 accessEntity { // <= we don't need an overall consistent view
                     import scala.collection.JavaConversions._
                     val spSet = theSetProperties.getOrElseUpdate(spId, createIdentityHashSet())
                     spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
                 }
-            } finally {
-                spMutex.release()
             }
         }
     }
@@ -238,10 +237,9 @@ class PropertyStore private (
         val spId = sp.id
         val spMutex = sp.mutex
         withReadLock(theSetPropertyObserversLock) {
-            spMutex.acquire()
-            try {
+            spMutex.synchronized {
                 accessEntity {
-                    val currentEs = theSetProperties.getOrElse(spId, createIdentityHashSet())
+                    val currentEs = theSetProperties.getOrElseUpdate(spId, createIdentityHashSet())
                     if (!currentEs.contains(e)) {
                         currentEs.add(e)
                         theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
@@ -250,9 +248,22 @@ class PropertyStore private (
                         }
                     }
                 }
-            } finally {
-                spMutex.release()
+
             }
+        }
+    }
+
+    /**
+     * The set of all entities which have the given [[SetProperty]].
+     *
+     * This is a blocking operation; the returned set is a copy of the original set.
+     */
+    def entities[E <: AnyRef](sp: SetProperty[E]): JSet[E] = {
+        sp.mutex.synchronized {
+            val entitiesSet = theSetProperties.getOrElse(sp.id, new JHSet[AnyRef]())
+            val clonedEntitiesSet = new JHSet[E]()
+            clonedEntitiesSet.addAll(entitiesSet.asInstanceOf[JSet[E]])
+            clonedEntitiesSet
         }
     }
 
@@ -348,6 +359,11 @@ class PropertyStore private (
      *              Result(method, Impure)
      *          }
      * }}}
+     *
+     * @param dependerE The entity for which we are currently computing a property.
+     * @param dependerPK The property that is currently computed for the entity `dependerE`.
+     * @param dependeeE The entity about which some information is required to compute the
+     * 		property `dependerPK`.
      */
     def require(
         dependerE: Entity,
@@ -356,12 +372,10 @@ class PropertyStore private (
         dependeePK: PropertyKey)(
             c: Continuation): PropertyComputationResult = {
         this(dependeeE, dependeePK) match {
-            case Some(dependeeP) ⇒
-                c(dependeeE, dependeeP)
+            case Some(dependeeP) ⇒ c(dependeeE, dependeeP)
             case _ /*None*/ ⇒
                 new Suspended(dependerE, dependerPK, dependeeE, dependeePK) {
-                    def continue(dependeeE: Entity, dependeeP: Property) =
-                        c(dependeeE, dependeeP)
+                    def continue(dependeeE: Entity, dependeeP: Property) = c(dependeeE, dependeeP)
                 }
         }
     }
@@ -569,6 +583,26 @@ class PropertyStore private (
     }
 
     /**
+     * The set of all entities which have the given [[SetProperty]].
+     *
+     * This is a blocking operation; the returned set is a copy of the original set.
+     */
+    def entities(propertyFilter: Property ⇒ Boolean): JSet[Entity] = accessStore {
+        import scala.collection.JavaConversions._
+        val entities = new JHSet[Entity]()
+        for {
+            entry ← data.entrySet()
+            entity = entry.getKey
+            (_, properties) = entry.getValue
+            properties.values
+        } {
+
+        }
+
+        entities
+    }
+
+    /**
      * Returns a string representation of the stored properties.
      */
     def toString(printProperties: Boolean): String = accessStore /* <=> Exclusive Access*/ {
@@ -599,7 +633,7 @@ class PropertyStore private (
                         perPropertyKeyEntities(pk) = perPropertyKeyEntities(pk) + 1
                         p.toString
                     }
-                )+"["+(if (os eq null) 0 else os.size)+"]"
+                )+"[obs="+(if (os eq null) 0 else os.size)+"]"
             }
             if (printProperties && ps.nonEmpty) {
                 val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")

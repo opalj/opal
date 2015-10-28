@@ -48,7 +48,7 @@ trait SetProperty[E <: AnyRef] {
     // the id is used to efficiently get the respective (identity) set
     private[fpcf] final val id = SetProperty.nextId(this.getClass().getSimpleName)
 
-    private[fpcf] final val mutex = new java.util.concurrent.Semaphore(1, true) // a binary semaphore
+    private[fpcf] final val mutex = new Object
 }
 
 private[fpcf] object SetProperty {
