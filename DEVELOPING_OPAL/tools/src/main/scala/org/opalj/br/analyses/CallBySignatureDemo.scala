@@ -26,32 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package org.opalj.br
+package analyses
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Warn
 import java.net.URL
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.CallBySignatureResolutionKey
 
 /**
+ * Prints information about those methods for which we need to do call by signature resolution
+ * when we analyze a library.
  *
  * @author Michael Reif
  */
-object CallBySignatureDemo extends MethodAnalysisDemo {
-
-    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
+object CallBySignatureInformation extends DefaultOneStepAnalysis {
 
     override def title: String =
-        "call by signature computation"
+        "computes potential target method for interface methods"
 
     override def description: String =
-        "determines to every interface method if there are methods"+
-            "with matching signatures in classes that are not final and"+
-            "does not implement the interface of the method"
+        """|Determines for every interface method if there are methods 
+           |with matching signatures in classes that are not final and 
+           |which do not implement the respective interface. In such cases, and if we 
+           |analyze a library, the respective target methods need to be taken into account.""".
+            stripMargin('|')
 
     override def doAnalyze(
         project: org.opalj.br.analyses.Project[URL],
@@ -60,7 +60,9 @@ object CallBySignatureDemo extends MethodAnalysisDemo {
 
         val cbs = project.get(CallBySignatureResolutionKey)
 
-        BasicReport(cbs.statistics.toString)
+        val methodReferenceStatistics = cbs.methodReferenceStatistics.mkString("\n", "\n", "\n")
+        val generalStatistics = cbs.statistics.map(e ⇒ e._1+": "+e._2).mkString("Statistics{\n\t", "\n\t", "\n}")
+        BasicReport(methodReferenceStatistics + generalStatistics)
     }
 
 }

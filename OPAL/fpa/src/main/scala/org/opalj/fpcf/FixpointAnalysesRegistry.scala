@@ -37,7 +37,8 @@ import org.opalj.fpcf.analysis.FactoryMethodAnalysis
  * The fixpoint analyses registry is a registry for all analyses that need
  * to be computed with the fixpoint framework because they depend on other analyses.
  *
- * All registered analyses does compute a [[org.opalj.fp.Property]] associated with an [[org.opalj.fp.Entity]].
+ * All registered analyses does compute a [[org.opalj.fpcf.Property]] associated with
+ * an [[org.opalj.fpcf.Entity]].
  * Instances for entities are, e.g.: ´classes´, ´methods´ or ´fields´.
  *
  * The registry was developed to support configuration purposes where the user/developer

@@ -107,7 +107,7 @@ final class Code private (
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note Calling this method only makes sense for Java bytecode that actually contains
-     * 		[[org.opalj.br.instruction.JSR]] and [[org.opalj.br.instruction.RET]]
+     * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
      * 		instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
@@ -935,8 +935,7 @@ final class Code private (
 
     /**
      * Tests if the sequence of instructions that starts with the given `pc` always ends
-     * with an
-     * [[instructions.ATHROW]] instruction or a method call that always throws an
+     * with an `ATHROW` instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means
      * that evaluating the instruction may result in multiple control flows. If the
@@ -976,7 +975,7 @@ final class Code private (
      *      return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
-     * 		given `pc` always ends with an [[ATHROW]] instruction. `false` in all other
+     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction. `false` in all other
      * 		cases (i.e., the sequence does not end with an `athrow` instruction or
      * 		the control flow is more complex.)
      */
