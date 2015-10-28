@@ -44,8 +44,6 @@ object MethodAccessibilityAnalysis
 
     val propertyKey = ProjectAccessibility.Key
 
-    private[this] final val ObjectType = org.opalj.br.ObjectType.Object
-
     val entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStatic && m.body.nonEmpty /*FIXME.... native methods are also filtered*/ ⇒ m
     }
@@ -71,24 +69,13 @@ object MethodAccessibilityAnalysis
         if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
             return ImmediateResult(method, Global);
 
-        val classHierarchy = project.classHierarchy
-        val classType = classFile.thisType
-        val hasSubtypes = classHierarchy.hasSubtypes(classType).isYesOrUnknown
-
-        val numSupertypes = classHierarchy.directSupertypes(classType).
-            filter { supertype ⇒ supertype ne ObjectType }.size // FIXME Smells
-
-        if ((isPublicMethod || isProtectedMethod) && hasSubtypes || numSupertypes > 0) {
-            def c(dependeeE: Entity, dependeeP: Property) = {
-                if (dependeeP == NoLeakage)
-                    Result(method, PackageLocal)
-                else
-                    Result(method, Global)
-            }
-
-            return propertyStore.require(method, propertyKey, method, LibraryLeakage.Key)(c);
+        def c(dependeeE: Entity, dependeeP: Property) = {
+            if (dependeeP == NoLeakage)
+                Result(method, PackageLocal)
+            else
+                Result(method, Global)
         }
 
-        ImmediateResult(method, PackageLocal)
+        return propertyStore.require(method, propertyKey, method, LibraryLeakage.Key)(c);
     }
 }
