@@ -32,6 +32,7 @@ package da
 import scala.xml.Node
 import scala.xml.Text
 import scala.util.Random
+import scala.xml.Unparsed
 
 /**
  * @author Wael Alkhatib
@@ -536,20 +537,27 @@ case class Code(instructions: Array[Byte]) {
                 case 95 ⇒ <span class="instruction swap">swap</span>
                 case 170 ⇒
                     in.skip((3 - (pc % 4)).toLong) // skip padding bytes
-                    val defaultTarget = in.readInt + pc
+                    val defaultTargetPC = in.readInt + pc
+                    val defaultTargetID = "#"+id(methodIndex, defaultTargetPC)
+                    val defaultTarget = s"<a href='$defaultTargetID' class='pc'>$defaultTargetPC</a>"
                     val low = in.readInt
                     val high = in.readInt
                     var offsetcounter: Int = 0;
-                    val table = new StringBuilder("");
+                    val switchTargets = new StringBuilder("");
                     repeat(high - low + 1) {
-                        table.append("(case:"+(low + offsetcounter)+","+(in.readInt + pc)+") ")
+                        val targetPC = in.readInt + pc
+                        val targetID = "#"+id(methodIndex, targetPC)
+                        val target = s"<a href='$targetID' class='pc'>$targetPC</a>"
+                        switchTargets.append("(case "+(low + offsetcounter)+" &rarr; "+target+") ")
                         offsetcounter += 1;
                     }
-                    <span><span class="instruction tableswitch">tableswitch </span>default:{ defaultTarget } [{ table }]</span>
+                    <span><span class="instruction tableswitch">tableswitch </span>default &rarr; { Unparsed(defaultTarget) }; { Unparsed(switchTargets.toString) }</span>
                 case 196 ⇒
                     wide = true
                     <span class="instruction wide">wide</span>
-                case opcode ⇒ throw new UnknownError("unknown opcode: "+opcode)
+
+                case opcode ⇒
+                    throw new UnknownError("unknown opcode: "+opcode)
             }
         }
         instructions
