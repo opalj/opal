@@ -29,17 +29,15 @@
 package org.opalj
 package br
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+import org.opalj.br.analyses.{ DefaultOneStepAnalysis, BasicReport, Project }
 
 /**
  * Evaluates the number of locals (Local Variables/Registers) required to evaluate a method.
  *
  * @author Michael Eichberg
  */
-object MaxLocalsEvaluation extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
 
     override def description: String =
         "Collects information about the maxium number of registers required per method."
