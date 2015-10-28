@@ -55,32 +55,27 @@ class CallBySignatureResolution private (
 
     def statistics(): Map[String, Any] = {
 
-        var i = -1
-        var sum = 0
+        // print a list of methods
+        //        var i = -1
+        //        var sum = 0
         //        methods.view foreach { kv ⇒
-        //            if (kv._1 != "<clinit>" && kv._2 > 0) {
+        //            kv._2 foreach { innerKv ⇒
+        //                sum += innerKv._2.size
         //                i += 1
-        //                sum += kv._2.size
-        //                OPALLogger.warn(s"[method name][$i]", "name: "+kv._1+" "+kv._2.map { kv ⇒ kv._2.mkString(s"[${kv._2.size}][", ",", "]") })(GlobalLogContext)
+        //                OPALLogger.info(
+        //                    s"method $i", innerKv._1.toJava(kv._1) + s"[${innerKv._2.size}][${innerKv._2.map(_.name).mkString("[", ",", "]")}]"
+        //                )(GlobalLogContext)
         //            }
         //        }
-
-        methods.view foreach { kv ⇒
-            kv._2 foreach { innerKv ⇒
-                sum += innerKv._2.size
-                i += 1
-                OPALLogger.warn(
-                    s"method $i", innerKv._1.toJava(kv._1) + s"[${innerKv._2.size}]"
-                )(GlobalLogContext)
-            }
-        }
 
         Map(
             "number of method names" ->
                 methods.view.size,
             "number of different method name/descriptor pairs" ->
                 methods.view.map(kv ⇒ kv._2.size).sum,
-            "overall number of addiditionall call edges (if every method is invoked only once)" ->
+            "overall number of additionall call edges (if every method is invoked by name only once)" ->
+                methods.view.map(kv ⇒ kv._2.map(kv ⇒ kv._2.size).sum * kv._2.size).sum,
+            "overall number of additionall call edges (if every method is invoked by signature only once)" ->
                 methods.view.map(kv ⇒ kv._2.map(kv ⇒ kv._2.size).sum).sum
         )
     }
