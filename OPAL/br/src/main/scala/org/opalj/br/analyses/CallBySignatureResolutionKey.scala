@@ -31,20 +31,19 @@ package br
 package analyses
 
 /**
- * The ''key'' object to get an index of the interface methods that should be resolved by signatures.
+ * The ''key'' object to get the interface methods for which call by signature resolution
+ * needs to be done.
  *
- * @example
- *      To get the index use the [[Project]]'s `get` method and pass in
- *      `this` object.
+ * @note To get call by signature information use the [[Project]]'s `get` method and pass in
+ * 		`this` object.
+ * @see [[CallBySignatureResolution]] for further information.
  *
  * @author Michael Reif
  */
 object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatureResolution] {
 
     /**
-     * The [[CallBySignatureResolution]] has no special prerequisites.
-     *
-     * @return Seq[ProjectinformationKey[CallBySignatureResolutionKey]].
+     * The computation of [[CallBySignatureResolution]] information needs the [[ProjectIndex]].
      */
     protected def requirements = List(ProjectIndexKey)
 

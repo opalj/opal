@@ -60,7 +60,9 @@ object CallBySignatureDemo extends MethodAnalysisDemo {
 
         val cbs = project.get(CallBySignatureResolutionKey)
 
-        BasicReport(cbs.statistics.toString)
+        BasicReport(
+            cbs.methodReferenceStatistics.mkString("\n", "\n", "\n") + cbs.statistics.toString
+        )
     }
 
 }
