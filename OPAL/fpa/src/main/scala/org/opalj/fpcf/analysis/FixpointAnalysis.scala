@@ -3,14 +3,53 @@ package fpcf
 package analysis
 
 import java.net.URL
-
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.SourceElement
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.AnalysisModes._
 import org.opalj.br.analyses.SomeProject
+import scala.reflect.ClassTag
+
+//abstract class FPCFAnalysis[E <: Entity](val project: SomeProject) {
+//
+//    def determineProperty(entity: E): PropertyComputationResult
+//
+//}
+//abstract class DefaultFPCFAnalysis[T <: Entity: ClassTag](
+//        project: SomeProject,
+//        val entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector()) extends FPCFAnalysis(project) {
+//
+//    implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
+//
+//    //implicit val analysisMode = project....
+//
+//    propertyStore <||< (entitySelector, determineProperty)
+//
+//}
+//
+//private[analysis] object DefaultFPCFAnalysis {
+//    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = new PartialFunction[Entity, T] {
+//        def apply(v1: Entity): T = {
+//            if (isDefinedAt(v1))
+//                v1.asInstanceOf[T]
+//            else
+//                throw new IllegalArgumentException
+//        }
+//
+//        def isDefinedAt(x: Entity): Boolean = {
+//            val ct = implicitly[ClassTag[T]]
+//            x.getClass.isInstance(ct.runtimeClass)
+//        }
+//    }
+//}
+//def entitySelector[T : reflect.ClassTag](): String = {val ct = implicitly[reflect.ClassTag[T]]; ct.runtimeClass.toString  }
+
+//new DefaultFPCFAnalysis[Method](project) {
+//    
+//    def determineProperty(...)
+//    
+//}
 
 /**
  * The fixpoint analysis trait is a common supertrait for all analyses that leverage the
@@ -28,6 +67,7 @@ import org.opalj.br.analyses.SomeProject
 trait FixpointAnalysis {
     this: AnalysisEngine[_] ⇒
 
+    // TODO REMOVE
     /**
      * Returns the unique [[org.opalj.fp.PropertyKey]] of the computed [[org.opalj.fp.Property]] which is shared between
      * all properties of the same kind.
