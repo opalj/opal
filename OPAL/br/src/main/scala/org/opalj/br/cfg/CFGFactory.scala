@@ -26,15 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj.br
+package cfg
 
 import scala.collection.{ Set ⇒ SomeSet }
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.HashMap
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.Method
-import org.opalj.br.Code
-import org.opalj.br.ExceptionHandler
+import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -47,11 +46,8 @@ import org.opalj.br.instructions.JSR_W
 import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.PC
-import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.ObjectType
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -80,6 +76,13 @@ object CFGFactory {
     def apply(
         method: Method,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy): CFG = {
+
+        /*
+         * The basic idea of the algorithm is to create the cfg using a single sweep over
+         * the instructions and while doing so to determine the basic block boundaries. Here,
+         * the idea is that the current basic block is extended to also capture the current 
+         * instruction unless the previous instruction ended the basic block.
+         */
 
         import classHierarchy.isSubtypeOf
 
@@ -236,11 +239,19 @@ object CFGFactory {
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     // GOTO WILL NEVER THROW AN EXCEPTION
-                    val currentBB = useRunningBB()
-                    currentBB.endPC = pc
-                    val GOTO = instruction.asInstanceOf[UnconditionalBranchInstruction]
-                    connect(currentBB, pc + GOTO.branchoffset)
-                    runningBB = null
+                    instruction match {
+                        case GOTO(3) | GOTO_W(4) ⇒
+                            // THE GOTO INSTRUCTION IS EFFECTIVELY USELESS (A NOP) AS IT IS JUST
+                            // A JUMP TO THE NEXT INSTRUCTION; HENCE, WE DO NOT HAVE TO END THE
+                            // CURRENT BLOCK.
+                            useRunningBB()
+                        case _ ⇒
+                            val currentBB = useRunningBB()
+                            currentBB.endPC = pc
+                            val GOTO = instruction.asInstanceOf[UnconditionalBranchInstruction]
+                            connect(currentBB, pc + GOTO.branchoffset)
+                            runningBB = null
+                    }
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |

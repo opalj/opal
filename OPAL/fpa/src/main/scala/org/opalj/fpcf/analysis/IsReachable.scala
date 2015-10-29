@@ -42,11 +42,9 @@ case object IsReachable extends SetProperty[Method]
 
 object IsReachableDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "all reachable methods"
+    override def title: String = "all reachable methods"
 
-    override def description: String =
-        "determines if a method is reachable"
+    override def description: String = "determines if a method is reachable by computing the call graph"
 
     override def doAnalyze(
         project: Project[URL],
