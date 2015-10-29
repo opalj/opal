@@ -32,7 +32,7 @@ package core
 package analysis
 
 import scala.language.existentials
-import scala.Console.{ GREEN, RESET }
+import scala.Console.{GREEN, RESET}
 import scala.xml.Node
 import scala.xml.Text
 import org.opalj.br.PC
@@ -53,18 +53,19 @@ import scala.xml.Unparsed
  * @author Michael Eichberg
  */
 case class StandardIssue(
-    project: SomeProject,
-    classFile: ClassFile,
-    method: Option[Method],
-    pc: Option[PC],
-    operands: Option[List[_ <: AnyRef]],
+    project:        SomeProject,
+    classFile:      ClassFile,
+    method:         Option[Method],
+    pc:             Option[PC],
+    operands:       Option[List[_ <: AnyRef]],
     localVariables: Option[Locals[_ <: AnyRef]],
-    summary: String,
-    description: Option[String],
-    categories: Set[String],
-    kind: Set[String],
-    otherPCs: Seq[(PC, String)],
-    relevance: Relevance)
+    summary:        String,
+    description:    Option[String],
+    categories:     Set[String],
+    kind:           Set[String],
+    otherPCs:       Seq[(PC, String)],
+    relevance:      Relevance
+)
         extends Issue {
 
     /**
@@ -104,7 +105,8 @@ case class StandardIssue(
                     (a, b) ⇒ a._1 < b._1 || (a._1 == b._1 && a._2 < b._2)
                 },
                 this.relevance merge other.relevance
-            ))
+            )
+        )
     }
 
     def asXHTML(basicInfoOnly: Boolean): Node = {
@@ -250,8 +252,7 @@ case class StandardIssue(
                     val (pc, message) = info
                     val lineNode =
                         line(pc).map(ln ⇒
-                            <span class="line_number">line={ createLineNode(pc, ln) }</span>
-                        ).getOrElse(Text(""))
+                            <span class="line_number">line={ createLineNode(pc, ln) }</span>).getOrElse(Text(""))
 
                     locations ::=
                         <div class="issue_additional_info">
@@ -269,14 +270,12 @@ case class StandardIssue(
             lineNode.foreach(ln ⇒
                 locations =
                     <span class="line_number">line={ lineNode.get }</span> ::
-                        locations
-            )
+                        locations)
             pcNode.foreach(ln ⇒
                 locations =
                     <span class="program_counter">pc={ pcNode.get }</span> ::
                         Text(" ") ::
-                        locations
-            )
+                        locations)
 
             val dd =
                 <dd> { locations }</dd>
@@ -327,9 +326,10 @@ object StandardIssue {
      * Creates a new simple standard issues.
      */
     def apply(
-        project: SomeProject,
+        project:   SomeProject,
         classFile: ClassFile,
-        summary: String): StandardIssue = {
+        summary:   String
+    ): StandardIssue = {
         new StandardIssue(
             project,
             classFile,
@@ -342,7 +342,8 @@ object StandardIssue {
             Set.empty,
             Set.empty,
             Seq.empty,
-            Relevance.DefaultRelevance)
+            Relevance.DefaultRelevance
+        )
     }
 
     /**

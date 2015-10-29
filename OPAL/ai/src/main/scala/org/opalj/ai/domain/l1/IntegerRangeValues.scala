@@ -208,13 +208,13 @@ trait IntegerRangeValues
     )(orElse: ⇒ T): T =
         value match {
             case v: IntegerRange if v.lowerBound == v.upperBound ⇒ f(v.lowerBound)
-            case _ ⇒ orElse
+            case _                                               ⇒ orElse
         }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] =
         value match {
             case v: IntegerRange if v.lowerBound == v.upperBound ⇒ Some(v.lowerBound)
-            case _ ⇒ None
+            case _                                               ⇒ None
         }
 
     @inline protected final def intValues[T](
@@ -319,7 +319,7 @@ trait IntegerRangeValues
             case _ ⇒
                 left match {
                     case IntegerRange(Int.MaxValue, _ /* Int.MaxValue*/ ) ⇒ No
-                    case _ ⇒ Unknown
+                    case _                                                ⇒ Unknown
                 }
         }
     }

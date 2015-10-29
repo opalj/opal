@@ -51,12 +51,13 @@ import org.w3c.dom.NodeList
  *      ensures that the respective tab is focused
  */
 class AddClickListenersOnLoadListener(
-        project: Project[URL],
-        sources: Seq[File],
-        resultWebview: WebView,
+        project:         Project[URL],
+        sources:         Seq[File],
+        resultWebview:   WebView,
         bytecodeWebview: WebView,
-        sourceWebview: WebView,
-        focus: WebView ⇒ Unit) extends ChangeListener[State] {
+        sourceWebview:   WebView,
+        focus:           WebView ⇒ Unit
+) extends ChangeListener[State] {
 
     private val loadWorker = resultWebview.engine.delegate.getLoadWorker
 
@@ -64,8 +65,9 @@ class AddClickListenersOnLoadListener(
 
     override def changed(
         observable: ObservableValue[_ <: State],
-        oldValue: State,
-        newValue: State): Unit = {
+        oldValue:   State,
+        newValue:   State
+    ): Unit = {
         if (newValue != State.SUCCEEDED) return
 
         val document = resultWebview.engine.document

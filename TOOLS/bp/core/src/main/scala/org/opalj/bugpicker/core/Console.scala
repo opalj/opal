@@ -35,7 +35,7 @@ import scala.collection.SortedMap
 import scala.xml.Node
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analysis.IssueKind
@@ -118,9 +118,10 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     override def description: String = bugPickerAnalysis.description
 
     override def analyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement) = {
+        theProject:             Project[URL],
+        parameters:             Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ) = {
 
         import theProject.logContext
 
@@ -177,10 +178,12 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         if (exceptions.nonEmpty) {
             OPALLogger.error(
                 "internal error",
-                s"the analysis threw ${exceptions.size} exceptions")
+                s"the analysis threw ${exceptions.size} exceptions"
+            )
             exceptions.foreach { e ⇒
                 OPALLogger.error(
-                    "internal error", "the analysis failed", e)
+                    "internal error", "the analysis failed", e
+                )
             }
 
             var exceptionsReport: Node = null
@@ -222,7 +225,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             groupedAndCountedIssues.mkString(
                 s"Issues (∑${issues.size}):\n\t",
                 "\n\t",
-                s"\nIdentified in: ${analysisTime.toSeconds}.\n")
+                s"\nIdentified in: ${analysisTime.toSeconds}.\n"
+            )
         )
     }
 

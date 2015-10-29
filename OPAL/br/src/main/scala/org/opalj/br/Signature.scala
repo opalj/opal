@@ -594,7 +594,7 @@ object ConcreteTypeArgument {
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
             case ProperTypeArgument(None, ConcreteType(ot)) ⇒ Some(ot)
-            case _ ⇒ None
+            case _                                          ⇒ None
         }
     }
 }

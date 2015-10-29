@@ -113,9 +113,10 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
      *
      */
     override def analyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): BugPickerResults = {
+        theProject:             Project[URL],
+        parameters:             Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ): BugPickerResults = {
 
         implicit val logContext = theProject.logContext
 
@@ -164,14 +165,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
-            OPALLogger.info("configuration",
+            OPALLogger.info(
+                "configuration",
                 cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n")+"\n"+
                     "Settings:"+"\n"+
                     s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
                     s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
                     s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
                     s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
-                    s"\tmaxCallChainLength=$maxCallChainLength")
+                    s"\tmaxCallChainLength=$maxCallChainLength"
+            )
         }
 
         //
@@ -244,7 +247,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             //
             UnusedMethodsAnalysis.analyze(
                 theProject, callGraph, callGraphEntryPoints,
-                classFile, method) foreach { issue ⇒ results.add(issue) }
+                classFile, method
+            ) foreach { issue ⇒ results.add(issue) }
 
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
@@ -259,13 +263,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     maxCardinalityOfIntegerRanges,
                     maxCardinalityOfLongSets, maxCallChainLength,
                     classFile, method,
-                    debug)
+                    debug
+                )
             val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
-                    doInterrupt)
+                    doInterrupt
+                )
             val result = {
                 val result0 = ai0(classFile, method, analysisDomain)
                 if (result0.wasAborted && maxCallChainLength > 0) {
@@ -281,14 +287,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             fieldValueInformation, methodReturnValueInformation,
                             cache,
                             maxCardinalityOfIntegerRanges, maxCardinalityOfLongSets,
-                            method)
+                            method
+                        )
 
                     val ai1 =
                         new BoundedInterruptableAI[fallbackAnalysisDomain.type](
                             body,
                             maxEvalFactor,
                             maxEvalTime,
-                            doInterrupt)
+                            doInterrupt
+                        )
 
                     val result1 = ai1(classFile, method, fallbackAnalysisDomain)
 
@@ -296,7 +304,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         OPALLogger.warn(
                             "configuration",
                             logMessage+
-                                ": retry without performing invocations also failed")
+                                ": retry without performing invocations also failed"
+                        )
                     else
                         OPALLogger.info("configuration", logMessage)
 
@@ -309,17 +318,21 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             if (!result.wasAborted) {
 
                 if (debug) {
-                    org.opalj.io.writeAndOpen(org.opalj.ai.common.XHTML.dump(
+                    org.opalj.io.writeAndOpen(
+                        org.opalj.ai.common.XHTML.dump(
                         Some(classFile),
                         Some(method),
                         method.body.get,
                         Some(
                             "Created: "+(new java.util.Date).toString+"<br>"+
                                 "Domain: "+result.domain.getClass.getName+"<br>"+
-                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
-                        result.domain)(
+                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                        ),
+                        result.domain
+                    )(
                             result.operandsArray,
-                            result.localsArray),
+                            result.localsArray
+                        ),
                         "AIResult",
                         ".html"
                     )
@@ -434,10 +447,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 }
 
             } else if (!doInterrupt()) {
-                OPALLogger.error("internal error",
+                OPALLogger.error(
+                    "internal error",
                     s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
                         s"after ${ai0.currentEvaluationCount} steps "+
-                        s"(code size: ${method.body.get.instructions.length})")
+                        s"(code size: ${method.body.get.instructions.length})"
+                )
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
@@ -471,7 +486,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 } catch {
                     case t: Throwable ⇒
                         OPALLogger.error(
-                            "internal error", s"evaluation step $stepId failed", t)
+                            "internal error", s"evaluation step $stepId failed", t
+                        )
                         throw t
                 } finally {
                     progressManagement.end(stepId)
@@ -482,9 +498,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
 
-        OPALLogger.info("analysis progress",
+        OPALLogger.info(
+            "analysis progress",
             s"the analysis took ${analysisTime.toSeconds} "+
-                s"and found ${identifiedIssues.size} unique issues")
+                s"and found ${identifiedIssues.size} unique issues"
+        )
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
@@ -530,10 +548,11 @@ object BugPickerAnalysis {
     final val DefaultFixpointAnalyses = Seq.empty[String]
 
     def resultsAsXHTML(
-        parameters: Seq[String],
+        parameters:        Seq[String],
         methodsWithIssues: Iterable[Issue],
-        showSearch: Boolean,
-        analysisTime: Nanoseconds): Node = {
+        showSearch:        Boolean,
+        analysisTime:      Nanoseconds
+    ): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 
@@ -612,8 +631,7 @@ object BugPickerAnalysis {
                             {
                                 parameters.filterNot(p ⇒
                                     p.startsWith("-debug") ||
-                                        p.startsWith("-html") || p.startsWith("-eclipse")
-                                ).map(p ⇒ <li>{ p }</li>)
+                                        p.startsWith("-html") || p.startsWith("-eclipse")).map(p ⇒ <li>{ p }</li>)
                             }
                         </ul>
                     </details>

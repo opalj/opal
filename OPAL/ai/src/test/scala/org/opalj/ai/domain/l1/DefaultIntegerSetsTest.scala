@@ -615,7 +615,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -634,7 +634,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -646,7 +646,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -658,7 +658,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -687,7 +687,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -699,7 +699,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -711,7 +711,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 

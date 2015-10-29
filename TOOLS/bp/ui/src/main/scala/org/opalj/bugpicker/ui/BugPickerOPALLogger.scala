@@ -47,7 +47,8 @@ import scalafx.collections.ObservableBuffer
  * @author David Becker
  */
 class BugPickerOPALLogger(
-    val messages: ObservableBuffer[BugPickerLogMessage])
+    val messages: ObservableBuffer[BugPickerLogMessage]
+)
         extends AbstractOPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
@@ -57,7 +58,8 @@ class BugPickerOPALLogger(
                     BugPickerOPALLogger.DateFormatter.format(new Date()),
                     message.level.id,
                     message.category.getOrElse(""),
-                    message.message)
+                    message.message
+                )
         }
     }
 }

@@ -311,7 +311,7 @@ object HasNoArgsAndReturnsVoid {
     def unapply(md: MethodDescriptor): Boolean =
         md match {
             case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
-            case _ ⇒ false
+            case _                                          ⇒ false
         }
 }
 

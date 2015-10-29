@@ -41,9 +41,9 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project, SomeProject}
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.MethodWithBody
 import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
@@ -108,7 +108,8 @@ object GuardedAndUnguardedAccessAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }): List[StandardIssue] = {
+        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
+    ): List[StandardIssue] = {
 
         import result.domain
         val operandsArray = result.operandsArray

@@ -41,12 +41,13 @@ import org.opalj.br.analyses.ProgressEvent
 import org.opalj.br.analyses.ProgressEvents
 
 class InitProgressManagement(
-        interrupted: ReadOnlyBooleanProperty,
-        theProgress: DoubleProperty,
-        progressListView: ListView[String],
+        interrupted:       ReadOnlyBooleanProperty,
+        theProgress:       DoubleProperty,
+        progressListView:  ListView[String],
         progressListItems: scala.collection.mutable.HashMap[String, String],
-        stepCount: Double,
-        progStage: Stage) extends Function1[Int, ProgressManagement] {
+        stepCount:         Double,
+        progStage:         Stage
+) extends Function1[Int, ProgressManagement] {
 
     override def apply(x: Int): ProgressManagement = new ProgressManagement { pm ⇒
 

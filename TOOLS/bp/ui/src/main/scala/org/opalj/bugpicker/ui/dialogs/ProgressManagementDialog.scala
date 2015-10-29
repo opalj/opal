@@ -67,12 +67,13 @@ import scalafx.stage.StageStyle
 import scalafx.stage.WindowEvent
 
 class ProgressManagementDialog(
-        owner: Stage,
-        reportView: WebView,
+        owner:            Stage,
+        reportView:       WebView,
         progressListView: ListView[String],
-        theProgress: ReadOnlyDoubleProperty,
-        numberOfSteps: Int,
-        interrupted: BooleanProperty) extends Stage {
+        theProgress:      ReadOnlyDoubleProperty,
+        numberOfSteps:    Int,
+        interrupted:      BooleanProperty
+) extends Stage {
 
     theStage ⇒
     title = s"Analysis Progress (Number of Steps: $numberOfSteps)"

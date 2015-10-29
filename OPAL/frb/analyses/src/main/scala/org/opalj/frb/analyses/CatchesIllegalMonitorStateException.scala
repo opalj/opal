@@ -57,7 +57,7 @@ class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[S
             case MethodWithBody(body) ⇒
                 body.exceptionHandlers.exists {
                     case ExceptionHandler(_, _, _, Some(`exception`)) ⇒ true
-                    case _ ⇒ false
+                    case _                                            ⇒ false
                 }
             case _ ⇒ false
         }

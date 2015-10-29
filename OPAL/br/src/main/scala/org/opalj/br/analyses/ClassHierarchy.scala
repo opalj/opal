@@ -955,9 +955,9 @@ class ClassHierarchy private (
     ): Answer = {
         (subtype, supertype) match {
             case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ Answer(et eq superEt)
-            case (ConcreteTypeArgument(et), UpperTypeBound(superEt)) ⇒ isSubtypeOf(et, superEt)
-            case (ConcreteTypeArgument(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
-            case (_, Wildcard) ⇒ Yes
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       ⇒ isSubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       ⇒ isSubtypeOf(superEt, et)
+            case (_, Wildcard)                                             ⇒ Yes
             case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
                 case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
                 case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
@@ -969,7 +969,7 @@ class ClassHierarchy private (
             }
             case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ isSubtypeOf(et, superEt)
             case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
-            case _ ⇒ No
+            case _                                             ⇒ No
         }
     }
 

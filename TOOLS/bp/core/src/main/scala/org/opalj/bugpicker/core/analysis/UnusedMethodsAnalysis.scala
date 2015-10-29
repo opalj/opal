@@ -62,15 +62,16 @@ object UnusedMethodsAnalysis {
      */
     def analyze(
         theProject: SomeProject,
-        callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
-        classFile: ClassFile, method: Method): Option[StandardIssue] = {
+        callgraph:  ComputedCallGraph, callgraphEntryPoints: Set[Method],
+        classFile: ClassFile, method: Method
+    ): Option[StandardIssue] = {
 
         if (callgraphEntryPoints.contains(method))
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
 
-            import method.{ isConstructor, isPrivate, parametersCount }
+            import method.{isConstructor, isPrivate, parametersCount}
 
             // Let's check if it is a default constructor
             // which was defined to avoid instantiations of the

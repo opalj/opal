@@ -108,7 +108,11 @@ final class Code private (
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note Calling this method only makes sense for Java bytecode that actually contains
+     * <<<<<<< HEAD
      * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
+     * =======
+     * 		[[org.opalj.br.instruction.JSR]] and [[org.opalj.br.instruction.RET]]
+     * >>>>>>> master
      * 		instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
@@ -983,9 +987,9 @@ final class Code private (
      *      return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
-     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction. `false` in all other
-     * 		cases (i.e., the sequence does not end with an `athrow` instruction or
-     * 		the control flow is more complex.)
+     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
+     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow`
+     * 		instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
         pc:               PC,

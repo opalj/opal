@@ -614,7 +614,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -633,7 +633,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -645,7 +645,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -657,7 +657,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -686,7 +686,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -698,7 +698,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -710,7 +710,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 

@@ -32,7 +32,7 @@ package ui
 
 import java.net.URL
 import scala.io.Source
-import scala.xml.{ Node ⇒ xmlNode }
+import scala.xml.{Node ⇒ xmlNode}
 import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
@@ -40,8 +40,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import javafx.concurrent.{ Service ⇒ jService }
-import javafx.concurrent.{ Task ⇒ jTask }
+import javafx.concurrent.{Service ⇒ jService}
+import javafx.concurrent.{Task ⇒ jTask}
 import scalafx.beans.property.ObjectProperty
 import scalafx.concurrent.Service
 import org.opalj.log.OPALLogger
@@ -54,11 +54,12 @@ import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
  * @author David Becker
  */
 class AnalysisWorker(
-    doc: ObjectProperty[xmlNode],
-    project: Project[URL],
-    parameters: AnalysisParameters,
-    issuez: ObjectProperty[Iterable[Issue]],
-    initProgressManagement: Int ⇒ ProgressManagement) extends Service[Unit](new jService[Unit]() {
+    doc:                    ObjectProperty[xmlNode],
+    project:                Project[URL],
+    parameters:             AnalysisParameters,
+    issuez:                 ObjectProperty[Iterable[Issue]],
+    initProgressManagement: Int ⇒ ProgressManagement
+) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
@@ -70,13 +71,15 @@ class AnalysisWorker(
         }
 
         def createHTMLReport(
-            analysisTime: Nanoseconds,
+            analysisTime:       Nanoseconds,
             parametersAsString: Seq[String],
-            issues: Iterable[Issue]): scala.xml.Node = {
+            issues:             Iterable[Issue]
+        ): scala.xml.Node = {
             val report =
                 resultsAsXHTML(
                     parametersAsString, issues, showSearch = true,
-                    analysisTime)
+                    analysisTime
+                )
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString
@@ -92,10 +95,12 @@ class AnalysisWorker(
                     report.attributes,
                     report.scope,
                     false,
-                    (newHead ++ (report \ "body"): _*))
+                    (newHead ++ (report \ "body"): _*)
+                )
 
             OPALLogger.info(
-                "analysis progress", "assembled the final report")(project.logContext)
+                "analysis progress", "assembled the final report"
+            )(project.logContext)
 
             assembledReport
         }

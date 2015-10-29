@@ -229,8 +229,8 @@ class CodeAttributeTest
         codeOfGet.pcOfPreviousInstruction(4) should be(1)
     }
 
-    it should "throw an IllegalArgumentException if the pc is 0" in {
-        an[IllegalArgumentException] should be thrownBy codeOfGet.pcOfPreviousInstruction(0)
+    it should "return a negative pc (which is invalid if the given pc is 0)" in {
+        codeOfGet.pcOfPreviousInstruction(0) should be(-1)
     }
 
 }
