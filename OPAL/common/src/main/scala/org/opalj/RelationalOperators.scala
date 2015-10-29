@@ -58,4 +58,5 @@ object RelationalOperators extends Enumeration {
     // Operators to compare long values.
     //
     final val CMP = Value("cmp")
+
 }

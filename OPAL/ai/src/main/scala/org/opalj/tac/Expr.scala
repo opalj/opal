@@ -62,10 +62,12 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 
 case class Compare(
-        pc: PC,
-        left: Expr,
-        condition: RelationalOperator,
-        right: Expr) extends Expr {
+    pc: PC,
+    left: Expr,
+    condition: RelationalOperator,
+    right: Expr) 
+		extends Expr {
+
     final def cTpe = ComputationalTypeInt
 }
 
@@ -153,6 +155,7 @@ case class NewArray(
     counts: List[Expr],
     tpe: ArrayType)
         extends Expr {
+
     final def cTpe = ComputationalTypeReference
 }
 
