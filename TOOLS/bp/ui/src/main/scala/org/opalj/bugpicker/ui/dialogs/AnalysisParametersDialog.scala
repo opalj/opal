@@ -233,9 +233,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 maxEvalFactorField.text().toDouble
                             } catch {
                                 case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage("Error",
+                                    DialogStage.showMessage(
+                                        "Error",
                                         "You entered an illegal value for the maximum evaluation factor!",
-                                        theStage)
+                                        theStage
+                                    )
                                     interrupt = true
                                     Double.NaN
                                 }
@@ -244,9 +246,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 new Milliseconds(maxEvalTimeField.text().toLong)
                             } catch {
                                 case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage("Error",
+                                    DialogStage.showMessage(
+                                        "Error",
                                         "You entered an illegal value for the maximum evaluation time!",
-                                        theStage)
+                                        theStage
+                                    )
                                     interrupt = true
                                     Milliseconds.None
                                 }
@@ -255,9 +259,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 maxCardinalityOfIntegerRangesField.text().toLong
                             } catch {
                                 case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage("Error",
+                                    DialogStage.showMessage(
+                                        "Error",
                                         "You entered an illegal value for the maximum cardinality of integer ranges!",
-                                        theStage)
+                                        theStage
+                                    )
                                     interrupt = true
                                     Long.MinValue
                                 }
@@ -266,9 +272,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 maxCardinalityOfLongSetsField.text().toInt
                             } catch {
                                 case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage("Error",
+                                    DialogStage.showMessage(
+                                        "Error",
                                         "You entered an illegal value for the maximum cardinality of long sets!",
-                                        theStage)
+                                        theStage
+                                    )
                                     interrupt = true
                                     Int.MinValue
                                 }
@@ -277,9 +285,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 maxCallChainLengthField.text().toInt
                             } catch {
                                 case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage("Error",
+                                    DialogStage.showMessage(
+                                        "Error",
                                         "You entered an illegal value for the maximum call chain length!",
-                                        theStage)
+                                        theStage
+                                    )
                                     interrupt = true
                                     Int.MinValue
                                 }
@@ -297,7 +307,8 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                     maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
                                     maxCardinalityOfLongSets = maxCardinalityOfLongSets,
                                     maxCallChainLength = maxCallChainLength,
-                                    fixpointAnalyses = fpas))
+                                    fixpointAnalyses = fpas
+                                ))
                                 close()
                             }
                         }

@@ -42,9 +42,9 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project, SomeProject}
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.MethodWithBody
 import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
@@ -112,7 +112,8 @@ object DeadEdgesAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }): Seq[StandardIssue] = {
+        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }
+    ): Seq[StandardIssue] = {
         if (method.isSynthetic)
             return Seq.empty;
 
@@ -331,13 +332,14 @@ object DeadEdgesAnalysis {
                             result.strictfp,
                             result.code,
                             result.joinInstructions,
-                            zDomain)(
-                                /*initialWorkList =*/ List(nextPC),
-                                /*alreadyEvaluated =*/ List(),
-                                zOperandsArray,
-                                zLocalsArray,
-                                List.empty
-                            )
+                            zDomain
+                        )(
+                            /*initialWorkList =*/ List(nextPC),
+                            /*alreadyEvaluated =*/ List(),
+                            zOperandsArray,
+                            zLocalsArray,
+                            List.empty
+                        )
                         val exceptionValue = zOperandsArray(athrowPC).head
                         val throwsError =
                             (
@@ -406,7 +408,8 @@ object DeadEdgesAnalysis {
                             "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
                         else
                             ""
-                    )),
+                    )
+                ),
                 Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
                 Set(IssueKind.DeadPath),
                 hints,

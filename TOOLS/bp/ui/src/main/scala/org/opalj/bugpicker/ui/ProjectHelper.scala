@@ -65,9 +65,10 @@ object ProjectHelper {
     private[this] implicit val logContext = org.opalj.log.GlobalLogContext
 
     def setupProject(
-        loadedFiles: LoadedFiles,
-        parentStage: Stage,
-        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): (Project[URL], Seq[File]) = {
+        loadedFiles:        LoadedFiles,
+        parentStage:        Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]
+    ): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
@@ -77,10 +78,11 @@ object ProjectHelper {
     }
 
     def setupProject(
-        cpFiles: Iterable[File],
-        libcpFiles: Iterable[File],
-        parentStage: Stage,
-        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): Project[URL] = {
+        cpFiles:            Iterable[File],
+        libcpFiles:         Iterable[File],
+        parentStage:        Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]
+    ): Project[URL] = {
         OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
@@ -92,7 +94,9 @@ object ProjectHelper {
                 Java8ClassFileReader.ClassFiles,
                 (file) ⇒ OPALLogger.info(
                     "creating project",
-                    "project class path member: "+file.toString))
+                    "project class path member: "+file.toString
+                )
+            )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
@@ -102,7 +106,9 @@ object ProjectHelper {
                     Java8LibraryClassFileReader.ClassFiles,
                     (file) ⇒ OPALLogger.info(
                         "creating project",
-                        "library class path member: "+file.toString))
+                        "library class path member: "+file.toString
+                    )
+                )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -114,13 +120,16 @@ object ProjectHelper {
                 OPALLogger.error(
                     "creating project",
                     "an exception occured while creating project; the responsible class file is ignored",
-                    exception)
+                    exception
+                )
             }
         }
 
         Project(
-            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
-                projectLogger = new BugPickerOPALLogger(projectLogMessages))
+            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty
+        )(
+            projectLogger = new BugPickerOPALLogger(projectLogMessages)
+        )
     }
 }
 

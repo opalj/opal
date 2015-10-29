@@ -58,9 +58,10 @@ object WebViewStage {
 
     def showWebView(
         theTitle: String,
-        wv: WebView,
-        screenX: Double,
-        screenY: Double): Unit = {
+        wv:       WebView,
+        screenX:  Double,
+        screenY:  Double
+    ): Unit = {
         val stage = new WebViewStage {
             theStage ⇒
             title = theTitle

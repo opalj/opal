@@ -50,10 +50,11 @@ import scalafx.scene.image.ImageView
  * @author David Becker
  */
 class ProjectExplorerTreeItem(
-    p: ProjectExplorerData,
-    iv: ImageView,
-    childrenNodes: ObservableBuffer[ProjectExplorerTreeItem] = ObservableBuffer.empty,
-    classFileStructure: Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = Map.empty)
+    p:                  ProjectExplorerData,
+    iv:                 ImageView,
+    childrenNodes:      ObservableBuffer[ProjectExplorerTreeItem]                 = ObservableBuffer.empty,
+    classFileStructure: Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = Map.empty
+)
         extends TreeItem[ProjectExplorerData](p, iv) {
 
     // We cache whether the ProjectExplorerData is a leaf or not. A ProjectExplorerData
@@ -96,51 +97,61 @@ class ProjectExplorerTreeItem(
         val data: ProjectExplorerData = parent.getValue
         data match {
             case p: ProjectExplorerPackageData ⇒ sortProjectExplorerTreeItems(
-                addClassFiles(classFileStructure(parent)))
+                addClassFiles(classFileStructure(parent))
+            )
             case c: ProjectExplorerClassData ⇒ sortProjectExplorerTreeItems(
                 addClassMembers(c.classFile, c.classFile.fields, determineFieldIcon) ++
-                    addClassMembers(c.classFile, c.classFile.methods, determineMethodIcon))
+                    addClassMembers(c.classFile, c.classFile.methods, determineMethodIcon)
+            )
             case _ ⇒ ObservableBuffer.empty
         }
     }
 
     private def addClassFiles(
-        classFiles: ObservableBuffer[ClassFile]): ObservableBuffer[ProjectExplorerTreeItem] = {
+        classFiles: ObservableBuffer[ClassFile]
+    ): ObservableBuffer[ProjectExplorerTreeItem] = {
         for (classFile ← classFiles) yield {
             val objectType = classFile.thisType
             new ProjectExplorerTreeItem(
                 ProjectExplorerClassData(
                     objectType.simpleName,
-                    classFile),
+                    classFile
+                ),
                 new ImageView {
                     image = determineClassIcon(classFile)
-                })
+                }
+            )
         }
     }
 
     private def addClassMembers[T <: ClassMember](
-        classFile: ClassFile,
-        classMembers: Seq[T],
-        determineIcon: T ⇒ Image): ObservableBuffer[ProjectExplorerTreeItem] = {
+        classFile:     ClassFile,
+        classMembers:  Seq[T],
+        determineIcon: T ⇒ Image
+    ): ObservableBuffer[ProjectExplorerTreeItem] = {
         for (classMember ← ObservableBuffer.apply(classMembers)) yield {
-            new ProjectExplorerTreeItem(classMember match {
+            new ProjectExplorerTreeItem(
+                classMember match {
                 case m: Method ⇒ {
                     ProjectExplorerMethodData(
                         m.name,
                         classFile,
                         m,
                         m.isStatic,
-                        m.isAbstract)
+                        m.isAbstract
+                    )
                 }
                 case f: Field ⇒ {
                     ProjectExplorerFieldData(
                         f.name,
-                        f.isStatic)
+                        f.isStatic
+                    )
                 }
             },
                 new ImageView {
                     image = determineIcon(classMember)
-                })
+                }
+            )
         }
     }
 
@@ -218,7 +229,8 @@ class ProjectExplorerTreeItem(
      * Alphabetically if everything else is equal
      */
     private def sortProjectExplorerTreeItems(
-        items: ObservableBuffer[ProjectExplorerTreeItem]): ObservableBuffer[ProjectExplorerTreeItem] = {
+        items: ObservableBuffer[ProjectExplorerTreeItem]
+    ): ObservableBuffer[ProjectExplorerTreeItem] = {
         items.sort((a, b) ⇒ {
             val value1 = a.getValue
             val value2 = b.getValue

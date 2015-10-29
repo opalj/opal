@@ -88,8 +88,7 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
                         if (!isLoading) {
                             saveButton.disable = false
                             loadProgress.close
-                        }
-                    )
+                        })
                     view.engine.loadContent(XHTMLContent.toString)
                 })
             generatingService.start
@@ -200,9 +199,9 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
                 (description.map(_.text.trim) zip (data.map(_.text.trim))).toMap
             }
             if (!savedData1.isDefinedAt(i))
-                savedData1 += (i -> getData(cIssues(i)))
+                savedData1 += (i → getData(cIssues(i)))
             if (!savedData2.isDefinedAt(j))
-                savedData2 += (j -> getData(oIssues(j)))
+                savedData2 += (j → getData(oIssues(j)))
             val data1 = savedData1(i)
             val data2 = savedData1(j)
             def eqIfExists(s: String) = {
@@ -341,7 +340,8 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
 case class StoredAnalysis(
         analysisName: String,
         analysisFile: File,
-        analysisDate: Date = java.util.Calendar.getInstance().getTime()) {
+        analysisDate: Date   = java.util.Calendar.getInstance().getTime()
+) {
     lazy val xml = scala.xml.XML.loadFile(analysisFile)
     def getIssues(): Option[Iterable[Node]] = {
         try {

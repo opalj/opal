@@ -81,8 +81,9 @@ import org.opalj.fp.PropertyKey
  * @author David Becker
  */
 class ProjectExplorer(
-        tv: TreeView[ProjectExplorerData],
-        stage: Stage) {
+        tv:    TreeView[ProjectExplorerData],
+        stage: Stage
+) {
 
     private[this] val projectPackageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem] = scala.collection.mutable.Map.empty
     private[this] val libraryPackageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem] = scala.collection.mutable.Map.empty
@@ -141,10 +142,12 @@ class ProjectExplorer(
                                         runAbstractInterpretation(
                                             chosenDomain.get,
                                             classFile,
-                                            method)
+                                            method
+                                        )
                                     }
                                 }
-                            })
+                            }
+                        )
                         else
                             new ContextMenu(sc, bc))
                     }
@@ -161,9 +164,10 @@ class ProjectExplorer(
     }
 
     def buildProjectExplorer(
-        project: Project[URL],
-        sources: Seq[File],
-        projectName: String): Unit = {
+        project:     Project[URL],
+        sources:     Seq[File],
+        projectName: String
+    ): Unit = {
         this.project = project
         this.sources = sources
         val root = new ProjectExplorerTreeItem(
@@ -180,7 +184,11 @@ class ProjectExplorer(
                     createPackageStructure(
                         project.projectPackages.toSeq.sorted,
                         projectPackageStructure,
-                        projectClassFileStructure))))
+                        projectClassFileStructure
+                    )
+                )
+            )
+        )
         root.expanded = true
         if (project.libraryClassFilesCount > 0) {
             root.children ++ Seq(new ProjectExplorerTreeItem(
@@ -191,16 +199,20 @@ class ProjectExplorer(
                 createPackageStructure(
                     project.libraryPackages.toBuffer.sorted,
                     libraryPackageStructure,
-                    libraryClassFileStructure)))
+                    libraryClassFileStructure
+                )
+            ))
             initializeClassFileStructure(
                 project.allLibraryClassFiles,
                 libraryPackageStructure,
-                libraryClassFileStructure)
+                libraryClassFileStructure
+            )
         }
         initializeClassFileStructure(
             project.allProjectClassFiles,
             projectPackageStructure,
-            projectClassFileStructure)
+            projectClassFileStructure
+        )
 
         tv.root = root
     }
@@ -214,35 +226,41 @@ class ProjectExplorer(
             ProjectExplorerData(projectName),
             new ImageView {
                 image = ProjectExplorer.getImage("/org/opalj/bugpicker/ui/explorer/folder.gif")
-            })
+            }
+        )
     }
 
     private def createPackageStructure(
-        packages: Seq[String],
-        packageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem],
-        classFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]]): ObservableBuffer[ProjectExplorerTreeItem] = {
+        packages:           Seq[String],
+        packageStructure:   scala.collection.mutable.Map[String, ProjectExplorerTreeItem],
+        classFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]]
+    ): ObservableBuffer[ProjectExplorerTreeItem] = {
         for (p ← ObservableBuffer.apply(packages)) yield {
             val node = new ProjectExplorerTreeItem(
                 if (p == "")
                     ProjectExplorerPackageData(
-                    "(default package)")
+                    "(default package)"
+                )
                 else
                     ProjectExplorerPackageData(
-                        p.replace('/', '.')),
+                        p.replace('/', '.')
+                    ),
                 new ImageView {
                     image = ProjectExplorer.getImage("/org/opalj/bugpicker/ui/explorer/package.gif")
                 },
                 ObservableBuffer.empty,
-                classFileStructure)
-            packageStructure += (node.value.apply.name.apply -> node)
+                classFileStructure
+            )
+            packageStructure += (node.value.apply.name.apply → node)
             node
         }
     }
 
     private def initializeClassFileStructure(
-        classFiles: Iterable[ClassFile],
-        packageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem],
-        classFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]]): Unit = {
+        classFiles:         Iterable[ClassFile],
+        packageStructure:   scala.collection.mutable.Map[String, ProjectExplorerTreeItem],
+        classFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]]
+    ): Unit = {
         for (classFile ← classFiles) {
             val objectType = classFile.thisType
             // get the ProjectExplorerTreeItem representing the Package of the ClassFile
@@ -250,14 +268,15 @@ class ProjectExplorer(
             else objectType.packageName.replace('/', '.')
             val packageNode = packageStructure(packageName)
             // add a link from the ProjectExplorerTreeItem to all ClassFiles belonging to it
-            classFileStructure += (packageNode -> (classFileStructure.getOrElse(packageNode, ObservableBuffer.empty) :+ classFile))
+            classFileStructure += (packageNode → (classFileStructure.getOrElse(packageNode, ObservableBuffer.empty) :+ classFile))
         }
     }
 
     private def runAbstractInterpretation(
         chosenDomain: String,
-        classFile: ClassFile,
-        method: Method): Unit = {
+        classFile:    ClassFile,
+        method:       Method
+    ): Unit = {
         // WebView for AI result, independent of domain
         val aiDefaultView: WebView = new WebView {
             contextMenuEnabled = false
@@ -268,12 +287,14 @@ class ProjectExplorer(
         val domainName: String = chosenDomain.split(']')(0).drop(1)
         WebViewStage.showWebView(
             s"Result of Abstract Interpretation[$domainName]: "+classFile.fqn + s"{ $method }",
-            aiDefaultView, 125d, 50d)
+            aiDefaultView, 125d, 50d
+        )
         val domain: Domain = DomainRegistry.newDomain(
             chosenDomain,
             project,
             classFile,
-            method)
+            method
+        )
         val aiResult = BaseAI(classFile, method, domain)
         val aiResultXHTML =
             XHTML.dump(
@@ -291,13 +312,15 @@ class ProjectExplorer(
             }
             WebViewStage.showWebView(
                 "DefUse Info: "+classFile.fqn + s"{ $method }",
-                aiDefUseView, 175d, 100d)
+                aiDefUseView, 175d, 100d
+            )
         }
     }
 
     private def showSourceCode(
-        cf: ClassFile,
-        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        cf:     ClassFile,
+        method: Option[Method]
+    ): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val sourceView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
@@ -322,18 +345,21 @@ class ProjectExplorer(
                 webview = sourceView,
                 methodOption = methodId,
                 pcOption = None,
-                lineOption = firstLineOfMethod)
+                lineOption = firstLineOfMethod
+            )
 
             val methodString = if (methodId.isDefined) ("{ "+methodId.get+" }") else ""
             WebViewStage.showWebView(
                 "SourceCode for "+cf.fqn + methodString,
-                sourceView, 125d, 50d)
+                sourceView, 125d, 50d
+            )
         }
     }
 
     private def showBytecode(
-        cf: ClassFile,
-        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        cf:     ClassFile,
+        method: Option[Method]
+    ): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val byteView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
@@ -352,15 +378,17 @@ class ProjectExplorer(
         new JumpToProblemListener(
             webview = byteView,
             methodOption = methodId,
-            pcOption = None, lineOption = None)
+            pcOption = None, lineOption = None
+        )
 
         val title = "Byte Code for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
         WebViewStage.showWebView(title, byteView, 175d, 100d)
     }
 
     private def showTAC(
-        cf: ClassFile,
-        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        cf:     ClassFile,
+        method: Option[Method]
+    ): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val tacView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
@@ -389,8 +417,9 @@ class ProjectExplorer(
     }
 
     private def showProperties(
-        cf: ClassFile,
-        method: Option[Method]): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        cf:     ClassFile,
+        method: Option[Method]
+    ): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val propView: WebView = new WebView {
             contextMenuEnabled = false
             vgrow = Priority.Always
@@ -437,8 +466,9 @@ class ProjectExplorer(
         WebViewStage.showWebView(title, propView, 175d, 100d)
     }
     private def findSourceFile(
-        classFile: ClassFile,
-        lineOption: Option[String]): Option[SourceFileWrapper] = {
+        classFile:  ClassFile,
+        lineOption: Option[String]
+    ): Option[SourceFileWrapper] = {
 
         val theType: ObjectType = classFile.thisType
         val sourcePackagePath = theType.packageName
@@ -446,14 +476,12 @@ class ProjectExplorer(
         val sourceFile: Option[File] =
             if (classFile.sourceFile.isDefined) {
                 sources.toStream.map(dir ⇒
-                    new File(dir, sourcePackagePath+"/"+classFile.sourceFile.get)).find(_.exists()
-                )
+                    new File(dir, sourcePackagePath+"/"+classFile.sourceFile.get)).find(_.exists())
             } else {
                 val name = theType.simpleName
                 val packageDir =
                     sources.toStream.map(dir ⇒
-                        new File(dir, sourcePackagePath)).find(_.exists()
-                    )
+                        new File(dir, sourcePackagePath)).find(_.exists())
                 packageDir.map(_.listFiles(new FilenameFilter {
                     override def accept(file: File, filename: String): Boolean =
                         filename.matches("^"+name+"\\.\\w+$")
@@ -481,13 +509,14 @@ class ProjectExplorer(
 object ProjectExplorer {
 
     private[this] val imageCache: Map[String, Image] = Map(
-        "fallback" -> new Image("/org/opalj/bugpicker/ui/explorer/error.gif"))
+        "fallback" → new Image("/org/opalj/bugpicker/ui/explorer/error.gif")
+    )
 
     def getImage(path: String): Image = {
         imageCache.getOrElse(path, {
             try {
                 val img = new Image(path, true)
-                imageCache += (path -> img)
+                imageCache += (path → img)
                 img
             } catch {
                 case e: Exception ⇒ imageCache("fallback")

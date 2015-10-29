@@ -146,7 +146,8 @@ class BugPicker extends Application {
         }
 
         def createLogMessagesTableView(
-            messages: ObservableBuffer[BugPickerLogMessage]): TableView[BugPickerLogMessage] = {
+            messages: ObservableBuffer[BugPickerLogMessage]
+        ): TableView[BugPickerLogMessage] = {
             val timestampColumn = new TableColumn[BugPickerLogMessage, String] {
                 text = "Timestamp"
                 maxWidth = 100
@@ -196,21 +197,29 @@ class BugPicker extends Application {
                     timestampColumn,
                     levelColumn,
                     categoryColumn,
-                    messageColumn)
+                    messageColumn
+                )
                 editable = false
                 placeholder = Label("")
             }
             timestampColumn.prefWidthProperty().bind(
-                logMessagesTableView.widthProperty().multiply(0.17))
+                logMessagesTableView.widthProperty().multiply(0.17)
+            )
             levelColumn.prefWidthProperty().bind(
-                logMessagesTableView.widthProperty().multiply(0.13))
+                logMessagesTableView.widthProperty().multiply(0.13)
+            )
             categoryColumn.prefWidthProperty().bind(
-                logMessagesTableView.widthProperty().multiply(0.26))
+                logMessagesTableView.widthProperty().multiply(0.26)
+            )
             messageColumn.prefWidthProperty().bind(
                 logMessagesTableView.widthProperty().subtract(
-                    timestampColumn.widthProperty()).subtract(
-                        levelColumn.widthProperty()).subtract(
-                            categoryColumn.widthProperty()))
+                    timestampColumn.widthProperty()
+                ).subtract(
+                        levelColumn.widthProperty()
+                    ).subtract(
+                            categoryColumn.widthProperty()
+                        )
+            )
 
             logMessagesTableView
         }
@@ -231,7 +240,8 @@ class BugPicker extends Application {
 
         def logMessagesOnChangeBehaviour(
             sortOrder: ObservableBuffer[javafx.scene.control.TableColumn[BugPickerLogMessage, _]],
-            tv: TableView[BugPickerLogMessage], scrollBar: Option[ScrollBar]): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
+            tv:        TableView[BugPickerLogMessage], scrollBar: Option[ScrollBar]
+        ): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
             (_, changes) ⇒
                 {
                     for (change ← changes)
@@ -365,9 +375,11 @@ class BugPicker extends Application {
 
         projectExplorerShown.children = Seq(
             minimizeProjectExplorerButton,
-            projectExplorerTreeView)
+            projectExplorerTreeView
+        )
         projectExplorerHidden.children = Seq(
-            restoreProjectExplorerButton)
+            restoreProjectExplorerButton
+        )
 
         OPALLogger.initGlobalContextLogger(new BugPickerOPALLogger(bugpickerLogMessages))
 
@@ -413,7 +425,8 @@ class BugPicker extends Application {
                         title = "Save Analysis"
                         extensionFilters ++= Seq(
                             new FileChooser.ExtensionFilter("Bugpicker Analysis", bpFileSuffix),
-                            new FileChooser.ExtensionFilter("All Files", "*.*"))
+                            new FileChooser.ExtensionFilter("All Files", "*.*")
+                        )
                         initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
                         initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
                     }
@@ -425,8 +438,10 @@ class BugPicker extends Application {
                                 name,
                                 currentAnalysis,
                                 currentAnalysisParameters,
-                                file)(
-                                    recentAnalyses)
+                                file
+                            )(
+                                recentAnalyses
+                            )
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
                     }
@@ -449,7 +464,8 @@ class BugPicker extends Application {
                     title = "Open Analysis"
                     extensionFilters ++= Seq(
                         new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
-                        new FileChooser.ExtensionFilter("All Files", "*.*"))
+                        new FileChooser.ExtensionFilter("All Files", "*.*")
+                    )
                     initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
                 }
                 val file = fod.showOpenDialog(stage)
@@ -462,7 +478,8 @@ class BugPicker extends Application {
                                 recentProjects.head.projectName,
                                 currentAnalysis,
                                 currentAnalysisParameters.toStringParameters,
-                                oldAnalysis.get)
+                                oldAnalysis.get
+                            )
                         recentAnalyses = BugPicker.updateRecentlyUsedAnalyses(oldAnalysis.get, recentAnalyses)
                         recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
                         recentAnalysisToDiffMenu.disable = false
@@ -547,7 +564,8 @@ class BugPicker extends Application {
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+Q")
                                 onAction = { e: ActionEvent ⇒ stage.close }
-                            })
+                            }
+                        )
                     },
                     new Menu {
                         text = "_Analysis"
@@ -574,7 +592,8 @@ class BugPicker extends Application {
                                         })
                                         AnalysisRunner.runAnalysis(
                                             stage, project, sources, parameters,
-                                            issues, sourceView, byteView, reportView, tabPane)
+                                            issues, sourceView, byteView, reportView, tabPane
+                                        )
 
                                         if (!tabPane.selectionModel().isSelected(1)) {
                                             tabPane.selectionModel().select(1)
@@ -622,7 +641,8 @@ class BugPicker extends Application {
                                         val newParameters = dialog.show(parameters)
                                         if (newParameters.isDefined) {
                                             BugPicker.storeParametersToPreferences(
-                                                newParameters.get)
+                                                newParameters.get
+                                            )
                                         }
                                     }
                                 }
@@ -630,7 +650,8 @@ class BugPicker extends Application {
                             new SeparatorMenuItem,
                             storeCurrentAnalysis,
                             loadAnalysisToDiff,
-                            recentAnalysisToDiffMenu)
+                            recentAnalysisToDiffMenu
+                        )
                     },
                     new Menu {
                         text = "_Help"
@@ -646,8 +667,10 @@ class BugPicker extends Application {
                                 text = "_About"
                                 mnemonicParsing = true
                                 onAction = { e: ActionEvent ⇒ aboutDialog.showAndWait() }
-                            })
-                    })
+                            }
+                        )
+                    }
+                )
             }
         }
 
@@ -665,7 +688,8 @@ class BugPicker extends Application {
                                     recentProjects.head.projectName,
                                     currentAnalysis,
                                     currentAnalysisParameters.toStringParameters,
-                                    p).show(stage)
+                                    p
+                                ).show(stage)
                             }
                         }
                     }
@@ -681,7 +705,8 @@ class BugPicker extends Application {
                             recentAnalysisToDiffMenu.items = Seq.empty
                             recentAnalysisToDiffMenu.disable = true;
                         }
-                    })
+                    }
+                )
             } else {
                 Seq.empty
             }
@@ -723,7 +748,8 @@ class BugPicker extends Application {
                                 recentProjectsMenu.disable = true;
                             }
                         }
-                    })
+                    }
+                )
             } else {
                 Seq.empty
             }
@@ -740,7 +766,8 @@ class BugPicker extends Application {
             } else if (recentProjects.exists(_.projectName == lastProject.projectName)) {
                 // already existing project got updated, bring it to front
                 lastProject +: recentProjects.filter(
-                    _.projectName != lastProject.projectName)
+                    _.projectName != lastProject.projectName
+                )
             } else {
                 if (recentProjects.size < BugPicker.MAX_RECENT_PROJECTS) {
                     // lastProject is most recent project, enough space for one more
@@ -761,7 +788,8 @@ class BugPicker extends Application {
                 hgrow = Priority.Always
                 children = Seq(
                     createMenuBar(),
-                    bugPickerPane)
+                    bugPickerPane
+                )
             }
 
             stylesheets += BugPicker.defaultAppCSSURL
@@ -801,7 +829,8 @@ class BugPicker extends Application {
         stage.onCloseRequest = { e: WindowEvent ⇒
             BugPicker.storeWindowSizeInPreferences(
                 stage.width(), stage.height(),
-                stage.x(), stage.y())
+                stage.x(), stage.y()
+            )
         }
 
         stage.show()
@@ -811,11 +840,13 @@ class BugPicker extends Application {
 
         bugpickerLogMessages.onChange {
             logMessagesOnChangeBehaviour(
-                bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar)
+                bugpickerLogSortOrder, bugpickerLogView, bugpickerLogViewScrollBar
+            )
         }
         projectLogMessages.onChange {
             logMessagesOnChangeBehaviour(
-                projectLogSortOrder, projectLogView, projectLogViewScrollBar)
+                projectLogSortOrder, projectLogView, projectLogViewScrollBar
+            )
         }
     }
 }
@@ -879,47 +910,59 @@ object BugPicker {
         import BugPickerAnalysis._
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
-            DefaultMaxEvalFactor)
+            DefaultMaxEvalFactor
+        )
         val maxEvalTime = new Milliseconds(PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            DefaultMaxEvalTime.timeSpan))
+            DefaultMaxEvalTime.timeSpan
+        ))
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
-            DefaultMaxCardinalityOfIntegerRanges)
+            DefaultMaxCardinalityOfIntegerRanges
+        )
         val maxCardinalityOfLongSets = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
-            DefaultMaxCardinalityOfLongSets)
+            DefaultMaxCardinalityOfLongSets
+        )
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
-            DefaultMaxCallChainLength)
+            DefaultMaxCallChainLength
+        )
         val fixpointAnalyses = PREFERENCES.get(
             PREFERENCES_KEY_FIXPOINT_ANALYSES,
-            DefaultFixpointAnalyses.mkString(";"))
+            DefaultFixpointAnalyses.mkString(";")
+        )
         new AnalysisParameters(
             maxEvalTime,
             maxEvalFactor,
             maxCardinalityOfIntegerRanges,
             maxCardinalityOfLongSets,
             maxCallChainLength,
-            fixpointAnalyses.split(";"))
+            fixpointAnalyses.split(";")
+        )
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
         PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            parameters.maxEvalTime.timeSpan)
+            parameters.maxEvalTime.timeSpan
+        )
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
-            parameters.maxEvalFactor)
+            parameters.maxEvalFactor
+        )
         PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
-            parameters.maxCardinalityOfIntegerRanges)
+            parameters.maxCardinalityOfIntegerRanges
+        )
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
-            parameters.maxCardinalityOfLongSets)
+            parameters.maxCardinalityOfLongSets
+        )
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
-            parameters.maxCallChainLength)
+            parameters.maxCallChainLength
+        )
         PREFERENCES.put(
             PREFERENCES_KEY_FIXPOINT_ANALYSES,
             parameters.fixpointAnalyses.mkString(";")
@@ -951,7 +994,8 @@ object BugPicker {
             projectName = name,
             projectFiles = classes,
             projectSources = sources,
-            libraries = libs))
+            libraries = libs
+        ))
     }
 
     def storeRecentProjectsToPreferences(recentProjects: Seq[LoadedFiles]): Unit = {
@@ -965,19 +1009,23 @@ object BugPicker {
             val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
             PREFERENCES_RECENT_PROJECT.put(
                 s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i",
-                loadedFiles.projectName)
+                loadedFiles.projectName
+            )
             filesToPref(
                 s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i",
                 loadedFiles.projectFiles,
-                PREFERENCES_RECENT_PROJECT)
+                PREFERENCES_RECENT_PROJECT
+            )
             filesToPref(
                 s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i",
                 loadedFiles.projectSources,
-                PREFERENCES_RECENT_PROJECT)
+                PREFERENCES_RECENT_PROJECT
+            )
             filesToPref(
                 s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i",
                 loadedFiles.libraries,
-                PREFERENCES_RECENT_PROJECT)
+                PREFERENCES_RECENT_PROJECT
+            )
         }
     }
 
@@ -1009,11 +1057,13 @@ object BugPicker {
     }
 
     def storeAnalysis(
-        name: String,
-        issues: Iterable[Node],
+        name:       String,
+        issues:     Iterable[Node],
         parameters: AnalysisParameters,
-        file: File)(
-            recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
+        file:       File
+    )(
+        recentAnalyses: Seq[StoredAnalysis]
+    ): Seq[StoredAnalysis] = {
 
         class PE(name: String, entdef: EntityDef) extends ParsedEntityDecl(name, entdef) {
             override def toString: String = {

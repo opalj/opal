@@ -96,13 +96,14 @@ trait BaseBugPickerAnalysisDomain
  * a method without invoking called methods.
  */
 class FallbackBugPickerAnalysisDomain(
-    val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    val project:                                Project[URL],
+    val fieldValueInformation:                  FieldValueInformation,
+    val methodReturnValueInformation:           MethodReturnValueInformation,
+    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets: Int,
-    val /*current*/ method: Method)
+    override val maxCardinalityOfLongSets:      Int,
+    val /*current*/ method:                     Method
+)
         extends BaseBugPickerAnalysisDomain
         with domain.l1.DefaultClassValuesBinding
         with domain.l1.RecordAllThrownExceptions
@@ -123,22 +124,28 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     type CalledMethodDomain = InvocationBugPickerAnalysisDomain
 
     override protected[this] def doInvoke(
-        method: Method,
-        calledMethodDomain: CalledMethodDomain)(
-            parameters: calledMethodDomain.Locals): AIResult { val domain: calledMethodDomain.type } = {
+        method:             Method,
+        calledMethodDomain: CalledMethodDomain
+    )(
+        parameters: calledMethodDomain.Locals
+    ): AIResult { val domain: calledMethodDomain.type } = {
         val result = super.doInvoke(method, calledMethodDomain)(parameters)
         if (debug) {
-            org.opalj.io.writeAndOpen(org.opalj.ai.common.XHTML.dump(
+            org.opalj.io.writeAndOpen(
+                org.opalj.ai.common.XHTML.dump(
                 Some(project.classFile(method)),
                 Some(method),
                 method.body.get,
                 Some(
                     "Created: "+(new java.util.Date).toString+"<br>"+
                         "Domain: "+result.domain.getClass.getName+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
-                result.domain)(
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                ),
+                result.domain
+            )(
                     result.operandsArray,
-                    result.localsArray),
+                    result.localsArray
+                ),
                 "AIResult",
                 ".html"
             )
@@ -147,11 +154,12 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     }
 
     override def doInvoke(
-        pc: PC,
+        pc:            PC,
         definingClass: ClassFile,
-        method: Method,
-        operands: callingDomain.Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        method:        Method,
+        operands:      callingDomain.Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
         val result = super.doInvoke(pc, definingClass, method, operands, fallback)
         if (debug) {
             println("the result of calling "+method.toJava(definingClass)+" is "+result)
@@ -165,7 +173,8 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,
-        calledMethod: Method): Boolean = {
+        calledMethod:  Method
+    ): Boolean = {
         val result =
             maxCallChainLength > currentCallChainLength &&
                 !(calledMethod.isPrivate && calledMethod.parametersCount == 1)
@@ -180,11 +189,12 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     }
 
     abstract override def invokevirtual(
-        pc: PC,
+        pc:             PC,
         declaringClass: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
+    ): MethodCallResult = {
 
         val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         if (debug) {
@@ -196,17 +206,18 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 }
 
 class InvocationBugPickerAnalysisDomain(
-    val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    val project:                                Project[URL],
+    val fieldValueInformation:                  FieldValueInformation,
+    val methodReturnValueInformation:           MethodReturnValueInformation,
+    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets: Int,
-    val maxCallChainLength: Int,
-    val callerDomain: BasePerformInvocationBugPickerAnalysisDomain,
-    val /*current*/ method: Method,
-    val currentCallChainLength: Int,
-    val debug: Boolean)
+    override val maxCardinalityOfLongSets:      Int,
+    val maxCallChainLength:                     Int,
+    val callerDomain:                           BasePerformInvocationBugPickerAnalysisDomain,
+    val /*current*/ method:                     Method,
+    val currentCallChainLength:                 Int,
+    val debug:                                  Boolean
+)
         extends BasePerformInvocationBugPickerAnalysisDomain
         with domain.RecordMethodCallResults
         with domain.RecordLastReturnedValues
@@ -225,7 +236,8 @@ class InvocationBugPickerAnalysisDomain(
             maxCallChainLength,
             callingDomain,
             method, currentCallChainLength + 1,
-            debug) {
+            debug
+        ) {
         }
 
     def calledMethodAI = callerDomain.calledMethodAI
@@ -238,17 +250,18 @@ class InvocationBugPickerAnalysisDomain(
  * @author Michael Eichberg
  */
 class RootBugPickerAnalysisDomain(
-    val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    val project:                                Project[URL],
+    val fieldValueInformation:                  FieldValueInformation,
+    val methodReturnValueInformation:           MethodReturnValueInformation,
+    val cache:                                  CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     override val maxCardinalityOfIntegerRanges: Long,
-    override val maxCardinalityOfLongSets: Int,
-    val maxCallChainLength: Int,
-    val classFile: ClassFile,
-    val /*current*/ method: Method,
-    val debug: Boolean,
-    val frequentEvaluationWarningLevel: Int = 256)
+    override val maxCardinalityOfLongSets:      Int,
+    val maxCallChainLength:                     Int,
+    val classFile:                              ClassFile,
+    val /*current*/ method:                     Method,
+    val debug:                                  Boolean,
+    val frequentEvaluationWarningLevel:         Int                                                           = 256
+)
         extends BasePerformInvocationBugPickerAnalysisDomain
         with TheAI[BaseBugPickerAnalysisDomain]
         with TheMemoryLayout // required to extract the initial operands
@@ -267,10 +280,10 @@ class RootBugPickerAnalysisDomain(
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
             localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
-                if (n ne null) n :: l else l
-            )
+                if (n ne null) n :: l else l)
         CalledMethodsStore(coordinatingDomain, frequentEvaluationWarningLevel)(
-            method, mapOperands(operands, coordinatingDomain))
+            method, mapOperands(operands, coordinatingDomain)
+        )
     }
 
     override def calledMethodDomain(classFile: ClassFile, method: Method) =
@@ -285,7 +298,8 @@ class RootBugPickerAnalysisDomain(
             callingDomain,
             method,
             currentCallChainLength + 1,
-            debug)
+            debug
+        )
 
 }
 

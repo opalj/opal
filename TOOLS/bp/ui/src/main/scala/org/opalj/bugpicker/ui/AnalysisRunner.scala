@@ -33,7 +33,7 @@ package ui
 import java.io.File
 import java.net.URL
 
-import scala.xml.{ Node ⇒ xmlNode }
+import scala.xml.{Node ⇒ xmlNode}
 
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
@@ -61,10 +61,11 @@ import scalafx.stage.Stage
 object AnalysisRunner extends BugPickerAnalysis {
 
     def runAnalysis(
-        stage: Stage,
+        stage:   Stage,
         project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
-        issues: ObjectProperty[Iterable[Issue]],
-        sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane): Unit = {
+        issues:     ObjectProperty[Iterable[Issue]],
+        sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane
+    ): Unit = {
 
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project first!", stage)
@@ -84,13 +85,15 @@ object AnalysisRunner extends BugPickerAnalysis {
         val progStage =
             new ProgressManagementDialog(
                 stage,
-                reportView, progressListView, theProgress, stepCount, interrupted)
+                reportView, progressListView, theProgress, stepCount, interrupted
+            )
 
         val initProgressManagement =
             new InitProgressManagement(
                 interrupted, theProgress,
                 progressListView, progressListItems,
-                stepCount.toDouble, progStage)
+                stepCount.toDouble, progStage
+            )
 
         val doc = new ObjectProperty[xmlNode]
 
@@ -105,13 +108,14 @@ object AnalysisRunner extends BugPickerAnalysis {
     }
 
     private class WorkerFinishedListener(
-            project: Project[URL],
-            sources: Seq[File],
-            doc: ObjectProperty[xmlNode],
+            project:    Project[URL],
+            sources:    Seq[File],
+            doc:        ObjectProperty[xmlNode],
             reportView: WebView,
             sourceView: WebView,
-            byteView: WebView,
-            tabPane: TabPane) extends Function1[WorkerStateEvent, Unit] {
+            byteView:   WebView,
+            tabPane:    TabPane
+    ) extends Function1[WorkerStateEvent, Unit] {
 
         override def apply(event: WorkerStateEvent): Unit = {
             event.eventType match {
