@@ -52,22 +52,11 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
     override def description: String =
         "determines the factory methods of a library"
 
-    val dependees = Seq(
-        StaticMethodAccessibilityAnalysis,
-        LibraryLeakageAnalysis
-    //        FactoryMethodAnalysis,
-    //        InstantiabilityAnalysis,
-    //        MethodAccessibilityAnalysis
-    )
-
     override def doAnalyze(
         project:       org.opalj.br.analyses.Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisManagerKey)
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         val projectInfo =
@@ -75,15 +64,22 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
                 s"old #entryPoints ${oldEntryPoints}"+
                 s"old #nonEntryPoints ${project.methodsCount - oldEntryPoints}"
 
+        val executer = project.get(FPCFAnalysisManagerKey)
+
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            dependees foreach { analysisRunner ⇒
-                executer.run(analysisRunner)
-            }
-            executer.run(EntryPointsAnalysis)
 
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            executer.runAll(
+                LibraryLeakageAnalysis,
+                FactoryMethodAnalysis,
+                InstantiabilityAnalysis,
+                MethodAccessibilityAnalysis,
+                EntryPointsAnalysis
+            )
+
         } { t ⇒ analysisTime = t.toSeconds }
+
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
         val entryPoints = entitiesByProperty(IsEntryPoint)(propertyStore)
         val noEntryPoints = entitiesByProperty(NoEntryPoint)(propertyStore)

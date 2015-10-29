@@ -59,7 +59,6 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
             executer.run(LibraryLeakageAnalysis)
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
         val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)

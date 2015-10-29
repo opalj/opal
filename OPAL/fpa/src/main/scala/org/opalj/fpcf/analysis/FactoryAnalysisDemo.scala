@@ -66,7 +66,6 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
             executer.run(FactoryMethodAnalysis)
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
         val nonFactoryMethods = entitiesByProperty(NotFactoryMethod)(propertyStore)

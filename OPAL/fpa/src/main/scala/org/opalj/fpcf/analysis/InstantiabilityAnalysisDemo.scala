@@ -47,13 +47,10 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def description: String = "determines the instantiable classes of a library/application"
 
-    private val dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
-
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val executer = project.get(FPCFAnalysisManagerKey)
@@ -61,9 +58,8 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         org.opalj.util.PerformanceEvaluation.time {
 
-            dependees foreach { analysisRunner ⇒ executer.run(analysisRunner) }
-            executer.run(InstantiabilityAnalysis)
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            executer.runAll(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis, InstantiabilityAnalysis)
+
         } { t ⇒ analysisTime = t.toSeconds }
 
         val instantiableClasses: Traversable[(AnyRef, Property)] =
