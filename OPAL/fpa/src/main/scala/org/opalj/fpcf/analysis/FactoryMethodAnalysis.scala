@@ -38,7 +38,7 @@ import org.opalj.br.analyses.SomeProject
  * Common supertrait of all factory method properties.
  */
 sealed trait FactoryMethod extends Property {
-    final def key = FactoryMethod.Key // All instances have to share the SAME key!
+    final def key = FactoryMethod.Key
 }
 
 /**
@@ -47,9 +47,11 @@ sealed trait FactoryMethod extends Property {
 object FactoryMethod {
 
     /**
-     * The key associated with every purity property.
+     * The key associated with every FactoryMethod property.
      * It contains the unique name of the property and the default property that
      * will be used if no analysis is able to (directly) compute the respective property.
+     * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
+     * all depended analyses.
      */
     final val Key = PropertyKey.create("FactoryMethod", IsFactoryMethod)
 }
@@ -64,6 +66,35 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
  */
 case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
+/**
+ * This analysis determines which method is a factory method.
+ *
+ * A method is no factory method if:
+ *  - it is not static and does not invoke the constructor of the class where it is declared.
+ *
+ * This information is relevant in various contexts, e.g., to determine
+ * the instantiability of a class.
+ *
+ * ==Usage==
+ * Use the [[FPCFAnalysisManagerKey]] to query the analysis manager of a project. You can run
+ * the analysis afterwards as follows:
+ * {{{
+ *  val analysisManager = project.get(FPCFAnalysisManagerKey)
+ *  analysisManager.run(FactoryMethodAnalysis)
+ * }}}
+ * For detailed information see the documentation of the analysis manager.
+ *
+ * The results of this analysis are stored in the property store of the project. You can receive
+ * the results as follows:
+ * {{{
+ * val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+ * val factoryMethods = theProjectStore.entities { (p: Property) ⇒
+ * p == IsFactoryMethod
+ * }
+ * }}}
+ *
+ * @note Native methods are considered as factory methods because they might instantiate the class.
+ */
 class FactoryMethodAnalysis private (
     project: SomeProject)
         extends AbstractFPCFAnalysis[Method](
