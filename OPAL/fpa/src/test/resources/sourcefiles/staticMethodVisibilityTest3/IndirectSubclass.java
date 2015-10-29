@@ -26,9 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing2;
+package staticMethodVisibilityTest3;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
+
+import staticMethodVisibilityTest2.DirectPublicSubclass;
 
 /**
  * 
@@ -38,8 +41,19 @@ import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
  * @author Michael Reif
  *
  */
-public class PublicIndirectSubclass extends IndirectSubclass {
-	
+
+class IndirectSubclass extends DirectPublicSubclass {
+
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	static public void publicMethod() {
+	}
+
 	@ProjectAccessibilityProperty
-	static public void publicMethod(){}
+	static public void publicMethod_Visible() {
+	}
+
+	@ProjectAccessibilityProperty
+	static protected void protectedMethod() {
+	}
 }

@@ -26,42 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package staticMethodVisibilityTest2;
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
+ * 
+ * This class used for test purpose only. The annotations are only valid under
+ * the closed packages assumption.
+ * 
  * @author Michael Reif
+ *
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+public class DirectPublicSubclass extends PackageVisibleClass {
 
-    def analysisName = "MethodvisibilityAnalysis"
+	@ProjectAccessibilityProperty
+	static public void publicMethod() {
+	}
 
-    override def testFileName = "classfiles/methodVisibilityTest.jar"
+	@ProjectAccessibilityProperty
+	static protected void publicMethod_Visible() {
+	}
 
-    override def testFilePath = "fpa"
-
-    override def analysisRunner = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
+	static void packageVisibleMethod() {
+	}
 }

@@ -21,7 +21,6 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def dependees =
         Seq(
-            StaticMethodAccessibilityAnalysis,
             LibraryLeakageAnalysis,
             FactoryMethodAnalysis,
             InstantiabilityAnalysis,

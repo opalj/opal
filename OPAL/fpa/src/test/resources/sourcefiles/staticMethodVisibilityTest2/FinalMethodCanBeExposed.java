@@ -26,26 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing1;
+package staticMethodVisibilityTest2;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * This class is for test purpose only. It only has one method with the visibility
- * modifier protected. However, this implies that the protected method can't be
- * exposed to the client (under CPA) because this class is final which prevents
- * any subclass.
+ * Inherits from the class defined below and make this methods visible to the client.
  * 
  * @author Michael Reif
  *
  */
-public final class FinalClassCantExposeProtectedMethods {
+public class FinalMethodCanBeExposed extends IDontWantToShowEveryoneWhatIHave {
 
+}
+
+class IDontWantToShowEveryoneWhatIHave {
+	
 	@ProjectAccessibilityProperty(
-			cpa=ProjectAccessibilityKeys.PackageLocal)
-	protected static void cantBeGlobal(){
-		
+			cpa=ProjectAccessibilityKeys.Global)
+	public final static void finalPublicMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.Global)
+	protected final static void finalProtectedMethod(){
 	}
 }

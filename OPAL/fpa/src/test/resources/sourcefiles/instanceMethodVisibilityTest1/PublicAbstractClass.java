@@ -26,37 +26,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing1;
+package instanceMethodVisibilityTest1;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * This class used for test purpose only. The annotations are only valid under
- * the closed packages assumption.
+ * Since this class is abstract it is not possible to create an instance of it.
+ * But via inheritance through a subclass is it possible to get access to the methods
+ * when there are not overridden. This class is public, that implies that a client
+ * can create a arbitrary number of subclasses which not override the according
+ * methods.
  * 
- * @author Michael Reif
+ * @note This comments refers to the use of the closed packages assumption (cpa)
  *
  */
-
-class PackageVisibleClass {
-
-	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
-	static public void publicMethod() {
-	}
-
+public abstract class PublicAbstractClass {
+	
 	@ProjectAccessibilityProperty
-	static protected void protectedMethod() {
+	public void publicMethod(){
 	}
-
+	
 	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
-	static void packageVisibleMethod() {
+	void packagePrivateMethod(){
 	}
-
+	
+	@ProjectAccessibilityProperty
+	protected void protectedMethod(){
+	}
+	
 	@ProjectAccessibilityProperty(
 			opa=ProjectAccessibilityKeys.ClassLocal,
 			cpa=ProjectAccessibilityKeys.ClassLocal)
-	static private void privateMethod() {
+	private void privateMethod(){
 	}
 }

@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -15,8 +15,8 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED T
+ * PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -26,42 +26,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package instanceMethodVisibilityTest1;
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
-/**
- * @author Michael Reif
- */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+public interface PublicInterfaceWithInheritance extends ManInTheMiddle{
 
-    def analysisName = "MethodvisibilityAnalysis"
-
-    override def testFileName = "classfiles/methodVisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisRunner = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
+	@ProjectAccessibilityProperty
+	default void overriddenInPublicSubInterface(){
+	}
 }
 
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
+interface ManInTheMiddle extends RootInterface {
+	
+	@ProjectAccessibilityProperty
+	default void overriddenInSubInterface(){
+	}
 }
 
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+interface RootInterface {
+	
+	@ProjectAccessibilityProperty
+	default void nonOverridenInSubInterface(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	default void overriddenInSubInterface(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	default void overriddenInPublicSubInterface(){
+	}
 }

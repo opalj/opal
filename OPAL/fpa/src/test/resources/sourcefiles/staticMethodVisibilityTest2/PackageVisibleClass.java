@@ -26,42 +26,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package staticMethodVisibilityTest2;
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
+ * 
+ * This class used for test purpose only. The annotations are only valid under
+ * the closed packages assumption.
+ * 
  * @author Michael Reif
+ *
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
 
-    def analysisName = "MethodvisibilityAnalysis"
+class PackageVisibleClass {
 
-    override def testFileName = "classfiles/methodVisibilityTest.jar"
+	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
+	static public void publicMethod() {
+	}
 
-    override def testFilePath = "fpa"
+	@ProjectAccessibilityProperty
+	static protected void protectedMethod() {
+	}
 
-    override def analysisRunner = MethodAccessibilityAnalysis
+	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
+	static void packageVisibleMethod() {
+	}
 
-    override def dependees = Seq(LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+	@ProjectAccessibilityProperty(
+			opa=ProjectAccessibilityKeys.ClassLocal,
+			cpa=ProjectAccessibilityKeys.ClassLocal)
+	static private void privateMethod() {
+	}
 }

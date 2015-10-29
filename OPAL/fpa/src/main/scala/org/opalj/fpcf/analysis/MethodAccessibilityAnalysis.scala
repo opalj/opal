@@ -34,12 +34,30 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 
 /**
+ * @author Michael Reif
+ */
+sealed trait ProjectAccessibility extends Property {
+    final def key = ProjectAccessibility.Key
+}
+
+object ProjectAccessibility {
+    final val Key = PropertyKey.create("Accessible", Global)
+}
+
+case object Global extends ProjectAccessibility { final val isRefineable = false }
+
+case object PackageLocal extends ProjectAccessibility { final val isRefineable = false }
+
+case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
+
+/**
  *
  *
  * @author Michael Reif
  */
-class MethodAccessibilityAnalysis private (
-    project: SomeProject
+class MethodAccessibilityAnalysis private[analysis] (
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, Method] = MethodAccessibilityAnalysis.entitySelector
 )
         extends DefaultFPCFAnalysis[Method](
             project,
@@ -47,12 +65,56 @@ class MethodAccessibilityAnalysis private (
         ) {
 
     override def determineProperty(method: Method): PropertyComputationResult = {
-
         if (method.isPrivate)
-            return ImmediateResult(method, ClassLocal);
+            return ImmediateResult(method, ClassLocal)
 
         if (isOpenLibrary)
+            return ImmediateResult(method, Global)
+
+        // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
+        //
+
+        if (method.isStatic)
+            determineStaticMethodAccessibility(method)
+        else
+            determineInstanceMethodAccessibility(method)
+    }
+
+    private[this] def determineStaticMethodAccessibility(
+        method: Method
+    ): PropertyComputationResult = {
+
+        if (method.isPackagePrivate)
+            return ImmediateResult(method, PackageLocal);
+
+        val classFile = project.classFile(method)
+        if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
             return ImmediateResult(method, Global);
+
+        val classHierarchy = project.classHierarchy
+
+        val classType = classFile.thisType
+        val methodDescriptor = method.descriptor
+        val methodName = method.name
+
+        classHierarchy.foreachSubtype(classType) { subtype ⇒
+            project.classFile(subtype) match {
+                case Some(subclass) ⇒
+                    if (subclass.isPublic)
+                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                            // the original method is now visible (and not shadowed)
+                            return ImmediateResult(method, Global);
+                // we need to continue our search for a class that makes the method visible
+                case None ⇒
+                    // The type hierarchy is obviously not downwards closed; i.e.,
+                    // the project configuration is rather strange! 
+                    return ImmediateResult(method, Global);
+            }
+        }
+        ImmediateResult(method, PackageLocal)
+    }
+
+    private[this] def determineInstanceMethodAccessibility(method: Method): PropertyComputationResult = {
 
         val classFile = project.classFile(method)
         val isFinalClass = classFile.isFinal
@@ -84,7 +146,7 @@ object MethodAccessibilityAnalysis
     private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.Key
 
     private[MethodAccessibilityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && (m.isNative || !m.isAbstract) ⇒ m
+        case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
     private[MethodAccessibilityAnalysis] def apply(
@@ -95,5 +157,20 @@ object MethodAccessibilityAnalysis
 
     protected def start(project: SomeProject): Unit = {
         MethodAccessibilityAnalysis(project)
+    }
+}
+
+/**
+ * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
+ */
+object StaticMethodAccessibilityAnalysis
+        extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
+
+    private[this] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        new MethodAccessibilityAnalysis(project, entitySelector)
     }
 }

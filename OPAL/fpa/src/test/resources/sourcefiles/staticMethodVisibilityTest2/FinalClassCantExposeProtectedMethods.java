@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,34 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing2;
+package staticMethodVisibilityTest2;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
-
-import shadowing1.DirectPublicSubclass;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * This class used for test purpose only. The annotations are only valid under
- * the closed packages assumption.
+ * This class is for test purpose only. It only has one method with the visibility
+ * modifier protected. However, this implies that the protected method can't be
+ * exposed to the client (under CPA) because this class is final which prevents
+ * any subclass.
  * 
  * @author Michael Reif
  *
  */
-
-class IndirectSubclass extends DirectPublicSubclass {
+public final class FinalClassCantExposeProtectedMethods {
 
 	@ProjectAccessibilityProperty(
 			cpa=ProjectAccessibilityKeys.PackageLocal)
-	static public void publicMethod() {
-	}
-
-	@ProjectAccessibilityProperty
-	static public void publicMethod_Visible() {
-	}
-
-	@ProjectAccessibilityProperty
-	static protected void protectedMethod() {
+	protected static void cantBeGlobal(){
+		
 	}
 }

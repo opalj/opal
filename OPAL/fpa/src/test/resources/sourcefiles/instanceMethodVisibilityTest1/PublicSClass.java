@@ -26,42 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package instanceMethodVisibilityTest1;
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
-/**
- * @author Michael Reif
- */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
-
-    def analysisName = "MethodvisibilityAnalysis"
-
-    override def testFileName = "classfiles/methodVisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisRunner = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+public class PublicSClass extends PPAbstractClassWS {
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.Global)
+	public void publicMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
+	void packagePrivateMethod(){
+	}
+	
+	
+	@ProjectAccessibilityProperty(
+			opa=ProjectAccessibilityKeys.ClassLocal,
+			cpa=ProjectAccessibilityKeys.ClassLocal)
+	private void privateMethod(){
+	}
 }

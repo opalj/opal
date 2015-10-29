@@ -15,8 +15,8 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED T
+ * PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -26,31 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing1;
+package instanceMethodVisibilityTest1;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
  * 
- * Inherits from the class defined below and make this methods visible to the client.
+ * Thus this interface is package visible, it cannot be seen by a client
+ * if the closed packages assumption is applied and there exists no class
+ * that implements the interface which is the case in this test code.
+ * 
+ * This class has one subclass which overwrites the available method. Hence,
+ * the method not becomes accessible to the client.
  * 
  * @author Michael Reif
  *
  */
-public class FinalMethodCanBeExposed extends IDontWantToShowEveryoneWhatIHave {
+interface PackagePrivateInterface {
 
-}
-
-class IDontWantToShowEveryoneWhatIHave {
-	
 	@ProjectAccessibilityProperty(
-			cpa=ProjectAccessibilityKeys.Global)
-	public final static void finalPublicMethod(){
-	}
-	
-	@ProjectAccessibilityProperty(
-			cpa=ProjectAccessibilityKeys.Global)
-	protected final static void finalProtectedMethod(){
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	public default void publicMethod() {
 	}
 }

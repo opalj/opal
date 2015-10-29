@@ -26,42 +26,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analysis
+package instanceMethodVisibilityTest1;
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
+ * 
+ * Since this class is abstract it is not possible to create an instance of it.
+ * But via inheritance through a subclass is it possible to get access to the methods
+ * when there are not overridden. This class is package private, that implies that a client
+ * that is not able to contribute to this given package can not access the already implemented
+ * methods, no matter what visibility modifier they have. This class has no public subclass,
+ * hence, all methods should be maximal package local under the closed packages assumption.
+ * 
+ * @note This comments refers to the use of the closed packages assumption (cpa)
  *
- *
- * @author Michael Reif
+ * @note subclass is PublicSClass.
  */
-abstract class StaticMethodAccessibilityAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
-
-    override def analysisName = "ShadowingAnalysis"
-
-    override def testFileName = "classfiles/shadowingTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisRunner = StaticMethodAccessibilityAnalysis
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    override def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class StaticMethodAccessibilityAnalysisCPATest extends StaticMethodAccessibilityAnalysisTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class StaticMethodAccessibilityAnalysisOPATest extends StaticMethodAccessibilityAnalysisTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+abstract class PPAbstractClassWS {
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	public void publicMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
+	void packagePrivateMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.Global)
+	protected void protectedMethod(){
+	}
+	
+	@ProjectAccessibilityProperty(
+			opa=ProjectAccessibilityKeys.ClassLocal,
+			cpa=ProjectAccessibilityKeys.ClassLocal)
+	private void privateMethod(){
+	}
 }

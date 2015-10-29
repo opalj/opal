@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -15,8 +15,8 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED T
+ * PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
@@ -26,30 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package shadowing1;
+package instanceMethodVisibilityTest1;
 
-import org.opalj.fpa.test.annotations.ProjectAccessibilityKeys;
-import org.opalj.fpa.test.annotations.ProjectAccessibilityProperty;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys;
+import org.opalj.fpcf.test.annotations.ProjectAccessibilityProperty;
 
 /**
- * 
- * This class used for test purpose only. The annotations are only valid under
- * the closed packages assumption.
- * 
- * @author Michael Reif
- *
- */
-public class DirectPublicSubclass extends PackageVisibleClass {
+*
+* This class is for test purposes only.
+* It is public which implies that all public and protected methods
+* are visible to the client. (regarding the closed packages assumption)
+* 
+* It implements the PackagePrivateInterface which defines a default method.
+* The interface method is overwridden by publicMethod. Hence, it is not inherited
+* and due to that not exposed to the client.
+* 
+* @author Michael Reif
+*
+*/
+public class PublicClass implements PackagePrivateInterface{
 
 	@ProjectAccessibilityProperty
-	static public void publicMethod() {
+	public void publicMethod(){
 	}
-
+	
+	@ProjectAccessibilityProperty(
+			cpa=ProjectAccessibilityKeys.PackageLocal)
+	void packagePrivateMethod(){
+	}
+	
 	@ProjectAccessibilityProperty
-	static protected void publicMethod_Visible() {
+	protected void protectedMethod(){
 	}
-
-	@ProjectAccessibilityProperty(cpa=ProjectAccessibilityKeys.PackageLocal)
-	static void packageVisibleMethod() {
+	
+	@ProjectAccessibilityProperty(
+			opa=ProjectAccessibilityKeys.ClassLocal,
+			cpa=ProjectAccessibilityKeys.ClassLocal)
+	private void privateMethod(){
 	}
 }
