@@ -26,15 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj.br
+package cfg
 
 import scala.collection.{ Set ⇒ SomeSet }
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.HashMap
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.Method
-import org.opalj.br.Code
-import org.opalj.br.ExceptionHandler
+import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -47,11 +46,8 @@ import org.opalj.br.instructions.JSR_W
 import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.PC
-import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.ObjectType
 
 /**
  * A factory for computing control flow graphs for methods.
