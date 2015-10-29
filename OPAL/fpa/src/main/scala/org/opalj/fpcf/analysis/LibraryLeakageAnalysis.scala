@@ -34,6 +34,14 @@ package analysis
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.log.OPALLogger
+import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.BooleanType
+import org.opalj.br.VoidType
+import org.opalj.br.FieldType
+import org.opalj.br.LongType
+import org.opalj.br.IntegerType
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -76,8 +84,6 @@ class LibraryLeakageAnalysis private (
             entitySelector = LibraryLeakageAnalysis.entitySelector
         ) {
 
-    private[this] final val ObjectType = org.opalj.br.ObjectType.Object
-
     /**
      * Determines the [[LibraryLeakage]] property of non-static methods. It is tailored to entry point
      *  set computation where we have to consider different kind of program/library usage scenarios.
@@ -119,49 +125,54 @@ class LibraryLeakageAnalysis private (
         if (classFile.isPublic && !classFile.isFinal)
             return ImmediateResult(method, Leakage)
 
-        var relevantSubtypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
+        val classHierarchy = project.classHierarchy
 
+        val classType = classFile.thisType
         val methodName = method.name
         val methodDescriptor = method.descriptor
 
-        while (relevantSubtypes.nonEmpty) {
-            val subtype = relevantSubtypes.head
-            val subclassAsOption = project.classFile(subtype)
-            if (subclassAsOption.isDefined) {
-                val subclass = subclassAsOption.get
-                val declMethod = subclass.findMethod(methodName, methodDescriptor)
-                if (declMethod.isEmpty) {
-                    if (!subclass.isPublic || method.isPackagePrivate) {
-                        relevantSubtypes ++= project.classHierarchy.directSubtypesOf(subtype)
-                    } else return ImmediateResult(method, Leakage)
-                }
-            } else return ImmediateResult(method, Leakage)
-            relevantSubtypes -= subtype
+        classHierarchy.foreachSubtype(classType) { subtype ⇒
+            project.classFile(subtype) match {
+                case Some(subclass) ⇒
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty &&
+                        subclass.isPublic && method.isPackagePrivate)
+                        // the original method is visible and leak
+                        return ImmediateResult(method, Leakage)
+                case None ⇒ return ImmediateResult(method, Leakage)
+            }
         }
 
         //Now: A method does not leak through a subclass, but we also have to check the superclass
 
-        var relevantSupertypes = project.classHierarchy.directSupertypes(classFile.thisType)
-
-        while (relevantSupertypes.nonEmpty) {
-            val supertype = relevantSupertypes.head
-            if (supertype != ObjectType) {
-                val superclassAsOption = project.classFile(supertype)
-                if (superclassAsOption.isDefined) {
-                    val superclass = superclassAsOption.get
+        classHierarchy.foreachSupertype(classType) { supertype ⇒
+            project.classFile(supertype) match {
+                case Some(superclass) ⇒ {
                     val declMethod = superclass.findMethod(methodName, methodDescriptor)
                     if (declMethod.isDefined) {
                         val m = declMethod.get
-                        if (m.isPublic && superclass.isPublic
-                            || (!m.isPrivate && isOpenLibrary))
+                        if ((m.isPublic || m.isProtected) && superclass.isPublic)
                             return ImmediateResult(method, Leakage)
-
-                        relevantSubtypes ++= project.classHierarchy.directSupertypes(supertype)
                     }
-                } else return ImmediateResult(method, Leakage)
+                }
+                case None if supertype eq ObjectType.Object ⇒
+                    (methodName, methodDescriptor) match {
+                        case ("toString", MethodDescriptor.JustReturnsString) |
+                            ("hashCode", MethodDescriptor.JustReturnsInteger) |
+                            ("equals", MethodDescriptor(IndexedSeq(ObjectType.Object), BooleanType)) |
+                            ("clone", MethodDescriptor.JustReturnsObject) |
+                            ("getClass", _) |
+                            ("finalize", MethodDescriptor.NoArgsAndReturnVoid) |
+                            ("notify", MethodDescriptor.NoArgsAndReturnVoid) |
+                            ("notifyAll", MethodDescriptor.NoArgsAndReturnVoid) |
+                            ("wait", MethodDescriptor.NoArgsAndReturnVoid) |
+                            ("wait", MethodDescriptor(IndexedSeq(LongType), VoidType)) |
+                            ("wait", MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)) ⇒ return ImmediateResult(method, Leakage)
+                        case _ ⇒ /* nothing leaks */
+                    }
+                case _ ⇒ return ImmediateResult(method, Leakage)
             }
-            relevantSupertypes -= supertype
         }
+
         ImmediateResult(method, NoLeakage)
     }
 }
