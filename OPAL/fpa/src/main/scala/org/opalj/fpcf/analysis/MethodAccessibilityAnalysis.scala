@@ -173,4 +173,6 @@ object StaticMethodAccessibilityAnalysis
     protected def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project, entitySelector)
     }
+
+    override def recommendations = Set(LibraryLeakageAnalysis)
 }

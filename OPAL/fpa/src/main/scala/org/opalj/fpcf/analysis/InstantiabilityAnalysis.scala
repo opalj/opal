@@ -200,4 +200,6 @@ object InstantiabilityAnalysis
     protected def start(project: SomeProject): Unit = {
         InstantiabilityAnalysis(project)
     }
+
+    override def recommendations = Set(FactoryMethodAnalysis)
 }

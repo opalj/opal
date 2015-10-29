@@ -42,8 +42,6 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "fpa"
 
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis)
-
     override def analysisRunner = FactoryMethodAnalysis
 
     override def propertyKey: PropertyKey = FactoryMethod.Key

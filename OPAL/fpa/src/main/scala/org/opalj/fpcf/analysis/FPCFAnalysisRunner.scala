@@ -51,7 +51,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis[_ <: Entity]] {
      * depends on the computed property of the analysis and the property key has no fallback
      * such that it is only available if the regarding analysis is executed.
      */
-    def requirements: Set[FPCFAnalysis[_ <: Entity]] = Set.empty
+    def requirements: Set[FPCFAnalysisRunner[_]] = Set.empty
 
     /**
      * Returns the information which analyses should be executed to achieve
@@ -61,7 +61,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis[_ <: Entity]] {
      * result. If the set of recommendations is not empty, you may lose precision for every analysis
      * that is not executed in parallel.
      */
-    def recommendations: Set[FPCFAnalysis[_ <: Entity]] = Set.empty
+    def recommendations: Set[FPCFAnalysisRunner[_]] = Set.empty
 
     // TODO def derivedProperties : Set[PropertyKey]...
     // TODO def derivedSpProperties : Set[SpProperty]...

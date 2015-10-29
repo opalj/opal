@@ -48,9 +48,10 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
     override def description: String = "determines the instantiable classes of a library/application"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val executer = project.get(FPCFAnalysisManagerKey)

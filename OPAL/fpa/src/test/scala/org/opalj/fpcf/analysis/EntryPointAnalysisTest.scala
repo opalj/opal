@@ -19,14 +19,6 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def analysisRunner = EntryPointsAnalysis
 
-    override def dependees =
-        Seq(
-            LibraryLeakageAnalysis,
-            FactoryMethodAnalysis,
-            InstantiabilityAnalysis,
-            MethodAccessibilityAnalysis
-        )
-
     override def propertyKey: PropertyKey = EntryPoint.Key
 
     override def propertyAnnotation: ObjectType =

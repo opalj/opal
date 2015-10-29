@@ -150,4 +150,9 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
     protected def start(project: SomeProject): Unit = {
         EntryPointsAnalysis(project)
     }
+
+    /*
+     * This recommendations are not transitive. All (even indirect) dependencies are listed here.
+     */
+    override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
 }

@@ -46,8 +46,6 @@ abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTe
 
     override def analysisRunner = MethodAccessibilityAnalysis
 
-    override def dependees = Seq(LibraryLeakageAnalysis)
-
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
 
     override def propertyAnnotation: ObjectType =
