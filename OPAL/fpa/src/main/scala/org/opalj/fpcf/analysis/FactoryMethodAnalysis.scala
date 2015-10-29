@@ -67,7 +67,7 @@ case object NotFactoryMethod extends FactoryMethod { final val isRefineable = fa
 class FactoryMethodAnalysis private (
     project: SomeProject
 )
-        extends DefaultFPCFAnalysis[Method](
+        extends AbstractFPCFAnalysis[Method](
             project, FactoryMethodAnalysis.entitySelector
         ) {
 

@@ -51,7 +51,7 @@ case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 class EntryPointsAnalysis private (
     project: SomeProject
 )
-        extends FPCFAnalysisModeAnalysis[Method](
+        extends DefaultFPCFAnalysis[Method](
             project, EntryPointsAnalysis.entitySelector
         ) {
 

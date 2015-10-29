@@ -71,7 +71,7 @@ case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
 class LibraryLeakageAnalysis private (
     project: SomeProject
 )
-        extends FPCFAnalysisModeAnalysis[Method](
+        extends DefaultFPCFAnalysis[Method](
             project,
             entitySelector = LibraryLeakageAnalysis.entitySelector
         ) {

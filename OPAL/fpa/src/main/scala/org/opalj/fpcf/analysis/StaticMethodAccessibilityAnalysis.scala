@@ -68,7 +68,7 @@ case object ClassLocal extends ProjectAccessibility { final val isRefineable = f
 class StaticMethodAccessibilityAnalysis private (
     project: SomeProject
 )
-        extends FPCFAnalysisModeAnalysis[Method](
+        extends DefaultFPCFAnalysis[Method](
             project, StaticMethodAccessibilityAnalysis.entitySelector
         ) {
 

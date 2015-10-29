@@ -54,7 +54,7 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
     ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisExecuterKey)
+        val executer = project.get(FPCFAnalysisManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {

@@ -67,7 +67,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
     ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisExecuterKey)
+        val executer = project.get(FPCFAnalysisManagerKey)
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         val projectInfo =

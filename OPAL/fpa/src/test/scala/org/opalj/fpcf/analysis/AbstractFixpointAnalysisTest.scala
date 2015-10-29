@@ -82,7 +82,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     def runAnalysis(project: Project[URL]): Unit = {
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisExecuterKey)
+        val executer = project.get(FPCFAnalysisManagerKey)
 
         dependees foreach { analysisRunner ⇒
             executer.run(analysisRunner)

@@ -67,14 +67,16 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             }
         }
 
-        val executer = project.get(FPCFAnalysisExecuterKey)
+        val executer = project.get(FPCFAnalysisManagerKey)
 
-        val analyses = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis,
-            FactoryMethodAnalysis, InstantiabilityAnalysis, MethodAccessibilityAnalysis, EntryPointsAnalysis)
-
-        analyses foreach { analysis ⇒
-            executer.run(analysis)
-        }
+        executer.runAll(
+            StaticMethodAccessibilityAnalysis,
+            LibraryLeakageAnalysis,
+            FactoryMethodAnalysis,
+            InstantiabilityAnalysis,
+            MethodAccessibilityAnalysis,
+            EntryPointsAnalysis
+        )
 
         theProjectStore.waitOnPropertyComputationCompletion(true)
 

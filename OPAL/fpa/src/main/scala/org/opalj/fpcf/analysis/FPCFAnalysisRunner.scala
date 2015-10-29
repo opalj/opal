@@ -63,11 +63,16 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis[_ <: Entity]] {
      */
     def recommendations: Set[FPCFAnalysis[_ <: Entity]] = Set.empty
 
+    // TODO def derivedProperties : Set[PropertyKey]...
+    // TODO def derivedSpProperties : Set[SpProperty]...
+    // TODO def usedProperty...
+    // TODO def requiredProperty...
+
     // Only (intended to be) used by FPCFAnalysisFactory.
     final private[analysis] def doStart(project: SomeProject) = start(project)
 
     /**
-     * Startes the analysis for the given `project`.
+     * Starts the analysis for the given `project`.
      *
      * @note This method is abstract and has to be overridden in any subclass.
      */

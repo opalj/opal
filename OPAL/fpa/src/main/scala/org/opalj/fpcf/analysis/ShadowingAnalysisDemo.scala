@@ -46,8 +46,7 @@ import org.opalj.bi.ACC_PROTECTED
  *
  * @author Michael Reif
  */
-object ShadowingAnalysisDemo
-        extends DefaultOneStepAnalysis {
+object ShadowingAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def title: String =
         "entry point set computation"
@@ -62,7 +61,7 @@ object ShadowingAnalysisDemo
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        val fpcfFactory = project.get(FPCFAnalysisExecuterKey)
+        val fpcfFactory = project.get(FPCFAnalysisManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {

@@ -30,55 +30,55 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.log.OPALLogger
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
  * @author Michael Reif
  */
-class FPCFAnalysisExecuter private (
-        project: SomeProject
-) {
+class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
     // Accesses to this field have to be synchronized
     private[this] final val registeredAnalyses = scala.collection.mutable.Set.empty[Int]
 
-    //    private[this] def alreadyRegistered(
-    //        analysis: FPCFAnalysisRunner[_]
-    //    ): Boolean = this.synchronized {
-    //        registeredAnalyses contains analysis.uniqueId
-    //    }
-
     private[this] def registerAnalysis(
         analysisRunner: FPCFAnalysisRunner[_]
     ): Unit = this.synchronized {
-        assert(!(registeredAnalyses contains analysisRunner.uniqueId),
-                "given fpcf analysis is already registered for this specific project")
+        assert(
+            !(registeredAnalyses contains analysisRunner.uniqueId),
+            s"the analysis(id: ${analysisRunner.uniqueId})is running/was executed for this project"
+        )
+
+        // TODO check that it still makes sense to run/register the analysis 
+
         registeredAnalyses += analysisRunner.uniqueId
     }
 
+    private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
+
+    def runAll(
+        analyses: FPCFAnalysisRunner[_]*
+    ): Unit = {
+        analyses.foreach { run(_, false) }
+        propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
+    }
+
     def run(
-        analysisRunner: FPCFAnalysisRunner[_]
+        analysisRunner:   FPCFAnalysisRunner[_],
+        waitOnCompletion: Boolean               = true
     ): Unit = this.synchronized {
         if (!(registeredAnalyses contains analysisRunner.uniqueId)) {
             registerAnalysis(analysisRunner)
             analysisRunner.doStart(project)
+            if (waitOnCompletion) {
+                propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
+            }
         } else
             OPALLogger.error(
                 "internal",
-                s"Given analysis(id: ${analysisRunner.uniqueId})is already registerd for this specific project"
-            )(
-                    project.logContext
-                )
+                s"the analysis(id: ${analysisRunner.uniqueId})is running/was executed for this project"
+            )(project.logContext)
     }
 }
 
-/**
- * Companion object of FPCFAnalysisFactory.
- */
-object FPCFAnalysisExecuter {
-
-    def apply(project: SomeProject): FPCFAnalysisExecuter = {
-        new FPCFAnalysisExecuter(project)
-    }
-}

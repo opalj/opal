@@ -42,31 +42,56 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-abstract class FPCFAnalysis[E <: Entity](val project: SomeProject) {
+trait FPCFAnalysis[E <: Entity] {
+
+    def project: SomeProject
 
     def determineProperty(entity: E): PropertyComputationResult
 
 }
 
-abstract class DefaultFPCFAnalysis[T <: Entity](
-    project:            SomeProject,
-    val entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector()
+/**
+ * Factory to create type dependent entity selectors.
+ */
+object FPCFAnalysis {
+    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = {
+        new PartialFunction[Entity, T] {
+            def apply(v1: Entity): T = {
+                if (isDefinedAt(v1))
+                    v1.asInstanceOf[T]
+                else
+                    throw new IllegalArgumentException
+            }
+
+            def isDefinedAt(x: Entity): Boolean = {
+                val ct = implicitly[ClassTag[T]]
+                x.getClass.isInstance(ct.runtimeClass)
+            }
+        }
+    }
+}
+
+abstract class AbstractFPCFAnalysis[T <: Entity](
+    val project:        SomeProject,
+    val entitySelector: PartialFunction[Entity, T] = FPCFAnalysis.entitySelector()
 )
-        extends FPCFAnalysis[T](project) {
+        extends FPCFAnalysis[T] {
 
     implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
-    propertyStore <||< (entitySelector, (determineProperty _).
-        asInstanceOf[T ⇒ PropertyComputationResult])
+    propertyStore <||< (
+        entitySelector,
+        (determineProperty _).asInstanceOf[T ⇒ PropertyComputationResult]
+    )
 }
 
-abstract class FPCFAnalysisModeAnalysis[T <: Entity](
+abstract class DefaultFPCFAnalysis[T <: Entity](
     project:        SomeProject,
-    entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector()
+    entitySelector: PartialFunction[Entity, T] = FPCFAnalysis.entitySelector()
 )
-        extends DefaultFPCFAnalysis[T](project, entitySelector) {
+        extends AbstractFPCFAnalysis[T](project, entitySelector) {
 
-    lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
+    val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
     def isOpenLibrary = analysisMode eq OPA
 
@@ -75,21 +100,3 @@ abstract class FPCFAnalysisModeAnalysis[T <: Entity](
     def isApplication = analysisMode eq APP
 }
 
-/**
- * Companion object for the abstract [[DefaultFPCFAnalysis]] class.
- */
-private[analysis] object DefaultFPCFAnalysis {
-    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = new PartialFunction[Entity, T] {
-        def apply(v1: Entity): T = {
-            if (isDefinedAt(v1))
-                v1.asInstanceOf[T]
-            else
-                throw new IllegalArgumentException
-        }
-
-        def isDefinedAt(x: Entity): Boolean = {
-            val ct = implicitly[ClassTag[T]]
-            x.getClass.isInstance(ct.runtimeClass)
-        }
-    }
-}

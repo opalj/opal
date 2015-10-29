@@ -32,22 +32,21 @@ package analysis
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
- * The ''key'' object to get an factory for FPCFAnalysisFactoryKey.
+ * The ''key'' object to get the [[FPCFAnalysisManager]].
  *
  * @example
- *      To get the factory use the [[Project]]'s `get` method and pass in
- *      `this` object.
- *
+ *      To get an instance of the [[FPCFAnalysisManager]] pass this key to a project's `get` method.
  *
  * @author Michael Reif
  */
-object FPCFAnalysisExecuterKey extends ProjectInformationKey[FPCFAnalysisExecuter] {
+object FPCFAnalysisManagerKey extends ProjectInformationKey[FPCFAnalysisManager] {
 
-    protected def requirements = Nil
+    protected def requirements = List(SourceElementsPropertyStoreKey)
 
-    protected def compute(project: SomeProject): FPCFAnalysisExecuter = {
-        FPCFAnalysisExecuter(project)
+    protected def compute(project: SomeProject): FPCFAnalysisManager = {
+        new FPCFAnalysisManager(project)
     }
 }

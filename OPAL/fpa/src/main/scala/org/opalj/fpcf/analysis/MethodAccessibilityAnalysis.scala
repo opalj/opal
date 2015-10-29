@@ -41,14 +41,12 @@ import org.opalj.br.analyses.SomeProject
 class MethodAccessibilityAnalysis private (
     project: SomeProject
 )
-        extends FPCFAnalysisModeAnalysis[Method](
+        extends DefaultFPCFAnalysis[Method](
             project,
             MethodAccessibilityAnalysis.entitySelector
         ) {
 
-    override def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
+    override def determineProperty(method: Method): PropertyComputationResult = {
 
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal);

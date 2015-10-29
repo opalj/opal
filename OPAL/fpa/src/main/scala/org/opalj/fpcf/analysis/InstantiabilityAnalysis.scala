@@ -52,7 +52,7 @@ case object MaybeInstantiable extends Instantiability { final val isRefineable =
 class InstantiabilityAnalysis private (
     project: SomeProject
 )
-        extends FPCFAnalysisModeAnalysis[ClassFile](
+        extends DefaultFPCFAnalysis[ClassFile](
             project,
             InstantiabilityAnalysis.entitySelector
         ) {
