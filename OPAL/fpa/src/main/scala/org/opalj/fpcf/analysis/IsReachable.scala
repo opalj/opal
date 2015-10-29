@@ -47,10 +47,9 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
     override def description: String = "determines if a method is reachable by computing the call graph"
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): BasicReport = {
         implicit val theProject = project
         implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
 
@@ -67,12 +66,15 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             }
         }
 
-        //        theProjectStore <||< (StaticMethodAccessibilityAnalysis.entitySelector, StaticMethodAccessibilityAnalysis.determineProperty _) //.asInstanceOf[Object ⇒ PropertyComputationResult]
-        //        theProjectStore <||< (LibraryLeakageAnalysis.entitySelector, LibraryLeakageAnalysis.determineProperty _)
-        //        theProjectStore <||< (FactoryMethodAnalysis.entitySelector, FactoryMethodAnalysis.determineProperty _)
-        //        theProjectStore <||< (InstantiabilityAnalysis.entitySelector, InstantiabilityAnalysis.determineProperty _)
-        //        theProjectStore <||< (MethodAccessibilityAnalysis.entitySelector, MethodAccessibilityAnalysis.determineProperty _)
-        //theProjectStore <||< (EntryPointsAnalysis.entitySelector, EntryPointsAnalysis.determineProperty _)
+        val executer = project.get(FPCFAnalysisExecuterKey)
+
+        val analyses = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis,
+            FactoryMethodAnalysis, InstantiabilityAnalysis, MethodAccessibilityAnalysis, EntryPointsAnalysis)
+
+        analyses foreach { analysis =>
+            executer.run(analysis)
+        }
+
         theProjectStore.waitOnPropertyComputationCompletion(true)
 
         //        
