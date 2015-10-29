@@ -64,6 +64,11 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
     }
 
+    def runAll(analyses: Traversable[FPCFAnalysisRunner[_]]): Unit = {
+        analyses.foreach { run(_, false) }
+        propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
+    }
+
     def run(
         analysisRunner:   FPCFAnalysisRunner[_],
         waitOnCompletion: Boolean               = true
