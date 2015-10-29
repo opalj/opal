@@ -34,6 +34,8 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 sealed trait Instantiability extends Property {
     final def key = Instantiability.Key // All instances have to share the SAME key!
@@ -59,9 +61,6 @@ class InstantiabilityAnalysis private (
 
     val propertyKey = Instantiability.Key
 
-    private final val FactoryPropertyKey = FactoryMethod.Key
-    private final val SerializableType = ObjectType.Serializable
-
     private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile
     ): PropertyComputationResult = {
@@ -72,13 +71,13 @@ class InstantiabilityAnalysis private (
         var i = 0
         while (i < methods.length) {
             val curMethod = methods(i)
-            val factoryMethod = propertyStore(curMethod, FactoryPropertyKey)
+            val factoryMethod = propertyStore(curMethod, FactoryMethod.Key)
             factoryMethod match {
                 case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable);
                 case Some(NotFactoryMethod) ⇒ /* Do nothing */
                 case _ ⇒
                     assert(factoryMethod.isEmpty)
-                    dependees += EPK(curMethod, FactoryPropertyKey)
+                    dependees += EPK(curMethod, FactoryMethod.Key)
             }
             i += 1
         }
@@ -156,7 +155,7 @@ class InstantiabilityAnalysis private (
 
         val classType = classFile.thisType
 
-        if (isSubtypeOf(classType, SerializableType).isYesOrUnknown &&
+        if (isSubtypeOf(classType, ObjectType.Serializable).isYesOrUnknown &&
             classFile.hasDefaultConstructor)
             return ImmediateResult(classFile, Instantiable)
 
