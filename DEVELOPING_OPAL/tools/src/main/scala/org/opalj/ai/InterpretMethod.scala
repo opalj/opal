@@ -214,19 +214,19 @@ object InterpretMethod {
             }
             writeAndOpen(
                 dump(
-                Some(classFile),
-                Some(method),
-                method.body.get,
-                Some(
-                    "Created: "+(new java.util.Date).toString+"<br>"+
-                        "Domain: "+domainClass.getName+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)
-                ),
-                result.domain
-            )(
-                    result.operandsArray,
-                    result.localsArray
-                ),
+                    Some(classFile),
+                    Some(method),
+                    method.body.get,
+                    Some(
+                        "Created: "+(new java.util.Date).toString+"<br>"+
+                            "Domain: "+domainClass.getName+"<br>"+
+                            XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                    ),
+                    result.domain
+                )(
+                        result.operandsArray,
+                        result.localsArray
+                    ),
                 "AIResult",
                 ".html"
             )

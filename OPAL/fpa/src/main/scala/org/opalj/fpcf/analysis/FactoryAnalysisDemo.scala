@@ -61,12 +61,11 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         // ShadowingAnalysis.analyze(project)
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val executer = project.get(FPCFAnalysisExecuterKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            val fmat = new Thread(new Runnable { def run = FactoryMethodAnalysis.analyze(project) });
-            fmat.start
-            fmat.join
+            executer.run(FactoryMethodAnalysis)
             propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 

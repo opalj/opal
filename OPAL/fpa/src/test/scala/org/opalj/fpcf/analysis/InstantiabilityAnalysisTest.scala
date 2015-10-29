@@ -48,7 +48,7 @@ class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
 
-    override def analysisType: FixpointAnalysis = InstantiabilityAnalysis
+    override def analysisRunner = InstantiabilityAnalysis
 
     override def propertyKey: PropertyKey = Instantiability.Key
 

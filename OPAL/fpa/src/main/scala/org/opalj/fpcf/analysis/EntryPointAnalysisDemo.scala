@@ -30,18 +30,14 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.fpcf.MethodAnalysisDemo
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
-import org.opalj.log.DefaultLogContext
-import org.opalj.log.GlobalLogContext
 import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.ai.domain.LogContextProvider
-import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * @author Michael Reif
@@ -58,10 +54,10 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
     val dependees = Seq(
         StaticMethodAccessibilityAnalysis,
-        LibraryLeakageAnalysis,
-        FactoryMethodAnalysis,
-        InstantiabilityAnalysis,
-        MethodAccessibilityAnalysis
+        LibraryLeakageAnalysis
+    //        FactoryMethodAnalysis,
+    //        InstantiabilityAnalysis,
+    //        MethodAccessibilityAnalysis
     )
 
     override def doAnalyze(
@@ -71,6 +67,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
     ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val executer = project.get(FPCFAnalysisExecuterKey)
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         val projectInfo =
@@ -80,18 +77,11 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            var fpaThreads = Seq.empty[Thread]
-            dependees foreach { fpa ⇒
-                fpaThreads = fpaThreads :+ new Thread(
-                    new Runnable { def run = fpa.analyze(project) }
-                )
+            dependees foreach { analysisRunner ⇒
+                executer.run(analysisRunner)
             }
-            fpaThreads = fpaThreads :+ new Thread(
-                new Runnable { def run = EntryPointsAnalysis.analyze(project) }
-            )
+            executer.run(EntryPointsAnalysis)
 
-            fpaThreads foreach (_.start)
-            fpaThreads foreach (_.join)
             propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 

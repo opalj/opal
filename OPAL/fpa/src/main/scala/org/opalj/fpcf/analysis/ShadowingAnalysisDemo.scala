@@ -42,6 +42,8 @@ import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 
 /**
+ *
+ *
  * @author Michael Reif
  */
 object ShadowingAnalysisDemo
@@ -60,10 +62,11 @@ object ShadowingAnalysisDemo
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
+        val fpcfFactory = project.get(FPCFAnalysisExecuterKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            StaticMethodAccessibilityAnalysisEx(project)
+            fpcfFactory.run(StaticMethodAccessibilityAnalysis)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
@@ -91,14 +94,7 @@ object ShadowingAnalysisDemo
             }
         }
 
-        //        val visibleMethods = formatMethods(visibleByClient)contains
-        val nonVisibleMethods = formatMethods(nonVisibleByClient) //.filter { x ⇒ x.contains("java.util") }
-
-        //        val visibleMethodInfo = visibleMethods.mkString(
-        //            "\nMethods that are visible by the client:\n\n\t",
-        //            "\n\t",
-        //            s"\nTotal: ${visibleByClient.size}\n\n"
-        //        )
+        val nonVisibleMethods = formatMethods(nonVisibleByClient)
 
         val nonVisibleMethodInfo = nonVisibleMethods.mkString(
             "\npackage local Methods that are not visible by the client:\n\n\t",
@@ -106,7 +102,7 @@ object ShadowingAnalysisDemo
             s"\nTotal: ${nonVisibleByClient.size}\n\n"
         )
 
-        BasicReport( //visibleMethodInfo +
+        BasicReport(
             nonVisibleMethodInfo +
                 projectStore+
                 "\nAnalysis time: "+analysisTime

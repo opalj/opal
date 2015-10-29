@@ -56,17 +56,13 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-
+        val executer = project.get(FPCFAnalysisExecuterKey)
         var analysisTime = org.opalj.util.Seconds.None
 
         org.opalj.util.PerformanceEvaluation.time {
 
-            var fpaThreads = Seq.empty[Thread]
-            dependees foreach { fpa ⇒ fpaThreads = fpaThreads :+ new Thread(new Runnable { def run = fpa.analyze(project) }) }
-            fpaThreads = fpaThreads :+ new Thread(new Runnable { def run = InstantiabilityAnalysis.analyze(project) })
-
-            fpaThreads foreach (_.start)
-            fpaThreads foreach (_.join)
+            dependees foreach { analysisRunner ⇒ executer.run(analysisRunner) }
+            executer.run(InstantiabilityAnalysis)
             propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 

@@ -67,12 +67,12 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             }
         }
 
-        theProjectStore <||< (StaticMethodAccessibilityAnalysis.entitySelector, StaticMethodAccessibilityAnalysis.determineProperty _) //.asInstanceOf[Object ⇒ PropertyComputationResult]
-        theProjectStore <||< (LibraryLeakageAnalysis.entitySelector, LibraryLeakageAnalysis.determineProperty _)
-        theProjectStore <||< (FactoryMethodAnalysis.entitySelector, FactoryMethodAnalysis.determineProperty _)
-        theProjectStore <||< (InstantiabilityAnalysis.entitySelector, InstantiabilityAnalysis.determineProperty _)
-        theProjectStore <||< (MethodAccessibilityAnalysis.entitySelector, MethodAccessibilityAnalysis.determineProperty _)
-        theProjectStore <||< (EntryPointsAnalysis.entitySelector, EntryPointsAnalysis.determineProperty _)
+        //        theProjectStore <||< (StaticMethodAccessibilityAnalysis.entitySelector, StaticMethodAccessibilityAnalysis.determineProperty _) //.asInstanceOf[Object ⇒ PropertyComputationResult]
+        //        theProjectStore <||< (LibraryLeakageAnalysis.entitySelector, LibraryLeakageAnalysis.determineProperty _)
+        //        theProjectStore <||< (FactoryMethodAnalysis.entitySelector, FactoryMethodAnalysis.determineProperty _)
+        //        theProjectStore <||< (InstantiabilityAnalysis.entitySelector, InstantiabilityAnalysis.determineProperty _)
+        //        theProjectStore <||< (MethodAccessibilityAnalysis.entitySelector, MethodAccessibilityAnalysis.determineProperty _)
+        //theProjectStore <||< (EntryPointsAnalysis.entitySelector, EntryPointsAnalysis.determineProperty _)
         theProjectStore.waitOnPropertyComputationCompletion(true)
 
         //        

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,46 +22,32 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 package analysis
 
-import org.opalj.br.ObjectType
-import org.opalj.AnalysisModes
-import org.opalj.fpcf.test.annotations.ProjectAccessibilityKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
+ * The ''key'' object to get an factory for FPCFAnalysisFactoryKey.
+ *
+ * @example
+ *      To get the factory use the [[Project]]'s `get` method and pass in
+ *      `this` object.
+ *
+ *
  * @author Michael Reif
  */
-abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTest {
+object FPCFAnalysisExecuterKey extends ProjectInformationKey[FPCFAnalysisExecuter] {
 
-    def analysisName = "MethodvisibilityAnalysis"
+    protected def requirements = Nil
 
-    override def testFileName = "classfiles/methodvisibilityTest.jar"
-
-    override def testFilePath = "fpa"
-
-    override def analysisRunner = MethodAccessibilityAnalysis
-
-    override def dependees = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis)
-
-    override def propertyKey: PropertyKey = ProjectAccessibility.Key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/ProjectAccessibilityProperty")
-
-    def defaultValue = ProjectAccessibilityKeys.Global.toString
-}
-
-class MethodvisibilityCPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class MethodvisibilityOPATest extends MethodvisibilityTest {
-
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
+    protected def compute(project: SomeProject): FPCFAnalysisExecuter = {
+        FPCFAnalysisExecuter(project)
+    }
 }

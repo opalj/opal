@@ -72,28 +72,23 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * that depends on at least one other analysis. All analyses that are defined
      * within this sequence gets executed with the test.
      */
-    def dependees: Seq[_ <: FixpointAnalysis] = Seq.empty
+    def dependees: Seq[_ <: FPCFAnalysisRunner[_]] = Seq.empty
 
     /**
      * This method has to be overridden in a subclass to define the analysis that
      * is going to be tested
      */
-    def analysisType: FixpointAnalysis
+    def analysisRunner: FPCFAnalysisRunner[_]
 
     def runAnalysis(project: Project[URL]): Unit = {
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        var fpaThreads = Seq.empty[Thread]
-        dependees foreach { fpa ⇒
-            fpaThreads = fpaThreads :+ new Thread(
-                new Runnable { def run = fpa.analyze(project) }
-            )
-        }
-        fpaThreads = fpaThreads :+ new Thread(
-            new Runnable { def run = analysisType.analyze(project) }
-        )
+        val executer = project.get(FPCFAnalysisExecuterKey)
 
-        fpaThreads foreach (_.start)
-        fpaThreads foreach (_.join)
+        dependees foreach { analysisRunner ⇒
+            executer.run(analysisRunner)
+        }
+        executer.run(analysisRunner)
+
         propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
     }
 

@@ -17,7 +17,7 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def testFilePath = "fpa"
 
-    override def analysisType = EntryPointsAnalysis
+    override def analysisRunner = EntryPointsAnalysis
 
     override def dependees =
         Seq(

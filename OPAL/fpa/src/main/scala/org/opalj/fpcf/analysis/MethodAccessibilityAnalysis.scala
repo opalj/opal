@@ -38,22 +38,16 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Reif
  */
-object MethodAccessibilityAnalysis
-        extends AssumptionBasedFixpointAnalysis
-        with FilterEntities[Method] {
-
-    val propertyKey = ProjectAccessibility.Key
-
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && m.body.nonEmpty /*FIXME.... native methods are also filtered*/ ⇒ m
-    }
+class MethodAccessibilityAnalysis private (
+    project: SomeProject
+)
+        extends FPCFAnalysisModeAnalysis[Method](
+            project,
+            MethodAccessibilityAnalysis.entitySelector
+        ) {
 
     override def determineProperty(
         method: Method
-    )(
-        implicit
-        project:       SomeProject,
-        propertyStore: PropertyStore
     ): PropertyComputationResult = {
 
         if (method.isPrivate)
@@ -79,6 +73,29 @@ object MethodAccessibilityAnalysis
                 Result(method, Global)
         }
 
-        return propertyStore.require(method, propertyKey, method, LibraryLeakage.Key)(c);
+        return propertyStore.require(method, MethodAccessibilityAnalysis.propertyKey, method, LibraryLeakage.Key)(c);
+    }
+}
+
+/**
+ * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
+ */
+object MethodAccessibilityAnalysis
+        extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
+
+    private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.Key
+
+    private[MethodAccessibilityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isStatic && (m.isNative || !m.isAbstract) ⇒ m
+    }
+
+    private[MethodAccessibilityAnalysis] def apply(
+        project: SomeProject
+    ): MethodAccessibilityAnalysis = {
+        new MethodAccessibilityAnalysis(project)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        MethodAccessibilityAnalysis(project)
     }
 }

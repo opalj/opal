@@ -44,7 +44,7 @@ abstract class LibraryLeakageAnalysisTest extends AbstractFixpointAnalysisAssump
 
     override def testFilePath = "fpa"
 
-    override def analysisType = LibraryLeakageAnalysis
+    override def analysisRunner = LibraryLeakageAnalysis
 
     override def propertyKey: PropertyKey = LibraryLeakage.Key
 

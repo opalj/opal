@@ -49,9 +49,13 @@ case object Instantiable extends Instantiability { final val isRefineable = fals
 
 case object MaybeInstantiable extends Instantiability { final val isRefineable = true }
 
-object InstantiabilityAnalysis
-        extends AssumptionBasedFixpointAnalysis
-        with FilterEntities[ClassFile] {
+class InstantiabilityAnalysis private (
+    project: SomeProject
+)
+        extends FPCFAnalysisModeAnalysis[ClassFile](
+            project,
+            InstantiabilityAnalysis.entitySelector
+        ) {
 
     val propertyKey = Instantiability.Key
 
@@ -60,10 +64,6 @@ object InstantiabilityAnalysis
 
     private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile
-    )(
-        implicit
-        project:       SomeProject,
-        propertyStore: PropertyStore
     ): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
@@ -146,10 +146,6 @@ object InstantiabilityAnalysis
 
     def determineProperty(
         classFile: ClassFile
-    )(
-        implicit
-        project:       SomeProject,
-        propertyStore: PropertyStore
     ): PropertyComputationResult = {
         //TODO: check further method visibility according to the computed property. 
         //    -> classes with only non-visible constructors are not instantiable by the client
@@ -184,8 +180,25 @@ object InstantiabilityAnalysis
         val instantiability = instantiableThroughFactoryOrSubclass(classFile)
         instantiability
     }
+}
 
-    val entitySelector: PartialFunction[Entity, ClassFile] = {
+/**
+ * Companion object for the [[InstantiabilityAnalysis]] class.
+ */
+object InstantiabilityAnalysis
+        extends FPCFAnalysisRunner[InstantiabilityAnalysis] {
+
+    private[InstantiabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
         case cf: ClassFile ⇒ cf
+    }
+
+    private[InstantiabilityAnalysis] def apply(
+        project: SomeProject
+    ): InstantiabilityAnalysis = {
+        new InstantiabilityAnalysis(project)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        InstantiabilityAnalysis(project)
     }
 }

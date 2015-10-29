@@ -46,7 +46,7 @@ abstract class StaticMethodAccessibilityAnalysisTest extends AbstractFixpointAna
 
     override def testFilePath = "fpa"
 
-    override def analysisType = StaticMethodAccessibilityAnalysis
+    override def analysisRunner = StaticMethodAccessibilityAnalysis
 
     override def propertyKey: PropertyKey = ProjectAccessibility.Key
 

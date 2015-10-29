@@ -30,47 +30,55 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.fpcf.MethodAnalysisDemo
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import java.net.URL
+import org.opalj.br.analyses.SomeProject
+import org.opalj.log.OPALLogger
 
 /**
  * @author Michael Reif
  */
-object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
+class FPCFAnalysisExecuter private (
+        project: SomeProject
+) {
 
-    override def title: String =
-        "method leakage analysis"
+    // Accesses to this field have to be synchronized
+    private[this] final val registeredAnalyses = scala.collection.mutable.Set.empty[Int]
 
-    override def description: String =
-        "determines if the method is exposed to the client via subclasses"
+    //    private[this] def alreadyRegistered(
+    //        analysis: FPCFAnalysisRunner[_]
+    //    ): Boolean = this.synchronized {
+    //        registeredAnalyses contains analysis.uniqueId
+    //    }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
+    private[this] def registerAnalysis(
+        analysisRunner: FPCFAnalysisRunner[_]
+    ): Unit = this.synchronized {
+        assert(!(registeredAnalyses contains analysisRunner.uniqueId),
+                "given fpcf analysis is already registered for this specific project")
+        registeredAnalyses += analysisRunner.uniqueId
+    }
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisExecuterKey)
+    def run(
+        analysisRunner: FPCFAnalysisRunner[_]
+    ): Unit = this.synchronized {
+        if (!(registeredAnalyses contains analysisRunner.uniqueId)) {
+            registerAnalysis(analysisRunner)
+            analysisRunner.doStart(project)
+        } else
+            OPALLogger.error(
+                "internal",
+                s"Given analysis(id: ${analysisRunner.uniqueId})is already registerd for this specific project"
+            )(
+                    project.logContext
+                )
+    }
+}
 
-        var analysisTime = org.opalj.util.Seconds.None
-        org.opalj.util.PerformanceEvaluation.time {
-            executer.run(LibraryLeakageAnalysis)
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
-        } { t ⇒ analysisTime = t.toSeconds }
+/**
+ * Companion object of FPCFAnalysisFactory.
+ */
+object FPCFAnalysisExecuter {
 
-        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
-        val notLeakedMethodsInfo = buildMethodInfo(notLeakedMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
-
-        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
-
-        BasicReport(
-            nonOverriddenInfoString +
-                propertyStore+
-                "\nAnalysis time: "+analysisTime
-        )
+    def apply(project: SomeProject): FPCFAnalysisExecuter = {
+        new FPCFAnalysisExecuter(project)
     }
 }

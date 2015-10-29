@@ -29,9 +29,8 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analysis.FixpointAnalysis
+import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.StaticMethodAccessibilityAnalysis
-import org.opalj.fpcf.analysis.FactoryMethodAnalysis
 
 /**
  * The fixpoint analyses registry is a registry for all analyses that need
@@ -55,8 +54,8 @@ import org.opalj.fpcf.analysis.FactoryMethodAnalysis
  */
 object FixpointAnalysesRegistry {
 
-    private[this] var descriptions: Map[String, _ <: FixpointAnalysis] = Map.empty
-    private[this] var theRegistry: Set[FixpointAnalysis] = Set.empty
+    private[this] var descriptions: Map[String, _ <: FPCFAnalysisRunner[_]] = Map.empty
+    private[this] var theRegistry: Set[FPCFAnalysisRunner[_]] = Set.empty
 
     /**
      * Register a new fixpoint analysis that can be used to compute a property of an specific entity.
@@ -65,7 +64,7 @@ object FixpointAnalysesRegistry {
      *     particular w.r.t. a specific set of entities.
      * @param analysisClass The object of the analysis.
      */
-    def register[FA <: FixpointAnalysis](
+    def register[FA <: FPCFAnalysisRunner[_]](
         analysisDescription: String,
         analysisClass:       FA
     ): Unit = {
@@ -85,7 +84,7 @@ object FixpointAnalysesRegistry {
     /**
      * Returns the current view of the registry.
      */
-    def registry: Set[FixpointAnalysis] = this.synchronized { theRegistry }
+    def registry: Set[FPCFAnalysisRunner[_]] = this.synchronized { theRegistry }
 
     /**
      * Return the [[FixpointAnalysis]] object that can be used to analyze a project later on.
@@ -95,21 +94,20 @@ object FixpointAnalysesRegistry {
      */
     def newFixpointAnalysis(
         analysisDescripition: String
-    ): FixpointAnalysis = {
+    ): FPCFAnalysisRunner[_] = {
         this.synchronized {
             descriptions(analysisDescripition)
         }
     }
 
     // initialize the registry with the known default analyses
-
     register(
-        "[ShadowingAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
+        "[StaticMethodAccessibilityAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
         StaticMethodAccessibilityAnalysis
     )
 
-    register(
-        "[FactoryMethodAnalysis] An analysis which computes whether a static melthod is an accessible factory method w.r.t. clients.",
-        FactoryMethodAnalysis
-    )
+    //    register(
+    //        "[FactoryMethodAnalysis] An analysis which computes whether a static melthod is an accessible factory method w.r.t. clients.",
+    //        FactoryMethodAnalysis
+    //    )
 }

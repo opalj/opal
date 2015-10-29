@@ -64,16 +64,14 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
  */
 case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
-object FactoryMethodAnalysis extends FixpointAnalysis
-        with FilterEntities[Method] {
+class FactoryMethodAnalysis private (
+    project: SomeProject
+)
+        extends DefaultFPCFAnalysis[Method](
+            project, FactoryMethodAnalysis.entitySelector
+        ) {
 
-    val propertyKey = FactoryMethod.Key
-
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.isStatic && !m.isAbstract ⇒ m
-    }
-
-    private val opInvokeSpecial = INVOKESPECIAL.opcode
+    private[this] final val opInvokeSpecial = INVOKESPECIAL.opcode
 
     /**
      * Approximates if the given method is used as factory method. Any
@@ -88,10 +86,6 @@ object FactoryMethodAnalysis extends FixpointAnalysis
      */
     def determineProperty(
         method: Method
-    )(
-        implicit
-        project: SomeProject,
-        store:   PropertyStore
     ): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).
@@ -120,5 +114,26 @@ object FactoryMethodAnalysis extends FixpointAnalysis
         }
 
         ImmediateResult(method, NotFactoryMethod)
+    }
+}
+
+/**
+ * Companion object for the [[FactoryMethodAnalysis]] class.
+ */
+object FactoryMethodAnalysis
+        extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
+
+    private[FactoryMethodAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if m.isStatic && !m.isAbstract ⇒ m
+    }
+
+    private[FactoryMethodAnalysis] def apply(
+        project: SomeProject
+    ): FactoryMethodAnalysis = {
+        new FactoryMethodAnalysis(project)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        FactoryMethodAnalysis(project)
     }
 }

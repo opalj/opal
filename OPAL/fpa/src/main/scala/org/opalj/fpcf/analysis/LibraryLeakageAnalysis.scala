@@ -68,17 +68,15 @@ case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
  *
  *  @author Michael Reif
  */
-object LibraryLeakageAnalysis
-        extends AssumptionBasedFixpointAnalysis
-        with FilterEntities[Method] {
-
-    val propertyKey = ProjectAccessibility.Key
+class LibraryLeakageAnalysis private (
+    project: SomeProject
+)
+        extends FPCFAnalysisModeAnalysis[Method](
+            project,
+            entitySelector = LibraryLeakageAnalysis.entitySelector
+        ) {
 
     private[this] final val ObjectType = org.opalj.br.ObjectType.Object
-
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
-    }
 
     /**
      * Determines the [[LibraryLeakage]] property of non-static methods. It is tailored to entry point
@@ -92,10 +90,6 @@ object LibraryLeakageAnalysis
      */
     def determineProperty(
         method: Method
-    )(
-        implicit
-        project: SomeProject,
-        store:   PropertyStore
     ): PropertyComputationResult = {
 
         if (method.isPrivate || method.isConstructor)
@@ -170,5 +164,20 @@ object LibraryLeakageAnalysis
         }
         ImmediateResult(method, NoLeakage)
     }
+}
 
+object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis] {
+    private[LibraryLeakageAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
+    }
+
+    private[LibraryLeakageAnalysis] def apply(
+        project: SomeProject
+    ): LibraryLeakageAnalysis = {
+        new LibraryLeakageAnalysis(project)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        LibraryLeakageAnalysis(project)
+    }
 }

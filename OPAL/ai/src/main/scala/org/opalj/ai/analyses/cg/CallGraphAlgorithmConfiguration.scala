@@ -66,5 +66,4 @@ trait CallGraphAlgorithmConfiguration {
     protected[this] val cache: Cache
 
     val Extractor: CallGraphExtractor
-
 }

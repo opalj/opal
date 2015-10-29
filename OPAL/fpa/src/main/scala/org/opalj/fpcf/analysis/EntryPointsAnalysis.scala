@@ -31,9 +31,9 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 
 sealed trait EntryPoint extends Property {
     final def key = EntryPoint.Key // All instances have to share the SAME key!
@@ -48,9 +48,12 @@ case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
 //
 case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 
-object EntryPointsAnalysis
-        extends AssumptionBasedFixpointAnalysis
-        with FilterEntities[Method] {
+class EntryPointsAnalysis private (
+    project: SomeProject
+)
+        extends FPCFAnalysisModeAnalysis[Method](
+            project, EntryPointsAnalysis.entitySelector
+        ) {
 
     private[this] final val AccessKey = ProjectAccessibility.Key
     private[this] final val InstantiabilityKey = Instantiability.Key
@@ -59,10 +62,6 @@ object EntryPointsAnalysis
     private[this] final val SerializableType = ObjectType.Serializable
 
     val propertyKey = EntryPoint.Key
-
-    val entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract ⇒ m
-    }
 
     @inline private[this] def leakageContinuation(
         method: Method
@@ -79,10 +78,6 @@ object EntryPointsAnalysis
      */
     def determineProperty(
         method: Method
-    )(
-        implicit
-        project:       SomeProject,
-        propertyStore: PropertyStore
     ): PropertyComputationResult = {
 
         val classFile = project.classFile(method)
@@ -137,5 +132,22 @@ object EntryPointsAnalysis
             }
 
         return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
+    }
+}
+
+object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
+
+    private[EntryPointsAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract ⇒ m
+    }
+
+    private[EntryPointsAnalysis] def apply(
+        project: SomeProject
+    ): EntryPointsAnalysis = {
+        new EntryPointsAnalysis(project)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        EntryPointsAnalysis(project)
     }
 }
