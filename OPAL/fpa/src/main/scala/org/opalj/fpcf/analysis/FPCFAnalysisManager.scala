@@ -57,14 +57,13 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
     private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
 
-    def runAll(
-        analyses: FPCFAnalysisRunner[_]*
-    ): Unit = {
-        analyses.foreach { run(_, false) }
-        propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
+    final def runAll(analyses: FPCFAnalysisRunner[_]*): Unit = {
+        runAll(analyses)(true)
     }
 
-    def runAll(analyses: Traversable[FPCFAnalysisRunner[_]])(
+    final def runAll(
+        analyses: Traversable[FPCFAnalysisRunner[_]]
+    )(
         waitOnCompletion: Boolean = true
     ): Unit = {
         analyses.foreach { run(_, false) }
