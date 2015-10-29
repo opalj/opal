@@ -91,7 +91,8 @@ case object MaybeInstantiable extends Instantiability { final val isRefineable =
  * @note The analysis does not take reflective instantiations into account!
  */
 class InstantiabilityAnalysis private (
-    project: SomeProject)
+    project: SomeProject
+)
         extends DefaultFPCFAnalysis[ClassFile](
             project,
             InstantiabilityAnalysis.entitySelector
@@ -100,7 +101,8 @@ class InstantiabilityAnalysis private (
     val propertyKey = Instantiability.Key
 
     private def instantiableThroughFactoryOrSubclass(
-        classFile: ClassFile): PropertyComputationResult = {
+        classFile: ClassFile
+    ): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
         var dependees = Set.empty[EOptionP]
@@ -118,7 +120,7 @@ class InstantiabilityAnalysis private (
             }
             i += 1
         }
-        
+
         var subtypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
@@ -181,7 +183,8 @@ class InstantiabilityAnalysis private (
     }
 
     def determineProperty(
-        classFile: ClassFile): PropertyComputationResult = {
+        classFile: ClassFile
+    ): PropertyComputationResult = {
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration)
@@ -200,7 +203,7 @@ class InstantiabilityAnalysis private (
         val nonFinalClass = !classFile.isFinal
 
         if (classFile.isPublic || isOpenLibrary) {
-            
+
             classFile.constructors foreach { cons ⇒
                 if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
                     return ImmediateResult(classFile, Instantiable)
@@ -235,7 +238,8 @@ object InstantiabilityAnalysis
     }
 
     private[InstantiabilityAnalysis] def apply(
-        project: SomeProject): InstantiabilityAnalysis = {
+        project: SomeProject
+    ): InstantiabilityAnalysis = {
         new InstantiabilityAnalysis(project)
     }
 

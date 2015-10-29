@@ -96,7 +96,8 @@ case object NotFactoryMethod extends FactoryMethod { final val isRefineable = fa
  * @note Native methods are considered as factory methods because they might instantiate the class.
  */
 class FactoryMethodAnalysis private (
-    project: SomeProject)
+    project: SomeProject
+)
         extends AbstractFPCFAnalysis[Method](
             project, FactoryMethodAnalysis.entitySelector
         ) {
@@ -113,7 +114,8 @@ class FactoryMethodAnalysis private (
      *  - check if the methods returns an instance of the class or some superclass.
      */
     def determineProperty(
-        method: Method): PropertyComputationResult = {
+        method: Method
+    ): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).
 
@@ -160,7 +162,8 @@ object FactoryMethodAnalysis
     }
 
     private[FactoryMethodAnalysis] def apply(
-        project: SomeProject): FactoryMethodAnalysis = {
+        project: SomeProject
+    ): FactoryMethodAnalysis = {
         new FactoryMethodAnalysis(project)
     }
 
