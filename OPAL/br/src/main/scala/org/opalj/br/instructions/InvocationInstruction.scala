@@ -64,9 +64,10 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
      * is a potential successor!
      */
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else {

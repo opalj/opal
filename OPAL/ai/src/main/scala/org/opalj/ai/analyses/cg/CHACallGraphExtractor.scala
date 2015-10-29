@@ -63,21 +63,24 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
  * @author Michael Eichberg
  */
 class CHACallGraphExtractor(
-    val cache: CallGraphCache[MethodSignature, Set[Method]])
+    val cache: CallGraphCache[MethodSignature, Set[Method]]
+)
         extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            val project: SomeProject,
+            val project:   SomeProject,
             val classFile: ClassFile,
-            val method: Method) extends super.AnalysisContext {
+            val method:    Method
+    ) extends super.AnalysisContext {
 
         val classHierarchy = project.classHierarchy
 
         def staticCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor) = {
+            name:               String,
+            descriptor:         MethodDescriptor
+        ) = {
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(
@@ -88,22 +91,24 @@ class CHACallGraphExtractor(
 
             if (classHierarchy.isKnown(declaringClassType)) {
                 classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project) match {
-                        case Some(callee) ⇒
-                            addCallEdge(pc, HashSet(callee))
-                        case None ⇒
-                            handleUnresolvedMethodCall()
-                    }
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
             } else {
                 handleUnresolvedMethodCall()
             }
         }
 
         def doNonVirtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor
+        ): Unit = {
 
             def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
@@ -114,13 +119,14 @@ class CHACallGraphExtractor(
 
             if (classHierarchy.isKnown(declaringClassType)) {
                 classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project) match {
-                        case Some(callee) ⇒
-                            val callees = HashSet(callee)
-                            addCallEdge(pc, callees)
-                        case None ⇒
-                            handleUnresolvedMethodCall()
-                    }
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        val callees = HashSet(callee)
+                        addCallEdge(pc, callees)
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
             } else {
                 handleUnresolvedMethodCall()
             }
@@ -133,11 +139,12 @@ class CHACallGraphExtractor(
          *      - the receiver is known not to be null and the type is known to be precise.
          */
         def nonVirtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            receiverIsNull: Answer): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            receiverIsNull:     Answer
+        ): Unit = {
 
             if (receiverIsNull.isYesOrUnknown)
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -151,10 +158,11 @@ class CHACallGraphExtractor(
          *      self reference (`this`).
          */
         def virtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor
+        ): Unit = {
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 
@@ -162,7 +170,8 @@ class CHACallGraphExtractor(
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor)
+                    declaringClassType, name, descriptor
+                )
             } else {
                 addCallEdge(pc, callees)
             }
@@ -170,9 +179,10 @@ class CHACallGraphExtractor(
     }
 
     def extract(
-        project: SomeProject,
+        project:   SomeProject,
         classFile: ClassFile,
-        method: Method): CallGraphExtractor.LocalCallGraphInformation = {
+        method:    Method
+    ): CallGraphExtractor.LocalCallGraphInformation = {
         val context = new AnalysisContext(project, classFile, method)
 
         method.body.get.foreach { (pc, instruction) ⇒

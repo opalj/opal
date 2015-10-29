@@ -109,8 +109,9 @@ object OPALLogger extends OPALLogger {
      * specified logger with the context.
      */
     def register(
-        ctx: LogContext,
-        logger: OPALLogger = new ConsoleOPALLogger(true)): Unit = this.synchronized {
+        ctx:    LogContext,
+        logger: OPALLogger = new ConsoleOPALLogger(true)
+    ): Unit = this.synchronized {
         println("context will be registered: "+ctx)
         if (ctx.id == -1) {
             val id = nextId
@@ -173,9 +174,10 @@ object OPALLogger extends OPALLogger {
      */
     @elidable(ASSERTION)
     final def debug(
-        p: ⇒ Boolean,
+        p:        ⇒ Boolean,
         category: String,
-        message: ⇒ String)(implicit ctx: LogContext): Unit = {
+        message:  ⇒ String
+    )(implicit ctx: LogContext): Unit = {
         if (p) {
             log(Info(category, message))
         }
@@ -240,8 +242,9 @@ object OPALLogger extends OPALLogger {
      */
     final def error(
         category: String,
-        message: String,
-        t: Throwable)(implicit ctx: LogContext): Unit = {
+        message:  String,
+        t:        Throwable
+    )(implicit ctx: LogContext): Unit = {
         log(Error(category, message, t))
     }
 }

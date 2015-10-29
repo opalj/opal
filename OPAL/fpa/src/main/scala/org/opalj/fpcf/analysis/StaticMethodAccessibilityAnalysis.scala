@@ -51,12 +51,15 @@ case object PackageLocal extends ProjectAccessibility { final val isRefineable =
 case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
 
 class StaticMethodAccessibilityAnalysisEx private (
-    project: SomeProject)
+    project: SomeProject
+)
         extends FPCFAnalysisModeAnalysis[Method](
-            project, StaticMethodAccessibilityAnalysis.entitySelector) {
+            project, StaticMethodAccessibilityAnalysis.entitySelector
+        ) {
 
     def determineProperty(
-        method: Method): PropertyComputationResult = {
+        method: Method
+    ): PropertyComputationResult = {
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal);
 
@@ -132,9 +135,12 @@ object StaticMethodAccessibilityAnalysis
      *
      */
     def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            store: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project: SomeProject,
+        store:   PropertyStore
+    ): PropertyComputationResult = {
 
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal);

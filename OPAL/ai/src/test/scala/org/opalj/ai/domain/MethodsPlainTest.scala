@@ -732,7 +732,8 @@ class MethodsPlainTest
 
         assert(
             domain.refIsNull(-1, domain.returnedValue.get).isYes,
-            "unexpected nullness property of the returned value: "+domain.returnedValue.get)
+            "unexpected nullness property of the returned value: "+domain.returnedValue.get
+        )
     }
     it should "be able to analyze a push of byte value" in {
         val domain = new RecordingDomain
@@ -872,7 +873,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(BooleanType)) should be(Yes)
+            ArrayType(BooleanType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze a new char array" in {
@@ -882,7 +884,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(CharType)) should be(Yes)
+            ArrayType(CharType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze a new float array" in {
@@ -892,7 +895,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(FloatType)) should be(Yes)
+            ArrayType(FloatType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze a new double array" in {
@@ -902,7 +906,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(DoubleType)) should be(Yes)
+            ArrayType(DoubleType)
+        ) should be(Yes)
 
     }
 
@@ -913,7 +918,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ByteType)) should be(Yes)
+            ArrayType(ByteType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze a new short array" in {
@@ -923,7 +929,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ShortType)) should be(Yes)
+            ArrayType(ShortType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze the creation of a new int array" in {
@@ -933,7 +940,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(IntegerType)) should be(Yes)
+            ArrayType(IntegerType)
+        ) should be(Yes)
     }
 
     it should "be able to analyze the creation of a new long array" in {
@@ -943,7 +951,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(LongType)) should be(Yes)
+            ArrayType(LongType)
+        ) should be(Yes)
 
     }
 
@@ -954,7 +963,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ObjectType("ai/MethodsPlain"))) should be(Yes)
+            ArrayType(ObjectType("ai/MethodsPlain"))
+        ) should be(Yes)
     }
 
     it should "be able to analyze the creation of a new multidimensional Object array" in {
@@ -964,7 +974,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ArrayType(ObjectType("ai/MethodsPlain")))) should be(Yes)
+            ArrayType(ArrayType(ObjectType("ai/MethodsPlain")))
+        ) should be(Yes)
     }
 
     //
@@ -977,7 +988,8 @@ class MethodsPlainTest
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.isValueSubtypeOf(
                 domain.returnedValue.get,
-                ObjectType("ai/MethodsPlain")) should be(Yes)
+                ObjectType("ai/MethodsPlain")
+            ) should be(Yes)
         }
     }
 
@@ -1075,7 +1087,8 @@ class MethodsPlainTest
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
-            ObjectType.Object) should be(Yes)
+            ObjectType.Object
+        ) should be(Yes)
     }
 
     it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {

@@ -42,8 +42,9 @@ import org.opalj.collection.mutable.UShortSet
  */
 case class PUTFIELD(
     declaringClass: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:           String,
+    fieldType:      FieldType
+)
         extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTFIELD.opcode
@@ -55,9 +56,10 @@ case class PUTFIELD(
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else

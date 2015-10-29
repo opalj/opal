@@ -115,7 +115,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
             }
 
@@ -127,7 +128,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_2;"))
             }
 
@@ -139,7 +141,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
             }
 
@@ -155,13 +158,17 @@ class LongArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), SimpleVar(-2, ComputationalTypeLong)),
                     Assignment(1, SimpleVar(0, ComputationalTypeLong),
                         PrefixExpr(1, ComputationalTypeLong, Negate, SimpleVar(0, ComputationalTypeLong))),
-                    ReturnValue(2, SimpleVar(0, ComputationalTypeLong))))
+                    ReturnValue(2, SimpleVar(0, ComputationalTypeLong))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0;"))
+                        "4: return op_0;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
@@ -172,7 +179,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
             }
 
@@ -184,7 +192,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_2;"))
             }
 
@@ -196,7 +205,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
             }
 
@@ -208,7 +218,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_2;"))
             }
 
@@ -220,7 +231,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_2;"))
             }
 
@@ -232,7 +244,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
 
@@ -244,7 +257,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_2;"))
             }
 
@@ -256,7 +270,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_2;"))
             }
         }
@@ -302,7 +317,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
             }
 
@@ -317,7 +333,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_2;"))
             }
 
@@ -332,7 +349,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
             }
 
@@ -350,13 +368,17 @@ class LongArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), SimpleVar(-2, ComputationalTypeLong)),
                     Assignment(1, SimpleVar(0, ComputationalTypeLong),
                         PrefixExpr(1, ComputationalTypeLong, Negate, SimpleVar(0, ComputationalTypeLong))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(2, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0 /*ALongValue*/;"))
+                        "4: return op_0 /*ALongValue*/;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
@@ -370,7 +392,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
             }
 
@@ -385,7 +408,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_2;"))
             }
 
@@ -400,7 +424,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
             }
 
@@ -415,7 +440,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_2;"))
             }
 
@@ -430,7 +456,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_2;"))
             }
 
@@ -445,7 +472,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
 
@@ -460,7 +488,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_2;"))
             }
 
@@ -475,7 +504,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_2;"))
             }
         }

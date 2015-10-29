@@ -39,8 +39,9 @@ import scala.xml.Node
  */
 case class StackMapTable_attribute(
         attribute_name_index: Int,
-        attribute_length: Int,
-        stack_map_frames: IndexedSeq[StackMapFrame]) extends Attribute {
+        attribute_length:     Int,
+        stack_map_frames:     IndexedSeq[StackMapFrame]
+) extends Attribute {
 
     //
     // ABSTRACT DEFINITIONS

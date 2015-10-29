@@ -65,8 +65,9 @@ trait CalledMethodsStore { rootStore ⇒
     val calledMethods: Map[Method, List[Array[domain.DomainValue]]]
 
     def updated(
-        method: Method,
-        operands: List[Array[domain.DomainValue]]): CalledMethodsStore { val domain: rootStore.domain.type } = {
+        method:   Method,
+        operands: List[Array[domain.DomainValue]]
+    ): CalledMethodsStore { val domain: rootStore.domain.type } = {
         new CalledMethodsStore {
             val domain: rootStore.domain.type = rootStore.domain
             val frequentEvaluationWarningLevel = rootStore.frequentEvaluationWarningLevel
@@ -77,8 +78,9 @@ trait CalledMethodsStore { rootStore ⇒
 
     def testOrElseUpdated(
         definingClass: ClassFile,
-        method: Method,
-        operands: ValuesDomain#Operands): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
+        method:        Method,
+        operands:      ValuesDomain#Operands
+    ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
 
         val adaptedOperands = mapOperands(operands, domain)
         calledMethods.get(method) match {
@@ -103,8 +105,10 @@ trait CalledMethodsStore { rootStore ⇒
                             OPALLogger.error(
                                 "internal error",
                                 s"incompatible operands lists: $previousOperands and $adaptedOperands",
-                                t)(
-                                    domain.logContext)
+                                t
+                            )(
+                                    domain.logContext
+                                )
                             throw t
                     }
                 }
@@ -119,8 +123,9 @@ trait CalledMethodsStore { rootStore ⇒
 
     def frequentEvalution(
         definingClass: ClassFile,
-        method: Method,
-        operandsSet: List[Array[domain.DomainValue]]): Unit = {
+        method:        Method,
+        operandsSet:   List[Array[domain.DomainValue]]
+    ): Unit = {
         OPALLogger.info(
             "analysis configuration",
             "the method "+
@@ -137,9 +142,12 @@ object CalledMethodsStore {
     type BaseDomain = ValuesFactory with ReferenceValuesDomain with TheProject
 
     def empty(
-        theDomain: BaseDomain,
-        theFrequentEvaluationWarningLevel: Int = 10)(
-            implicit theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = {
+        theDomain:                         BaseDomain,
+        theFrequentEvaluationWarningLevel: Int        = 10
+    )(
+        implicit
+        theLogContext: LogContext
+    ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain
             val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
@@ -149,11 +157,15 @@ object CalledMethodsStore {
     }
 
     def apply(
-        theDomain: BaseDomain,
-        theFrequentEvaluationWarningLevel: Int = 10)(
-            method: Method,
-            operands: Array[theDomain.DomainValue])(
-                implicit theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = {
+        theDomain:                         BaseDomain,
+        theFrequentEvaluationWarningLevel: Int        = 10
+    )(
+        method:   Method,
+        operands: Array[theDomain.DomainValue]
+    )(
+        implicit
+        theLogContext: LogContext
+    ): CalledMethodsStore { val domain: theDomain.type } = {
         new CalledMethodsStore {
             val domain: theDomain.type = theDomain
             val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel

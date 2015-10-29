@@ -85,10 +85,12 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         var fpaThreads = Seq.empty[Thread]
         dependees foreach { fpa ⇒
             fpaThreads = fpaThreads :+ new Thread(
-                new Runnable { def run = fpa.analyze(project) })
+                new Runnable { def run = fpa.analyze(project) }
+            )
         }
         fpaThreads = fpaThreads :+ new Thread(
-            new Runnable { def run = analysisType.analyze(project) })
+            new Runnable { def run = analysisType.analyze(project) }
+        )
 
         fpaThreads foreach (_.start)
         fpaThreads foreach (_.join)
@@ -141,7 +143,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      */
     def propertyExtraction(annotation: Annotation): Option[String] = {
         annotation.elementValuePairs collectFirst (
-            { case ElementValuePair("value", EnumValue(_, property)) ⇒ property })
+            { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
+        )
     }
 
     /**

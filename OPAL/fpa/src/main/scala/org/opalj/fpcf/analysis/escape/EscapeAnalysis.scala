@@ -100,9 +100,12 @@ class EscapeAnalysis(val debug: Boolean) {
      * their self reference.
      */
     private[this] def determineSelfReferenceLeakageContinuation(
-        classFile: ClassFile,
-        immediateResult: Boolean)(
-            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
+        classFile:       ClassFile,
+        immediateResult: Boolean
+    )(
+        implicit
+        project: SomeProject, store: PropertyStore
+    ): PropertyComputationResult = {
 
         import project.logContext
 
@@ -169,13 +172,15 @@ class EscapeAnalysis(val debug: Boolean) {
                     if (debug)
                         OPALLogger.debug(
                             "analysis result",
-                            s"${m.toJava(classFile)} leaks its self reference")
+                            s"${m.toJava(classFile)} leaks its self reference"
+                        )
                     true
                 } else {
                     if (debug)
                         OPALLogger.debug(
                             "analysis result",
-                            s"${m.toJava(classFile)} does not leak its self reference")
+                            s"${m.toJava(classFile)} does not leak its self reference"
+                        )
                     false
                 }
 
@@ -184,7 +189,8 @@ class EscapeAnalysis(val debug: Boolean) {
             if (debug)
                 OPALLogger.debug(
                     "analysis result",
-                    s"${classFile.thisType.toJava} leaks its self reference")
+                    s"${classFile.thisType.toJava} leaks its self reference"
+                )
             if (immediateResult)
                 ImmediateResult(classFile, LeaksSelfReference)
             else
@@ -193,7 +199,8 @@ class EscapeAnalysis(val debug: Boolean) {
             if (debug)
                 OPALLogger.debug(
                     "analysis result",
-                    s"${classFile.thisType.toJava} does not leak its self reference")
+                    s"${classFile.thisType.toJava} does not leak its self reference"
+                )
             if (immediateResult)
                 ImmediateResult(classFile, DoesNotLeakSelfReference)
             else
@@ -202,15 +209,19 @@ class EscapeAnalysis(val debug: Boolean) {
     }
 
     def determineSelfReferenceLeakage(
-        classFile: ClassFile)(
-            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project: SomeProject, store: PropertyStore
+    ): PropertyComputationResult = {
         import project.logContext
 
         if (classFile.thisType eq ObjectType.Object) {
             if (debug)
                 OPALLogger.debug(
                     "analysis result",
-                    "java.lang.Object does not leak its self reference [configured]")
+                    "java.lang.Object does not leak its self reference [configured]"
+                )
             return ImmediateResult(classFile, DoesNotLeakSelfReference);
         }
 
@@ -224,7 +235,8 @@ class EscapeAnalysis(val debug: Boolean) {
             if (debug)
                 OPALLogger.debug(
                     "analysis result",
-                    s"${classFile.thisType.toJava} leaks self reference [super type information is incomplete]")
+                    s"${classFile.thisType.toJava} leaks self reference [super type information is incomplete]"
+                )
             return ImmediateResult(classFile, LeaksSelfReference);
         }
 
@@ -240,20 +252,23 @@ class EscapeAnalysis(val debug: Boolean) {
             if (debug)
                 OPALLogger.debug(
                     "analysis progress",
-                    s"${classFile.thisType.toJava} waiting on leakage information about: ${superClassFiles.map(_.thisType.toJava).mkString(", ")}")
+                    s"${classFile.thisType.toJava} waiting on leakage information about: ${superClassFiles.map(_.thisType.toJava).mkString(", ")}"
+                )
             store.allHaveProperty(
                 /*depender*/ classFile, SelfReferenceLeakage,
-                /*dependees*/ superClassFiles, DoesNotLeakSelfReference) { haveProperty ⇒
-                    if (haveProperty) {
-                        determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
-                    } else {
-                        if (debug)
-                            OPALLogger.debug(
-                                "analysis result",
-                                s"${classFile.thisType.toJava} leaks its self reference [a supertype already leaks the self reference]")
-                        Result(classFile, LeaksSelfReference);
-                    }
+                /*dependees*/ superClassFiles, DoesNotLeakSelfReference
+            ) { haveProperty ⇒
+                if (haveProperty) {
+                    determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
+                } else {
+                    if (debug)
+                        OPALLogger.debug(
+                            "analysis result",
+                            s"${classFile.thisType.toJava} leaks its self reference [a supertype already leaks the self reference]"
+                        )
+                    Result(classFile, LeaksSelfReference);
                 }
+            }
         } else {
             determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
         }

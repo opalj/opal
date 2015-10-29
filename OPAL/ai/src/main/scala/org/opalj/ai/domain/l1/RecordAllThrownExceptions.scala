@@ -45,17 +45,19 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
     override type ThrownException = Set[DomainSingleOriginReferenceValue]
 
     override protected[this] def recordThrownException(
-        pc: PC,
-        value: ExceptionValue): ThrownException =
+        pc:    PC,
+        value: ExceptionValue
+    ): ThrownException =
         value match {
             case MultipleReferenceValues(values)        ⇒ values
             case DomainSingleOriginReferenceValue(sorv) ⇒ Set.empty + sorv
         }
 
     override protected[this] def joinThrownExceptions(
-        pc: PC,
+        pc:                        PC,
         previouslyThrownException: ThrownException,
-        value: ExceptionValue): ThrownException =
+        value:                     ExceptionValue
+    ): ThrownException =
         value match {
             case MultipleReferenceValues(values)        ⇒ previouslyThrownException ++ values
             case DomainSingleOriginReferenceValue(sorv) ⇒ previouslyThrownException + sorv

@@ -63,36 +63,41 @@ class JoinObjectTypesTest
     }
 
     def testJoinOfTwoObjectTypes(
-        param1: ObjectType,
-        param2: ObjectType,
+        param1:    ObjectType,
+        param2:    ObjectType,
         reflexive: Boolean,
-        expected: UIDSet[ObjectType]) = {
+        expected:  UIDSet[ObjectType]
+    ) = {
         val result = classhierachy.joinObjectTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
                 s"${param1} join${if (reflexive) "(reflexive)" else ""}"+
                     s" ${param2} is ${mkString(result)};"+
-                    s" expected ${mkString(expected)}")
+                    s" expected ${mkString(expected)}"
+            )
     }
 
     def testJoinOfObjectTypesWithUpperBound(
-        param1: ObjectType,
-        param2: UIDSet[ObjectType],
+        param1:    ObjectType,
+        param2:    UIDSet[ObjectType],
         reflexive: Boolean,
-        expected: UIDSet[ObjectType]) = {
+        expected:  UIDSet[ObjectType]
+    ) = {
         val result = classhierachy.joinObjectTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
                 s"${param1} join${if (reflexive) "(reflexive)" else ""}"+
                     s" ${mkString(param2)} is ${mkString(result)};"+
-                    s" expected ${mkString(expected)}")
+                    s" expected ${mkString(expected)}"
+            )
     }
 
     def testJoinObjectTypesUntilSingleUpperBound(
-        param1: ObjectType,
-        param2: ObjectType,
+        param1:    ObjectType,
+        param2:    ObjectType,
         reflexive: Boolean,
-        expected: ObjectType) = {
+        expected:  ObjectType
+    ) = {
         val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param1, param2, reflexive)
         if (result != expected)
             fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}"+
@@ -101,8 +106,9 @@ class JoinObjectTypesTest
     }
 
     def testJoinObjectTypesUntilSingleUpperBound(
-        param: UIDSet[ObjectType],
-        expected: ObjectType) = {
+        param:    UIDSet[ObjectType],
+        expected: ObjectType
+    ) = {
         val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param)
         if (result != expected)
             fail(s"join of ${mkString(param)} "+

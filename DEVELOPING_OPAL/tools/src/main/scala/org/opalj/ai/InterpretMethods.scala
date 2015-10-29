@@ -94,9 +94,10 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
     override def description = "Performs an abstract interpretation of all methods."
 
     override def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement) = {
+        project:                Project[Source],
+        parameters:             Seq[String]                = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ) = {
         implicit val logContext = project.logContext
 
         val verbose = parameters.size > 0 &&
@@ -109,19 +110,22 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
                     verbose,
                     initProgressManagement,
-                    6d)
+                    6d
+                )
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     classOf[domain.l0.BaseDomain[java.net.URL]],
                     verbose,
                     initProgressManagement,
-                    6d)
+                    6d
+                )
 
             }
         BasicReport(
             message +
-                detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse(""))
+                detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse("")
+        )
     }
 }
 
@@ -133,29 +137,34 @@ object InterpretMethodsAnalysis {
     }
 
     def interpret[Source](
-        project: Project[Source],
-        domainClass: Class[_ <: Domain],
-        beVerbose: Boolean,
+        project:                Project[Source],
+        domainClass:            Class[_ <: Domain],
+        beVerbose:              Boolean,
         initProgressManagement: (Int) ⇒ ProgressManagement,
-        maxEvaluationFactor: Double = 3d)(
-            implicit logContext: LogContext): (String, Option[File]) = {
+        maxEvaluationFactor:    Double                     = 3d
+    )(
+        implicit
+        logContext: LogContext
+    ): (String, Option[File]) = {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
 
-        import Console.{ BOLD, RED, YELLOW, GREEN, RESET }
+        import Console.{BOLD, RED, YELLOW, GREEN, RESET}
 
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
-        import performanceEvaluationContext.{ time, getTime }
+        import performanceEvaluationContext.{time, getTime}
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         val domainConstructor =
             domainClass.getConstructor(
-                classOf[Project[java.net.URL]], classOf[ClassFile], classOf[Method])
+                classOf[Project[java.net.URL]], classOf[ClassFile], classOf[Method]
+            )
 
         def analyzeMethod(
-            source: String,
+            source:    String,
             classFile: ClassFile,
-            method: Method): Option[(String, ClassFile, Method, Throwable)] = {
+            method:    Method
+        ): Option[(String, ClassFile, Method, Throwable)] = {
 
             val body = method.body.get
             try {
@@ -178,17 +187,20 @@ object InterpretMethodsAnalysis {
                                     " instructions (size of instructions array="+
                                     body.instructions.size+
                                     "; max="+ai.maxEvaluationCount+")]"+
-                                    RESET+" }")
+                                    RESET+" }"
+                            )
 
                         throw new InterruptedException(
                             "evaluation bound (max="+ai.maxEvaluationCount+
-                                ") exceeded")
+                                ") exceeded"
+                        )
                     }
                 }
                 if (beVerbose)
                     println(
                         classFile.thisType.toJava+
-                            "{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
+                            "{ "+method.toJava + GREEN+"[finished]"+RESET+" }"
+                    )
                 methodsCount.incrementAndGet()
                 None
             } catch {
@@ -199,7 +211,8 @@ object InterpretMethodsAnalysis {
                         project.source(classFile.thisType).get.toString,
                         classFile,
                         method,
-                        t))
+                        t
+                    ))
             }
         }
 
@@ -239,11 +252,13 @@ object InterpretMethodsAnalysis {
             val node =
                 XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body))
+                    scala.xml.NodeSeq.fromSeq(body)
+                )
             val file =
                 org.opalj.io.writeAndOpen(
                     node,
-                    "ExceptionsOfCrashedAbstractInterpretations", ".html")
+                    "ExceptionsOfCrashedAbstractInterpretations", ".html"
+                )
 
             (
                 "During the interpretation of "+

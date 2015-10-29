@@ -51,9 +51,10 @@ class ProtectedFieldInFinalClass[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[FieldBasedReport[Source]] = {
         // For all protected fields from final classes...
         for {
             classFile ← project.allProjectClassFiles
@@ -66,7 +67,8 @@ class ProtectedFieldInFinalClass[Source] extends FindRealBugsAnalysis[Source] {
                 Severity.Info,
                 classFile.thisType,
                 field,
-                "Protected field in final class")
+                "Protected field in final class"
+            )
         }
     }
 }

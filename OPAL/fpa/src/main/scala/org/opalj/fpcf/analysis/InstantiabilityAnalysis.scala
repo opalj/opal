@@ -59,9 +59,12 @@ object InstantiabilityAnalysis
     private final val SerializableType = ObjectType.Serializable
 
     private def instantiableThroughFactoryOrSubclass(
-        classFile: ClassFile)(
-            implicit project: SomeProject,
-            propertyStore: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
         var dependees = Set.empty[EOptionP]
@@ -142,9 +145,12 @@ object InstantiabilityAnalysis
     }
 
     def determineProperty(
-        classFile: ClassFile)(
-            implicit project: SomeProject,
-            propertyStore: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): PropertyComputationResult = {
         //TODO: check further method visibility according to the computed property. 
         //    -> classes with only non-visible constructors are not instantiable by the client
         import project.classHierarchy.isSubtypeOf

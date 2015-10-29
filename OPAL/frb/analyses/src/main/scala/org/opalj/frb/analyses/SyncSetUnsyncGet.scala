@@ -59,9 +59,10 @@ class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         // Look through non-static methods of all classes, collecting lists of
         // unsynchronized getters and synchronized setters.
@@ -100,7 +101,8 @@ class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
                 Severity.Warning,
                 classFile.thisType,
                 unsyncGet,
-                "Is not synchronized like "+syncSet.name)
+                "Is not synchronized like "+syncSet.name
+            )
         }
     }
 }

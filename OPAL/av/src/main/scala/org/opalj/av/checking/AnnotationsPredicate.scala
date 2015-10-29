@@ -61,7 +61,8 @@ case object AnyAnnotations extends AnnotationsPredicate {
  * @author Marco Torsello
  */
 case class HasAtLeastTheAnnotations(
-        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
+        annotationPredicates: Set[_ <: AnnotationPredicate]
+) extends AnnotationsPredicate {
 
     def apply(others: Traversable[Annotation]): Boolean = {
         annotationPredicates.forall(p ⇒ others.exists(a ⇒ p(a)))
@@ -77,7 +78,8 @@ object HasAtLeastTheAnnotations {
  * @author Marco Torsello
  */
 case class HasTheAnnotations(
-        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
+        annotationPredicates: Set[_ <: AnnotationPredicate]
+) extends AnnotationsPredicate {
 
     def apply(others: Traversable[Annotation]): Boolean = {
         others.size == annotationPredicates.size &&
@@ -95,7 +97,8 @@ object HasTheAnnotations {
  * @author Marco Torsello
  */
 case class HasAtLeastOneAnnotation(
-        annotationPredicates: Set[_ <: AnnotationPredicate]) extends AnnotationsPredicate {
+        annotationPredicates: Set[_ <: AnnotationPredicate]
+) extends AnnotationsPredicate {
 
     def apply(annotations: Traversable[Annotation]): Boolean = {
         annotationPredicates.exists(p ⇒ annotations.exists(a ⇒ p(a)))

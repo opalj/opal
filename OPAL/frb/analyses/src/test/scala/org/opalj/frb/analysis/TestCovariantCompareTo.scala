@@ -55,7 +55,8 @@ class TestCovariantCompareTo extends AnalysisTest {
             project.source(classType),
             Severity.Warning,
             classType,
-            "Missing compareTo(Object) to override Comparable.compareTo(Object)"))
+            "Missing compareTo(Object) to override Comparable.compareTo(Object)"
+        ))
     }
 
     it should "detect a covariant compareTo() in a Comparable abstract class" in {

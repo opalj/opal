@@ -60,8 +60,9 @@ trait DefaultPreciseIntegerValues
     }
 
     case class TheIntegerValue(
-        value: Int,
-        updateCount: Int = 0)
+        value:       Int,
+        updateCount: Int = 0
+    )
             extends super.IntegerValue {
 
         def update(newValue: Int): DomainValue = TheIntegerValue(newValue, updateCount + 1)
@@ -88,7 +89,8 @@ trait DefaultPreciseIntegerValues
 
         override def adapt(
             target: TargetDomain,
-            pc: PC): target.DomainValue =
+            pc:     PC
+        ): target.DomainValue =
             if (target.isInstanceOf[DefaultPreciseIntegerValues]) {
                 val thatDomain = target.asInstanceOf[DefaultPreciseIntegerValues]
                 thatDomain.TheIntegerValue(this.value, this.updateCount).

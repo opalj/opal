@@ -84,7 +84,8 @@ class ArrayTest extends TACTest {
                 Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
                 Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
                 Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
-                Return(12))
+                Return(12)
+            )
 
             def expectedJLC(tpe: String, value: String) = Array[String](
                 "0: r_0 = this;",
@@ -99,7 +100,8 @@ class ArrayTest extends TACTest {
                 "9: op_1 = 4;",
                 "10: op_0 = op_0[op_1];",
                 "11: r_2 = op_0;",
-                "12: return;")
+                "12: return;"
+            )
 
             it("should correctly reflect reference array instructions") {
                 val statements = AsQuadruples(RefArrayMethod, None)
@@ -122,7 +124,8 @@ class ArrayTest extends TACTest {
                     Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
                     Assignment(17, SimpleVar(0, ComputationalTypeReference), ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
                     Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(19)))
+                    Return(19)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
@@ -138,7 +141,8 @@ class ArrayTest extends TACTest {
                     "11: op_1 = 4;",
                     "12: op_0 = op_0[op_1];",
                     "13: r_2 = op_0;",
-                    "14: return;"))
+                    "14: return;"
+                ))
             }
 
             it("should correctly reflect multidimensional array instructions") {
@@ -157,7 +161,8 @@ class ArrayTest extends TACTest {
                     Assignment(7, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(8, SimpleVar(0, ComputationalTypeInt), ArrayLength(8, SimpleVar(0, ComputationalTypeReference))),
                     Assignment(9, SimpleVar(-3, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(10)))
+                    Return(10)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 4;",
@@ -167,7 +172,8 @@ class ArrayTest extends TACTest {
                     "5: op_0 = r_1;",
                     "6: op_0 = op_0.length;",
                     "7: r_2 = op_0;",
-                    "8: return;"))
+                    "8: return;"
+                ))
             }
 
             it("should correctly reflect double array instructions") {
@@ -255,7 +261,8 @@ class ArrayTest extends TACTest {
                 Assignment(9, SimpleVar(1, ComputationalTypeInt), IntConst(9, 4)),
                 Assignment(10, SimpleVar(0, cTpe), ArrayLoad(10, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
                 Assignment(11, SimpleVar(-3, cTpe), SimpleVar(0, cTpe)),
-                Return(12))
+                Return(12)
+            )
 
             def expectedJLC(tpe: String, value: String) = Array[String](
                 "0: r_0 = this;",
@@ -270,7 +277,8 @@ class ArrayTest extends TACTest {
                 "9: op_1 = 4;",
                 "10: op_0 = op_0[op_1];",
                 "11: r_2 = op_0;",
-                "12: return;")
+                "12: return;"
+            )
 
             it("should correctly reflect reference array instructions") {
                 val domain = new DefaultDomain(project, ArrayInstructionsClassFile, RefArrayMethod)
@@ -295,7 +303,8 @@ class ArrayTest extends TACTest {
                     Assignment(16, SimpleVar(1, ComputationalTypeInt), IntConst(16, 4)),
                     Assignment(17, SimpleVar(0, ComputationalTypeReference), ArrayLoad(17, SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeReference))),
                     Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(19)))
+                    Return(19)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 5;",
@@ -311,7 +320,8 @@ class ArrayTest extends TACTest {
                     "11: op_1 = 4;",
                     "12: op_0 = op_0[op_1];",
                     "13: r_2 = op_0;",
-                    "14: return;"))
+                    "14: return;"
+                ))
             }
 
             it("should correctly reflect multidimensional array instructions") {
@@ -344,7 +354,8 @@ class ArrayTest extends TACTest {
                     "5: op_0 = r_1;",
                     "6: op_0 = op_0.length;",
                     "7: r_2 = op_0;",
-                    "8: return;"))
+                    "8: return;"
+                ))
             }
 
             it("should correctly reflect double array instructions") {

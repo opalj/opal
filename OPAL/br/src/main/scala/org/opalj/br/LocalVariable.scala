@@ -35,8 +35,9 @@ package br
  * @author Michael Eichberg
  */
 case class LocalVariable(
-    startPC: PC,
-    length: Int,
-    name: String,
+    startPC:   PC,
+    length:    Int,
+    name:      String,
     fieldType: FieldType,
-    index: Int)
+    index:     Int
+)

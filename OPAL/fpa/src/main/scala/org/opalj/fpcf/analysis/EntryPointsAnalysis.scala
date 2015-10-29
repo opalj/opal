@@ -65,7 +65,8 @@ object EntryPointsAnalysis
     }
 
     @inline private[this] def leakageContinuation(
-        method: Method): Continuation = {
+        method: Method
+    ): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
             if (dependeeP == Leakage)
                 Result(method, IsEntryPoint)
@@ -77,9 +78,12 @@ object EntryPointsAnalysis
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            propertyStore: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): PropertyComputationResult = {
 
         val classFile = project.classFile(method)
 
@@ -91,7 +95,8 @@ object EntryPointsAnalysis
             else {
                 import propertyStore.require
                 require(method, propertyKey, method, LibraryLeakageKey)(
-                    leakageContinuation(method))
+                    leakageContinuation(method)
+                )
             }
         }
 
@@ -101,7 +106,8 @@ object EntryPointsAnalysis
                 !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
                 project.classHierarchy.isSubtypeOf(
                     classFile.thisType,
-                    SerializableType).isYesOrUnknown
+                    SerializableType
+                ).isYesOrUnknown
             )) {
             return ImmediateResult(method, IsEntryPoint)
         }
@@ -122,7 +128,8 @@ object EntryPointsAnalysis
                         Result(method, IsEntryPoint)
                     else
                         require(method, propertyKey, method, LibraryLeakageKey)(
-                            leakageContinuation(method))
+                            leakageContinuation(method)
+                        )
                 }
 
                 require(method, propertyKey, method, AccessKey)(c_vis)

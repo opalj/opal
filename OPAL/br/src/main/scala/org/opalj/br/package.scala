@@ -136,8 +136,9 @@ package object br {
      */
     def annotationsToJava(
         annotations: Annotations,
-        before: String = "",
-        after: String = ""): String = {
+        before:      String      = "",
+        after:       String      = ""
+    ): String = {
 
         val annotationToJava: (Annotation) ⇒ String = { annotation: Annotation ⇒
             val s = annotation.toJava
@@ -210,9 +211,10 @@ package object br {
      * Creates an (X)HTML5 representation that resembles Java source code method signature.
      */
     def methodToXHTML(
-        name: String,
-        descriptor: MethodDescriptor,
-        abbreviateTypes: Boolean = true): Node = {
+        name:            String,
+        descriptor:      MethodDescriptor,
+        abbreviateTypes: Boolean          = true
+    ): Node = {
 
         val parameterTypes =
             if (descriptor.parametersCount == 0)
@@ -230,10 +232,11 @@ package object br {
     }
 
     def methodToXHTML(
-        accessFlags: Int,
-        name: String,
-        descriptor: MethodDescriptor,
-        abbreviateTypes: Boolean): Node = {
+        accessFlags:     Int,
+        name:            String,
+        descriptor:      MethodDescriptor,
+        abbreviateTypes: Boolean
+    ): Node = {
 
         val signature = methodToXHTML(name, descriptor, abbreviateTypes)
 

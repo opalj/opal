@@ -44,10 +44,11 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
     type RuntimeVisibleTypeAnnotations_attribute <: Attribute
     def RuntimeVisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute
+        attribute_length:     Int,
+        annotations:          TypeAnnotations
+    ): RuntimeVisibleTypeAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -65,7 +66,7 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
      * <pre> 
      */
     registerAttributeReader(
-        RuntimeVisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME ->
+        RuntimeVisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeVisibleTypeAnnotations_attribute(

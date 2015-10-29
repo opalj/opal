@@ -36,7 +36,8 @@ package br
  */
 case class UnknownAttribute(
     attributeName: String,
-    info: Array[Byte])
+    info:          Array[Byte]
+)
         extends Attribute {
 
     override def kindId: Int = UnknownAttribute.KindId

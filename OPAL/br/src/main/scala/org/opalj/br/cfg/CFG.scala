@@ -28,7 +28,7 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.{ Set ⇒ SomeSet }
+import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Method
 import org.opalj.br.PC
@@ -55,11 +55,12 @@ import org.opalj.br.PC
  * @author Michael Eichberg
  */
 case class CFG(
-        method: Method,
-        normalReturnNode: ExitNode,
-        abnormalReturnNode: ExitNode,
+        method:                  Method,
+        normalReturnNode:        ExitNode,
+        abnormalReturnNode:      ExitNode,
         private val basicBlocks: Array[BasicBlock],
-        catchNodes: Seq[CatchNode]) {
+        catchNodes:              Seq[CatchNode]
+) {
 
     final def startBlock: BasicBlock = basicBlocks(0)
 

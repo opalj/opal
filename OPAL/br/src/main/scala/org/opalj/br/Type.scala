@@ -193,22 +193,26 @@ sealed abstract class Type extends UID with Ordered[Type] {
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a BaseType")
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a BaseType"
+        )
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a FieldType")
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a FieldType"
+        )
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a NumericType")
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a NumericType"
+        )
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asIntLikeType: IntLikeType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an IntLikeType")
+            "a "+this.getClass().getSimpleName()+" cannot be cast to an IntLikeType"
+        )
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -472,7 +476,8 @@ object BaseType {
             ByteType, CharType, ShortType, IntegerType, // <= "IntLike" values
             LongType,
             FloatType,
-            DoubleType)
+            DoubleType
+        )
 }
 
 sealed abstract class NumericType protected () extends BaseType {
@@ -598,18 +603,22 @@ case object ByteType extends ByteType {
             INVOKEVIRTUAL(
                 ObjectType.Byte,
                 "byteValue",
-                MethodDescriptor.JustReturnsByte),
+                MethodDescriptor.JustReturnsByte
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveByteToLangByte: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Byte,
                 "valueOf",
-                MethodDescriptor(ByteType, ObjectType.Byte)),
+                MethodDescriptor(ByteType, ObjectType.Byte)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class CharType private () extends IntLikeType {
@@ -659,18 +668,22 @@ case object CharType extends CharType {
             INVOKEVIRTUAL(
                 ObjectType.Character,
                 "charValue",
-                MethodDescriptor.JustReturnsChar),
+                MethodDescriptor.JustReturnsChar
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveCharToLangCharacter: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Character,
                 "valueOf",
-                MethodDescriptor(CharType, ObjectType.Character)),
+                MethodDescriptor(CharType, ObjectType.Character)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class DoubleType private () extends NumericType {
@@ -729,18 +742,22 @@ case object DoubleType extends DoubleType {
             INVOKEVIRTUAL(
                 ObjectType.Double,
                 "doubleValue",
-                MethodDescriptor.JustReturnsDouble),
+                MethodDescriptor.JustReturnsDouble
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveDoubleToLangDouble: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Double,
                 "valueOf",
-                MethodDescriptor(DoubleType, ObjectType.Double)),
+                MethodDescriptor(DoubleType, ObjectType.Double)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class FloatType private () extends NumericType {
@@ -799,18 +816,22 @@ case object FloatType extends FloatType {
             INVOKEVIRTUAL(
                 ObjectType.Float,
                 "floatValue",
-                MethodDescriptor.JustReturnsFloat),
+                MethodDescriptor.JustReturnsFloat
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveFloatToLangFloat: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Float,
                 "valueOf",
-                MethodDescriptor(FloatType, ObjectType.Float)),
+                MethodDescriptor(FloatType, ObjectType.Float)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class ShortType private () extends IntLikeType {
@@ -861,18 +882,22 @@ case object ShortType extends ShortType {
             INVOKEVIRTUAL(
                 ObjectType.Short,
                 "shortValue",
-                MethodDescriptor.JustReturnsShort),
+                MethodDescriptor.JustReturnsShort
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveShortToLangShort: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Short,
                 "valueOf",
-                MethodDescriptor(ShortType, ObjectType.Short)),
+                MethodDescriptor(ShortType, ObjectType.Short)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class IntegerType private () extends IntLikeType {
@@ -927,18 +952,22 @@ case object IntegerType extends IntegerType {
             INVOKEVIRTUAL(
                 ObjectType.Integer,
                 "intValue",
-                MethodDescriptor.JustReturnsInteger),
+                MethodDescriptor.JustReturnsInteger
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveIntToLangInteger: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Integer,
                 "valueOf",
-                MethodDescriptor(IntegerType, ObjectType.Integer)),
+                MethodDescriptor(IntegerType, ObjectType.Integer)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 sealed abstract class LongType private () extends NumericType {
@@ -997,18 +1026,22 @@ case object LongType extends LongType {
             INVOKEVIRTUAL(
                 ObjectType.Long,
                 "longValue",
-                MethodDescriptor.JustReturnsLong),
+                MethodDescriptor.JustReturnsLong
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveLongToLangLong: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Long,
                 "valueOf",
-                MethodDescriptor(LongType, ObjectType.Long)),
+                MethodDescriptor(LongType, ObjectType.Long)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 /**
@@ -1052,18 +1085,22 @@ case object BooleanType extends BooleanType {
             INVOKEVIRTUAL(
                 ObjectType.Boolean,
                 "booleanValue",
-                MethodDescriptor.JustReturnsBoolean),
+                MethodDescriptor.JustReturnsBoolean
+            ),
             null,
-            null)
+            null
+        )
 
     final lazy val primitiveBooleanToLangBoolean: Array[Instruction] =
         Array(
             INVOKESTATIC(
                 ObjectType.Boolean,
                 "valueOf",
-                MethodDescriptor(BooleanType, ObjectType.Boolean)),
+                MethodDescriptor(BooleanType, ObjectType.Boolean)
+            ),
             null,
-            null)
+            null
+        )
 }
 
 /**
@@ -1074,8 +1111,9 @@ case object BooleanType extends BooleanType {
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
-    final val id: Int,
-    final val fqn: String)
+    final val id:  Int,
+    final val fqn: String
+)
         extends ReferenceType {
 
     override def isObjectType: Boolean = true
@@ -1364,14 +1402,15 @@ object ObjectType {
 
     def primitiveTypeWrapperMatcher[Args, T](
         booleanMatch: (Args) ⇒ T,
-        byteMatch: (Args) ⇒ T,
-        charMatch: (Args) ⇒ T,
-        shortMatch: (Args) ⇒ T,
+        byteMatch:    (Args) ⇒ T,
+        charMatch:    (Args) ⇒ T,
+        shortMatch:   (Args) ⇒ T,
         integerMatch: (Args) ⇒ T,
-        longMatch: (Args) ⇒ T,
-        floatMatch: (Args) ⇒ T,
-        doubleMatch: (Args) ⇒ T,
-        orElse: (Args) ⇒ T): (ObjectType, Args) ⇒ T = {
+        longMatch:    (Args) ⇒ T,
+        floatMatch:   (Args) ⇒ T,
+        doubleMatch:  (Args) ⇒ T,
+        orElse:       (Args) ⇒ T
+    ): (ObjectType, Args) ⇒ T = {
         val fs = new Array[(Args) ⇒ T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
@@ -1420,8 +1459,9 @@ object ObjectType {
  * @author Michael Eichberg
  */
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
-    val id: Int,
-    val componentType: FieldType)
+    val id:            Int,
+    val componentType: FieldType
+)
         extends ReferenceType {
 
     final override def isArrayType = true

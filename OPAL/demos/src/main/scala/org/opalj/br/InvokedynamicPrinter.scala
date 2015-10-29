@@ -53,9 +53,10 @@ object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, B
         "Prints information about invokedynamic instructions."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         import scala.collection.JavaConversions._
         val invokedynamics = new java.util.concurrent.ConcurrentLinkedQueue[String]
         project.parForeachMethodWithBody(isInterrupted) { e ⇒

@@ -48,13 +48,14 @@ case class ClassFile(
         constant_pool: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags: Int,
-        this_class: Constant_Pool_Index,
-        super_class: Constant_Pool_Index,
-        interfaces: IndexedSeq[Constant_Pool_Index],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes) {
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    IndexedSeq[Constant_Pool_Index],
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
+) {
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 

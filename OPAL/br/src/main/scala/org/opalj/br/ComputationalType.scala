@@ -35,7 +35,8 @@ package br
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  */
 sealed abstract class ComputationalType(
-        val computationalTypeCategory: ComputationalTypeCategory) {
+        val computationalTypeCategory: ComputationalTypeCategory
+) {
 
     def operandSize = computationalTypeCategory.operandSize
 

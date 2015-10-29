@@ -37,7 +37,8 @@ package instructions
  */
 case class MULTIANEWARRAY(
     componentType: ArrayType,
-    dimensions: Int)
+    dimensions:    Int
+)
         extends CreateNewArrayInstruction {
 
     final def opcode: Opcode = MULTIANEWARRAY.opcode

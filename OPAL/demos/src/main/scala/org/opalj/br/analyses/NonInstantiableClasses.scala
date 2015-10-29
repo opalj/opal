@@ -48,11 +48,12 @@ object NonInstantiableClasses extends DefaultOneStepAnalysis {
     override def description: String = "Provides information about instantiable classes."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
+        import org.opalj.util.PerformanceEvaluation.{time, memory, asMB}
         var overallExecutionTime = Nanoseconds.None
         var memoryUsageInMB = ""
 

@@ -36,8 +36,9 @@ package br
  * @author Michael Eichberg
  */
 case class MethodSignature(
-        name: String,
-        descriptor: MethodDescriptor) {
+        name:       String,
+        descriptor: MethodDescriptor
+) {
 
     override def equals(other: Any): Boolean = {
         other match {

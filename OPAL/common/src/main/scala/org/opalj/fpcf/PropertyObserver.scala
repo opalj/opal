@@ -57,8 +57,9 @@ private[fpcf] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 }
 
 private[fpcf] abstract class DefaultPropertyObserver(
-    final val depender: EPK,
-    final val removeAfterNotification: Boolean)
+    final val depender:                EPK,
+    final val removeAfterNotification: Boolean
+)
         extends PropertyObserver {
 
     override def toString: String = {

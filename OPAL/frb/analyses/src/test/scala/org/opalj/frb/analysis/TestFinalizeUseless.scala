@@ -55,7 +55,8 @@ class TestFinalizeUseless extends AnalysisTest {
             project.source(classToReport),
             Severity.Info,
             classToReport,
-            "Declares useless finalize() method"))
+            "Declares useless finalize() method"
+        ))
     }
 
     it should "report 1 issue in total" in {

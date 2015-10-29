@@ -49,8 +49,9 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
      * [[org.opalj.br.instructions.Instruction]]s.
      */
     def Instructions(
-        cp: Constant_Pool,
-        source: Array[Byte]): Instructions = {
+        cp:     Constant_Pool,
+        source: Array[Byte]
+    ): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -356,7 +357,8 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
 
                 case opcode ⇒
                     throw new BytecodeProcessingFailedException(
-                        "unsupported opcode: "+opcode)
+                        "unsupported opcode: "+opcode
+                    )
             }
 
         }

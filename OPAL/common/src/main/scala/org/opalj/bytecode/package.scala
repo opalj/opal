@@ -66,7 +66,8 @@ package object bytecode {
      */
     def commonPackage(
         fqnA: String, fqnB: String,
-        packageSeperatorChar: Int = '.'): Option[String] = {
+        packageSeperatorChar: Int = '.'
+    ): Option[String] = {
         val packageSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
         if (packageSeperatorIndex <= 0)
             return None;
@@ -108,9 +109,10 @@ package object bytecode {
      *      should be `'/'`.
      */
     def abbreviateFQN(
-        definingTypeFQN: String,
-        memberTypeFQN: String,
-        packageSeperatorChar: Int = '.'): String = {
+        definingTypeFQN:      String,
+        memberTypeFQN:        String,
+        packageSeperatorChar: Int    = '.'
+    ): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
 

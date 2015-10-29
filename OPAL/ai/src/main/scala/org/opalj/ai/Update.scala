@@ -101,7 +101,8 @@ object SomeUpdate {
  * continue the abstract interpretation.
  */
 final case class StructuralUpdate[V](
-    value: V)
+    value: V
+)
         extends SomeUpdate[V] {
 
     override def isStructuralUpdate: Boolean = true
@@ -130,7 +131,8 @@ final case class StructuralUpdate[V](
  * state is a decision of the domain.''
  */
 final case class MetaInformationUpdate[V](
-    value: V)
+    value: V
+)
         extends SomeUpdate[V] {
 
     override def isMetaInformationUpdate: Boolean = true

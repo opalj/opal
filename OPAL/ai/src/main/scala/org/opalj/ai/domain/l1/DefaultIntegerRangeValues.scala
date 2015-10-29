@@ -90,11 +90,13 @@ trait DefaultIntegerRangeValues
      */
     class IntegerRange(
             val lowerBound: Int,
-            val upperBound: Int) extends super.IntegerRange {
+            val upperBound: Int
+    ) extends super.IntegerRange {
 
         assert(
             lowerBound <= upperBound,
-            s"the lower bound $lowerBound is larger than the upper bound $upperBound")
+            s"the lower bound $lowerBound is larger than the upper bound $upperBound"
+        )
 
         /**
          * Creates a new `IntegerRange` value that also represents the given value.

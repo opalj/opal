@@ -37,7 +37,8 @@ package da
  */
 case class LocalVariableTable_attribute(
         attribute_name_index: Int,
-        local_variable_table: Seq[LocalVariableTableEntry]) extends Attribute {
+        local_variable_table: Seq[LocalVariableTableEntry]
+) extends Attribute {
 
     def attribute_length: Int = 2 + (local_variable_table.size * 10)
 

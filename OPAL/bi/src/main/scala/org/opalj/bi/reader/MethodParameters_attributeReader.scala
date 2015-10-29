@@ -47,15 +47,17 @@ trait MethodParameters_attributeReader extends AttributeReader {
     implicit val MethodParameterManifest: ClassTag[MethodParameter]
 
     def MethodParameters_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameters: MethodParameters): MethodParameters_attribute
+        attribute_length:     Int,
+        parameters:           MethodParameters
+    ): MethodParameters_attribute
 
     def MethodParameter(
         constant_pool: Constant_Pool,
-        name_index: Constant_Pool_Index,
-        access_flags: Int): MethodParameter
+        name_index:    Constant_Pool_Index,
+        access_flags:  Int
+    ): MethodParameter
 
     //
     // IMPLEMENTATION
@@ -77,7 +79,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        MethodParameters_attributeReader.ATTRIBUTE_NAME -> (
+        MethodParameters_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 MethodParameters_attribute(

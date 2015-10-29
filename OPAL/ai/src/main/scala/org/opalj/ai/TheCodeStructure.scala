@@ -57,8 +57,9 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      * This method is called by the AI framework.
      */
     private[ai] def setCodeStructure(
-        theInstructions: Array[Instruction],
-        theJoinInstructions: BitSet): Unit = {
+        theInstructions:     Array[Instruction],
+        theJoinInstructions: BitSet
+    ): Unit = {
 
         this.theInstructions = theInstructions
         this.theJoinInstructions = theJoinInstructions

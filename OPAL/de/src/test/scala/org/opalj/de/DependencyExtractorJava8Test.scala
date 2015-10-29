@@ -58,7 +58,8 @@ class DependencyExtractorJava8Test extends FunSuite {
             DependencyExtractorFixture.extractDependencies(
                 "de",
                 "classfiles/Dependencies-1.8.jar",
-                (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp))
+                (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp)
+            )
 
         def assertDependency(src: String, trgt: String, dType: DependencyType): Unit = {
             val key = (src, trgt, dType)
@@ -77,8 +78,9 @@ class DependencyExtractorJava8Test extends FunSuite {
         }
 
         def assertImplicitDefaultConstructor(
-            className: String,
-            superClassName: String = "java.lang.Object"): Unit = {
+            className:      String,
+            superClassName: String = "java.lang.Object"
+        ): Unit = {
             // //implicit constructor:
             val constructorName = className+".<init>()"
             assertDependency(constructorName, className, INSTANCE_MEMBER)
@@ -92,7 +94,8 @@ class DependencyExtractorJava8Test extends FunSuite {
             assertDependency(
                 methodName,
                 methodName.substring(0, methodName.substring(0, methodName.lastIndexOf('(')).lastIndexOf('.')),
-                LOCAL_VARIABLE_TYPE)
+                LOCAL_VARIABLE_TYPE
+            )
         }
 
         assert(dependencies.size > 0, "no dependencies extracted")
@@ -1245,9 +1248,11 @@ class DependencyExtractorJava8Test extends FunSuite {
         //    }
 
         val remainingDependencies = dependencies.view.filter(_._2 > 0)
-        assert(remainingDependencies.isEmpty,
+        assert(
+            remainingDependencies.isEmpty,
             "Too many dependencies have been extracted for:\n"+
-                remainingDependencies.mkString("\n"))
+                remainingDependencies.mkString("\n")
+        )
     }
 }
 

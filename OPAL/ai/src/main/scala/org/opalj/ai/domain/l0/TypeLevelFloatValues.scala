@@ -31,7 +31,7 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
+import org.opalj.br.{ComputationalType, ComputationalTypeFloat}
 
 /**
  * This partial `Domain` performs all computations related to primitive float
@@ -70,56 +70,64 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     // UNARY EXPRESSIONS
     //
     override def fneg(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value: DomainValue): DomainValue = FloatValue(pc)
+        value:    DomainValue
+    ): DomainValue = FloatValue(pc)
 
     //
     // RELATIONAL OPERATORS
     //
     override def fcmpg(
-        pc: PC,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        pc:     PC,
+        value1: DomainValue, value2: DomainValue
+    ): DomainValue =
         IntegerValue(pc)
 
     override def fcmpl(
-        pc: PC,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        pc:     PC,
+        value1: DomainValue, value2: DomainValue
+    ): DomainValue =
         IntegerValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
     override def fadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         FloatValue(pc)
 
     override def fdiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue,
-        value2: DomainValue): DomainValue =
+        value1:   DomainValue,
+        value2:   DomainValue
+    ): DomainValue =
         FloatValue(pc)
 
     override def fmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         FloatValue(pc)
 
     override def frem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue,
-        value2: DomainValue): DomainValue =
+        value1:   DomainValue,
+        value2:   DomainValue
+    ): DomainValue =
         FloatValue(pc)
 
     override def fsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         FloatValue(pc)
 
 }

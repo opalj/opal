@@ -91,9 +91,12 @@ object LibraryLeakageAnalysis
      *
      */
     def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            store: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project: SomeProject,
+        store:   PropertyStore
+    ): PropertyComputationResult = {
 
         if (method.isPrivate || method.isConstructor)
             return ImmediateResult(method, NoLeakage)

@@ -31,9 +31,9 @@ package ai
 
 import scala.language.existentials
 import java.net.URL
-import org.opalj.br.analyses.{ DefaultOneStepAnalysis, BasicReport, Project }
+import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.Method
-import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
+import org.opalj.br.{ReferenceType, ObjectType, IntegerType}
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.domain.l1.DefaultDomain
@@ -56,9 +56,10 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
         "Analyzes the parameters of called methods to determine if we have more precise type information."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         import theProject._
 
         //        val mutex = new Object // JUST USED TO GET A REASONABLE DEBUG OUTPUT

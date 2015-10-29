@@ -32,7 +32,7 @@ package domain
 package l0
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.{ Method, ClassFile }
+import org.opalj.br.{Method, ClassFile}
 
 /**
  * A complete domain that performs all computations at the type level and which has
@@ -47,10 +47,11 @@ import org.opalj.br.{ Method, ClassFile }
  * @author Michael Eichberg
  */
 class BaseConfigurableDomain[I, S](
-    val id: I,
-    val project: Project[S],
+    val id:        I,
+    val project:   Project[S],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends TypeLevelDomain
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
@@ -71,12 +72,14 @@ class BaseConfigurableDomain[I, S](
  * @author Michael Eichberg
  */
 class BaseDomain[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
+    method:    Method
+)
         extends BaseConfigurableDomain[String, Source](
             classFile.thisType.toJava+"{ "+method.toJava+"}",
             project,
             classFile,
-            method)
+            method
+        )
 

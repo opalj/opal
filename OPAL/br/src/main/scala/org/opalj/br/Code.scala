@@ -55,11 +55,12 @@ import scala.collection.mutable.Queue
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack: Int,
-    val maxLocals: Int,
-    val instructions: Array[Instruction],
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
     val exceptionHandlers: ExceptionHandlers,
-    val attributes: Attributes)
+    val attributes:        Attributes
+)
         extends Attribute
         with CommonAttributes {
 
@@ -181,9 +182,10 @@ final class Code private (
             // belonging to this subroutine belong to this subroutine (unless the handler
             // is already associated with a previous subroutine!)
             @inline def belongsToCurrentSubroutine(
-                startPC: PC,
-                endPC: PC,
-                handlerPC: PC): Boolean = {
+                startPC:   PC,
+                endPC:     PC,
+                handlerPC: PC
+            ): Boolean = {
                 var currentPC = startPC
                 while (currentPC < endPC) {
                     if (subroutineIds(currentPC) != -1) {
@@ -713,8 +715,10 @@ final class Code private (
      * @return The list of results of applying the function f for each matching sequence.
      */
     def slidingCollect[B](
-        windowSize: Int)(
-            f: PartialFunction[(PC, Seq[Instruction]), B]): Seq[B] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[(PC, Seq[Instruction]), B]
+    ): Seq[B] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -764,8 +768,10 @@ final class Code private (
      *      of the partial function.
      */
     def findSequence[B](
-        windowSize: Int)(
-            f: PartialFunction[Seq[Instruction], B]): List[(PC, B)] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[Seq[Instruction], B]
+    ): List[(PC, B)] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -818,7 +824,8 @@ final class Code private (
      * }}}
      */
     def collectPair[B](
-        f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
+        f: PartialFunction[(Instruction, Instruction), B]
+    ): List[(PC, B)] = {
         val max_pc = instructions.size
 
         var first_pc = 0
@@ -893,8 +900,9 @@ final class Code private (
      *      passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int = Int.MaxValue,
-        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchMaxTriples: Int                                               = Int.MaxValue,
+        f:               (Instruction, Instruction, Instruction) ⇒ Boolean
+    ): List[PC] = {
         val max_pc = instructions.size
         var matchedTriplesCount = 0
         var pc1 = 0
@@ -980,10 +988,11 @@ final class Code private (
      * 		the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
-        pc: PC,
+        pc:               PC,
         joinInstructions: BitSet,
-        anInvocation: (PC) ⇒ Boolean,
-        aThrow: (PC) ⇒ Boolean): Boolean = {
+        anInvocation:     (PC) ⇒ Boolean,
+        aThrow:           (PC) ⇒ Boolean
+    ): Boolean = {
 
         var currentPC = pc
         while (!joinInstructions.contains(currentPC)) {
@@ -1088,11 +1097,12 @@ final class Code private (
 object Code {
 
     def apply(
-        maxStack: Int,
-        maxLocals: Int,
-        instructions: Array[Instruction],
+        maxStack:          Int,
+        maxLocals:         Int,
+        instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        attributes: Attributes): Code = {
+        attributes:        Attributes
+    ): Code = {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0

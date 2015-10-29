@@ -39,8 +39,9 @@ import scala.xml.Node
  */
 case class EnclosingMethod_attribute(
         attribute_name_index: Int,
-        class_index: Int,
-        method_index: Int) extends Attribute {
+        class_index:          Int,
+        method_index:         Int
+) extends Attribute {
 
     def attribute_length = 4
 

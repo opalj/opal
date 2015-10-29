@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.{ Project, SomeProject }
+import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
@@ -70,7 +70,7 @@ object InterpretMethod {
      * 		is returned.
      */
     def main(args: Array[String]): Unit = {
-        import Console.{ RED, RESET }
+        import Console.{RED, RESET}
         import language.existentials
 
         def printUsage(issue: Option[String]): Unit = {
@@ -113,9 +113,10 @@ object InterpretMethod {
         }
 
         def createDomain[Source: reflect.ClassTag](
-            project: SomeProject,
+            project:   SomeProject,
             classFile: ClassFile,
-            method: Method): Domain = {
+            method:    Method
+        ): Domain = {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
@@ -126,7 +127,8 @@ object InterpretMethod {
                 domainClass.getConstructor(
                     classOf[Project[java.net.URL]],
                     classOf[ClassFile],
-                    classOf[Method])
+                    classOf[Method]
+                )
 
             constructor.newInstance(project, classFile, method)
         }
@@ -210,17 +212,21 @@ object InterpretMethod {
                 val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
                 writeAndOpen(dotGraph, "DefUseGraph", ".dot")
             }
-            writeAndOpen(dump(
-                Some(classFile),
-                Some(method),
-                method.body.get,
-                Some(
-                    "Created: "+(new java.util.Date).toString+"<br>"+
-                        "Domain: "+domainClass.getName+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
-                result.domain)(
-                    result.operandsArray,
-                    result.localsArray),
+            writeAndOpen(
+                dump(
+                    Some(classFile),
+                    Some(method),
+                    method.body.get,
+                    Some(
+                        "Created: "+(new java.util.Date).toString+"<br>"+
+                            "Domain: "+domainClass.getName+"<br>"+
+                            XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                    ),
+                    result.domain
+                )(
+                        result.operandsArray,
+                        result.localsArray
+                    ),
                 "AIResult",
                 ".html"
             )
@@ -259,8 +265,10 @@ object InterpretMethod {
                 val evaluationDump =
                     dump(
                         Some(classFile), Some(method), method.body.get,
-                        resultHeader, ife.domain)(
-                            ife.operandsArray, ife.localsArray)
+                        resultHeader, ife.domain
+                    )(
+                            ife.operandsArray, ife.localsArray
+                        )
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }

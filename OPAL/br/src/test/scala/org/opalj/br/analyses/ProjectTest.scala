@@ -180,7 +180,8 @@ class ProjectTest extends FlatSpec with Matchers {
             AbstractB,
             "someSubMethod",
             MethodDescriptor("()V"),
-            project)
+            project
+        )
 
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SubI"))
@@ -191,7 +192,8 @@ class ProjectTest extends FlatSpec with Matchers {
             AbstractB,
             "someMethod",
             MethodDescriptor("()V"),
-            project)
+            project
+        )
 
         r should be('Defined)
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))

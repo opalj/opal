@@ -98,7 +98,8 @@ class SwitchTest extends TACTest {
                     "8: op_0 = 3;",
                     "9: return op_0;",
                     "10: op_0 = 0;",
-                    "11: return op_0;"))
+                    "11: return op_0;"
+                ))
             }
 
             it("should correctly reflect lookupswitch case") {
@@ -117,7 +118,8 @@ class SwitchTest extends TACTest {
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
                     ReturnValue(34, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(35, SimpleVar(0, ComputationalTypeInt), IntConst(35, 0)),
-                    ReturnValue(36, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(36, SimpleVar(0, ComputationalTypeInt))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -128,7 +130,8 @@ class SwitchTest extends TACTest {
                     "6: op_0 = 200;",
                     "7: return op_0;",
                     "8: op_0 = 0;",
-                    "9: return op_0;"))
+                    "9: return op_0;"
+                ))
             }
         }
 
@@ -153,7 +156,8 @@ class SwitchTest extends TACTest {
                     Assignment(32, SimpleVar(0, ComputationalTypeInt), IntConst(32, 3)),
                     ReturnValue(33, DomainValueBasedVar(0, domain.IntegerRange(3) /*int=3*/ )),
                     Assignment(34, SimpleVar(0, ComputationalTypeInt), IntConst(34, 0)),
-                    ReturnValue(35, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))))
+                    ReturnValue(35, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -166,7 +170,8 @@ class SwitchTest extends TACTest {
                     "8: op_0 = 3;",
                     "9: return op_0 /*int = 3*/;",
                     "10: op_0 = 0;",
-                    "11: return op_0 /*int = 0*/;"))
+                    "11: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect lookupswitch case") {
@@ -187,7 +192,8 @@ class SwitchTest extends TACTest {
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
                     ReturnValue(34, DomainValueBasedVar(0, domain.IntegerRange(200) /*int=200*/ )),
                     Assignment(35, SimpleVar(0, ComputationalTypeInt), IntConst(35, 0)),
-                    ReturnValue(36, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))))
+                    ReturnValue(36, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -198,7 +204,8 @@ class SwitchTest extends TACTest {
                     "6: op_0 = 200;",
                     "7: return op_0 /*int = 200*/;",
                     "8: op_0 = 0;",
-                    "9: return op_0 /*int = 0*/;"))
+                    "9: return op_0 /*int = 0*/;"
+                ))
             }
         }
     }

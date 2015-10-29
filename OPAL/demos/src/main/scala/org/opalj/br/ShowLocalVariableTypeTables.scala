@@ -48,9 +48,10 @@ object ShowLocalVariableTypeTables extends AnalysisExecutor with OneStepAnalysis
     override def description: String = "Prints out the local variable type tables."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val messages = new java.util.concurrent.ConcurrentLinkedQueue[String]
         project.parForeachMethodWithBody(() ⇒ false) { e ⇒

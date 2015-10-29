@@ -63,9 +63,10 @@ class FieldShouldBePackageProtected[Source] extends FindRealBugsAnalysis[Source]
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[FieldBasedReport[Source]] = {
 
         val readFieldsFromPackage = getReadFields(project.allClassFiles)
             .map(entry ⇒ (entry._1._1.thisType.packageName, entry._2))
@@ -84,15 +85,15 @@ class FieldShouldBePackageProtected[Source] extends FindRealBugsAnalysis[Source]
                 (field.fieldType.isArrayType || field.fieldType == HashtableType) &&
                 !readFieldsFromPackage.exists(entry ⇒
                     entry._2 == ((classFile.thisType, field.name, field.fieldType))
-                        && entry._1 != classFile.thisType.packageName)
-            )
+                        && entry._1 != classFile.thisType.packageName))
         } yield {
             FieldBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
                 classFile.thisType,
                 field,
-                "Should be package protected")
+                "Should be package protected"
+            )
         }
     }
 }

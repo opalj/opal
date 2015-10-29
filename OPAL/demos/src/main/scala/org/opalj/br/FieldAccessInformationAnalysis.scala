@@ -60,11 +60,12 @@ object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
             Seq("unknown parameters: "+parameters.mkString(" "))
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
+        import org.opalj.util.PerformanceEvaluation.{time, memory, asMB}
         var overallExecutionTime = Nanoseconds.None
         var memoryUsageInMB = ""
 

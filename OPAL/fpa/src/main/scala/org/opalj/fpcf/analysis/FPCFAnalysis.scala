@@ -11,8 +11,8 @@ import scala.reflect.ClassTag
 import net.ceedubs.ficus.Ficus._
 
 /**
- * 
- * 
+ *
+ *
  * @author Michael Reif
  */
 abstract class FPCFAnalysis[E <: Entity](val project: SomeProject) {
@@ -22,19 +22,21 @@ abstract class FPCFAnalysis[E <: Entity](val project: SomeProject) {
 }
 
 abstract class DefaultFPCFAnalysis[T <: Entity](
-    project: SomeProject,
-    val entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector())
+    project:            SomeProject,
+    val entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector()
+)
         extends FPCFAnalysis[T](project) {
 
     implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
-    
+
     propertyStore <||< (entitySelector, (determineProperty _).
         asInstanceOf[T ⇒ PropertyComputationResult])
 }
 
 abstract class FPCFAnalysisModeAnalysis[T <: Entity](
-    project: SomeProject,
-    entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector())
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, T] = DefaultFPCFAnalysis.entitySelector()
+)
         extends DefaultFPCFAnalysis[T](project, entitySelector) {
 
     lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))

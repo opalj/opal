@@ -67,9 +67,10 @@ trait RecordCFG
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
 
     abstract override def initProperties(
-        code: Code,
+        code:             Code,
         joinInstructions: BitSet,
-        initialLocals: Locals): Unit = {
+        initialLocals:    Locals
+    ): Unit = {
 
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
@@ -201,18 +202,19 @@ trait RecordCFG
      * @note This method is called by the abstract interpretation framework.
      */
     abstract override def flow(
-        currentPC: PC,
-        currentOperands: Operands,
-        currentLocals: Locals,
-        successorPC: PC,
-        isSuccessorSchedulued: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorSchedulued:            Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = {
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = {
 
         val successors =
             if (isExceptionalControlFlow)
@@ -236,7 +238,8 @@ trait RecordCFG
             wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
-            tracer)
+            tracer
+        )
     }
 
     /**
@@ -250,26 +253,26 @@ trait RecordCFG
         // 1. create nodes
         for (pc ← code.programCounters) {
             nodes(pc) = {
-                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
+                var visualProperties = Map("shape" → "box", "labelloc" → "l")
 
                 if (instructions(pc).isInstanceOf[ReturnInstruction]) {
-                    visualProperties += "fillcolor" -> "green"
-                    visualProperties += "style" -> "filled"
+                    visualProperties += "fillcolor" → "green"
+                    visualProperties += "style" → "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
-                    visualProperties += "fillcolor" -> "yellow"
-                    visualProperties += "style" -> "filled"
+                    visualProperties += "fillcolor" → "yellow"
+                    visualProperties += "style" → "filled"
                 } else if (allSuccessorsOf(pc).isEmpty) {
-                    visualProperties += "fillcolor" -> "red"
-                    visualProperties += "style" -> "filled"
-                    visualProperties += "shape" -> "octagon"
+                    visualProperties += "fillcolor" → "red"
+                    visualProperties += "style" → "filled"
+                    visualProperties += "shape" → "octagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
-                    visualProperties += "color" -> "orange"
+                    visualProperties += "color" → "orange"
                 }
 
                 if (code.exceptionHandlers.exists { eh ⇒ eh.handlerPC == pc }) {
-                    visualProperties += "peripheries" -> "2"
+                    visualProperties += "peripheries" → "2"
                 }
 
                 def pcsToString(pcs: List[PC]): String = {
@@ -284,7 +287,8 @@ trait RecordCFG
                     List(pc),
                     pcsToString,
                     visualProperties,
-                    List.empty[DefaultMutableNode[List[PC]]])
+                    List.empty[DefaultMutableNode[List[PC]]]
+                )
             }
         }
         // 2. create edges

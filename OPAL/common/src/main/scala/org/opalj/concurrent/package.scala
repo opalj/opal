@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.{ Future ⇒ JFuture }
+import java.util.concurrent.{Future ⇒ JFuture}
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -87,7 +87,8 @@ package object concurrent {
         } else {
             OPALLogger.warn(
                 "OPAL",
-                "the property org.opalj.threads.CPUBoundTasks is unspecified")
+                "the property org.opalj.threads.CPUBoundTasks is unspecified"
+            )
             Runtime.getRuntime.availableProcessors()
         }
     }
@@ -95,7 +96,8 @@ package object concurrent {
         "OPAL",
         s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
-            "the number should be equal to the number of physical – not hyperthreaded – cores)")
+            "the number should be equal to the number of physical – not hyperthreaded – cores)"
+    )
 
     //
     // STEP 2
@@ -119,7 +121,8 @@ package object concurrent {
         } else {
             OPALLogger.warn(
                 "OPAL",
-                "the property org.opalj.threads.IOBoundTasks is unspecified")
+                "the property org.opalj.threads.IOBoundTasks is unspecified"
+            )
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
@@ -127,7 +130,8 @@ package object concurrent {
         "OPAL",
         s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
-            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
+            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
+    )
 
     //
     // STEP 3
@@ -188,10 +192,12 @@ package object concurrent {
      * @note The OPALExecutionContext is used for getting the necessary threads.
      */
     def parForeachArrayElement[T, U](
-        data: Array[T],
-        parallelizationLevel: Int = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
-            f: Function[T, U]): Unit = {
+        data:                 Array[T],
+        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
+        isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: Function[T, U]
+    ): Unit = {
 
         if (parallelizationLevel == 1) {
             data.foreach(f)

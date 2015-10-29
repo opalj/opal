@@ -33,7 +33,7 @@ package debug
 import scala.Console.RED
 import scala.Console.RESET
 import scala.Console.err
-import org.opalj.br.{ Method }
+import org.opalj.br.{Method}
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
@@ -173,7 +173,7 @@ object CallGraphVisualization {
 
                 // Some statistics
                 val callGraph = computedCallGraph.callGraph
-                import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
+                import callGraph.{calls, callsCount, calledByCount, foreachCallingMethod}
                 println("Methods with at least one resolved call: "+callsCount)
                 println("Methods which are called by at least one method: "+calledByCount)
 
@@ -200,7 +200,8 @@ object CallGraphVisualization {
                 println(f"Number of call sites: ${callGraph.callSites}%,d ")
                 println(
                     f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
-                        f" / called-by edges: ${callGraph.calledByEdgesCount}%,d")
+                        f" / called-by edges: ${callGraph.calledByEdgesCount}%,d"
+                )
                 println(
                     "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
                         methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(

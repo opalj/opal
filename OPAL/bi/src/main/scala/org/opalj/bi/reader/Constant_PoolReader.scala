@@ -98,8 +98,10 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
 
     def registerDeferredAction(
-        cp: Constant_Pool)(
-            deferredAction: ClassFile ⇒ ClassFile): Unit = {
+        cp: Constant_Pool
+    )(
+        deferredAction: ClassFile ⇒ ClassFile
+    ): Unit = {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
         store.synchronized {
             store += deferredAction
@@ -107,8 +109,9 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     }
 
     override def applyDeferredActions(
-        cp: Constant_Pool,
-        classFile: ClassFile): ClassFile = {
+        cp:        Constant_Pool,
+        classFile: ClassFile
+    ): ClassFile = {
         var transformedClassFile = classFile
         val das = cp(0).asInstanceOf[DeferredActionsStore]
         das.foreach { deferredAction ⇒
@@ -165,7 +168,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     i += 1
                     CONSTANT_InterfaceMethodref_info(
                         in.readUnsignedShort,
-                        in.readUnsignedShort)
+                        in.readUnsignedShort
+                    )
                 case CONSTANT_String_ID ⇒
                     i += 1
                     CONSTANT_String_info(in.readUnsignedShort)
@@ -198,7 +202,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
                 case _ ⇒
                     throw new BytecodeProcessingFailedException(
-                        s"unsupported constant pool tag id: $tag")
+                        s"unsupported constant pool tag id: $tag"
+                    )
             }
         }
         constant_pool_entries

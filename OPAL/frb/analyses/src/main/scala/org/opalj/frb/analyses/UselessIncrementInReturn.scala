@@ -69,8 +69,9 @@ class IincTracingDomain
      * identified as operands of later instructions.
      */
     case class IincResults(
-        val iincPcs: Set[PC],
-        override final val computationalType: ComputationalType)
+        val iincPcs:                          Set[PC],
+        override final val computationalType: ComputationalType
+    )
             extends DomainValue {
 
         /**
@@ -85,8 +86,10 @@ class IincTracingDomain
                     NoUpdate
                 } else {
                     // Combine both lists of IINC results
-                    StructuralUpdate(IincResults(this.iincPcs ++ other.iincPcs,
-                        computationalType))
+                    StructuralUpdate(IincResults(
+                        this.iincPcs ++ other.iincPcs,
+                        computationalType
+                    ))
                 }
             } else {
                 // Joining IINC result with an unknown value - we want to trace the IINC
@@ -155,15 +158,18 @@ class IincTracingDomain
      * does not use `IincResults`, we don't care about its result.
      */
     private def MakeResult(
-        pc: PC,
-        sources: Set[DomainValue],
-        computationalType: ComputationalType): DomainValue = {
+        pc:                PC,
+        sources:           Set[DomainValue],
+        computationalType: ComputationalType
+    ): DomainValue = {
 
         val tsources = sources.filter(_.isInstanceOf[IincResults])
 
         if (tsources.nonEmpty) {
-            IincResults(tsources.map(_.asInstanceOf[IincResults].iincPcs).flatten,
-                computationalType)
+            IincResults(
+                tsources.map(_.asInstanceOf[IincResults].iincPcs).flatten,
+                computationalType
+            )
         } else {
             computationalType match {
                 case ComputationalTypeInt    ⇒ SomeInteger
@@ -221,21 +227,25 @@ class IincTracingDomain
 
     override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = Unknown
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
-        lowerBound: Int, upperBound: Int): Answer = Unknown
+        pc:         PC,
+        value:      DomainValue,
+        lowerBound: Int, upperBound: Int
+    ): Answer = Unknown
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
-        lowerBound: Int, upperBound: Int): Answer = Unknown
+        pc:         PC,
+        value:      DomainValue,
+        lowerBound: Int, upperBound: Int
+    ): Answer = Unknown
     override def intIsLessThan(
-        pc: PC,
+        pc:           PC,
         smallerValue: DomainValue,
-        largerValue: DomainValue): Answer = Unknown
+        largerValue:  DomainValue
+    ): Answer = Unknown
     override def intIsLessThanOrEqualTo(
-        pc: PC,
+        pc:                  PC,
         smallerOrEqualValue: DomainValue,
-        equalOrLargerValue: DomainValue): Answer = Unknown
+        equalOrLargerValue:  DomainValue
+    ): Answer = Unknown
 
     override def ineg(pc: PC, value: DomainValue) = MakeIntegerResult(pc, value)
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -312,31 +322,37 @@ class IincTracingDomain
     override def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
     override def fneg(
-        pc: PC, strictfp: Boolean, value: DomainValue) = MakeFloatResult(pc, value)
+        pc: PC, strictfp: Boolean, value: DomainValue
+    ) = MakeFloatResult(pc, value)
     override def fadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeFloatResult(pc, value1, value2)
     override def fdiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeFloatResult(pc, value1, value2)
     override def fmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeFloatResult(pc, value1, value2)
     override def frem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeFloatResult(pc, value1, value2)
     override def fsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeFloatResult(pc, value1, value2)
     override def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
         MakeDoubleResult(pc, value)
@@ -349,38 +365,45 @@ class IincTracingDomain
     override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
     override def dneg(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value: DomainValue) = MakeDoubleResult(pc, value)
+        value:    DomainValue
+    ) = MakeDoubleResult(pc, value)
     override def dadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeDoubleResult(pc, value1, value2)
     override def ddiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeDoubleResult(pc, value1, value2)
     override def dmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeDoubleResult(pc, value1, value2)
     override def drem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeDoubleResult(pc, value1, value2)
     override def dsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         MakeDoubleResult(pc, value1, value2)
     override def d2f(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value: DomainValue): DomainValue = MakeFloatResult(pc, value)
+        value:    DomainValue
+    ): DomainValue = MakeFloatResult(pc, value)
     override def d2i(pc: PC, value: DomainValue): DomainValue =
         MakeIntegerResult(pc, value)
     override def d2l(pc: PC, value: DomainValue): DomainValue = MakeLongResult(pc, value)
@@ -451,9 +474,10 @@ class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         var reports: List[LineAndColumnBasedReport[Source]] = List.empty
 

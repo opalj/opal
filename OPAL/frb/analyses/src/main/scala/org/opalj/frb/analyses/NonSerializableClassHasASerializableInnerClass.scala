@@ -64,9 +64,10 @@ class NonSerializableClassHasASerializableInnerClass[Source]
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         import project.classHierarchy.isSubtypeOf
 

@@ -67,7 +67,8 @@ object FixpointAnalysesRegistry {
      */
     def register[FA <: FixpointAnalysis](
         analysisDescription: String,
-        analysisClass: FA): Unit = {
+        analysisClass:       FA
+    ): Unit = {
         this.synchronized {
             descriptions += ((analysisDescription, analysisClass))
             theRegistry += analysisClass
@@ -93,7 +94,8 @@ object FixpointAnalysesRegistry {
      * are currently not (directly) supported by the registry.
      */
     def newFixpointAnalysis(
-        analysisDescripition: String): FixpointAnalysis = {
+        analysisDescripition: String
+    ): FixpointAnalysis = {
         this.synchronized {
             descriptions(analysisDescripition)
         }

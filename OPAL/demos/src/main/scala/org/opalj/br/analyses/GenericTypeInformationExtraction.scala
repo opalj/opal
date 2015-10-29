@@ -31,7 +31,7 @@ package br
 package analyses
 
 import java.net.URL
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
+import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.MethodWithBody
 import java.util.concurrent.atomic.AtomicInteger
@@ -49,9 +49,10 @@ object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
     override def description: String = TheAnalysis.description
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         // THE NAME OF THE CONTAINER (HERE) HAS TO BE AN INTERFACE NAME!
         //        val containerPackageName = "java/lang/"
         //        val containerSimpleName = "Iterable"
@@ -123,13 +124,14 @@ object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
 
         val allAffectedSubtypesAsStrings =
             allAffectedSubtypes.map(p ⇒
-                p._1.toJava+" inherits from "+containerType.toJava+"<"+p._2.toJava+">"
-            )
+                p._1.toJava+" inherits from "+containerType.toJava+"<"+p._2.toJava+">")
 
         BasicReport(
             allAffectedSubtypesAsStrings.mkString(
                 "Implementations of "+containerName+":\n",
                 "\n\n",
-                "\nFound: "+allAffectedSubtypes.size+"("+subtypes.size+")"))
+                "\nFound: "+allAffectedSubtypes.size+"("+subtypes.size+")"
+            )
+        )
     }
 }

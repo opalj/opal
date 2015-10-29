@@ -46,7 +46,8 @@ import scala.collection.generic.FilterMonadic
  * @author Michael Eichberg
  */
 class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
-        private var data: Array[T]) {
+        private var data: Array[T]
+) {
 
     /**
      * Returns the value stored for the given key or `null` instead.

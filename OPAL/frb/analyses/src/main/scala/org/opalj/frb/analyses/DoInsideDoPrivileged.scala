@@ -67,9 +67,10 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         // For all classes referencing neither privilegedAction nor
         // privilegedExceptionAction, look for methods that call setAccessible() on
@@ -88,7 +89,8 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
                 classFile.thisType,
                 method,
                 "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+
-                    "doPrivileged block")
+                    "doPrivileged block"
+            )
         }
     }
 }

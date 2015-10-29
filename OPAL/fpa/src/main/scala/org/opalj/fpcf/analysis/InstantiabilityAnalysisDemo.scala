@@ -50,9 +50,10 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
     private val dependees = Seq(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis)
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -83,7 +84,8 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(classInfo.mkString(
             "\ninstantiable classes:\n\n\t",
             "\n\t",
-            s"\nTotal: ${instantiableClasses.size}\n\n") +
+            s"\nTotal: ${instantiableClasses.size}\n\n"
+        ) +
             propertyStore+
             "\nanalysis time: "+analysisTime)
     }

@@ -42,8 +42,11 @@ import org.opalj.bi.VisibilityModifier
 trait AnalysisDemo extends DefaultOneStepAnalysis {
 
     def entitiesByProperty(
-        property: Property)(
-            implicit propertyStore: PropertyStore): Traversable[(Entity, Property)] =
+        property: Property
+    )(
+        implicit
+        propertyStore: PropertyStore
+    ): Traversable[(Entity, Property)] =
         propertyStore(property.key).filter { ep ⇒
             val isFactoryMethod = ep._2
             isFactoryMethod == property
@@ -56,9 +59,12 @@ trait AnalysisDemo extends DefaultOneStepAnalysis {
 trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
-        entities: Traversable[(Entity, Property)],
-        withJarInfo: Boolean = false)(
-            implicit project: Project[URL]): Traversable[String] = entities.map { e ⇒
+        entities:    Traversable[(Entity, Property)],
+        withJarInfo: Boolean                         = false
+    )(
+        implicit
+        project: Project[URL]
+    ): Traversable[String] = entities.map { e ⇒
         val method = e._1.asInstanceOf[Method]
         val methodString = getVisibilityModifier(method)+" "+method.name
         val classFile = project.classFile(method)
@@ -79,9 +85,12 @@ trait MethodAnalysisDemo extends AnalysisDemo {
 trait ClassAnalysisDemo extends AnalysisDemo {
 
     def buildClassInfo(
-        entities: Traversable[(Entity, Property)],
-        withJarInfo: Boolean = false)(
-            implicit project: Project[URL]): Traversable[String] = entities.map { e ⇒
+        entities:    Traversable[(Entity, Property)],
+        withJarInfo: Boolean                         = false
+    )(
+        implicit
+        project: Project[URL]
+    ): Traversable[String] = entities.map { e ⇒
         val classFile = e._1.asInstanceOf[ClassFile]
         val jarInfo = if (withJarInfo)
             project.source(classFile.thisType)

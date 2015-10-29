@@ -134,10 +134,11 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
             Annotation(ObjectType("entity/annotation/Transient"))
         ) should be(true)
 
-        AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name"))(
+        AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name"))(
             Annotation(
                 ObjectType("entity/annotation/Column"),
-                ArrayBuffer(ElementValuePair("name", StringValue("first_name"))))
+                ArrayBuffer(ElementValuePair("name", StringValue("first_name")))
+            )
         ) should be(true)
     }
 
@@ -149,10 +150,11 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         val fixture =
             Annotation(
                 ObjectType("entity/annotation/Transient"),
-                ElementValuePair("name", StringValue("last_name")))
+                ElementValuePair("name", StringValue("last_name"))
+            )
         AnnotatedWith(
             "entity.annotation.Column",
-            Map("name" -> StringValue("first_name"))
+            Map("name" → StringValue("first_name"))
         )(fixture) should be(false)
     }
 
@@ -168,36 +170,45 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         val columnAnnotation = IndexedSeq(
             Annotation(
                 ObjectType("entity/annotation/Column"),
-                ElementValuePair("name", StringValue("first_name"))))
+                ElementValuePair("name", StringValue("first_name"))
+            )
+        )
         HasAtLeastTheAnnotations(
-            AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name"))
+            AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name"))
         )(columnAnnotation) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient"))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         ) should be(true)
 
-        HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name")))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Column"),
-                ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("first_name")))))
+        HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column", "name" → StringValue("first_name")))(
+            IndexedSeq(Annotation(
+                ObjectType("entity/annotation/Column"),
+                ArrayBuffer[ElementValuePair](ElementValuePair("name", StringValue("first_name")))
+            ))
         ) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
-                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty))
+            IndexedSeq(
+                Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)
+            )
         ) should be(true)
 
         HasAtLeastTheAnnotations(Set(
             AnnotatedWith("entity.annotation.Column"),
-            AnnotatedWith("entity.annotation.Transient")))(
+            AnnotatedWith("entity.annotation.Transient")
+        ))(
             IndexedSeq(
                 Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
-                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty))
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)
+            )
         ) should be(true)
 
         HasAtLeastOneAnnotation(Set(
             AnnotatedWith("entity.annotation.Column"),
-            AnnotatedWith("entity.annotation.Transient")))(
+            AnnotatedWith("entity.annotation.Transient")
+        ))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         ) should be(true)
     }
@@ -208,34 +219,41 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
         ) should be(false)
 
         HasAtLeastTheAnnotations(
-            AnnotatedWith("entity.annotation.Column", Map("name" -> StringValue("first_name"))))(
+            AnnotatedWith("entity.annotation.Column", Map("name" → StringValue("first_name")))
+        )(
                 IndexedSeq(
                     Annotation(
                         ObjectType("entity/annotation/Transient"),
-                        ArrayBuffer(ElementValuePair("name", StringValue("last_name")))))
+                        ArrayBuffer(ElementValuePair("name", StringValue("last_name")))
+                    )
+                )
             ) should be(false)
 
         HasTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
             IndexedSeq(
                 Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty),
-                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty))
+                Annotation(ObjectType("entity/annotation/Column"), IndexedSeq.empty)
+            )
         ) should be(false)
 
         HasAtLeastTheAnnotations(Set(
             AnnotatedWith("entity.annotation.Column"),
-            AnnotatedWith("entity.annotation.Transient")))(
+            AnnotatedWith("entity.annotation.Transient")
+        ))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         ) should be(false)
 
         HasTheAnnotations(Set(
             AnnotatedWith("entity.annotation.Column"),
-            AnnotatedWith("entity.annotation.Transient")))(
+            AnnotatedWith("entity.annotation.Transient")
+        ))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), IndexedSeq.empty))
         ) should be(false)
 
         HasAtLeastOneAnnotation(Set(
             AnnotatedWith("entity.annotation.Column"),
-            AnnotatedWith("entity.annotation.Transient")))(
+            AnnotatedWith("entity.annotation.Transient")
+        ))(
             IndexedSeq(Annotation(ObjectType("entity/annotation/Embedded"), IndexedSeq.empty))
         ) should be(false)
     }
@@ -442,7 +460,9 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
             HasAtLeastTheAnnotations(
                 AnnotatedWith(
                     "entity.annotation.Column",
-                    Map("name" -> StringValue("first_name"), "nullable" -> BooleanValue(false))))
+                    Map("name" → StringValue("first_name"), "nullable" → BooleanValue(false))
+                )
+            )
         ).extension(project).size should be(1)
 
         FieldMatcher(
@@ -465,8 +485,10 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
             HasAtLeastTheAnnotations(
                 AnnotatedWith(
                     "entity.annotation.Column",
-                    "name" -> StringValue("street"),
-                    "nullable" -> BooleanValue(false)))
+                    "name" → StringValue("street"),
+                    "nullable" → BooleanValue(false)
+                )
+            )
         ).extension(project) should be(empty)
 
         FieldMatcher(
@@ -507,7 +529,8 @@ class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
             ClassMatcher("entity.impl.User"),
             AnnotatedWith(
                 "entity.annotation.Column",
-                "name" -> StringValue("street"), "nullable" -> BooleanValue(false))
+                "name" → StringValue("street"), "nullable" → BooleanValue(false)
+            )
         ).extension(project) should be(empty)
 
         MethodMatcher(

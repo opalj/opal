@@ -47,7 +47,8 @@ abstract class PrimitiveArrayStoreInstruction extends ArrayStoreInstruction {
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, PrimitiveArrayAccess.jvmExceptions)
+                this, currentPC, code, PrimitiveArrayAccess.jvmExceptions
+            )
     }
 
 }

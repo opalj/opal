@@ -51,25 +51,27 @@ trait CodeAttributeBinding
     type Code_attribute = br.Code
 
     def Code_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        max_stack: Int,
-        max_locals: Int,
-        instructions: Instructions,
-        exception_handlers: ExceptionHandlers,
-        attributes: Attributes) = {
+        attribute_length:     Int,
+        max_stack:            Int,
+        max_locals:           Int,
+        instructions:         Instructions,
+        exception_handlers:   ExceptionHandlers,
+        attributes:           Attributes
+    ) = {
         org.opalj.br.Code(
             max_stack, max_locals, instructions, exception_handlers, attributes
         )
     }
 
     def ExceptionTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int,
-        end_pc: Int,
-        handler_pc: Int,
-        catch_type_index: Constant_Pool_Index): ExceptionTableEntry = {
+        cp:               Constant_Pool,
+        start_pc:         Int,
+        end_pc:           Int,
+        handler_pc:       Int,
+        catch_type_index: Constant_Pool_Index
+    ): ExceptionTableEntry = {
         new ExceptionTableEntry(
             start_pc, end_pc, handler_pc,
             if (catch_type_index == 0)

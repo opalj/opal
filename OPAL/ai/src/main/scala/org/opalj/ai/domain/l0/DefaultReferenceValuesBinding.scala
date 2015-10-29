@@ -71,15 +71,17 @@ trait DefaultReferenceValuesBinding
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def ObjectValue(
-        origin: ValueOrigin,
-        objectType: ObjectType): DomainObjectValue = {
+        origin:     ValueOrigin,
+        objectType: ObjectType
+    ): DomainObjectValue = {
 
         new SObjectValue(objectType)
     }
 
     override def ObjectValue(
-        origin: ValueOrigin,
-        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
+        origin:         ValueOrigin,
+        upperTypeBound: UIDSet[ObjectType]
+    ): DomainObjectValue = {
 
         if (upperTypeBound.isSingletonSet)
             ObjectValue(origin, upperTypeBound.first)
@@ -88,8 +90,9 @@ trait DefaultReferenceValuesBinding
     }
 
     override protected[domain] def ArrayValue(
-        origin: ValueOrigin,
-        arrayType: ArrayType): DomainArrayValue = {
+        origin:    ValueOrigin,
+        arrayType: ArrayType
+    ): DomainArrayValue = {
 
         new ArrayValue(arrayType)
     }

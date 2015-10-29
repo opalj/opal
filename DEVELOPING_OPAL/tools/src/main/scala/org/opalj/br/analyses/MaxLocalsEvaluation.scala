@@ -30,7 +30,7 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.{ DefaultOneStepAnalysis, BasicReport, Project }
+import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 
 /**
  * Evaluates the number of locals (Local Variables/Registers) required to evaluate a method.
@@ -43,9 +43,10 @@ object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
         "Collects information about the maxium number of registers required per method."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
@@ -78,7 +79,6 @@ object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
             methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+
             "MaxLocals Distribution:\n"+
             "#Locals\t\tFrequency:\n"+
-            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")
-        )
+            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n"))
     }
 }

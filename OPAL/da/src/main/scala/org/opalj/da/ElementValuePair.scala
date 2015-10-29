@@ -43,7 +43,8 @@ import scala.xml.Node
  */
 case class ElementValuePair(
         element_name_index: Int,
-        element_value: ElementValue) {
+        element_value:      ElementValue
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val en = cp(element_name_index).toString(cp)

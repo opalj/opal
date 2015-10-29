@@ -46,10 +46,11 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
     type RuntimeInvisibleTypeAnnotations_attribute <: Attribute
 
     protected def RuntimeInvisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute
+        attribute_length:     Int,
+        annotations:          TypeAnnotations
+    ): RuntimeInvisibleTypeAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -67,7 +68,7 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        RuntimeInvisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME ->
+        RuntimeInvisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeInvisibleTypeAnnotations_attribute(

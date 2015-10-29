@@ -40,6 +40,7 @@ package br
  */
 case class CodeAnalysisFailedException(
     message: String,
-    code: Code,
-    pc: PC) extends RuntimeException(message)
+    code:    Code,
+    pc:      PC
+) extends RuntimeException(message)
 
