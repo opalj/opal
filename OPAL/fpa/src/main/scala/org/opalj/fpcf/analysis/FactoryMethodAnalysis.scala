@@ -65,13 +65,10 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
 case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
 class FactoryMethodAnalysis private (
-    project: SomeProject
-)
+    project: SomeProject)
         extends AbstractFPCFAnalysis[Method](
             project, FactoryMethodAnalysis.entitySelector
         ) {
-
-    private[this] final val opInvokeSpecial = INVOKESPECIAL.opcode
 
     /**
      * Approximates if the given method is used as factory method. Any
@@ -85,12 +82,14 @@ class FactoryMethodAnalysis private (
      *  - check if the methods returns an instance of the class or some superclass.
      */
     def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
+        method: Method): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).
 
         if (method.isNative)
+            // We don't now what this static method is doing, hence, we assume that
+            // it may act as a factory method; we can now abort the entire
+            // analysis.
             return ImmediateResult(method, IsFactoryMethod)
 
         val classType = project.classFile(method).thisType
@@ -101,9 +100,11 @@ class FactoryMethodAnalysis private (
         var pc = 0
         while (pc < max) {
             val instruction = instructions(pc)
-            if (instruction.opcode == opInvokeSpecial) {
+            if (instruction.opcode == INVOKESPECIAL.opcode) {
                 instruction match {
                     case INVOKESPECIAL(`classType`, "<init>", _) ⇒
+                        // We found a static factory method that is responsible
+                        // for creating instances of this class.
                         return ImmediateResult(method, IsFactoryMethod)
                     case _ ⇒
                 }
@@ -128,8 +129,7 @@ object FactoryMethodAnalysis
     }
 
     private[FactoryMethodAnalysis] def apply(
-        project: SomeProject
-    ): FactoryMethodAnalysis = {
+        project: SomeProject): FactoryMethodAnalysis = {
         new FactoryMethodAnalysis(project)
     }
 

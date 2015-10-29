@@ -51,9 +51,47 @@ case object Instantiable extends Instantiability { final val isRefineable = fals
 
 case object MaybeInstantiable extends Instantiability { final val isRefineable = true }
 
+/**
+ * This analysis determines which classes can never be instantiated (e.g.,
+ * `java.lang.Math`).
+ *
+ * A class is not instantiable if:
+ *  - it only defines private constructors and these constructors are not called
+ *    by any static method and the class does not implement Serializable.
+ *
+ * @note This analysis depends on the project configuration which encodes the analysis mode.
+ *       Different analysis modes are: library with open or closed packages assumption or application
+ *
+ *  This information is relevant in various contexts, e.g., to determine
+ * precise call graph. For example, instance methods of those objects that cannot be
+ * created are always dead.
+ *
+ * ==Usage==
+ * Use the [[FPCFAnalysisManagerKey]] to query the analysis manager of a project. You can run
+ * the analysis afterwards as follows:
+ * {{{
+ *  val analysisManager = project.get(FPCFAnalysisManagerKey)
+ *  analysisManager.run(InstantiabilityAnalysis)
+ * }}}
+ * For detailed information see the documentation of the analysis manager.
+ *
+ * The results of this analysis are stored in the property store of the project. You can receive
+ * the results as follows:
+ * {{{
+ * val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
+ * val instantiableClasses = theProjectStore.entities { (p: Property) ⇒
+ * p == Instantiable
+ * }
+ * }}}
+ *
+ * This information is relevant in various contexts, e.g., to determine
+ * precise call graph. For example, instance methods of those objects that cannot be
+ * created are always dead.
+ *
+ * @note The analysis does not take reflective instantiations into account!
+ */
 class InstantiabilityAnalysis private (
-    project: SomeProject
-)
+    project: SomeProject)
         extends DefaultFPCFAnalysis[ClassFile](
             project,
             InstantiabilityAnalysis.entitySelector
@@ -62,8 +100,7 @@ class InstantiabilityAnalysis private (
     val propertyKey = Instantiability.Key
 
     private def instantiableThroughFactoryOrSubclass(
-        classFile: ClassFile
-    ): PropertyComputationResult = {
+        classFile: ClassFile): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
         var dependees = Set.empty[EOptionP]
@@ -81,7 +118,7 @@ class InstantiabilityAnalysis private (
             }
             i += 1
         }
-
+        
         var subtypes = project.classHierarchy.directSubtypesOf(classFile.thisType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
@@ -144,29 +181,35 @@ class InstantiabilityAnalysis private (
     }
 
     def determineProperty(
-        classFile: ClassFile
-    ): PropertyComputationResult = {
-        //TODO: check further method visibility according to the computed property. 
-        //    -> classes with only non-visible constructors are not instantiable by the client
+        classFile: ClassFile): PropertyComputationResult = {
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration)
+            // A class that either never has any constructor (interfaces)
+            // or that must have at least one non-private constructor to make
+            // sense at all.
             return ImmediateResult(classFile, NotInstantiable)
 
         val classType = classFile.thisType
 
         if (isSubtypeOf(classType, ObjectType.Serializable).isYesOrUnknown &&
             classFile.hasDefaultConstructor)
+            //if the class is Serializable or it is unknown, we have to count it as instantiated.
             return ImmediateResult(classFile, Instantiable)
 
         val nonFinalClass = !classFile.isFinal
 
         if (classFile.isPublic || isOpenLibrary) {
+            
             classFile.constructors foreach { cons ⇒
-                if (cons.isPublic)
+                if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
                     return ImmediateResult(classFile, Instantiable)
                 else if (nonFinalClass &&
                     ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+                    //If the class not final and public or we analyze an open library we have
+                    //to assume that a subclass is created and instantiated later on.
+                    //Hence, every time a subclass is instantiated all superclass's have to be
+                    //considered instantiated as well.
                     return ImmediateResult(classFile, Instantiable)
             }
         }
@@ -192,8 +235,7 @@ object InstantiabilityAnalysis
     }
 
     private[InstantiabilityAnalysis] def apply(
-        project: SomeProject
-    ): InstantiabilityAnalysis = {
+        project: SomeProject): InstantiabilityAnalysis = {
         new InstantiabilityAnalysis(project)
     }
 
