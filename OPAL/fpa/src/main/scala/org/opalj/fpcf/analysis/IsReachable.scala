@@ -47,9 +47,10 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
     override def description: String = "determines if a method is reachable by computing the call graph"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         implicit val theProject = project
         implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
 
@@ -71,7 +72,7 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
         val analyses = Seq(StaticMethodAccessibilityAnalysis, LibraryLeakageAnalysis,
             FactoryMethodAnalysis, InstantiabilityAnalysis, MethodAccessibilityAnalysis, EntryPointsAnalysis)
 
-        analyses foreach { analysis =>
+        analyses foreach { analysis ⇒
             executer.run(analysis)
         }
 
