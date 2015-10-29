@@ -72,7 +72,8 @@ object MethodInvocationInstruction {
                 Some((
                     invocationInstruction.declaringClass,
                     invocationInstruction.name,
-                    invocationInstruction.methodDescriptor))
+                    invocationInstruction.methodDescriptor
+                ))
             case _ ⇒ None
         }
     }

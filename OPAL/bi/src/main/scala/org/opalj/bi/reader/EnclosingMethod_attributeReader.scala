@@ -42,10 +42,11 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
     type EnclosingMethod_attribute <: Attribute
 
     def EnclosingMethod_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        class_index: Constant_Pool_Index,
-        method_index: Constant_Pool_Index): EnclosingMethod_attribute
+        class_index:          Constant_Pool_Index,
+        method_index:         Constant_Pool_Index
+    ): EnclosingMethod_attribute
 
     //
     // IMPLEMENTATION
@@ -62,7 +63,7 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        EnclosingMethod_attributeReader.ATTRIBUTE_NAME -> (
+        EnclosingMethod_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 /*val attribute_length =*/ in.readInt
                 EnclosingMethod_attribute(

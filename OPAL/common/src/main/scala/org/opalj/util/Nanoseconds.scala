@@ -66,7 +66,8 @@ object Nanoseconds {
      */
     final def TimeSpan(
         startTimeInNanoseconds: Long,
-        endTimeInNanoseconds: Long): Nanoseconds =
+        endTimeInNanoseconds:   Long
+    ): Nanoseconds =
         new Nanoseconds(endTimeInNanoseconds - startTimeInNanoseconds)
 
 }

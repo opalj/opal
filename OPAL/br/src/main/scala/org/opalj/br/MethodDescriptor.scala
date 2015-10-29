@@ -169,7 +169,8 @@ private object NoArgumentAndNoReturnValueMethodDescriptor
 }
 
 private final class NoArgumentMethodDescriptor(
-    val returnType: Type)
+    val returnType: Type
+)
         extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq.empty
@@ -193,7 +194,8 @@ private final class NoArgumentMethodDescriptor(
 
 private final class SingleArgumentMethodDescriptor(
     val parameterType: FieldType,
-    val returnType: Type)
+    val returnType:    Type
+)
         extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq(parameterType)
@@ -225,9 +227,10 @@ private final class SingleArgumentMethodDescriptor(
 }
 
 private final class TwoArgumentsMethodDescriptor(
-    val firstParameterType: FieldType,
+    val firstParameterType:  FieldType,
     val secondParameterType: FieldType,
-    val returnType: Type)
+    val returnType:          Type
+)
         extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
@@ -269,7 +272,8 @@ private final class TwoArgumentsMethodDescriptor(
 
 private final class MultiArgumentsMethodDescriptor(
     val parameterTypes: IndexedSeq[FieldType],
-    val returnType: Type)
+    val returnType:     Type
+)
         extends MethodDescriptor {
 
     override def parameterType(index: Int): FieldType = parameterTypes(index)
@@ -307,7 +311,7 @@ object HasNoArgsAndReturnsVoid {
     def unapply(md: MethodDescriptor): Boolean =
         md match {
             case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
-            case _ ⇒ false
+            case _                                          ⇒ false
         }
 }
 
@@ -430,7 +434,8 @@ object MethodDescriptor {
 
     def apply(
         parameterTypes: IndexedSeq[FieldType],
-        returnType: Type): MethodDescriptor = {
+        returnType:     Type
+    ): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
                 withNoArgs(returnType)

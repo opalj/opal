@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.br.{ComputationalType, ComputationalTypeInt}
 
 /**
  * This domain enables the tracking of an integer value (a constant);
@@ -95,8 +95,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     //
 
     @inline final override def intValue[T](
-        value: DomainValue)(
-            f: Int ⇒ T)(orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        f: Int ⇒ T
+    )(orElse: ⇒ T): T =
         value match {
             case v: TheIntegerValue ⇒ f(v.value)
             case _                  ⇒ orElse
@@ -109,9 +111,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
 
     @inline protected final def intValues[T](
-        value1: DomainValue, value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(
-                orElse: ⇒ T): T = {
+        value1: DomainValue, value2: DomainValue
+    )(
+        f: (Int, Int) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T = {
         intValue(value1) { v1 ⇒
             intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
         } {
@@ -124,10 +129,11 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             Yes
         else
@@ -138,10 +144,11 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             No
         else
@@ -156,9 +163,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): Answer = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): Answer = {
         intValues(left, right) { (v1, v2) ⇒ Answer(v1 <= v2) } { Unknown }
     }
 
@@ -218,9 +226,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def idiv(
-        pc: PC,
-        numerator: DomainValue,
-        denominator: DomainValue): IntegerValueOrArithmeticException = {
+        pc:          PC,
+        numerator:   DomainValue,
+        denominator: DomainValue
+    ): IntegerValueOrArithmeticException = {
 
         (numerator, denominator) match {
             case (_, TheIntegerValue(0)) ⇒
@@ -233,16 +242,18 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         IntegerValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
     }
 
     override def irem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): IntegerValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): IntegerValueOrArithmeticException = {
 
         (left, right) match {
             case (_, TheIntegerValue(0)) ⇒
@@ -255,7 +266,8 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         IntegerValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }

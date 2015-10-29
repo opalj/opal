@@ -87,9 +87,12 @@ object FactoryMethodAnalysis extends FixpointAnalysis
      *  - check if the methods returns an instance of the class or some superclass.
      */
     def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            store: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project: SomeProject,
+        store:   PropertyStore
+    ): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).
 

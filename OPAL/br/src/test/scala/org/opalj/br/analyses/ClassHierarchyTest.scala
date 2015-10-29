@@ -276,8 +276,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
     val genericWithSuffix_publicSuffix4_1 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix4_1", List(elementType(baseCTS)))))
 
     /** GenericWithSuffix<Base>.Suffix1_1<AlternativeBase>.Suffix1_2 */
-    val genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase = CTS("GenericWithSuffix",
-        List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_2<Base, AlternativeBase> */
     val genericWithSuffix_Suffix2_2 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS)))))
@@ -313,7 +315,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         if (preInitCH.rootTypes.size != 1) {
             fail(
                 "The default class hierarchy has unexpected root types: "+
-                    preInitCH.rootTypes.mkString(", "))
+                    preInitCH.rootTypes.mkString(", ")
+            )
         }
     }
 
@@ -714,15 +717,15 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
 
         clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
             method.name == "draw" &&
-                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
-        ) should be('defined)
+                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid) should be('defined)
 
         classHierarchy.lookupImplementingMethods(
             window,
             "draw",
             MethodDescriptor.NoArgsAndReturnVoid,
             clusteringProject,
-            (cf) ⇒ true) should be('nonEmpty)
+            (cf) ⇒ true
+        ) should be('nonEmpty)
     }
 
     // -----------------------------------------------------------------------------------
@@ -804,7 +807,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
             ObjectType("NOT/DEFINED"),
             "NOT_DEFINED",
             IntegerType,
-            fieldsProject) should be(None)
+            fieldsProject
+        ) should be(None)
     }
 
     // -----------------------------------------------------------------------------------
@@ -832,7 +836,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
                 "someMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
                 methodsProject,
-                (cf) ⇒ true)
+                (cf) ⇒ true
+            )
 
         implementingMethods.size should be(0)
     }
@@ -845,7 +850,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
                 "publicMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
                 methodsProject,
-                (cf) ⇒ true)
+                (cf) ⇒ true
+            )
 
         implementingMethods.size should be(1)
         implementingMethods.head should have(

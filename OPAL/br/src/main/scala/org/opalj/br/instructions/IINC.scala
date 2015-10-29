@@ -76,9 +76,10 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
         }
     }
     override def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"

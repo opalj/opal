@@ -84,9 +84,11 @@ trait ProgressManagement {
         progress(step, ProgressEvents.End, message)
 
     final def step[T](
-        step: Int,
-        startMessage: String)(
-            f: ⇒ (T, Option[String])): T = {
+        step:         Int,
+        startMessage: String
+    )(
+        f: ⇒ (T, Option[String])
+    ): T = {
         start(step, startMessage)
 
         try {

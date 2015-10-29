@@ -61,12 +61,14 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         LibraryLeakageAnalysis,
         FactoryMethodAnalysis,
         InstantiabilityAnalysis,
-        MethodAccessibilityAnalysis)
+        MethodAccessibilityAnalysis
+    )
 
     override def doAnalyze(
-        project: org.opalj.br.analyses.Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       org.opalj.br.analyses.Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -81,10 +83,12 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
             var fpaThreads = Seq.empty[Thread]
             dependees foreach { fpa ⇒
                 fpaThreads = fpaThreads :+ new Thread(
-                    new Runnable { def run = fpa.analyze(project) })
+                    new Runnable { def run = fpa.analyze(project) }
+                )
             }
             fpaThreads = fpaThreads :+ new Thread(
-                new Runnable { def run = EntryPointsAnalysis.analyze(project) })
+                new Runnable { def run = EntryPointsAnalysis.analyze(project) }
+            )
 
             fpaThreads foreach (_.start)
             fpaThreads foreach (_.join)
@@ -100,6 +104,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
             projectInfo +
                 s"\nsize: ${entryPoints.size}"+
                 s"\nsize: ${noEntryPoints.size}"+
-                "\nAnalysis time: "+analysisTime)
+                "\nAnalysis time: "+analysisTime
+        )
     }
 }

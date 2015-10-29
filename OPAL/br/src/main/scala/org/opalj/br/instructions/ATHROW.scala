@@ -64,14 +64,16 @@ case object ATHROW extends Instruction {
         indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
+        currentPC:      PC,
+        modifiedByWide: Boolean
+    ): Int =
         currentPC + 1
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet.empty
         else

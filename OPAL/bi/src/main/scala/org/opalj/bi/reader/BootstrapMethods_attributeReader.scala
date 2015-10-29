@@ -59,19 +59,22 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
 
     def BootstrapMethods_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Int,
-        attribute_length: Int,
-        bootstrap_methods: BootstrapMethods): BootstrapMethods_attribute
+        attribute_length:     Int,
+        bootstrap_methods:    BootstrapMethods
+    ): BootstrapMethods_attribute
 
     def BootstrapMethod(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         bootstrap_method_ref: Int,
-        bootstrap_arguments: BootstrapArguments): BootstrapMethod
+        bootstrap_arguments:  BootstrapArguments
+    ): BootstrapMethod
 
     def BootstrapArgument(
-        constant_pool: Constant_Pool,
-        constant_pool_ref: Int): BootstrapArgument
+        constant_pool:     Constant_Pool,
+        constant_pool_ref: Int
+    ): BootstrapArgument
 
     //
     // IMPLEMENTATION
@@ -109,7 +112,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        BootstrapMethods_attributeReader.ATTRIBUTE_NAME -> (
+        BootstrapMethods_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 BootstrapMethods_attribute(
                     cp,

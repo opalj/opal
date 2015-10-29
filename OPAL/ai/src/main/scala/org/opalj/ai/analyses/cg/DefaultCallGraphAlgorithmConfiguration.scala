@@ -50,7 +50,8 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 abstract class DefaultCallGraphAlgorithmConfiguration(
-    val project: SomeProject)
+    val project: SomeProject
+)
         extends CallGraphAlgorithmConfiguration {
 
     protected type Contour = MethodSignature

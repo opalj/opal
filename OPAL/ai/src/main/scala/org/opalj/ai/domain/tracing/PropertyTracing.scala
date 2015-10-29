@@ -68,7 +68,8 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
 
     abstract override def initProperties(
         code: Code, joinInstructions: BitSet,
-        locals: Locals): Unit = {
+        locals: Locals
+    ): Unit = {
 
         super.initProperties(code, joinInstructions, locals)
 
@@ -88,8 +89,9 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
      */
     abstract override def properties(
-        pc: Int,
-        propertyToString: AnyRef ⇒ String): Option[String] = {
+        pc:               Int,
+        propertyToString: AnyRef ⇒ String
+    ): Option[String] = {
 
         val thisProperty = Option(propertiesArray(pc)).map(_.toString())
 
@@ -103,18 +105,19 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
     }
 
     abstract override def flow(
-        currentPC: PC,
-        currentOperands: Operands,
-        currentLocals: Locals,
-        successorPC: PC,
-        isSuccessorScheduled: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorScheduled:             Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = {
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = {
 
         val forceScheduling: Boolean = {
             if (wasJoinPerformed) {
@@ -158,6 +161,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
             wasJoinPerformed,
             newWorklist,
             operandsArray, localsArray,
-            tracer)
+            tracer
+        )
     }
 }

@@ -36,9 +36,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-    declaringClass: ObjectType, // an interface or class type to be precise
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    declaringClass:   ObjectType, // an interface or class type to be precise
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends VirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKEINTERFACE.opcode

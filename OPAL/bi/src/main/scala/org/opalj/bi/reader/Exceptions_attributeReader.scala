@@ -45,10 +45,11 @@ trait Exceptions_attributeReader extends AttributeReader {
     implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
     def Exceptions_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        exception_index_table: ExceptionIndexTable): Exceptions_attribute
+        constant_pool:         Constant_Pool,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int,
+        exception_index_table: ExceptionIndexTable
+    ): Exceptions_attribute
 
     //
     // IMPLEMENTATION
@@ -68,7 +69,7 @@ trait Exceptions_attributeReader extends AttributeReader {
      * </pre> 
      */
     registerAttributeReader(
-        Exceptions_attributeReader.ATTRIBUTE_NAME -> (
+        Exceptions_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 Exceptions_attribute(

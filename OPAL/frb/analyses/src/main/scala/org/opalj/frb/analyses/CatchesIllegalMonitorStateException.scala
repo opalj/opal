@@ -57,7 +57,7 @@ class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[S
             case MethodWithBody(body) ⇒
                 body.exceptionHandlers.exists {
                     case ExceptionHandler(_, _, _, Some(`exception`)) ⇒ true
-                    case _ ⇒ false
+                    case _                                            ⇒ false
                 }
             case _ ⇒ false
         }
@@ -71,9 +71,10 @@ class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[S
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         // Look for methods that have an exception handler for
         // IllegalMonitorStateException.
@@ -88,7 +89,8 @@ class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[S
                 Severity.Info,
                 classFile.thisType,
                 method,
-                "Handles IllegalMonitorStateException")
+                "Handles IllegalMonitorStateException"
+            )
         }
     }
 }

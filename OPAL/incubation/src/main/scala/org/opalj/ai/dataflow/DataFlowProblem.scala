@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package dataflow
 
-import scala.collection.{ Map, Set }
+import scala.collection.{Map, Set}
 
 import bi.AccessFlagsMatcher
 
@@ -115,17 +115,19 @@ trait DataFlowProblem[Source, P] {
 
     case class Invoke(
         declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        context: Method,
-        caller: TaintInformation,
-        receiver: TaintInformation,
-        parameters: IndexedSeq[TaintInformation])
+        name:               String,
+        descriptor:         MethodDescriptor,
+        context:            Method,
+        caller:             TaintInformation,
+        receiver:           TaintInformation,
+        parameters:         IndexedSeq[TaintInformation]
+    )
 
     case class CallResult(
-        receiver: TaintInformation,
+        receiver:   TaintInformation,
         parameters: IndexedSeq[TaintInformation],
-        result: (DomainValue) ⇒ TaintInformation)
+        result:     (DomainValue) ⇒ TaintInformation
+    )
 
     type OnCallTaintProcessor = PartialFunction[Invoke, CallResult]
 
@@ -137,12 +139,13 @@ trait DataFlowProblem[Source, P] {
 
     case class FieldWrite(
         declaringClassType: ReferenceType,
-        name: String,
-        fieldType: Type,
-        context: Method,
-        caller: TaintInformation,
-        value: TaintInformation,
-        receiver: TaintInformation)
+        name:               String,
+        fieldType:          Type,
+        context:            Method,
+        caller:             TaintInformation,
+        value:              TaintInformation,
+        receiver:           TaintInformation
+    )
 
     type OnWriteTaintProcessor = PartialFunction[FieldWrite, (DomainValue) ⇒ TaintInformation /*about the receiver*/ ]
 
@@ -190,7 +193,8 @@ trait DataFlowProblem[Source, P] {
             Console.out.println(
                 "[info] The analysis will take long; the number of source values to analyze is: "+
                     sourceValuesCount+
-                    ".")
+                    "."
+            )
         }
     }
 

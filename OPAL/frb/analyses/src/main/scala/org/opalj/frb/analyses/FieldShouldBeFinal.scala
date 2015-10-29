@@ -58,9 +58,10 @@ class FieldShouldBeFinal[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[FieldBasedReport[Source]] = {
 
         // In all class declarations (excluding interfaces), search for `static` fields,
         // either `public` or `protected`, that are neither arrays nor hash tables,
@@ -81,7 +82,8 @@ class FieldShouldBeFinal[Source] extends FindRealBugsAnalysis[Source] {
                 Severity.Info,
                 classFile.thisType,
                 field,
-                "Should be final")
+                "Should be final"
+            )
         }
     }
 }

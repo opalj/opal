@@ -106,7 +106,8 @@ package object collection {
      * }}}
      */
     def asScala[K, SubK, V](
-        map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]): Map[K, Map[SubK, V]] = {
+        map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]
+    ): Map[K, Map[SubK, V]] = {
 
         val entries =
             for {

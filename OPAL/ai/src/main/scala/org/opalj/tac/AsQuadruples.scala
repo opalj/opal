@@ -410,7 +410,8 @@ object AsQuadruples {
                     statements(pc) = List(
                         Assignment(pc, tempVar, value2),
                         Assignment(pc, newValue2, value1),
-                        Assignment(pc, newValue1, tempVar))
+                        Assignment(pc, newValue1, tempVar)
+                    )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
@@ -489,7 +490,8 @@ object AsQuadruples {
                         else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
                     statements(pc) = List(
                         MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-                            receiver.headOption, params, target))
+                            receiver.headOption, params, target)
+                    )
                     schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
 
                 case INVOKESTATIC.opcode ⇒
@@ -501,7 +503,8 @@ object AsQuadruples {
                         else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
                     statements(pc) = List(
                         MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-                            None, operands, target))
+                            None, operands, target)
+                    )
                     val newStack = if (target.nonEmpty) { target.get :: rest } else { rest }
                     schedule(pcOfNextInstruction(pc), newStack)
 

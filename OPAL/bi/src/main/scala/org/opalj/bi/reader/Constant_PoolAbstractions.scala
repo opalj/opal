@@ -69,7 +69,8 @@ trait Constant_PoolAbstractions {
      * loaded to perform class file specific transformations.
      */
     def applyDeferredActions(
-        cp: Constant_Pool,
-        classFile: ClassFile): ClassFile
+        cp:        Constant_Pool,
+        classFile: ClassFile
+    ): ClassFile
 
 }

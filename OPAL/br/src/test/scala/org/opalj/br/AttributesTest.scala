@@ -49,7 +49,7 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
         assert(
             cf1.runtimeVisibleAnnotations.exists {
                 case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true
-                case _ ⇒ false
+                case _                                                 ⇒ false
             }
         )
 

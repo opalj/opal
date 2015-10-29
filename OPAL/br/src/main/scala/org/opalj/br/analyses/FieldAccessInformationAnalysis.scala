@@ -61,8 +61,9 @@ import org.opalj.br.instructions.PUTSTATIC
 object FieldAccessInformationAnalysis {
 
     def doAnalyze(
-        project: SomeProject,
-        isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
+        project:       SomeProject,
+        isInterrupted: () ⇒ Boolean
+    ): FieldAccessInformation = {
 
         val classHierarchy = project.classHierarchy
 
@@ -143,15 +144,17 @@ object FieldAccessInformationAnalysis {
 }
 
 class FieldAccessInformation(
-        val project: SomeProject,
-        val allReadAccesses: Map[Field, Seq[(Method, PCs)]],
+        val project:          SomeProject,
+        val allReadAccesses:  Map[Field, Seq[(Method, PCs)]],
         val allWriteAccesses: Map[Field, Seq[(Method, PCs)]],
-        val unresolved: IndexedSeq[(Method, PCs)]) {
+        val unresolved:       IndexedSeq[(Method, PCs)]
+) {
 
     private[this] def accesses(
-        accessInformation: Map[Field, Seq[(Method, PCs)]],
+        accessInformation:  Map[Field, Seq[(Method, PCs)]],
         declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
+        fieldName:          String
+    ): Seq[(Method, PCs)] = {
         for {
             (field, wa) ← accessInformation
             if project.classFile(field).thisType eq declaringClassType
@@ -165,21 +168,23 @@ class FieldAccessInformation(
 
     def writeAccesses(
         declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
+        fieldName:          String
+    ): Seq[(Method, PCs)] = {
         accesses(allWriteAccesses, declaringClassType, fieldName)
     }
 
     def readAccesses(
         declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
+        fieldName:          String
+    ): Seq[(Method, PCs)] = {
         accesses(allReadAccesses, declaringClassType, fieldName)
     }
 
     def statistics: Map[String, Int] =
         Map(
-            "field reads" -> allReadAccesses.values.map(_.map(_._2.size).sum).sum,
-            "field writes" -> allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
-            "unresolved field accesses" -> unresolved.map(_._2.size).sum
+            "field reads" → allReadAccesses.values.map(_.map(_._2.size).sum).sum,
+            "field writes" → allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
+            "unresolved field accesses" → unresolved.map(_._2.size).sum
         )
 
 }

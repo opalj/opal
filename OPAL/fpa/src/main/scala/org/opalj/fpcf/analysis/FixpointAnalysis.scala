@@ -127,9 +127,12 @@ trait AnalysisEngine[E <: Entity] {
      * property store function.
      */
     def determineProperty(
-        entity: E)(
-            implicit project: SomeProject,
-            store: PropertyStore): PropertyComputationResult
+        entity: E
+    )(
+        implicit
+        project: SomeProject,
+        store:   PropertyStore
+    ): PropertyComputationResult
 
 }
 
@@ -146,8 +149,10 @@ trait AllEntities[E <: Entity] extends AnalysisEngine[E] {
      * @note see [org.opalj.fp.PropertyStore#<<]
      */
     def triggerPropertyCalculation(
-        implicit project: SomeProject,
-        propertyStore: PropertyStore) =
+        implicit
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ) =
         propertyStore << (determineProperty _).
             asInstanceOf[Object ⇒ PropertyComputationResult]
 }

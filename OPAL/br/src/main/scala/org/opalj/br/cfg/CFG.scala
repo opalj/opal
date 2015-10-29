@@ -28,7 +28,7 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.{ Set ⇒ SomeSet }
+import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.Method
 import org.opalj.br.PC
@@ -55,21 +55,19 @@ import org.opalj.br.PC
  * @author Michael Eichberg
  */
 case class CFG(
-        method: Method,
-        normalReturnNode: ExitNode,
-        abnormalReturnNode: ExitNode,
+        method:                  Method,
+        normalReturnNode:        ExitNode,
+        abnormalReturnNode:      ExitNode,
         private val basicBlocks: Array[BasicBlock],
-        catchNodes: Seq[CatchNode]) {
+        catchNodes:              Seq[CatchNode]
+) {
 
     final def startBlock: BasicBlock = basicBlocks(0)
 
     /**
      * Returns the basic block to which the instruction with the given `pc` belongs.
-<<<<<<< HEAD
      *
      * @param pc A valid pc.
-=======
->>>>>>> master
      */
     def bb(pc: PC): BasicBlock = basicBlocks(pc)
 
@@ -86,7 +84,6 @@ case class CFG(
      */
     def allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
 
-<<<<<<< HEAD
     //    /**
     //     * Determines and returns the set of CFGNodes that are dominated by a given node.
     //     *
@@ -139,58 +136,5 @@ case class CFG(
     //        }
     //        result
     //    }
-=======
-    /**
-     * Determines and returns the set of CFGNodes that are dominated by a given node.
-     *
-     * Example:
-     * Given a graph with blocks A, B, C, D, E and F, with the edges:
-     *
-     * A->B;
-     * A->F;
-     * B->C;
-     * B->D;
-     * C->E;
-     * D->E;
-     * E->F;
-     *
-     * In this Scenario, blocksDominatedBy(B), will yield {B,C,D,E}.
-     * The method called for B and C will only contain B and C themselves, respectively.
-     *
-     * @param dominator The CFGNode for which the domination-set is to be computed.
-     */
-    def blocksDominatedBy(dominator: CFGNode): SomeSet[CFGNode] = {
 
-        var result = dominator.reachable(reflexive = true)
-
-        var hasChanged: Boolean = true
-
-        /*
-         * In each Iteration:
-         *
-         * Remove all blocks who have a predecessor, that is not contained in results.
-         * Also remove all of their immediate successors.
-         *
-         * Exempt from removal is the dominator itself.
-         */
-        while (hasChanged) {
-
-            hasChanged = false
-
-            for {
-                block ← result
-                if (block ne dominator)
-                if (block.predecessors.exists { pred ⇒ !result.contains(pred) })
-            } {
-                result = result - (block)
-                for (succ ← block.successors if (succ ne dominator)) {
-                    result = result - (succ)
-                }
-
-                hasChanged = true
-            }
-        }
-        result
-    }
->>>>>>> master
 }

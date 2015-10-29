@@ -45,10 +45,13 @@ case class Code(instructions: Array[Byte]) {
     import Code.id
 
     def toXHTML(
-        methodIndex: Int,
-        exceptionTable: IndexedSeq[ExceptionTableEntry],
-        lineNumberTable: Option[Seq[LineNumberTableEntry]])(
-            implicit cp: Constant_Pool): Node = {
+        methodIndex:     Int,
+        exceptionTable:  IndexedSeq[ExceptionTableEntry],
+        lineNumberTable: Option[Seq[LineNumberTableEntry]]
+    )(
+        implicit
+        cp: Constant_Pool
+    ): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
         val exceptions = ExceptionsToXHTMLTableElements(instructions, exceptionTable)
@@ -69,8 +72,7 @@ case class Code(instructions: Array[Byte]) {
                         Seq(
                             <th class="exception_header">Exceptions</th>
                         ) ++ exceptionTable.tail.map(_ ⇒
-                                <th class="exception_header"></th>
-                            )
+                                <th class="exception_header"></th>)
                     else
                         scala.xml.NodeSeq.Empty
                 }
@@ -81,18 +83,20 @@ case class Code(instructions: Array[Byte]) {
                     if instructions(pc) != null
                 } yield {
                     createTableRowForInstruction(
-                        methodIndex, instructions(pc), exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b), pc, lineNumberTable)
+                        methodIndex, instructions(pc), exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b), pc, lineNumberTable
+                    )
                 }
             }
         </table>
     }
 
     private[this] def createTableRowForInstruction(
-        methodIndex: Int,
-        instruction: Node,
-        exceptions: List[Node],
-        pc: Int,
-        lineNumberTable: Option[Seq[LineNumberTableEntry]]): Node = {
+        methodIndex:     Int,
+        instruction:     Node,
+        exceptions:      List[Node],
+        pc:              Int,
+        lineNumberTable: Option[Seq[LineNumberTableEntry]]
+    ): Node = {
 
         <tr>
             <td class="pc" id={ id(methodIndex, pc) }>{ pc }</td>
@@ -111,8 +115,11 @@ case class Code(instructions: Array[Byte]) {
 
     private[this] def InstructionsToXHTML(
         methodIndex: Int,
-        source: Array[Byte])(
-            implicit cp: Constant_Pool): Array[Node] = {
+        source:      Array[Byte]
+    )(
+        implicit
+        cp: Constant_Pool
+    ): Array[Node] = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
         val bas = new ByteArrayInputStream(source)
@@ -564,9 +571,12 @@ case class Code(instructions: Array[Byte]) {
     }
 
     def ExceptionsToXHTMLTableElements(
-        instructions: Array[Node],
-        exceptionTable: IndexedSeq[ExceptionTableEntry])(
-            implicit cp: Constant_Pool): Array[Array[Node]] = {
+        instructions:   Array[Node],
+        exceptionTable: IndexedSeq[ExceptionTableEntry]
+    )(
+        implicit
+        cp: Constant_Pool
+    ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
         for { (exceptionHandler, index) ← exceptionTable.zipWithIndex } yield {
             val exceptionName =

@@ -49,8 +49,10 @@ package object util {
      * a reference comparison (`eq`).
      */
     @inline final def removeFirstUnless(
-        worklist: List[PC], pc: PC)(
-            test: PC ⇒ Boolean): List[PC] = {
+        worklist: List[PC], pc: PC
+    )(
+        test: PC ⇒ Boolean
+    ): List[PC] = {
         var newWorklist: List[PC] = List.empty
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
@@ -74,9 +76,10 @@ package object util {
      * `prefixEnd` `true` will be returned.
      */
     @inline @tailrec final def containsInPrefix(
-        worklist: List[PC],
-        pc: PC,
-        prefixEnd: PC): Boolean = {
+        worklist:  List[PC],
+        pc:        PC,
+        prefixEnd: PC
+    ): Boolean = {
         if (worklist.isEmpty)
             false
         else {
@@ -95,9 +98,10 @@ package object util {
      * `prefixEnd`, `pc` is appended to the list.
      */
     @inline final def insertBefore(
-        worklist: List[PC],
-        pc: PC,
-        prefixEnd: PC): List[PC] = {
+        worklist:  List[PC],
+        pc:        PC,
+        prefixEnd: PC
+    ): List[PC] = {
 
         @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
             if (headWorklist.isEmpty)
@@ -128,9 +132,10 @@ package object util {
      * the original list is returned!
      */
     @inline final def insertBeforeIfNew(
-        worklist: List[PC],
-        pc: PC,
-        prefixEnd: PC): List[PC] = {
+        worklist:  List[PC],
+        pc:        PC,
+        prefixEnd: PC
+    ): List[PC] = {
 
         @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
             if (headWorklist.isEmpty)

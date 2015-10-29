@@ -58,9 +58,10 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CallGraph private[cg] (
-        val project: SomeProject,
+        val project:                   SomeProject,
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
-        private[this] val callsMap: Map[Method, Map[PC, Iterable[Method]]]) {
+        private[this] val callsMap:    Map[Method, Map[PC, Iterable[Method]]]
+) {
 
     /**
      * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that
@@ -203,11 +204,13 @@ class CallGraph private[cg] (
         }
         // add(prepend) the line with the column titles
         result =
-            List("\"Class\"",
+            List(
+                "\"Class\"",
                 "\"Method\"",
                 "\"Class of calling Method\"",
                 "\"Calling Method\"",
-                "\"Calling Sites\"") :: result
+                "\"Calling Sites\""
+            ) :: result
         result.map(_.mkString("\t")).mkString("\n")
     }
 }

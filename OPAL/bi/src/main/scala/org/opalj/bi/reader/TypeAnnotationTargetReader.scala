@@ -52,23 +52,28 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //______________________________
     // type_parameter_target
     def ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int): TypeAnnotationTarget
+        type_parameter_index: Int
+    ): TypeAnnotationTarget
     def ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int): TypeAnnotationTarget
+        type_parameter_index: Int
+    ): TypeAnnotationTarget
 
     //______________________________
     // supertype_target
     def SupertypeTarget(
-        supertype_index: Int): TypeAnnotationTarget
+        supertype_index: Int
+    ): TypeAnnotationTarget
 
     //______________________________
     // type_parameter_bound_target
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget
+        bound_index:          Int
+    ): TypeAnnotationTarget
     def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget
+        bound_index:          Int
+    ): TypeAnnotationTarget
 
     //______________________________
     // empty_target
@@ -110,9 +115,10 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * [[org.opalj.bi.reader.AttributeReader.registerAttributesPostProcessor]].
      */
     def LocalvarTableEntry(
-        start_pc: Int,
-        length: Int,
-        local_variable_table_index: Int): LocalvarTableEntry
+        start_pc:                   Int,
+        length:                     Int,
+        local_variable_table_index: Int
+    ): LocalvarTableEntry
     def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
     def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
 
@@ -121,27 +127,34 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     def InstanceOf(offset: Int): TypeAnnotationTarget
     def New(offset: Int): TypeAnnotationTarget
     def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int): TypeAnnotationTarget
+        offset: Int
+    ): TypeAnnotationTarget
     def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int): TypeAnnotationTarget
+        offset: Int
+    ): TypeAnnotationTarget
 
     //______________________________
     // type_arguement_target
     def CastExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget
     def ConstructorInvocation(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget
     def MethodInvocation(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget
     def ConstructorInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget
     def MethodInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget
 
     //
     // IMPLEMENTATION
@@ -152,7 +165,8 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             LocalvarTableEntry(
                 in.readUnsignedShort(),
                 in.readUnsignedShort(),
-                in.readUnsignedShort())
+                in.readUnsignedShort()
+            )
         }
     }
 
@@ -183,11 +197,13 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x11 ⇒
                 TypeBoundOfParameterDeclarationOfClassOrInterface(
                     in.readUnsignedByte(),
-                    in.readUnsignedByte())
+                    in.readUnsignedByte()
+                )
             case 0x12 ⇒
                 TypeBoundOfParameterDeclarationOfMethodOrConstructor(
                     in.readUnsignedByte(),
-                    in.readUnsignedByte())
+                    in.readUnsignedByte()
+                )
             case 0x13 ⇒ FieldDeclaration
             case 0x14 ⇒ ReturnType
             case 0x15 ⇒ ReceiverType
@@ -208,11 +224,13 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x4A ⇒
                 ConstructorInMethodReferenceExpression(
                     in.readUnsignedShort(),
-                    in.readUnsignedByte())
+                    in.readUnsignedByte()
+                )
             case 0x4B ⇒
                 MethodInMethodReferenceExpression(
                     in.readUnsignedShort(),
-                    in.readUnsignedByte())
+                    in.readUnsignedByte()
+                )
         }
     }
 }

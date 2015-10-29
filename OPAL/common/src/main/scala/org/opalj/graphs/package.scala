@@ -43,9 +43,10 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        nodes: Set[_ <: Node],
-        dir: String = "forward",
-        ranksep: String = "1.0"): String = {
+        nodes:   Set[_ <: Node],
+        dir:     String         = "forward",
+        ranksep: String         = "1.0"
+    ): String = {
         var nodesToProcess = Set.empty[Node] ++ nodes
         var processedNodes = Set.empty[Node]
 
@@ -60,7 +61,7 @@ package object graphs {
             if (nextNode.toHRR.isDefined) {
                 var visualProperties = nextNode.visualProperties
                 visualProperties += (
-                    "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
+                    "label" → nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
                     "\t"+nextNode.nodeId +

@@ -35,7 +35,8 @@ package br
  * @author Michael Eichberg
  */
 case class LocalVariableTable(
-    localVariables: LocalVariables)
+    localVariables: LocalVariables
+)
         extends Attribute {
 
     override def kindId: Int = LocalVariableTable.KindId

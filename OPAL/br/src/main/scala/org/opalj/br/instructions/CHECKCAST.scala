@@ -38,7 +38,8 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class CHECKCAST(
-    referenceType: ReferenceType)
+    referenceType: ReferenceType
+)
         extends Instruction
         with ConstantLengthInstruction {
 
@@ -66,14 +67,16 @@ case class CHECKCAST(
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = {
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.ClassCastException)
+                this, currentPC, code, ObjectType.ClassCastException
+            )
     }
 
     override def toString: String = "CHECKCAST("+referenceType.toJava+")"

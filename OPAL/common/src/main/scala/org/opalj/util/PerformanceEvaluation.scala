@@ -240,11 +240,13 @@ object PerformanceEvaluation {
      *      into consideration when calculating the average.
      */
     def time[T >: Null <: AnyRef](
-        epsilon: Int,
-        consideredRunsEpsilon: Int,
+        epsilon:                     Int,
+        consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
-        f: ⇒ T)(
-            r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit): T = {
+        f:                           ⇒ T
+    )(
+        r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
+    ): T = {
 
         require(minimalNumberOfRelevantRuns >= 3)
         require(consideredRunsEpsilon > epsilon)
@@ -263,7 +265,8 @@ object PerformanceEvaluation {
                 OPALLogger.warn(
                     "common",
                     s"the time required by the function (${t.toString}) "+
-                        "is too small to get meaningful measurements.")(GlobalLogContext)
+                        "is too small to get meaningful measurements."
+                )(GlobalLogContext)
 
                 return result;
             }

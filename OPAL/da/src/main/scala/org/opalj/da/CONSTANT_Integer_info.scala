@@ -37,7 +37,8 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class CONSTANT_Integer_info(
-    value: Int)
+    value: Int
+)
         extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
@@ -54,7 +55,8 @@ case class CONSTANT_Integer_info(
             if (value < 0 || value >= 10)
                 Seq(
                     Text(value.toString),
-                    <span class="comment">{ "==0x"+value.toHexString }</span>)
+                    <span class="comment">{ "==0x"+value.toHexString }</span>
+                )
             else
                 Seq(Text(value.toString))
 

@@ -30,7 +30,7 @@ package org.opalj
 package collection
 package immutable
 
-import org.opalj.UShort.{ MinValue, MaxValue }
+import org.opalj.UShort.{MinValue, MaxValue}
 
 /**
  * A memory-efficient representation of a pair of UShortValues.

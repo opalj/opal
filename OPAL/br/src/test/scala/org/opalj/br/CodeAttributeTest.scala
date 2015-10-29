@@ -149,9 +149,11 @@ class CodeAttributeTest
 
     it should "be able to associate all instructions with the correct index" in {
         codeOfGet.associateWithIndex() should be(
-            Seq((0, ALOAD_0),
+            Seq(
+                (0, ALOAD_0),
                 (1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),
-                (4, ARETURN))
+                (4, ARETURN)
+            )
         )
     }
 
@@ -199,7 +201,7 @@ class CodeAttributeTest
 
     it should "return the local variables defined at the respective pc" in {
         val lvs = codeOfPut.localVariablesAt(32).map(e ⇒ (e._1, e._2.name))
-        lvs should be(Map(0 -> "this", 1 -> "item"))
+        lvs should be(Map(0 → "this", 1 → "item"))
     }
 
     behavior of "the \"Code\" attribute's localVariable method"
@@ -227,8 +229,8 @@ class CodeAttributeTest
         codeOfGet.pcOfPreviousInstruction(4) should be(1)
     }
 
-    it should "throw an IllegalArgumentException if the pc is 0" in {
-        an[IllegalArgumentException] should be thrownBy codeOfGet.pcOfPreviousInstruction(0)
+    it should "return a negative pc (which is invalid if the given pc is 0)" in {
+        codeOfGet.pcOfPreviousInstruction(0) should be(-1)
     }
 
 }

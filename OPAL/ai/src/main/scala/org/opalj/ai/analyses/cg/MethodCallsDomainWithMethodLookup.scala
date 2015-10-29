@@ -51,22 +51,24 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     protected[this] def doInvoke(
-        pc: PC,
-        method: Method,
+        pc:       PC,
+        method:   Method,
         operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult
+        fallback: () ⇒ MethodCallResult
+    ): MethodCallResult
 
     /**
      * Currently, if we have multiple targets, `fallback` is called and that result is
      * returned.
      */
     protected[this] def doVirtualInvoke(
-        pc: PC,
+        pc:                 PC,
         declaringClassType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        operands:           Operands,
+        fallback:           () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         try {
             val receiver = operands.last.asInstanceOf[IsAReferenceValue]
@@ -83,13 +85,15 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 doNonVirtualInvoke(
                     pc,
                     receiverType, methodName, methodDescriptor, operands,
-                    fallback)
+                    fallback
+                )
             } else {
                 project.classFile(receiverType).map { receiverClassFile ⇒
                     if (receiverClassFile.isFinal)
                         doNonVirtualInvoke(
                             pc,
-                            receiverType, methodName, methodDescriptor, operands, fallback)
+                            receiverType, methodName, methodDescriptor, operands, fallback
+                        )
                     else {
                         val targetMethod =
                             if (receiverClassFile.isInterfaceDeclaration)
@@ -118,18 +122,20 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                         project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
                         declaringClassType.toJava+
                         "{ "+methodDescriptor.toJava(methodName)+" }",
-                    t)
+                    t
+                )
                 fallback()
         }
     }
 
     protected[this] def doNonVirtualInvoke(
-        pc: PC,
+        pc:                 PC,
         declaringClassType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        operands:           Operands,
+        fallback:           () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         try {
             val resolvedMethod =
@@ -137,10 +143,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                     case Some(classFile) ⇒
                         if (classFile.isInterfaceDeclaration)
                             classHierarchy.resolveInterfaceMethodReference(
-                                declaringClassType, methodName, methodDescriptor, project)
+                                declaringClassType, methodName, methodDescriptor, project
+                            )
                         else
                             classHierarchy.resolveMethodReference(
-                                declaringClassType, methodName, methodDescriptor, project)
+                                declaringClassType, methodName, methodDescriptor, project
+                            )
                     case _ ⇒
                         return fallback();
                 }
@@ -156,7 +164,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                         "project configuration",
                         "method reference cannot be resolved: "+
                             declaringClassType.toJava+
-                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"))
+                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"
+                    ))
                     fallback()
             }
         } catch {
@@ -168,7 +177,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                         project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
                         declaringClassType.toJava+
                         "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}",
-                    t)
+                    t
+                )
                 fallback()
         }
     }
@@ -180,11 +190,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     // -----------------------------------------------------------------------------------
 
     abstract override def invokevirtual(
-        pc: PC,
-        declaringClass: ReferenceType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ReferenceType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -201,11 +212,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     }
 
     abstract override def invokeinterface(
-        pc: PC,
-        declaringClass: ObjectType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -216,11 +228,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
     }
 
     abstract override def invokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -236,11 +249,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
      * if have a recursive invocation are delegated to the super class.
      */
     abstract override def invokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)

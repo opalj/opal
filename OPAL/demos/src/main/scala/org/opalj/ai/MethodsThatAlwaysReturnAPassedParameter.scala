@@ -40,7 +40,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
+import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis}
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.BaseMethodReturnValuesAnalysisDomain
 import org.opalj.ai.analyses.cg.CallGraphCache
@@ -69,9 +69,10 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
         "identifies methods that either always throw an exception or return a given parameter"
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val methods = for {
             classFile ← theProject.allClassFiles.par
@@ -89,7 +90,8 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
                 new domain.l1.DefaultDomain(
                     theProject,
                     classFile, method
-                ) with RecordLastReturnedValues)
+                ) with RecordLastReturnedValues
+            )
             if result.domain.allReturnedValues.forall(_ match {
                 case (_, Origin(o)) if o < 0              ⇒ true
                 case (_, Origins(os)) if os.forall(_ < 0) ⇒ true
@@ -114,12 +116,14 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
             returnsParameter.toList.sorted.mkString(
                 s"Found ${returnsParameter.size} methods which always return a passed parameter (including this):\n",
                 "\n",
-                "\n")
+                "\n"
+            )
         val throwsExceptionResult =
             throwsException.toList.sorted.mkString(
                 s"Found ${throwsException.size} methods which always throw an exception:\n",
                 "\n",
-                "\n")
+                "\n"
+            )
         BasicReport(throwsExceptionResult + returnsParameterResult)
 
     }

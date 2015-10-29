@@ -78,9 +78,10 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = Seq.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[SourceLocationBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = Seq.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[SourceLocationBasedReport[Source]] = {
 
         import project.classHierarchy
 
@@ -111,7 +112,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
                 filter(!classHierarchy.isInterface(_)).
                 exists(
                     classHierarchy.lookupMethodDefinition(_, method.name,
-                        method.descriptor, project).isDefined
+                    method.descriptor, project).isDefined
                 )
         }
 
@@ -146,12 +147,13 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          * @return The referenced `Method` or `None`.
          */
         def maybeResolveMethodReference(
-            classFile: ClassFile,
-            constructor: Method,
-            pc: PC,
+            classFile:      ClassFile,
+            constructor:    Method,
+            pc:             PC,
             declaringClass: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor): Option[Method] = {
+            name:           String,
+            descriptor:     MethodDescriptor
+        ): Option[Method] = {
 
             // Excluding interfaces here, because resolveMethodReference() can't be called
             // on interfaces, and normally, constructors are not being called on
@@ -168,7 +170,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
                         constructor.name,
                         constructor.body.get.lineNumber(pc),
                         None,
-                        "INVOKESPECIAL on interface type; inconsistent project.")
+                        "INVOKESPECIAL on interface type; inconsistent project."
+                    )
                 None
             } else {
                 classHierarchy.
@@ -183,11 +186,13 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          * @return The first superconstructor to be called or None.
          */
         def findCalledSuperConstructor(
-            classFile: ClassFile,
-            constructor: Method): Option[Method] = {
+            classFile:   ClassFile,
+            constructor: Method
+        ): Option[Method] = {
             constructor.body.get.associateWithIndex.collectFirst({
                 case (pc, INVOKESPECIAL(typ, name, desc)) ⇒ maybeResolveMethodReference(
-                    classFile, constructor, pc, typ, name, desc)
+                    classFile, constructor, pc, typ, name, desc
+                )
             }).flatten
         }
 
@@ -214,7 +219,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
                     classFile.thisType,
                     method,
                     "Called by super constructor ("+superClass.thisType.toJava+"), "+
-                        "while the class' fields are still uninitialized")
+                        "while the class' fields are still uninitialized"
+                )
         }
 
         inconsistencyReports ++ reports

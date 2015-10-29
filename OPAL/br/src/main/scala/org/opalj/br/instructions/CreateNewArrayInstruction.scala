@@ -50,14 +50,16 @@ abstract class CreateNewArrayInstruction
         CreateNewArrayInstruction.jvmExceptions
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, CreateNewArrayInstruction.jvmExceptionsAndErrors)
+                this, currentPC, code, CreateNewArrayInstruction.jvmExceptionsAndErrors
+            )
 
 }
 

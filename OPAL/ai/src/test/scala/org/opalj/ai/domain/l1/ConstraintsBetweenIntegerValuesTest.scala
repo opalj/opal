@@ -37,7 +37,7 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
-import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
+import org.opalj.br.{ObjectType, ArrayType, IntegerType}
 
 /**
  * Tests the `ConstraintsBetweenIntegerValuesTest` Domain extension.
@@ -50,7 +50,8 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers with Par
     final val IrrelevantPC = Int.MinValue
 
     class IntegerRangesWithInterIntegerConstraintsTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+    )
             extends CorrelationalDomain
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues

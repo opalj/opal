@@ -60,9 +60,10 @@ class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         // If it's unknown, it's neither possible nor necessary to check the subtypes
         if (project.classHierarchy.isUnknown(ObjectType.Cloneable)) {
@@ -82,7 +83,8 @@ class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source
                 project.source(classFile.thisType),
                 Severity.Error,
                 classFile.thisType,
-                "Implements java.lang.Cloneable but not clone()")
+                "Implements java.lang.Cloneable but not clone()"
+            )
         }
     }
 }

@@ -243,7 +243,8 @@ object PerformInvocationsTestFixture {
 
     abstract class InvocationDomain(
         val project: Project[java.net.URL],
-        val method: Method)
+        val method:  Method
+    )
             extends Domain
             with l0.TypeLevelInvokeInstructions
             with PerformInvocations
@@ -253,16 +254,19 @@ object PerformInvocationsTestFixture {
 
         def isRecursive(
             definingClass: ClassFile,
-            method: Method,
-            operands: Operands): Boolean = false
+            method:        Method,
+            operands:      Operands
+        ): Boolean = false
 
         def shouldInvocationBePerformed(
             definingClass: ClassFile,
-            method: Method): Boolean = true
+            method:        Method
+        ): Boolean = true
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain
+            method:  Method
+        ): InvocationDomain
 
         override val useExceptionsThrownByCalledMethod = true
 
@@ -280,7 +284,8 @@ object PerformInvocationsTestFixture {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain = new LiInvocationDomain(project, method)
+            method:  Method
+        ): InvocationDomain = new LiInvocationDomain(project, method)
     }
 
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
@@ -288,7 +293,8 @@ object PerformInvocationsTestFixture {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain = new L1InvocationDomain(project, method)
+            method:  Method
+        ): InvocationDomain = new L1InvocationDomain(project, method)
     }
 
     val testClassFileName = "classfiles/performInvocations.jar"

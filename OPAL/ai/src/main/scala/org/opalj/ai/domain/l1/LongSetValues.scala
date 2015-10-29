@@ -122,9 +122,12 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     //
 
     @inline final override def longValue[T](
-        value: DomainValue)(
-            f: Long ⇒ T)(
-                orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        f: Long ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T =
         value match {
             case LongSet(values) if values.size == 1 ⇒ f(values.head)
             case _                                   ⇒ orElse
@@ -137,9 +140,12 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
 
     @inline protected final def withLongValuesOrElse[T](
-        value1: DomainValue, value2: DomainValue)(
-            f: (Long, Long) ⇒ T)(
-                orElse: ⇒ T): T = {
+        value1: DomainValue, value2: DomainValue
+    )(
+        f: (Long, Long) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T = {
         longValue(value1) {
             v1 ⇒ longValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
         } {
@@ -279,9 +285,10 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     protected[this] def createLongValueOrArithmeticException(
-        pc: PC,
+        pc:        PC,
         exception: Boolean,
-        results: SortedSet[Long]): LongValueOrArithmeticException = {
+        results:   SortedSet[Long]
+    ): LongValueOrArithmeticException = {
 
         val hasResults = results.nonEmpty
         assert(exception || hasResults)
@@ -296,7 +303,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 if (exception)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(LongValue(origin = pc))
             }
@@ -306,9 +314,10 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     /*override*/ def ldiv(
-        pc: PC,
-        numerator: DomainValue,
-        denominator: DomainValue): LongValueOrArithmeticException = {
+        pc:          PC,
+        numerator:   DomainValue,
+        denominator: DomainValue
+    ): LongValueOrArithmeticException = {
         (numerator, denominator) match {
             case (LongSet(leftValues), LongSet(rightValues)) ⇒
                 var results: SortedSet[Long] = SortedSet.empty
@@ -328,7 +337,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                     else
                         ComputedValueOrException(
                             LongValue(origin = pc),
-                            VMArithmeticException(pc))
+                            VMArithmeticException(pc)
+                        )
                 } else
                     ComputedValue(LongValue(origin = pc))
 
@@ -336,16 +346,18 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(LongValue(origin = pc))
         }
     }
 
     /*override*/ def lrem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): LongValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): LongValueOrArithmeticException = {
 
         (left, right) match {
             case (LongSet(leftValues), LongSet(rightValues)) ⇒
@@ -366,7 +378,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                     else
                         ComputedValueOrException(
                             LongValue(origin = pc),
-                            VMArithmeticException(pc))
+                            VMArithmeticException(pc)
+                        )
                 } else
                     ComputedValue(LongValue(origin = pc))
 
@@ -374,7 +387,8 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(LongValue(origin = pc))
         }

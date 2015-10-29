@@ -47,16 +47,18 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses_attribute <: Attribute
 
     def InnerClasses_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes: InnerClasses): InnerClasses_attribute
+        inner_classes:        InnerClasses
+    ): InnerClasses_attribute
 
     def InnerClassesEntry(
-        constant_pool: Constant_Pool,
-        inner_class_info_index: Constant_Pool_Index,
-        outer_class_info_index: Constant_Pool_Index,
-        inner_name_index: Constant_Pool_Index,
-        inner_class_access_flags: Int): InnerClassesEntry
+        constant_pool:            Constant_Pool,
+        inner_class_info_index:   Constant_Pool_Index,
+        outer_class_info_index:   Constant_Pool_Index,
+        inner_name_index:         Constant_Pool_Index,
+        inner_class_access_flags: Int
+    ): InnerClassesEntry
 
     //
     // IMPLEMENTATION
@@ -80,7 +82,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        InnerClasses_attributeReader.ATTRIBUTE_NAME -> (
+        InnerClasses_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 /*val attribute_length =*/ in.readInt()
                 InnerClasses_attribute(

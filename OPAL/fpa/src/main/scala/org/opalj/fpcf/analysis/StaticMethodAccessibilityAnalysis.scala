@@ -74,9 +74,12 @@ object StaticMethodAccessibilityAnalysis
      *
      */
     def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            store: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project: SomeProject,
+        store:   PropertyStore
+    ): PropertyComputationResult = {
 
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal);

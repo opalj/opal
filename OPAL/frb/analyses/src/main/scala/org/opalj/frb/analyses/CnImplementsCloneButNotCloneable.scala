@@ -55,9 +55,10 @@ class CnImplementsCloneButNotCloneable[Source] extends FindRealBugsAnalysis[Sour
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         for {
             classFile ← project.allProjectClassFiles
@@ -70,7 +71,8 @@ class CnImplementsCloneButNotCloneable[Source] extends FindRealBugsAnalysis[Sour
                 project.source(classFile.thisType),
                 Severity.Error,
                 classFile.thisType,
-                "implements clone(), but not Cloneable")
+                "implements clone(), but not Cloneable"
+            )
         }
     }
 }

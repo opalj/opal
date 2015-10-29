@@ -73,9 +73,10 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
     protected[this] def joinReturnedValues(
-        pc: PC,
+        pc:                      PC,
         previouslyReturnedValue: ReturnedValue,
-        value: DomainValue): ReturnedValue
+        value:                   DomainValue
+    ): ReturnedValue
 
     private[this] var returnedValues: Map[PC, ReturnedValue] = Map.empty
 

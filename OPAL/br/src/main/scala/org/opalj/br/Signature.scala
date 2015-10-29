@@ -244,7 +244,8 @@ sealed trait Signature extends SignatureElement with Attribute
 private[br] object Signature {
 
     def formalTypeParametersToJVMSignature(
-        formalTypeParameters: List[FormalTypeParameter]): String = {
+        formalTypeParameters: List[FormalTypeParameter]
+    ): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
@@ -259,9 +260,10 @@ import Signature.formalTypeParametersToJVMSignature
  * @see For matching signatures see [[Signature]].
  */
 case class ClassSignature(
-    formalTypeParameters: List[FormalTypeParameter],
-    superClassSignature: ClassTypeSignature,
-    superInterfacesSignature: List[ClassTypeSignature])
+    formalTypeParameters:     List[FormalTypeParameter],
+    superClassSignature:      ClassTypeSignature,
+    superInterfacesSignature: List[ClassTypeSignature]
+)
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
@@ -291,10 +293,11 @@ object ClassSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class MethodTypeSignature(
-    formalTypeParameters: List[FormalTypeParameter],
+    formalTypeParameters:     List[FormalTypeParameter],
     parametersTypeSignatures: List[TypeSignature],
-    returnTypeSignature: ReturnTypeSignature,
-    throwsSignature: List[ThrowsSignature])
+    returnTypeSignature:      ReturnTypeSignature,
+    throwsSignature:          List[ThrowsSignature]
+)
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
@@ -345,9 +348,10 @@ object ArrayTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class ClassTypeSignature(
-    packageIdentifier: Option[String],
+    packageIdentifier:        Option[String],
     simpleClassTypeSignature: SimpleClassTypeSignature,
-    classTypeSignatureSuffix: List[SimpleClassTypeSignature])
+    classTypeSignatureSuffix: List[SimpleClassTypeSignature]
+)
         extends FieldTypeSignature
         with ThrowsSignature {
 
@@ -398,7 +402,8 @@ object ClassTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class TypeVariableSignature(
-    identifier: String)
+    identifier: String
+)
         extends FieldTypeSignature
         with ThrowsSignature {
 
@@ -419,8 +424,9 @@ object TypeVariableSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class SimpleClassTypeSignature(
-        simpleName: String,
-        typeArguments: List[TypeArgument]) {
+        simpleName:    String,
+        typeArguments: List[TypeArgument]
+) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -437,9 +443,10 @@ case class SimpleClassTypeSignature(
  * @see For matching signatures see [[Signature]].
  */
 case class FormalTypeParameter(
-        identifier: String,
-        classBound: Option[FieldTypeSignature],
-        interfaceBound: List[FieldTypeSignature]) {
+        identifier:     String,
+        classBound:     Option[FieldTypeSignature],
+        interfaceBound: List[FieldTypeSignature]
+) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -465,8 +472,9 @@ sealed trait TypeArgument extends SignatureElement
  * @see For matching signatures see [[Signature]].
  */
 case class ProperTypeArgument(
-    varianceIndicator: Option[VarianceIndicator],
-    fieldTypeSignature: FieldTypeSignature)
+    varianceIndicator:  Option[VarianceIndicator],
+    fieldTypeSignature: FieldTypeSignature
+)
         extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
@@ -586,7 +594,7 @@ object ConcreteTypeArgument {
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
             case ProperTypeArgument(None, ConcreteType(ot)) ⇒ Some(ot)
-            case _ ⇒ None
+            case _                                          ⇒ None
         }
     }
 }

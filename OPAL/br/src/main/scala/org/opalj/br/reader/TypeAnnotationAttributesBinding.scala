@@ -50,18 +50,20 @@ trait TypeAnnotationAttributesBinding
     type RuntimeVisibleTypeAnnotations_attribute = RuntimeVisibleTypeAnnotationTable
 
     protected def RuntimeInvisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute = {
+        attribute_length:     Int,
+        annotations:          TypeAnnotations
+    ): RuntimeInvisibleTypeAnnotations_attribute = {
         new RuntimeInvisibleTypeAnnotationTable(annotations)
     }
 
     def RuntimeVisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute = {
+        attribute_length:     Int,
+        annotations:          TypeAnnotations
+    ): RuntimeVisibleTypeAnnotations_attribute = {
         new RuntimeVisibleTypeAnnotationTable(annotations)
     }
 

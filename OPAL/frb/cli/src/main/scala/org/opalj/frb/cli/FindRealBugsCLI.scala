@@ -104,8 +104,10 @@ object FindRealBugsCLI extends ProgressListener {
                                 case (className, enabled) ⇒ className
                             }
                     case "--write-default-config" ⇒
-                        saveRegistry(new java.io.File(option(1)),
-                            builtInAnalysisClassNames.map(name ⇒ name -> true).toMap)
+                        saveRegistry(
+                            new java.io.File(option(1)),
+                            builtInAnalysisClassNames.map(name ⇒ name → true).toMap
+                        )
                         sys.exit(0)
                     case _ ⇒
                         printUsageAndExit("unknown command line option: "+arg)
@@ -145,8 +147,9 @@ object FindRealBugsCLI extends ProgressListener {
         println("Reading class files:")
 
         def loadClassFilesForCLI(
-            fileNames: Iterable[String],
-            loadAsLibrary: Boolean): Iterable[(ClassFile, URL)] = {
+            fileNames:     Iterable[String],
+            loadAsLibrary: Boolean
+        ): Iterable[(ClassFile, URL)] = {
             loadClassFiles(
                 fileNames,
                 loadAsLibrary,
@@ -209,11 +212,12 @@ object FindRealBugsCLI extends ProgressListener {
      * Prints a progress message.
      */
     private def printProgress(
-        color: String,
+        color:    String,
         position: Int,
-        total: Int,
-        status: String,
-        message: String): Unit = {
+        total:    Int,
+        status:   String,
+        message:  String
+    ): Unit = {
         println(color+"["+position+"/"+total+"]"+Console.RESET+
             " "+status+" "+message)
     }
@@ -232,9 +236,10 @@ object FindRealBugsCLI extends ProgressListener {
     override def analysisCompleted(
         analysis: Analysis,
         position: Int,
-        total: Int,
+        total:    Int,
         timeSpan: Nanoseconds,
-        reports: AnalysisReports): Unit = {
+        reports:  AnalysisReports
+    ): Unit = {
         progressLock.synchronized {
             analysesExecutionTime += timeSpan
         }

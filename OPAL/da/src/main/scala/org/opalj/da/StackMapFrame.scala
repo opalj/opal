@@ -47,7 +47,8 @@ trait StackMapFrame {
 }
 
 case class SameFrame(
-        frame_type: Int) extends StackMapFrame {
+        frame_type: Int
+) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_fram_Offset + frame_type + 1; initial_offset },frame_type:same]</div>
@@ -55,8 +56,9 @@ case class SameFrame(
 }
 
 case class SameLocals1StackItemFrame(
-        frame_type: Int,
-        verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
+        frame_type:                   Int,
+        verification_type_info_stack: VerificationTypeInfo
+) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_fram_Offset + frame_type - 64 + 1; initial_offset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
@@ -64,9 +66,10 @@ case class SameLocals1StackItemFrame(
 }
 
 case class SameLocals1StackItemFrameExtended(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
+        frame_type:                   Int,
+        offset_delta:                 Int,
+        verification_type_info_stack: VerificationTypeInfo
+) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>
@@ -78,8 +81,9 @@ case class SameLocals1StackItemFrameExtended(
 }
 
 case class ChopFrame(
-        frame_type: Int,
-        offset_delta: Int) extends StackMapFrame {
+        frame_type:   Int,
+        offset_delta: Int
+) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset },frame_type:Chop]</div>
@@ -87,8 +91,9 @@ case class ChopFrame(
 }
 
 case class SameFrameExtended(
-        frame_type: Int,
-        offset_delta: Int) extends StackMapFrame {
+        frame_type:   Int,
+        offset_delta: Int
+) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>
@@ -99,9 +104,10 @@ case class SameFrameExtended(
 }
 
 case class AppendFrame(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_locals: Seq[VerificationTypeInfo]) extends StackMapFrame {
+        frame_type:                    Int,
+        offset_delta:                  Int,
+        verification_type_info_locals: Seq[VerificationTypeInfo]
+) extends StackMapFrame {
 
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { for (verification_type_info_local ← verification_type_info_locals) yield verification_type_info_local.toXHTML(cp) }</span>
@@ -118,10 +124,11 @@ case class AppendFrame(
 }
 
 case class FullFrame(
-        frame_type: Int,
-        offset_delta: Int,
+        frame_type:                    Int,
+        offset_delta:                  Int,
         verification_type_info_locals: IndexedSeq[VerificationTypeInfo],
-        verification_type_info_stack: IndexedSeq[VerificationTypeInfo]) extends StackMapFrame {
+        verification_type_info_stack:  IndexedSeq[VerificationTypeInfo]
+) extends StackMapFrame {
 
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { for (verification_type_info_local ← verification_type_info_locals) yield verification_type_info_local.toXHTML(cp) }</span>

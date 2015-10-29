@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.br.{ComputationalType, ComputationalTypeInt}
 
 /**
  * This domain represents integer values using ranges.
@@ -177,8 +177,9 @@ trait IntegerRangeValues
      * Creates a new IntegerRange value with the given bounds.
      */
     final def IntegerRange(
-        origin: ValueOrigin,
-        lowerBound: Int, upperBound: Int): DomainValue = {
+        origin:     ValueOrigin,
+        lowerBound: Int, upperBound: Int
+    ): DomainValue = {
         IntegerRange(lowerBound, upperBound)
     }
 
@@ -201,23 +202,28 @@ trait IntegerRangeValues
     //
 
     @inline final override def intValue[T](
-        value: DomainValue)(
-            f: Int ⇒ T)(orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        f: Int ⇒ T
+    )(orElse: ⇒ T): T =
         value match {
             case v: IntegerRange if v.lowerBound == v.upperBound ⇒ f(v.lowerBound)
-            case _ ⇒ orElse
+            case _                                               ⇒ orElse
         }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] =
         value match {
             case v: IntegerRange if v.lowerBound == v.upperBound ⇒ Some(v.lowerBound)
-            case _ ⇒ None
+            case _                                               ⇒ None
         }
 
     @inline protected final def intValues[T](
-        value1: DomainValue, value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(
-                orElse: ⇒ T): T = {
+        value1: DomainValue, value2: DomainValue
+    )(
+        f: (Int, Int) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T = {
         intValue(value1) { v1 ⇒
             intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
         } {
@@ -250,10 +256,11 @@ trait IntegerRangeValues
     }
 
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             Yes
         else
@@ -269,10 +276,11 @@ trait IntegerRangeValues
     }
 
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             No
         else
@@ -311,15 +319,16 @@ trait IntegerRangeValues
             case _ ⇒
                 left match {
                     case IntegerRange(Int.MaxValue, _ /* Int.MaxValue*/ ) ⇒ No
-                    case _ ⇒ Unknown
+                    case _                                                ⇒ Unknown
                 }
         }
     }
 
     override def intIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): Answer = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): Answer = {
 
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
@@ -359,11 +368,12 @@ trait IntegerRangeValues
     // -----------------------------------------------------------------------------------
 
     override def intEstablishValue(
-        pc: PC,
+        pc:       PC,
         theValue: Int,
-        value: DomainValue,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         value match {
             case IntegerRange(`theValue`, `theValue`) ⇒
                 // "nothing to do"
@@ -371,16 +381,18 @@ trait IntegerRangeValues
             case _ ⇒
                 updateMemoryLayout(
                     value, IntegerRange(theValue, theValue),
-                    operands, locals)
+                    operands, locals
+                )
         }
     }
 
     override def intEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         if (value1 eq value2)
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
@@ -410,11 +422,12 @@ trait IntegerRangeValues
     }
 
     override def intEstablishAreNotEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         // Given that we cannot represent multiple ranges, our possibilities are
         // severely limited w.r.t. representing values that are not equal.
         // Only if one range just represents a single value
@@ -448,11 +461,12 @@ trait IntegerRangeValues
     }
 
     override def intEstablishIsLessThan(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue,
+        pc:       PC,
+        left:     DomainValue,
+        right:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         val (lb1, ub1) = left match {
             case IntegerRange(lb1, ub1) ⇒ (lb1, ub1)
@@ -478,17 +492,19 @@ trait IntegerRangeValues
                 right,
                 IntegerRange(lb, ub2),
                 operands1,
-                locals1)
+                locals1
+            )
         else
             newMemoryLayout
     }
 
     override def intEstablishIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue,
+        pc:       PC,
+        left:     DomainValue,
+        right:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         val (lb1, ub1) = left match {
             case IntegerRange(lb1, ub1) ⇒ (lb1, ub1)
@@ -626,9 +642,10 @@ trait IntegerRangeValues
     }
 
     override def idiv(
-        pc: PC,
-        numerator: DomainValue,
-        denominator: DomainValue): IntegerValueOrArithmeticException = {
+        pc:          PC,
+        numerator:   DomainValue,
+        denominator: DomainValue
+    ): IntegerValueOrArithmeticException = {
 
         def genericResult() = {
             val value =
@@ -692,8 +709,10 @@ trait IntegerRangeValues
                     Math.min(
                         Math.min(
                             Math.min(lb1l * lb2l, ub1l * ub2l),
-                            ub1l * lb2l),
-                        lb1l * ub2l)
+                            ub1l * lb2l
+                        ),
+                        lb1l * ub2l
+                    )
 
                 if (lb < Int.MinValue || ub > Int.MaxValue)
                     IntegerValue(pc)
@@ -706,9 +725,10 @@ trait IntegerRangeValues
     }
 
     override def irem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): IntegerValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): IntegerValueOrArithmeticException = {
 
         right match {
             case IntegerRange(0, 0)   ⇒ ThrowsException(VMArithmeticException(pc))
@@ -819,7 +839,7 @@ trait IntegerRangeValues
                 } else {
                     // both values are positive (lbs are >= 0) and at least one
                     // value is not just 0.
-                    import Integer.{ numberOfLeadingZeros ⇒ nlz }
+                    import Integer.{numberOfLeadingZeros ⇒ nlz}
                     val max = Math.max(rub, lub)
                     val nlzMax = nlz(max)
                     val ub =
@@ -872,11 +892,13 @@ trait IntegerRangeValues
                         // is set to zero by using "& Int.MaxValue".
                         IntegerRange(
                             (1 << maxShift) | Int.MinValue,
-                            (-1 << minShift) & Int.MaxValue)
+                            (-1 << minShift) & Int.MaxValue
+                        )
                 } else {
                     IntegerRange(
                         (1 << maxShift) | Int.MinValue,
-                        (-1 << minShift) & Int.MaxValue)
+                        (-1 << minShift) & Int.MaxValue
+                    )
                 }
 
             case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)

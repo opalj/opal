@@ -55,9 +55,10 @@ class SerializableNoSuitableConstructor[Source] extends FindRealBugsAnalysis[Sou
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         // If it's unknown, it's neither possible nor necessary to collect subtypes
         if (project.classHierarchy.isUnknown(ObjectType.Serializable))
@@ -66,20 +67,23 @@ class SerializableNoSuitableConstructor[Source] extends FindRealBugsAnalysis[Sou
         // For all classes with Serializable subclasses but no zero-arguments constructor.
         for {
             serializableClass ← project.classHierarchy.allSubtypes(
-                ObjectType.Serializable, false)
+                ObjectType.Serializable, false
+            )
             superClass ← project.classHierarchy.allSupertypes(serializableClass)
             superClassFile ← project.classFile(superClass)
             if !project.isLibraryType(superClassFile)
             if !superClassFile.isInterfaceDeclaration &&
                 !superClassFile.constructors.exists(
-                    _.descriptor.parameterTypes.length == 0)
+                    _.descriptor.parameterTypes.length == 0
+                )
         } yield {
             ClassBasedReport(
                 project.source(superClass),
                 Severity.Error,
                 superClass,
                 "Is a superclass of a Serializable class ("+serializableClass.fqn+
-                    ") but does not define a zero-arguments constructor.")
+                    ") but does not define a zero-arguments constructor."
+            )
         }
     }
 }

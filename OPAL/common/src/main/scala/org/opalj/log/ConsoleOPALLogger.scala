@@ -36,11 +36,13 @@ package log
  */
 class ConsoleOPALLogger(
         val ansiColored: Boolean,
-        val minLogLevel: Int) extends AbstractOPALLogger {
+        val minLogLevel: Int
+) extends AbstractOPALLogger {
 
     def this(
         ansiColored: Boolean = true,
-        minLogLevel: Level = Info) {
+        minLogLevel: Level   = Info
+    ) {
         this(ansiColored, minLogLevel.value)
     }
 

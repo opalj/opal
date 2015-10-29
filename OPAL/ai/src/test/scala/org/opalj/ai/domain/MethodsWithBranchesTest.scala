@@ -93,7 +93,8 @@ class MethodsWithBranchesTest
             Some(classFile),
             Some(method),
             method.body.get,
-            result) { f(domain) }
+            result
+        ) { f(domain) }
     }
 
     behavior of "the abstract interpreter"
@@ -110,7 +111,8 @@ class MethodsWithBranchesTest
             //    7  ireturn 
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
+                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+            )
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
@@ -138,7 +140,8 @@ class MethodsWithBranchesTest
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
+                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+            )
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
@@ -173,9 +176,9 @@ class MethodsWithBranchesTest
             //    18  ireturn
             import domain._
             allReturnedValues should be(Map(
-                (14 -> AnIntegerValue),
-                (16 -> AnIntegerValue),
-                (18 -> AnIntegerValue)
+                (14 → AnIntegerValue),
+                (16 → AnIntegerValue),
+                (18 → AnIntegerValue)
             ))
         }
     }

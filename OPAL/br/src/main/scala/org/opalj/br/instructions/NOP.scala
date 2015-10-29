@@ -63,9 +63,10 @@ case object NOP extends Instruction with ConstantLengthInstruction {
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

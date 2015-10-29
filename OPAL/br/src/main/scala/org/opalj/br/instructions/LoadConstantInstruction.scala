@@ -54,9 +54,10 @@ abstract class LoadConstantInstruction[T]
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
@@ -88,15 +89,15 @@ object LoadConstantInstruction {
      */
     def apply(i: Int): LoadConstantInstruction[Int] =
         (i: @scala.annotation.switch) match {
-            case 0 ⇒ ICONST_0
-            case 1 ⇒ ICONST_1
-            case 2 ⇒ ICONST_2
-            case 3 ⇒ ICONST_3
-            case 4 ⇒ ICONST_4
-            case 5 ⇒ ICONST_5
-            case _ if i >= Byte.MinValue && i <= Byte.MaxValue ⇒ BIPUSH(i)
+            case 0                                               ⇒ ICONST_0
+            case 1                                               ⇒ ICONST_1
+            case 2                                               ⇒ ICONST_2
+            case 3                                               ⇒ ICONST_3
+            case 4                                               ⇒ ICONST_4
+            case 5                                               ⇒ ICONST_5
+            case _ if i >= Byte.MinValue && i <= Byte.MaxValue   ⇒ BIPUSH(i)
             case _ if i >= Short.MinValue && i <= Short.MaxValue ⇒ SIPUSH(i)
-            case _ ⇒ LoadInt(i)
+            case _                                               ⇒ LoadInt(i)
         }
 
     /**

@@ -58,7 +58,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroLhs",
                 Some(44),
                 None,
-                "0 | x: bit or operation with 0 left operand is useless"))
+                "0 | x: bit or operation with 0 left operand is useless"
+            )
+        )
     }
 
     it should "detect a useless x | 0 operation at BitNops/Or:49" in {
@@ -71,7 +73,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroRhs",
                 Some(49),
                 None,
-                "x | 0: bit or operation with 0 right operand is useless"))
+                "x | 0: bit or operation with 0 right operand is useless"
+            )
+        )
     }
 
     it should "detect a useless 0 | 0 operation at BitNops/Or:55" in {
@@ -84,7 +88,8 @@ class TestBitNops extends AnalysisTest {
                 "testZeroBoth",
                 Some(55),
                 None,
-                "0 | x: bit or operation with 0 left operand is useless"))
+                "0 | x: bit or operation with 0 left operand is useless"
+            ))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
@@ -93,7 +98,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroBoth",
                 Some(55),
                 None,
-                "x | 0: bit or operation with 0 right operand is useless")))
+                "x | 0: bit or operation with 0 right operand is useless"
+            ))
+        )
     }
 
     it should "detect a -1 | x operation at BitNops/Or:60" in {
@@ -106,7 +113,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneLhs",
                 Some(60),
                 None,
-                "-1 | x: bit or operation with -1 left operand always returns -1"))
+                "-1 | x: bit or operation with -1 left operand always returns -1"
+            )
+        )
     }
 
     it should "detect a x | -1 operation at BitNops/Or:65" in {
@@ -119,7 +128,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneRhs",
                 Some(65),
                 None,
-                "x | -1: bit or operation with -1 right operand always returns -1"))
+                "x | -1: bit or operation with -1 right operand always returns -1"
+            )
+        )
     }
 
     it should "detect a -1 | -1 operation at BitNops/Or:71" in {
@@ -132,7 +143,8 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneBoth",
                 Some(71),
                 None,
-                "-1 | x: bit or operation with -1 left operand always returns -1"))
+                "-1 | x: bit or operation with -1 left operand always returns -1"
+            ))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
@@ -141,7 +153,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneBoth",
                 Some(71),
                 None,
-                "x | -1: bit or operation with -1 right operand always returns -1")))
+                "x | -1: bit or operation with -1 right operand always returns -1"
+            ))
+        )
     }
 
     it should "detect a useless 0 & x operation at BitNops/And:44" in {
@@ -154,7 +168,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroLhs",
                 Some(44),
                 None,
-                "0 & x: bit and operation with 0 left operand always returns 0"))
+                "0 & x: bit and operation with 0 left operand always returns 0"
+            )
+        )
     }
 
     it should "detect a useless x & 0 operation at BitNops/And:49" in {
@@ -167,7 +183,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroRhs",
                 Some(49),
                 None,
-                "x & 0: bit and operation with 0 right operand always returns 0"))
+                "x & 0: bit and operation with 0 right operand always returns 0"
+            )
+        )
     }
 
     it should "detect a useless 0 & 0 operation at BitNops/And:55" in {
@@ -180,7 +198,8 @@ class TestBitNops extends AnalysisTest {
                 "testZeroBoth",
                 Some(55),
                 None,
-                "0 & x: bit and operation with 0 left operand always returns 0"))
+                "0 & x: bit and operation with 0 left operand always returns 0"
+            ))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
@@ -189,7 +208,9 @@ class TestBitNops extends AnalysisTest {
                 "testZeroBoth",
                 Some(55),
                 None,
-                "x & 0: bit and operation with 0 right operand always returns 0")))
+                "x & 0: bit and operation with 0 right operand always returns 0"
+            ))
+        )
     }
 
     it should "detect a -1 & x operation at BitNops/And:60" in {
@@ -202,7 +223,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneLhs",
                 Some(60),
                 None,
-                "-1 & x: bit and operation with -1 left operand is useless"))
+                "-1 & x: bit and operation with -1 left operand is useless"
+            )
+        )
     }
 
     it should "detect a x & -1 operation at BitNops/And:65" in {
@@ -215,7 +238,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneRhs",
                 Some(65),
                 None,
-                "x & -1: bit and operation with -1 right operand is useless"))
+                "x & -1: bit and operation with -1 right operand is useless"
+            )
+        )
     }
 
     it should "detect a -1 & -1 operation at BitNops/And:71" in {
@@ -228,7 +253,8 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneBoth",
                 Some(71),
                 None,
-                "-1 & x: bit and operation with -1 left operand is useless"))
+                "-1 & x: bit and operation with -1 left operand is useless"
+            ))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
@@ -237,7 +263,9 @@ class TestBitNops extends AnalysisTest {
                 "testMinusOneBoth",
                 Some(71),
                 None,
-                "x & -1: bit and operation with -1 right operand is useless")))
+                "x & -1: bit and operation with -1 right operand is useless"
+            ))
+        )
     }
 
     it should "only find 12 issues in BitNops.jar" in {

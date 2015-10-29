@@ -54,11 +54,12 @@ sealed trait Stmt {
  * @param targetStmt Index in the statements array.
  */
 case class If(
-        pc: PC,
-        left: Expr,
-        condition: RelationalOperator,
-        right: Expr,
-        private[tac] var target: Int) extends Stmt {
+        pc:                      PC,
+        left:                    Expr,
+        condition:               RelationalOperator,
+        right:                   Expr,
+        private[tac] var target: Int
+) extends Stmt {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
@@ -94,10 +95,11 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
 }
 
 case class Switch(
-        pc: PC,
-        index: Expr,
+        pc:                             PC,
+        index:                          Expr,
         private[tac] var defaultTarget: PC,
-        private[tac] var npairs: IndexedSeq[(Int, PC)]) extends Stmt {
+        private[tac] var npairs:        IndexedSeq[(Int, PC)]
+) extends Stmt {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
@@ -140,24 +142,27 @@ case class ArrayStore(pc: PC, arrayRef: Expr, index: Expr, operandVar: Expr) ext
 case class Throw(pc: PC, exception: Expr) extends SimpleStmt
 
 case class PutStatic(
-    pc: PC,
+    pc:             PC,
     declaringClass: ObjectType, name: String,
-    value: Expr) extends SimpleStmt
+    value: Expr
+) extends SimpleStmt
 
 case class PutField(
-    pc: PC,
+    pc:             PC,
     declaringClass: ObjectType, name: String,
-    objRef: Expr, value: Expr) extends SimpleStmt
+    objRef: Expr, value: Expr
+) extends SimpleStmt
 
 /**
  * Call of a method.
  */
 case class MethodCall(
-    pc: PC,
+    pc:             PC,
     declaringClass: ReferenceType,
-    name: String,
-    descriptor: MethodDescriptor,
-    receiver: Option[Expr],
-    params: List[Expr],
-    target: Option[Var]) extends SimpleStmt
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Option[Expr],
+    params:         List[Expr],
+    target:         Option[Var]
+) extends SimpleStmt
 

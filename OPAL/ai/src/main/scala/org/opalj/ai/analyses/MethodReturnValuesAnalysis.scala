@@ -38,8 +38,8 @@ import scala.collection.mutable.AnyRefMap
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.analyses.{ Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject }
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.{Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject}
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
@@ -64,9 +64,10 @@ object MethodReturnValuesAnalysis {
         "Identifies methods where we can – statically – derive more precise return type/value information."
 
     def doAnalyze(
-        theProject: SomeProject,
+        theProject:    SomeProject,
         isInterrupted: () ⇒ Boolean,
-        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure): MethodReturnValueInformation = {
+        createDomain:  (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure
+    ): MethodReturnValueInformation = {
 
         val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)

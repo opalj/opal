@@ -33,8 +33,8 @@ package analyses
 import java.net.URL
 import java.io.File
 
-import scala.collection.{ Set, Map }
-import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
+import scala.collection.{Set, Map}
+import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.parallel.mutable.ParArray
 import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
@@ -108,25 +108,28 @@ import org.opalj.log.DefaultLogContext
  * @author Marco Torsello
  */
 class Project[Source] private (
-    private[this] val projectClassFiles: Array[ClassFile],
-    private[this] val libraryClassFiles: Array[ClassFile],
-    private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
-    private[this] val projectTypes: Set[ObjectType], // the types defined by the class files belonging to the project's code
-    private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
-    private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
-    private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
-    private[this] val sources: OpenHashMap[ObjectType, Source],
+    private[this] val projectClassFiles:              Array[ClassFile],
+    private[this] val libraryClassFiles:              Array[ClassFile],
+    private[this] val methods:                        Array[Method], // the concrete methods, sorted by size in descending order
+    private[this] val projectTypes:                   Set[ObjectType], // the types defined by the class files belonging to the project's code
+    private[this] val fieldToClassFile:               AnyRefMap[Field, ClassFile],
+    private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
+    private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
+    private[this] val sources:                        OpenHashMap[ObjectType, Source],
     private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
-    val projectClassFilesCount: Int,
-    val projectMethodsCount: Int,
-    val projectFieldsCount: Int,
-    val libraryClassFilesCount: Int,
-    val libraryMethodsCount: Int,
-    val libraryFieldsCount: Int,
-    val codeSize: Long,
-    val classHierarchy: ClassHierarchy)(
-        implicit val logContext: LogContext,
-        implicit val config: Config)
+    val projectClassFilesCount:                       Int,
+    val projectMethodsCount:                          Int,
+    val projectFieldsCount:                           Int,
+    val libraryClassFilesCount:                       Int,
+    val libraryMethodsCount:                          Int,
+    val libraryFieldsCount:                           Int,
+    val codeSize:                                     Long,
+    val classHierarchy:                               ClassHierarchy
+)(
+    implicit
+    val logContext:      LogContext,
+    implicit val config: Config
+)
         extends ClassFileRepository {
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
@@ -136,11 +139,13 @@ class Project[Source] private (
      */
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty
+    ): Project[Source] = {
         Project.extend[Source](
             this,
             projectClassFilesWithSources,
-            libraryClassFilesWithSources)
+            libraryClassFilesWithSources
+        )
     }
 
     /**
@@ -151,7 +156,8 @@ class Project[Source] private (
         Project.extend[Source](
             this,
             otherProject.projectClassFilesWithSources,
-            otherProject.libraryClassFilesWithSources)
+            otherProject.libraryClassFilesWithSources
+        )
     }
 
     /**
@@ -185,8 +191,10 @@ class Project[Source] private (
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
 
     private[this] def doParForeachClassFile[T](
-        classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean)(
-            f: ClassFile ⇒ T): Unit = {
+        classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
+    )(
+        f: ClassFile ⇒ T
+    ): Unit = {
         val classFilesCount = classFiles.length
         if (classFilesCount == 0)
             return ;
@@ -196,24 +204,30 @@ class Project[Source] private (
     }
 
     def parForeachProjectClassFile[T](
-        isInterrupted: () ⇒ Boolean)(
-            f: ClassFile ⇒ T): Unit = {
+        isInterrupted: () ⇒ Boolean
+    )(
+        f: ClassFile ⇒ T
+    ): Unit = {
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
     val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
 
     def parForeachLibraryClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
-            f: ClassFile ⇒ T): Unit = {
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: ClassFile ⇒ T
+    ): Unit = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
     }
 
     val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
     def parForeachClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
-            f: ClassFile ⇒ T): Unit = {
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: ClassFile ⇒ T
+    ): Unit = {
         parForeachProjectClassFile(isInterrupted)(f)
         parForeachLibraryClassFile(isInterrupted)(f)
     }
@@ -273,8 +287,10 @@ class Project[Source] private (
      * methods are analyzed ordered by their length (longest first).
      */
     def parForeachMethodWithBody[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
-            f: Function[(Source, ClassFile, Method), T]): Unit = {
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: Function[(Source, ClassFile, Method), T]
+    ): Unit = {
         val methods = this.methodsWithClassFilesAndSource
         val methodCount = methods.length
         if (methodCount == 0)
@@ -442,15 +458,15 @@ class Project[Source] private (
      */
     def statistics: Map[String, Int] =
         Map(
-            ("ProjectClassFiles" -> projectClassFilesCount),
-            ("LibraryClassFiles" -> libraryClassFilesCount),
-            ("ProjectMethods" -> projectMethodsCount),
-            ("ProjectFields" -> projectFieldsCount),
-            ("LibraryMethods" -> libraryMethodsCount),
-            ("LibraryFields" -> libraryFieldsCount),
-            ("ProjectPackages" -> projectPackages.size),
-            ("LibraryPackages" -> libraryPackages.size),
-            ("ProjectInstructions" ->
+            ("ProjectClassFiles" → projectClassFilesCount),
+            ("LibraryClassFiles" → libraryClassFilesCount),
+            ("ProjectMethods" → projectMethodsCount),
+            ("ProjectFields" → projectFieldsCount),
+            ("LibraryMethods" → libraryMethodsCount),
+            ("LibraryFields" → libraryFieldsCount),
+            ("ProjectPackages" → projectPackages.size),
+            ("LibraryPackages" → libraryPackages.size),
+            ("ProjectInstructions" →
                 projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
                     foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
         )
@@ -461,8 +477,10 @@ class Project[Source] private (
      * are ignored.
      */
     def lookupClassFiles(
-        objectTypes: Traversable[ObjectType])(
-            filter: ClassFile ⇒ Boolean): Traversable[ClassFile] = {
+        objectTypes: Traversable[ObjectType]
+    )(
+        filter: ClassFile ⇒ Boolean
+    ): Traversable[ClassFile] = {
         objectTypes.view.flatMap(classFile(_)) filter { someClassFile: ClassFile ⇒
             filter(someClassFile)
         }
@@ -632,7 +650,8 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)]): Project[Source] = {
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)]
+    ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             projectLogger = OPALLogger.globalLogger()
@@ -641,31 +660,37 @@ object Project {
 
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        projectLogger: OPALLogger): Project[Source] = {
+        projectLogger:                OPALLogger
+    ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             Traversable.empty,
-            virtualClassFiles = Traversable.empty)(
-                projectLogger = projectLogger
-            )
+            virtualClassFiles = Traversable.empty
+        )(
+            projectLogger = projectLogger
+        )
     }
 
     def apply(
         projectFile: File,
-        libraryFile: File): Project[URL] = {
+        libraryFile: File
+    ): Project[URL] = {
         apply(
             Java8ClassFileReader.ClassFiles(projectFile),
             Java8LibraryClassFileReader.ClassFiles(libraryFile),
-            virtualClassFiles = Traversable.empty)
+            virtualClassFiles = Traversable.empty
+        )
     }
 
     def apply(
         projectFiles: Array[File],
-        libraryFiles: Array[File]): Project[URL] = {
+        libraryFiles: Array[File]
+    ): Project[URL] = {
         apply(
             Java8ClassFileReader.AllClassFiles(projectFiles),
             Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
-            virtualClassFiles = Traversable.empty)
+            virtualClassFiles = Traversable.empty
+        )
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
@@ -677,14 +702,16 @@ object Project {
      * project and the newly given source files.
      */
     def extend[Source](
-        project: Project[Source],
+        project:                      Project[Source],
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty
+    ): Project[Source] = {
 
         apply(
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
-            virtualClassFiles = Traversable.empty)(
+            virtualClassFiles = Traversable.empty
+        )(
                 config = project.config,
                 projectLogger = OPALLogger.logger(project.logContext.successor)
             )
@@ -692,11 +719,13 @@ object Project {
 
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)]): Project[Source] = {
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)]
+    ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             libraryClassFilesWithSources,
-            virtualClassFiles = Traversable.empty)
+            virtualClassFiles = Traversable.empty
+        )
     }
 
     /**
@@ -705,18 +734,20 @@ object Project {
      * configuration is by default used as fallback, so not all values have to be updated.
      */
     def updateConfig[Source](
-        project: Project[Source],
-        config: Config,
-        useOldConfigAsFallback: Boolean = true) = {
+        project:                Project[Source],
+        config:                 Config,
+        useOldConfigAsFallback: Boolean         = true
+    ) = {
 
         apply(
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
-            virtualClassFiles = Traversable.empty)(
-                if (useOldConfigAsFallback) config.withFallback(project.config)
-                else config,
-                projectLogger = OPALLogger.logger(project.logContext.successor)
-            )
+            virtualClassFiles = Traversable.empty
+        )(
+            if (useOldConfigAsFallback) config.withFallback(project.config)
+            else config,
+            projectLogger = OPALLogger.logger(project.logContext.successor)
+        )
     }
 
     /**
@@ -730,7 +761,8 @@ object Project {
      */
     def defaultHandlerForInconsistentProjects(
         logContext: LogContext,
-        ex: InconsistentProjectException): Unit = {
+        ex:         InconsistentProjectException
+    ): Unit = {
 
         OPALLogger.log(Warn("project configuration", ex.message))(logContext)
 
@@ -766,17 +798,20 @@ object Project {
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
-        virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
-        handleInconsistentProject: HandleInconsistenProject = defaultHandlerForInconsistentProjects)(
-            implicit config: Config = ConfigFactory.load(),
-            projectLogger: OPALLogger = OPALLogger.globalLogger()): Project[Source] = {
+        virtualClassFiles:            Traversable[ClassFile]           = Traversable.empty,
+        handleInconsistentProject:    HandleInconsistenProject         = defaultHandlerForInconsistentProjects
+    )(
+        implicit
+        config:        Config     = ConfigFactory.load(),
+        projectLogger: OPALLogger = OPALLogger.globalLogger()
+    ): Project[Source] = {
 
         implicit val logContext = new DefaultLogContext()
         OPALLogger.register(logContext, projectLogger)
 
         try {
-            import scala.collection.mutable.{ Set, Map }
-            import scala.concurrent.{ Future, Await, ExecutionContext }
+            import scala.collection.mutable.{Set, Map}
+            import scala.concurrent.{Future, Await, ExecutionContext}
             import scala.concurrent.duration.Duration
             import ExecutionContext.Implicits.global
 
@@ -808,7 +843,8 @@ object Project {
 
             def processProjectClassFile(
                 classFile: ClassFile,
-                source: Option[Source]): Unit = {
+                source:    Option[Source]
+            ): Unit = {
                 val projectType = classFile.thisType
                 if (projectTypes.contains(projectType)) {
                     handleInconsistentProject(
@@ -917,7 +953,8 @@ object Project {
                 libraryMethodsCount,
                 libraryFieldsCount,
                 codeSize,
-                Await.result(classHierarchyFuture, Duration.Inf))
+                Await.result(classHierarchyFuture, Duration.Inf)
+            )
         } catch {
             case t: Throwable ⇒
                 OPALLogger.unregister(logContext)

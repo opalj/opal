@@ -33,7 +33,7 @@ package analysis
 import scala.language.postfixOps
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.analyses.{ Project, SomeProject }
+import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
@@ -87,9 +87,12 @@ object MutablityAnalysis {
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineMutabilityOfNonFinalPrivateStaticFields(
-        classFile: ClassFile)(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project:      SomeProject,
+        projectStore: PropertyStore
+    ): PropertyComputationResult = {
 
         val thisType = classFile.thisType
         val fields = classFile.fields
@@ -133,7 +136,8 @@ object MutablityAnalysis {
         implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
         projectStore <||< (
             { case cf: ClassFile ⇒ cf },
-            determineMutabilityOfNonFinalPrivateStaticFields)
+            determineMutabilityOfNonFinalPrivateStaticFields
+        )
     }
 }
 

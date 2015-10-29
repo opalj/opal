@@ -42,26 +42,30 @@ import br._
  * This class is thread-safe if the specified dependency processor is also thread-safe.
  */
 class DependencyProcessorDecorator(
-        baseDependencyProcessor: DependencyProcessor) extends DependencyProcessor {
+        baseDependencyProcessor: DependencyProcessor
+) extends DependencyProcessor {
 
     def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         baseDependencyProcessor.processDependency(source, target, dType)
     }
 
     def processDependency(
-        source: VirtualSourceElement,
+        source:    VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit = {
+        dType:     DependencyType
+    ): Unit = {
         baseDependencyProcessor.processDependency(source, arrayType, dType)
     }
 
     def processDependency(
-        source: VirtualSourceElement,
+        source:   VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit = {
+        dType:    DependencyType
+    ): Unit = {
         baseDependencyProcessor.processDependency(source, baseType, dType)
     }
 

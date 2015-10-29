@@ -64,9 +64,10 @@ class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
      * @return An Iterable of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         for {
             classFile ← project.allProjectClassFiles
@@ -85,7 +86,8 @@ class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
                 Severity.Error,
                 classFile.thisType,
                 method,
-                "Calls System.runFinalizersOnExit()")
+                "Calls System.runFinalizersOnExit()"
+            )
         }
     }
 }

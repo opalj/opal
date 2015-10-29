@@ -79,13 +79,15 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
                     MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnInt", MethodDescriptor(IndexedSeq[FieldType](), IntegerType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeInt))),
                     EmptyStmt(4),
-                    Return(5)))
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect pop2 mode 2") {
@@ -99,13 +101,15 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
                     MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnDouble", MethodDescriptor(IndexedSeq[FieldType](), DoubleType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeDouble))),
                     EmptyStmt(4),
-                    Return(5)))
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect dup") {
@@ -120,14 +124,16 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     EmptyStmt(3),
                     MethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(8)))
+                    Return(8)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
                     "3: op_0/*java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect monitorenter and -exit") {
@@ -150,7 +156,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
                     Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)))
+                    Return(14)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
@@ -165,7 +172,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "10: monitorexit op_0;",
                     "11: op_0 = r_2;",
                     "12: throw op_0;",
-                    "13: return;"))
+                    "13: return;"
+                ))
             }
 
             it("should correctly reflect invokestatic") {
@@ -180,14 +188,16 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
                     MethodCall(2, ObjectType("tactest/StackManipulationAndSynchronization"), "staticMethod", MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType), None, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), Some(SimpleVar(0, ComputationalTypeInt))),
                     Assignment(5, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
                     "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect invokeinterface") {
@@ -208,7 +218,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(1, ComputationalTypeReference)), List(), None),
                     MethodCall(16, ObjectType("java/util/List"), "add", MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType), Some(SimpleVar(0, ComputationalTypeReference)), List(SimpleVar(1, ComputationalTypeReference)), Some(SimpleVar(0, ComputationalTypeInt))),
                     EmptyStmt(21),
-                    Return(22)))
+                    Return(22)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
@@ -221,7 +232,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "8: op_1/*java.lang.Object*/.<init>();",
                     "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
-                    "11: return;"))
+                    "11: return;"
+                ))
             }
         }
 
@@ -239,13 +251,15 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
                     MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnInt", MethodDescriptor(IndexedSeq[FieldType](), IntegerType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeInt))),
                     EmptyStmt(4),
-                    Return(5)))
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect pop2 mode 2") {
@@ -261,13 +275,15 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
                     MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnDouble", MethodDescriptor(IndexedSeq[FieldType](), DoubleType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeDouble))),
                     EmptyStmt(4),
-                    Return(5)))
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect dup") {
@@ -284,14 +300,16 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     EmptyStmt(3),
                     MethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(8)))
+                    Return(8)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
                     "3: op_0/*java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect monitorenter and -exit") {
@@ -316,7 +334,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
                     Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)))
+                    Return(14)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
@@ -331,7 +350,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "10: monitorexit op_0;",
                     "11: op_0 = r_2;",
                     "12: throw op_0;",
-                    "13: return;"))
+                    "13: return;"
+                ))
             }
 
             it("should correctly reflect invokestatic") {
@@ -348,14 +368,16 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
                     MethodCall(2, ObjectType("tactest/StackManipulationAndSynchronization"), "staticMethod", MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType), None, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), Some(SimpleVar(0, ComputationalTypeInt))),
                     Assignment(5, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
                     "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect invokeinterface") {
@@ -378,7 +400,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(1, ComputationalTypeReference)), List(), None),
                     MethodCall(16, ObjectType("java/util/List"), "add", MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType), Some(SimpleVar(0, ComputationalTypeReference)), List(SimpleVar(1, ComputationalTypeReference)), Some(SimpleVar(0, ComputationalTypeInt))),
                     EmptyStmt(21),
-                    Return(22)))
+                    Return(22)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
@@ -391,7 +414,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "8: op_1/*java.lang.Object*/.<init>();",
                     "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
-                    "11: return;"))
+                    "11: return;"
+                ))
             }
         }
     }

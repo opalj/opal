@@ -56,9 +56,10 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class DefaultDomain(
-    val project: SomeProject,
-    val classFile: ClassFile,
-    override val method: Method)
+    val project:         SomeProject,
+    val classFile:       ClassFile,
+    override val method: Method
+)
         extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration

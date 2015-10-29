@@ -48,9 +48,10 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         "determines the factory methods of a library"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         // RECOMMENDED
         // The factory method analysis requires information about the accessibility

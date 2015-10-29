@@ -120,7 +120,8 @@ object DependencyAnalysis extends AnalysisExecutor {
                 println(
                     Console.YELLOW+
                         "[warn] HtmlDocument has at least one unset option "+o +
-                        Console.RESET)
+                        Console.RESET
+                )
             }
             case None ⇒
         }
@@ -133,14 +134,15 @@ object DependencyAnalysis extends AnalysisExecutor {
             "Collects information about the number of dependencies on others packages per package."
 
         def analyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            initProgressManagement: (Int) ⇒ ProgressManagement) = {
+            project:                Project[URL],
+            parameters:             Seq[String],
+            initProgressManagement: (Int) ⇒ ProgressManagement
+        ) = {
 
             val pm = initProgressManagement(3)
             pm.progress(1, ProgressEvents.Start, Some("setup"))
 
-            import scala.collection.mutable.{ HashSet, HashMap }
+            import scala.collection.mutable.{HashSet, HashMap}
 
             val rootPackages = project.rootPackages
 
@@ -169,11 +171,13 @@ object DependencyAnalysis extends AnalysisExecutor {
                 override def processDependency(
                     source: VirtualSourceElement,
                     target: VirtualSourceElement,
-                    dType: DependencyType): Unit = {
+                    dType:  DependencyType
+                ): Unit = {
                     if (source.isClass && target.isClass)
                         addDependency(
                             source.asInstanceOf[VirtualClass].thisType.packageName,
-                            target.asInstanceOf[VirtualClass].thisType.packageName)
+                            target.asInstanceOf[VirtualClass].thisType.packageName
+                        )
                 }
 
                 def getPackageName(pn: String): String = {
@@ -185,19 +189,22 @@ object DependencyAnalysis extends AnalysisExecutor {
                 }
 
                 def processDependency(
-                    source: VirtualSourceElement,
+                    source:   VirtualSourceElement,
                     baseType: BaseType,
-                    dType: DependencyType): Unit = {
+                    dType:    DependencyType
+                ): Unit = {
 
                 }
                 def processDependency(
-                    source: VirtualSourceElement,
+                    source:    VirtualSourceElement,
                     arrayType: ArrayType,
-                    dType: DependencyType): Unit = {
+                    dType:     DependencyType
+                ): Unit = {
                     if (source.isClass && arrayType.componentType.isObjectType)
                         addDependency(
                             source.asInstanceOf[VirtualClass].thisType.packageName,
-                            arrayType.componentType.asInstanceOf[ObjectType].packageName)
+                            arrayType.componentType.asInstanceOf[ObjectType].packageName
+                        )
                 }
 
                 def currentDependencyCount(source: String, target: String): Int = {
@@ -231,7 +238,9 @@ object DependencyAnalysis extends AnalysisExecutor {
             var data = ("["+packages.foldRight("")(
                 (p1, l1) ⇒ "["+
                     packages.foldRight("")(
-                        (p2, l2) ⇒ (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2)+"],"+l1)+"]").replaceAll(",]", "]")
+                        (p2, l2) ⇒ (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount)+","+l2
+                    )+"],"+l1
+            )+"]").replaceAll(",]", "]")
 
             if (inverse)
                 data = "d3.transpose("+data+")"
@@ -243,7 +252,9 @@ object DependencyAnalysis extends AnalysisExecutor {
                     ("<table> <tr><th"+cS+"></th>"+packages.foldRight("</tr>")((p, l) ⇒ "<th"+cS+">"+p+"</th>"+l) + packages.foldRight("</table>")(
                         (p1, l1) ⇒ "<tr><td"+cS+"><b>"+p1+"</b></td>"+
                             packages.foldRight("</tr>\n")(
-                                (p2, l2) ⇒ "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2) + l1))
+                                (p2, l2) ⇒ "<td"+cS+">"+(dependencyProcessor.currentDependencyCount(p1, p2))+"</td>"+l2
+                            ) + l1
+                    ))
                 else
                     ""
             // read the the template
@@ -263,7 +274,8 @@ object DependencyAnalysis extends AnalysisExecutor {
 
             htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
                 (name, json) ⇒
-                    s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json)+"]")
+                    s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json
+            )+"]")
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
 
             pm.progress(3, ProgressEvents.End, None)

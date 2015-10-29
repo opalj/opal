@@ -39,7 +39,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class CONSTANT_String_info(
-        string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        string_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_String
 

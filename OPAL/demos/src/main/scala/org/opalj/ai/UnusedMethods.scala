@@ -59,9 +59,10 @@ object UnusedMethods extends DefaultOneStepAnalysis {
     override def description: String = "Identifies methods that are never called."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         import theProject.classHierarchy.isSubtypeOf
 

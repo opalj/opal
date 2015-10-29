@@ -38,7 +38,7 @@ import org.opalj.ai.util.containsInPrefix
 import org.opalj.br.Code
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.ArrayMap
-import org.opalj.collection.mutable.{ Locals ⇒ Registers }
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.ai.util.XHTML
@@ -102,9 +102,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Creates a new set for storing value origins that contains the given origin value.
      */
     @inline private[this] final def ValueOrigins(
-        min: Int = this.min,
-        max: Int = this.max,
-        origin: Int): SmallValuesSet =
+        min:    Int = this.min,
+        max:    Int = this.max,
+        origin: Int
+    ): SmallValuesSet =
         SmallValuesSet.create(min, max, origin)
 
     private[this] var min: Int = _ // initialized by initProperties
@@ -128,9 +129,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
 
     abstract override def initProperties(
-        code: Code,
+        code:             Code,
         joinInstructions: BitSet,
-        locals: Locals): Unit = {
+        locals:           Locals
+    ): Unit = {
 
         instructions = code.instructions
         val codeSize = instructions.size
@@ -169,8 +171,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     abstract override def properties(
-        pc: Int,
-        propertyToString: AnyRef ⇒ String): Option[String] = {
+        pc:               Int,
+        propertyToString: AnyRef ⇒ String
+    ): Option[String] = {
 
         val thisProperty =
             Option(used(pc + parametersOffset)).
@@ -327,11 +330,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
      */
     private[this] def handleFlow(
-        currentPC: PC,
-        successorPC: PC,
+        currentPC:                PC,
+        successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        joinInstructions: BitSet,
-        operandsArray: OperandsArray): Boolean = {
+        joinInstructions:         BitSet,
+        operandsArray:            OperandsArray
+    ): Boolean = {
 
         var forceScheduling = false
         val instruction = instructions(currentPC)
@@ -356,17 +360,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
 
         def propagate(
-            newDefOps: List[ValueOrigins],
-            newDefLocals: Registers[ValueOrigins]): Boolean = {
+            newDefOps:    List[ValueOrigins],
+            newDefLocals: Registers[ValueOrigins]
+        ): Boolean = {
             if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
-                    oldDefOps: List[ValueOrigins],
-                    lDefOps: List[ValueOrigins],
-                    rDefOps: List[ValueOrigins],
-                    oldIsSuperset: Boolean = true,
-                    joinedDefOps: List[ValueOrigins] = Nil): List[ValueOrigins] = {
+                    oldDefOps:     List[ValueOrigins],
+                    lDefOps:       List[ValueOrigins],
+                    rDefOps:       List[ValueOrigins],
+                    oldIsSuperset: Boolean            = true,
+                    joinedDefOps:  List[ValueOrigins] = Nil
+                ): List[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
                         //                        assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
@@ -382,7 +388,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
-                            oldIsSuperset, oldHead :: joinedDefOps)
+                            oldIsSuperset, oldHead :: joinedDefOps
+                        )
                     else {
                         val joinedHead = (newHead ++ oldHead)
                         //                        assert(newHead.subsetOf(joinedHead))
@@ -391,7 +398,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
-                            false, joinedHead :: joinedDefOps)
+                            false, joinedHead :: joinedDefOps
+                        )
                     }
                 }
 
@@ -435,7 +443,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // variables (there is no load without a previous store).
                     var newUsage = false
                     val joinedDefLocals =
-                        oldDefLocals.merge(newDefLocals,
+                        oldDefLocals.merge(
+                            newDefLocals,
                             { (o, n) ⇒
                                 // In general, if n or o equals null, then
                                 // the register variable did not contain any
@@ -470,7 +479,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                     //                                    assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
                                     joinedDefLocals
                                 }
-                            })
+                            }
+                        )
                     if (joinedDefLocals ne oldDefLocals) {
                         // assert(
                         //      joinedDefLocals != oldDefLocals,
@@ -627,7 +637,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val descriptor = invoke.methodDescriptor
                 stackOp(
                     invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
-                    !descriptor.returnType.isVoidType)
+                    !descriptor.returnType.isVoidType
+                )
 
             //
             // LOAD AND STORE INSTRUCTIONS
@@ -831,7 +842,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     abstract override def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: defUseDomain.type }): Unit = {
+        aiResult: AIResult { val domain: defUseDomain.type }
+    ): Unit = {
         if (aiResult.wasAborted)
             return ;
 
@@ -862,7 +874,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
                         joinInstructions,
-                        operandsArray)
+                        operandsArray
+                    )
 
                 } catch {
                     case e: Throwable ⇒

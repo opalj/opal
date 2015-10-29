@@ -63,87 +63,108 @@ sealed trait TypeAnnotationPathElement
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-        target: TypeAnnotationTarget,
-        path: TypeAnnotationPath,
-        annotationType: FieldType,
-        elementValuePairs: ElementValuePairs) {
+        target:            TypeAnnotationTarget,
+        path:              TypeAnnotationPath,
+        annotationType:    FieldType,
+        elementValuePairs: ElementValuePairs
+) {
 
 }
 
 case class TAOfCastExpression(
-    offset: Int,
-    type_argument_index: Int) extends TypeAnnotationTarget
+    offset:              Int,
+    type_argument_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfCatch(
-    exception_table_index: Int) extends TypeAnnotationTarget
+    exception_table_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfConstructorInMethodReferenceExpression(
-    offset: Int,
-    type_argument_index: Int) extends TypeAnnotationTarget
+    offset:              Int,
+    type_argument_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfConstructorInvocation(
-    offset: Int,
-    type_argument_index: Int) extends TypeAnnotationTarget
+    offset:              Int,
+    type_argument_index: Int
+) extends TypeAnnotationTarget
 
 case object TAOfFieldDeclaration extends TypeAnnotationTarget
 
 case class TAOfFormalParameter(
-    formal_parameter_index: Int) extends TypeAnnotationTarget
+    formal_parameter_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfInstanceOf(
-    offset: Int) extends TypeAnnotationTarget
+    offset: Int
+) extends TypeAnnotationTarget
 
 case class TAOfLocalvarDecl(
-    localVarTable: IndexedSeq[LocalvarTableEntry]) extends TypeAnnotationTarget
+    localVarTable: IndexedSeq[LocalvarTableEntry]
+) extends TypeAnnotationTarget
 
 case class TAOfResourcevarDecl(
-    localVarTable: IndexedSeq[LocalvarTableEntry]) extends TypeAnnotationTarget
+    localVarTable: IndexedSeq[LocalvarTableEntry]
+) extends TypeAnnotationTarget
 
 case class LocalvarTableEntry(
-    start_pc: Int,
-    length: Int,
-    local_variable_table_index: Int)
+    start_pc:                   Int,
+    length:                     Int,
+    local_variable_table_index: Int
+)
 
 case class TAOfMethodInMethodReferenceExpression(
-    offset: Int,
-    type_argument_index: Int) extends TypeAnnotationTarget
+    offset:              Int,
+    type_argument_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfMethodInvocation(
-    offset: Int,
-    type_argument_index: Int) extends TypeAnnotationTarget
+    offset:              Int,
+    type_argument_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfMethodReferenceExpressionIdentifier(
-    offset: Int) extends TypeAnnotationTarget
+    offset: Int
+) extends TypeAnnotationTarget
 
 case class TAOfMethodReferenceExpressionNew(
-    offset: Int) extends TypeAnnotationTarget
+    offset: Int
+) extends TypeAnnotationTarget
 
 case class TAOfNew(
-    offset: Int) extends TypeAnnotationTarget
+    offset: Int
+) extends TypeAnnotationTarget
 
 case class TAOfParameterDeclarationOfClassOrInterface(
-    type_parameter_index: Int) extends TypeAnnotationTarget
+    type_parameter_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfParameterDeclarationOfMethodOrConstructor(
-    type_parameter_index: Int) extends TypeAnnotationTarget
+    type_parameter_index: Int
+) extends TypeAnnotationTarget
 
 case object TAOfReceiverType extends TypeAnnotationTarget
 
 case object TAOfReturnType extends TypeAnnotationTarget
 
 case class TAOfSupertype(
-    supertype_index: Int) extends TypeAnnotationTarget
+    supertype_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfThrows(
-    throws_type_index: Int) extends TypeAnnotationTarget
+    throws_type_index: Int
+) extends TypeAnnotationTarget
 
 case class TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
     type_parameter_index: Int,
-    bound_index: Int) extends TypeAnnotationTarget
+    bound_index:          Int
+) extends TypeAnnotationTarget
 
 case class TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
     type_parameter_index: Int,
-    bound_index: Int) extends TypeAnnotationTarget
+    bound_index:          Int
+) extends TypeAnnotationTarget
 
 //
 //
@@ -154,7 +175,8 @@ case class TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
 case object TADirectlyOnType extends TypeAnnotationPath
 
 case class TAOnNestedType(
-    path: IndexedSeq[TypeAnnotationPathElement]) extends TypeAnnotationPath
+    path: IndexedSeq[TypeAnnotationPathElement]
+) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement
 
@@ -163,5 +185,6 @@ case object TADeeperInNestedType extends TypeAnnotationPathElement
 case object TAOnBoundOfWildcardType extends TypeAnnotationPathElement
 
 case class TAOnTypeArgument(
-    type_argument_index: Int) extends TypeAnnotationPathElement
+    type_argument_index: Int
+) extends TypeAnnotationPathElement
 

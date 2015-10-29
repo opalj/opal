@@ -54,10 +54,12 @@ class TestCovariantEquals extends AnalysisTest {
     it should "find that class CovariantEqualsMethod defines a covariant eqals() method "+
         "(and does not define a correct one)." in {
             val declaringClass = ObjectType("CovariantEquals/CovariantEqualsMethod")
-            results should contain(ClassBasedReport(project.source(declaringClass),
+            results should contain(ClassBasedReport(
+                project.source(declaringClass),
                 Severity.Warning,
                 declaringClass,
-                "Missing equals(Object) to override Object.equals(Object)"))
+                "Missing equals(Object) to override Object.equals(Object)"
+            ))
         }
 
     it should "find exactly one issue in total" in {

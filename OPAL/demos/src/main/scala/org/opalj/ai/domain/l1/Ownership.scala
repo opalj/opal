@@ -38,7 +38,7 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.Iterable
-import scala.collection.{ Set, Map }
+import scala.collection.{Set, Map}
 import org.opalj.collection.mutable.Locals
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
@@ -80,9 +80,10 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
         "a very basic ownership analysis for arrays"
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 
@@ -169,7 +170,9 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
 
         BasicReport(
             classes.toList.sortWith((v1, v2) ⇒ v1._1 < v2._1).mkString(
-                "Class files with no ownership protection for arrays:\n\t", "\n\t", "\n"))
+                "Class files with no ownership protection for arrays:\n\t", "\n\t", "\n"
+            )
+        )
 
     }
 

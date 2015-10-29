@@ -50,17 +50,19 @@ trait MethodsReader extends Constant_PoolAbstractions {
     protected def Attributes(
         ap: AttributeParent,
         cp: Constant_Pool,
-        in: DataInputStream): Attributes
+        in: DataInputStream
+    ): Attributes
 
     type Method_Info
     implicit val Method_InfoManifest: ClassTag[Method_Info]
 
     def Method_Info(
-        constant_pool: Constant_Pool,
-        accessFlags: Int,
-        name_index: Constant_Pool_Index,
+        constant_pool:    Constant_Pool,
+        accessFlags:      Int,
+        name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes): Method_Info
+        attributes:       Attributes
+    ): Method_Info
 
     //
     // IMPLEMENTATION

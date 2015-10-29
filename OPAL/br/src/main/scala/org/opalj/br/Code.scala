@@ -55,11 +55,12 @@ import scala.collection.mutable.Queue
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack: Int,
-    val maxLocals: Int,
-    val instructions: Array[Instruction],
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
     val exceptionHandlers: ExceptionHandlers,
-    val attributes: Attributes)
+    val attributes:        Attributes
+)
         extends Attribute
         with CommonAttributes {
 
@@ -107,11 +108,11 @@ final class Code private (
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note Calling this method only makes sense for Java bytecode that actually contains
-<<<<<<< HEAD
+     * <<<<<<< HEAD
      * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
-=======
+     * =======
      * 		[[org.opalj.br.instruction.JSR]] and [[org.opalj.br.instruction.RET]]
->>>>>>> master
+     * >>>>>>> master
      * 		instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
@@ -185,9 +186,10 @@ final class Code private (
             // belonging to this subroutine belong to this subroutine (unless the handler
             // is already associated with a previous subroutine!)
             @inline def belongsToCurrentSubroutine(
-                startPC: PC,
-                endPC: PC,
-                handlerPC: PC): Boolean = {
+                startPC:   PC,
+                endPC:     PC,
+                handlerPC: PC
+            ): Boolean = {
                 var currentPC = startPC
                 while (currentPC < endPC) {
                     if (subroutineIds(currentPC) != -1) {
@@ -717,8 +719,10 @@ final class Code private (
      * @return The list of results of applying the function f for each matching sequence.
      */
     def slidingCollect[B](
-        windowSize: Int)(
-            f: PartialFunction[(PC, Seq[Instruction]), B]): Seq[B] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[(PC, Seq[Instruction]), B]
+    ): Seq[B] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -768,8 +772,10 @@ final class Code private (
      *      of the partial function.
      */
     def findSequence[B](
-        windowSize: Int)(
-            f: PartialFunction[Seq[Instruction], B]): List[(PC, B)] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[Seq[Instruction], B]
+    ): List[(PC, B)] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -822,7 +828,8 @@ final class Code private (
      * }}}
      */
     def collectPair[B](
-        f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
+        f: PartialFunction[(Instruction, Instruction), B]
+    ): List[(PC, B)] = {
         val max_pc = instructions.size
 
         var first_pc = 0
@@ -897,8 +904,9 @@ final class Code private (
      *      passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int = Int.MaxValue,
-        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchMaxTriples: Int                                               = Int.MaxValue,
+        f:               (Instruction, Instruction, Instruction) ⇒ Boolean
+    ): List[PC] = {
         val max_pc = instructions.size
         var matchedTriplesCount = 0
         var pc1 = 0
@@ -979,15 +987,16 @@ final class Code private (
      *      return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
-     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction. 
-     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow` 
+     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
+     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow`
      * 		instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
-        pc: PC,
+        pc:               PC,
         joinInstructions: BitSet,
-        anInvocation: (PC) ⇒ Boolean,
-        aThrow: (PC) ⇒ Boolean): Boolean = {
+        anInvocation:     (PC) ⇒ Boolean,
+        aThrow:           (PC) ⇒ Boolean
+    ): Boolean = {
 
         var currentPC = pc
         while (!joinInstructions.contains(currentPC)) {
@@ -1092,11 +1101,12 @@ final class Code private (
 object Code {
 
     def apply(
-        maxStack: Int,
-        maxLocals: Int,
-        instructions: Array[Instruction],
+        maxStack:          Int,
+        maxLocals:         Int,
+        instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        attributes: Attributes): Code = {
+        attributes:        Attributes
+    ): Code = {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0

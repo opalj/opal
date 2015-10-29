@@ -54,9 +54,10 @@ object CallBySignatureInformation extends DefaultOneStepAnalysis {
             stripMargin('|')
 
     override def doAnalyze(
-        project: org.opalj.br.analyses.Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       org.opalj.br.analyses.Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val cbs = project.get(CallBySignatureResolutionKey)
 

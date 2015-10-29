@@ -232,8 +232,9 @@ trait AnalysisExecutor {
     }
 
     protected def handleParsingExceptions(
-        project: SomeProject,
-        exceptions: Traversable[Throwable]): Unit = {
+        project:    SomeProject,
+        exceptions: Traversable[Throwable]
+    ): Unit = {
         if (exceptions.isEmpty)
             return ;
 
@@ -244,8 +245,9 @@ trait AnalysisExecutor {
     }
 
     def setupProject(
-        cpFiles: Iterable[File],
-        libcpFiles: Iterable[File]): Project[URL] = {
+        cpFiles:    Iterable[File],
+        libcpFiles: Iterable[File]
+    ): Project[URL] = {
 
         OPALLogger.info("creating project", "reading project class files")(GlobalLogContext)
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
@@ -265,7 +267,8 @@ trait AnalysisExecutor {
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext))
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
+                )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -273,9 +276,11 @@ trait AnalysisExecutor {
         val project = Project(classFiles, libraryClassFiles)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
-        OPALLogger.info("project",
+        OPALLogger.info(
+            "project",
             project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.reverse.
-                mkString("project statistics:\n\t", "\n\t", "\n"))(project.logContext)
+                mkString("project statistics:\n\t", "\n\t", "\n")
+        )(project.logContext)
         project
     }
 }

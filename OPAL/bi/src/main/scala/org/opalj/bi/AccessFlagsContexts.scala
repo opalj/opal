@@ -41,7 +41,8 @@ object AccessFlagsContexts extends Enumeration {
     val INNER_CLASS, CLASS, METHOD, FIELD, METHOD_PARAMETERS = Value
 
     val INNER_CLASS_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC,
+        IndexedSeq(
+            ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -51,20 +52,24 @@ object AccessFlagsContexts extends Enumeration {
             ACC_ABSTRACT,
             ACC_SYNTHETIC,
             ACC_ANNOTATION,
-            ACC_ENUM)
+            ACC_ENUM
+        )
 
     val CLASS_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC,
+        IndexedSeq(
+            ACC_PUBLIC,
             ACC_FINAL,
             ACC_SUPER,
             ACC_INTERFACE,
             ACC_ABSTRACT,
             ACC_SYNTHETIC,
             ACC_ANNOTATION,
-            ACC_ENUM)
+            ACC_ENUM
+        )
 
     val FIELD_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC,
+        IndexedSeq(
+            ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -72,10 +77,12 @@ object AccessFlagsContexts extends Enumeration {
             ACC_VOLATILE,
             ACC_TRANSIENT,
             ACC_SYNTHETIC,
-            ACC_ENUM)
+            ACC_ENUM
+        )
 
     val METHOD_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC,
+        IndexedSeq(
+            ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -86,7 +93,8 @@ object AccessFlagsContexts extends Enumeration {
             ACC_NATIVE,
             ACC_ABSTRACT,
             ACC_STRICT,
-            ACC_SYNTHETIC)
+            ACC_SYNTHETIC
+        )
 
     val METHOD_PARAMETER_FLAGS: IndexedSeq[AccessFlag] =
         IndexedSeq(ACC_FINAL, ACC_SYNTHETIC, ACC_MANDATED)

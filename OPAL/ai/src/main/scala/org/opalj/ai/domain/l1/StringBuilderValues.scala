@@ -33,7 +33,7 @@ package l1
 
 import org.opalj.br.ObjectType
 import scala.reflect.ClassTag
-import java.lang.{ StringBuilder ⇒ JStringBuilder }
+import java.lang.{StringBuilder ⇒ JStringBuilder}
 
 /**
  * Enables the tracing of `StringBuilders`.
@@ -44,21 +44,24 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
     domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with ClassHierarchy ⇒
 
     protected class StringBuilderValue(
-        origin: ValueOrigin,
+        origin:          ValueOrigin,
         val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
-        val builder: JStringBuilder,
-        t: Timestamp)
+        val builder:     JStringBuilder,
+        t:               Timestamp
+    )
             extends SObjectValue(origin, No, true, builderType, t) {
         this: DomainStringValue ⇒
 
         assert(builder != null)
         assert(
             (builderType eq StringBuilderValues.Buffer) ||
-                (builderType eq StringBuilderValues.Builder))
+                (builderType eq StringBuilderValues.Builder)
+        )
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
-            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+            other:  DomainSingleOriginReferenceValue
+        ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
                 case that: StringBuilderValue ⇒
@@ -101,7 +104,8 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
                     that.StringBuilderValue(
                         this.origin,
                         this.builderType,
-                        this.builder).asInstanceOf[target.DomainValue]
+                        this.builder
+                    ).asInstanceOf[target.DomainValue]
                 case _ ⇒
                     super.adapt(target, vo)
             }
@@ -130,14 +134,16 @@ trait StringBuilderValues extends StringValues with ReflectiveInvoker {
     }
 
     final def StringBuilderValue(
-        origin: ValueOrigin,
-        builderType: ObjectType): StringBuilderValue =
+        origin:      ValueOrigin,
+        builderType: ObjectType
+    ): StringBuilderValue =
         StringBuilderValue(origin, builderType, new JStringBuilder())
 
     def StringBuilderValue(
-        origin: ValueOrigin,
+        origin:      ValueOrigin,
         builderType: ObjectType,
-        builder: JStringBuilder): StringBuilderValue
+        builder:     JStringBuilder
+    ): StringBuilderValue
 }
 
 object StringBuilderValues {

@@ -51,9 +51,12 @@ object MethodAccessibilityAnalysis
     }
 
     override def determineProperty(
-        method: Method)(
-            implicit project: SomeProject,
-            propertyStore: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): PropertyComputationResult = {
 
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal);

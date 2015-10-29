@@ -130,8 +130,9 @@ object HasAnnotation {
  * @author Marco Torsello
  */
 case class AnnotatedWith(
-    annotationType: FieldType,
-    elementValuePairs: Seq[ElementValuePair])
+    annotationType:    FieldType,
+    elementValuePairs: Seq[ElementValuePair]
+)
         extends AnnotationPredicate {
 
     /**
@@ -189,14 +190,16 @@ object AnnotatedWith {
      *      `java.lang.Void.TYPE`.
      */
     def apply(
-        annotationType: SomeClass,
-        elementValuePairs: ElementValuePairs): AnnotatedWith = {
+        annotationType:    SomeClass,
+        elementValuePairs: ElementValuePairs
+    ): AnnotatedWith = {
         new AnnotatedWith(Type(annotationType).asFieldType, elementValuePairs)
     }
 
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs: ElementValuePairs): AnnotatedWith = {
+        elementValuePairs:  ElementValuePairs
+    ): AnnotatedWith = {
 
         val annotationType = ObjectType(annotationTypeName.asString)
         new AnnotatedWith(annotationType, elementValuePairs)
@@ -204,7 +207,8 @@ object AnnotatedWith {
 
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs: Map[String, ElementValue]): AnnotatedWith = {
+        elementValuePairs:  Map[String, ElementValue]
+    ): AnnotatedWith = {
         new AnnotatedWith(
             ObjectType(annotationTypeName.asString),
             elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq
@@ -212,7 +216,8 @@ object AnnotatedWith {
     }
     def apply(
         annotationTypeName: BinaryString,
-        elementValuePairs: (String, ElementValue)*): AnnotatedWith = {
+        elementValuePairs:  (String, ElementValue)*
+    ): AnnotatedWith = {
         new AnnotatedWith(
             ObjectType(annotationTypeName.asString),
             elementValuePairs.map(kv ⇒ ElementValuePair(kv._1, kv._2)).toSeq

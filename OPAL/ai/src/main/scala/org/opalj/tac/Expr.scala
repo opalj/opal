@@ -62,11 +62,12 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 
 case class Compare(
-    pc: PC,
-    left: Expr,
+    pc:        PC,
+    left:      Expr,
     condition: RelationalOperator,
-    right: Expr) 
-		extends Expr {
+    right:     Expr
+)
+        extends Expr {
 
     final def cTpe = ComputationalTypeInt
 }
@@ -121,39 +122,44 @@ case class NullExpr(pc: PC) extends Expr {
  * @param cTpe The computational type of the result of the binary expression.
  */
 case class BinaryExpr(
-    pc: PC,
+    pc:   PC,
     cTpe: ComputationalType,
-    op: BinaryArithmeticOperator,
-    left: Expr, right: Expr) extends Expr
+    op:   BinaryArithmeticOperator,
+    left: Expr, right: Expr
+) extends Expr
 
 /**
  * @param cTpe The computational type of the result of the prefix expression.
  */
 case class PrefixExpr(
-    pc: PC,
-    cTpe: ComputationalType,
-    op: UnaryArithmeticOperator,
-    operand: Expr) extends Expr
+    pc:      PC,
+    cTpe:    ComputationalType,
+    op:      UnaryArithmeticOperator,
+    operand: Expr
+) extends Expr
 
 case class PrimitiveTypecastExpr(
-    pc: PC,
+    pc:        PC,
     targetTpe: BaseType,
-    operand: Expr)
+    operand:   Expr
+)
         extends Expr {
     final def cTpe = targetTpe.computationalType
 }
 
 case class New(
-    pc: PC,
-    tpe: ObjectType)
+    pc:  PC,
+    tpe: ObjectType
+)
         extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
 case class NewArray(
-    pc: PC,
+    pc:     PC,
     counts: List[Expr],
-    tpe: ArrayType)
+    tpe:    ArrayType
+)
         extends Expr {
 
     final def cTpe = ComputationalTypeReference
@@ -168,8 +174,9 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 }
 
 case class GetField(
-    pc: PC,
-    declaringClass: ObjectType, name: String, objRef: Expr)
+    pc:             PC,
+    declaringClass: ObjectType, name: String, objRef: Expr
+)
         extends Expr {
     final def cTpe = ComputationalTypeInt
 }

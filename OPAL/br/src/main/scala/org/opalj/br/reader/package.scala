@@ -58,15 +58,17 @@ package object reader {
      *      class files even if the processing of a class file failed.
      */
     def read(
-        args: Iterable[String],
-        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        args:             Iterable[String],
+        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]
+    ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         readClassFiles(args.view.map(new File(_)), classFilesReader)
     }
 
     def readClassFiles(
-        files: Iterable[File],
+        files:            Iterable[File],
         classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
-        perFile: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        perFile:          File ⇒ Unit                                                     = (f: File) ⇒ { /*do nothing*/ }
+    ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         val exceptionsMutex = new Object
         var exceptions: List[Throwable] = Nil
         def handleException(source: Source, e: Throwable): Unit = {

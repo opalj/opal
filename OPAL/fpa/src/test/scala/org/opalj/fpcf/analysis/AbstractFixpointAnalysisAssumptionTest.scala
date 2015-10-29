@@ -92,13 +92,16 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
         analysisMode match {
             case AnalysisModes.LibraryWithOpenPackagesAssumption ⇒
                 annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("opa", EnumValue(_, property)) ⇒ property })
+                    { case ElementValuePair("opa", EnumValue(_, property)) ⇒ property }
+                )
             case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒
                 annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property })
+                    { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property }
+                )
             case AnalysisModes.Application ⇒
                 annotation.elementValuePairs collectFirst (
-                    { case ElementValuePair("application", EnumValue(_, property)) ⇒ property })
+                    { case ElementValuePair("application", EnumValue(_, property)) ⇒ property }
+                )
         }
     }
 }

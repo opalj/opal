@@ -29,7 +29,7 @@
 package org.opalj
 package da
 
-import bi.reader.{ Constant_PoolReader, Constant_PoolAbstractions }
+import bi.reader.{Constant_PoolReader, Constant_PoolAbstractions}
 
 import reflect.ClassTag
 
@@ -82,41 +82,48 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
 
     type CONSTANT_Fieldref_info = org.opalj.da.CONSTANT_Fieldref_info
     def CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index): CONSTANT_Fieldref_info =
+        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+    ): CONSTANT_Fieldref_info =
         new CONSTANT_Fieldref_info(class_index, name_and_type_index)
 
     type CONSTANT_Methodref_info = org.opalj.da.CONSTANT_Methodref_info
     def CONSTANT_Methodref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index): CONSTANT_Methodref_info =
+        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+    ): CONSTANT_Methodref_info =
         new CONSTANT_Methodref_info(class_index, name_and_type_index)
 
     type CONSTANT_InterfaceMethodref_info = org.opalj.da.CONSTANT_InterfaceMethodref_info
     def CONSTANT_InterfaceMethodref_info(
-        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index): CONSTANT_InterfaceMethodref_info =
+        class_index: Constant_Pool_Index, name_and_type_index: Constant_Pool_Index
+    ): CONSTANT_InterfaceMethodref_info =
         new CONSTANT_InterfaceMethodref_info(
             class_index, name_and_type_index
         )
 
     type CONSTANT_NameAndType_info = org.opalj.da.CONSTANT_NameAndType_info
     def CONSTANT_NameAndType_info(
-        name_index: Constant_Pool_Index, descriptor_index: Constant_Pool_Index): CONSTANT_NameAndType_info =
+        name_index: Constant_Pool_Index, descriptor_index: Constant_Pool_Index
+    ): CONSTANT_NameAndType_info =
         new CONSTANT_NameAndType_info(name_index, descriptor_index)
 
     type CONSTANT_InvokeDynamic_info = org.opalj.da.CONSTANT_InvokeDynamic_info
     def CONSTANT_InvokeDynamic_info(
         bootstrap_method_attr_index: Int,
-        name_and_type_index: Constant_Pool_Index): org.opalj.da.ClassFileReader.CONSTANT_InvokeDynamic_info =
+        name_and_type_index:         Constant_Pool_Index
+    ): org.opalj.da.ClassFileReader.CONSTANT_InvokeDynamic_info =
         new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
 
     type CONSTANT_MethodHandle_info = org.opalj.da.CONSTANT_MethodHandle_info
     def CONSTANT_MethodHandle_info(
-        reference_kind: Int,
-        reference_index: Constant_Pool_Index): org.opalj.da.ClassFileReader.CONSTANT_MethodHandle_info =
+        reference_kind:  Int,
+        reference_index: Constant_Pool_Index
+    ): org.opalj.da.ClassFileReader.CONSTANT_MethodHandle_info =
         new CONSTANT_MethodHandle_info(reference_kind, reference_index)
 
     type CONSTANT_MethodType_info = org.opalj.da.CONSTANT_MethodType_info
     def CONSTANT_MethodType_info(
-        descriptor_index: Constant_Pool_Index): org.opalj.da.ClassFileReader.CONSTANT_MethodType_info =
+        descriptor_index: Constant_Pool_Index
+    ): org.opalj.da.ClassFileReader.CONSTANT_MethodType_info =
         new CONSTANT_MethodType_info(descriptor_index)
 
 }

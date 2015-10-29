@@ -54,9 +54,10 @@ object ShadowingAnalysisDemo
         "determins the entry point set of an library by the configured analysis mode"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -115,7 +116,8 @@ object ShadowingAnalysisDemo
         BasicReport( //visibleMethodInfo +
             nonVisibleMethodInfo +
                 projectStore+
-                "\nAnalysis time: "+analysisTime)
+                "\nAnalysis time: "+analysisTime
+        )
     }
 
 }

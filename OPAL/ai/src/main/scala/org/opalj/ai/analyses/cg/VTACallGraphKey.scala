@@ -67,7 +67,8 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
         CallGraphFactory.create(
             project,
             () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project),
-            new DefaultVTACallGraphAlgorithmConfiguration(project))
+            new DefaultVTACallGraphAlgorithmConfiguration(project)
+        )
     }
 }
 

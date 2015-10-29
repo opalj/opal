@@ -49,9 +49,10 @@ object ShowInnerClassesInformation extends AnalysisExecutor {
         override def description: String = "Prints out the inner classes tables."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean): BasicReport = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ): BasicReport = {
 
             val messages =
                 (

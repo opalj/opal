@@ -48,9 +48,10 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
         "determines if the method is exposed to the client via subclasses"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 

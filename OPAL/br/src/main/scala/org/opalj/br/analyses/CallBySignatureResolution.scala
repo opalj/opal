@@ -47,7 +47,8 @@ import org.opalj.log.GlobalLogContext
  */
 class CallBySignatureResolution private (
         val project: SomeProject,
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
+        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
+) {
 
     /**
      * Given the `name` and `descriptor` of a method declared by an interface, all those
@@ -63,11 +64,11 @@ class CallBySignatureResolution private (
 
     def statistics(): Map[String, Any] = {
         Map(
-            "number of method names" ->
+            "number of method names" →
                 methods.size,
-            "number of different method name/descriptor pairs" ->
+            "number of different method name/descriptor pairs" →
                 methods.view.map(kv ⇒ kv._2.size).sum,
-            "number of class methods with method signatures matching non-implemented interface methods" ->
+            "number of class methods with method signatures matching non-implemented interface methods" →
                 methods.view.map(kv ⇒ kv._2.map(kv ⇒ kv._2.size).sum).sum
         )
     }

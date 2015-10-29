@@ -45,15 +45,16 @@ trait ClassFileBinding extends ClassFileReader {
     type Methods <: IndexedSeq[Method_Info]
 
     def ClassFile(
-        cp: Constant_Pool,
+        cp:            Constant_Pool,
         minor_version: Int, major_version: Int,
-        access_flags: Int,
-        this_class_index: Constant_Pool_Index,
+        access_flags:      Int,
+        this_class_index:  Constant_Pool_Index,
         super_class_index: Constant_Pool_Index,
-        interfaces: IndexedSeq[Constant_Pool_Index],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes): ClassFile = {
+        interfaces:        IndexedSeq[Constant_Pool_Index],
+        fields:            Fields,
+        methods:           Methods,
+        attributes:        Attributes
+    ): ClassFile = {
         br.ClassFile(
             minor_version, major_version, access_flags,
             cp(this_class_index).asObjectType(cp),
@@ -67,7 +68,8 @@ trait ClassFileBinding extends ClassFileReader {
             interfaces.map(cp(_).asObjectType(cp)),
             fields,
             methods,
-            attributes)
+            attributes
+        )
     }
 
     val removeBootstrapMethodAttribute: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒

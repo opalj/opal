@@ -53,28 +53,33 @@ trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
     // BINARY ARITHMETIC EXPRESSIONS
     //
     def dadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def ddiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def dmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def drem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def dsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
 }
