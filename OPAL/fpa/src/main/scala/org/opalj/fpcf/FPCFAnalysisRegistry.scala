@@ -100,7 +100,7 @@ object FPCFAnalysisRegistry {
 
     // initialize the registry with the known default analyses
     register(
-        "[StaticMethodAccessibilityAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
+        "[MethodAccessibilityAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
         MethodAccessibilityAnalysis
     )
 
