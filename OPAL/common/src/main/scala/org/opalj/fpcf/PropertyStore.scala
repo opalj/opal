@@ -935,7 +935,11 @@ class PropertyStore private (
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (useFallbackForIncomputableProperties) {
-                println(store.toString)
+                OPALLogger.debug(
+                    "analysis progress",
+                    s"using the fallback property for ${directlyIncomputableEPKs.size})"
+                )
+                println(s"using the fallback property for ${directlyIncomputableEPKs.size})"+store.toString)
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
