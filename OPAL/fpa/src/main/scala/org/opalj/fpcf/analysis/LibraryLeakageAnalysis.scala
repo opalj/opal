@@ -43,6 +43,8 @@ import org.opalj.br.VoidType
 import org.opalj.br.FieldType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
+import org.opalj.br.SingleArgumentMethodDescriptor
+import org.opalj.br.NoArgumentMethodDescriptor
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -57,7 +59,7 @@ object LibraryLeakage {
     final val Key = PropertyKey.create("Leakage", Leakage)
 }
 
-// Leakage => CallableFromClassesInOtherPackages
+// TODO Leakage => CallableFromClassesInOtherPackages
 case object Leakage extends LibraryLeakage { final val isRefineable = false }
 
 case object PotentialLeakage extends LibraryLeakage { final val isRefineable = true }
@@ -140,7 +142,9 @@ class LibraryLeakageAnalysis private (
         }
 
         //Now: A method does not leak through a subclass, but we also have to check the superclasses
-
+        val EqualsSignature = MethodDescriptor(ObjectType.Object, BooleanType)
+        val BasicWaitSignature = MethodDescriptor(LongType, VoidType)
+        val PreciseWaitSignature = MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)
         classHierarchy.foreachSupertype(classType) { supertype ⇒
             project.classFile(supertype) match {
                 case Some(superclass) ⇒ {
@@ -155,15 +159,15 @@ class LibraryLeakageAnalysis private (
                     (methodName, methodDescriptor) match {
                         case ("toString", JustReturnsString) |
                             ("hashCode", JustReturnsInteger) |
-                            ("equals", MethodDescriptor(IndexedSeq(ObjectType.Object), BooleanType)) |
+                            ("equals", EqualsSignature) |
                             ("clone", JustReturnsObject) |
-                            ("getClass", _) |
+                            ("getClass", JustReturnsClass) |
                             ("finalize", NoArgsAndReturnVoid) |
                             ("notify", NoArgsAndReturnVoid) |
                             ("notifyAll", NoArgsAndReturnVoid) |
                             ("wait", NoArgsAndReturnVoid) |
-                            ("wait", MethodDescriptor(IndexedSeq(LongType), VoidType)) |
-                            ("wait", MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)) ⇒
+                            ("wait", BasicWaitSignature) |
+                            ("wait", PreciseWaitSignature) ⇒
                             return ImmediateResult(method, Leakage);
                         case _ ⇒ /* nothing leaks */
                     }

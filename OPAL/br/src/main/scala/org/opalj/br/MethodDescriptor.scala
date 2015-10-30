@@ -405,6 +405,9 @@ object MethodDescriptor {
     final val JustReturnsObject: MethodDescriptor =
         new NoArgumentMethodDescriptor(ObjectType.Object)
 
+    final val JustReturnsClass: MethodDescriptor =
+        new NoArgumentMethodDescriptor(ObjectType.Class)
+
     final val JustReturnsString: MethodDescriptor =
         new NoArgumentMethodDescriptor(ObjectType.String)
 
@@ -424,6 +427,7 @@ object MethodDescriptor {
             case DoubleType.id       ⇒ JustReturnsDouble
             case ObjectType.ObjectId ⇒ JustReturnsObject
             case ObjectType.StringId ⇒ JustReturnsString
+            case ObjectType.ClassId  ⇒ JustReturnsClass
             case _ ⇒
                 new NoArgumentMethodDescriptor(returnType)
         }

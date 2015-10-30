@@ -1291,9 +1291,11 @@ object ObjectType {
 
     final val String = ObjectType("java/lang/String")
     final val StringId = 9
-    require(String.id == StringId)
 
     final val Class = ObjectType("java/lang/Class")
+    final val ClassId = 10
+    require(Class.id == 10)
+
     final val System = ObjectType("java/lang/System")
 
     final val Throwable = ObjectType("java/lang/Throwable")
