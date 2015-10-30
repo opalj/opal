@@ -133,7 +133,7 @@ class MethodAccessibilityAnalysis private[analysis] (
                 Result(method, Global)
         }
 
-        return propertyStore.require(method, MethodAccessibilityAnalysis.propertyKey, method, LibraryLeakage.Key)(c);
+        propertyStore.require(method, MethodAccessibilityAnalysis.propertyKey, method, LibraryLeakage.Key)(c);
     }
 }
 
@@ -163,11 +163,10 @@ object MethodAccessibilityAnalysis
 /**
  * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
  */
-object StaticMethodAccessibilityAnalysis
-        extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
+object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
 
     private[this] def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+        case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
     protected def start(project: SomeProject): Unit = {
