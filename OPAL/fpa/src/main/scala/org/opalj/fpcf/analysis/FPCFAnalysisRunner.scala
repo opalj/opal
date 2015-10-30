@@ -33,15 +33,23 @@ package analysis
 import org.opalj.br.analyses.SomeProject
 
 /**
- *
  * The results of the analysis which the `FPCFAnalysisRunner` object run are saved
  * within the [[PropertyStore]] of the [[Project]].
  *
  * @author Michael Reif
+ * @author Michael Eichberg
  */
 trait FPCFAnalysisRunner[T <: FPCFAnalysis[_ <: Entity]] {
 
     final val uniqueId: Int = FPCFAnalysisRunner.nextId
+
+    def name: String = {
+        val nameCandidate = this.getClass.getSimpleName
+        if (nameCandidate.endsWith("$"))
+            nameCandidate.substring(0, nameCandidate.length() - 1)
+        else
+            nameCandidate
+    }
 
     /**
      * Returns the information which other analyses strictly need to be executed
