@@ -134,6 +134,9 @@ import java.util.Collections
 // SORTING IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT 
 // THE INIDIVUAL ENTITIES
 class PropertyStore private (
+        // type Observers = mutable.ListBuffer[PropertyObserver]
+        // type Properties = OArrayMap[(Property, Observers)]
+        // type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
         private[this] val data: JIDMap[Entity, PropertyStoreValue],
         val isInterrupted:      () ⇒ Boolean
 )(
@@ -280,12 +283,12 @@ class PropertyStore private (
     private[this] final val theOnPropertyComputations = ArrayMap[List[(Entity, Property) ⇒ Unit]](5)
 
     // The list of observers used by the entity e to compute the property of kind k (EPK).
-    // In other words: the mapping between a Depender and its Observers!
+    // In other words: the mapping between a Depender and its Dependee(s)/Observers!
     // The list of observers needs to be maintained whenever:
-    //  1. A computation of a property finishes. In this kind all observers need to
+    //  1. A computation of a property finishes. In this case all observers need to
     //     be notified and removed from this map afterwards.
     //  1. A computation of a property generates an [[IntermediatResult]], but the
-    //     the observer is one-time observer. (Such observers are only used internally.
+    //     the observer is one-time observer. (Such observers are only used internally.)
     private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
 
     /**
@@ -746,7 +749,6 @@ class PropertyStore private (
             } else {
                 clearAllObservers()
             }
-
         }
 
         def taskStarted() = synchronized {
@@ -880,7 +882,9 @@ class PropertyStore private (
                             directlyIncomputableEPKs += dependeeEPK
                             assert(
                                 data.get(dependeeEPK.e)._2(dependeeEPK.pk.id)._1 eq null,
-                                s"property propagation failed $dependeeEPK has a property. but $dependerEPK was not notified"
+                                s"property propagation failed $dependeeEPK has a property("+
+                                    s"${data.get(dependeeEPK.e)._2(dependeeEPK.pk.id)._1}"+
+                                    s"), but $dependerEPK was not notified"
                             )
                             indirectlyIncomputableEPKs += dependerEPK
                             determineIncomputableEPKs(dependerEPK)
