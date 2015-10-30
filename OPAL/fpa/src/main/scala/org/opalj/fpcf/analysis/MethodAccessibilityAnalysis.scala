@@ -86,9 +86,6 @@ class MethodAccessibilityAnalysis private[analysis] (
         method: Method
     ): PropertyComputationResult = {
 
-        if (method.isPackagePrivate)
-            return ImmediateResult(method, PackageLocal);
-
         val classFile = project.classFile(method)
         if (classFile.isPublic && (method.isPublic || (!classFile.isFinal && method.isProtected)))
             return ImmediateResult(method, Global);
@@ -120,6 +117,8 @@ class MethodAccessibilityAnalysis private[analysis] (
             subtypes -= subtype
         }
 
+        // The method does not become visible through inheritance.
+        // Hence, it is not globally visible.
         ImmediateResult(method, PackageLocal)
     }
 
@@ -132,21 +131,19 @@ class MethodAccessibilityAnalysis private[analysis] (
         val isPublicMethod = method.isPublic
         val isProtectedMethod = method.isProtected
 
-        if (method.name == "protectedMethod" && classFile.thisType.fqn.endsWith("instanceMethodVisibilityTest1/PPClass"))
-            println("hit")
         if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
-            if (method.name == "protectedMethod" && classFile.thisType.fqn.endsWith("instanceMethodVisibilityTest1/PPClass"))
-                println("hit")
             if (dependeeP == NoLeakage)
                 Result(method, PackageLocal)
             else
                 Result(method, Global)
         }
 
-        propertyStore.require(method, MethodAccessibilityAnalysis.propertyKey, method, LibraryLeakage.Key)(c);
+        import propertyStore.require
+        require(method, MethodAccessibilityAnalysis.propertyKey,
+            method, LibraryLeakage.Key)(c);
     }
 }
 

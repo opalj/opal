@@ -42,7 +42,7 @@ import org.opalj.log.GlobalLogContext
 /**
  * @author Michael Reif
  */
-object EntryPointAnalysisDemo extends MethodAnalysisDemo {
+object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
 
     OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
@@ -58,12 +58,6 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
-        val projectInfo =
-            s"JDK #methods ${project.methodsCount} "+
-                s"old #entryPoints ${oldEntryPoints} "+
-                s"old #nonEntryPoints ${project.methodsCount - oldEntryPoints}"
-
         val executer = project.get(FPCFAnalysisManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
@@ -71,26 +65,21 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
             executer.runAll(
                 LibraryLeakageAnalysis,
-                FactoryMethodAnalysis,
-                InstantiabilityAnalysis,
                 MethodAccessibilityAnalysis
             )
-
-            executer.run(EntryPointsAnalysis)
 
         } { t ⇒ analysisTime = t.toSeconds }
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
-        val entryPoints = entitiesByProperty(IsEntryPoint)(propertyStore)
-        val noEntryPoints = entitiesByProperty(NoEntryPoint)(propertyStore)
+        val global = entitiesByProperty(Global)(propertyStore)
+        val packgeLocal = entitiesByProperty(PackageLocal)(propertyStore)
+        val classLocal = entitiesByProperty(ClassLocal)(propertyStore)
 
         BasicReport(
-            //            entryPointInfo +
-            //                propertyStore.toString +
-            projectInfo +
-                s"\nsize: ${entryPoints.size}"+
-                s"\nsize: ${noEntryPoints.size}"+
+            s"\nglobal            : ${global.size}"+
+                s"\npackageLocal  : ${packgeLocal.size}"+
+                s"\nclassLocal    : ${classLocal.size}"+
                 "\nAnalysis time: "+analysisTime
         )
     }

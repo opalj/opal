@@ -136,7 +136,7 @@ class LibraryLeakageAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
                         if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, Global);
+                            return ImmediateResult(method, Leakage);
                         } else
                             subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -144,7 +144,7 @@ class LibraryLeakageAnalysis private (
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange! 
-                    return ImmediateResult(method, Global);
+                    return ImmediateResult(method, Leakage);
             }
             subtypes -= subtype
         }
