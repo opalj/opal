@@ -62,9 +62,7 @@ class EntryPointsAnalysis private (
 
     val propertyKey = EntryPoint.Key
 
-    @inline private[this] def leakageContinuation(
-        method: Method
-    ): Continuation = {
+    @inline private[this] def leakageContinuation(method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
             if (dependeeP == Leakage)
                 Result(method, IsEntryPoint)
@@ -110,25 +108,24 @@ class EntryPointsAnalysis private (
         // which relates somehow to object serialization.
 
         import propertyStore.require
-        val c_inst: Continuation =
-            (dependeeE: Entity, dependeeP: Property) ⇒ {
-                val isInstantiable = (dependeeP == Instantiable)
-                if (isInstantiable && method.isStaticInitializer)
+        val c_inst: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+            val isInstantiable = (dependeeP == Instantiable)
+            if (isInstantiable && method.isStaticInitializer)
+                Result(method, IsEntryPoint)
+
+            val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                if (dependeeP == Global &&
+                    (isInstantiable || method.isStatic || method.isConstructor))
                     Result(method, IsEntryPoint)
-
-                val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (dependeeP == Global &&
-                        (isInstantiable || method.isStatic || method.isConstructor))
-                        Result(method, IsEntryPoint)
-                    else
-                        require(method, propertyKey, method, LibraryLeakageKey)(
-                            leakageContinuation(method)
-                        )
-                }
-
-                require(method, propertyKey, method, AccessKey)(c_vis)
-
+                else
+                    require(method, propertyKey, method, LibraryLeakageKey)(
+                        leakageContinuation(method)
+                    )
             }
+
+            require(method, propertyKey, method, AccessKey)(c_vis)
+
+        }
 
         return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
     }
