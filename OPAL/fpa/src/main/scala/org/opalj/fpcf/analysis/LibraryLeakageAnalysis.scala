@@ -37,6 +37,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.log.OPALLogger
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor._
 import org.opalj.br.BooleanType
 import org.opalj.br.VoidType
 import org.opalj.br.FieldType
@@ -45,7 +46,7 @@ import org.opalj.br.IntegerType
 
 /**
  * This property expresses the leakage of methods to the client such that
- * the method is called by a client. A method does only leak if it gets accessible
+ * the method can be called by a client. A method does only leak if it gets accessible
  * though inheritance where a immediate non-abstract subclass inherits the target method.
  */
 sealed trait LibraryLeakage extends Property {
@@ -56,9 +57,10 @@ object LibraryLeakage {
     final val Key = PropertyKey.create("Leakage", Leakage)
 }
 
+// Leakage => CallableFromClassesInOtherPackages
 case object Leakage extends LibraryLeakage { final val isRefineable = false }
 
-case object PotentialLeakage extends LibraryLeakage { final val isRefineable = false }
+case object PotentialLeakage extends LibraryLeakage { final val isRefineable = true }
 
 case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
 
@@ -69,16 +71,15 @@ case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
  * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
  * also always overridden.
  * {{{
- * /*package visible*/ class C { public Object m() }
- * /*package visible*/ abstract class A extends C { /*empty*/ }
- * public class B extends A { public Object m() }
+ * 		/*package visible*/ class C { public Object m() }
+ * 		/*package visible*/ abstract class A extends C { /*empty*/ }
+ * 		public class B extends A { public Object m() }
  * }}}
  *
  *  @author Michael Reif
  */
 class LibraryLeakageAnalysis private (
-    project: SomeProject
-)
+    project: SomeProject)
         extends DefaultFPCFAnalysis[Method](
             project,
             entitySelector = LibraryLeakageAnalysis.entitySelector
@@ -94,36 +95,26 @@ class LibraryLeakageAnalysis private (
      *  - if CPA is met, methods in package visible classes are not visible by default.
      *
      */
-    def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
-
-        if (method.isPrivate || method.isConstructor)
-            return ImmediateResult(method, NoLeakage)
-
-        val classFile = project.classFile(method)
-
-        if (classFile.isFinal)
-            return ImmediateResult(method, NoLeakage)
+    def determineProperty(method: Method): PropertyComputationResult = {
 
         if (isOpenLibrary)
-            return ImmediateResult(method, Leakage)
+            return ImmediateResult(method, Leakage);
 
-        /* A package private method can not leak to the client, if CPA is applied */
-        if (isClosedLibrary && method.isPackagePrivate)
-            return ImmediateResult(method, NoLeakage)
+        //we are now either analyzing a library under CPA or an application.
 
-        if (classFile.isPublic && (method.isPublic || method.isProtected))
-            return ImmediateResult(method, Leakage)
+        if (method.isPrivate || method.isPackagePrivate || method.isConstructor)
+            /* a package private method can not leak to the client under CPA */
+            return ImmediateResult(method, NoLeakage);
 
-        /*
-         * At this point: 
-         *  - A class can't be final.
-         *  - A method can't be package visible.
-         *  - A method can't be private or final.
-         */
-        if (classFile.isPublic && !classFile.isFinal)
-            return ImmediateResult(method, Leakage)
+        val classFile = project.classFile(method)
+        if (classFile.isFinal)
+            return ImmediateResult(method, NoLeakage);
+
+        // When we reach this point:
+        // - the method is public or protected
+        // - the class is not final
+        if (classFile.isPublic)
+            return ImmediateResult(method, Leakage);
 
         val classHierarchy = project.classHierarchy
 
@@ -134,15 +125,17 @@ class LibraryLeakageAnalysis private (
         classHierarchy.foreachSubtype(classType) { subtype ⇒
             project.classFile(subtype) match {
                 case Some(subclass) ⇒
-                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty &&
-                        subclass.isPublic && method.isPackagePrivate)
-                        // the original method is visible and leak
-                        return ImmediateResult(method, Leakage)
-                case None ⇒ return ImmediateResult(method, Leakage)
+                    if (subclass.isPublic &&
+                        method.isPackagePrivate &&
+                        subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                        // the original method is visible and can be called by clients
+                        return ImmediateResult(method, Leakage);
+                case None ⇒
+                    return ImmediateResult(method, Leakage);
             }
         }
 
-        //Now: A method does not leak through a subclass, but we also have to check the superclass
+        //Now: A method does not leak through a subclass, but we also have to check the superclasses
 
         classHierarchy.foreachSupertype(classType) { supertype ⇒
             project.classFile(supertype) match {
@@ -156,20 +149,22 @@ class LibraryLeakageAnalysis private (
                 }
                 case None if supertype eq ObjectType.Object ⇒
                     (methodName, methodDescriptor) match {
-                        case ("toString", MethodDescriptor.JustReturnsString) |
-                            ("hashCode", MethodDescriptor.JustReturnsInteger) |
+                        case ("toString", JustReturnsString) |
+                            ("hashCode", JustReturnsInteger) |
                             ("equals", MethodDescriptor(IndexedSeq(ObjectType.Object), BooleanType)) |
-                            ("clone", MethodDescriptor.JustReturnsObject) |
+                            ("clone", JustReturnsObject) |
                             ("getClass", _) |
-                            ("finalize", MethodDescriptor.NoArgsAndReturnVoid) |
-                            ("notify", MethodDescriptor.NoArgsAndReturnVoid) |
-                            ("notifyAll", MethodDescriptor.NoArgsAndReturnVoid) |
-                            ("wait", MethodDescriptor.NoArgsAndReturnVoid) |
+                            ("finalize", NoArgsAndReturnVoid) |
+                            ("notify", NoArgsAndReturnVoid) |
+                            ("notifyAll", NoArgsAndReturnVoid) |
+                            ("wait", NoArgsAndReturnVoid) |
                             ("wait", MethodDescriptor(IndexedSeq(LongType), VoidType)) |
-                            ("wait", MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)) ⇒ return ImmediateResult(method, Leakage)
+                            ("wait", MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)) ⇒
+                            return ImmediateResult(method, Leakage)
                         case _ ⇒ /* nothing leaks */
                     }
-                case _ ⇒ return ImmediateResult(method, Leakage)
+                case _ ⇒
+                    return ImmediateResult(method, Leakage)
             }
         }
 
@@ -183,8 +178,7 @@ object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis]
     }
 
     private[LibraryLeakageAnalysis] def apply(
-        project: SomeProject
-    ): LibraryLeakageAnalysis = {
+        project: SomeProject): LibraryLeakageAnalysis = {
         new LibraryLeakageAnalysis(project)
     }
 
