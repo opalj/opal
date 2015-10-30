@@ -33,7 +33,7 @@ package analysis
 import scala.language.postfixOps
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
@@ -81,17 +81,17 @@ case object EffectivelyFinal extends Mutability { final val isRefineable = false
 
 case object NonFinal extends Mutability { final val isRefineable = false }
 
-object MutablityAnalysis {
+class MutabilityAnalysis private (
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, ClassFile]
+)
+        extends AbstractFPCFAnalysis(project, entitySelector) {
 
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
      */
-    def determineMutabilityOfNonFinalPrivateStaticFields(
+    def determineProperty(
         classFile: ClassFile
-    )(
-        implicit
-        project:      SomeProject,
-        projectStore: PropertyStore
     ): PropertyComputationResult = {
 
         val thisType = classFile.thisType
@@ -131,13 +131,21 @@ object MutablityAnalysis {
         }
         ImmediateMultiResult(results)
     }
-
-    def analyze(implicit project: SomeProject): Unit = {
-        implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore <||< (
-            { case cf: ClassFile ⇒ cf },
-            determineMutabilityOfNonFinalPrivateStaticFields
-        )
-    }
 }
 
+object MutabilityAnalysis extends FPCFAnalysisRunner[MutabilityAnalysis] {
+
+    private[MutabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
+        case cf: ClassFile ⇒ cf
+    }
+
+    private[MutabilityAnalysis] def apply(
+        project: SomeProject, entitySelector: PartialFunction[Entity, ClassFile] = entitySelector
+    ): MutabilityAnalysis = {
+        new MutabilityAnalysis(project, entitySelector)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        MutabilityAnalysis(project, entitySelector)
+    }
+}

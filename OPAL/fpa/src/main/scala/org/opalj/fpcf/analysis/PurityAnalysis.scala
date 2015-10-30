@@ -31,10 +31,9 @@ package fpcf
 package analysis
 
 import scala.language.postfixOps
-import java.net.URL
 import org.opalj.br.PC
 import org.opalj.br.Method
-import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
@@ -78,7 +77,11 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-object PurityAnalysis {
+class PurityAnalysis private (
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, Method]
+)
+        extends AbstractFPCFAnalysis(project, entitySelector) {
 
     final val Purity = org.opalj.fpcf.analysis.Purity.Key
 
@@ -94,10 +97,6 @@ object PurityAnalysis {
         method:    Method,
         pc:        PC,
         dependees: Set[EOptionP]
-    )(
-        implicit
-        project:      SomeProject,
-        projectStore: PropertyStore
     ): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
@@ -135,7 +134,7 @@ object PurityAnalysis {
                             // This, however, does not make this a multi-step computation,
                             // as the analysis is only continued when property becomes
                             // available.
-                            import projectStore.require
+                            import propertyStore.require
                             return require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
@@ -166,7 +165,7 @@ object PurityAnalysis {
 
                             case Some(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
-                                val purity = projectStore(callee, Purity)
+                                val purity = propertyStore(callee, Purity)
 
                                 purity match {
                                     case Some(Pure)   ⇒ /* Nothing to do...*/
@@ -253,11 +252,8 @@ object PurityAnalysis {
     /**
      * Determines the purity of the given method.
      */
-    def determinePurity(
+    def determineProperty(
         method: Method
-    )(
-        implicit
-        project: SomeProject, store: PropertyStore
     ): PropertyComputationResult = {
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
@@ -277,26 +273,35 @@ object PurityAnalysis {
         purity
     }
 
-    def analyze(implicit project: SomeProject): Unit = {
-        implicit val projectStore = project.get(SourceElementsPropertyStoreKey)
-        val entitySelector: PartialFunction[Entity, Method] = {
-            case m: Method if !m.isAbstract ⇒ m
-        }
-        projectStore <||< (entitySelector, determinePurity)
-
-        //        // Ordering by size (implicit assumption: methods that are short don't call
-        //        // too many other methods...); this ordering is extremely efficient and simple.
-        //        val methodOrdering = new Ordering[Method] {
-        //            def compare(a: Method, b: Method): Int = {
-        //                val aBody = a.body
-        //                val bBody = b.body
-        //                val aSize = if (aBody.isEmpty) -1 else aBody.get.instructions.size
-        //                val bSize = if (bBody.isEmpty) -1 else bBody.get.instructions.size
-        //                bSize - aSize
-        //            }
-        //        }
-        //        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
-
-    }
+    // FIXME Idea of method ordering, do we need this code?
+    //        // Ordering by size (implicit assumption: methods that are short don't call
+    //        // too many other methods...); this ordering is extremely efficient and simple.
+    //        val methodOrdering = new Ordering[Method] {
+    //            def compare(a: Method, b: Method): Int = {
+    //                val aBody = a.body
+    //                val bBody = b.body
+    //                val aSize = if (aBody.isEmpty) -1 else aBody.get.instructions.size
+    //                val bSize = if (bBody.isEmpty) -1 else bBody.get.instructions.size
+    //                bSize - aSize
+    //            }
+    //        }
+    //        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
 }
 
+object PurityAnalysis extends FPCFAnalysisRunner[PurityAnalysis] {
+    private[PurityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract ⇒ m
+    }
+
+    private[PurityAnalysis] def apply(
+        project: SomeProject, entitySelector: PartialFunction[Entity, Method] = entitySelector
+    ): PurityAnalysis = {
+        new PurityAnalysis(project, entitySelector)
+    }
+
+    protected def start(project: SomeProject): Unit = {
+        PurityAnalysis(project, entitySelector)
+    }
+
+    override def recommendations = Set(MutabilityAnalysis)
+}

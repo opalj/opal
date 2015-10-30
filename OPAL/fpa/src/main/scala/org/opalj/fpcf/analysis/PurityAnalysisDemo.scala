@@ -62,39 +62,14 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
-        // RECOMMENDED
-        // The purity analysis requires information about the actual mutability
-        // of private static non-final fields. Hence, we have to schedule the
-        // respective analysis. (Technically, it would be possible to schedule
-        // it afterwards, but that doesn't make sense.)
-        //        println("Starting Mutability Analysis")
-        MutablityAnalysis.analyze(project)
-
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
-        //        println("Starting Purity Analysis")
-        //        PurityAnalysis.analyze(project)
 
-        // ALTERNATIVE APPROACH
-        // (This approach is if the filtering and sorting functions are complex as
-        // both operations are carried out in the calling thread's context.)
+        val manager = project.get(FPCFAnalysisManagerKey)
+
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            println("Starting Purity Analysis")
-            val pat = new Thread(new Runnable { def run = PurityAnalysis.analyze(project) });
-            pat.start
-            println("Starting Mutability Analysis")
-            //  MutablityAnalysis.analyze(project)
-            // Let's make sure that everything is scheduled.
-            pat.join
-
-            println("Waiting on analyses to finish")
-            // We have scheduled all analyses that we are going to execute.
-            // DETAILS
-            // projectStore.useDefaultForUnsatisfiableLinearDependencies = true
-            // projectStore.waitOnPropertyComputationCompletion()
-            // ABBREVIATED
-            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            manager.runAll(MutabilityAnalysis, PurityAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
         val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.Key)
