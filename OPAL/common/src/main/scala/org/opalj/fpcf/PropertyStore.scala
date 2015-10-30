@@ -731,6 +731,7 @@ class PropertyStore private (
                     for {
                         entry ← data.entrySet()
                         (_ /*p*/ , os) ← entry.getValue()._2.values
+                        if os ne null // if the property is final the observers are already cleared
                     } {
                         os.clear()
                     }
