@@ -136,13 +136,10 @@ private[fpcf] abstract class Suspended(
         extends PropertyComputationResult {
 
     /**
-     * Called by the framework when the property of the element this computation is
+     * Called by the framework when the property of the element `dependee` this computation is
      * depending on was computed.
      */
-    def continue(
-        dependeeE: Entity,
-        dependeeP: Property
-    ): PropertyComputationResult
+    def continue(dependeeP: Property): PropertyComputationResult
 
 }
 
