@@ -133,19 +133,19 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         if (debug) {
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
-                Some(project.classFile(method)),
-                Some(method),
-                method.body.get,
-                Some(
-                    "Created: "+(new java.util.Date).toString+"<br>"+
-                        "Domain: "+result.domain.getClass.getName+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)
-                ),
-                result.domain
-            )(
-                    result.operandsArray,
-                    result.localsArray
-                ),
+                    Some(project.classFile(method)),
+                    Some(method),
+                    method.body.get,
+                    Some(
+                        "Created: "+(new java.util.Date).toString+"<br>"+
+                            "Domain: "+result.domain.getClass.getName+"<br>"+
+                            XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                    ),
+                    result.domain
+                )(
+                        result.operandsArray,
+                        result.localsArray
+                    ),
                 "AIResult",
                 ".html"
             )

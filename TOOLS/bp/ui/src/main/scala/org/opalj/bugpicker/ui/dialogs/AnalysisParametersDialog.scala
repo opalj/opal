@@ -52,11 +52,10 @@ import scalafx.stage.Stage
 import org.opalj.util.Milliseconds
 import scalafx.scene.control.ToggleButton
 import scalafx.scene.control.ListView
-import org.opalj.fpa.common.FixpointAnalysesRegistry
-import org.opalj.br.analyses.fp.ShadowingAnalysis
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.MultipleSelectionModel
 import scalafx.scene.control.SelectionMode
+import org.opalj.fpcf.FPCFAnalysisRegistry
 
 /**
  * @author Arne Lottmann
@@ -112,7 +111,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     }
 
     val fixpointAnalyses = ObservableBuffer[String](
-        FixpointAnalysesRegistry.analysisDescriptions().toSeq.sorted
+        FPCFAnalysisRegistry.analysisDescriptions().toSeq.sorted
     )
 
     val fixpointAnalysesView = new ListView(fixpointAnalyses) {

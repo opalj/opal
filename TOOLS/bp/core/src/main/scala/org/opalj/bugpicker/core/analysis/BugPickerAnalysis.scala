@@ -70,11 +70,10 @@ import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import scala.xml.NodeSeq
-import org.opalj.fpa.FixpointAnalysis
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.analyses.fp.ShadowingAnalysis
-import org.opalj.fpa.common.FixpointAnalysesRegistry
-import org.opalj.fpa.AnalysisEngine
+import org.opalj.fpcf.FPCFAnalysisRegistry
+import org.opalj.fpcf.analysis.FPCFAnalysisRunner
+import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -151,14 +150,14 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 collectFirst { case MaxCallChainLengthPattern(i) ⇒ parseInt(i) }.
                 getOrElse(DefaultMaxCallChainLength)
 
-        val fixpointAnalyses: Seq[FixpointAnalysis] = {
+        val fixpointAnalyses = {
             parameters.collectFirst {
                 case FixpointAnalysesPattern(i) ⇒
-                    var fpas = Seq.empty[FixpointAnalysis]
+                    var fpas = Seq.empty[FPCFAnalysisRunner[_]]
                     for (fpa ← i.split(";"))
-                        fpas = fpas :+ FixpointAnalysesRegistry.newFixpointAnalysis(fpa)
+                        fpas = fpas :+ FPCFAnalysisRegistry.newFixpointAnalysis(fpa)
                     fpas
-            }.getOrElse(Seq.empty[FixpointAnalysis])
+            }.getOrElse(Seq.empty[FPCFAnalysisRunner[_]])
         }
 
         val debug = parameters.contains("-debug")
@@ -207,18 +206,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
 
         if (fixpointAnalyses.nonEmpty) {
-            val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
-
-            val threads = fixpointAnalyses map { fpa ⇒
-                new Thread(new Runnable {
-                    def run = fpa.asInstanceOf[AnalysisEngine[_]].analyze(theProject)
-                })
-            }
-
-            threads foreach (_.start)
-            threads foreach (_.join)
-
-            propertyStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            val analysisManager = theProject.get(FPCFAnalysisManagerKey)
+            analysisManager.runAll(fixpointAnalyses)(true)
         }
 
         //
@@ -320,19 +309,19 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 if (debug) {
                     org.opalj.io.writeAndOpen(
                         org.opalj.ai.common.XHTML.dump(
-                        Some(classFile),
-                        Some(method),
-                        method.body.get,
-                        Some(
-                            "Created: "+(new java.util.Date).toString+"<br>"+
-                                "Domain: "+result.domain.getClass.getName+"<br>"+
-                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)
-                        ),
-                        result.domain
-                    )(
-                            result.operandsArray,
-                            result.localsArray
-                        ),
+                            Some(classFile),
+                            Some(method),
+                            method.body.get,
+                            Some(
+                                "Created: "+(new java.util.Date).toString+"<br>"+
+                                    "Domain: "+result.domain.getClass.getName+"<br>"+
+                                    XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                            ),
+                            result.domain
+                        )(
+                                result.operandsArray,
+                                result.localsArray
+                            ),
                         "AIResult",
                         ".html"
                     )

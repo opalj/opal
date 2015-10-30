@@ -132,22 +132,22 @@ class ProjectExplorerTreeItem(
         for (classMember ← ObservableBuffer.apply(classMembers)) yield {
             new ProjectExplorerTreeItem(
                 classMember match {
-                case m: Method ⇒ {
-                    ProjectExplorerMethodData(
-                        m.name,
-                        classFile,
-                        m,
-                        m.isStatic,
-                        m.isAbstract
-                    )
-                }
-                case f: Field ⇒ {
-                    ProjectExplorerFieldData(
-                        f.name,
-                        f.isStatic
-                    )
-                }
-            },
+                    case m: Method ⇒ {
+                        ProjectExplorerMethodData(
+                            m.name,
+                            classFile,
+                            m,
+                            m.isStatic,
+                            m.isAbstract
+                        )
+                    }
+                    case f: Field ⇒ {
+                        ProjectExplorerFieldData(
+                            f.name,
+                            f.isStatic
+                        )
+                    }
+                },
                 new ImageView {
                     image = determineIcon(classMember)
                 }

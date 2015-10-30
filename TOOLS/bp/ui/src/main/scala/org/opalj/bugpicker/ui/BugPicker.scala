@@ -115,6 +115,7 @@ import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
 import scalafx.scene.input.MouseButton
+import org.opalj.log.GlobalLogContext
 
 /**
  * @author Arne Lottmann
@@ -381,7 +382,7 @@ class BugPicker extends Application {
             restoreProjectExplorerButton
         )
 
-        OPALLogger.initGlobalContextLogger(new BugPickerOPALLogger(bugpickerLogMessages))
+        OPALLogger.updateLogger(GlobalLogContext, new BugPickerOPALLogger(bugpickerLogMessages))
 
         def screenForStage(stage: Stage): Screen =
             Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head

@@ -66,14 +66,11 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.AsQuadruples
 import org.opalj.tac.ToJavaLike
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fp.Property
-import org.opalj.br.analyses.fp.ProjectAccessibility
-import org.opalj.br.analyses.fp.PackageLocal
 import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
-import org.opalj.fp.PropertyKey
+import org.opalj.fpcf.PropertyKey
 
 /**
  * Given a TreeView and a Project[URL] creates a visual representation of the project structure
