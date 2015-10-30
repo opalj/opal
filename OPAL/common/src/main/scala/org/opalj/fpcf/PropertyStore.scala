@@ -1075,7 +1075,12 @@ class PropertyStore private (
                     }
                 }
             }
-            observers.remove(epk) /*clear all*/ ne null
+            val os = observers.remove(epk)
+            assert(
+                (os eq null) || os.nonEmpty,
+                "the list of outgoing observers is empty, but should be null"
+            )
+            os ne null
         } else {
             false
         }
