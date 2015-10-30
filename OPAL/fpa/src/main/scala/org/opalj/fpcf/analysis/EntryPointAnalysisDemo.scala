@@ -60,8 +60,8 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         val projectInfo =
-            s"JDK #methods ${project.methodsCount}"+
-                s"old #entryPoints ${oldEntryPoints}"+
+            s"JDK #methods ${project.methodsCount} "+
+                s"old #entryPoints ${oldEntryPoints} "+
                 s"old #nonEntryPoints ${project.methodsCount - oldEntryPoints}"
 
         val executer = project.get(FPCFAnalysisManagerKey)
