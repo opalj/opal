@@ -79,7 +79,8 @@ case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
  *  @author Michael Reif
  */
 class LibraryLeakageAnalysis private (
-    project: SomeProject)
+    project: SomeProject
+)
         extends DefaultFPCFAnalysis[Method](
             project,
             entitySelector = LibraryLeakageAnalysis.entitySelector
@@ -97,17 +98,20 @@ class LibraryLeakageAnalysis private (
      */
     def determineProperty(method: Method): PropertyComputationResult = {
 
-        if (isOpenLibrary)
-            return ImmediateResult(method, Leakage);
-
-        //we are now either analyzing a library under CPA or an application.
-
-        if (method.isPrivate || method.isPackagePrivate || method.isConstructor)
-            /* a package private method can not leak to the client under CPA */
+        if (method.isPrivate)
+            /* private methods are only visible in the scope of the class */
             return ImmediateResult(method, NoLeakage);
 
         val classFile = project.classFile(method)
         if (classFile.isFinal)
+            return ImmediateResult(method, NoLeakage);
+
+        if (isOpenLibrary)
+            return ImmediateResult(method, Leakage);
+
+        //we are now either analyzing a library under CPA or an application.
+        if (method.isPackagePrivate || method.isConstructor)
+            /* a package private method can not leak to the client under CPA */
             return ImmediateResult(method, NoLeakage);
 
         // When we reach this point:
@@ -144,7 +148,7 @@ class LibraryLeakageAnalysis private (
                     if (declMethod.isDefined) {
                         val m = declMethod.get
                         if ((m.isPublic || m.isProtected) && superclass.isPublic)
-                            return ImmediateResult(method, Leakage)
+                            return ImmediateResult(method, Leakage);
                     }
                 }
                 case None if supertype eq ObjectType.Object ⇒
@@ -160,11 +164,11 @@ class LibraryLeakageAnalysis private (
                             ("wait", NoArgsAndReturnVoid) |
                             ("wait", MethodDescriptor(IndexedSeq(LongType), VoidType)) |
                             ("wait", MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)) ⇒
-                            return ImmediateResult(method, Leakage)
+                            return ImmediateResult(method, Leakage);
                         case _ ⇒ /* nothing leaks */
                     }
                 case _ ⇒
-                    return ImmediateResult(method, Leakage)
+                    return ImmediateResult(method, Leakage);
             }
         }
 
@@ -178,7 +182,8 @@ object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis]
     }
 
     private[LibraryLeakageAnalysis] def apply(
-        project: SomeProject): LibraryLeakageAnalysis = {
+        project: SomeProject
+    ): LibraryLeakageAnalysis = {
         new LibraryLeakageAnalysis(project)
     }
 

@@ -91,7 +91,7 @@ abstract class DefaultFPCFAnalysis[T <: Entity](
 )
         extends AbstractFPCFAnalysis[T](project, entitySelector) {
 
-    val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
+    lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
     def isOpenLibrary = analysisMode eq OPA
 
