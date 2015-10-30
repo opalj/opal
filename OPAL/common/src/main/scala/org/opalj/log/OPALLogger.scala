@@ -112,7 +112,6 @@ object OPALLogger extends OPALLogger {
         ctx:    LogContext,
         logger: OPALLogger = new ConsoleOPALLogger(true)
     ): Unit = this.synchronized {
-        println("context will be registered: "+ctx)
         if (ctx.id == -1) {
             val id = nextId
             if (nextId == loggers.length) {

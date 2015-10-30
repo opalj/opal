@@ -39,14 +39,9 @@ class ConsoleOPALLogger(
         val minLogLevel: Int
 ) extends AbstractOPALLogger {
 
-    def this(
-        ansiColored: Boolean = true,
-        minLogLevel: Level   = Info
-    ) {
+    def this(ansiColored: Boolean = true, minLogLevel: Level = Info) {
         this(ansiColored, minLogLevel.value)
     }
-
-    println(s"ConsoleLogger($ansiColored,$minLogLevel,$hashCode)")
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         val messageLevel = message.level
