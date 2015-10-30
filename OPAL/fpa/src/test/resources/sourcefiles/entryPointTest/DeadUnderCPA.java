@@ -28,8 +28,8 @@
  */
 package entryPointTest;
 
-import org.opalj.fpa.test.annotations.EntryPointKeys;
-import org.opalj.fpa.test.annotations.EntryPointProperty;
+import org.opalj.fpcf.test.annotations.EntryPointKeys;
+import org.opalj.fpcf.test.annotations.EntryPointProperty;
 
 /**
  * 
@@ -43,7 +43,7 @@ class DeadUnderCPA implements InterfaceWithEntryPoint {
 	}
 	
 	@EntryPointProperty(
-			cpa=EntryPointKeys.IsEntryPoint)
+			cpa=EntryPointKeys.NoEntryPoint)
 	public void defaultMethodAsEntryPoint() {
 
 	}

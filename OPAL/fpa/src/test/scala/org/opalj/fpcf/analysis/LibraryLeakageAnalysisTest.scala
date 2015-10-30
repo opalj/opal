@@ -49,7 +49,7 @@ abstract class LibraryLeakageAnalysisTest extends AbstractFixpointAnalysisAssump
     override def propertyKey: PropertyKey = LibraryLeakage.Key
 
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/LibraryLeakageProperty")
+        ObjectType("org/opalj/fpcf/test/annotations/LibraryLeakageProperty")
 
     def defaultValue = LibraryLeakageKeys.Leakage.toString
 }

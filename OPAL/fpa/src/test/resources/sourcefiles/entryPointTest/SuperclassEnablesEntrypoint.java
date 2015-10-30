@@ -28,7 +28,7 @@
  */
 package entryPointTest;
 
-import org.opalj.fpa.test.annotations.EntryPointProperty;
+import org.opalj.fpcf.test.annotations.EntryPointProperty;
 
 /**
  * This class is for test purpose only. In this case enables this superclass the

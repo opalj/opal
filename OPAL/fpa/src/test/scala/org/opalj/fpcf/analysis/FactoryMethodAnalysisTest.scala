@@ -47,7 +47,7 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
     override def propertyKey: PropertyKey = FactoryMethod.Key
 
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/FactoryMethodProperty")
+        ObjectType("org/opalj/fpcf/test/annotations/FactoryMethodProperty")
 
     override def defaultValue = NotFactoryMethod.toString
 }

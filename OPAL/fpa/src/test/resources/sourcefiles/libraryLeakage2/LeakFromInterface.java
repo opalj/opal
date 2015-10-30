@@ -28,7 +28,7 @@
  */
 package libraryLeakage2;
 
-import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
 
 /**
  * 

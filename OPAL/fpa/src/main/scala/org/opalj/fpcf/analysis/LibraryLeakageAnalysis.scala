@@ -128,17 +128,25 @@ class LibraryLeakageAnalysis private (
         val methodName = method.name
         val methodDescriptor = method.descriptor
 
-        classHierarchy.foreachSubtype(classType) { subtype ⇒
+        var subtypes = classHierarchy.directSubtypesOf(classType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
             project.classFile(subtype) match {
                 case Some(subclass) ⇒
-                    if (subclass.isPublic &&
-                        method.isPackagePrivate &&
-                        subclass.findMethod(methodName, methodDescriptor).isEmpty)
-                        // the original method is visible and can be called by clients
-                        return ImmediateResult(method, Leakage);
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                        if (subclass.isPublic) {
+                            // the original method is now visible (and not shadowed)
+                            return ImmediateResult(method, Global);
+                        } else
+                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+
+                // we need to continue our search for a class that makes the method visible
                 case None ⇒
-                    return ImmediateResult(method, Leakage);
+                    // The type hierarchy is obviously not downwards closed; i.e.,
+                    // the project configuration is rather strange! 
+                    return ImmediateResult(method, Global);
             }
+            subtypes -= subtype
         }
 
         //Now: A method does not leak through a subclass, but we also have to check the superclasses

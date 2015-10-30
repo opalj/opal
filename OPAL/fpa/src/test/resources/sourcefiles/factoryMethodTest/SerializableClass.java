@@ -30,7 +30,7 @@ package factoryMethodTest;
 
 import java.io.Serializable;
 
-import org.opalj.fpa.test.annotations.InstantiabilityProperty;
+import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
 /**
  * 

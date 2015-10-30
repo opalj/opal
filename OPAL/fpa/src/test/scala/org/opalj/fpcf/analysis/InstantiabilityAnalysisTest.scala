@@ -51,7 +51,7 @@ class InstantiabilityAnalysisTest extends AbstractFixpointAnalysisTest {
     override def propertyKey: PropertyKey = Instantiability.Key
 
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/InstantiabilityProperty")
+        ObjectType("org/opalj/fpcf/test/annotations/InstantiabilityProperty")
 
     override def defaultValue = InstantiabilityKeys.Instantiable.toString
 }

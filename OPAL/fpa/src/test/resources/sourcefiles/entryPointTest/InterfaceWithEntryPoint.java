@@ -28,7 +28,7 @@
  */
 package entryPointTest;
 
-import org.opalj.fpa.test.annotations.EntryPointProperty;
+import org.opalj.fpcf.test.annotations.EntryPointProperty;
 
 
 /**

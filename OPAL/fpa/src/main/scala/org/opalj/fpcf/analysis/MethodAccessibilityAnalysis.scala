@@ -73,6 +73,8 @@ class MethodAccessibilityAnalysis private[analysis] (
 
         // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
         //
+        if (method.isPackagePrivate)
+            return ImmediateResult(method, PackageLocal)
 
         if (method.isStatic)
             determineStaticMethodAccessibility(method)
@@ -97,20 +99,27 @@ class MethodAccessibilityAnalysis private[analysis] (
         val methodDescriptor = method.descriptor
         val methodName = method.name
 
-        classHierarchy.foreachSubtype(classType) { subtype ⇒
+        var subtypes = classHierarchy.directSubtypesOf(classType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
             project.classFile(subtype) match {
                 case Some(subclass) ⇒
-                    if (subclass.isPublic)
-                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                        if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
                             return ImmediateResult(method, Global);
+                        } else
+                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+
                 // we need to continue our search for a class that makes the method visible
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange! 
                     return ImmediateResult(method, Global);
             }
+            subtypes -= subtype
         }
+        
         ImmediateResult(method, PackageLocal)
     }
 
@@ -123,10 +132,14 @@ class MethodAccessibilityAnalysis private[analysis] (
         val isPublicMethod = method.isPublic
         val isProtectedMethod = method.isProtected
 
+        if (method.name == "protectedMethod" && classFile.thisType.fqn.endsWith("instanceMethodVisibilityTest1/PPClass"))
+            println("hit")
         if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
+            if (method.name == "protectedMethod" && classFile.thisType.fqn.endsWith("instanceMethodVisibilityTest1/PPClass"))
+                println("hit")
             if (dependeeP == NoLeakage)
                 Result(method, PackageLocal)
             else
@@ -158,6 +171,8 @@ object MethodAccessibilityAnalysis
     protected def start(project: SomeProject): Unit = {
         MethodAccessibilityAnalysis(project)
     }
+
+    override def recommendations = Set(LibraryLeakageAnalysis)
 }
 
 /**

@@ -48,5 +48,6 @@ interface PackagePrivateInterface {
 	@ProjectAccessibilityProperty(
 			cpa=ProjectAccessibilityKeys.PackageLocal)
 	public default void publicMethod() {
+		
 	}
 }

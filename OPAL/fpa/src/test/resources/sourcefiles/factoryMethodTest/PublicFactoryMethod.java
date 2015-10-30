@@ -28,9 +28,9 @@
  */
 package factoryMethodTest;
 
-import org.opalj.fpa.test.annotations.FactoryMethodKeys;
-import org.opalj.fpa.test.annotations.FactoryMethodProperty;
-import org.opalj.fpa.test.annotations.InstantiabilityProperty;
+import org.opalj.fpcf.test.annotations.FactoryMethodKeys;
+import org.opalj.fpcf.test.annotations.FactoryMethodProperty;
+import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
 /**
  * 

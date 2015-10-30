@@ -29,8 +29,8 @@
 
 package libraryLeakage1;
 
-import org.opalj.fpa.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpa.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
+import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
 
 
 /*

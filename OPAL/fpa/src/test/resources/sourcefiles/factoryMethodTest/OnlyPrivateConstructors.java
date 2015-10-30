@@ -28,8 +28,8 @@
  */
 package factoryMethodTest;
 
-import org.opalj.fpa.test.annotations.InstantiabilityKeys;
-import org.opalj.fpa.test.annotations.InstantiabilityProperty;
+import org.opalj.fpcf.test.annotations.InstantiabilityKeys;
+import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
 /**
  * This class is used for test purpose only.

@@ -22,7 +22,7 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
     override def propertyKey: PropertyKey = EntryPoint.Key
 
     override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpa/test/annotations/EntryPointProperty")
+        ObjectType("org/opalj/fpcf/test/annotations/EntryPointProperty")
 
     def defaultValue = EntryPointKeys.IsEntryPoint.toString
 }
