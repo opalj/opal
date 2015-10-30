@@ -30,17 +30,25 @@ package org.opalj
 package fpcf
 package analysis
 
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
  * @author Michael Reif
+ * @author Michael Eichberg
  */
 class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
     // Accesses to this field have to be synchronized
     private[this] final val registeredAnalyses = scala.collection.mutable.Set.empty[Int]
+
+    final val debug = {
+        val setting = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.manager.debug")
+        setting.getOrElse(false)
+    }
 
     private[this] def registerAnalysis(
         analysisRunner: FPCFAnalysisRunner[_]
@@ -76,16 +84,23 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         waitOnCompletion: Boolean               = true
     ): Unit = this.synchronized {
         if (!(registeredAnalyses contains analysisRunner.uniqueId)) {
+            if (debug)
+                OPALLogger.debug(
+                    "project configuration",
+                    s"the analysis(id: ${analysisRunner.name}) will be executed next"
+                )(project.logContext)
+
             registerAnalysis(analysisRunner)
             analysisRunner.doStart(project)
             if (waitOnCompletion) {
                 propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
             }
-        } else
+        } else {
             OPALLogger.error(
-                "internal",
-                s"the analysis(id: ${analysisRunner.uniqueId})is running/was executed for this project"
+                "project configuration",
+                s"the analysis(id: ${analysisRunner.name})is running/was executed for this project"
             )(project.logContext)
+        }
     }
 }
 

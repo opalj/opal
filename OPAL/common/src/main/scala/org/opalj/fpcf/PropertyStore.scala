@@ -142,8 +142,9 @@ class PropertyStore private (
         // type Observers = mutable.ListBuffer[PropertyObserver]
         // type Properties = OArrayMap[(Property, Observers)]
         // type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
-        private[this] val data: JIDMap[Entity, PropertyStoreValue],
-        val isInterrupted:      () ⇒ Boolean
+        private[this] val data:  JIDMap[Entity, PropertyStoreValue],
+        final val isInterrupted: () ⇒ Boolean,
+        final val debug:         Boolean
 )(
         implicit
         val logContext: LogContext
@@ -733,7 +734,7 @@ class PropertyStore private (
                     return ;
 
                 isInterrupted = true
-                OPALLogger.debug("analysis progress", "cancelling scheduled computations")
+                if (debug) OPALLogger.debug("analysis progress", "cancelling scheduled computations")
                 val waitingTasks = threadPool.shutdownNow()
                 tasksAborted(waitingTasks.size)
             }
@@ -743,7 +744,7 @@ class PropertyStore private (
                 // to help to make sure that the computation can finish in due time.
                 threadPool.awaitTermination(5000l, TimeUnit.MILLISECONDS)
 
-                OPALLogger.debug("analysis progress", "garbage collecting property computations")
+                if (debug) OPALLogger.debug("analysis progress", "garbage collecting property computations")
                 accessStore {
                     // 1) clear the list of outgoing observers
                     store.observers.clear()
@@ -798,14 +799,15 @@ class PropertyStore private (
             // pending computations that now can be activated.
             if (scheduled == 0) {
                 // Let's check if we have some potentially refineable intermediate results.
-                OPALLogger.debug(
-                    "analysis progress",
-                    s"all $executed previously scheduled tasks have finished"
+                if (debug) OPALLogger.debug(
+                    "analysis progress", s"all $executed previously scheduled tasks have finished"
                 )
 
                 try {
                     if (!isInterrupted) {
-                        OPALLogger.debug("analysis progress", s"handling unsatisfied dependencies")
+                        if (debug) OPALLogger.debug(
+                            "analysis progress", s"handling unsatisfied dependencies"
+                        )
                         handleUnsatisfiedDependencies()
                     }
                 } catch {
@@ -820,16 +822,15 @@ class PropertyStore private (
                 }
 
                 if (scheduled == 0 /*scheduled is still === 0*/ ) {
-                    OPALLogger.debug(
+                    if (debug) OPALLogger.debug(
                         "analysis progress",
                         "computation of all properties finished"+
                             s" (remaining computations: $registeredObservers)"
                     )
                     notifyAll()
                 } else {
-                    OPALLogger.debug(
-                        "analysis progress",
-                        s"(re)scheduled $scheduled property computations"
+                    if (debug) OPALLogger.debug(
+                        "analysis progress", s"(re)scheduled $scheduled property computations"
                     )
                 }
             }
@@ -935,11 +936,10 @@ class PropertyStore private (
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (useFallbackForIncomputableProperties) {
-                OPALLogger.debug(
+                if (debug) OPALLogger.debug(
                     "analysis progress",
                     s"using the fallback property for ${directlyIncomputableEPKs.size})"
                 )
-                println(s"using the fallback property for ${directlyIncomputableEPKs.size})"+store.toString)
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
@@ -952,7 +952,7 @@ class PropertyStore private (
         def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
             this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
             while (scheduled > 0) {
-                OPALLogger.debug(
+                if (debug) OPALLogger.debug(
                     "analysis progress",
                     s"all previously scheduled tasks finished (newly scheduled tasks: $scheduled)"
                 )
@@ -1177,7 +1177,7 @@ class PropertyStore private (
 
                         case FallbackUpdate ⇒
                             if (oldP eq null) {
-                                OPALLogger.debug(
+                                if (debug) OPALLogger.debug(
                                     "analysis progress",
                                     s"associated default property $p with $e"
                                 )
@@ -1201,7 +1201,7 @@ class PropertyStore private (
                             } else {
                                 // Nothing to do... the entity is already associated
                                 // with a property.
-                                OPALLogger.debug(
+                                if (debug) OPALLogger.debug(
                                     "analysis progress",
                                     s"fallback update ignored; the property $oldP is already associated with $e"
                                 )
@@ -1353,7 +1353,7 @@ class PropertyStore private (
                                     dependeeOs += createAndRegisterObserver()
                                     null
                                 } else {
-                                    //OPALLogger.debug(
+                                    //if(debug) OPALLogger.debug(
                                     //    "analysis progress",
                                     //    s"immediately continued the suspended computation of $dependerE($dependerPK) using $dependeeE(dependeeP)")
 
@@ -1380,7 +1380,8 @@ object PropertyStore {
 
     def apply(
         entities:      Traversable[Entity],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () ⇒ Boolean,
+        debug:         Boolean
     )(
         implicit
         logContext: LogContext
@@ -1391,7 +1392,7 @@ object PropertyStore {
 
         entities.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, ArrayMap.empty)) }
 
-        new PropertyStore(map, isInterrupted)
+        new PropertyStore(map, isInterrupted, debug)
     }
 
 }

@@ -35,7 +35,7 @@ import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
+import org.opalj.log.Info
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 
@@ -44,13 +44,12 @@ import org.opalj.log.GlobalLogContext
  */
 object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
-    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Info))
 
-    override def title: String =
-        "entry point computation"
+    override def title: String = "Determines the entry points for the given project."
 
     override def description: String =
-        "determines the factory methods of a library"
+        "Determines all methods that are initial entry points when construction a call graph."
 
     override def doAnalyze(
         project:       org.opalj.br.analyses.Project[URL],
