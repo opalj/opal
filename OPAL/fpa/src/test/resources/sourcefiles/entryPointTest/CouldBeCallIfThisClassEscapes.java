@@ -1,3 +1,4 @@
+
 /* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
@@ -33,17 +34,17 @@ import org.opalj.fpcf.test.annotations.EntryPointProperty;
 
 /**
  * 
+ * This class also tests the case of an escape analysis. The declared methods
+ * could be visible over a superclass if an instance escapes its scope casted to InterfaceWithEntryPoint.
+ * 
+ * 
  * @author Michael Reif
  *
  */
-class DeadUnderCPA implements InterfaceWithEntryPoint {
-
-	static {
-
-	}
+class CouldBeCallIfThisClassEscapes implements InterfaceWithEntryPoint {
 	
 	@EntryPointProperty(
-			cpa=EntryPointKeys.NoEntryPoint)
+			cpa=EntryPointKeys.IsEntryPoint)
 	public void defaultMethodAsEntryPoint() {
 
 	}

@@ -119,7 +119,7 @@ class MethodAccessibilityAnalysis private[analysis] (
             }
             subtypes -= subtype
         }
-        
+
         ImmediateResult(method, PackageLocal)
     }
 
