@@ -51,15 +51,14 @@ case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 class EntryPointsAnalysis private (
     project: SomeProject
 )
-        extends DefaultFPCFAnalysis[Method](
+        extends {
+            private[this] final val AccessKey = ProjectAccessibility.Key
+            private[this] final val InstantiabilityKey = Instantiability.Key
+            private[this] final val LibraryLeakageKey = LibraryLeakage.Key
+            private[this] final val SerializableType = ObjectType.Serializable
+        } with DefaultFPCFAnalysis[Method](
             project, EntryPointsAnalysis.entitySelector
         ) {
-
-    private[this] final val AccessKey = ProjectAccessibility.Key
-    private[this] final val InstantiabilityKey = Instantiability.Key
-    private[this] final val LibraryLeakageKey = LibraryLeakage.Key
-
-    private[this] final val SerializableType = ObjectType.Serializable
 
     val propertyKey = EntryPoint.Key
 
