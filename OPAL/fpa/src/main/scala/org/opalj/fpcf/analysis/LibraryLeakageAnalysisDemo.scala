@@ -35,6 +35,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import java.net.URL
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Warn
 
 /**
  * @author Michael Reif
@@ -53,6 +57,8 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
+
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val executer = project.get(FPCFAnalysisManagerKey)
 
@@ -61,15 +67,24 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
             executer.run(LibraryLeakageAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
-        val notLeakedMethodsInfo = buildMethodInfo(notLeakedMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
+        //        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
+        //        val notLeakedMethodsInfo = buildMethodInfo(notLeakedMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
+        //
+        //        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
 
-        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒
+            p == Leakage
+        }
 
+        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒
+            p == NoLeakage
+        }
         BasicReport(
-            nonOverriddenInfoString +
-                propertyStore+
-                "\nAnalysis time: "+analysisTime
+            //            nonOverriddenInfoString +
+            propertyStore.toString+
+                "\nAnalysis time: "+analysisTime +
+                s"\nleaked: ${leakedMethods.size}"+
+                s"\n not leaked: ${notLeakedMethods2.size}"
         )
     }
 }
