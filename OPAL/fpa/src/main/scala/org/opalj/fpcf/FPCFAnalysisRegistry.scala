@@ -29,9 +29,7 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analysis.FPCFAnalysisRunner
-import org.opalj.fpcf.analysis.StaticMethodAccessibilityAnalysis
-
+import org.opalj.fpcf.analysis._
 /**
  * The fixpoint analyses registry is a registry for all analyses that need
  * to be computed with the fixpoint framework because they depend on other analyses.
@@ -52,7 +50,7 @@ import org.opalj.fpcf.analysis.StaticMethodAccessibilityAnalysis
  *
  * @author Michael Reif
  */
-object FixpointAnalysesRegistry {
+object FPCFAnalysisRegistry {
 
     private[this] var descriptions: Map[String, _ <: FPCFAnalysisRunner[_]] = Map.empty
     private[this] var theRegistry: Set[FPCFAnalysisRunner[_]] = Set.empty
@@ -103,11 +101,36 @@ object FixpointAnalysesRegistry {
     // initialize the registry with the known default analyses
     register(
         "[StaticMethodAccessibilityAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
-        StaticMethodAccessibilityAnalysis
+        MethodAccessibilityAnalysis
     )
 
-    //    register(
-    //        "[FactoryMethodAnalysis] An analysis which computes whether a static melthod is an accessible factory method w.r.t. clients.",
-    //        FactoryMethodAnalysis
-    //    )
+    register(
+        "[FactoryMethodAnalysis] An analysis which computes whether a static method is an accessible factory method w.r.t. clients.",
+        FactoryMethodAnalysis
+    )
+
+    register(
+        "[InstantiabilityAnalysis] An analysis which computes if a class can (possibly) can be instantiated.",
+        InstantiabilityAnalysis
+    )
+
+    register(
+        "[LibraryLeakageAnalysis] An analysis which computes whether a non-static method can be called via an super or subclass.",
+        LibraryLeakageAnalysis
+    )
+
+    register(
+        "[EntryPointAnalysis] An analysis which computes the entry points of a library/application.",
+        EntryPointsAnalysis
+    )
+
+    register(
+        "[MutabilityAnalysis] An analysis which computes the entry points of a library/application.",
+        MutabilityAnalysis
+    )
+
+    register(
+        "[PurityAnalysis] An analysis which computes the entry points of a library/application.",
+        PurityAnalysis
+    )
 }
