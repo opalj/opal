@@ -53,11 +53,6 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
     private[this] def registerAnalysis(
         analysisRunner: FPCFAnalysisRunner[_]
     ): Unit = this.synchronized {
-        assert(
-            !(registeredAnalyses contains analysisRunner.uniqueId),
-            s"the analysis(id: ${analysisRunner.uniqueId})is running/was executed for this project"
-        )
-
         // TODO check that it still makes sense to run/register the analysis 
 
         registeredAnalyses += analysisRunner.uniqueId
@@ -87,7 +82,7 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
             if (debug)
                 OPALLogger.debug(
                     "project configuration",
-                    s"the analysis(id: ${analysisRunner.name}) will be executed next"
+                    s"the analysis ${analysisRunner.name} will be executed next"
                 )(project.logContext)
 
             registerAnalysis(analysisRunner)
@@ -98,7 +93,7 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         } else {
             OPALLogger.error(
                 "project configuration",
-                s"the analysis(id: ${analysisRunner.name})is running/was executed for this project"
+                s"the analysis ${analysisRunner.name} is running/was executed for this project"
             )(project.logContext)
         }
     }
