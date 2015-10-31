@@ -387,10 +387,14 @@ class PropertyStore private (
             case Some(dependeeP) ⇒
                 // dependeeP may be already updated, but it is now on the caller to make
                 // a decision whether it will continue listening for further updates or not
+                assert(dependeeP.key == dependeePK)
                 c(dependeeE, dependeeP)
             case _ /*None*/ ⇒
                 new Suspended(dependerE, dependerPK, dependeeE, dependeePK) {
-                    override def continue(dependeeP: Property) = c(dependeeE, dependeeP)
+                    override def continue(dependeeP: Property) = {
+                        assert(dependeeP.key == dependeePK)
+                        c(dependeeE, dependeeP)
+                    }
                 }
         }
     }
@@ -808,7 +812,9 @@ class PropertyStore private (
                         if (debug) OPALLogger.debug(
                             "analysis progress", s"handling unsatisfied dependencies"
                         )
-                        handleUnsatisfiedDependencies()
+                        accessStore {
+                            handleUnsatisfiedDependencies()
+                        }
                     }
                 } catch {
                     case t: Throwable ⇒
@@ -836,24 +842,6 @@ class PropertyStore private (
             }
         }
 
-        /**
-         * Returns the list of observers related to the given entity and property kind.
-         * I.e., the list of observers on those elements that are needed to compute the
-         * given property kind.
-         */
-        @inline private[this] def getObservers(e: Entity, pkId: Int): Observers = {
-            val value = data.get(e)
-            if (value eq null)
-                return null;
-
-            val (_, properties) = value
-            if (properties eq null)
-                return null;
-
-            val (_, observers) = properties(pkId)
-            observers
-        }
-
         // THIS METHOD REQUIRES EXCLUSIVE ACCESS TO THE STORE!
         // Handle unsatisfied dependencies supports both cases:
         //  1. computations that are part of a cyclic computation dependency
@@ -861,7 +849,24 @@ class PropertyStore private (
         //     property that was not computed (final lack of knowledge) and for
         //     which no computation exits.
         private[this] def handleUnsatisfiedDependencies(): Unit = {
-            import scala.collection.JavaConverters._
+            /*
+        		 * Returns the list of observers related to the given entity and property kind.
+        		 * I.e., the list of observers on those elements that are needed to compute the
+        		 * given property kind.
+        		 */
+            def getDependeeObservers(e: Entity, pkId: Int): Observers = {
+                val value = data.get(e)
+                if (value eq null)
+                    return null;
+
+                val (_, properties) = value
+                if (properties eq null)
+                    return null;
+
+                val (_, observers) = properties(pkId)
+                observers
+            }
+
             // GIVEN: data: JIDMap[Entity,PropertyStoreValue = (ReentrantReadWriteLock, Properties = OArrayMap[(Property, Observers)])]
             // GIVEN: observers: new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
             val observers = store.observers
@@ -916,7 +921,7 @@ class PropertyStore private (
                         } else {
                             // this EPK observes EPKs that have observers...
                             // but, is it also observed?
-                            val observers = getObservers(dependerEPK.e, dependerEPK.pk.id)
+                            val observers = getDependeeObservers(dependerEPK.e, dependerEPK.pk.id)
                             if (observers ne null) {
                                 cyclicComputableEPKCandidates += dependerEPK
                             }
@@ -930,15 +935,13 @@ class PropertyStore private (
             //            println("Indirectly..."+indirectlyIncomputableEPKs)
             //            println("Cyclic..."+cyclicComputableEPKCandidates)
 
-            // Now
-
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (useFallbackForIncomputableProperties) {
                 if (debug) OPALLogger.debug(
                     "analysis progress",
-                    s"using the fallback property for ${directlyIncomputableEPKs.size})"
+                    s"using a fallback property for ${directlyIncomputableEPKs.size} entities"
                 )
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
@@ -946,6 +949,9 @@ class PropertyStore private (
                     val defaultP = PropertyKey.fallbackProperty(pk.id)
                     scheduleHandleFallbackResult(e, defaultP)
                 }
+                if (debug) OPALLogger.debug(
+                    "analysis progress", "created all tasks for setting the fallback properties"
+                )
             }
         }
 
@@ -1097,7 +1103,7 @@ class PropertyStore private (
         val pkId = pk.id
 
         val (lock, properties) = data.get(e)
-        var obsoleteOs: List[PropertyObserver] = Nil
+        var obsoleteOs: Iterable[PropertyObserver] = Nil
         val os = withWriteLock(lock) {
 
             // 1. inform all onPropertyComputations about the value
@@ -1154,25 +1160,29 @@ class PropertyStore private (
                                 clearDependeeObservers(e, pk) == false,
                                 s"the analysis returned an immediate result for $e($pk) though it had intermediate dependencies"
                             )
+                            obsoleteOs = os
                             properties(pkId) = (p, null /*The list of observers is no longer required!*/ )
 
                         case FinalUpdate ⇒
                             // We may still observe other entities... we have to clear
                             // these dependencies.
                             clearDependeeObservers(e, pk)
+                            obsoleteOs = os
                             properties(pkId) = (p, null /*The incoming observers are no longer required!*/ )
 
                         case IntermediateUpdate ⇒
                             // We still continue observing all other entities;
                             // hence, we only need to clear our one-time observers.
+                            var oneTimeObservers = List.empty[PropertyObserver]
                             val newOs = os.filter { o ⇒
                                 if (o.removeAfterNotification) {
-                                    obsoleteOs = o :: obsoleteOs
+                                    oneTimeObservers = o :: oneTimeObservers
                                     false
                                 } else {
                                     true
                                 }
                             }
+                            obsoleteOs = oneTimeObservers
                             properties(pkId) = (p, newOs)
 
                         case FallbackUpdate ⇒
@@ -1185,17 +1195,21 @@ class PropertyStore private (
                                 val newOs =
                                     if (p.isFinal) {
                                         clearDependeeObservers(e, pk)
+                                        obsoleteOs = os
                                         null /*The incoming observers are no longer required!*/
                                     } else {
                                         // the fallback property is refineable...
-                                        os.filter { o ⇒
+                                        var oneTimeObservers = List.empty[PropertyObserver]
+                                        val newOs = os.filter { o ⇒
                                             if (o.removeAfterNotification) {
-                                                obsoleteOs = o :: obsoleteOs
+                                                oneTimeObservers = o :: oneTimeObservers
                                                 false
                                             } else {
                                                 true
                                             }
                                         }
+                                        obsoleteOs = oneTimeObservers
+                                        newOs
                                     }
                                 properties(pkId) = (p, newOs)
                             } else {
