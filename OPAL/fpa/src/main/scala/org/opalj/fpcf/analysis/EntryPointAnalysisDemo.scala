@@ -57,11 +57,18 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
-        val projectInfo =
-            s"JDK #methods ${project.methodsCount} "+
-                s"old #entryPoints ${oldEntryPoints} "+
-                s"old #nonEntryPoints ${project.methodsCount - oldEntryPoints}"
+        var oldEntryPoints = 0
+
+        var oldTime = org.opalj.util.Seconds.None
+        org.opalj.util.PerformanceEvaluation.time {
+
+            oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
+        } { t ⇒ oldTime = t.toSeconds }
+        //        val projectInfo =
+        //            s"Overall #methods ${project.methodsCount} "+
+        //                s"\nold #entryPoints ${oldEntryPoints} "+
+        //                s"\nold #nonEntryPoints ${project.methodsCount - oldEntryPoints}"+
+        //                s"\nanalysisTime: $oldTime\n\n"
 
         val executer = project.get(FPCFAnalysisManagerKey)
 
@@ -82,15 +89,18 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
         val entryPoints = entitiesByProperty(IsEntryPoint)(propertyStore)
-        val noEntryPoints = entitiesByProperty(NoEntryPoint)(propertyStore)
+        //        val noEntryPoints = entitiesByProperty(NoEntryPoint)(propertyStore)
+
+        val methodsCount: Double = project.methodsCount.toDouble
+        def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
+
+        val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
+            s"#entry points: | $oldEntryPoints (old)     | ${entryPoints.size} (new)\n"+
+            s"percentage:    | ${getPercentage(oldEntryPoints)}% (old)     | ${getPercentage(entryPoints.size)}% (new)\n"+
+            s"analysisTime:  | $oldTime (old) | ${analysisTime} (new)"
 
         BasicReport(
-            //            entryPointInfo +
-            //                propertyStore.toString +
-            projectInfo +
-                s"\nsize: ${entryPoints.size}"+
-                s"\nsize: ${noEntryPoints.size}"+
-                "\nAnalysis time: "+analysisTime
+            outputTable
         )
     }
 }
