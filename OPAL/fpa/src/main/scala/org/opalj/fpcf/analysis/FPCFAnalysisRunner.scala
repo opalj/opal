@@ -34,7 +34,7 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * The results of the analysis which the `FPCFAnalysisRunner` object run are saved
- * within the [[PropertyStore]] of the [[Project]].
+ * within the [[PropertyStore]] of the Project.
  *
  * @author Michael Reif
  * @author Michael Eichberg

@@ -85,7 +85,7 @@ object FPCFAnalysisRegistry {
     def registry: Set[FPCFAnalysisRunner[_]] = this.synchronized { theRegistry }
 
     /**
-     * Return the [[FixpointAnalysis]] object that can be used to analyze a project later on.
+     * Return the FPCFAnalysisRunner object that can be used to analyze a project later on.
      *
      * @note This registry does only support scala `object`s. Fixpoint analyses implemented in an class
      * are currently not (directly) supported by the registry.
