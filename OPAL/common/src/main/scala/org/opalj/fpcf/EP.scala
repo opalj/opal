@@ -31,7 +31,7 @@ package org.opalj.fpcf
 /**
  * A pairing of an [[Entity]] and an associated [[Property]].
  *
- * Compared to a standard `Tuple2` the equality of two EP objects is based on
+ * Compared to a standard `Tuple2` the equality of two `EP` objects is based on
  * comparing the entities using reference equality.
  *
  * @author Michael Eichberg
@@ -43,7 +43,7 @@ final class EP(val e: Entity, val p: Property)
     def _1 = e
     def _2 = p
 
-    final def hasProperty = true
+    def hasProperty = true
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -58,7 +58,7 @@ final class EP(val e: Entity, val p: Property)
 
     override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
-    override def toString: String = s"EK($e,$p)"
+    override def toString: String = s"EP($e,$p)"
 }
 
 /**

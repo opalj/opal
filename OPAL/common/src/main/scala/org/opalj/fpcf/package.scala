@@ -33,12 +33,12 @@ import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * The fixpoint computations framework (`fcf`) is a general framework to perform fixpoint
+ * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
  * computations on a fixed set of entities. The framework in particular
  * supports the development of static analyses. In this case, the fixpoint computations/
  * static analyses are generally operating on the code and need to be executed until
  * the computation has reached its (implicit) fixpoint. The fixpoint framework explicitly
- * support cyclic dependencies/computations.
+ * supports cyclic dependencies/computations and performs all computations in parallel.
  * A prime use case of the fixpoint framework
  * are all those analyses that may interact with the results of other analyses.
  *
@@ -48,6 +48,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  *
  * The framework is generic enough to facilitate the implementation of
  * anytime algorithms.
+ *
+ * The framework supports two very basic kinds of properties. Those properties that are
+ * associated with a specific entity; e.g., a field's ''real'' type, and those properties
+ * that are shared by a set of entities; e.g., the set of all methods that are entry
+ * points. In general, the latter properties can also be modeled using the first
+ * mechanism, but this would be highly ineffective.
  *
  * @note The dependency relation is as follows:
  *      “A depends on B”
@@ -61,7 +67,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 package object fpcf {
 
     /**
-     * A simple type alias to facilitate comprehension of the code.
+     * The type of the values stored in a property store.
+     *
+     * Basically, a simple type alias to facilitate comprehension of the code.
      */
     type Entity = AnyRef
 
@@ -79,6 +87,12 @@ package object fpcf {
      * the entity + property of the entity on which the computation depends.
      */
     type Continuation = (Entity, Property) ⇒ PropertyComputationResult
+
+    /**
+     * The result of a computation if the computation derives multiple properties
+     * at the same time.
+     */
+    type ComputationResults = Traversable[(Entity, Property)]
 
     /**
      * A computation of a property that was restarted (under different properties)

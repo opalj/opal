@@ -31,8 +31,8 @@ package org.opalj.fpcf
 /**
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
- * Compared to a standard `Tuple2` the implementation of equals differ. Here,
- * the entities are compared using reference comparison and not equality.
+ * Compared to a standard `Tuple2` the entities are compared using reference comparison
+ * and not equality based on `equals` checks.
  *
  * @author Michael Eichberg
  */
@@ -40,8 +40,8 @@ final class EPK(val e: Entity, val pk: PropertyKey)
         extends EOptionP
         with Product2[Entity, PropertyKey] {
 
-    final def hasProperty: Boolean = false
-    final def p: Property = throw new UnsupportedOperationException()
+    def hasProperty: Boolean = false
+    def p: Property = throw new UnsupportedOperationException()
 
     def _1 = e
     def _2 = pk

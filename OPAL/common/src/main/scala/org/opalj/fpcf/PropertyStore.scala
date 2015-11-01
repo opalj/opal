@@ -30,25 +30,18 @@ package org.opalj.fpcf
 
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
-import java.util.{Map ⇒ JMap}
 import java.util.{HashSet ⇒ JHSet}
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.RejectedExecutionException
-import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
-import java.util.concurrent.locks.ReentrantLock
 import java.util.Collections
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{HashMap ⇒ HMap}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContextExecutorService
-import org.opalj.concurrent.Locking
-import org.opalj.collection.immutable.IdentityPair
 import org.opalj.concurrent.Locking.{withReadLock, withWriteLock}
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.handleUncaughtException
@@ -107,8 +100,8 @@ import org.opalj.collection.mutable.ArrayMap
  */
 /*
  * The ProperStore prevents deadlocks by ensuring that updates of the store are always
- * atomic and by preventing each computation from acquiring more than one (write and/or
- * read) lock at a time.
+ * atomic and by ensuring that each computation acquires all necessary locks (write and/or
+ * read) locks in the same order!
  * The locking strategy is as follows:
  *  1.  Every entity is directly associated with a ReentrantReadWriteLock that
  *      is always used if a property for the respective entity is read or written.
@@ -119,6 +112,7 @@ import org.opalj.collection.mutable.ArrayMap
  *      that each computation is thread-safe.
  *  1.  The store as a whole is associated with a lock to enable selected methods
  *      to get a consistent view.
+ *  1.  All set properties related operation are sycnchronized using the set property's mutex.
  */
 // COMMON ABBREVIATONS USED IN THE FOLLOWING:
 // ==========================================
@@ -136,8 +130,8 @@ import org.opalj.collection.mutable.ArrayMap
 // 
 // REMARKS:
 // ========
-// SORTING IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT 
-// THE INIDIVUAL ENTITIES
+// SORTING ENTIES IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT
+// THE INDIVIDUAL ENTITIES; HENCE NO SORTING FUNCTIONALITY IS SUPPORTED!
 class PropertyStore private (
         // type Observers = mutable.ListBuffer[PropertyObserver]
         // type Properties = OArrayMap[(Property, Observers)]
@@ -159,13 +153,13 @@ class PropertyStore private (
      * Counts how often some observer was notified. I.e., how often an analysis reacted
      * upon the update of a value and was no able to directly use a/the value.
      */
-    private[this] val propagationCount = new java.util.concurrent.atomic.AtomicLong(0)
+    private[this] val propagationCount = new AtomicLong(0)
 
     /**
      * Counts how often a default property was effectively assigned to an entity.
      */
-    private[this] val effectiveDefaultPropertiesCount = new java.util.concurrent.atomic.AtomicLong(0)
-    private[this] val candidateDefaultPropertiesCount = new java.util.concurrent.atomic.AtomicLong(0)
+    private[this] val effectiveDefaultPropertiesCount = new AtomicLong(0)
+    private[this] val candidateDefaultPropertiesCount = new AtomicLong(0)
 
     // We want to be able to make sure that methods that access the store as
     // a whole always get a consistent snapshot view
@@ -196,7 +190,7 @@ class PropertyStore private (
     private[this] final val theSetProperties = ArrayMap[JSet[AnyRef]](5)
 
     private[this] def createIdentityHashSet(): JSet[AnyRef] = {
-        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]());
+        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
     }
 
     private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
@@ -399,18 +393,6 @@ class PropertyStore private (
         }
     }
 
-    //       def requireFinal(
-    //        dependerE: Entity,
-    //        dependerPK: PropertyKey,
-    //        dependeeE: Entity,
-    //        dependeePK: PropertyKey) : Property = {
-    //        this(dependeeE,dependeePK) match {
-    //            case Some(p) if p.isFinal ⇒ p
-    //            case _                             ⇒ ???
-    //                
-    //        }
-    //    }
-
     /**
      * Tests if all entities have the given property. If the respective property is
      * not yet available, the computation will be suspended until the property of
@@ -486,7 +468,7 @@ class PropertyStore private (
      */
     def set(e: Entity, p: Property): Unit = {
         accessEntity {
-            assert(this(e, p.key) == None, "(re)setting a property is not supported")
+            assert(this(e, p.key).isEmpty, "(re)setting a property is not supported")
             update(e, p, OneStepFinalUpdate)
         }
     }
@@ -502,7 +484,7 @@ class PropertyStore private (
         accessStore {
             val valuesWithProperty =
                 data.entrySet().asScala filter { v ⇒
-                    val (_ /*lock*/ , properties) = v.getValue()
+                    val (_ /*lock*/ , properties) = v.getValue
                     properties(pk.id) match {
                         case null | (null, _) ⇒ false
                         case _                ⇒ true
@@ -571,7 +553,7 @@ class PropertyStore private (
     def <|<(f: Entity ⇒ Boolean, c: PropertyComputation): Unit = {
         val it = keys.iterator()
         var es: List[Entity] = Nil
-        while (it.hasNext()) {
+        while (it.hasNext) {
             if (isInterrupted())
                 return ;
             val e = it.next()
@@ -664,7 +646,7 @@ class PropertyStore private (
                             perPropertyKeyEntities(pk) = perPropertyKeyEntities(pk) + 1
                             p.toString
                         }
-                    )+"[obs="+(osCount)+"]"
+                    )+"[obs="+osCount+"]"
                 }
                 if (printProperties && ps.nonEmpty) {
                     val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
@@ -694,7 +676,7 @@ class PropertyStore private (
 
     override def toString: String = toString(false)
 
-    //
+    // =============================================================================================
     //
     // INTERNAL IMPLEMENTATION
     //
@@ -756,7 +738,7 @@ class PropertyStore private (
                     // 2) clear the list of incoming observers
                     for {
                         entry ← data.entrySet().asScala
-                        ps = entry.getValue()._2
+                        ps = entry.getValue._2
                         ((p, os), pkId) ← ps.values.zipWithIndex // the property p may (still be) null
                         if os ne null // if the property is final the observers are already cleared
                     } {
@@ -792,7 +774,7 @@ class PropertyStore private (
             def registeredObservers: Int = {
                 val ps = data.values().asScala.view.map(_._2)
                 val poss = ps.map(_.values).flatten
-                poss.map(pos ⇒ if (pos._2 eq null) 0 else pos._2.filter(_ ne null).size).sum
+                poss.map(pos ⇒ if (pos._2 eq null) 0 else pos._2.count(_ ne null)).sum
             }
 
             assert(scheduled > 0)
@@ -957,12 +939,13 @@ class PropertyStore private (
 
         def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
             this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
+            //noinspection LoopVariableNotUpdated
             while (scheduled > 0) {
                 if (debug) OPALLogger.debug(
                     "analysis progress",
                     s"all previously scheduled tasks finished (newly scheduled tasks: $scheduled)"
                 )
-                wait
+                wait()
             }
         }
     }
@@ -1269,24 +1252,32 @@ class PropertyStore private (
 
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
         accessEntity {
-            // TODO assign all PropertyComputationResult objects with a unique id to make it possible to use a switch
-            r match {
+            (r.id: @annotation.switch) match {
 
-                case NoResult              ⇒ // Nothing to do..
+                case NoResult.id ⇒ // Nothing to do..
 
-                case ImmediateResult(e, p) ⇒ update(e, p, OneStepFinalUpdate)
+                case ImmediateResult.id ⇒
+                    val ImmediateResult(e, p) = r
+                    update(e, p, OneStepFinalUpdate)
 
-                case Result(e, p)          ⇒ update(e, p, FinalUpdate)
+                case Result.id ⇒
+                    val Result(e, p) = r
+                    update(e, p, FinalUpdate)
 
-                case ImmediateMultiResult(results) ⇒
+                case ImmediateMultiResult.id ⇒
+                    val ImmediateMultiResult(results) = r
                     results foreach { ep ⇒ val (e, p) = ep; update(e, p, OneStepFinalUpdate) }
 
-                case MultiResult(results) ⇒
+                case MultiResult.id ⇒
+                    val MultiResult(results) = r
                     results foreach { ep ⇒ val (e, p) = ep; update(e, p, FinalUpdate) }
 
-                case FallbackResult(e, p) ⇒ update(e, p, FallbackUpdate)
+                case FallbackResult.id ⇒
+                    val FallbackResult(e, p) = r
+                    update(e, p, FallbackUpdate)
 
-                case IntermediateResult(e, p, dependees: Traversable[EOptionP], c) ⇒
+                case IntermediateResult.id ⇒
+                    val IntermediateResult(e, p, dependees: Traversable[EOptionP], c) = r
                     val dependerEPK = EPK(e, p.key)
                     dependees foreach { eOptionP ⇒
 
@@ -1324,8 +1315,8 @@ class PropertyStore private (
                     }
                     update(e, p, IntermediateUpdate)
 
-                case suspended @ Suspended(dependerE, dependerPK, dependeeE, dependeePK) ⇒
-
+                case Suspended.id ⇒
+                    val suspended @ Suspended(dependerE, dependerPK, dependeeE, dependeePK) = r
                     // CONCEPT
                     // First, let's get the property, then...
                     //  - If we now have a property, let's immediately continue
@@ -1367,20 +1358,22 @@ class PropertyStore private (
                                     dependeeOs += createAndRegisterObserver()
                                     null
                                 } else {
-                                    //if(debug) OPALLogger.debug(
-                                    //    "analysis progress",
-                                    //    s"immediately continued the suspended computation of $dependerE($dependerPK) using $dependeeE(dependeeP)")
-
                                     // the property was computed in the meantime...
                                     // but we don't want to call the continuation while we
                                     // still hold the lock on dependee
-                                    (e: AnyRef) ⇒ suspended.continue(dependeeP)
+                                    if (debug) OPALLogger.debug(
+                                        "analysis progress",
+                                        "immediately continued the suspended computation of "+
+                                            s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
+                                    )
+                                    // (e: AnyRef) ⇒ suspended.continue(dependeeP)
+                                    /*prepare for immediate exec*/ () ⇒ suspended.continue(dependeeP)
                                 }
                         }
                     }
                     if (continuation ne null) {
-                        scheduleComputation(dependerE, continuation)
-                        //handleResult(continuation())
+                        //scheduleComputation(dependerE, continuation)
+                        /*immediately exec*/ handleResult(continuation())
                     }
             }
         }
@@ -1392,6 +1385,18 @@ class PropertyStore private (
  */
 object PropertyStore {
 
+    /**
+     * Creates a new [[PropertyStore]] for the given set of entities.
+     *
+     * @param entities The entities which will be stored in the property store and with which it is
+     *                 possible to associate properties. E.g., the set of all class files, methods
+     *                 and fields of a program.
+     * @param isInterrupted A function that is frequently called by the framework to test if
+     *          the computation should be aborted. It is important that this function is efficient.
+     * @param debug `true` if debug output should be generated.
+     * @param logContext The [[LogContext]] that will be used for debug etc. messages.
+     * @return The newly created [[PropertyStore]].
+     */
     def apply(
         entities:      Traversable[Entity],
         isInterrupted: () ⇒ Boolean,

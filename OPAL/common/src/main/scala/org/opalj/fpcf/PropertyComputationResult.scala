@@ -31,13 +31,18 @@ package org.opalj.fpcf
 /**
  * Encapsulates the result of the computation of a property.
  */
-sealed trait PropertyComputationResult
+sealed trait PropertyComputationResult {
+
+    private[fpcf] def id: Int
+}
 
 /**
  * Computing a property for the respective element is not possible or did not
  * result in a new result.
  */
-case object NoResult extends PropertyComputationResult
+case object NoResult extends PropertyComputationResult {
+    private[fpcf] final val id = 0
+}
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties.
@@ -46,9 +51,10 @@ case object NoResult extends PropertyComputationResult
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class MultiResult(
-    properties: Traversable[(Entity, Property)]
-) extends PropertyComputationResult
+case class MultiResult(properties: ComputationResults) extends PropertyComputationResult {
+    private[fpcf] final def id = MultiResult.id
+}
+private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties that
@@ -58,9 +64,10 @@ case class MultiResult(
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class ImmediateMultiResult(
-    properties: Traversable[(Entity, Property)]
-) extends PropertyComputationResult
+case class ImmediateMultiResult(properties: ComputationResults) extends PropertyComputationResult {
+    private[fpcf] final val id = ImmediateMultiResult.id
+}
+private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
 
 /**
  * Encapsulates the '''final result''' of the computation of the property.
@@ -69,9 +76,9 @@ case class ImmediateMultiResult(
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class Result(e: Entity, p: Property) extends PropertyComputationResult
-
-private[fpcf] case class FallbackResult(e: Entity, p: Property) extends PropertyComputationResult
+case class Result(e: Entity, p: Property) extends PropertyComputationResult {
+    private[fpcf] final def id = Result.id
+}
 
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
@@ -81,7 +88,10 @@ private[fpcf] case class FallbackResult(e: Entity, p: Property) extends Property
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult
+case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult {
+    private[fpcf] final val id = ImmediateResult.id
+}
+private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
 
 /**
  * Factory for [[Result]] and [[ImmediateResult]] objects.
@@ -94,6 +104,8 @@ object Result {
         else
             new Result(e, p)
     }
+
+    private[fpcf] final val id = 3
 }
 
 /**
@@ -111,11 +123,30 @@ object Result {
  * and correct solution is to just wrap it in a synchronized block.)
  */
 case class IntermediateResult(
-    e: Entity, p: Property,
-    dependeeEs: Traversable[EOptionP],
-    c:          Continuation
-)
-        extends PropertyComputationResult
+        e:          Entity,
+        p:          Property,
+        dependeeEs: Traversable[EOptionP],
+        c:          Continuation
+) extends PropertyComputationResult {
+    private[fpcf] final def id = IntermediateResult.id
+}
+private[fpcf] object IntermediateResult { private[fpcf] final val id = 5 }
+
+//
+//
+// PACKAGE PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
+//
+//
+
+private[fpcf] case class FallbackResult(
+        e: Entity,
+        p: Property
+) extends PropertyComputationResult {
+
+    private[fpcf] final def id = FallbackResult.id
+
+}
+private[fpcf] object FallbackResult { private[fpcf] final val id = 6 }
 
 /**
  * Represents a suspended computation.
@@ -126,19 +157,19 @@ case class IntermediateResult(
  *      is required.
  */
 private[fpcf] abstract class Suspended(
-    val e:          Entity,
-    val pk:         PropertyKey,
-    val dependeeE:  Entity,
-    val dependeePk: PropertyKey
-)
-        extends PropertyComputationResult {
+        val e:          Entity,
+        val pk:         PropertyKey,
+        val dependeeE:  Entity,
+        val dependeePK: PropertyKey
+) extends PropertyComputationResult {
 
     /**
-     * Called by the framework when the property of the element `dependee` this computation is
-     * depending on was computed.
+     * Called by the framework when the property of the element `dependeeE` on which
+     * this computation is depending on was computed.
      */
     def continue(dependeeP: Property): PropertyComputationResult
 
+    private[fpcf] final def id = Suspended.id
 }
 
 /**
@@ -146,7 +177,9 @@ private[fpcf] abstract class Suspended(
  */
 private[fpcf] object Suspended {
 
+    private[fpcf] final val id = 7
+
     def unapply(c: Suspended): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
-        Some((c.e, c.pk, c.dependeeE, c.dependeePk))
+        Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }

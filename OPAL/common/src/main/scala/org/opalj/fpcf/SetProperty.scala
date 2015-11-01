@@ -29,6 +29,7 @@
 package org.opalj.fpcf
 
 import org.opalj.collection.mutable.ArrayMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A set property is a property that is shared by a set of entities. A set property is
@@ -53,9 +54,9 @@ trait SetProperty[E <: AnyRef] {
 
 private[fpcf] object SetProperty {
 
-    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
+    private[this] final val idGenerator = new AtomicInteger(0)
 
-    private[this] val theSetPropertyNames = ArrayMap[String](5)
+    private[this] final val theSetPropertyNames = ArrayMap[String](5)
 
     def name(id: Int): String = {
         theSetPropertyNames.synchronized { theSetPropertyNames(id) }

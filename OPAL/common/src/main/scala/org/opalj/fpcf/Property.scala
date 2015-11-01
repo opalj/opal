@@ -52,6 +52,9 @@ trait Property {
      */
     def isRefineable: Boolean
 
+    /**
+     *  Returns `true` if this property is always final and no refinement is possible.
+     */
     def isFinal = !isRefineable
 
 }
