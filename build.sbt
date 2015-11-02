@@ -26,8 +26,8 @@ parallelExecution in Global := false // the tests/analysis are already paralleli
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 testOptions in ThisBuild <<=
-  baseDirectory map {
-	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+  baseDirectory map { bd =>
+    Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
   }
 
 testOptions in ThisBuild += Tests.Argument("-o")
