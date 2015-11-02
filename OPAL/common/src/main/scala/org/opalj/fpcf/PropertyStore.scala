@@ -474,6 +474,33 @@ class PropertyStore private (
         }
     }
 
+    def set(ps: Traversable[EP]): Unit = {
+        ps.foreach { ep ⇒
+            val EP(e, p) = ep
+            accessEntity {
+                val lps = data.get(e)
+                assert(
+                    lps ne null,
+                    s"the entity $e returned by the given function f is unknown"
+                )
+                val (lock, properties) = lps
+                withWriteLock(lock) {
+                    val pos = properties(p.key.id)
+                    if ((pos eq null) || (pos._1 eq null))
+                        // we do not have a property...
+                        update(e, p, OneStepFinalUpdate)
+                    else {
+                        OPALLogger.info(
+                            "analysis progress",
+                            s"ignored the new property ${p} computed for $e, "+
+                                s"because the entity already has the property ${pos._1}}"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Returns all elements which have a property of the respective kind. This method
      * returns a consistent snapshot view of the store w.r.t. the given
@@ -528,58 +555,31 @@ class PropertyStore private (
         }
     }
 
-
     /**
-     * Executes f for each group of entities which is grouped by k.
+     * Executes f for each group of entities which is grouped by the function `groupBy`.
      *
-     * @param groupBy
-     * @param f
+     * @param groupBy A function that associates every entity E that is selected by the given
+     *                entitySelector function with a specific group.
+     * @param f The analysis.
      * @tparam K The group key.
-     * @tparam E
-     * @return
+     * @tparam E The type of the entities that will be analyzed/passed to `f`.
      */
-    def execute[K,E <: Entity](
-                              entitySelector: PartialFunction[Entity, E],
-                              groupBy: Function[E, K]
-                              )(
-                              f: (K,Seq[E]) ⇒ Traversable[EP]
-                              ): Unit = {
-        var remainingGroups : Map[K,Seq[E]] = keysList.view.collect(entitySelector).groupBy(groupBy)
-        for{
-            (key,entities) <- remainingGroups
+    def execute[K, E <: Entity](
+        entitySelector: PartialFunction[Entity, E],
+        groupBy:        Function[E, K]
+    )(
+        f: (K, Seq[E]) ⇒ Traversable[EP]
+    ): Unit = {
+        for {
+            (key, entities) ← keysList.view.collect(entitySelector).groupBy(groupBy)
             if !Tasks.isInterrupted
         } {
             scheduleRunnable {
-                        val results = f(key,entities)
-                        results.foreach { ep ⇒
-                            val EP(e, p) = ep
-                            accessEntity {
-                                val lps = data.get(e)
-                                assert(
-                                    lps ne null,
-                                    s"the entity $e returned by the given function f "+
-                                      "is unknown to the property store"
-                                )
-                                val (lock, properties) = lps
-                                withWriteLock(lock) {
-                                    val pos = properties(p.key.id)
-                                    if ((pos eq null) || (pos._1 eq null))
-                                    // we do not have a property...
-                                        update(e, p, OneStepFinalUpdate)
-                                    else {
-                                        OPALLogger.info(
-                                            "analysis progress",
-                                            s"ignored the new property ${p} computed for $e, "+
-                                              s"because the entity already has the property ${pos._1}}"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                val results = f(key, entities)
+                set(results)
             }
         }
-
+    }
 
     /**
      * Executes the given function `f` in parallel for all entities in the store.
@@ -626,31 +626,7 @@ class PropertyStore private (
                     }
                     if (nextEntity ne null) {
                         val results = f(nextEntity)
-                        results.foreach { ep ⇒
-                            val EP(e, p) = ep
-                            accessEntity {
-                                val lps = data.get(e)
-                                assert(
-                                    lps ne null,
-                                    s"the entity $e returned by the given function f "+
-                                        "is unknown to the property store"
-                                )
-                                val (lock, properties) = lps
-                                withWriteLock(lock) {
-                                    val pos = properties(p.key.id)
-                                    if ((pos eq null) || (pos._1 eq null))
-                                        // we do not have a property...
-                                        update(e, p, OneStepFinalUpdate)
-                                    else {
-                                        OPALLogger.info(
-                                            "analysis progress",
-                                            s"ignored the new property ${p} computed for $e, "+
-                                                s"because the entity already has the property ${pos._1}}"
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        set(results)
                     }
                 }
             }
@@ -740,22 +716,6 @@ class PropertyStore private (
                 if entry.getValue._2.values.exists(pOs ⇒ propertyFilter(pOs._1))
             } yield {
                 entry.getKey
-            }
-        }
-    }
-
-    /**
-     * The set of all entities which have a property that passes the given filter.
-     *
-     * This is a blocking operation; the returned set is independent of the store.
-     */
-    def entities2[T <: Entity](propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[T] = {
-        accessStore {
-            for {
-                entry ← data.entrySet().asScala
-                if entry.getValue._2.values.exists(pOs ⇒ propertyFilter(pOs._1))
-            } yield {
-                entry.getKey.asInstanceOf[T]
             }
         }
     }
