@@ -39,7 +39,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysisRunner[T <: FPCFAnalysis[_ <: Entity]] {
+trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
 
     final val uniqueId: Int = FPCFAnalysisRunner.nextId
 

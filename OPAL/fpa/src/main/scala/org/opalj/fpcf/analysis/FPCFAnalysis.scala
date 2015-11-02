@@ -41,9 +41,16 @@ import org.opalj.AnalysisModes._
  *
  * @author Michael Reif
  */
-trait FPCFAnalysis[E <: Entity] {
+trait FPCFAnalysis {
 
     def project: SomeProject
+
+}
+
+abstract class AbstractFPCFAnalysis[T <: Entity](
+        val project:        SomeProject,
+        val entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
+) extends FPCFAnalysis {
 
     /**
      * The implementation of the analysis. This method will  in general be executed concurrently
@@ -52,15 +59,7 @@ trait FPCFAnalysis[E <: Entity] {
      * @param entity The entity which should be analyzed.
      * @return The result of analyzing the given entity.
      */
-    def determineProperty(entity: E): PropertyComputationResult
-
-}
-
-
-abstract class AbstractFPCFAnalysis[T <: Entity](
-        val project:        SomeProject,
-        val entitySelector: PartialFunction[Entity, T] = FPCFAnalysis.entitySelector()
-) extends FPCFAnalysis[T] {
+    def determineProperty(entity: T): PropertyComputationResult
 
     implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -72,7 +71,7 @@ abstract class AbstractFPCFAnalysis[T <: Entity](
 
 abstract class DefaultFPCFAnalysis[T <: Entity](
         project:        SomeProject,
-        entitySelector: PartialFunction[Entity, T] = FPCFAnalysis.entitySelector()
+        entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
 ) extends AbstractFPCFAnalysis[T](project, entitySelector) {
 
     lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
@@ -83,4 +82,3 @@ abstract class DefaultFPCFAnalysis[T <: Entity](
 
     def isApplication = analysisMode eq APP
 }
-
