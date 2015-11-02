@@ -37,6 +37,7 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
 import java.util.Collections
+import scala.reflect.ClassTag
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{HashMap ⇒ HMap}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
@@ -528,6 +529,76 @@ class PropertyStore private (
     }
 
     /**
+     * Executes the given function `f` in parallel for all entities in the store.
+     * `f` is allowed to derive any
+     * properties related to any other entity found in the store. However, if `f` derives
+     * a property pNew of property kind pk and the respective entity e already has a property pOld
+     * of property kind pk, then the new property will be ignored.
+     *
+     * The function may also access the store to query '''other properties'''; however, this should in
+     * general only be done directly after all previously scheduled computations - that
+     * compute any properties of interest - have finished (cf. [[waitOnPropertyComputationCompletion]]).
+     *
+     * @param entitySelector An entity selector (cf. [[PropertyStore#entitySelector]])
+     * @param f The function the computes the respective property.
+     */
+    def execute[E <: Entity](
+        entitySelector: PartialFunction[Entity, E]
+    )(
+        f: (Entity) ⇒ Traversable[EP]
+    ): Unit = {
+        val mutex = new Object
+        // we use the remaining entities as a worklist
+        @volatile var remainingEntities = keysList
+        var i = 0
+        // We use exactly ThreadCount number of threads that process all entities
+        val max = ThreadCount
+        while (i < max) {
+            i += 1
+            scheduleRunnable {
+                while (!Tasks.isInterrupted && remainingEntities.nonEmpty) {
+                    val nextEntity = mutex.synchronized {
+                        if (remainingEntities.nonEmpty) {
+                            val nextEntity = remainingEntities.head
+                            remainingEntities = remainingEntities.tail
+                            nextEntity
+                        } else
+                            null
+                    }
+                    if (nextEntity ne null) {
+                        val results = f(nextEntity)
+                        results.foreach { ep ⇒
+                            val EP(e, p) = ep
+                            accessEntity {
+                                val lps = data.get(e)
+                                assert(
+                                    lps ne null,
+                                    s"the entity $e returned by the given function f "+
+                                        "is unknown to the property store"
+                                )
+                                val (lock, properties) = lps
+                                withWriteLock(lock) {
+                                    val pos = properties(p.key.id)
+                                    if ((pos eq null) || (pos._1 eq null))
+                                        // we do not have a property...
+                                        update(e, p, OneStepFinalUpdate)
+                                    else {
+                                        OPALLogger.info(
+                                            "analysis progress",
+                                            s"ignored the new property ${p} computed for $e, "+
+                                                s"because the entity already has the property ${pos._1}}"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Registers a function that calculates a property for all or some elements
      * of the store.
      *
@@ -692,7 +763,7 @@ class PropertyStore private (
 
         @volatile var useFallbackForIncomputableProperties: Boolean = false
 
-        @volatile private[this] var isInterrupted: Boolean = false
+        @volatile private[PropertyStore] var isInterrupted: Boolean = false
 
         // ALL ACCESSES TO "executed" and "scheduled" ARE SYNCHRONIZED
         private[this] var executed = 0
@@ -1414,5 +1485,20 @@ object PropertyStore {
         new PropertyStore(map, isInterrupted, debug)
     }
 
+    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = {
+        new PartialFunction[Entity, T] {
+            def apply(v1: Entity): T = {
+                if (isDefinedAt(v1))
+                    v1.asInstanceOf[T]
+                else
+                    throw new IllegalArgumentException
+            }
+
+            def isDefinedAt(x: Entity): Boolean = {
+                val ct = implicitly[ClassTag[T]]
+                x.getClass.isInstance(ct.runtimeClass)
+            }
+        }
+    }
 }
 

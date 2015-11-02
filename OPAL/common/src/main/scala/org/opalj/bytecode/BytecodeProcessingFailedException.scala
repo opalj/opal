@@ -39,6 +39,5 @@ package org.opalj.bytecode
  */
 case class BytecodeProcessingFailedException(
     message: String
-)
-        extends RuntimeException(message)
+) extends RuntimeException(message)
 

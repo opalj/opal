@@ -67,7 +67,7 @@ case object IsFactoryMethod extends FactoryMethod { final val isRefineable = fal
 case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
 
 /**
- * This analysis determines which method is a factory method.
+ * This analysis identifies a project's factory methods.
  *
  * A method is no factory method if:
  *  - it is not static and does not invoke the constructor of the class where it is declared.
@@ -96,14 +96,12 @@ case object NotFactoryMethod extends FactoryMethod { final val isRefineable = fa
  * @note Native methods are considered as factory methods because they might instantiate the class.
  */
 class FactoryMethodAnalysis private (
-    project: SomeProject
-)
-        extends AbstractFPCFAnalysis[Method](
-            project, FactoryMethodAnalysis.entitySelector
-        ) {
+        project: SomeProject
+) extends AbstractFPCFAnalysis[Method](project, FactoryMethodAnalysis.entitySelector) {
 
     /**
-     * Approximates if the given method is used as factory method. Any
+     * Determines if the given method is a factory method.
+     * Any
      * native method is considered as factory method, because we have to
      * assume, that it creates an instance of the class.
      * This checks not for effective factory methods, since the return type
@@ -111,11 +109,9 @@ class FactoryMethodAnalysis private (
      * of the declaring class is invoked.
      *
      * Possible improvements:
-     *  - check if the methods returns an instance of the class or some superclass.
+     *  - check if the method returns an instance of the class or some superclass.
      */
-    def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
+    def determineProperty(method: Method): PropertyComputationResult = {
 
         //TODO use escape analysis (still have to be implemented).
 
@@ -154,20 +150,17 @@ class FactoryMethodAnalysis private (
 /**
  * Companion object for the [[FactoryMethodAnalysis]] class.
  */
-object FactoryMethodAnalysis
-        extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
+object FactoryMethodAnalysis extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
 
     private[FactoryMethodAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if m.isStatic && !m.isAbstract ⇒ m
     }
 
-    private[FactoryMethodAnalysis] def apply(
-        project: SomeProject
-    ): FactoryMethodAnalysis = {
+    private[FactoryMethodAnalysis] def apply(project: SomeProject): FactoryMethodAnalysis = {
         new FactoryMethodAnalysis(project)
     }
 
     protected def start(project: SomeProject): Unit = {
-        FactoryMethodAnalysis(project)
+        new FactoryMethodAnalysis(project)
     }
 }

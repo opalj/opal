@@ -92,11 +92,10 @@ case object MaybeInstantiable extends Instantiability { final val isRefineable =
  */
 class InstantiabilityAnalysis private (
     project: SomeProject
-)
-        extends DefaultFPCFAnalysis[ClassFile](
-            project,
-            InstantiabilityAnalysis.entitySelector
-        ) {
+) extends DefaultFPCFAnalysis[ClassFile](
+    project,
+    InstantiabilityAnalysis.entitySelector
+) {
 
     val propertyKey = Instantiability.Key
 
