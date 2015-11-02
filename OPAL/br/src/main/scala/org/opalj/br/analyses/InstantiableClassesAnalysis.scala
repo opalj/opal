@@ -30,27 +30,19 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Set
 import scala.collection.mutable.HashSet
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.immutable.IdentityPair
-import org.opalj.br.instructions.FieldReadAccess
-import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.PUTSTATIC
+import scala.collection.JavaConverters._
 import org.opalj.br.instructions.INVOKESPECIAL
 
 /**
- * This analysis determines which classes can never be instantiated (e.g.,
+ * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
  * `java.lang.Math`).
  *
  * A class is not instantiable if:
  *  - it only defines private constructors and these constructors are not called
- *    by any static method and the method is not Serializable.
+ *    by any static method and the class is also not Serializable.
  *
  * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
@@ -76,13 +68,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
  */
 object InstantiableClassesAnalysis {
 
-    // IMPROVE Add support for close-packages assumptions.
-    // IMPROVE Use the fcf to react on results related to constructor calls from factory methods.
-
-    def doAnalyze(
-        project:       SomeProject,
-        isInterrupted: () ⇒ Boolean
-    ): InstantiableClasses = {
+    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+        import project.classHierarchy.isSubtypeOf
 
         val notInstantiable = new ConcurrentLinkedQueue[ObjectType]()
 
@@ -99,7 +86,7 @@ object InstantiableClassesAnalysis {
 
             val thisClassType = cf.thisType
 
-            if (project.classHierarchy.isSubtypeOf(thisClassType, ObjectType.Serializable).isYesOrUnknown)
+            if (isSubtypeOf(thisClassType, ObjectType.Serializable).isYesOrUnknown)
                 return ;
 
             for {
@@ -132,7 +119,6 @@ object InstantiableClassesAnalysis {
 
         project.parForeachProjectClassFile(isInterrupted)(analyzeClassFile)
 
-        import scala.collection.JavaConverters._
         new InstantiableClasses(project, HashSet.empty ++ notInstantiable.asScala)
     }
 }

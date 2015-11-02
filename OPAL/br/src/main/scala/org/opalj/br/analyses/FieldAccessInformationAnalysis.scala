@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Map
 import scala.collection.mutable.AnyRefMap
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.immutable.IdentityPair
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -166,17 +165,11 @@ class FieldAccessInformation(
         Seq.empty
     }
 
-    def writeAccesses(
-        declaringClassType: ObjectType,
-        fieldName:          String
-    ): Seq[(Method, PCs)] = {
+    def writeAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
         accesses(allWriteAccesses, declaringClassType, fieldName)
     }
 
-    def readAccesses(
-        declaringClassType: ObjectType,
-        fieldName:          String
-    ): Seq[(Method, PCs)] = {
+    def readAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
         accesses(allReadAccesses, declaringClassType, fieldName)
     }
 

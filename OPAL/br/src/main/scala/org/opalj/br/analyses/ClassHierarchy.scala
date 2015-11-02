@@ -55,7 +55,7 @@ import org.opalj.log.OPALLogger
  * ==Thread safety==
  * This class is immutable. Hence, concurrent access to the class hierarchy is supported.
  *
- * @param isFinal `true` if the class is known to be `final`.
+ * @param isKnownToBeFinalMap `true` if the class is known to be `final`.
  * @param superclassTypeMap Contains type information about a type's immediate superclass.
  *      This value is defined unless the key identifies the
  *      object type `java.lang.Object` or when the respective class files was not
@@ -104,7 +104,7 @@ class ClassHierarchy private (
      *    and all the library it depends on then the class hierarchy '''should not'''
      *    contain multiple root types.
      * @note
-     *    This list is recalculated
+     *    This list is recalculated whenever this function is called.
      *
      */
     def rootTypes: SeqView[ObjectType, Seq[ObjectType]] = {
