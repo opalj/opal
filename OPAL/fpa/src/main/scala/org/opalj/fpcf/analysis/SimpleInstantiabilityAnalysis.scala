@@ -128,13 +128,7 @@ object SimpleInstantiabilityAnalysis
         case m: Method if m.body.nonEmpty || m.isNative ⇒ m
     }
 
-    private[SimpleInstantiabilityAnalysis] def apply(
-        project: SomeProject
-    ): SimpleInstantiabilityAnalysis = {
-        new SimpleInstantiabilityAnalysis(project)
-    }
-
     protected def start(project: SomeProject): Unit = {
-        SimpleInstantiabilityAnalysis(project)
+        new SimpleInstantiabilityAnalysis(project)
     }
 }
