@@ -134,7 +134,7 @@ class EntryPointsAnalysis private (
 object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
 
     private[EntryPointsAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract ⇒ m
+        case m: Method if !m.isAbstract && !m.isNative ⇒ m
     }
 
     private[EntryPointsAnalysis] def apply(
