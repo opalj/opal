@@ -539,13 +539,16 @@ class PropertyStore private (
      * general only be done directly after all previously scheduled computations - that
      * compute any properties of interest - have finished (cf. [[waitOnPropertyComputationCompletion]]).
      *
+     * This function cannot be used to register a function that (bi-directionally) interacts with
+     * other analyses.
+     *
      * @param entitySelector An entity selector (cf. [[PropertyStore#entitySelector]])
      * @param f The function the computes the respective property.
      */
     def execute[E <: Entity](
         entitySelector: PartialFunction[Entity, E]
     )(
-        f: (Entity) ⇒ Traversable[EP]
+        f: (E) ⇒ Traversable[EP]
     ): Unit = {
         val mutex = new Object
         // we use the remaining entities as a worklist
@@ -557,18 +560,21 @@ class PropertyStore private (
             i += 1
             scheduleRunnable {
                 while (!Tasks.isInterrupted && remainingEntities.nonEmpty) {
-                    val nextEntity = mutex.synchronized {
+                    val nextEntity : E = mutex.synchronized {
                         if (remainingEntities.nonEmpty) {
                             val nextEntity = remainingEntities.head
                             remainingEntities = remainingEntities.tail
-                            nextEntity
+                            if(entitySelector.isDefinedAt(nextEntity))
+                                entitySelector(nextEntity)
+                            else
+                                null.asInstanceOf[E]
                         } else
-                            null
+                            null.asInstanceOf[E]
                     }
                     if (nextEntity ne null) {
                         val results = f(nextEntity)
                         results.foreach { ep ⇒
-                            val EP(e, p) = ep
+                            val EP(e : E, p) = ep
                             accessEntity {
                                 val lps = data.get(e)
                                 assert(
