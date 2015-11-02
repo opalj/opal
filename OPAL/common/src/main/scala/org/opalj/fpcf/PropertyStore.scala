@@ -713,9 +713,29 @@ class PropertyStore private (
         accessStore {
             for {
                 entry ← data.entrySet().asScala
-                if entry.getValue._2.values.exists(pOs ⇒ propertyFilter(pOs._1))
+                if entry.getValue._2.values.exists(pOs ⇒ pOs._1 != null && propertyFilter(pOs._1))
             } yield {
                 entry.getKey
+            }
+        }
+    }
+
+    /**
+     * The set of all entities which have a property that passes the given filter.
+     *
+     * This is a blocking operation; the returned set is independent of the store.
+     */
+    def collect[T](collect: PartialFunction[(Entity, Property), T]): scala.collection.mutable.Set[T] = {
+        accessStore {
+            for {
+                entry ← data.entrySet().asScala
+                e = entry.getKey
+                pos = entry.getValue._2
+                (p, _ /*os*/ ) ← pos.values
+                ep: (Entity, Property) = (e, p)
+                if collect.isDefinedAt(ep)
+            } yield {
+                collect(ep)
             }
         }
     }
