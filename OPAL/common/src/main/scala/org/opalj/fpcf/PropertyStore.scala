@@ -528,6 +528,59 @@ class PropertyStore private (
         }
     }
 
+
+    /**
+     * Executes f for each group of entities which is grouped by k.
+     *
+     * @param groupBy
+     * @param f
+     * @tparam K The group key.
+     * @tparam E
+     * @return
+     */
+    def execute[K,E <: Entity](
+                              entitySelector: PartialFunction[Entity, E],
+                              groupBy: Function[E, K]
+                              )(
+                              f: (K,Seq[E]) ⇒ Traversable[EP]
+                              ): Unit = {
+        var remainingGroups : Map[K,Seq[E]] = keysList.view.collect(entitySelector).groupBy(groupBy)
+        for{
+            (key,entities) <- remainingGroups
+            if !Tasks.isInterrupted
+        } {
+            scheduleRunnable {
+                        val results = f(key,entities)
+                        results.foreach { ep ⇒
+                            val EP(e, p) = ep
+                            accessEntity {
+                                val lps = data.get(e)
+                                assert(
+                                    lps ne null,
+                                    s"the entity $e returned by the given function f "+
+                                      "is unknown to the property store"
+                                )
+                                val (lock, properties) = lps
+                                withWriteLock(lock) {
+                                    val pos = properties(p.key.id)
+                                    if ((pos eq null) || (pos._1 eq null))
+                                    // we do not have a property...
+                                        update(e, p, OneStepFinalUpdate)
+                                    else {
+                                        OPALLogger.info(
+                                            "analysis progress",
+                                            s"ignored the new property ${p} computed for $e, "+
+                                              s"because the entity already has the property ${pos._1}}"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
+        }
+
+
     /**
      * Executes the given function `f` in parallel for all entities in the store.
      * `f` is allowed to derive any
