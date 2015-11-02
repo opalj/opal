@@ -230,7 +230,7 @@ final class Method private (
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
         val method =
             if (jAccessFlags.nonEmpty)
-                " "+descriptor.toJava(name)
+                jAccessFlags+" "+descriptor.toJava(name)
             else
                 descriptor.toJava(name)
 
