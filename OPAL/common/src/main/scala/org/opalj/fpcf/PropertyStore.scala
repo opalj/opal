@@ -560,11 +560,11 @@ class PropertyStore private (
             i += 1
             scheduleRunnable {
                 while (!Tasks.isInterrupted && remainingEntities.nonEmpty) {
-                    val nextEntity : E = mutex.synchronized {
+                    val nextEntity: E = mutex.synchronized {
                         if (remainingEntities.nonEmpty) {
                             val nextEntity = remainingEntities.head
                             remainingEntities = remainingEntities.tail
-                            if(entitySelector.isDefinedAt(nextEntity))
+                            if (entitySelector.isDefinedAt(nextEntity))
                                 entitySelector(nextEntity)
                             else
                                 null.asInstanceOf[E]
@@ -574,7 +574,7 @@ class PropertyStore private (
                     if (nextEntity ne null) {
                         val results = f(nextEntity)
                         results.foreach { ep ⇒
-                            val EP(e : E, p) = ep
+                            val EP(e, p) = ep
                             accessEntity {
                                 val lps = data.get(e)
                                 assert(
@@ -687,6 +687,22 @@ class PropertyStore private (
                 if entry.getValue._2.values.exists(pOs ⇒ propertyFilter(pOs._1))
             } yield {
                 entry.getKey
+            }
+        }
+    }
+
+    /**
+     * The set of all entities which have a property that passes the given filter.
+     *
+     * This is a blocking operation; the returned set is independent of the store.
+     */
+    def entities2[T <: Entity](propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[T] = {
+        accessStore {
+            for {
+                entry ← data.entrySet().asScala
+                if entry.getValue._2.values.exists(pOs ⇒ propertyFilter(pOs._1))
+            } yield {
+                entry.getKey.asInstanceOf[T]
             }
         }
     }
