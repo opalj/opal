@@ -48,8 +48,7 @@ case object NoResult extends PropertyComputationResult
  */
 case class MultiResult(
     properties: Traversable[(Entity, Property)]
-)
-        extends PropertyComputationResult
+) extends PropertyComputationResult
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties that
@@ -61,8 +60,7 @@ case class MultiResult(
  */
 case class ImmediateMultiResult(
     properties: Traversable[(Entity, Property)]
-)
-        extends PropertyComputationResult
+) extends PropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property.

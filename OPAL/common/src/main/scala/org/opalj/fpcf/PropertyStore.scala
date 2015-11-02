@@ -1269,7 +1269,7 @@ class PropertyStore private (
 
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
         accessEntity {
-
+            // TODO assign all PropertyComputationResult objects with a unique id to make it possible to use a switch
             r match {
 
                 case NoResult              ⇒ // Nothing to do..
