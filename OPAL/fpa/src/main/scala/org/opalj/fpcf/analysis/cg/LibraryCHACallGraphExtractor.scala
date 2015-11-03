@@ -170,11 +170,22 @@ class LibraryCHACallGraphExtractor(
         ): Unit = {
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
-            val cbsCalls = cbsIndex.findMethods(name, descriptor)
+            var cbsCalls = Iterable.empty[Method]
             //if (cbsCalls.nonEmpty) {
             //    sum += cbsCalls.size
             //    println(s"sum: $sum new edges: ${cbsCalls.size}")
             //}
+            if (!project.classHierarchy.
+                allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
+                    project.classFile(iType) match {
+                        case Some(classFile) ⇒ !classFile.methods.exists { m ⇒
+                            m.name == name && (m.descriptor eq descriptor)
+                        }
+                        case None ⇒ true
+                    }
+                })
+                cbsCalls = cbsIndex.findMethods(name, descriptor)
+
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor) ++ cbsCalls
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
