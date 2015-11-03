@@ -30,7 +30,8 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.{ObjectType, ClassFile}
+import org.opalj.br.ObjectType
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.log.OPALLogger
@@ -81,7 +82,7 @@ class SimpleInstantiabilityAnalysis private (
             project,
             SimpleInstantiabilityAnalysis.groupBy,
             SimpleInstantiabilityAnalysis.entitySelector
-        ) with AnalysisMode {
+        ) with CodeAnalysisMode {
 
     def determineProperty(
         key: String, classFiles: Seq[ClassFile]
