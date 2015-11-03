@@ -42,9 +42,18 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
+/**
+ *
+ * @param value The estimated complexity of a specific method.
+ */
 case class MethodComplexity(value: Int) extends Property {
+
+    assert(value >= 0)
+
     final def key = MethodComplexity.Key // All instances have to share the SAME key!
+
     final val isRefineable = false
+
 }
 
 object MethodComplexity {
@@ -54,6 +63,15 @@ object MethodComplexity {
     final val Key = PropertyKey.create("MethodComplexity", TooComplex)
 }
 
+/**
+ * A shallow analysis that tries to identify methods that are relatively simple, that is,
+ * which don't have loops and don't depend on other (more) complex methods. For such methods
+ * it often makes sense to include them in the execution.
+ *
+ * @param maxComplexity
+ *
+ * @author Michael Eichberg
+ */
 class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
 
     def apply(method: Method): MethodComplexity = {
@@ -385,34 +403,7 @@ class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
         if (complexity >= 0 && complexity <= maxComplexity)
             MethodComplexity(complexity)
         else
-            MethodComplexity.TooComplex // <= Use a shared property!
+            MethodComplexity.TooComplex // <= Use a shared property to safe memory!
     }
 
-}
-
-object MethodComplexityDemo extends DefaultOneStepAnalysis {
-
-    override def title: String = "assesses the complexity of methods"
-
-    override def description: String =
-        """|a very simple assessment of a method that primarily serves
-           |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
-
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-        implicit val theProject = project
-        implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
-
-        val analysis = new MethodComplexityAnalysis
-        theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }
-        theProjectStore.waitOnPropertyComputationCompletion(true)
-        println(theProjectStore.toString)
-        val ratings = theProjectStore.collect[(String, Property)] {
-            case (e, p @ MethodComplexity(c)) if c < Int.MaxValue ⇒ (e.toString, p)
-        }
-        BasicReport(ratings.mkString("\n", "\n", s"\n${ratings.size} simple methods found - Done."))
-    }
 }

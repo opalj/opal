@@ -709,7 +709,7 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is independent of the store.
      */
-    def entities(propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[AnyRef] = {
+    def entities(propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[Entity] = {
         accessStore {
             for {
                 entry ← data.entrySet().asScala
@@ -725,10 +725,10 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is independent of the store.
      */
-    def collect[T](collect: PartialFunction[(Entity, Property), T]): scala.collection.mutable.Set[T] = {
+    def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
             for {
-                entry ← data.entrySet().asScala
+                entry ← data.entrySet().asScala.toSeq
                 e = entry.getKey
                 pos = entry.getValue._2
                 (p, _ /*os*/ ) ← pos.values

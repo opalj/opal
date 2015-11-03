@@ -1,5 +1,6 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+/**
+ * BSD 2-Clause License:
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,50 +28,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package fpcf
+package analysis
+package complexity
 
 import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
+import org.opalj.br.Method
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
- * Very primitive rating of the complexity of methods.
+ * Demonstrates how to use an analysis that was developed using the FPCF framework.
  *
  * @author Michael Eichberg
  */
-object MethodComplexityAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
+object MethodComplexityDemo extends DefaultOneStepAnalysis {
 
-    val analysis = this
+    override def title: String = "assesses the complexity of methods"
 
-    override def description: String = "Estimates the complexity of interpreting the method."
+    override def description: String =
+        """|a very simple assessment of a method that primarily serves
+      |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
 
-    def doAnalyze(
+    override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ) = {
+    ): BasicReport = {
+        implicit val theProject = project
+        implicit val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
 
-        var executionTime = Nanoseconds.None
-
-        val analysisResults = time {
-
-            import org.opalj.br.analyses.{MethodComplexityAnalysis ⇒ TheAnalysis}
-            TheAnalysis.doAnalyze(project, 100, isInterrupted)
-
-        } { t ⇒ executionTime += t }
-
-        BasicReport(
-            analysisResults.
-                toList.map(m ⇒ (m._2, m._1)).
-                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                mkString("\n")+"\n"+
-                s"rated ${analysisResults.size} methods in ${executionTime.toSeconds}"
-        )
+        val analysis = new MethodComplexityAnalysis
+        theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }
+        theProjectStore.waitOnPropertyComputationCompletion(true)
+        println(theProjectStore.toString)
+        val ratings = theProjectStore.collect[(String, Property)] {
+            case (e, p @ MethodComplexity(c)) if c < Int.MaxValue ⇒ (e.toString, p)
+        }
+        BasicReport(ratings.mkString("\n", "\n", s"\n${ratings.size} simple methods found - Done."))
     }
 }
