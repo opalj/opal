@@ -150,5 +150,6 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
     /*
      * This recommendations are not transitive. All (even indirect) dependencies are listed here.
      */
-    override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
+    //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
+    override def recommendations = Set(SimpleInstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
 }

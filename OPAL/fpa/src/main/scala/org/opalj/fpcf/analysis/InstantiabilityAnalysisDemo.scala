@@ -37,7 +37,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-
 /**
  * @author Michael Reif
  */
@@ -59,14 +58,14 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         org.opalj.util.PerformanceEvaluation.time {
 
-            executer.runAll(StaticMethodAccessibilityAnalysis, FactoryMethodAnalysis, InstantiabilityAnalysis)
+            executer.runAll(FactoryMethodAnalysis, InstantiabilityAnalysis)
 
         } { t ⇒ analysisTime = t.toSeconds }
 
         val instantiableClasses: Traversable[(AnyRef, Property)] =
             propertyStore(Instantiability.Key).filter { ep ⇒
                 val isInstantiable = ep._2
-                isInstantiable == NotInstantiable
+                isInstantiable == Instantiable
             }
 
         val classInfo = instantiableClasses.map { e ⇒
@@ -77,9 +76,9 @@ object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(classInfo.mkString(
             "\ninstantiable classes:\n\n\t",
             "\n\t",
-            s"\nTotal: ${instantiableClasses.size}\n\n"
+            s"\n# instantiable classes: ${instantiableClasses.size}\n"
         ) +
-            propertyStore+
+            s"\n #classes: ${project.classFilesCount}\n"+
             "\nanalysis time: "+analysisTime)
     }
 }

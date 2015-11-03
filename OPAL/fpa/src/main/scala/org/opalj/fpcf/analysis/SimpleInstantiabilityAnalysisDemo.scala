@@ -66,7 +66,7 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         val instantiableClasses: Traversable[(AnyRef, Property)] =
             propertyStore(Instantiability.Key).filter { ep ⇒
                 val isInstantiable = ep._2
-                isInstantiable == NotInstantiable
+                isInstantiable == Instantiable
             }
 
         val classInfo = instantiableClasses.map { e ⇒
@@ -77,9 +77,9 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(classInfo.mkString(
             "\ninstantiable classes:\n\n\t",
             "\n\t",
-            s"\nTotal: ${instantiableClasses.size}\n\n"
+            s"\n# instantiable classes: ${instantiableClasses.size}\n"
         ) +
-            propertyStore+
+            s"\n #classes: ${project.classFilesCount}\n"+
             "\nanalysis time: "+analysisTime)
     }
 }

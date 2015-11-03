@@ -76,9 +76,10 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         org.opalj.util.PerformanceEvaluation.time {
 
             executer.runAll(
+                SimpleInstantiabilityAnalysis,
                 LibraryLeakageAnalysis,
-                FactoryMethodAnalysis,
-                InstantiabilityAnalysis,
+                //FactoryMethodAnalysis,
+                //InstantiabilityAnalysis
                 MethodAccessibilityAnalysis
             )
 

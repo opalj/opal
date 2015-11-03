@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.Method
+import org.opalj.br.{ObjectType, ClassFile}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESPECIAL
 
@@ -76,45 +76,94 @@ import org.opalj.br.instructions.INVOKESPECIAL
 class SimpleInstantiabilityAnalysis private (
     project: SomeProject
 )
-        extends AbstractLinearFPCFAnalysis[Method](
+        extends AbstractGroupedFPCFAnalysis[String, ClassFile](
             project,
+            SimpleInstantiabilityAnalysis.groupBy,
             SimpleInstantiabilityAnalysis.entitySelector
-        ) {
+        ) with AnalysisMode {
 
     def determineProperty(
-        method: Method
+        key: String, classFiles: Seq[ClassFile]
     ): Traversable[EP] = {
-        var cfToProperty = Set.empty[EP]
-        if (method.isNative) {
-            //return all classes the package that matches the return type?
-            println(method.descriptor.toJava(method.name))
-        } else {
 
-            //val returnType = method.returnType
+        var instantiatedClasses = Set.empty[EP]
 
-            val body = method.body.get
-            val instructions = body.instructions
-            val max = instructions.length
-            var pc = 0
-            while (pc < max) {
-                val instruction = instructions(pc)
-                if (instruction.opcode == INVOKESPECIAL.opcode) {
-                    instruction match {
-                        case INVOKESPECIAL(classType, "<init>", _) ⇒ {
-                            val classFile = project.classFile(classType)
-                            if (classFile.nonEmpty)
-                                cfToProperty += EP(classFile.get, Instantiable)
+        for {
+            cf ← classFiles
+            method ← cf.methods if !method.isAbstract
+        } {
+            val visibleMethod =
+                if (isOpenLibrary) !method.isPrivate
+                else method.isPublic || (method.isProtected && !cf.isFinal)
+
+            if (method.isNative && method.isStatic && visibleMethod) {
+                println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
+            } else if (method.body.nonEmpty) {
+                val body = method.body.get
+                val instructions = body.instructions
+                val max = instructions.length
+                var pc = 0
+                while (pc < max) {
+                    val instruction = instructions(pc)
+                    if (instruction.opcode == INVOKESPECIAL.opcode) {
+                        instruction match {
+                            case INVOKESPECIAL(classType, "<init>", _) ⇒
+                                // We found a constructor call.
+                                val classFile = project.classFile(classType)
+                                if (classFile.nonEmpty) {
+                                    instantiatedClasses += EP(classFile.get, Instantiable)
+                                }
+                            case _ ⇒
                         }
-                        case _ ⇒
                     }
+                    pc = body.pcOfNextInstruction(pc)
                 }
-
-                //TODO: model that the method could be called by an accessible method
-                pc = body.pcOfNextInstruction(pc)
-            }
-
+            } else instantiatedClasses += EP(cf, Instantiable)
         }
-        cfToProperty
+
+        val usedClassFiles = instantiatedClasses.collect { case EP(cf: ClassFile, _) ⇒ cf }
+        val remainingClassFiles: Set[ClassFile] = classFiles.toSet -- usedClassFiles
+
+        remainingClassFiles foreach { classFile ⇒
+            instantiatedClasses += determineClassInstantiability(classFile)
+        }
+        instantiatedClasses
+    }
+
+    def determineClassInstantiability(classFile: ClassFile): EP = {
+        import project.classHierarchy.isSubtypeOf
+
+        if (classFile.isAbstract || classFile.isInterfaceDeclaration)
+            // A class that either never has any constructor (interfaces)
+            // or that must have at least one non-private constructor to make
+            // sense at all.
+            return EP(classFile, NotInstantiable)
+
+        val classType = classFile.thisType
+
+        if (isSubtypeOf(classType, ObjectType.Serializable).isYesOrUnknown &&
+            classFile.hasDefaultConstructor)
+            //if the class is Serializable or it is unknown, we have to count it as instantiated.
+            return EP(classFile, Instantiable)
+
+        val nonFinalClass = !classFile.isFinal
+
+        if (classFile.isPublic || isOpenLibrary) {
+
+            classFile.constructors foreach { cons ⇒
+                if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
+                    return EP(classFile, Instantiable)
+                else if (nonFinalClass &&
+                    ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+                    //If the class not final and public or we analyze an open library we have
+                    //to assume that a subclass is created and instantiated later on.
+                    //Hence, every time a subclass is instantiated all superclass's have to be
+                    //considered instantiated as well.
+                    return EP(classFile, Instantiable)
+            }
+        }
+
+        return EP(classFile, NotInstantiable)
     }
 }
 
@@ -124,8 +173,12 @@ class SimpleInstantiabilityAnalysis private (
 object SimpleInstantiabilityAnalysis
         extends FPCFAnalysisRunner[SimpleInstantiabilityAnalysis] {
 
-    private[SimpleInstantiabilityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.body.nonEmpty || m.isNative ⇒ m
+    private[SimpleInstantiabilityAnalysis] def groupBy: Function[ClassFile, String] = {
+        case cf: ClassFile ⇒ cf.thisType.packageName
+    }
+
+    private[SimpleInstantiabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
+        case cf: ClassFile ⇒ cf
     }
 
     protected def start(project: SomeProject): Unit = {
