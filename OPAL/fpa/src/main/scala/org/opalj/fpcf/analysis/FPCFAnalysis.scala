@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package analysis
 
-import scala.reflect.ClassTag
 import net.ceedubs.ficus.Ficus._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
@@ -69,11 +68,7 @@ abstract class AbstractFPCFAnalysis[T <: Entity](
     )
 }
 
-abstract class DefaultFPCFAnalysis[T <: Entity](
-        project:        SomeProject,
-        entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
-) extends AbstractFPCFAnalysis[T](project, entitySelector) {
-
+trait AnalysisMode extends FPCFAnalysis {
     lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
     def isOpenLibrary = analysisMode eq OPA
@@ -82,3 +77,8 @@ abstract class DefaultFPCFAnalysis[T <: Entity](
 
     def isApplication = analysisMode eq APP
 }
+
+abstract class DefaultFPCFAnalysis[T <: Entity](
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
+) extends AbstractFPCFAnalysis[T](project, entitySelector) with AnalysisMode
