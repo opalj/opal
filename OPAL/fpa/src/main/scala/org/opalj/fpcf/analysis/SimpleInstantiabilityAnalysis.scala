@@ -98,7 +98,10 @@ class SimpleInstantiabilityAnalysis private (
                 else method.isPublic || (method.isProtected && !cf.isFinal)
 
             if (method.isNative && method.isStatic && visibleMethod) {
-                println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
+                //println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
+                var instantiatedClasses = Set.empty[EP]
+                classFiles.foreach { classFile ⇒ instantiatedClasses += EP(classFile, Instantiable) }
+                return instantiatedClasses;
             } else if (method.body.nonEmpty) {
                 val body = method.body.get
                 val instructions = body.instructions
