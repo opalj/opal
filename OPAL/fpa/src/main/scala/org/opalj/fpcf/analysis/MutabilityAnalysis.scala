@@ -31,43 +31,9 @@ package fpcf
 package analysis
 
 import scala.language.postfixOps
-import java.net.URL
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.NEWARRAY
-import org.opalj.br.instructions.MULTIANEWARRAY
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.SASTORE
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.MethodInvocationInstruction
 
 sealed trait Mutability extends Property {
     final def key = Mutability.Key // All instances have to share the SAME key!
@@ -82,10 +48,9 @@ case object EffectivelyFinal extends Mutability { final val isRefineable = false
 case object NonFinal extends Mutability { final val isRefineable = false }
 
 class MutabilityAnalysis private (
-    project:        SomeProject,
-    entitySelector: PartialFunction[Entity, ClassFile]
-)
-        extends AbstractFPCFAnalysis(project, entitySelector) {
+        project:        SomeProject,
+        entitySelector: PartialFunction[Entity, ClassFile]
+) extends AbstractFPCFAnalysis(project, entitySelector) {
 
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
