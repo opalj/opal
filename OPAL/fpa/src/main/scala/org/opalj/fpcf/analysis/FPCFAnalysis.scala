@@ -68,7 +68,7 @@ abstract class AbstractFPCFAnalysis[T <: Entity](
     )
 }
 
-trait AnalysisMode extends FPCFAnalysis {
+trait CodeAnalysisMode extends FPCFAnalysis {
     lazy val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
     def isOpenLibrary = analysisMode eq OPA
@@ -81,4 +81,4 @@ trait AnalysisMode extends FPCFAnalysis {
 abstract class DefaultFPCFAnalysis[T <: Entity](
     project:        SomeProject,
     entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
-) extends AbstractFPCFAnalysis[T](project, entitySelector) with AnalysisMode
+) extends AbstractFPCFAnalysis[T](project, entitySelector) with CodeAnalysisMode
