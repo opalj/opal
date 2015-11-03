@@ -112,19 +112,22 @@ class EntryPointsAnalysis private (
             val isInstantiable = (dependeeP == Instantiable)
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
+            else {
+                val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                    if (dependeeP == ClassLocal)
+                        Result(method, NoEntryPoint)
+                    else if (dependeeP == Global &&
+                        (isInstantiable || method.isStatic))
+                        Result(method, IsEntryPoint)
+                    else if (dependeeP == PackageLocal)
+                        require(method, propertyKey, method, LibraryLeakageKey)(
+                            leakageContinuation(method)
+                        )
+                    else Result(method, NoEntryPoint)
+                }
 
-            val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                if (dependeeP == Global &&
-                    (isInstantiable || method.isStatic || method.isConstructor))
-                    Result(method, IsEntryPoint)
-                else
-                    require(method, propertyKey, method, LibraryLeakageKey)(
-                        leakageContinuation(method)
-                    )
+                require(method, propertyKey, method, AccessKey)(c_vis)
             }
-
-            require(method, propertyKey, method, AccessKey)(c_vis)
-
         }
 
         return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
