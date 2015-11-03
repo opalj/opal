@@ -63,8 +63,8 @@ abstract class AbstractFPCFAnalysis[T <: Entity](
     implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
     propertyStore <||< (
-        entitySelector,
-        (determineProperty _).asInstanceOf[T ⇒ PropertyComputationResult]
+        entitySelector, (entity: T) ⇒
+            determineProperty(entity)
     )
 }
 
