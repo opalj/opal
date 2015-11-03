@@ -51,7 +51,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         println("\n\n SIZE: "+difference.size+"\n\n")
 
-        println(difference.take(259).collect {
+        println(difference.collect {
             case m: org.opalj.br.Method ⇒
                 val cf = project.classFile(m)
                 cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
