@@ -33,6 +33,7 @@ package analysis
 import org.opalj.br.{ObjectType, ClassFile}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.log.OPALLogger
 
 /**
  * This analysis determines which classes can never be instantiated (e.g.,
@@ -107,7 +108,7 @@ class SimpleInstantiabilityAnalysis private (
                     val instruction = instructions(pc)
                     if (instruction.opcode == INVOKESPECIAL.opcode) {
                         instruction match {
-                            case INVOKESPECIAL(classType, "<init>", _) ⇒
+                            case INVOKESPECIAL(classType, "<init>", _) if classType.packageName == key ⇒
                                 // We found a constructor call.
                                 val classFile = project.classFile(classType)
                                 if (classFile.nonEmpty) {
