@@ -46,7 +46,7 @@ import org.opalj.log.OPALLogger
  * @note This analysis depends on the project configuration which encodes the analysis mode.
  *       Different analysis modes are: library with open or closed packages assumption or application
  *
- *  This information is relevant in various contexts, e.g., to determine
+ * This information is relevant in various contexts, e.g., to determine
  * precise call graph. For example, instance methods of those objects that cannot be
  * created are always dead.
  *
@@ -100,9 +100,17 @@ class SimpleInstantiabilityAnalysis private (
             if (method.isNative && method.isStatic && visibleMethod) {
                 //println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
                 var instantiatedClasses = Set.empty[EP]
-                classFiles.foreach { classFile ⇒ instantiatedClasses += EP(classFile, Instantiable) }
+                classFiles.foreach { classFile ⇒
+                    if (classFile.isAbstract || classFile.isInterfaceDeclaration)
+                        instantiatedClasses += EP(classFile, NotInstantiable)
+                    else
+                        instantiatedClasses += EP(classFile, Instantiable)
+                }
+                // we can stop here, we have to assume that native methods instantiate every package visible class
                 return instantiatedClasses;
+
             } else if (method.body.nonEmpty) {
+                // we have to check this because the method could be a method of another library
                 val body = method.body.get
                 val instructions = body.instructions
                 val max = instructions.length
