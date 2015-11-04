@@ -36,6 +36,7 @@ import org.opalj.br.{ClassFile, Method, MethodDescriptor, MethodSignature, Objec
 import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResolutionKey, SomeProject}
 import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
 
+import net.ceedubs.ficus.Ficus._
 import scala.collection.Set
 import scala.collection.mutable.HashSet
 
@@ -68,6 +69,7 @@ class LibraryCHACallGraphExtractor(
     ) extends super.AnalysisContext {
 
         val classHierarchy = project.classHierarchy
+        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
         def staticCall(
             pc:                 PC,
@@ -159,11 +161,9 @@ class LibraryCHACallGraphExtractor(
         ): Unit = {
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+
             var cbsCalls = Iterable.empty[Method]
-            //if (cbsCalls.nonEmpty) {
-            //    sum += cbsCalls.size
-            //    println(s"sum: $sum new edges: ${cbsCalls.size}")
-            //}
+
             if (!project.classHierarchy.
                 allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
                     project.classFile(iType) match {
@@ -172,8 +172,9 @@ class LibraryCHACallGraphExtractor(
                         }
                         case None ⇒ true
                     }
-                })
-                cbsCalls = cbsIndex.findMethods(name, descriptor)
+                }) {
+                cbsCalls = cbsIndex.findMethods(name, descriptor, declaringClassType.packageName)
+            }
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor) ++ cbsCalls
             if (callees.isEmpty) {
@@ -186,9 +187,34 @@ class LibraryCHACallGraphExtractor(
                 addCallEdge(pc, callees)
             }
         }
-    }
 
-    //var sum = 0
+        private[AnalysisContext] def callBySignature(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            name:               String,
+            descriptor:         MethodDescriptor
+        ): Iterable[Method] = {
+            if (analysisMode eq AnalysisModes.APP)
+                return Iterable.empty[Method];
+
+            if (!project.classHierarchy.
+                allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
+                    project.classFile(iType) match {
+                        case Some(classFile) ⇒ !classFile.methods.exists { m ⇒
+                            m.name == name && (m.descriptor eq descriptor)
+                        }
+                        case None ⇒ true
+                    }
+                }) {
+                if (analysisMode eq AnalysisModes.CPA)
+                    return cbsIndex.findMethods(name, descriptor, declaringClassType.packageName);
+                else
+                    return cbsIndex.findMethods(name, descriptor);
+            }
+
+            Iterable.empty[Method]
+        }
+    }
 
     def extract(
         project:   SomeProject,
@@ -220,8 +246,7 @@ class LibraryCHACallGraphExtractor(
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     context.nonVirtualCall(
                         pc, declaringClass, name, descriptor,
-                        receiverIsNull = No /*the receiver is "this" object*/
-                    )
+                        receiverIsNull = No /*the receiver is "this" object*/ )
 
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, name, descriptor) = instruction
