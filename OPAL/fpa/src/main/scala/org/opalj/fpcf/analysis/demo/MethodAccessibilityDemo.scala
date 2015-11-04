@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* BSD 2Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -29,56 +29,65 @@
 package org.opalj
 package fpcf
 package analysis
+package demo
 
-import java.net.URL
-
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.ClassFile
+import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.fpcf.MethodAnalysisDemo
+import org.opalj.fpcf.analysis.ClassLocal
+import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
+import org.opalj.fpcf.analysis.Global
+import org.opalj.fpcf.analysis.LibraryLeakageAnalysis
+import org.opalj.fpcf.analysis.MethodAccessibilityAnalysis
+import org.opalj.fpcf.analysis.PackageLocal
+
 /**
  * @author Michael Reif
  */
-object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
+object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
 
-    override def title: String = "class instantiablility computation"
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
-    override def description: String = "determines the instantiable classes of a library/application"
+    override def title: String =
+        "entry point computation"
+
+    override def description: String =
+        "determines the factory methods of a library"
 
     override def doAnalyze(
-        project:       Project[URL],
+        project:       org.opalj.br.analyses.Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val executer = project.get(FPCFAnalysisManagerKey)
-        var analysisTime = org.opalj.util.Seconds.None
 
+        var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
 
-            executer.runAll(FactoryMethodAnalysis, InstantiabilityAnalysis)
+            executer.runAll(
+                LibraryLeakageAnalysis,
+                MethodAccessibilityAnalysis
+            )
 
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val instantiableClasses: Traversable[(AnyRef, Property)] =
-            propertyStore(Instantiability.Key).filter { ep ⇒
-                val isInstantiable = ep._2
-                isInstantiable == Instantiable
-            }
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
-        val classInfo = instantiableClasses.map { e ⇒
-            val classFile = e._1.asInstanceOf[ClassFile]
-            classFile.thisType.toJava
-        }
+        val global = entitiesByProperty(Global)(propertyStore)
+        val packgeLocal = entitiesByProperty(PackageLocal)(propertyStore)
+        val classLocal = entitiesByProperty(ClassLocal)(propertyStore)
 
-        BasicReport(classInfo.mkString(
-            "\ninstantiable classes:\n\n\t",
-            "\n\t",
-            s"\n# instantiable classes: ${instantiableClasses.size}\n"
-        ) +
-            s"\n #classes: ${project.classFilesCount}\n"+
-            "\nanalysis time: "+analysisTime)
+        BasicReport(
+            s"\nglobal            : ${global.size}"+
+                s"\npackageLocal  : ${packgeLocal.size}"+
+                s"\nclassLocal    : ${classLocal.size}"+
+                "\nAnalysis time: "+analysisTime
+        )
     }
 }

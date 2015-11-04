@@ -1,4 +1,4 @@
-/* BSD 2Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -29,23 +29,28 @@
 package org.opalj
 package fpcf
 package analysis
+package demo
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import java.net.URL
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.MethodAnalysisDemo
-
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
+import org.opalj.fpcf.analysis.FactoryMethodAnalysis
+import org.opalj.fpcf.analysis.Instantiability
+import org.opalj.fpcf.analysis.InstantiabilityAnalysis
+import org.opalj.fpcf.analysis.Instantiable
 /**
  * @author Michael Reif
  */
-object FactoryAnalysisDemo extends MethodAnalysisDemo {
+object InstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "factory method computation"
+    override def title: String = "class instantiablility computation"
 
-    override def description: String =
-        "determines the factory methods of a library"
+    override def description: String = "determines the instantiable classes of a library/application"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -53,36 +58,33 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        // RECOMMENDED
-        // The factory method analysis requires information about the accessibility
-        // of static methods. Hence, we have to schedule the
-        // respective analysis. (Technically, it would be possible to schedule
-        // it afterwards, but that doesn't make sense.)
-        // ShadowingAnalysis.analyze(project)
-
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val executer = project.get(FPCFAnalysisManagerKey)
-
         var analysisTime = org.opalj.util.Seconds.None
+
         org.opalj.util.PerformanceEvaluation.time {
-            executer.run(FactoryMethodAnalysis)
+
+            executer.runAll(FactoryMethodAnalysis, InstantiabilityAnalysis)
+
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val nonFactoryMethods = entitiesByProperty(NotFactoryMethod)(propertyStore)
-        val nonFactoryInfo = buildMethodInfo(nonFactoryMethods)(project)
+        val instantiableClasses: Traversable[(AnyRef, Property)] =
+            propertyStore(Instantiability.Key).filter { ep ⇒
+                val isInstantiable = ep._2
+                isInstantiable == Instantiable
+            }
 
-        val factoryMethods = entitiesByProperty(IsFactoryMethod)(propertyStore)
-        val factoryInfo = buildMethodInfo(factoryMethods)(project)
+        val classInfo = instantiableClasses.map { e ⇒
+            val classFile = e._1.asInstanceOf[ClassFile]
+            classFile.thisType.toJava
+        }
 
-        val nonFactoryInfoString = finalReport(nonFactoryInfo, "Found non-factory methods")
-        val factoryInfoString = finalReport(factoryInfo, "Found factory methods")
-
-        BasicReport(
-            factoryInfoString +
-                nonFactoryInfoString +
-                propertyStore+
-                "\nAnalysis time: "+analysisTime
-
-        )
+        BasicReport(classInfo.mkString(
+            "\ninstantiable classes:\n\n\t",
+            "\n\t",
+            s"\n# instantiable classes: ${instantiableClasses.size}\n"
+        ) +
+            s"\n #classes: ${project.classFilesCount}\n"+
+            "\nanalysis time: "+analysisTime)
     }
 }

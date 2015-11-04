@@ -30,6 +30,7 @@
 package org.opalj
 package fpcf
 package analysis
+package demo
 
 import java.net.URL
 import org.opalj.br.analyses.Project
@@ -37,6 +38,16 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.SetProperty
+import org.opalj.fpcf.analysis.EntryPoint
+import org.opalj.fpcf.analysis.EntryPointsAnalysis
+import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
+import org.opalj.fpcf.analysis.FactoryMethodAnalysis
+import org.opalj.fpcf.analysis.InstantiabilityAnalysis
+import org.opalj.fpcf.analysis.IsEntryPoint
+import org.opalj.fpcf.analysis.LibraryLeakageAnalysis
+import org.opalj.fpcf.analysis.MethodAccessibilityAnalysis
 
 case object IsReachable extends SetProperty[Method]
 
