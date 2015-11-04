@@ -45,14 +45,14 @@ object CHADemo extends DefaultOneStepAnalysis {
         println(cbs.statistics)
         val difference = entryPoints -- oldEntryPoints
 
-        println("EntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
-        println("\n\n SIZE: "+difference.size+"\n\n")
+        println("\n\nEntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
+        println("\n SIZE: "+difference.size)
         println(difference.collect {
             case m: org.opalj.br.Method ⇒
                 val cf = project.classFile(m)
                 cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
         }.mkString("\n\n", "\n", "\n\n"))
-        println("\n\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n\n")
+        println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
 
         val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${entryPoints.size} (new)\n"+
