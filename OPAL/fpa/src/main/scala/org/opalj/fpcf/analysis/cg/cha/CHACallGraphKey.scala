@@ -30,14 +30,9 @@ package org.opalj
 package fpcf
 package analysis
 package cg
+package cha
 
-import org.opalj.br.Method
 import org.opalj.br.analyses._
-import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.CallBySignatureResolutionKey
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
@@ -50,32 +45,26 @@ import org.opalj.br.analyses.CallBySignatureResolutionKey
  *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
  *
- * @author Michael Reif
+ * @author Michael Eichberg
  */
-object LibraryCHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
     /**
-     * The CHACallGraph has no special prerequisites.W
+     * The CHACallGraph has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements = Seq(CallBySignatureResolutionKey)
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
     /**
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
-        val fpcfManager = project.get(FPCFAnalysisManagerKey)
-        fpcfManager.runAll(EntryPointsAnalysis.recommendations + EntryPointsAnalysis)(true)
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val entryPointSet: scala.collection.mutable.Set[Method] = propertyStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }.collect { case entity: Method ⇒ entity }
-
-        println("startConstruction")
+        val entryPoints = () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
-            project, () ⇒ entryPointSet,
-            new LibraryCHACallGraphAlgorithmConfiguration(project)
+            project, entryPoints,
+            new CHACallGraphAlgorithmConfiguration(project)
         )
     }
 }
+

@@ -30,24 +30,14 @@ package org.opalj
 package fpcf
 package analysis
 package cg
+package cha
+
+import org.opalj.br.{ClassFile, Method, MethodDescriptor, MethodSignature, ObjectType, PC}
+import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResolutionKey, SomeProject}
+import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
 
 import scala.collection.Set
 import scala.collection.mutable.HashSet
-import org.opalj.br.PC
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodSignature
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.ai.analyses.cg.CallGraphExtractor
-import org.opalj.br.analyses.CallBySignatureResolution
-import org.opalj.br.analyses.CallBySignatureResolutionKey
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain

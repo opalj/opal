@@ -30,41 +30,26 @@ package org.opalj
 package fpcf
 package analysis
 package cg
+package cha
 
-import org.opalj.br.Method
-import org.opalj.br.analyses._
-import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.CallBySignatureResolutionKey
-import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 
 /**
- * EXPERIMENTAL CAN BE DELETED LATER ON THIS CALLGRAPH USES THE NEW ENTRY POINTS AND BUILDS THE CG WITHOUT SIGNATURE RESOLUTION.
+ * Configuration of a call graph algorithm that uses CHA.
+ *
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
+ *
+ * @author Michael Eichberg
  */
-object ExpLibraryCHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+class CHACallGraphAlgorithmConfiguration(
+    project: SomeProject
+)
+        extends DefaultCallGraphAlgorithmConfiguration(project) {
 
-    /**
-     * The CHACallGraph has no special prerequisites.W
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements = Seq(CallBySignatureResolutionKey)
-
-    /**
-     * Computes the `CallGraph` for the given project.
-     */
-    override protected def compute(project: SomeProject): ComputedCallGraph = {
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val entryPointSet: scala.collection.mutable.Set[Method] = propertyStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }.collect { case entity: Method ⇒ entity }
-
-        println("startConstruction")
-        CallGraphFactory.create(
-            project, () ⇒ entryPointSet,
-            new CHACallGraphAlgorithmConfiguration(project)
-        )
-    }
+    final val Extractor = new CHACallGraphExtractor(cache)
 }
+

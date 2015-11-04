@@ -2,15 +2,12 @@ package org.opalj
 package fpcf
 package analysis
 package cg
+package cha
 
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.ai.analyses.cg.CHACallGraphKey
 import java.net.URL
-import org.opalj.br.analyses.CallBySignatureResolutionKey
+
+import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
+import org.opalj.fpcf.Property
 
 object CHADemo extends DefaultOneStepAnalysis {
 
