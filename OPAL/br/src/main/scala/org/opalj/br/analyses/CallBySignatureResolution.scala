@@ -63,18 +63,24 @@ class CallBySignatureResolution private (
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
 
     /**
-     * Given the `name` and `descriptor` of a method declared by an interface, all those
-     * methods are returned that have a matching name and descriptor and which are implemented
+     * Given the `name` and `descriptor` of a method declared by an interface and the `pacakgeName`
+     * where the method is declared, all those  methods are returned that have a matching name and
+     * descriptor and are declared in the same package. All those methods are implemented
      * by classes (not interfaces) that '''do not inherit''' from the respective interface and
      * which may have a subclass (in the future) that may implement the interface.
      *
      * Hence, when we compute the call graph for a library the returned methods may (in general)
      * be call targets.
+     *
+     * @note This method assumes the closed packages assumption
      */
     def findMethods(name: String, descriptor: MethodDescriptor, packageName: String): Iterable[Method] =
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
             val classFile = project.classFile(method)
-            packageName == classFile.thisType.packageName
+            if (classFile.nonPublic || method.isPackagePrivate)
+                packageName == classFile.thisType.packageName
+            else
+                true
         }
 
     def statistics(): Map[String, Any] = {
