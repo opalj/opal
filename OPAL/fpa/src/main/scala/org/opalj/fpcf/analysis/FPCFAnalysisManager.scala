@@ -129,4 +129,3 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         derivedProperties.contains(setProperty.id)
     }
 }
-
