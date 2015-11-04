@@ -219,14 +219,15 @@ class PropertyStore private (
      * computations to take place.
      */
     def onPropertyDerivation[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
-        val spId = sp.id
+        val spIndex = sp.index
         val spMutex = sp.mutex
         withWriteLock(theSetPropertyObserversLock) {
-            theSetPropertyObservers(spId) = f.asInstanceOf[AnyRef ⇒ Unit] :: theSetPropertyObservers.getOrElse(spId, Nil)
+            val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
+            theSetPropertyObservers(spIndex) = f.asInstanceOf[AnyRef ⇒ Unit] :: oldObservers
             spMutex.synchronized {
                 accessEntity { // <= we don't need an overall consistent view
                     import scala.collection.JavaConversions._
-                    val spSet = theSetProperties.getOrElseUpdate(spId, createIdentityHashSet())
+                    val spSet = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
                     spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
                 }
             }
@@ -241,15 +242,15 @@ class PropertyStore private (
      * are interested in this property.
      */
     def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
-        val spId = sp.id
+        val spIndex = sp.index
         val spMutex = sp.mutex
         withReadLock(theSetPropertyObserversLock) {
             spMutex.synchronized {
                 accessEntity {
-                    val currentEs = theSetProperties.getOrElseUpdate(spId, createIdentityHashSet())
+                    val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
                     if (!currentEs.contains(e)) {
                         currentEs.add(e)
-                        theSetPropertyObservers.getOrElse(spId, Nil) foreach { f ⇒
+                        theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
                             propagationCount.incrementAndGet()
                             scheduleFforE(e, f)
                         }
@@ -267,7 +268,7 @@ class PropertyStore private (
      */
     def entities[E <: AnyRef](sp: SetProperty[E]): JSet[E] = {
         sp.mutex.synchronized {
-            val entitiesSet = theSetProperties.getOrElse(sp.id, new JHSet[AnyRef]())
+            val entitiesSet = theSetProperties.getOrElse(sp.index, new JHSet[AnyRef]())
             val clonedEntitiesSet = new JHSet[E]()
             clonedEntitiesSet.addAll(entitiesSet.asInstanceOf[JSet[E]])
             clonedEntitiesSet
@@ -474,6 +475,10 @@ class PropertyStore private (
         }
     }
 
+    /**
+     * Stores the properties of the respective entities in the store if the respective property
+     * is not yet associated with a property of the same kind.
+     */
     def set(ps: Traversable[EP]): Unit = {
         ps.foreach { ep ⇒
             val EP(e, p) = ep
@@ -790,8 +795,8 @@ class PropertyStore private (
      */
     def toString(printProperties: Boolean): String = {
         accessStore {
-            val entitiesPerSetPropertyCount = theSetProperties map { (key, entities) ⇒
-                (SetProperty.name(key), entities.size)
+            val entitiesPerSetPropertyCount = theSetProperties map { (index, entities) ⇒
+                (SetProperty.propertyName(index), entities.size)
             }
             val overallSetPropertyCount = entitiesPerSetPropertyCount.map(_._2).sum
             val setPropertiesStatistics =
@@ -1094,12 +1099,12 @@ class PropertyStore private (
             if (useFallbackForIncomputableProperties) {
                 if (debug) OPALLogger.debug(
                     "analysis progress",
-                    s"using a fallback property for ${directlyIncomputableEPKs.size} entities"
+                    s"fallback is used for ${directlyIncomputableEPKs.size} entities"
                 )
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
-                    val defaultP = PropertyKey.fallbackProperty(pk.id)
+                    val defaultP = PropertyKey.fallbackProperty(e, pk)
                     scheduleHandleFallbackResult(e, defaultP)
                 }
                 if (debug) OPALLogger.debug(
@@ -1276,6 +1281,10 @@ class PropertyStore private (
                             properties(pkId) = (p, null)
 
                         case FinalUpdate ⇒
+                            // Note that it is possible to have a Final Update though the underlying
+                            // property is refineable. This is the case whenever the analysis knows
+                            // that no further refinement may happen (given the current program).
+
                             // We (still) may have a hard dependency on another entity...
                             clearDependeeObservers(e, pk)
                             properties(pkId) = (p, null)

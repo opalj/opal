@@ -33,6 +33,9 @@ package org.opalj.fpcf
  * property kind identified by a [[PropertyKey]]. Furthermore, each property
  * is associated with at most one property per property kind.
  *
+ * Instances of SetProperty will always get negative ids [-X,...,-1] and instances of per
+ * entity properties will get positive ids [0,...X]; to be precise the underlying property keys.
+ *
  * @author Michael Eichberg
  */
 trait Property {

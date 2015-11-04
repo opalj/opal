@@ -33,6 +33,8 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.concurrent.Locking.withReadLock
 import org.opalj.concurrent.Locking.withWriteLock
 
+trait PropertyKind extends Any /* we now have a universal trait */ { def id: Int }
+
 /**
  * A value object that identifies a specific kind of properties. Every entity in
  * the [[PropertyStore]] must be associated with at most one property per property kind/key.
@@ -41,7 +43,7 @@ import org.opalj.concurrent.Locking.withWriteLock
  *
  * @author Michael Eichberg
  */
-class PropertyKey private[fpcf] ( final val id: Int) extends AnyVal {
+class PropertyKey private[fpcf] ( final val id: Int) extends AnyVal with PropertyKind {
 
     override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
 }
@@ -56,22 +58,33 @@ object PropertyKey {
     private[this] val lock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val fallbackProperties = ArrayBuffer.empty[Property]
+    private[this] val fallbackProperties = ArrayBuffer.empty[Entity ⇒ Property]
     private[this] var lastKeyId: Int = -1
 
-    def create(name: String, fallback: Property): PropertyKey = withWriteLock(lock) {
-        lastKeyId += 1
-        propertyKeyNames += name
-        fallbackProperties += fallback
-        new PropertyKey(lastKeyId)
+    def create(name: String, fallback: Property): PropertyKey = {
+        withWriteLock(lock) {
+            lastKeyId += 1
+            propertyKeyNames += name
+            fallbackProperties += ((e: Entity) ⇒ fallback)
+            new PropertyKey(lastKeyId)
+        }
     }
 
-    def name(id: Int): String = withReadLock(lock) {
-        propertyKeyNames(id)
+    def create(name: String, fallback: Entity ⇒ Property): PropertyKey = {
+        withWriteLock(lock) {
+            lastKeyId += 1
+            propertyKeyNames += name
+            fallbackProperties += fallback
+            new PropertyKey(lastKeyId)
+        }
     }
 
-    def fallbackProperty(id: Int): Property = withReadLock(lock) {
-        fallbackProperties(id)
+    def name(id: Int): String = withReadLock(lock) { propertyKeyNames(id) }
+
+    def fallbackProperty(e: Entity, pk: PropertyKey): Property = {
+        withReadLock(lock) {
+            fallbackProperties(pk.id)(e)
+        }
     }
 
     private[fpcf] def maxId = withReadLock(lock) { lastKeyId }

@@ -44,28 +44,31 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Michael Eichberg
  */
-trait SetProperty[E <: AnyRef] {
+trait SetProperty[E <: AnyRef] extends PropertyKind {
 
     // the id is used to efficiently get the respective (identity) set
-    private[fpcf] final val id = SetProperty.nextId(this.getClass().getSimpleName)
+    final val id = { SetProperty.nextId(this.getClass().getSimpleName) }
+
+    final val index: Int = -id - 1
 
     private[fpcf] final val mutex = new Object
 }
 
 private[fpcf] object SetProperty {
 
-    private[this] final val idGenerator = new AtomicInteger(0)
+    private[this] final val idGenerator = new AtomicInteger(-1)
 
     private[this] final val theSetPropertyNames = ArrayMap[String](5)
 
-    def name(id: Int): String = {
-        theSetPropertyNames.synchronized { theSetPropertyNames(id) }
+    def propertyName(index: Int): String = {
+        theSetPropertyNames.synchronized { theSetPropertyNames(index) }
     }
 
     def nextId(name: String): Int = {
         val n = if (name.endsWith("$")) name.substring(0, name.length() - 1) else name
-        val nextId = idGenerator.getAndIncrement
-        theSetPropertyNames.synchronized { theSetPropertyNames(nextId) = n }
+        val nextId = idGenerator.getAndDecrement
+        val index = -nextId - 1
+        theSetPropertyNames.synchronized { theSetPropertyNames(index) = n }
         nextId
     }
 
