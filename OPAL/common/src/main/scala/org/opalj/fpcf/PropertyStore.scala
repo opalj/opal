@@ -490,12 +490,57 @@ class PropertyStore private (
                         // we do not have a property...
                         update(e, p, OneStepFinalUpdate)
                     else {
-                        OPALLogger.info(
+                        if (debug) OPALLogger.debug(
                             "analysis progress",
                             s"ignored the new property ${p} computed for $e, "+
                                 s"because the entity already has the property ${pos._1}}"
                         )
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the property associated with the given entity.
+     *
+     * @param u The function that updates the current property associated with the given entity.
+     * 		The parameter passed to `u` is `None` if the given entity is not associated with a
+     * 		property of the given kind and `Some(Property)` otherwise. `u` is expected to return
+     * 		`None` whenever the associated property already abstracts over the new property. I.e.,
+     * 		only if the updated property is not equal to the given property, `u` is allowed to
+     * 		return `Some(Property)`.
+     *
+     */
+    def update(e: Entity, pk: PropertyKey, u: Option[Property] ⇒ Option[Property]): Unit = {
+        accessEntity {
+            val lps = data.get(e)
+            assert(lps ne null, s"the entity $e is unknown to the property store")
+
+            val (lock, properties) = lps
+            withWriteLock(lock) {
+                val oldPOs = properties(pk.id)
+                val newP = oldPOs match {
+                    case null /* <= no one was interested in the property so far*/ |
+                        (null, _) /* <= we have observers, but not property so far*/ ⇒
+                        u(None)
+                    case (p /*non-null*/ , _) ⇒
+                        u(Some(p))
+                }
+                newP match {
+                    case Some(newP) ⇒
+                        assert(
+                            (oldPOs eq null) || (oldPOs._1 eq null) ||
+                                (oldPOs._1.isRefineable && newP != oldPOs._1),
+                            s"the old property ${oldPOs._1} is not refineable or "+
+                                s"the old ${oldPOs._1} and the new $newP property are equal"
+                        )
+                        update(
+                            e, newP,
+                            if (newP.isFinal) FinalUpdate else IntermediateUpdate
+                        )
+                    case None ⇒
+                    // nothing to do
                 }
             }
         }
