@@ -125,6 +125,8 @@ final class ClassFile private (
 
     def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
+    def nonPublic: Boolean = !isPublic
+
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 
     def isEnumDeclaration: Boolean = (accessFlags & ACC_ENUM.mask) == ACC_ENUM.mask
