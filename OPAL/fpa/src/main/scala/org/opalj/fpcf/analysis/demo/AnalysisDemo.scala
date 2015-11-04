@@ -28,13 +28,14 @@
  */
 package org.opalj
 package fpcf
+package analysis
+package demo
 
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
-import org.opalj.bi.VisibilityModifier
 
 /**
  * @author Michael Reif

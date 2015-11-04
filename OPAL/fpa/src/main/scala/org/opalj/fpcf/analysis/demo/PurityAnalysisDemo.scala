@@ -38,12 +38,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
 import org.opalj.br.Field
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
-import org.opalj.fpcf.analysis.Mutability
-import org.opalj.fpcf.analysis.MutabilityAnalysis
-import org.opalj.fpcf.analysis.Purity
-import org.opalj.fpcf.analysis.PurityAnalysis
 
 /**
  * Demonstrates how to run the purity analysis.

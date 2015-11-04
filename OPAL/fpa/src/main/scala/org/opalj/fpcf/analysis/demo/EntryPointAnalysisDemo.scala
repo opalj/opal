@@ -39,13 +39,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Info
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.fpcf.MethodAnalysisDemo
-import org.opalj.fpcf.analysis.EntryPointsAnalysis
-import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
-import org.opalj.fpcf.analysis.IsEntryPoint
-import org.opalj.fpcf.analysis.LibraryLeakageAnalysis
-import org.opalj.fpcf.analysis.MethodAccessibilityAnalysis
-import org.opalj.fpcf.analysis.SimpleInstantiabilityAnalysis
 
 /**
  * @author Michael Reif

@@ -37,12 +37,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
-import org.opalj.fpcf.analysis.FactoryMethodAnalysis
-import org.opalj.fpcf.analysis.Instantiability
-import org.opalj.fpcf.analysis.InstantiabilityAnalysis
-import org.opalj.fpcf.analysis.Instantiable
+
 /**
  * @author Michael Reif
  */

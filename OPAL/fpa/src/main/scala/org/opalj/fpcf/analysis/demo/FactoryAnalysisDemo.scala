@@ -35,12 +35,6 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.MethodAnalysisDemo
-import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
-import org.opalj.fpcf.analysis.FactoryMethodAnalysis
-import org.opalj.fpcf.analysis.IsFactoryMethod
-import org.opalj.fpcf.analysis.NotFactoryMethod
-
 /**
  * @author Michael Reif
  */
