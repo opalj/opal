@@ -59,6 +59,7 @@ object Purity {
             MaybePure
         )
 
+    final val Id = Key.id
 }
 
 /**

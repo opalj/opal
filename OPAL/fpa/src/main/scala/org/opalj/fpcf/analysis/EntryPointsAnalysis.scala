@@ -41,6 +41,7 @@ sealed trait EntryPoint extends Property {
 
 object EntryPoint {
     final val Key = PropertyKey.create("EntryPoint", IsEntryPoint)
+    final val Id = Key.id
 }
 
 case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
@@ -140,15 +141,13 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
         case m: Method if !m.isAbstract && !m.isNative ⇒ m
     }
 
-    private[EntryPointsAnalysis] def apply(
-        project: SomeProject
-    ): EntryPointsAnalysis = {
+    protected def start(project: SomeProject): Unit = {
         new EntryPointsAnalysis(project)
     }
 
-    protected def start(project: SomeProject): Unit = {
-        EntryPointsAnalysis(project)
-    }
+    override protected def derivedProperties = Set(EntryPoint.Id)
+
+    override protected def usedProperties = Set(ProjectAccessibility.Id, LibraryLeakage.Id, Instantiability.Id)
 
     /*
      * This recommendations are not transitive. All (even indirect) dependencies are listed here.

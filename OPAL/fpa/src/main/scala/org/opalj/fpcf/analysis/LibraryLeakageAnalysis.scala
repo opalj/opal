@@ -57,6 +57,8 @@ sealed trait LibraryLeakage extends Property {
 
 object LibraryLeakage {
     final val Key = PropertyKey.create("Leakage", Leakage)
+
+    final val Id = Key.id
 }
 
 // TODO Leakage => CallableFromClassesInOtherPackages
@@ -81,7 +83,8 @@ case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
  *  @author Michael Reif
  */
 class LibraryLeakageAnalysis private (
-    project: SomeProject
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, Method] = LibraryLeakageAnalysis.entitySelector
 )
         extends DefaultFPCFAnalysis[Method](
             project,
@@ -193,13 +196,9 @@ object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis]
         case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 
-    private[LibraryLeakageAnalysis] def apply(
-        project: SomeProject
-    ): LibraryLeakageAnalysis = {
-        new LibraryLeakageAnalysis(project)
-    }
+    override protected def derivedProperties = Set(LibraryLeakage.Id)
 
     protected def start(project: SomeProject): Unit = {
-        LibraryLeakageAnalysis(project)
+        new LibraryLeakageAnalysis(project)
     }
 }

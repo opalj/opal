@@ -42,6 +42,8 @@ sealed trait ProjectAccessibility extends Property {
 
 object ProjectAccessibility {
     final val Key = PropertyKey.create("Accessible", Global)
+
+    final val Id = Key.id
 }
 
 case object Global extends ProjectAccessibility { final val isRefineable = false }
@@ -148,7 +150,7 @@ class MethodAccessibilityAnalysis private[analysis] (
 }
 
 /**
- * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
+ * Companion object for the [[MethodAccessibilityAnalysis]] class.
  */
 object MethodAccessibilityAnalysis
         extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
@@ -159,17 +161,15 @@ object MethodAccessibilityAnalysis
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
-    private[MethodAccessibilityAnalysis] def apply(
-        project: SomeProject
-    ): MethodAccessibilityAnalysis = {
+    protected def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project)
     }
 
-    protected def start(project: SomeProject): Unit = {
-        MethodAccessibilityAnalysis(project)
-    }
-
     override def recommendations = Set(LibraryLeakageAnalysis)
+
+    override protected def derivedProperties = Set(ProjectAccessibility.Id)
+
+    override protected def usedProperties = Set(LibraryLeakage.Id)
 }
 
 /**
@@ -186,4 +186,8 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccess
     }
 
     override def recommendations = Set(LibraryLeakageAnalysis)
+
+    override protected def derivedProperties = Set(ProjectAccessibility.Id)
+
+    override protected def usedProperties = Set(LibraryLeakage.Id)
 }

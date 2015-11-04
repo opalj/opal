@@ -54,6 +54,8 @@ object FactoryMethod {
      * all depended analyses.
      */
     final val Key = PropertyKey.create("FactoryMethod", IsFactoryMethod)
+
+    final val Id = Key.id
 }
 
 /**
@@ -156,9 +158,7 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
         case m: Method if m.isStatic && !m.isAbstract ⇒ m
     }
 
-    private[FactoryMethodAnalysis] def apply(project: SomeProject): FactoryMethodAnalysis = {
-        new FactoryMethodAnalysis(project)
-    }
+    override def derivedProperties = Set(FactoryMethod.Id)
 
     protected def start(project: SomeProject): Unit = {
         new FactoryMethodAnalysis(project)

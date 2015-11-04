@@ -61,6 +61,8 @@ object MethodComplexity {
     final val TooComplex = MethodComplexity(Int.MaxValue)
 
     final val Key = PropertyKey.create("MethodComplexity", TooComplex)
+
+    final val Id = Key.id
 }
 
 /**

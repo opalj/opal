@@ -43,6 +43,8 @@ sealed trait Instantiability extends Property {
 
 object Instantiability {
     final val Key = PropertyKey.create("Instantiability", Instantiable)
+
+    final val Id = Key.id
 }
 
 case object NotInstantiable extends Instantiability { final val isRefineable = false }
@@ -236,14 +238,12 @@ object InstantiabilityAnalysis
         case cf: ClassFile ⇒ cf
     }
 
-    private[InstantiabilityAnalysis] def apply(
-        project: SomeProject
-    ): InstantiabilityAnalysis = {
-        new InstantiabilityAnalysis(project)
-    }
+    override def derivedProperties = Set(Instantiability.Id)
+
+    override def usedProperties = Set(FactoryMethod.Id)
 
     protected def start(project: SomeProject): Unit = {
-        InstantiabilityAnalysis(project)
+        new InstantiabilityAnalysis(project)
     }
 
     override def recommendations = Set(FactoryMethodAnalysis)

@@ -41,6 +41,8 @@ sealed trait Mutability extends Property {
 
 object Mutability {
     final val Key = PropertyKey.create("Mutability", NonFinal)
+
+    final val Id = Key.id
 }
 
 case object EffectivelyFinal extends Mutability { final val isRefineable = false }
@@ -104,13 +106,9 @@ object MutabilityAnalysis extends FPCFAnalysisRunner[MutabilityAnalysis] {
         case cf: ClassFile ⇒ cf
     }
 
-    private[MutabilityAnalysis] def apply(
-        project: SomeProject, entitySelector: PartialFunction[Entity, ClassFile] = entitySelector
-    ): MutabilityAnalysis = {
+    protected def start(project: SomeProject): Unit = {
         new MutabilityAnalysis(project, entitySelector)
     }
 
-    protected def start(project: SomeProject): Unit = {
-        MutabilityAnalysis(project, entitySelector)
-    }
+    override def derivedProperties = Set(Mutability.Id)
 }

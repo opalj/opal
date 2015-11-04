@@ -197,4 +197,6 @@ object SimpleInstantiabilityAnalysis
     protected def start(project: SomeProject): Unit = {
         new SimpleInstantiabilityAnalysis(project)
     }
+
+    override protected def derivedProperties = Set(Instantiability.Id)
 }

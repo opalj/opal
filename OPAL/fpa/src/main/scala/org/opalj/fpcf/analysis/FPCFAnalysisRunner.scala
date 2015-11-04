@@ -65,18 +65,41 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * Returns the information which analyses should be executed to achieve
      * the most precise analysis result.
      *
+     * This set should include all analyses that are required for the most precise result.
+     * Transitively used analyses also should been added here since more than one analysis
+     * could depend on the same property. In this case it has to be specified which analysis is
+     * recommended to derive the properties of this analysis.
+     *
      * @note These analyses are not required. Hence, the analysis will always compute a correct
      * result. If the set of recommendations is not empty, you may lose precision for every analysis
      * that is not executed in parallel.
      */
     def recommendations: Set[FPCFAnalysisRunner[_]] = Set.empty
 
-    // TODO def derivedProperties : Set[PropertyKey]...
-    // TODO def derivedSpProperties : Set[SpProperty]...
-    // TODO def usedProperty...
-    // TODO def requiredProperty...
+    /**
+     * Returns a set of integers that contains the id of every [[Property]] or [[SetProperty]] that is derived by
+     * the underlying analysis which is described by this [[FPCFAnalysisRunner]].
+     *
+     * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysisManager]] to guarantee the save
+     * execution of all FPCFAnalysis.
+     */
+    protected def derivedProperties: Set[Int]
 
-    // Only (intended to be) used by FPCFAnalysisFactory.
+    /**
+     * Returns a set of integers that contains the id of every [[Property]] or [SetProperty] that
+     * is used by the underlying analysis which is described by this [[FPCFAnalysisRunner]].
+     *
+     * The analyses with this id's are not explicitly required which is the case when the used properties
+     * define a (save) fallback value which is set by the [[PropertyStore]] if required.
+     *
+     * This set consists only of property id's which are directly used by the analysis.
+     *
+     * Self usages don't have to be documented since the analysis will derive this property during
+     * the computation.
+     */
+    protected def usedProperties: Set[Int] = Set.empty[Int]
+
+    // Only (intended to be) used by FPCFAnalysisManager.
     final private[analysis] def doStart(project: SomeProject) = start(project)
 
     /**
