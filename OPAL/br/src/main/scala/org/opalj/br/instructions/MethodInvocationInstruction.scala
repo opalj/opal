@@ -46,8 +46,9 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
         VirtualMethod(declaringClass, name, methodDescriptor)
 
     /**
-     * Returns `true` if the called method is an instance method/if the called method
-     * is not static.
+     * Returns `true` if the called method is an instance method and virtual method
+     * call resolution has to take place. I.e., if the underlying instruction is an
+     * invokevirtual or an invokeinterface instruction.
      */
     def isVirtualMethodCall: Boolean
 
@@ -82,6 +83,9 @@ object MethodInvocationInstruction {
 
 }
 
+/**
+ * Common superclass of all Invoke instructions that require virtual method resolution.
+ */
 abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
     def isVirtualMethodCall: Boolean = true
