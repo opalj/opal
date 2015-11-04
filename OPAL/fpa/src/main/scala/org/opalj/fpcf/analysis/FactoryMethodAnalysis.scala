@@ -160,7 +160,7 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
 
     override def derivedProperties = Set(FactoryMethod.Id)
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new FactoryMethodAnalysis(project)
     }
 }

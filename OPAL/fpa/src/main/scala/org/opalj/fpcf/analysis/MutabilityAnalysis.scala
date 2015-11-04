@@ -106,9 +106,9 @@ object MutabilityAnalysis extends FPCFAnalysisRunner[MutabilityAnalysis] {
         case cf: ClassFile ⇒ cf
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new MutabilityAnalysis(project, entitySelector)
     }
 
-    override def derivedProperties = Set(Mutability.Id)
+    override protected[analysis] def derivedProperties = Set(Mutability.Id)
 }

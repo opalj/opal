@@ -238,11 +238,11 @@ object InstantiabilityAnalysis
         case cf: ClassFile ⇒ cf
     }
 
-    override def derivedProperties = Set(Instantiability.Id)
+    protected[analysis] def derivedProperties = Set(Instantiability.Id)
 
-    override def usedProperties = Set(FactoryMethod.Id)
+    override protected[analysis] def usedProperties = Set(FactoryMethod.Id)
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new InstantiabilityAnalysis(project)
     }
 

@@ -196,9 +196,9 @@ object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis]
         case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override protected def derivedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def derivedProperties = Set(LibraryLeakage.Id)
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new LibraryLeakageAnalysis(project)
     }
 }

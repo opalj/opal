@@ -70,6 +70,9 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * could depend on the same property. In this case it has to be specified which analysis is
      * recommended to derive the properties of this analysis.
      *
+     * Real requirements of the analysis should be added to the requirements definition. The set for
+     * recommendations should be disjunct to the requirements set.
+     *
      * @note These analyses are not required. Hence, the analysis will always compute a correct
      * result. If the set of recommendations is not empty, you may lose precision for every analysis
      * that is not executed in parallel.
@@ -83,7 +86,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysisManager]] to guarantee the save
      * execution of all FPCFAnalysis.
      */
-    protected def derivedProperties: Set[Int]
+    protected[analysis] def derivedProperties: Set[Int]
 
     /**
      * Returns a set of integers that contains the id of every [[Property]] or [SetProperty] that
@@ -97,17 +100,14 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * Self usages don't have to be documented since the analysis will derive this property during
      * the computation.
      */
-    protected def usedProperties: Set[Int] = Set.empty[Int]
-
-    // Only (intended to be) used by FPCFAnalysisManager.
-    final private[analysis] def doStart(project: SomeProject) = start(project)
+    protected[analysis] def usedProperties: Set[Int] = Set.empty[Int]
 
     /**
      * Starts the analysis for the given `project`.
      *
      * @note This method is abstract and has to be overridden in any subclass.
      */
-    protected def start(project: SomeProject): Unit
+    protected[analysis] def start(project: SomeProject): Unit
 }
 
 /**

@@ -194,9 +194,9 @@ object SimpleInstantiabilityAnalysis
         case cf: ClassFile ⇒ cf
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new SimpleInstantiabilityAnalysis(project)
     }
 
-    override protected def derivedProperties = Set(Instantiability.Id)
+    override protected[analysis] def derivedProperties = Set(Instantiability.Id)
 }

@@ -43,19 +43,21 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
     // Accesses to this field have to be synchronized
-    private[this] final val registeredAnalyses = scala.collection.mutable.Set.empty[Int]
+    private[this] final val derivedProperties = scala.collection.mutable.Set.empty[Int]
 
     final val debug = {
         val setting = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.manager.debug")
         setting.getOrElse(false)
     }
 
-    private[this] def registerAnalysis(
+    private[this] def registerProperties(
         analysisRunner: FPCFAnalysisRunner[_]
     ): Unit = this.synchronized {
-        // TODO check that it still makes sense to run/register the analysis 
-
-        registeredAnalyses += analysisRunner.uniqueId
+        assert(
+            !analysisRunner.derivedProperties.exists { id ⇒ derivedProperties.contains(id) },
+            "FPCFAnalysisManager: the property has already been derived"
+        )
+        derivedProperties ++= analysisRunner.derivedProperties
     }
 
     private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
@@ -78,15 +80,15 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         analysisRunner:   FPCFAnalysisRunner[_],
         waitOnCompletion: Boolean               = true
     ): Unit = this.synchronized {
-        if (!(registeredAnalyses contains analysisRunner.uniqueId)) {
+        if (isDerived(analysisRunner.derivedProperties)) {
             if (debug)
                 OPALLogger.debug(
                     "project configuration",
                     s"the analysis ${analysisRunner.name} will be executed next"
                 )(project.logContext)
 
-            registerAnalysis(analysisRunner)
-            analysisRunner.doStart(project)
+            registerProperties(analysisRunner)
+            analysisRunner.start(project)
             if (waitOnCompletion) {
                 propertyStore.waitOnPropertyComputationCompletion(useDefaultForIncomputableProperties = true)
             }
@@ -96,6 +98,35 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
                 s"the analysis ${analysisRunner.name} is running/was executed for this project"
             )(project.logContext)
         }
+    }
+
+    def runWithRecommendations(
+        analysisRunner: FPCFAnalysisRunner[_]
+    )(
+        waitOnCompletion: Boolean = true
+    ): Unit = {
+        val analyses = analysisRunner.requirements ++ analysisRunner.recommendations
+        analyses foreach { runner ⇒
+            if (!isDerived(runner.derivedProperties))
+                run(runner, false)
+        }
+        run(analysisRunner, waitOnCompletion)
+    }
+
+    def isDerived(id: Int) = this.synchronized {
+        derivedProperties.contains(id)
+    }
+
+    def isDerived(ids: Set[Int]) = this.synchronized {
+        !ids.exists { derivedProperties.contains(_) }
+    }
+
+    def isDerived(property: Property) = this.synchronized {
+        derivedProperties.contains(property.id)
+    }
+
+    def isDerived(setProperty: SetProperty[_]) = this.synchronized {
+        derivedProperties.contains(setProperty.id)
     }
 }
 

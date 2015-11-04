@@ -141,13 +141,13 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
         case m: Method if !m.isAbstract && !m.isNative ⇒ m
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new EntryPointsAnalysis(project)
     }
 
-    override protected def derivedProperties = Set(EntryPoint.Id)
+    override protected[analysis] def derivedProperties = Set(EntryPoint.Id)
 
-    override protected def usedProperties = Set(ProjectAccessibility.Id, LibraryLeakage.Id, Instantiability.Id)
+    override protected[analysis] def usedProperties = Set(ProjectAccessibility.Id, LibraryLeakage.Id, Instantiability.Id)
 
     /*
      * This recommendations are not transitive. All (even indirect) dependencies are listed here.

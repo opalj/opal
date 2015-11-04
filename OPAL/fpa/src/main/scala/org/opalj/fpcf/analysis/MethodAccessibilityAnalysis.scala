@@ -161,15 +161,15 @@ object MethodAccessibilityAnalysis
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project)
     }
 
     override def recommendations = Set(LibraryLeakageAnalysis)
 
-    override protected def derivedProperties = Set(ProjectAccessibility.Id)
+    override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
 
-    override protected def usedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def usedProperties = Set(LibraryLeakage.Id)
 }
 
 /**
@@ -181,13 +181,13 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccess
         case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project, entitySelector)
     }
 
     override def recommendations = Set(LibraryLeakageAnalysis)
 
-    override protected def derivedProperties = Set(ProjectAccessibility.Id)
+    override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
 
-    override protected def usedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def usedProperties = Set(LibraryLeakage.Id)
 }

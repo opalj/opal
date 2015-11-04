@@ -293,13 +293,13 @@ object PurityAnalysis extends FPCFAnalysisRunner[PurityAnalysis] {
         case m: Method if !m.isAbstract ⇒ m
     }
 
-    protected def start(project: SomeProject): Unit = {
+    protected[analysis] def start(project: SomeProject): Unit = {
         new PurityAnalysis(project, entitySelector)
     }
 
     override def recommendations = Set(MutabilityAnalysis)
 
-    override protected def derivedProperties = Set(Purity.Id)
+    override protected[analysis] def derivedProperties = Set(Purity.Id)
 
-    override protected def usedProperties = Set(Mutability.Id)
+    override protected[analysis] def usedProperties = Set(Mutability.Id)
 }

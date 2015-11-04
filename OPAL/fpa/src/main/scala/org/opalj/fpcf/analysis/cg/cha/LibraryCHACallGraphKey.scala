@@ -63,16 +63,21 @@ object LibraryCHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
         val fpcfManager = project.get(FPCFAnalysisManagerKey)
-        fpcfManager.runAll(EntryPointsAnalysis.recommendations + EntryPointsAnalysis)(true)
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val entryPointSet: scala.collection.mutable.Set[Method] = propertyStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }.collect { case entity: Method ⇒ entity }
-
-        println("startConstruction")
+        fpcfManager.runAll(EntryPointsAnalysis.recommendations ++ Set(EntryPointsAnalysis))(true)
+        val entryPoints = getEntryPointsFromPropertyStore(project)
         CallGraphFactory.create(
-            project, () ⇒ entryPointSet,
+            project, () ⇒ entryPoints,
             new LibraryCHACallGraphAlgorithmConfiguration(project)
         )
+    }
+
+    /*
+     * Get all methods from the property store that are entry points.
+     */
+    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): scala.collection.mutable.Set[Method] = {
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        propertyStore.entities { (p: Property) ⇒
+            p == IsEntryPoint
+        }.collect { case entity: Method ⇒ entity }
     }
 }

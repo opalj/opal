@@ -57,7 +57,7 @@ object CHADemo extends DefaultOneStepAnalysis {
         val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${entryPoints.size} (new)\n"+
             s"percentage:    | ${getPercentage(oldEntryPoints.size)}% (old)     | ${getPercentage(entryPoints.size)}% (new)\n"+
-            s"#call edges:   | ${traditionalCG.callEdgesCount} (old)     | ${newCG.callEdgesCount} (new)| ${traditionalCG.callEdgesCount - newCG.callEdgesCount} (old - new)"+
+            s"#call edges:   | ${traditionalCG.callEdgesCount} (old)     | ${newCG.callEdgesCount} (new)| ${newCG.callEdgesCount - traditionalCG.callEdgesCount} (new - old)"+
             s" | ${wrongCG.callEdgesCount} (old graph with new entry points)\n"
 
         BasicReport(
