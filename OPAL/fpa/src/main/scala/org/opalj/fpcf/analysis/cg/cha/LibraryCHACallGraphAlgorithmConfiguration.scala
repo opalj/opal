@@ -46,9 +46,8 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  */
 class LibraryCHACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends DefaultCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends DefaultCallGraphAlgorithmConfiguration(project) {
 
     final val Extractor = new LibraryCHACallGraphExtractor(cache)
 }

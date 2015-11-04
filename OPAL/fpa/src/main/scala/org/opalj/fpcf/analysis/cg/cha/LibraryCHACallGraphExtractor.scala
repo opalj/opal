@@ -57,9 +57,8 @@ import scala.collection.mutable.HashSet
  * @author Michael Reif
  */
 class LibraryCHACallGraphExtractor(
-    val cache: CallGraphCache[MethodSignature, Set[Method]]
-)
-        extends CallGraphExtractor {
+        val cache: CallGraphCache[MethodSignature, Set[Method]]
+) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
             val project:   SomeProject,
