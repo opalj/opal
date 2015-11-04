@@ -62,6 +62,21 @@ class CallBySignatureResolution private (
     def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] =
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
 
+    /**
+     * Given the `name` and `descriptor` of a method declared by an interface, all those
+     * methods are returned that have a matching name and descriptor and which are implemented
+     * by classes (not interfaces) that '''do not inherit''' from the respective interface and
+     * which may have a subclass (in the future) that may implement the interface.
+     *
+     * Hence, when we compute the call graph for a library the returned methods may (in general)
+     * be call targets.
+     */
+    def findMethods(name: String, descriptor: MethodDescriptor, packageName: String): Iterable[Method] =
+        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
+            val classFile = project.classFile(method)
+            packageName == classFile.thisType.packageName
+        }
+
     def statistics(): Map[String, Any] = {
         Map(
             "number of method names" →
@@ -103,6 +118,9 @@ object CallBySignatureResolution {
 
             def analyzeMethod(m: Method): Unit = {
                 if (m.isAbstract)
+                    return ;
+
+                if (m.isPrivate)
                     return ;
 
                 val clazzClassFile = project.classFile(m)
