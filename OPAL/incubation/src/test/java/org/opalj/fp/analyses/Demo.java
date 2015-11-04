@@ -170,7 +170,7 @@ class Demo {
         return m1(k);
     }
 
-    // Two cycles connected by a "weak link"
+    // Two cycles connected by a "weak link" (fooBar)
     //
 
     static int cm1(int i) {
