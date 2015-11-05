@@ -34,18 +34,18 @@ package demo
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.log.OPALLogger
-import org.opalj.log.Info
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.Warn
+import org.opalj.fpcf.analysis.cg.CallGraphFactory
 
 /**
  * @author Michael Reif
  */
 object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
-    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Info))
+    OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
     override def title: String = "Determines the entry points for the given project."
 
@@ -65,41 +65,59 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
             oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         } { t ⇒ oldTime = t.toSeconds }
-        //        val projectInfo =
-        //            s"Overall #methods ${project.methodsCount} "+
-        //                s"\nold #entryPoints ${oldEntryPoints} "+
-        //                s"\nold #nonEntryPoints ${project.methodsCount - oldEntryPoints}"+
-        //                s"\nanalysisTime: $oldTime\n\n"
 
-        val executer = project.get(FPCFAnalysisManagerKey)
+        /* CPA */
 
-        var analysisTime = org.opalj.util.Seconds.None
+        val cpaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.CPA)
+        val cpaExecuter = cpaProject.get(FPCFAnalysisManagerKey)
+
+        var analysisTimeCPA = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
 
-            executer.runAll(
+            cpaExecuter.runAll(
                 SimpleInstantiabilityAnalysis,
                 LibraryLeakageAnalysis,
-                //FactoryMethodAnalysis,
-                //InstantiabilityAnalysis
                 MethodAccessibilityAnalysis
             )
 
-            executer.run(EntryPointsAnalysis)
+            cpaExecuter.run(EntryPointsAnalysis, true)
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t ⇒ analysisTimeCPA = t.toSeconds }
 
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        /* OPA */
 
-        val entryPoints = entitiesByProperty(IsEntryPoint)(propertyStore)
+        val opaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.OPA)
+        val opaExecuter = opaProject.get(FPCFAnalysisManagerKey)
+
+        var analysisTimeOPA = org.opalj.util.Seconds.None
+        org.opalj.util.PerformanceEvaluation.time {
+
+            opaExecuter.runAll(
+                SimpleInstantiabilityAnalysis,
+                LibraryLeakageAnalysis,
+                MethodAccessibilityAnalysis
+            )
+
+            opaExecuter.run(EntryPointsAnalysis)
+
+        } { t ⇒ analysisTimeOPA = t.toSeconds }
+
+        /* Analysis Execution done*/
+
+        val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
+        val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
+
+        val cpaEps = entitiesByProperty(IsEntryPoint)(cpaStore)
+        val opaEps = entitiesByProperty(IsEntryPoint)(opaStore)
         //        val noEntryPoints = entitiesByProperty(NoEntryPoint)(propertyStore)
 
         val methodsCount: Double = project.methodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
         val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
-            s"#entry points: | $oldEntryPoints (old)     | ${entryPoints.size} (new)\n"+
-            s"percentage:    | ${getPercentage(oldEntryPoints)}% (old)     | ${getPercentage(entryPoints.size)}% (new)\n"+
-            s"analysisTime:  | $oldTime (old) | ${analysisTime} (new)"
+            s"#entry points: | $oldEntryPoints (old)     | ${opaEps.size} (opa)     | ${cpaEps.size} (cpa)\n"+
+            s"percentage:    | ${getPercentage(oldEntryPoints)}% (old)     | ${getPercentage(opaEps.size)}% (opa)     | ${getPercentage(cpaEps.size)}% (cpa)\n"+
+            s"analysisTime:  | $oldTime (old) | ${analysisTimeOPA} (opa) | ${analysisTimeCPA} (cpa)"
 
         BasicReport(
             outputTable

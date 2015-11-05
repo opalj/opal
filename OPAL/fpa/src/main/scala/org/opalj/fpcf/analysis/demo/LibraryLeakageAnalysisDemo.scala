@@ -73,11 +73,11 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
         //        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
 
         val leakedMethods = propertyStore.entities { (p: Property) ⇒
-            p == Leakage
+            p == CallableFromClassesInOtherPackages
         }
 
         val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒
-            p == NoLeakage
+            p == NotCallableFromClassesInOtherPackages
         }
         BasicReport(
             //            nonOverriddenInfoString +

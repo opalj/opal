@@ -137,7 +137,7 @@ class MethodAccessibilityAnalysis private[analysis] (
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
-            if (dependeeP == NoLeakage)
+            if (dependeeP == NotCallableFromClassesInOtherPackages)
                 Result(method, PackageLocal)
             else
                 Result(method, Global)

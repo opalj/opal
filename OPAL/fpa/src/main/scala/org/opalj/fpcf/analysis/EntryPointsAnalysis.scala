@@ -65,7 +65,7 @@ class EntryPointsAnalysis private (
 
     @inline private[this] def leakageContinuation(method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == Leakage)
+            if (dependeeP == CallableFromClassesInOtherPackages)
                 Result(method, IsEntryPoint)
             else
                 Result(method, NoEntryPoint)

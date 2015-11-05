@@ -52,7 +52,7 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
     private[this] def registerProperties(
         analysisRunner: FPCFAnalysisRunner[_]
-    ): Unit = this.synchronized {
+    ): Unit = derivedProperties.synchronized {
         assert(
             !analysisRunner.derivedProperties.exists { id ⇒ derivedProperties.contains(id) },
             "FPCFAnalysisManager: the property has already been derived"
@@ -80,7 +80,7 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         analysisRunner:   FPCFAnalysisRunner[_],
         waitOnCompletion: Boolean               = true
     ): Unit = this.synchronized {
-        if (isDerived(analysisRunner.derivedProperties)) {
+        if (!isDerived(analysisRunner.derivedProperties)) {
             if (debug)
                 OPALLogger.debug(
                     "project configuration",
@@ -101,31 +101,25 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
     }
 
     def runWithRecommendations(
-        analysisRunner: FPCFAnalysisRunner[_]
+        runner: FPCFAnalysisRunner[_]
     )(
         waitOnCompletion: Boolean = true
     ): Unit = {
-        val analyses = analysisRunner.requirements ++ analysisRunner.recommendations
-        analyses foreach { runner ⇒
-            if (!isDerived(runner.derivedProperties))
-                run(runner, false)
+        val analyses = (runner.recommendations ++
+            runner.requirements).filterNot { ar ⇒ isDerived(ar.derivedProperties) }
+        runAll(analyses)(false)
+        run(runner, true)
+    }
+
+    def isDerived(id: Int): Boolean = derivedProperties.synchronized {
+        derivedProperties contains id
+    }
+
+    def isDerived(ids: Set[Int]): Boolean = {
+        ids foreach { id ⇒
+            if (isDerived(id))
+                return true;
         }
-        run(analysisRunner, waitOnCompletion)
-    }
-
-    def isDerived(id: Int) = this.synchronized {
-        derivedProperties.contains(id)
-    }
-
-    def isDerived(ids: Set[Int]) = this.synchronized {
-        !ids.exists { derivedProperties.contains(_) }
-    }
-
-    def isDerived(property: Property) = this.synchronized {
-        derivedProperties.contains(property.id)
-    }
-
-    def isDerived(setProperty: SetProperty[_]) = this.synchronized {
-        derivedProperties.contains(setProperty.id)
+        false
     }
 }

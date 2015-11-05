@@ -56,17 +56,15 @@ sealed trait LibraryLeakage extends Property {
 }
 
 object LibraryLeakage {
-    final val Key = PropertyKey.create("Leakage", Leakage)
+    final val Key = PropertyKey.create("Leakage", CallableFromClassesInOtherPackages)
 
     final val Id = Key.id
 }
 
 // TODO Leakage => CallableFromClassesInOtherPackages
-case object Leakage extends LibraryLeakage { final val isRefineable = false }
+case object CallableFromClassesInOtherPackages extends LibraryLeakage { final val isRefineable = false }
 
-case object PotentialLeakage extends LibraryLeakage { final val isRefineable = true }
-
-case object NoLeakage extends LibraryLeakage { final val isRefineable = false }
+case object NotCallableFromClassesInOtherPackages extends LibraryLeakage { final val isRefineable = false }
 
 /**
  * This Analysis determines the ´LibraryLeakage´ property of a method. A method is considered as leaked
@@ -105,25 +103,25 @@ class LibraryLeakageAnalysis private (
 
         if (method.isPrivate)
             /* private methods are only visible in the scope of the class */
-            return ImmediateResult(method, NoLeakage);
+            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
 
         val classFile = project.classFile(method)
         if (classFile.isFinal)
-            return ImmediateResult(method, NoLeakage);
+            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
 
         if (isOpenLibrary)
-            return ImmediateResult(method, Leakage);
+            return ImmediateResult(method, CallableFromClassesInOtherPackages);
 
         //we are now either analyzing a library under CPA or an application.
         if (method.isPackagePrivate || method.isConstructor)
             /* a package private method can not leak to the client under CPA */
-            return ImmediateResult(method, NoLeakage);
+            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
 
         // When we reach this point:
         // - the method is public or protected
         // - the class is not final
         if (classFile.isPublic)
-            return ImmediateResult(method, Leakage);
+            return ImmediateResult(method, CallableFromClassesInOtherPackages);
 
         val classHierarchy = project.classHierarchy
 
@@ -139,7 +137,7 @@ class LibraryLeakageAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
                         if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, Leakage);
+                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
                         } else
                             subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -147,7 +145,7 @@ class LibraryLeakageAnalysis private (
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange! 
-                    return ImmediateResult(method, Leakage);
+                    return ImmediateResult(method, CallableFromClassesInOtherPackages);
             }
             subtypes -= subtype
         }
@@ -163,7 +161,7 @@ class LibraryLeakageAnalysis private (
                     if (declMethod.isDefined) {
                         val m = declMethod.get
                         if ((m.isPublic || m.isProtected) && superclass.isPublic)
-                            return ImmediateResult(method, Leakage);
+                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
                     }
                 }
                 case None if supertype eq ObjectType.Object ⇒
@@ -179,15 +177,15 @@ class LibraryLeakageAnalysis private (
                             ("wait", NoArgsAndReturnVoid) |
                             ("wait", BasicWaitSignature) |
                             ("wait", PreciseWaitSignature) ⇒
-                            return ImmediateResult(method, Leakage);
+                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
                         case _ ⇒ /* nothing leaks */
                     }
                 case _ ⇒
-                    return ImmediateResult(method, Leakage);
+                    return ImmediateResult(method, CallableFromClassesInOtherPackages);
             }
         }
 
-        ImmediateResult(method, NoLeakage)
+        ImmediateResult(method, NotCallableFromClassesInOtherPackages)
     }
 }
 
