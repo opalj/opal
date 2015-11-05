@@ -77,7 +77,7 @@ class Demo {
     }
 
     static int barFoo(int i) {
-        return foo(i) + bar(i); // not observerd
+        return foo(i) + bar(i); // not observed
     }
 
     // The following two methods are mutually dependent and use an impure method.
@@ -105,7 +105,7 @@ class Demo {
     static int m3(int i) {
         return i % 4 == 0 ? i : m1(i - 1);
     }
-
+    
     // All three methods are depending on each other, but they are NOT pure, because
     // one calls an impure method.
     //
