@@ -534,7 +534,11 @@ class Project[Source] private (
      *
      * If the information was not yet required the information is computed and
      * returned. Subsequent calls will directly return the information.
-     *
+     * 
+     * @note (Development Time) 
+     * 		Every analysis using [[ProjectInformationKey]]s must list '''All 
+     * 		requirements; failing to specify a requirement can end up in a deadlock.'''
+     * 
      * @see [[ProjectInformationKey]] for further information.
      */
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
@@ -557,7 +561,7 @@ class Project[Source] private (
                 pi.asInstanceOf[T]
             } else {
                 this.synchronized {
-                    // It may be the case that the underlying array was updated!
+                    // It may be the case that the underlying array was replaced!
                     val thisProjectInformation = this.projectInformation
                     // double-checked locking (works with Java >=6)
                     val pi = thisProjectInformation.get(pikUId)
@@ -730,10 +734,10 @@ object Project {
 
     /**
      * Creates a new `Project` that consists of the source files of the previous
-     * project and only updates the configuration of the project. The old project
+     * project and uses the (new) configuration. The old project
      * configuration is by default used as fallback, so not all values have to be updated.
      */
-    def updateConfig[Source](
+    def recreate[Source](
         project:                Project[Source],
         config:                 Config,
         useOldConfigAsFallback: Boolean         = true
@@ -744,8 +748,10 @@ object Project {
             project.libraryClassFilesWithSources,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback) config.withFallback(project.config)
-            else config,
+            if (useOldConfigAsFallback)
+                config.withFallback(project.config)
+            else
+                config,
             projectLogger = OPALLogger.logger(project.logContext.successor)
         )
     }
