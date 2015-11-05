@@ -29,8 +29,8 @@
 
 package libraryLeakage1;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 
 /*
@@ -42,16 +42,16 @@ import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
  */
 public final class FinalSuperclass {
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	private void privateMethod(){
 		System.out.println("private");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -59,16 +59,16 @@ public final class FinalSuperclass {
 		System.out.println("public");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}

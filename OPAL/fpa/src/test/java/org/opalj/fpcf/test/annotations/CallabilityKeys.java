@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,36 +28,30 @@
  */
 package org.opalj.fpcf.test.annotations;
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static java.lang.annotation.ElementType.METHOD;
-
 /**
  * 
- * Describes the MethodLeakage property of the OPAL FixpointAnalysis.
+ * Represents all possible property variants of the [[LibraryLeakage]] property
+ * defined in the [[LibraryLeakageAnalysis]].
+ * 
+ * @Note This enum is used for test-only purposes. It is used as parameter in
+ * the [[LibraryLeakageAnalysis]] annotation. Make sure, that the names
+ * of the different variants of the Overridden property matches the enumeration
+ * names exactly.
  * 
  * @author Michael Reif
  *
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface LibraryLeakageProperty {
+public enum CallabilityKeys {
 	
 	/**
-	 * This refers to the LibraryLeakageProperty when the property is computed for
-	 * a library under the open package assumption. 
+	 * This has to be used if a method can't be inherit by any immediate non-abstract 
+	 * subclass and due to this is overridden in every concrete subclass.
 	 */
-	LibraryLeakageKeys opa() default LibraryLeakageKeys.Leakage;
+	NotCallable, 
 	
 	/**
-	 * This refers to the LibraryLeakageProperty when the property is computed for
-	 * a library under the closed package assumption. 
+	 * This has to be used if there is a subclass that inherits that method and the method
+	 * is not overridden by every existing subclass.
 	 */
-	LibraryLeakageKeys cpa() default LibraryLeakageKeys.Leakage;
-	
-	/**
-	 * This refers to the LibraryLeakageProperty when the property is computed for
-	 * an application.
-	 */
-	LibraryLeakageKeys application() default LibraryLeakageKeys.Leakage;
+	Callable,
 }

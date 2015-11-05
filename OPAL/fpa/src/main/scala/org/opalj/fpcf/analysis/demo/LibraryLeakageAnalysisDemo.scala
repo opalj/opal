@@ -64,7 +64,7 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            executer.run(LibraryLeakageAnalysis)
+            executer.run(CallableFromClassesInOtherPackagesAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
         //        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
@@ -73,11 +73,11 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
         //        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
 
         val leakedMethods = propertyStore.entities { (p: Property) ⇒
-            p == CallableFromClassesInOtherPackages
+            p == Callable
         }
 
         val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒
-            p == NotCallableFromClassesInOtherPackages
+            p == NotCallable
         }
         BasicReport(
             //            nonOverriddenInfoString +

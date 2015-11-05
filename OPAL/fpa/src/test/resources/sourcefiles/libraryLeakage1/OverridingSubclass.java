@@ -28,31 +28,31 @@
  */
 package libraryLeakage1;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 public class OverridingSubclass extends Superclass{
 
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	public void publicMethod(){
 		protectedMethod();
 	}
 	
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	protected void protectedMethod(){
 		publicMethod();
 	}
 	
-	@LibraryLeakageProperty(
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			cpa=CallabilityKeys.NotCallable)
 	void packagePrivateMethod(){
 		publicFinalMethod();
 		privteMethod();
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	private void privteMethod(){
 		publicFinalMethod();
 	}

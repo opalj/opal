@@ -31,7 +31,7 @@ package libraryLeakage3;
 /**
  * 
  * This class is for test purpose only. It shall reflect the case of a
- * leakage though the superclass.
+ * Callable though the superclass.
  * 
  * @note The method names refer to the closed packages assumption.
  * 
@@ -43,15 +43,15 @@ public class SuperclassLeakage {
 		privateMethodWithoutSuperclassLeakege(); // suppress warning of unused private method.
 	}
 	
-	public void publicMethodWithSuperclassLeakage() {
+	public void publicMethodWithSuperclassCallable() {
 
 	}
 
-	protected void protectedMethodWithSuperclassLeakage() {
+	protected void protectedMethodWithSuperclassCallable() {
 
 	}
 
-	void packagePrivateMethodWithoutSuperclassLeakage() {
+	void packagePrivateMethodWithoutSuperclassCallable() {
 
 	}
 

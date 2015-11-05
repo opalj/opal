@@ -28,8 +28,8 @@
  */
 package libraryLeakage3;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 /**
  * 
@@ -47,22 +47,22 @@ public class CompleteTypeHierarchyLeakage extends SuperclassLeakage {
 													// private method.
 	}
 
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	public void publicMethodWithSuperclassLeakage() {
 
 	}
 
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	protected void protectedMethodWithSuperclassLeakage() {
 
 	}
 
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
 	void packagePrivateMethodWithoutSuperclassLeakage() {
 
 	}
 
-	@LibraryLeakageProperty(opa = LibraryLeakageKeys.NoLeakage, cpa = LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(opa = CallabilityKeys.NotCallable, cpa = CallabilityKeys.NotCallable)
 	private void privateMethodWithoutSuperclassLeakege() {
 
 	}

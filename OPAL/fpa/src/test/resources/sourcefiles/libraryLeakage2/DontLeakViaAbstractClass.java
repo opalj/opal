@@ -39,6 +39,7 @@ package libraryLeakage2;
 public abstract class DontLeakViaAbstractClass extends
 		DontLeakViaNotConcreteClass {
 
+	
 	protected void iDoNotLeakToo(){
 		
 	}

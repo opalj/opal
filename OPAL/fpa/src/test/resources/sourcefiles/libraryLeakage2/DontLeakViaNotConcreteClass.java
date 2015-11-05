@@ -28,8 +28,8 @@
  */
 package libraryLeakage2;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 /**
  *
@@ -50,7 +50,7 @@ class DontLeakViaNotConcreteClass {
 	 * DontLeakViaAbstractClass but the compiler somehow introduces a method
 	 * with the same name that prevent that method from being exposed.
 	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
 	public void iDoNotLeak() {
 	}
 
@@ -58,7 +58,7 @@ class DontLeakViaNotConcreteClass {
 	 * Package visible methods can not leak when the closed packages assumption
 	 * is met.
 	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
 	void iCanNotLeakUnderCPA() {
 
 	}
@@ -67,7 +67,7 @@ class DontLeakViaNotConcreteClass {
 	 * This method can not leak because it is overridden in one subclass and the
 	 * other one is package private.
 	 */
-	@LibraryLeakageProperty(cpa = LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
 	protected void iDoNotLeakToo() {
 
 	}

@@ -28,7 +28,7 @@
  */
 package libraryLeakage2;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 /**
  * 
@@ -36,7 +36,7 @@ import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
  */
 public interface LeakFromInterface {
 
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	default void leakedMethod(){
 		
 	}

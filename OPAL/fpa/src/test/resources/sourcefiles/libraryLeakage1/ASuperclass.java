@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,21 +28,21 @@
  */
 package libraryLeakage1;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 public abstract class ASuperclass {
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	private void privateMethod(){
 		System.out.println("private");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.Leakage,
-			cpa=LibraryLeakageKeys.Leakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.Callable,
+			cpa=CallabilityKeys.Callable)
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -50,27 +50,27 @@ public abstract class ASuperclass {
 		System.out.println("public");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.Leakage,
-			cpa=LibraryLeakageKeys.Leakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.Callable,
+			cpa=CallabilityKeys.Callable)
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}
 	
-	@LibraryLeakageProperty(
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			cpa=CallabilityKeys.NotCallable)
 	void packagePrivateMethod(){
 		System.out.println("package private");
 	}
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.Leakage,
-			cpa=LibraryLeakageKeys.Leakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.Callable,
+			cpa=CallabilityKeys.Callable)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}
 	
-	@LibraryLeakageProperty(
-			cpa=LibraryLeakageKeys.Leakage)
+	@CallabilityProperty(
+			cpa=CallabilityKeys.Callable)
 	public native void nativeLeak();
 }

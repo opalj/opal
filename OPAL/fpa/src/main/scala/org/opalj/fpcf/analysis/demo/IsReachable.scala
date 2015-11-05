@@ -71,7 +71,7 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
         val executer = project.get(FPCFAnalysisManagerKey)
 
         executer.runAll(
-            LibraryLeakageAnalysis,
+            CallableFromClassesInOtherPackagesAnalysis,
             FactoryMethodAnalysis,
             InstantiabilityAnalysis,
             MethodAccessibilityAnalysis,

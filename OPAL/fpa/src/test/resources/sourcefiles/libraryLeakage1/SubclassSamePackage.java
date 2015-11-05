@@ -28,19 +28,19 @@
  */
 package libraryLeakage1;
 
-import org.opalj.fpcf.test.annotations.LibraryLeakageKeys;
-import org.opalj.fpcf.test.annotations.LibraryLeakageProperty;
+import org.opalj.fpcf.test.annotations.CallabilityKeys;
+import org.opalj.fpcf.test.annotations.CallabilityProperty;
 
 public class SubclassSamePackage extends ASuperclass {
 	
-	@LibraryLeakageProperty(
-			opa=LibraryLeakageKeys.NoLeakage,
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			opa=CallabilityKeys.NotCallable,
+			cpa=CallabilityKeys.NotCallable)
 	private void privateMethod(){
 		System.out.println("private");
 	}
 	
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -48,14 +48,14 @@ public class SubclassSamePackage extends ASuperclass {
 		System.out.println("public");
 	}
 	
-	@LibraryLeakageProperty(
-			cpa=LibraryLeakageKeys.NoLeakage)
+	@CallabilityProperty(
+			cpa=CallabilityKeys.NotCallable)
 	void packagePrivateMethod(){
 		System.out.println("package private");
 	}
 	
 	
-	@LibraryLeakageProperty
+	@CallabilityProperty
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}

@@ -116,7 +116,7 @@ object FPCFAnalysisRegistry {
 
     register(
         "[LibraryLeakageAnalysis] An analysis which computes whether a non-static method can be called via an super or subclass.",
-        LibraryLeakageAnalysis
+        CallableFromClassesInOtherPackagesAnalysis
     )
 
     register(

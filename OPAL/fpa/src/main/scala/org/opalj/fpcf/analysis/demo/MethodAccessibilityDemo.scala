@@ -64,7 +64,7 @@ object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
         org.opalj.util.PerformanceEvaluation.time {
 
             executer.runAll(
-                LibraryLeakageAnalysis,
+                CallableFromClassesInOtherPackagesAnalysis,
                 MethodAccessibilityAnalysis
             )
 

@@ -24,7 +24,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         val opaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.CPA)
-        //        val appProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.APP)
+        val appProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.APP)
         // not supported yet
 
         val oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
@@ -37,16 +37,10 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         // CALL GRAPH STUFF
 
-        println(" Started Construction of OLD CHA call graph")
         val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
-        println(" Finished Construction of OLD CHA call graph")
-        println(" Started Construction of CHA call graph under CPA")
         val newCpaCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph
-        println(" Finished Construction of CHA call graph under CPA")
-        println(" Started Construction of CHA call graph under OPA")
         val newOpaCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph
-        println(" Finished Construction of CHA call graph under OPA")
-        //        val wrongCG = appProject.get(LibraryCHACallGraphKey).callGraph
+        val wrongCG = appProject.get(CHACallGraphKey).callGraph
         // CALL GRAPH STUFF
 
         val cpaEP = cpaStore.entities { (p: Property) ⇒
@@ -74,8 +68,8 @@ object CHADemo extends DefaultOneStepAnalysis {
         val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+
             s"percentage:    | ${getPercentage(oldEntryPoints.size)}% (old)     | ${getPercentage(opaEP.size)}% (opa) | ${getPercentage(cpaEP.size)}% (cpa)\n"+
-            s"#call edges:   | ${traditionalCG.callEdgesCount} (old)     | ${newOpaCG.callEdgesCount} (opa) | ${newCpaCG.callEdgesCount} (cpa)| ${newCpaCG.callEdgesCount - traditionalCG.callEdgesCount} (new - old)" //+
-        //s" | ${wrongCG.callEdgesCount} (old graph with new entry points)\n"
+            s"#call edges:   | ${traditionalCG.callEdgesCount} (old)     | ${newOpaCG.callEdgesCount} (opa) | ${newCpaCG.callEdgesCount} (cpa)| ${newCpaCG.callEdgesCount - traditionalCG.callEdgesCount} (new - old)"+
+            s" | ${wrongCG.callEdgesCount} (old graph with new entry points)\n"
 
         BasicReport(
             outputTable

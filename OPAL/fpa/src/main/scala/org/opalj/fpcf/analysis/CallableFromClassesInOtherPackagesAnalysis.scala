@@ -51,20 +51,19 @@ import org.opalj.br.NoArgumentMethodDescriptor
  * the method can be called by a client. A method does only leak if it gets accessible
  * though inheritance where a immediate non-abstract subclass inherits the target method.
  */
-sealed trait LibraryLeakage extends Property {
-    final def key = LibraryLeakage.Key
+sealed trait CallableFromClassesInOtherPackages extends Property {
+    final def key = CallableFromClassesInOtherPackages.Key
 }
 
-object LibraryLeakage {
-    final val Key = PropertyKey.create("Leakage", CallableFromClassesInOtherPackages)
+object CallableFromClassesInOtherPackages {
+    final val Key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
 
     final val Id = Key.id
 }
 
-// TODO Leakage => CallableFromClassesInOtherPackages
-case object CallableFromClassesInOtherPackages extends LibraryLeakage { final val isRefineable = false }
+case object Callable extends CallableFromClassesInOtherPackages { final val isRefineable = false }
 
-case object NotCallableFromClassesInOtherPackages extends LibraryLeakage { final val isRefineable = false }
+case object NotCallable extends CallableFromClassesInOtherPackages { final val isRefineable = false }
 
 /**
  * This Analysis determines the ´LibraryLeakage´ property of a method. A method is considered as leaked
@@ -80,13 +79,13 @@ case object NotCallableFromClassesInOtherPackages extends LibraryLeakage { final
  *
  *  @author Michael Reif
  */
-class LibraryLeakageAnalysis private (
+class CallableFromClassesInOtherPackagesAnalysis private (
     project:        SomeProject,
-    entitySelector: PartialFunction[Entity, Method] = LibraryLeakageAnalysis.entitySelector
+    entitySelector: PartialFunction[Entity, Method] = CallableFromClassesInOtherPackagesAnalysis.entitySelector
 )
         extends DefaultFPCFAnalysis[Method](
             project,
-            entitySelector = LibraryLeakageAnalysis.entitySelector
+            entitySelector
         ) {
 
     /**
@@ -103,25 +102,25 @@ class LibraryLeakageAnalysis private (
 
         if (method.isPrivate)
             /* private methods are only visible in the scope of the class */
-            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
+            return ImmediateResult(method, NotCallable);
 
         val classFile = project.classFile(method)
         if (classFile.isFinal)
-            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
+            return ImmediateResult(method, NotCallable);
 
         if (isOpenLibrary)
-            return ImmediateResult(method, CallableFromClassesInOtherPackages);
+            return ImmediateResult(method, Callable);
 
         //we are now either analyzing a library under CPA or an application.
         if (method.isPackagePrivate || method.isConstructor)
             /* a package private method can not leak to the client under CPA */
-            return ImmediateResult(method, NotCallableFromClassesInOtherPackages);
+            return ImmediateResult(method, NotCallable);
 
         // When we reach this point:
         // - the method is public or protected
         // - the class is not final
         if (classFile.isPublic)
-            return ImmediateResult(method, CallableFromClassesInOtherPackages);
+            return ImmediateResult(method, Callable);
 
         val classHierarchy = project.classHierarchy
 
@@ -137,7 +136,7 @@ class LibraryLeakageAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
                         if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
+                            return ImmediateResult(method, Callable);
                         } else
                             subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -145,7 +144,7 @@ class LibraryLeakageAnalysis private (
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange! 
-                    return ImmediateResult(method, CallableFromClassesInOtherPackages);
+                    return ImmediateResult(method, Callable);
             }
             subtypes -= subtype
         }
@@ -161,7 +160,7 @@ class LibraryLeakageAnalysis private (
                     if (declMethod.isDefined) {
                         val m = declMethod.get
                         if ((m.isPublic || m.isProtected) && superclass.isPublic)
-                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
+                            return ImmediateResult(method, Callable);
                     }
                 }
                 case None if supertype eq ObjectType.Object ⇒
@@ -177,26 +176,27 @@ class LibraryLeakageAnalysis private (
                             ("wait", NoArgsAndReturnVoid) |
                             ("wait", BasicWaitSignature) |
                             ("wait", PreciseWaitSignature) ⇒
-                            return ImmediateResult(method, CallableFromClassesInOtherPackages);
+                            return ImmediateResult(method, Callable);
                         case _ ⇒ /* nothing leaks */
                     }
                 case _ ⇒
-                    return ImmediateResult(method, CallableFromClassesInOtherPackages);
+                    return ImmediateResult(method, Callable);
             }
         }
 
-        ImmediateResult(method, NotCallableFromClassesInOtherPackages)
+        ImmediateResult(method, NotCallable)
     }
 }
 
-object LibraryLeakageAnalysis extends FPCFAnalysisRunner[LibraryLeakageAnalysis] {
-    private[LibraryLeakageAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+object CallableFromClassesInOtherPackagesAnalysis
+        extends FPCFAnalysisRunner[CallableFromClassesInOtherPackagesAnalysis] {
+    private[CallableFromClassesInOtherPackagesAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override protected[analysis] def derivedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def derivedProperties = Set(CallableFromClassesInOtherPackages.Id)
 
     protected[analysis] def start(project: SomeProject): Unit = {
-        new LibraryLeakageAnalysis(project)
+        new CallableFromClassesInOtherPackagesAnalysis(project)
     }
 }

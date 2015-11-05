@@ -137,7 +137,7 @@ class MethodAccessibilityAnalysis private[analysis] (
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
-            if (dependeeP == NotCallableFromClassesInOtherPackages)
+            if (dependeeP == NotCallable)
                 Result(method, PackageLocal)
             else
                 Result(method, Global)
@@ -145,7 +145,7 @@ class MethodAccessibilityAnalysis private[analysis] (
 
         import propertyStore.require
         require(method, MethodAccessibilityAnalysis.propertyKey,
-            method, LibraryLeakage.Key)(c);
+            method, CallableFromClassesInOtherPackages.Key)(c);
     }
 }
 
@@ -165,11 +165,11 @@ object MethodAccessibilityAnalysis
         new MethodAccessibilityAnalysis(project)
     }
 
-    override def recommendations = Set(LibraryLeakageAnalysis)
+    override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
 
     override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
 
-    override protected[analysis] def usedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages.Id)
 }
 
 /**
@@ -185,9 +185,9 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccess
         new MethodAccessibilityAnalysis(project, entitySelector)
     }
 
-    override def recommendations = Set(LibraryLeakageAnalysis)
+    override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
 
     override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
 
-    override protected[analysis] def usedProperties = Set(LibraryLeakage.Id)
+    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages.Id)
 }

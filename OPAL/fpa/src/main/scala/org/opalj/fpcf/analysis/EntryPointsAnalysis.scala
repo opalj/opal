@@ -55,7 +55,7 @@ class EntryPointsAnalysis private (
         extends {
             private[this] final val AccessKey = ProjectAccessibility.Key
             private[this] final val InstantiabilityKey = Instantiability.Key
-            private[this] final val LibraryLeakageKey = LibraryLeakage.Key
+            private[this] final val LibraryLeakageKey = CallableFromClassesInOtherPackages.Key
             private[this] final val SerializableType = ObjectType.Serializable
         } with DefaultFPCFAnalysis[Method](
             project, EntryPointsAnalysis.entitySelector
@@ -65,7 +65,7 @@ class EntryPointsAnalysis private (
 
     @inline private[this] def leakageContinuation(method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == CallableFromClassesInOtherPackages)
+            if (dependeeP == Callable)
                 Result(method, IsEntryPoint)
             else
                 Result(method, NoEntryPoint)
@@ -147,11 +147,11 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
 
     override protected[analysis] def derivedProperties = Set(EntryPoint.Id)
 
-    override protected[analysis] def usedProperties = Set(ProjectAccessibility.Id, LibraryLeakage.Id, Instantiability.Id)
+    override protected[analysis] def usedProperties = Set(ProjectAccessibility.Id, CallableFromClassesInOtherPackages.Id, Instantiability.Id)
 
     /*
      * This recommendations are not transitive. All (even indirect) dependencies are listed here.
      */
     //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
-    override def recommendations = Set(SimpleInstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
+    override def recommendations = Set(SimpleInstantiabilityAnalysis, CallableFromClassesInOtherPackagesAnalysis, MethodAccessibilityAnalysis)
 }

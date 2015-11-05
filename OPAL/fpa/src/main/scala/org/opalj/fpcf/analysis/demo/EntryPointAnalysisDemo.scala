@@ -76,7 +76,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
             cpaExecuter.runAll(
                 SimpleInstantiabilityAnalysis,
-                LibraryLeakageAnalysis,
+                CallableFromClassesInOtherPackagesAnalysis,
                 MethodAccessibilityAnalysis
             )
 
@@ -94,7 +94,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
             opaExecuter.runAll(
                 SimpleInstantiabilityAnalysis,
-                LibraryLeakageAnalysis,
+                CallableFromClassesInOtherPackagesAnalysis,
                 MethodAccessibilityAnalysis
             )
 
