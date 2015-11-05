@@ -143,7 +143,7 @@ object CallBySignatureResolution {
                 if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYesOrUnknown)
                     return ;
 
-                println(s"${interfaceMethod.toJava(interfaceClassFile)} => ${project.classFile(m).thisType.toJava}")
+                //println(s"${interfaceMethod.toJava(interfaceClassFile)} => ${project.classFile(m).thisType.toJava}")
 
                 methods.get(methodName) match {
                     case None ⇒
