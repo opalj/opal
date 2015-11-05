@@ -27,7 +27,7 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val cpaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.CPA)
+        val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
         val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
 
         val methodsCount: Double = project.methodsCount.toDouble

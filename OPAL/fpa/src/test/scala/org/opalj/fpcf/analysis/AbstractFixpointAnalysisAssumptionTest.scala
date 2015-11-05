@@ -55,7 +55,7 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
     override def loadProject: Project[URL] = {
         val project = org.opalj.br.analyses.Project(file)
         val testConfig = AnalysisModeConfigFactory.createConfig(analysisMode)
-        Project.updateConfig(project, testConfig)
+        Project.recreate(project, testConfig)
     }
 
     /*

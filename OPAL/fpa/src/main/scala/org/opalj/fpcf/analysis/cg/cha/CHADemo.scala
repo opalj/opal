@@ -22,8 +22,8 @@ object CHADemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val opaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.OPA)
-        val cpaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.CPA)
+        val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
+        val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
         //        val appProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.APP)
         // not supported yet
 
