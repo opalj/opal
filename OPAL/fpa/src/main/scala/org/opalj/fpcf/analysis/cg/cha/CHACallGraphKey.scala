@@ -32,7 +32,9 @@ package analysis
 package cg
 package cha
 
-import org.opalj.br.analyses._
+import org.opalj.br.Method
+import org.opalj.br.analyses.{CallBySignatureResolutionKey, ProjectInformationKey, SomeProject, _}
+import org.opalj.fpcf.Property
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
@@ -45,26 +47,37 @@ import org.opalj.br.analyses._
  *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
  *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+object LibraryCHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
     /**
-     * The CHACallGraph has no special prerequisites.
+     * The CHACallGraph has no special prerequisites.W
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements = Seq(CallBySignatureResolutionKey)
 
     /**
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
-        val entryPoints = () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project)
+        val fpcfManager = project.get(FPCFAnalysisManagerKey)
+        fpcfManager.runAll(EntryPointsAnalysis.recommendations ++ Set(EntryPointsAnalysis))(true)
+        val entryPoints = getEntryPointsFromPropertyStore(project)
         CallGraphFactory.create(
-            project, entryPoints,
-            new CHACallGraphAlgorithmConfiguration(project)
+            project, () ⇒ entryPoints,
+            new LibraryCHACallGraphAlgorithmConfiguration(project)
         )
     }
-}
 
+    /*
+     * Get all methods from the property store that are entry points.
+     */
+    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): scala.collection.mutable.Set[Method] = {
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        propertyStore.entities { (p: Property) ⇒
+            p == IsEntryPoint
+        }.collect { case entity: Method ⇒ entity }
+    }
+}

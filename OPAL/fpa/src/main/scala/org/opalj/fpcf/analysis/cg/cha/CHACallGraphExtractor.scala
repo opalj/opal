@@ -32,20 +32,13 @@ package analysis
 package cg
 package cha
 
+import org.opalj.br.{ClassFile, Method, MethodDescriptor, MethodSignature, ObjectType, PC}
+import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResolutionKey, SomeProject}
+import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
+
+import net.ceedubs.ficus.Ficus._
 import scala.collection.Set
 import scala.collection.mutable.HashSet
-
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodSignature
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -62,20 +55,21 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
  * '''This domain is not thread-safe'''. However, given the strong coupling of a
  * domain instance to a specific method this is usually not an issue.
  *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-class CHACallGraphExtractor(
-    val cache: CallGraphCache[MethodSignature, Set[Method]]
-)
-        extends CallGraphExtractor {
+class LibraryCHACallGraphExtractor(
+        val cache: CallGraphCache[MethodSignature, Set[Method]]
+) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
             val project:   SomeProject,
             val classFile: ClassFile,
-            val method:    Method
+            val method:    Method,
+            val cbsIndex:  CallBySignatureResolution
     ) extends super.AnalysisContext {
 
         val classHierarchy = project.classHierarchy
+        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
         def staticCall(
             pc:                 PC,
@@ -168,15 +162,57 @@ class CHACallGraphExtractor(
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 
-            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
+            var cbsCalls = Iterable.empty[Method]
+
+            if (!project.classHierarchy.
+                allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
+                    project.classFile(iType) match {
+                        case Some(classFile) ⇒ !classFile.methods.exists { m ⇒
+                            m.name == name && (m.descriptor eq descriptor)
+                        }
+                        case None ⇒ true
+                    }
+                }) {
+                cbsCalls = cbsIndex.findMethods(name, descriptor, declaringClassType.packageName)
+            }
+
+            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor) ++ cbsCalls
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
                     declaringClassType, name, descriptor
                 )
             } else {
+
                 addCallEdge(pc, callees)
             }
+        }
+
+        private[AnalysisContext] def callBySignature(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            name:               String,
+            descriptor:         MethodDescriptor
+        ): Iterable[Method] = {
+            if (analysisMode eq AnalysisModes.APP)
+                return Iterable.empty[Method];
+
+            if (!project.classHierarchy.
+                allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
+                    project.classFile(iType) match {
+                        case Some(classFile) ⇒ !classFile.methods.exists { m ⇒
+                            m.name == name && (m.descriptor eq descriptor)
+                        }
+                        case None ⇒ true
+                    }
+                }) {
+                if (analysisMode eq AnalysisModes.CPA)
+                    return cbsIndex.findMethods(name, descriptor, declaringClassType.packageName);
+                else
+                    return cbsIndex.findMethods(name, descriptor);
+            }
+
+            Iterable.empty[Method]
         }
     }
 
@@ -185,7 +221,8 @@ class CHACallGraphExtractor(
         classFile: ClassFile,
         method:    Method
     ): CallGraphExtractor.LocalCallGraphInformation = {
-        val context = new AnalysisContext(project, classFile, method)
+        val cbsIndex = project.get(CallBySignatureResolutionKey)
+        val context = new AnalysisContext(project, classFile, method, cbsIndex)
 
         method.body.get.foreach { (pc, instruction) ⇒
             instruction.opcode match {
@@ -209,8 +246,7 @@ class CHACallGraphExtractor(
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     context.nonVirtualCall(
                         pc, declaringClass, name, descriptor,
-                        receiverIsNull = No /*the receiver is "this" object*/
-                    )
+                        receiverIsNull = No /*the receiver is "this" object*/ )
 
                 case INVOKESTATIC.opcode ⇒
                     val INVOKESTATIC(declaringClass, name, descriptor) = instruction

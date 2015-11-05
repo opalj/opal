@@ -35,7 +35,7 @@ package cha
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Configuration of a call graph algorithm that uses CHA.
+ * Configuration of a call graph algorithm that uses CHA and is sound for libraries.
  *
  * ==Thread Safety==
  * This class is thread-safe (it contains no mutable state.)
@@ -43,13 +43,12 @@ import org.opalj.br.analyses.SomeProject
  * ==Usage==
  * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-class CHACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends DefaultCallGraphAlgorithmConfiguration(project) {
+class LibraryCHACallGraphAlgorithmConfiguration(
+        project: SomeProject
+) extends DefaultCallGraphAlgorithmConfiguration(project) {
 
-    final val Extractor = new CHACallGraphExtractor(cache)
+    final val Extractor = new LibraryCHACallGraphExtractor(cache)
 }
 
