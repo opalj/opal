@@ -35,33 +35,7 @@ import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
-
-/**
- * Simple factory that can create a new Config by a given analysis mode. This is necessary
- * for test purposes because the analysis mode, which is configured in the configuration file,
- * has to be ignored to implement config file independet tests.
- */
-object TestConfigFactory {
-
-    private[this] final val cpaConfig =
-        "org.opalj { analysisMode = \"library with closed packages assumption\"}"
-
-    private[this] final val opaConfig =
-        "org.opalj { analysisMode = \"library with open packages assumption\"}"
-
-    private[this] final val appConfig =
-        "org.opalj { analysisMode = \"Application\"}"
-
-    def createConfig(value: AnalysisMode): Config = {
-        value match {
-            case AnalysisModes.LibraryWithOpenPackagesAssumption   ⇒ ConfigFactory.parseString(opaConfig)
-            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒ ConfigFactory.parseString(cpaConfig)
-            case AnalysisModes.Application                         ⇒ ConfigFactory.parseString(appConfig)
-        }
-    }
-}
+import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
 
 /**
  *
@@ -80,7 +54,7 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
 
     override def loadProject: Project[URL] = {
         val project = org.opalj.br.analyses.Project(file)
-        val testConfig = TestConfigFactory.createConfig(analysisMode)
+        val testConfig = AnalysisModeConfigFactory.createConfig(analysisMode)
         Project.updateConfig(project, testConfig)
     }
 
