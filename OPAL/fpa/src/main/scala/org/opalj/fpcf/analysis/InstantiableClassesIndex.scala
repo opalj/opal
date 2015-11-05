@@ -29,59 +29,57 @@
 package org.opalj
 package fpcf
 package analysis
-package cg
 
-import scala.collection.Set
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
-import org.opalj.log.OPALLogger
+import scala.collection.Set
+import scala.collection.mutable.HashSet
 
-trait Callees {
+/**
+ * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
+ * `java.lang.Math`).
+ *
+ * For details: see org.opalj.fpcf.analysis.SimpleInstantiableClassesAnalysis
+ *
+ * ==Usage==
+ * Use the [[InstantiableClassesKey]] to query a project about the instantiable classes.
+ * {{{
+ * val instantiableClasses = project.get(InstantiableClassesIndexKey)
+ * }}}
+ *
+ * @note The analysis does not take reflective instantiations into account!
+ *
+ * @author Michael Eichberg
+ */
+class InstantiableClassesIndex private (
+        val project:         SomeProject,
+        val notInstantiable: Set[ObjectType]
+) {
 
-    def project: SomeProject
+    def isInstantiable(objectType: ObjectType): Boolean = !notInstantiable.contains(objectType)
+}
 
-    final private[this] val instantiableClasses = project.get(InstantiableClassesIndexKey)
+/**
+ * Stores the information about those classes that are not instantiable (which is
+ * usually only a small fraction of all classes and hence, more
+ * efficient to store/access).
+ *
+ * @author MichaelReif
+ */
+object InstantiableClassesIndex {
 
-    final private[this] def classHierarchy: ClassHierarchy = project.classHierarchy
+    def apply(project: SomeProject): InstantiableClassesIndex = {
+        val fpcfManager = project.get(FPCFAnalysisManagerKey)
+        if (!fpcfManager.isDerived(Instantiability.Id))
+            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
 
-    def cache: CallGraphCache[MethodSignature, Set[Method]]
-
-    @inline def callees(
-        declaringClassType: ObjectType,
-        name:               String,
-        descriptor:         MethodDescriptor
-    ): Set[Method] = {
-
-        classHierarchy.hasSubtypes(declaringClassType) match {
-
-            case Yes ⇒
-                val methodSignature = new MethodSignature(name, descriptor)
-                cache.getOrElseUpdate(declaringClassType, methodSignature)(
-                    {
-                        classHierarchy.lookupImplementingMethods(
-                            declaringClassType, name, descriptor,
-                            project,
-                            classesFilter = (cf) ⇒ instantiableClasses.isInstantiable(cf)
-                        )
-                    },
-                    syncOnEvaluation = true //false
-                )
-
-            case No ⇒
-                classHierarchy.lookupImplementingMethods(
-                    declaringClassType, name, descriptor,
-                    project,
-                    classesFilter = (cf) ⇒ instantiableClasses.isInstantiable(cf)
-                )
-
-            case /*Unknown <=> the type is unknown */ _ ⇒
-                Set.empty
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val notInstantiableClasses = propertyStore.collect[ObjectType] {
+            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
         }
+
+        new InstantiableClassesIndex(project, HashSet.empty ++ notInstantiableClasses.toSet)
     }
 }

@@ -34,7 +34,6 @@ package cha
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.{CallBySignatureResolutionKey, ProjectInformationKey, SomeProject, _}
-import org.opalj.fpcf.Property
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
@@ -49,35 +48,33 @@ import org.opalj.fpcf.Property
  *
  * @author Michael Reif
  */
-object LibraryCHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
     /**
      * The CHACallGraph has no special prerequisites.W
      *
      * @return `Nil`.
      */
-    override protected def requirements = Seq(CallBySignatureResolutionKey)
+    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesIndexKey)
 
     /**
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
         val fpcfManager = project.get(FPCFAnalysisManagerKey)
-        fpcfManager.runAll(EntryPointsAnalysis.recommendations ++ Set(EntryPointsAnalysis))(true)
+        fpcfManager.runWithRecommendations(EntryPointsAnalysis)(true)
         val entryPoints = getEntryPointsFromPropertyStore(project)
         CallGraphFactory.create(
             project, () ⇒ entryPoints,
-            new LibraryCHACallGraphAlgorithmConfiguration(project)
+            new CHACallGraphAlgorithmConfiguration(project)
         )
     }
 
     /*
      * Get all methods from the property store that are entry points.
      */
-    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): scala.collection.mutable.Set[Method] = {
+    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): Set[Method] = {
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        propertyStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }.collect { case entity: Method ⇒ entity }
+        propertyStore.collect { case (m: Method, IsEntryPoint) ⇒ m }.toSet
     }
 }

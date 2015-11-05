@@ -29,26 +29,33 @@
 package org.opalj
 package fpcf
 package analysis
-package cg
-package cha
 
+import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Configuration of a call graph algorithm that uses CHA and is sound for libraries.
+ * The ''key'' object to get information about the classes that can be instantiated
+ * (either, directly or indirectly).
  *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
+ * @example
+ *      To get the index use the [[Project]]'s `get` method and pass in
+ *      `this` object.
  *
  * @author Michael Reif
  */
-class CHACallGraphAlgorithmConfiguration(
-        project: SomeProject
-) extends DefaultCallGraphAlgorithmConfiguration(project) {
+object InstantiableClassesIndexKey extends ProjectInformationKey[InstantiableClassesIndex] {
 
-    final val Extractor = new CHACallGraphExtractor(cache)
+    /**
+     * The [[InstantiableClasses]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+
+    /**
+     * Computes the information which classes are (not) instantiable.
+     */
+    override protected def compute(project: SomeProject): InstantiableClassesIndex = {
+        InstantiableClassesIndex(project)
+    }
 }
-
