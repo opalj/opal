@@ -52,13 +52,15 @@ import org.opalj.br.NoArgumentMethodDescriptor
  * though inheritance where a immediate non-abstract subclass inherits the target method.
  */
 sealed trait CallableFromClassesInOtherPackages extends Property {
-    final def key = CallableFromClassesInOtherPackages.Key
+
+    final def key = CallableFromClassesInOtherPackages.key
+
 }
 
-object CallableFromClassesInOtherPackages {
-    final val Key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
+object CallableFromClassesInOtherPackages extends PropertyMetaInformation {
 
-    final val Id = Key.id
+    final val key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
+
 }
 
 case object Callable extends CallableFromClassesInOtherPackages { final val isRefineable = false }
@@ -190,11 +192,12 @@ class CallableFromClassesInOtherPackagesAnalysis private (
 
 object CallableFromClassesInOtherPackagesAnalysis
         extends FPCFAnalysisRunner[CallableFromClassesInOtherPackagesAnalysis] {
+
     private[CallableFromClassesInOtherPackagesAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override protected[analysis] def derivedProperties = Set(CallableFromClassesInOtherPackages.Id)
+    override protected[analysis] def derivedProperties = Set(CallableFromClassesInOtherPackages)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new CallableFromClassesInOtherPackagesAnalysis(project)

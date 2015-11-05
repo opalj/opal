@@ -36,13 +36,13 @@ import org.opalj.br.ClassFile
 import org.opalj.br.instructions.PUTSTATIC
 
 sealed trait Mutability extends Property {
-    final def key = Mutability.Key // All instances have to share the SAME key!
+    final def key = Mutability.key // All instances have to share the SAME key!
 }
 
-object Mutability {
-    final val Key = PropertyKey.create("Mutability", NonFinal)
+object Mutability extends PropertyMetaInformation {
 
-    final val Id = Key.id
+    final val key = PropertyKey.create("Mutability", NonFinal)
+
 }
 
 case object EffectivelyFinal extends Mutability { final val isRefineable = false }
@@ -110,5 +110,5 @@ object MutabilityAnalysis extends FPCFAnalysisRunner[MutabilityAnalysis] {
         new MutabilityAnalysis(project, entitySelector)
     }
 
-    override protected[analysis] def derivedProperties = Set(Mutability.Id)
+    override protected[analysis] def derivedProperties = Set(Mutability)
 }

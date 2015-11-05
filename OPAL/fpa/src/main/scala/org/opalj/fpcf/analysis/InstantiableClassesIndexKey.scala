@@ -35,7 +35,7 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * The ''key'' object to get information about the classes that can be instantiated
- * (either, directly or indirectly).
+ * (either directly or indirectly).
  *
  * @example
  *      To get the index use the [[Project]]'s `get` method and pass in
@@ -46,7 +46,7 @@ import org.opalj.br.analyses.SomeProject
 object InstantiableClassesIndexKey extends ProjectInformationKey[InstantiableClassesIndex] {
 
     /**
-     * The [[InstantiableClasses]] has no special prerequisites.
+     * The [[InstantiableClassesIndex]] has no special prerequisites.
      *
      * @return `Nil`.
      */

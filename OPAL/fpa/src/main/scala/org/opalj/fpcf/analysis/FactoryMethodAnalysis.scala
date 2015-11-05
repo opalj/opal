@@ -38,13 +38,15 @@ import org.opalj.br.analyses.SomeProject
  * Common supertrait of all factory method properties.
  */
 sealed trait FactoryMethod extends Property {
-    final def key = FactoryMethod.Key
+
+    final def key = FactoryMethod.key
+
 }
 
 /**
  * Common constants use by all [[FactoryMethod]] properties associated with methods.
  */
-object FactoryMethod {
+object FactoryMethod extends PropertyMetaInformation {
 
     /**
      * The key associated with every FactoryMethod property.
@@ -53,9 +55,7 @@ object FactoryMethod {
      * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
      * all depended analyses.
      */
-    final val Key = PropertyKey.create("FactoryMethod", IsFactoryMethod)
-
-    final val Id = Key.id
+    final val key = PropertyKey.create("FactoryMethod", IsFactoryMethod)
 }
 
 /**
@@ -158,7 +158,7 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
         case m: Method if m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override def derivedProperties = Set(FactoryMethod.Id)
+    override def derivedProperties = Set(FactoryMethod)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new FactoryMethodAnalysis(project)

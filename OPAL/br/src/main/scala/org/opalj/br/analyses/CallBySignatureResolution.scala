@@ -77,7 +77,7 @@ class CallBySignatureResolution private (
     def findMethods(name: String, descriptor: MethodDescriptor, packageName: String): Iterable[Method] =
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
             val classFile = project.classFile(method)
-            if (classFile.nonPublic || method.isPackagePrivate)
+            if (classFile.isPackageVisible || method.isPackagePrivate)
                 packageName == classFile.thisType.packageName
             else
                 true

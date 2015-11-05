@@ -64,7 +64,7 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ analysisTime = t.toSeconds }
 
         val instantiableClasses: Traversable[(AnyRef, Property)] =
-            propertyStore(Instantiability.Key).filter { ep ⇒
+            propertyStore(Instantiability.key).filter { ep ⇒
                 val isInstantiable = ep._2
                 isInstantiable == Instantiable
             }

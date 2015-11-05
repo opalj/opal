@@ -61,7 +61,7 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             isReachableCount.incrementAndGet()
         }
 
-        theProjectStore.onPropertyChange(EntryPoint.Key) { (e: Entity, p: Property) ⇒
+        theProjectStore.onPropertyChange(EntryPoint.key) { (e: Entity, p: Property) ⇒
             p match {
                 case IsEntryPoint ⇒ theProjectStore.add(IsReachable)(e.asInstanceOf[Method])
                 case _            ⇒ // don't care

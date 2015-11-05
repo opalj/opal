@@ -33,8 +33,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.concurrent.Locking.withReadLock
 import org.opalj.concurrent.Locking.withWriteLock
 
-trait PropertyKind extends Any /* we now have a universal trait */ { def id: Int }
-
 /**
  * A value object that identifies a specific kind of properties. Every entity in
  * the [[PropertyStore]] must be associated with at most one property per property kind/key.
