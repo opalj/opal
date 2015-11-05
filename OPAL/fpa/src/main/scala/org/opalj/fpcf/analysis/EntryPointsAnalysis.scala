@@ -34,6 +34,7 @@ package analysis
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFile
 
 sealed trait EntryPoint extends Property {
 
@@ -108,16 +109,20 @@ class EntryPointsAnalysis private (
         import propertyStore.require
         val c_inst: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
             val isInstantiable = (dependeeP == Instantiable)
+            val isAbstractOrInterface = dependeeE match {
+                case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
+                case _             ⇒ false
+            }
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
             else { // TODO FIXME
                 val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
                     if (dependeeP == ClassLocal)
                         Result(method, NoEntryPoint)
-                    else if (dependeeP == Global &&
-                        (isInstantiable || method.isStatic))
+                    else if (dependeeP == Global && (isInstantiable || method.isStatic))
                         Result(method, IsEntryPoint)
-                    else if (dependeeP == PackageLocal)
+                    else if (dependeeP == Global && !isInstantiable && isAbstractOrInterface ||
+                        dependeeP == PackageLocal)
                         require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
                             leakageContinuation(method)
                         )
