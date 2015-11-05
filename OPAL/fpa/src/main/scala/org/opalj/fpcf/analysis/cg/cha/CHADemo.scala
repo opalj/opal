@@ -22,7 +22,7 @@ object CHADemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val entryPointInfo = true
+        val entryPointInfo = false
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
@@ -63,7 +63,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         println(cbs.statistics)
         val differenceCpa = cpaEP -- oldEntryPoints
-        val differenceOpa = oldEntryPoints.toSet -- opaEP
+        val differenceOpa = opaEP -- oldEntryPoints
 
         if (entryPointInfo) {
             println("\n\nEntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
@@ -75,7 +75,7 @@ object CHADemo extends DefaultOneStepAnalysis {
             }.mkString("\n\n", "\n", "\n\n"))
 
             println("\n\nEntryPoints difference between old and OPA EntryPoints."+
-                "\n these are in the old set but not in the OPA set! (see CallGraphFactory for details)")
+                "\n these are in the OPA set but not in the old one! (see CallGraphFactory for details)")
             println("\n SIZE: "+differenceOpa.size)
             println(differenceOpa.collect {
                 case m: org.opalj.br.Method ⇒
