@@ -34,16 +34,20 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 /**
+ * Common superclass of all TAC unit tests.
+ *
  * @author Michael Eichberg
  */
-class TACTest extends FunSpec with Matchers {
+private[tac] class TACTest extends FunSpec with Matchers {
 
     def compareStatements(expectedStmts: IndexedSeq[Stmt], actualStmts: IndexedSeq[Stmt]): Unit = {
         compareStatements(expectedStmts.toArray, actualStmts.toArray)
     }
 
     def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
-        if (!Arrays.equals(expectedStmts.asInstanceOf[Array[Object]], actualStmts.asInstanceOf[Array[Object]])) {
+        val expected = expectedStmts.asInstanceOf[Array[Object]]
+        val actual = actualStmts.asInstanceOf[Array[Object]]
+        if (!Arrays.equals(expected, actual)) {
             val message =
                 actualStmts.zip(expectedStmts).
                     filter(p ⇒ p._1 != p._2).

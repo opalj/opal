@@ -25,7 +25,7 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val opaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.OPA)
+        val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
 
         OPALLogger.updateLogger(opaProject.logContext, new ConsoleOPALLogger(true, Warn))

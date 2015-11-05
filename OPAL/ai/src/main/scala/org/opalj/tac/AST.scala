@@ -27,15 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package tac
 
-/**
- * Exception raised while the analysis is executed.
- *
- * @author Michael Eichberg
- */
-case class AnalysisException(
-    message: String,
-    cause:   Throwable = null
-) extends RuntimeException(message, cause)
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
+
+trait Call {
+    def declaringClass: ReferenceType
+    def name: String
+    def descriptor: MethodDescriptor
+    def params: List[Expr]
+}
+
+object Call {
+
+    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
+        Some((call.declaringClass, call.name, call.descriptor))
+    }
+}
+

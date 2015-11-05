@@ -68,7 +68,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         /* CPA */
 
-        val cpaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.CPA)
+        val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
         val cpaExecuter = cpaProject.get(FPCFAnalysisManagerKey)
 
         var analysisTimeCPA = org.opalj.util.Seconds.None
@@ -86,7 +86,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         /* OPA */
 
-        val opaProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.OPA)
+        val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val opaExecuter = opaProject.get(FPCFAnalysisManagerKey)
 
         var analysisTimeOPA = org.opalj.util.Seconds.None

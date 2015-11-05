@@ -64,7 +64,7 @@ class SwitchTest extends TACTest {
     describe("The quadruples representation of switch instructions") {
         describe("using no AI results") {
             it("should correctly reflect tableswitch case") {
-                val statements = AsQuadruples(TableSwitchMethod, None)
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -74,7 +74,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 10, IndexedSeq((1, 4), (2, 6), (3, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -103,7 +103,7 @@ class SwitchTest extends TACTest {
             }
 
             it("should correctly reflect lookupswitch case") {
-                val statements = AsQuadruples(LookupSwitchMethod, None)
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -112,7 +112,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 8, IndexedSeq((1, 4), (10, 6))),
+                    Switch(1, 8, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (10, 6))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                     ReturnValue(30, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
@@ -139,7 +139,7 @@ class SwitchTest extends TACTest {
             it("should correctly reflect tableswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, TableSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, TableSwitchMethod, domain)
-                val statements = AsQuadruples(TableSwitchMethod, Some(aiResult))
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -148,7 +148,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 10, IndexedSeq((1, 4), (2, 6), (3, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, DomainValueBasedVar(0, domain.IntegerRange(1) /*int=1*/ )),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -177,7 +177,7 @@ class SwitchTest extends TACTest {
             it("should correctly reflect lookupswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, LookupSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, LookupSwitchMethod, domain)
-                val statements = AsQuadruples(LookupSwitchMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -186,7 +186,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 8, IndexedSeq((1, 4), (10, 6))),
+                    Switch(1, 8, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (10, 6))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                     ReturnValue(30, DomainValueBasedVar(0, domain.IntegerRange(10) /*int=10*/ )),
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),

@@ -97,7 +97,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(ICMPNEMethod, None)
+                val statements = AsQuadruples(method = ICMPNEMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -109,7 +109,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(ICMPEQMethod, None)
+                val statements = AsQuadruples(method = ICMPEQMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -121,7 +121,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-equals case") {
-                val statements = AsQuadruples(ICMPGEMethod, None)
+                val statements = AsQuadruples(method = ICMPGEMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -133,7 +133,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-then case") {
-                val statements = AsQuadruples(ICMPLTMethod, None)
+                val statements = AsQuadruples(method = ICMPLTMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -145,7 +145,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-equals case") {
-                val statements = AsQuadruples(ICMPLEMethod, None)
+                val statements = AsQuadruples(method = ICMPLEMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -157,7 +157,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-then case") {
-                val statements = AsQuadruples(ICMPGTMethod, None)
+                val statements = AsQuadruples(method = ICMPGTMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -200,7 +200,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the not-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPNEMethod, domain)
-                val statements = AsQuadruples(ICMPNEMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPNEMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -220,7 +220,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPEQMethod, domain)
-                val statements = AsQuadruples(ICMPEQMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPEQMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -240,7 +240,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the greater-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPGEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPGEMethod, domain)
-                val statements = AsQuadruples(ICMPGEMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPGEMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -263,7 +263,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the less-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPLTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPLTMethod, domain)
-                val statements = AsQuadruples(ICMPLTMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPLTMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -286,7 +286,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the less-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPLEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPLEMethod, domain)
-                val statements = AsQuadruples(ICMPLEMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPLEMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -309,7 +309,7 @@ class IntegerIfTest extends FunSpec with Matchers {
             it("should correctly reflect the greater-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, ICMPGTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, ICMPGTMethod, domain)
-                val statements = AsQuadruples(ICMPGTMethod, Some(aiResult))
+                val statements = AsQuadruples(method = ICMPGTMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

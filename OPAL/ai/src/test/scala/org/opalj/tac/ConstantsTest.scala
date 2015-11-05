@@ -44,8 +44,8 @@ import org.opalj.ai.domain.l1.DefaultDomain
 /**
  * Tests the conversion of parsed methods to a quadruple representation
  *
- * @author Michael Eichberg
  * @author Roberts Kolosovs
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class ConstantsTest extends FunSpec with Matchers {
@@ -70,7 +70,7 @@ class ConstantsTest extends FunSpec with Matchers {
         describe("using no AI results") {
 
             it("should correctly reflect the integer constants") {
-                val statements = AsQuadruples(IntConstsMethod, None)
+                val statements = AsQuadruples(method = IntConstsMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -116,7 +116,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the long constants") {
-                val statements = AsQuadruples(LongConstsMethod, None)
+                val statements = AsQuadruples(method = LongConstsMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -142,7 +142,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the float constants") {
-                val statements = AsQuadruples(FloatConstsMethod, None)
+                val statements = AsQuadruples(method = FloatConstsMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -172,7 +172,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the double constants") {
-                val statements = AsQuadruples(DoubleConstsMethod, None)
+                val statements = AsQuadruples(method = DoubleConstsMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -198,7 +198,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the null reference constants") {
-                val statements = AsQuadruples(NullRefConstMethod, None)
+                val statements = AsQuadruples(method = NullRefConstMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -220,7 +220,7 @@ class ConstantsTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the other constant loading instructions") {
-                val statements = AsQuadruples(LoadConstsInstrMethod, None)
+                val statements = AsQuadruples(method = LoadConstsInstrMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -259,7 +259,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the integer constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, IntConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, IntConstsMethod, domain)
-                val statements = AsQuadruples(IntConstsMethod, Some(aiResult))
+                val statements = AsQuadruples(method = IntConstsMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -307,7 +307,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the long constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LongConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LongConstsMethod, domain)
-                val statements = AsQuadruples(LongConstsMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongConstsMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -335,7 +335,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the float constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, FloatConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, FloatConstsMethod, domain)
-                val statements = AsQuadruples(FloatConstsMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatConstsMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -367,7 +367,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the double constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, DoubleConstsMethod)
                 val aiResult = BaseAI(ConstantsClassFile, DoubleConstsMethod, domain)
-                val statements = AsQuadruples(DoubleConstsMethod, Some(aiResult))
+                val statements = AsQuadruples(method = DoubleConstsMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -395,7 +395,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the null reference constants") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, NullRefConstMethod)
                 val aiResult = BaseAI(ConstantsClassFile, NullRefConstMethod, domain)
-                val statements = AsQuadruples(NullRefConstMethod, Some(aiResult))
+                val statements = AsQuadruples(method = NullRefConstMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -419,7 +419,7 @@ class ConstantsTest extends FunSpec with Matchers {
             it("should correctly reflect the other constant loading instructions") {
                 val domain = new DefaultDomain(project, ConstantsClassFile, LoadConstsInstrMethod)
                 val aiResult = BaseAI(ConstantsClassFile, LoadConstsInstrMethod, domain)
-                val statements = AsQuadruples(LoadConstsInstrMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LoadConstsInstrMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

@@ -53,7 +53,7 @@ trait Property {
      * The id uniquely identifies this property's category. All property objects of the
      * same kind have to use the same id which is guaranteed since they share the same `PropertyKey`
      */
-    def id: Int = key.id
+    final def id: Int = key.id
 
     /**
      * Returns `true` if the current property may be refined in the future and, hence,

@@ -517,6 +517,7 @@ class PropertyStore private (
      * 		return `Some(Property)`.
      *
      */
+    // UNTESTED!!!
     def update(e: Entity, pk: PropertyKey, u: Option[Property] ⇒ Option[Property]): Unit = {
         accessEntity {
             val lps = data.get(e)
@@ -545,7 +546,7 @@ class PropertyStore private (
                             if (newP.isFinal) FinalUpdate else IntermediateUpdate
                         )
                     case None ⇒
-                    // nothing to do
+                    // Nothing to do as the update didn't reveal anything new!
                 }
             }
         }
@@ -1008,10 +1009,10 @@ class PropertyStore private (
         //     which no computation exits.
         private[this] def handleUnsatisfiedDependencies(): Unit = {
             /*
-        		 * Returns the list of observers related to the given entity and property kind.
-        		 * I.e., the list of observers on those elements that are needed to compute the
-        		 * given property kind.
-        		 */
+      		 * Returns the list of observers related to the given entity and property kind.
+       		 * I.e., the list of observers on those elements that are needed to compute the
+       		 * given property kind.
+       		 */
             def getDependeeObservers(e: Entity, pkId: Int): Observers = {
                 val value = data.get(e)
                 if (value eq null)
@@ -1025,8 +1026,6 @@ class PropertyStore private (
                 observers
             }
 
-            // GIVEN: data: JIDMap[Entity,PropertyStoreValue = (ReentrantReadWriteLock, Properties = OArrayMap[(Property, Observers)])]
-            // GIVEN: observers: new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
             val observers = store.observers
 
             val indirectlyIncomputableEPKs = HSet.empty[EPK]
@@ -1037,29 +1036,49 @@ class PropertyStore private (
             // is a knot (which has no outgoing dependency).
             val cyclicComputableEPKCandidates = HSet.empty[EPK]
 
-            // Let's determine all EPKs that have a dependency on an incomputableEPK
-            // (They may be in a strongly connected component, but we don't care about
-            // these, because they may still be subject to some refinement.)
-            def determineIncomputableEPKs(dependerEPK: EPK): Unit = {
+            val directlyIncomputableEPKs = HSet.empty[EPK]
+
+            /*
+             * @param epks The set of EPKs which have a dependency on dependerEPK.
+             * @return Those epks that are newly added to set epks. If epks is initially empty
+             * 		the returned list and the given set epks contain the same elements.
+             */
+            def determineDependentIncomputableEPKs(
+                dependerEPK: EPK,
+                epks:        HSet[EPK]
+            ): List[EPK] = {
+                var newDependentEPKs = List.empty[EPK]
+                if (epks.add(dependerEPK)) {
+                    // make sure that the start epk is in the list...
+                    newDependentEPKs = dependerEPK :: newDependentEPKs
+                }
                 var worklist = List(dependerEPK)
                 while (worklist.nonEmpty) {
                     val dependerEPK = worklist.head
                     worklist = worklist.tail
-                    val ps = data.get(dependerEPK.e)._2(dependerEPK._2.id)
-                    if ((ps ne null) && (ps._2 ne null)) {
-                        val os = ps._2
+                    val pOs = data.get(dependerEPK.e)._2(dependerEPK._2.id)
+                    if ((pOs ne null) && (pOs._2 ne null)) {
+                        val os = pOs._2
                         os foreach { o ⇒
                             val dependerEPK = o.depender
-                            if (indirectlyIncomputableEPKs.add(dependerEPK)) {
-                                cyclicComputableEPKCandidates -= dependerEPK
+                            if (epks.add(dependerEPK)) {
+                                newDependentEPKs = dependerEPK :: newDependentEPKs
                                 worklist = dependerEPK :: worklist
                             }
                         }
                     }
                 }
+                newDependentEPKs
             }
 
-            val directlyIncomputableEPKs = HSet.empty[EPK]
+            // Let's determine all EPKs that have a dependency on an incomputableEPK
+            // (They may be in a strongly connected component, but we don't care about
+            // these, because they may still be subject to some refinement.)
+            def determineIncomputableEPKs(dependerEPK: EPK): Unit = {
+                cyclicComputableEPKCandidates --=
+                    determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
+            }
+
             observers.entrySet().asScala foreach { e ⇒
                 val dependerEPK = e.getKey
                 if (!indirectlyIncomputableEPKs.contains(dependerEPK)) {
@@ -1087,16 +1106,33 @@ class PropertyStore private (
                     }
                 }
             }
+
+            // The algorithm used to compute the scc is described in/inspired by:
+            // Information Processing Letters 74 (2000) 107–114
+            // Path-based depth-first search for strong and biconnected components
+            // Harold N. Gabow 1
+            // Department of Computer Science, University of Colorado at Boulder
             //
-            //            println("Store..."+store.toString)
-            //            println("Directly..."+directlyIncomputableEPKs)
-            //            println("Indirectly..."+indirectlyIncomputableEPKs)
-            //            println("Cyclic..."+cyclicComputableEPKCandidates)
+            // However, we are interested in finding closed sccs; i.e., those strongly connected
+            // components that have no outgoing dependencies.
+
+            println("EPKs in cycle (before splitting) ..."+cyclicComputableEPKCandidates)
+            var cycles: List[HSet[EPK]] = Nil
+            while (cyclicComputableEPKCandidates.nonEmpty) {
+                val epk = cyclicComputableEPKCandidates.head
+                val cycle = HSet.empty[EPK]
+                cyclicComputableEPKCandidates --= determineDependentIncomputableEPKs(epk, cycle)
+                println("cycle            ..."+cycle)
+                println("remaining epks   ..."+cyclicComputableEPKCandidates)
+                cycles = cycle :: cycles
+            }
+            println("Cyclic (after splitting)  ..."+cyclicComputableEPKCandidates)
+            println("Cycles:\n"+cycles.mkString("\n"))
 
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
-            if (useFallbackForIncomputableProperties) {
+            if (directlyIncomputableEPKs.nonEmpty && useFallbackForIncomputableProperties) {
                 if (debug) OPALLogger.debug(
                     "analysis progress",
                     s"fallback is used for ${directlyIncomputableEPKs.size} entities"

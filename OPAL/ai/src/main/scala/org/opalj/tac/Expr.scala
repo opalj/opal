@@ -185,6 +185,40 @@ case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends E
     final def cTpe = ComputationalTypeInt
 }
 
+sealed trait FunctionCall extends Call with Expr {
+    final def cTpe = descriptor.returnType.computationalType
+}
+
+sealed trait InstanceFunctionCall extends FunctionCall {
+    def receiver: Expr
+}
+
+case class NonVirtualFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceFunctionCall
+
+case class VirtualFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceFunctionCall
+
+case class StaticFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    params:         List[Expr]
+) extends FunctionCall
+
 trait Var extends Expr {
 
     /**

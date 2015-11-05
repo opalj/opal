@@ -61,8 +61,8 @@ object AnalysisModeConfigFactory {
         }
     }
 
-    def updateProject(project: SomeProject, mode: AnalysisMode): SomeProject = {
+    def resetAnalysisMode(project: SomeProject, mode: AnalysisMode): SomeProject = {
         val testConfig = AnalysisModeConfigFactory.createConfig(mode)
-        Project.updateConfig(project, testConfig)
+        Project.recreate(project, testConfig)
     }
 }
