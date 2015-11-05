@@ -206,7 +206,6 @@ class InstantiabilityAnalysis private (
         val nonFinalClass = !classFile.isFinal
 
         if (classFile.isPublic || isOpenLibrary) {
-
             if (classFile.constructors exists { cons ⇒
                 cons.isPublic ||
                     (isOpenLibrary && !cons.isPrivate) ||

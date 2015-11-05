@@ -161,21 +161,18 @@ class SimpleInstantiabilityAnalysis private (
         val nonFinalClass = !classFile.isFinal
 
         if (classFile.isPublic || isOpenLibrary) {
-
-            // TODO resolve non-local return
-            classFile.constructors foreach { cons ⇒
-                if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
-                    return EP(classFile, Instantiable)
-                else if (nonFinalClass &&
-                    ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+            if (classFile.constructors exists { cons ⇒
+                cons.isPublic ||
+                    (isOpenLibrary && !cons.isPrivate) ||
                     //If the class not final and public or we analyze an open library we have
                     //to assume that a subclass is created and instantiated later on.
                     //Hence, every time a subclass is instantiated all superclass's have to be
                     //considered instantiated as well.
-                    return EP(classFile, Instantiable)
-            }
+                    (nonFinalClass && ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+            })
+                return EP(classFile, Instantiable);
         }
-
+        
         return EP(classFile, NotInstantiable)
     }
 }
