@@ -32,6 +32,8 @@ package tac
 import org.opalj.br._
 
 /**
+ * Super trait of all quadruple statements.
+ *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
@@ -40,12 +42,19 @@ sealed trait Stmt {
     /**
      * The program counter of the original underyling bytecode instruction.
      *
-     * The pc is independent of the index of the statement in the statements array!
+     * This `pc` is independent of the
+     * (implicit) `index` of the statement in the generated statements array!
      */
     def pc: UShort
 
     /**
-     * Remaps the indexes
+     * Called by the framework to enable each statement/expression to re-map the target
+     * `pc` of a(n unconditional) jump instruction to the index of the respective quadruple
+     * statement in the statements array.
+     *
+     * ==Example==
+     * The bytecode instruction:  `5: goto 10` (where 5 is the original `pc` and `10` is
+     * the branchoffset is re-mapped to a `goto pcToIndex(5+10)` quadruples statement.
      */
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit
 }
@@ -61,44 +70,72 @@ case class If(
         private[tac] var target: Int
 ) extends Stmt {
 
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
+
+    /**
+     * The target statement that is executed if the condition evaluates to `true`.
+     *
+     * @note Calling this method is only supported after the quadruples representation
+     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     */
+    def targetStmt: Int = target
+}
+
+/**
+ * @param target First the `pc` (absolute) of the target instruction in the
+ *          original bytecode array; then the index of the respective quadruples
+ *          instruction.
+ */
+case class Goto(pc: PC, private var target: Int) extends Stmt {
+
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
 
-    // Calling this method is only supported after the quadruples representation
-    // is created and the remapping of pcs to instruction indexes has happened!
-    def targetStmt: Int = target
-}
-
-case class Goto(pc: PC, private[tac] var target: Int) extends Stmt {
-
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        target = pcToIndex(target)
-    }
-
-    // Calling this method is only supported after the quadruples representation
-    // is created and the remapping of pcs to instruction indexes has happened!
+    /**
+     * @note Calling this method is only supported after the quadruples representation
+     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     *
+     */
     def targetStmt: Int = target
 
 }
 
+case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+}
+
+/**
+ * A JSR Instruction is mapped to two instructions:
+ *  1. the jsr instruction which performs a jump
+ *  1. an assigment instruction at the jump target that initializes the local variable that
+ *  	is used to store the return address.
+ *
+ * @param target At creation time the `pc` (absolute) of the target instruction in the
+ *          original bytecode array; then the index of the respective quadruples
+ *          instruction.
+ */
 case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
 
-    // Calling this method is only supported after the quadruples representation
-    // is created and the remapping of pcs to instruction indexes has happened!
+    /**
+     * The first statement of the called subroutine.
+     *
+     * @note Calling this method is only supported after the quadruples representation
+     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     */
     def targetStmt: Int = target
 
 }
 
 case class Switch(
-        pc:                             PC,
-        index:                          Expr,
-        private[tac] var defaultTarget: PC,
-        private[tac] var npairs:        IndexedSeq[(Int, PC)]
+        pc:                        PC,
+        private var defaultTarget: PC,
+        index:                     Expr,
+        private var npairs:        IndexedSeq[(Int, PC)]
 ) extends Stmt {
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
@@ -123,7 +160,7 @@ sealed trait SimpleStmt extends Stmt {
     final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
-case class Assignment(pc: PC, target: Var, source: Expr) extends SimpleStmt
+case class Assignment(pc: PC, targetVar: Var, expr: Expr) extends SimpleStmt
 
 case class ReturnValue(pc: PC, expr: Expr) extends SimpleStmt
 
@@ -131,13 +168,16 @@ case class Return(pc: PC) extends SimpleStmt
 
 case class Nop(pc: PC) extends SimpleStmt
 
-case class EmptyStmt(pc: PC) extends SimpleStmt
-
 case class MonitorEnter(pc: PC, objRef: Expr) extends SimpleStmt
 
 case class MonitorExit(pc: PC, objRef: Expr) extends SimpleStmt
 
-case class ArrayStore(pc: PC, arrayRef: Expr, index: Expr, operandVar: Expr) extends SimpleStmt
+case class ArrayStore(
+    pc:       PC,
+    arrayRef: Expr,
+    index:    Expr,
+    value:    Expr
+) extends SimpleStmt
 
 case class Throw(pc: PC, exception: Expr) extends SimpleStmt
 
@@ -150,19 +190,51 @@ case class PutStatic(
 case class PutField(
     pc:             PC,
     declaringClass: ObjectType, name: String,
-    objRef: Expr, value: Expr
+    objRef: Expr,
+    value:  Expr
 ) extends SimpleStmt
 
-/**
- * Call of a method.
- */
-case class MethodCall(
+sealed trait MethodCall extends Call with SimpleStmt
+
+sealed trait InstanceMethodCall extends MethodCall {
+    def receiver: Expr
+}
+
+object InstanceMethodCall {
+
+    def unapply(call: InstanceMethodCall): Some[(PC, ReferenceType, String, MethodDescriptor, Expr, List[Expr])] = {
+        import call._
+        Some((
+            pc,
+            declaringClass, name, descriptor,
+            receiver,
+            params
+        ))
+    }
+}
+
+case class NonVirtualMethodCall(
     pc:             PC,
     declaringClass: ReferenceType,
     name:           String,
     descriptor:     MethodDescriptor,
-    receiver:       Option[Expr],
-    params:         List[Expr],
-    target:         Option[Var]
-) extends SimpleStmt
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceMethodCall
 
+case class VirtualMethodCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceMethodCall
+
+case class StaticMethodCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    params:         List[Expr]
+) extends MethodCall

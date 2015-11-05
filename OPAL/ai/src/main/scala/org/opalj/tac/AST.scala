@@ -29,31 +29,20 @@
 package org.opalj
 package tac
 
-import java.util.Arrays
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 
-/**
- * Common superclass of all TAC unit tests.
- *
- * @author Michael Eichberg
- */
-private[tac] class TACTest extends FunSpec with Matchers {
+trait Call {
+    def declaringClass: ReferenceType
+    def name: String
+    def descriptor: MethodDescriptor
+    def params: List[Expr]
+}
 
-    def compareStatements(expectedStmts: IndexedSeq[Stmt], actualStmts: IndexedSeq[Stmt]): Unit = {
-        compareStatements(expectedStmts.toArray, actualStmts.toArray)
-    }
+object Call {
 
-    def compareStatements(expectedStmts: Array[Stmt], actualStmts: Array[Stmt]): Unit = {
-        val expected = expectedStmts.asInstanceOf[Array[Object]]
-        val actual = actualStmts.asInstanceOf[Array[Object]]
-        if (!Arrays.equals(expected, actual)) {
-            val message =
-                actualStmts.zip(expectedStmts).
-                    filter(p ⇒ p._1 != p._2).
-                    map(p ⇒ "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
-                    mkString("Differences:\n", "\n", "\n")
-            fail(message)
-        }
+    def unapply(call: Call): Some[(ReferenceType, String, MethodDescriptor)] = {
+        Some((call.declaringClass, call.name, call.descriptor))
     }
 }
+

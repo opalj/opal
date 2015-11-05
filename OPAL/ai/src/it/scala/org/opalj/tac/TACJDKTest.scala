@@ -64,7 +64,7 @@ class TACJDKTest extends FunSpec with Matchers {
                     val (cf, _) = cs
                     cf.methods.filter(_.body.isDefined) foreach { m ⇒
                         try {
-                            ToJavaLike(AsQuadruples(m, None))
+                            ToJavaLike(AsQuadruples(method = m,aiResult = None))
                             successfullyCompleted.incrementAndGet()
                         } catch {
                             case e: Throwable ⇒ this.synchronized {

@@ -32,20 +32,35 @@ package tac
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.collection.mutable.Locals
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br.Method
+import org.opalj.ai.AIResult
+import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.Code
+import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
+ * Converts a list of three address instructions into a Java like representation.
+ *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
 object ToJavaLike {
 
+    private def callToJavaLike(name: String, params: List[Expr]): String = {
+        // TODO Check order...
+        params map { toJavaLikeExpr(_) } mkString (s".$name(", ", ", ")")
+    }
+
     @inline final def toJavaLikeExpr(expr: Expr): String = {
         expr match {
             case dvr: DomainValueBasedVar ⇒ s"${dvr.name} /*${dvr.properties.toString()}*/"
-            case Var(name)                ⇒ name
+            case v @ Var(name) ⇒
+                if (v.cTpe == ComputationalTypeReturnAddress)
+                    name+"/* return address */"
+                else
+                    name
             case Param(_ /*cTpe*/ , name) ⇒ name
             case IntConst(_, value)       ⇒ value.toString
             case LongConst(_, value)      ⇒ value.toString+"l"
@@ -90,6 +105,17 @@ object ToJavaLike {
             case ArrayLength(_, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}.length"
 
+            case StaticFunctionCall(_, declClass, name, descriptor, params) ⇒
+                declClass.toJava + callToJavaLike(name, params)
+
+            case VirtualFunctionCall(_, declClass, name, descriptor, receiver, params) ⇒
+                val call = callToJavaLike(name, params)
+                toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call
+
+            case NonVirtualFunctionCall(_, declClass, name, descriptor, receiver, params) ⇒
+                val call = callToJavaLike(name, params)
+                toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call
+
             case GetStatic(_, declaringClass, name) ⇒
                 s"${declaringClass.toJava}.$name"
 
@@ -105,17 +131,17 @@ object ToJavaLike {
             case Throw(_, exc)               ⇒ s"throw ${toJavaLikeExpr(exc)};"
 
             case Nop(_)                      ⇒ ";"
-            case EmptyStmt(_)                ⇒ ";"
 
             case MonitorEnter(_, objRef)     ⇒ s"monitorenter ${toJavaLikeExpr(objRef)};"
             case MonitorExit(_, objRef)      ⇒ s"monitorexit ${toJavaLikeExpr(objRef)};"
 
             case Goto(_, target)             ⇒ s"goto $target;"
             case JumpToSubroutine(_, target) ⇒ s"jsr $target;"
+            case Ret(_, variable)            ⇒ s"ret ${toJavaLikeExpr(variable)};"
             case If(_, left, cond, right, target) ⇒
                 s"if(${toJavaLikeExpr(left)} $cond ${toJavaLikeExpr(right)}) goto $target;"
 
-            case Switch(_, index, defaultTarget, npairs) ⇒
+            case Switch(_, defaultTarget, index, npairs) ⇒
                 var result = "\n"
                 for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
                 result = result+"    default: goto "+defaultTarget+";\n"
@@ -133,23 +159,16 @@ object ToJavaLike {
             case PutField(_, declaringClass, name, receiver, value) ⇒
                 s"${toJavaLikeExpr(receiver)}/*${declaringClass.toJava}*/.$name = ${toJavaLikeExpr(value)}"
 
-            case MethodCall(_, declClass, name, descriptor, receiver, params, target) ⇒
-                val code = new StringBuffer(256)
+            case StaticMethodCall(_, declClass, name, descriptor, params) ⇒
+                declClass.toJava + callToJavaLike(name, params) + ';'
 
-                if (target.isDefined) code append target.get.name append " = "
+            case VirtualMethodCall(_, declClass, name, descriptor, receiver, params) ⇒
+                val call = callToJavaLike(name, params)
+                toJavaLikeExpr(receiver)+"/*"+declClass.toJava+"*/"+call + ';'
 
-                if (receiver.isDefined) {
-                    code append toJavaLikeExpr(receiver.get)
-                    code append "/*" append declClass.toJava append "*/"
-                } else {
-                    code append declClass.toJava // we have a static method call
-                }
-                code append "." append name
-
-                // TODO Check order...
-                code append (params map { toJavaLikeExpr(_) } mkString ("(", ", ", ")"))
-
-                code append ";" toString ()
+            case NonVirtualMethodCall(_, declClass, name, descriptor, receiver, params) ⇒
+                val call = callToJavaLike(name, params)
+                toJavaLikeExpr(receiver)+"/* (Non-Virtual) "+declClass.toJava+"*/"+call + ';'
         }
     }
 
@@ -187,8 +206,16 @@ object ToJavaLike {
     /**
      * Converts each statement into a Java-like statement.
      */
-    def apply(stmts: IndexedSeq[Stmt], indented: Boolean = true): Array[String] = {
+    def apply(stmts: IndexedSeq[Stmt], indented: Boolean): Array[String] = {
         apply(stmts.toArray, indented)
+    }
+
+    def apply(
+        method:         Method,
+        classHierarchy: ClassHierarchy   = Code.preDefinedClassHierarchy,
+        aiResult:       Option[AIResult] = None
+    ): String = {
+        ToJavaLike(AsQuadruples(method, classHierarchy, aiResult))
     }
 
 }
