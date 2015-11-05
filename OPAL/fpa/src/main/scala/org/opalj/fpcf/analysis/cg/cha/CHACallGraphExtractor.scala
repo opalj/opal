@@ -199,7 +199,7 @@ class CHACallGraphExtractor(
                 else
                     return cbsIndex.findMethods(name, descriptor);
             }
-           
+
             Iterable.empty[Method]
         }
     }
