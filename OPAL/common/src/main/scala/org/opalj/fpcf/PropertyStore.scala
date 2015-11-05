@@ -1075,7 +1075,7 @@ class PropertyStore private (
             // (They may be in a strongly connected component, but we don't care about
             // these, because they may still be subject to some refinement.)
             def determineIncomputableEPKs(dependerEPK: EPK): Unit = {
-                 cyclicComputableEPKCandidates --=
+                cyclicComputableEPKCandidates --=
                     determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
             }
 
@@ -1107,8 +1107,16 @@ class PropertyStore private (
                 }
             }
 
+            // The algorithm used to compute the scc is described in/inspired by:
+            // Information Processing Letters 74 (2000) 107–114
+            // Path-based depth-first search for strong and biconnected components
+            // Harold N. Gabow 1
+            // Department of Computer Science, University of Colorado at Boulder
+            //
+            // However, we are interested in finding closed sccs; i.e., those strongly connected
+            // components that have no outgoing dependencies.
+
             println("EPKs in cycle (before splitting) ..."+cyclicComputableEPKCandidates)
-            // split the cycles
             var cycles: List[HSet[EPK]] = Nil
             while (cyclicComputableEPKCandidates.nonEmpty) {
                 val epk = cyclicComputableEPKCandidates.head
