@@ -55,7 +55,7 @@ class EntryPointsAnalysis private (
         extends {
             private[this] final val AccessKey = ProjectAccessibility.Key
             private[this] final val InstantiabilityKey = Instantiability.Key
-            private[this] final val LibraryLeakageKey = CallableFromClassesInOtherPackages.Key
+            private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.Key
             private[this] final val SerializableType = ObjectType.Serializable
         } with DefaultFPCFAnalysis[Method](
             project, EntryPointsAnalysis.entitySelector
@@ -87,7 +87,7 @@ class EntryPointsAnalysis private (
                 return ImmediateResult(method, IsEntryPoint)
             else {
                 import propertyStore.require
-                require(method, propertyKey, method, LibraryLeakageKey)(
+                require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
                     leakageContinuation(method)
                 )
             }
@@ -121,7 +121,7 @@ class EntryPointsAnalysis private (
                         (isInstantiable || method.isStatic))
                         Result(method, IsEntryPoint)
                     else if (dependeeP == PackageLocal)
-                        require(method, propertyKey, method, LibraryLeakageKey)(
+                        require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
                             leakageContinuation(method)
                         )
                     else Result(method, NoEntryPoint)

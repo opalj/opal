@@ -43,9 +43,13 @@ import org.opalj.fpcf.test.annotations.EntryPointProperty;
  */
 class CouldBeCallIfThisClassEscapes implements InterfaceWithEntryPoint {
 	
-	@EntryPointProperty(
+	@@EntryPointProperty(
 			cpa=EntryPointKeys.IsEntryPoint)
 	public void defaultMethodAsEntryPoint() {
-
+		doesNotEscape();
+	}
+	
+	private void doesNotEscape(){
+		new CouldBeCallIfThisClassEscapes();
 	}
 }

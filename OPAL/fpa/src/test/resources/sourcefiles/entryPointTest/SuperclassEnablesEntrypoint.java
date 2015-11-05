@@ -47,6 +47,9 @@ public class SuperclassEnablesEntrypoint {
 
 class MethodBecomeEntryPointThroughSuperclass extends SuperclassEnablesEntrypoint {
 	
+	/* Since no instance is created is can not escape throug the super class
+	 * This test depends stricly on the instantiability analysis.
+	 * */
 	@EntryPointProperty
 	public void publicMethod(){
 		
