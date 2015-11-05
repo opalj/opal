@@ -38,13 +38,15 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 
 sealed trait Instantiability extends Property {
-    final def key = Instantiability.Key // All instances have to share the SAME key!
+
+    final def key = Instantiability.key // All instances have to share the SAME key!
+
 }
 
-object Instantiability {
-    final val Key = PropertyKey.create("Instantiability", Instantiable)
+object Instantiability extends PropertyMetaInformation {
 
-    final val Id = Key.id
+    final val key = PropertyKey.create("Instantiability", Instantiable)
+
 }
 
 case object NotInstantiable extends Instantiability { final val isRefineable = false }
@@ -99,7 +101,7 @@ class InstantiabilityAnalysis private (
     InstantiabilityAnalysis.entitySelector
 ) {
 
-    val propertyKey = Instantiability.Key
+    val propertyKey = Instantiability.key
 
     private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile
@@ -111,13 +113,13 @@ class InstantiabilityAnalysis private (
         var i = 0
         while (i < methods.length) {
             val curMethod = methods(i)
-            val factoryMethod = propertyStore(curMethod, FactoryMethod.Key)
+            val factoryMethod = propertyStore(curMethod, FactoryMethod.key)
             factoryMethod match {
                 case Some(IsFactoryMethod)  ⇒ return ImmediateResult(classFile, Instantiable);
                 case Some(NotFactoryMethod) ⇒ /* Do nothing */
                 case _ ⇒
                     assert(factoryMethod.isEmpty)
-                    dependees += EPK(curMethod, FactoryMethod.Key)
+                    dependees += EPK(curMethod, FactoryMethod.key)
             }
             i += 1
         }
@@ -192,30 +194,29 @@ class InstantiabilityAnalysis private (
             // A class that either never has any constructor (interfaces)
             // or that must have at least one non-private constructor to make
             // sense at all.
-            return ImmediateResult(classFile, NotInstantiable)
+            return ImmediateResult(classFile, NotInstantiable);
 
         val classType = classFile.thisType
 
         if (isSubtypeOf(classType, ObjectType.Serializable).isYesOrUnknown &&
             classFile.hasDefaultConstructor)
             //if the class is Serializable or it is unknown, we have to count it as instantiated.
-            return ImmediateResult(classFile, Instantiable)
+            return ImmediateResult(classFile, Instantiable);
 
         val nonFinalClass = !classFile.isFinal
 
         if (classFile.isPublic || isOpenLibrary) {
 
-            classFile.constructors foreach { cons ⇒
-                if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
-                    return ImmediateResult(classFile, Instantiable)
-                else if (nonFinalClass &&
-                    ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+            if (classFile.constructors exists { cons ⇒
+                cons.isPublic ||
+                    (isOpenLibrary && !cons.isPrivate) ||
                     //If the class not final and public or we analyze an open library we have
                     //to assume that a subclass is created and instantiated later on.
                     //Hence, every time a subclass is instantiated all superclass's have to be
                     //considered instantiated as well.
-                    return ImmediateResult(classFile, Instantiable)
-            }
+                    (nonFinalClass && ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+            })
+                return ImmediateResult(classFile, Instantiable);
         }
 
         // NOW: 
@@ -238,9 +239,9 @@ object InstantiabilityAnalysis
         case cf: ClassFile ⇒ cf
     }
 
-    protected[analysis] def derivedProperties = Set(Instantiability.Id)
+    protected[analysis] def derivedProperties = Set(Instantiability)
 
-    override protected[analysis] def usedProperties = Set(FactoryMethod.Id)
+    override protected[analysis] def usedProperties = Set(FactoryMethod)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new InstantiabilityAnalysis(project)

@@ -78,14 +78,13 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  * @author Michael Eichberg
  */
 class PurityAnalysis private (
-    project:        SomeProject,
-    entitySelector: PartialFunction[Entity, Method]
-)
-        extends AbstractFPCFAnalysis(project, entitySelector) {
+        val project:        SomeProject,
+        val entitySelector: PartialFunction[Entity, Method]
+) extends AbstractFPCFAnalysis(project, entitySelector) {
 
-    final val Purity = org.opalj.fpcf.analysis.Purity.Key
+    final val Purity = org.opalj.fpcf.analysis.Purity.key
 
-    final val Mutability = org.opalj.fpcf.analysis.Mutability.Key
+    final val Mutability = org.opalj.fpcf.analysis.Mutability.key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
@@ -252,9 +251,7 @@ class PurityAnalysis private (
     /**
      * Determines the purity of the given method.
      */
-    def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
+    def determineProperty(method: Method): PropertyComputationResult = {
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
@@ -289,6 +286,7 @@ class PurityAnalysis private (
 }
 
 object PurityAnalysis extends FPCFAnalysisRunner[PurityAnalysis] {
+
     private[PurityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract ⇒ m
     }
@@ -299,7 +297,7 @@ object PurityAnalysis extends FPCFAnalysisRunner[PurityAnalysis] {
 
     override def recommendations = Set(MutabilityAnalysis)
 
-    override protected[analysis] def derivedProperties = Set(Purity.Id)
+    override protected[analysis] def derivedProperties = Set(Purity)
 
-    override protected[analysis] def usedProperties = Set(Mutability.Id)
+    override protected[analysis] def usedProperties = Set(Mutability)
 }

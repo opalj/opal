@@ -50,19 +50,18 @@ case class MethodComplexity(value: Int) extends Property {
 
     assert(value >= 0)
 
-    final def key = MethodComplexity.Key // All instances have to share the SAME key!
+    final def key = MethodComplexity.key // All instances have to share the SAME key!
 
     final val isRefineable = false
 
 }
 
-object MethodComplexity {
+object MethodComplexity extends PropertyMetaInformation {
 
     final val TooComplex = MethodComplexity(Int.MaxValue)
 
-    final val Key = PropertyKey.create("MethodComplexity", TooComplex)
+    final val key = PropertyKey.create("MethodComplexity", TooComplex)
 
-    final val Id = Key.id
 }
 
 /**

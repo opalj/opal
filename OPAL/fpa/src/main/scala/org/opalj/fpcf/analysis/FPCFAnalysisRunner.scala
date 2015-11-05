@@ -86,7 +86,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysisManager]] to guarantee the save
      * execution of all FPCFAnalysis.
      */
-    protected[analysis] def derivedProperties: Set[Int]
+    protected[analysis] def derivedProperties: Set[PropertyKind]
 
     /**
      * Returns a set of integers that contains the id of every [[Property]] or [SetProperty] that
@@ -100,7 +100,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * Self usages don't have to be documented since the analysis will derive this property during
      * the computation.
      */
-    protected[analysis] def usedProperties: Set[Int] = Set.empty[Int]
+    protected[analysis] def usedProperties: Set[PropertyKind] = Set.empty
 
     /**
      * Starts the analysis for the given `project`.

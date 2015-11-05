@@ -32,6 +32,7 @@ package analysis
 
 import net.ceedubs.ficus.Ficus._
 
+import scala.collection.mutable
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
@@ -42,22 +43,22 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  */
 class FPCFAnalysisManager private[analysis] (project: SomeProject) {
 
-    // Accesses to this field have to be synchronized
-    private[this] final val derivedProperties = scala.collection.mutable.Set.empty[Int]
-
     final val debug = {
         val setting = project.config.as[Option[Boolean]]("org.opalj.fcpf.analysis.manager.debug")
         setting.getOrElse(false)
     }
 
+    // Accesses to this field have to be synchronized
+    private[this] final val derivedProperties = mutable.Set.empty[Int]
+
     private[this] def registerProperties(
         analysisRunner: FPCFAnalysisRunner[_]
     ): Unit = derivedProperties.synchronized {
         assert(
-            !analysisRunner.derivedProperties.exists { id ⇒ derivedProperties.contains(id) },
-            "FPCFAnalysisManager: the property has already been derived"
+            !analysisRunner.derivedProperties.exists { pKind ⇒ derivedProperties.contains(pKind.id) },
+            s"FPCFAnalysisManager: a property has already been derived ${analysisRunner.derivedProperties}"
         )
-        derivedProperties ++= analysisRunner.derivedProperties
+        derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
     }
 
     private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
@@ -100,26 +101,21 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         }
     }
 
-    def runWithRecommendations(
+    def runWithRecommendations( // TODO ...Recommended
         runner: FPCFAnalysisRunner[_]
     )(
         waitOnCompletion: Boolean = true
     ): Unit = {
-        val analyses = (runner.recommendations ++
-            runner.requirements).filterNot { ar ⇒ isDerived(ar.derivedProperties) }
+        val analyses =
+            (runner.recommendations ++ runner.requirements).
+                filterNot { ar ⇒ isDerived(ar.derivedProperties) }
         runAll(analyses)(false)
         run(runner, true)
     }
 
-    def isDerived(id: Int): Boolean = derivedProperties.synchronized {
-        derivedProperties contains id
+    def isDerived(pKind: PropertyKind): Boolean = derivedProperties.synchronized {
+        derivedProperties contains pKind.id
     }
 
-    def isDerived(ids: Set[Int]): Boolean = {
-        ids foreach { id ⇒
-            if (isDerived(id))
-                return true;
-        }
-        false
-    }
+    def isDerived(pKinds: Set[PropertyKind]): Boolean = pKinds exists (pKind ⇒ isDerived(pKind))
 }

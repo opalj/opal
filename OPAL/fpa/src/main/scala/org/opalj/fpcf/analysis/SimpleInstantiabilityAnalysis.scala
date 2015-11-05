@@ -77,16 +77,13 @@ import org.opalj.log.OPALLogger
  */
 class SimpleInstantiabilityAnalysis private (
     project: SomeProject
-)
-        extends AbstractGroupedFPCFAnalysis[String, ClassFile](
-            project,
-            SimpleInstantiabilityAnalysis.groupBy,
-            SimpleInstantiabilityAnalysis.entitySelector
-        ) with CodeAnalysisMode {
+) extends AbstractGroupedFPCFAnalysis[String, ClassFile](
+    project,
+    SimpleInstantiabilityAnalysis.groupBy,
+    SimpleInstantiabilityAnalysis.entitySelector
+) with CodeAnalysisMode {
 
-    def determineProperty(
-        key: String, classFiles: Seq[ClassFile]
-    ): Traversable[EP] = {
+    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP] = {
 
         var instantiatedClasses = Set.empty[EP]
 
@@ -131,7 +128,9 @@ class SimpleInstantiabilityAnalysis private (
                     }
                     pc = body.pcOfNextInstruction(pc)
                 }
-            } else instantiatedClasses += EP(cf, Instantiable)
+            } else {
+                instantiatedClasses += EP(cf, Instantiable)
+            }
         }
 
         val usedClassFiles = instantiatedClasses.collect { case EP(cf: ClassFile, _) ⇒ cf }
@@ -163,6 +162,7 @@ class SimpleInstantiabilityAnalysis private (
 
         if (classFile.isPublic || isOpenLibrary) {
 
+            // TODO resolve non-local return
             classFile.constructors foreach { cons ⇒
                 if (cons.isPublic || (isOpenLibrary && !cons.isPrivate))
                     return EP(classFile, Instantiable)
@@ -198,5 +198,5 @@ object SimpleInstantiabilityAnalysis
         new SimpleInstantiabilityAnalysis(project)
     }
 
-    override protected[analysis] def derivedProperties = Set(Instantiability.Id)
+    override protected[analysis] def derivedProperties = Set(Instantiability)
 }

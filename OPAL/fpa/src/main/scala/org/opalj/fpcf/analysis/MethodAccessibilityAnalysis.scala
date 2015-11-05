@@ -37,13 +37,13 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  */
 sealed trait ProjectAccessibility extends Property {
-    final def key = ProjectAccessibility.Key
+    final def key = ProjectAccessibility.key
 }
 
-object ProjectAccessibility {
-    final val Key = PropertyKey.create("Accessible", Global)
+object ProjectAccessibility extends PropertyMetaInformation {
 
-    final val Id = Key.id
+    final val key = PropertyKey.create("Accessible", Global)
+
 }
 
 case object Global extends ProjectAccessibility { final val isRefineable = false }
@@ -101,6 +101,7 @@ class MethodAccessibilityAnalysis private[analysis] (
         var subtypes = classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
+            // TODO resolve non-local return if it is indeed one...
             project.classFile(subtype) match {
                 case Some(subclass) ⇒
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
@@ -143,9 +144,12 @@ class MethodAccessibilityAnalysis private[analysis] (
                 Result(method, Global)
         }
 
-        import propertyStore.require
-        require(method, MethodAccessibilityAnalysis.propertyKey,
-            method, CallableFromClassesInOtherPackages.Key)(c);
+        propertyStore.require(
+            method, MethodAccessibilityAnalysis.propertyKey,
+            method, CallableFromClassesInOtherPackages.key
+        )(
+            c
+        )
     }
 }
 
@@ -155,7 +159,7 @@ class MethodAccessibilityAnalysis private[analysis] (
 object MethodAccessibilityAnalysis
         extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
 
-    private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.Key
+    private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.key
 
     private[MethodAccessibilityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
@@ -167,9 +171,9 @@ object MethodAccessibilityAnalysis
 
     override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
 
-    override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
+    override protected[analysis] def derivedProperties = Set(ProjectAccessibility)
 
-    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages.Id)
+    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages)
 }
 
 /**
@@ -187,7 +191,7 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccess
 
     override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
 
-    override protected[analysis] def derivedProperties = Set(ProjectAccessibility.Id)
+    override protected[analysis] def derivedProperties = Set(ProjectAccessibility)
 
-    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages.Id)
+    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages)
 }

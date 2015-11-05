@@ -86,16 +86,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 final class ClassFile private (
-    val version:        UShortPair,
-    val accessFlags:    Int,
-    val thisType:       ObjectType,
-    val superclassType: Option[ObjectType],
-    val interfaceTypes: Seq[ObjectType],
-    val fields:         Fields,
-    val methods:        Methods,
-    val attributes:     Attributes
-)
-        extends ConcreteSourceElement {
+        val version:        UShortPair,
+        val accessFlags:    Int,
+        val thisType:       ObjectType,
+        val superclassType: Option[ObjectType],
+        val interfaceTypes: Seq[ObjectType],
+        val fields:         Fields,
+        val methods:        Methods,
+        val attributes:     Attributes
+) extends ConcreteSourceElement {
 
     import ClassFile._
 
@@ -123,9 +122,21 @@ final class ClassFile private (
 
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
+    /**
+     * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
+     * will return `true`.
+     *
+     * @note There is no private or protected visibility.
+     */
     def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
-    def nonPublic: Boolean = !isPublic
+    /**
+     * `true` if the class file has package visibility. If `false` the method `isPublic`
+     * will return `true`.
+     *
+     * @note There is no private or protected visibility.
+     */
+    def isPackageVisible: Boolean = !isPublic
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 

@@ -72,7 +72,7 @@ object InstantiableClassesIndex {
 
     def apply(project: SomeProject): InstantiableClassesIndex = {
         val fpcfManager = project.get(FPCFAnalysisManagerKey)
-        if (!fpcfManager.isDerived(Instantiability.Id))
+        if (!fpcfManager.isDerived(Instantiability))
             fpcfManager.run(SimpleInstantiabilityAnalysis, true)
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)

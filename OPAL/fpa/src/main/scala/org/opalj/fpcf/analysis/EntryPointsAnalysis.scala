@@ -36,32 +36,31 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
 sealed trait EntryPoint extends Property {
-    final def key = EntryPoint.Key // All instances have to share the SAME key!
+
+    final def key = EntryPoint.key // All instances have to share the SAME key!
+
 }
 
-object EntryPoint {
-    final val Key = PropertyKey.create("EntryPoint", IsEntryPoint)
-    final val Id = Key.id
+object EntryPoint extends PropertyMetaInformation {
+
+    final val key = PropertyKey.create("EntryPoint", IsEntryPoint)
+
 }
 
 case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
 
-//
 case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
 
 class EntryPointsAnalysis private (
     project: SomeProject
-)
-        extends {
-            private[this] final val AccessKey = ProjectAccessibility.Key
-            private[this] final val InstantiabilityKey = Instantiability.Key
-            private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.Key
-            private[this] final val SerializableType = ObjectType.Serializable
-        } with DefaultFPCFAnalysis[Method](
-            project, EntryPointsAnalysis.entitySelector
-        ) {
+) extends {
+    private[this] final val AccessKey = ProjectAccessibility.key
+    private[this] final val InstantiabilityKey = Instantiability.key
+    private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
+    private[this] final val SerializableType = ObjectType.Serializable
+} with DefaultFPCFAnalysis[Method](project, EntryPointsAnalysis.entitySelector) {
 
-    val propertyKey = EntryPoint.Key
+    val propertyKey = EntryPoint.key
 
     @inline private[this] def leakageContinuation(method: Method): Continuation = {
         (dependeeE: Entity, dependeeP: Property) ⇒
@@ -74,9 +73,7 @@ class EntryPointsAnalysis private (
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
      */
-    def determineProperty(
-        method: Method
-    ): PropertyComputationResult = {
+    def determineProperty(method: Method): PropertyComputationResult = {
 
         val classFile = project.classFile(method)
 
@@ -113,7 +110,7 @@ class EntryPointsAnalysis private (
             val isInstantiable = (dependeeP == Instantiable)
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
-            else {
+            else { // TODO FIXME
                 val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
                     if (dependeeP == ClassLocal)
                         Result(method, NoEntryPoint)
@@ -145,13 +142,20 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
         new EntryPointsAnalysis(project)
     }
 
-    override protected[analysis] def derivedProperties = Set(EntryPoint.Id)
+    override protected[analysis] def derivedProperties =
+        Set(EntryPoint)
 
-    override protected[analysis] def usedProperties = Set(ProjectAccessibility.Id, CallableFromClassesInOtherPackages.Id, Instantiability.Id)
+    override protected[analysis] def usedProperties =
+        Set(ProjectAccessibility, CallableFromClassesInOtherPackages, Instantiability)
 
     /*
      * This recommendations are not transitive. All (even indirect) dependencies are listed here.
      */
     //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
-    override def recommendations = Set(SimpleInstantiabilityAnalysis, CallableFromClassesInOtherPackagesAnalysis, MethodAccessibilityAnalysis)
+    override def recommendations =
+        Set(
+            SimpleInstantiabilityAnalysis,
+            CallableFromClassesInOtherPackagesAnalysis,
+            MethodAccessibilityAnalysis
+        )
 }

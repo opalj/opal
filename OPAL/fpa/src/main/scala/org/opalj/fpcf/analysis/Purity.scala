@@ -39,18 +39,18 @@ sealed trait Purity extends Property {
      * Returns the key used by all `Purity` properties.
      */
     // All instances have to share the SAME key!
-    final def key = Purity.Key
+    final def key = Purity.key
 
 }
 /**
  * Common constants use by all [[Purity]] properties associated with methods.
  */
-object Purity {
+object Purity extends PropertyMetaInformation {
 
     /**
      * The key associated with every purity property.
      */
-    final val Key =
+    final val key =
         PropertyKey.create(
             // The unique name of the property.
             "Purity",
@@ -58,8 +58,6 @@ object Purity {
             // to (directly) compute the respective property.
             MaybePure
         )
-
-    final val Id = Key.id
 }
 
 /**
