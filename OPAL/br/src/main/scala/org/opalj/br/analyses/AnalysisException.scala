@@ -31,7 +31,7 @@ package br
 package analyses
 
 /**
- * Exception raised while the anaylsis is executed.
+ * Exception raised while the analysis is executed.
  *
  * @author Michael Eichberg
  */
