@@ -534,11 +534,11 @@ class Project[Source] private (
      *
      * If the information was not yet required the information is computed and
      * returned. Subsequent calls will directly return the information.
-     * 
-     * @note (Development Time) 
-     * 		Every analysis using [[ProjectInformationKey]]s must list '''All 
+     *
+     * @note (Development Time)
+     * 		Every analysis using [[ProjectInformationKey]]s must list '''All
      * 		requirements; failing to specify a requirement can end up in a deadlock.'''
-     * 
+     *
      * @see [[ProjectInformationKey]] for further information.
      */
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {

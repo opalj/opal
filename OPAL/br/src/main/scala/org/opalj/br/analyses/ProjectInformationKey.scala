@@ -94,8 +94,8 @@ trait ProjectInformationKey[T <: AnyRef] {
      * before this analysis can be performed.
      *
      * If the analysis has no special requirements `Nil` can be returned.
-     * 
-     * @note '''All requirements must be listed; failing to specify a requirement can 
+     *
+     * @note '''All requirements must be listed; failing to specify a requirement can
      * 		end up in a deadlock.'''
      *
      * @note Classes/Objects that implement this trait should not make the method `public`
