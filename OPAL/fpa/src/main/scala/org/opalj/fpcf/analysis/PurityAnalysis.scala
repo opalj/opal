@@ -78,8 +78,8 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  * @author Michael Eichberg
  */
 class PurityAnalysis private (
-        val project:        SomeProject,
-        val entitySelector: PartialFunction[Entity, Method]
+        project:        SomeProject,
+        entitySelector: PartialFunction[Entity, Method]
 ) extends AbstractFPCFAnalysis(project, entitySelector) {
 
     final val Purity = org.opalj.fpcf.analysis.Purity.key

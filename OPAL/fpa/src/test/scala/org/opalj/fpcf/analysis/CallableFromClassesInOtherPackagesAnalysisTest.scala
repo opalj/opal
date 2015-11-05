@@ -46,7 +46,7 @@ abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFi
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 
-    override def propertyKey: PropertyKey = CallableFromClassesInOtherPackages.Key
+    override def propertyKey: PropertyKey = CallableFromClassesInOtherPackages.key
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
