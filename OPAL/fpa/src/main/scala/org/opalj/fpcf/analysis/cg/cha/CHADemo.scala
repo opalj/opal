@@ -22,6 +22,8 @@ object CHADemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        val entryPointInfo = true
+
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
         //        val appProject = AnalysisModeConfigFactory.updateProject(project, AnalysisModes.APP)
@@ -60,17 +62,29 @@ object CHADemo extends DefaultOneStepAnalysis {
         val cbs = project.get(CallBySignatureResolutionKey)
 
         println(cbs.statistics)
-        val difference = cpaEP -- oldEntryPoints
+        val differenceCpa = cpaEP -- oldEntryPoints
+        val differenceOpa = oldEntryPoints.toSet -- opaEP
 
-        println("\n\nEntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
-        println("\n SIZE: "+difference.size)
-        println(difference.collect {
-            case m: org.opalj.br.Method ⇒
-                val cf = project.classFile(m)
-                cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
-        }.mkString("\n\n", "\n", "\n\n"))
-        println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
+        if (entryPointInfo) {
+            println("\n\nEntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
+            println("\n SIZE: "+differenceCpa.size)
+            println(differenceCpa.collect {
+                case m: org.opalj.br.Method ⇒
+                    val cf = project.classFile(m)
+                    cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
+            }.mkString("\n\n", "\n", "\n\n"))
 
+            println("\n\nEntryPoints difference between old and OPA EntryPoints."+
+                "\n these are in the old set but not in the OPA set! (see CallGraphFactory for details)")
+            println("\n SIZE: "+differenceOpa.size)
+            println(differenceOpa.collect {
+                case m: org.opalj.br.Method ⇒
+                    val cf = project.classFile(m)
+                    cf.thisType.toJava+" with method: "+m.descriptor.toJava(m.name)
+            }.mkString("\n\n", "\n", "\n\n"))
+
+            println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
+        }
         val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+
             s"percentage:    | ${getPercentage(oldEntryPoints.size)}% (old)     | ${getPercentage(opaEP.size)}% (opa) | ${getPercentage(cpaEP.size)}% (cpa)\n"+
