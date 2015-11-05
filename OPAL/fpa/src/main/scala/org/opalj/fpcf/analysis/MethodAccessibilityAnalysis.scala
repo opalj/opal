@@ -101,7 +101,6 @@ class MethodAccessibilityAnalysis private[analysis] (
         var subtypes = classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
-            // TODO resolve non-local return if it is indeed one...
             project.classFile(subtype) match {
                 case Some(subclass) ⇒
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
