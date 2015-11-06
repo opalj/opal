@@ -35,5 +35,8 @@ package br
  *
  * @author Michael Eichberg
  */
-trait BootstrapArgument
+trait BootstrapArgument {
+
+    def toJava: String
+}
 

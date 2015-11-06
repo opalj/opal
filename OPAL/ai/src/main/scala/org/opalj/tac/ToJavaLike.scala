@@ -105,6 +105,9 @@ object ToJavaLike {
             case ArrayLength(_, arrayRef) ⇒
                 s"${toJavaLikeExpr(arrayRef)}.length"
 
+            case Invokedynamic(_, bootstrapMethod, name, descriptor, params) ⇒
+                s"invokedynamic[${bootstrapMethod.toJava}]${callToJavaLike(name, params)}"
+
             case StaticFunctionCall(_, declClass, name, descriptor, params) ⇒
                 declClass.toJava + callToJavaLike(name, params)
 

@@ -498,7 +498,7 @@ object AsQuadruples {
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), rest)
                     } else {
-                        val newVal = OperandVar(returnType.computationalType, rest)
+                        val newVar = OperandVar(returnType.computationalType, rest)
                         val exprFactory =
                             if (invoke.isVirtualMethodCall)
                                 VirtualFunctionCall.apply _
@@ -511,8 +511,8 @@ object AsQuadruples {
                                 receiver,
                                 params
                             )
-                        statements(pc) = List(Assignment(pc, newVal, expr))
-                        schedule(pcOfNextInstruction(pc), newVal :: rest)
+                        statements(pc) = List(Assignment(pc, newVar, expr))
+                        schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
                 case INVOKESTATIC.opcode ⇒
@@ -531,30 +531,27 @@ object AsQuadruples {
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), rest)
                     } else {
-                        val newVal = OperandVar(returnType.computationalType, rest)
+                        val newVar = OperandVar(returnType.computationalType, rest)
                         val expr =
                             StaticFunctionCall(
                                 pc,
                                 declaringClass, name, methodDescriptor,
                                 params
                             )
-                        statements(pc) = List(Assignment(pc, newVal, expr))
-                        schedule(pcOfNextInstruction(pc), newVal :: rest)
+                        statements(pc) = List(Assignment(pc, newVar, expr))
+                        schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    ???
-                //                    val invoke = as[INVOKEDYNAMIC](instruction)
-                //                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
-                //                    val (operands, rest) = stack.splitAt(numOps)
-                //                    val target: Option[Var] =
-                //                        if (invoke.methodDescriptor.returnType.isVoidType) None
-                //                        else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
-                //                    statements(pc) = List(
-                //                        MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-                //                            None, operands, target))
-                //                    val newStack = if (target.nonEmpty) { target.get :: rest } else { rest }
-                //                    schedule(pcOfNextInstruction(pc), newStack)
+                    val invoke = as[INVOKEDYNAMIC](instruction)
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val (operands, rest) = stack.splitAt(numOps)
+                    val returnType = invoke.methodDescriptor.returnType
+                    val target: Var = OperandVar(returnType.computationalType, rest)
+                    val expr = Invokedynamic(pc, invoke.bootstrapMethod, invoke.name, invoke.methodDescriptor, operands)
+                    val newVar = OperandVar(returnType.computationalType, rest)
+                    statements(pc) = List(Assignment(pc, newVar, expr))
+                    schedule(pcOfNextInstruction(pc), target :: rest)
 
                 case PUTSTATIC.opcode ⇒
                     val value :: rest = stack

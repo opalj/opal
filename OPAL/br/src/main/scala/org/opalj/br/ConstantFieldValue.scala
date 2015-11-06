@@ -38,13 +38,17 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T]
+sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] {
+
+}
 
 final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 
     override def toLong = value
 
     override def valueToString = value.toString
+
+    final def toJava = valueToString+"l"
 
     override def valueType = LongType
 
@@ -71,6 +75,8 @@ final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
 
     override def valueToString = value.toString
 
+    final def toJava = valueToString
+
     override def valueType = IntegerType
 
     override def kindId: Int = ConstantInteger.KindId
@@ -87,6 +93,8 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
     override def toDouble = value
 
     override def valueToString = value.toString
+
+    final def toJava = valueToString+"d"
 
     override def valueType = DoubleType
 
@@ -105,6 +113,8 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
 
     override def valueToString = value.toString
 
+    final def toJava = valueToString+"f"
+
     override def valueType = FloatType
 
     override def kindId: Int = ConstantFloat.KindId
@@ -121,6 +131,8 @@ final case class ConstantString(value: String) extends ConstantFieldValue[String
     override def toUTF8 = value
 
     override def valueToString = value.toString
+
+    final def toJava = s""""$valueToString""""
 
     override def valueType = ObjectType.String
 
