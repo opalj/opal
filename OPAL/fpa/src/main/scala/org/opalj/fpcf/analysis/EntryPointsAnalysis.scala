@@ -94,7 +94,8 @@ class EntryPointsAnalysis private (
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
         if (Method.isObjectSerializationRelated(method) &&
             (
-                !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
+                !classFile.isFinal && classFile.constructors.exists { cons ⇒ !cons.isPrivate }
+                /*we may inherit from Serializable later on...*/ ||
                 project.classHierarchy.isSubtypeOf(
                     classFile.thisType,
                     SerializableType
@@ -115,7 +116,7 @@ class EntryPointsAnalysis private (
             }
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
-            else { // TODO FIXME
+            else {
                 val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
                     if (dependeeP == ClassLocal)
                         Result(method, NoEntryPoint)

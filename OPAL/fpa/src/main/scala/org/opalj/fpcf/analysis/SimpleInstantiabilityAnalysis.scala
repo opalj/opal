@@ -172,7 +172,7 @@ class SimpleInstantiabilityAnalysis private (
             })
                 return EP(classFile, Instantiable);
         }
-        
+
         return EP(classFile, NotInstantiable)
     }
 }
