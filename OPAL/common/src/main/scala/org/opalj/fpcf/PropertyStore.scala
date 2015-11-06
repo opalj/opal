@@ -1610,7 +1610,7 @@ object PropertyStore {
      * @param isInterrupted A function that is frequently called by the framework to test if
      *          the computation should be aborted. It is important that this function is efficient.
      * @param debug `true` if debug output should be generated.
-     * @param logContext The [[LogContext]] that will be used for debug etc. messages.
+     * @param logContext The [[org.opalj.log.LogContext]] that will be used for debug etc. messages.
      * @return The newly created [[PropertyStore]].
      */
     def apply(
