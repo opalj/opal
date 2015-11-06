@@ -37,7 +37,7 @@ import org.opalj.concurrent.Locking.withWriteLock
  * A value object that identifies a specific kind of properties. Every entity in
  * the [[PropertyStore]] must be associated with at most one property per property kind/key.
  *
- * To create a property key use the companion object's [[PropertyKey#create]] method.
+ * To create a property key use the companion object's [[PropertyKey$]].`create` method.
  *
  * @author Michael Eichberg
  */

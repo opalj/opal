@@ -62,12 +62,11 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 
 case class Compare(
-    pc:        PC,
-    left:      Expr,
-    condition: RelationalOperator,
-    right:     Expr
-)
-        extends Expr {
+        pc:        PC,
+        left:      Expr,
+        condition: RelationalOperator,
+        right:     Expr
+) extends Expr {
 
     final def cTpe = ComputationalTypeInt
 }
@@ -139,28 +138,25 @@ case class PrefixExpr(
 ) extends Expr
 
 case class PrimitiveTypecastExpr(
-    pc:        PC,
-    targetTpe: BaseType,
-    operand:   Expr
-)
-        extends Expr {
+        pc:        PC,
+        targetTpe: BaseType,
+        operand:   Expr
+) extends Expr {
     final def cTpe = targetTpe.computationalType
 }
 
 case class New(
-    pc:  PC,
-    tpe: ObjectType
-)
-        extends Expr {
+        pc:  PC,
+        tpe: ObjectType
+) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
 case class NewArray(
-    pc:     PC,
-    counts: List[Expr],
-    tpe:    ArrayType
-)
-        extends Expr {
+        pc:     PC,
+        counts: List[Expr],
+        tpe:    ArrayType
+) extends Expr {
 
     final def cTpe = ComputationalTypeReference
 }
@@ -174,15 +170,24 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 }
 
 case class GetField(
-    pc:             PC,
-    declaringClass: ObjectType, name: String, objRef: Expr
-)
-        extends Expr {
+        pc:             PC,
+        declaringClass: ObjectType, name: String, objRef: Expr
+) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
     final def cTpe = ComputationalTypeInt
+}
+
+case class Invokedynamic(
+        pc:              PC,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      MethodDescriptor,
+        params:          List[Expr]
+) extends Expr {
+    final def cTpe = descriptor.returnType.computationalType
 }
 
 sealed trait FunctionCall extends Call with Expr {

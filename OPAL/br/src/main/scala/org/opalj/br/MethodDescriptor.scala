@@ -63,6 +63,13 @@ sealed abstract class MethodDescriptor
 
     def valueToString: String = toUMLNotation
 
+    /**
+     * Returns a Java like view when a MethodDescriptor is used as a [[BootstrapArgument]].
+     */
+    def toJava: String = {
+        s"MethodDescriptor(${returnType.toJava},${parameterTypes.map(_.toJava).mkString("(", ",", ")")})"
+    }
+
     def equalParameters(other: MethodDescriptor): Boolean
 
     /**
