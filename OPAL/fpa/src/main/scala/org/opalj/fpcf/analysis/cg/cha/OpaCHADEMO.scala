@@ -45,8 +45,9 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
         println(cbs.statistics)
 
         BasicReport(
-            s"#entry points: ${opaEP.size}\n"+
-                s"percentage   : ${getPercentage(opaEP.size)}"+
+            s"#methods:  ${methodsCount}\n"+
+                s"#entry points: ${opaEP.size}\n"+
+                s"percentage   : ${getPercentage(opaEP.size)}\n"+
                 s"#call edges  : ${newOpaCG.callEdgesCount}"
         )
     }

@@ -194,10 +194,12 @@ class CHACallGraphExtractor(
                         case None ⇒ true
                     }
                 }) {
-                if (analysisMode eq AnalysisModes.CPA)
-                    return cbsIndex.findMethods(name, descriptor, declaringClassType.packageName);
-                else
-                    return cbsIndex.findMethods(name, descriptor);
+                return cbsIndex.findMethods(
+                    name,
+                    descriptor,
+                    declaringClassType,
+                    analysisMode eq AnalysisModes.OPA
+                );
             }
 
             Iterable.empty[Method]

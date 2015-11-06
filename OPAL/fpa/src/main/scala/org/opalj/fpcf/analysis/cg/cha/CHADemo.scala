@@ -8,6 +8,7 @@ import java.net.URL
 import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
+import org.opalj.br.Method
 
 object CHADemo extends DefaultOneStepAnalysis {
 
@@ -34,7 +35,7 @@ object CHADemo extends DefaultOneStepAnalysis {
         val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
         //        val appStore = appProject.get(SourceElementsPropertyStoreKey)
 
-        val methodsCount: Double = project.methodsCount.toDouble
+        val methodsCount: Double = project.projectMethodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
         // CALL GRAPH STUFF
@@ -51,13 +52,9 @@ object CHADemo extends DefaultOneStepAnalysis {
         //        val wrongCG = appProject.get(LibraryCHACallGraphKey).callGraph
         // CALL GRAPH STUFF
 
-        val cpaEP = cpaStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }
+        val cpaEP = cpaStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
 
-        val opaEP = opaStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }
+        val opaEP = opaStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
 
         val cbs = project.get(CallBySignatureResolutionKey)
 
@@ -85,7 +82,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
             println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
         }
-        val outputTable = s"\n\n#methods: ${project.methodsCount}\n"+
+        val outputTable = s"\n\n#methods: ${methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+
             s"percentage:    | ${getPercentage(oldEntryPoints.size)}% (old)     | ${getPercentage(opaEP.size)}% (opa) | ${getPercentage(cpaEP.size)}% (cpa)\n"+
             s"#call edges:   | ${traditionalCG.callEdgesCount} (old)     | ${newOpaCG.callEdgesCount} (opa) | ${newCpaCG.callEdgesCount} (cpa)| ${newCpaCG.callEdgesCount - traditionalCG.callEdgesCount} (new - old)" //+

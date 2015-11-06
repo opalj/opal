@@ -63,7 +63,7 @@ class CallBySignatureResolution private (
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
 
     /**
-     * Given the `name` and `descriptor` of a method declared by an interface and the `pacakgeName`
+     * Given the `name` and `descriptor` of a method declared by an interface and the `declaringClass`
      * where the method is declared, all those  methods are returned that have a matching name and
      * descriptor and are declared in the same package. All those methods are implemented
      * by classes (not interfaces) that '''do not inherit''' from the respective interface and
@@ -74,14 +74,21 @@ class CallBySignatureResolution private (
      *
      * @note This method assumes the closed packages assumption
      */
-    def findMethods(name: String, descriptor: MethodDescriptor, packageName: String): Iterable[Method] =
+    def findMethods(
+        name:                     String,
+        descriptor:               MethodDescriptor,
+        declClass:                ObjectType,
+        isOpenPackagesAssumption: Boolean          = true
+    ): Iterable[Method] = {
+        val classHierarchy = project.classHierarchy
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
             val classFile = project.classFile(method)
-            if (classFile.isPackageVisible || method.isPackagePrivate)
-                packageName == classFile.thisType.packageName
+            (if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
+                declClass.packageName == classFile.thisType.packageName
             else
-                true
+                true) && classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
         }
+    }
 
     def statistics(): Map[String, Any] = {
         Map(
@@ -133,6 +140,9 @@ object CallBySignatureResolution {
                 if (!clazzClassFile.isClassDeclaration)
                     return ;
                 if (clazzClassFile.isFinal)
+                    return ;
+
+                if (!clazzClassFile.constructors.exists { cons ⇒ !cons.isPrivate }) // effictively final
                     return ;
 
                 val clazzType = clazzClassFile.thisType

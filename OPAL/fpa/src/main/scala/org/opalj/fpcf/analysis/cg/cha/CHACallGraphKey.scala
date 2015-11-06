@@ -75,6 +75,6 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      */
     private[this] def getEntryPointsFromPropertyStore(project: SomeProject): Set[Method] = {
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        propertyStore.collect { case (m: Method, IsEntryPoint) ⇒ m }.toSet
+        propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
     }
 }
