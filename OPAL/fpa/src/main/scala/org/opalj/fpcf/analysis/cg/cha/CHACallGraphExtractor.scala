@@ -155,15 +155,18 @@ class CHACallGraphExtractor(
          *      self reference (`this`).
          */
         def virtualCall(
-            pc:                 PC,
-            declaringClassType: ObjectType,
-            name:               String,
-            descriptor:         MethodDescriptor
+            pc:                    PC,
+            declaringClassType:    ObjectType,
+            name:                  String,
+            descriptor:            MethodDescriptor,
+            isInterfaceInvocation: Boolean          = false
         ): Unit = {
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 
-            val cbsCalls = callBySignature(pc, declaringClassType, name, descriptor)
+            val cbsCalls =
+                if (isInterfaceInvocation) callBySignature(pc, declaringClassType, name, descriptor)
+                else Iterable.empty[Method]
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor) ++ cbsCalls
             if (callees.isEmpty) {
@@ -185,24 +188,12 @@ class CHACallGraphExtractor(
             if (analysisMode eq AnalysisModes.APP)
                 return Iterable.empty[Method];
 
-            if (!project.classHierarchy.
-                allSuperinterfacetypes(declaringClassType, false).exists { iType ⇒
-                    project.classFile(iType) match {
-                        case Some(classFile) ⇒ !classFile.methods.exists { m ⇒
-                            m.name == name && (m.descriptor eq descriptor)
-                        }
-                        case None ⇒ true
-                    }
-                }) {
-                return cbsIndex.findMethods(
-                    name,
-                    descriptor,
-                    declaringClassType,
-                    analysisMode eq AnalysisModes.OPA
-                );
-            }
-
-            Iterable.empty[Method]
+            return cbsIndex.findMethods(
+                name,
+                descriptor,
+                declaringClassType,
+                analysisMode eq AnalysisModes.OPA
+            );
         }
     }
 
@@ -230,7 +221,7 @@ class CHACallGraphExtractor(
                     }
                 case INVOKEINTERFACE.opcode ⇒
                     val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
-                    context.virtualCall(pc, declaringClass, name, descriptor)
+                    context.virtualCall(pc, declaringClass, name, descriptor, true)
 
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, name, descriptor) = instruction

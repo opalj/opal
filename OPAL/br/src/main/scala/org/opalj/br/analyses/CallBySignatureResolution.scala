@@ -83,10 +83,16 @@ class CallBySignatureResolution private (
         val classHierarchy = project.classHierarchy
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
             val classFile = project.classFile(method)
-            (if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
-                declClass.packageName == classFile.thisType.packageName
-            else
-                true) && classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
+            !classHierarchy.allSuperinterfacetypes(classFile.thisType, false).exists { superType ⇒
+                project.classFile(superType) match {
+                    case Some(cf) ⇒ cf.methods.exists { m ⇒ m.name == name && m.descriptor == descriptor }
+                    case None     ⇒ false
+                }
+            } &&
+                (if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
+                    declClass.packageName == classFile.thisType.packageName
+                else
+                    true) && classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
         }
     }
 
