@@ -58,6 +58,7 @@ class CallGraphBuilder(val project: SomeProject) {
     type PCs = collection.mutable.UShortSet
 
     private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
+    private[this] var callBySignatureCount = 0
 
     /**
      * Adds the given `callEdges` to the call graph.
@@ -71,7 +72,15 @@ class CallGraphBuilder(val project: SomeProject) {
             allCallEdges = callEdges :: allCallEdges
         }
     }
-
+    
+     /**
+     * Increases the given `callBySignatureCount` of the call graph.
+     *
+     */
+    def incCallBySignatureCount(cbsCount: Int): Unit = {
+      callBySignatureCount += cbsCount
+    }
+    
     /**
      * Builds the final call graph.
      */
@@ -153,7 +162,8 @@ class CallGraphBuilder(val project: SomeProject) {
         new CallGraph(
             project,
             Await.result(calledByMapFuture, Duration.Inf),
-            callsMap
+            callsMap,
+            callBySignatureCount
         )
     }
 }

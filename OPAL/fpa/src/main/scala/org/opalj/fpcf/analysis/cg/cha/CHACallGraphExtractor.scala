@@ -187,16 +187,21 @@ class CHACallGraphExtractor(
         ): Iterable[Method] = {
             if (analysisMode eq AnalysisModes.APP)
                 return Iterable.empty[Method];
-
-            return cbsIndex.findMethods(
+            
+            val cbsMethods = cbsIndex.findMethods(
                 name,
                 descriptor,
                 declaringClassType,
                 analysisMode eq AnalysisModes.OPA
-            );
+            ) 
+            
+            cbsCount += cbsMethods.size
+            cbsMethods   
         }
     }
-
+    
+    var cbsCount = 0
+    
     def extract(
         project:   SomeProject,
         classFile: ClassFile,
@@ -239,7 +244,7 @@ class CHACallGraphExtractor(
             }
         }
 
-        (context.allCallEdges, context.unresolvableMethodCalls)
+        (context.allCallEdges, context.unresolvableMethodCalls, 0)
     }
 
 }

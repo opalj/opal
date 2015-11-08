@@ -75,8 +75,14 @@ trait CallGraphExtractor { extractor ⇒
         //
         //
 
+        private[this] var callBySignatureCount = 0
+        
+        def callBySignatureCallEdges = callBySignatureCount
+        
+        def addCallBySignatureNumber(count: Int) = callBySignatureCount += count
+        
         var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
-
+        
         @inline def addUnresolvedMethodCall(
             callerClass: ReferenceType, caller: Method, pc: PC,
             calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor
@@ -126,7 +132,7 @@ trait CallGraphExtractor { extractor ⇒
 }
 object CallGraphExtractor {
 
-    type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall])
+    type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Int)
 
 }
 

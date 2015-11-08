@@ -71,7 +71,7 @@ object ComputedCallGraph {
 
     def empty(project: SomeProject) =
         apply(
-            new CallGraph(project, Map.empty, Map.empty),
+            new CallGraph(project, Map.empty, Map.empty, 0),
             () ⇒ List.empty,
             List.empty,
             List.empty

@@ -60,7 +60,8 @@ import scala.collection.Map
 class CallGraph private[cg] (
         val project:                   SomeProject,
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
-        private[this] val callsMap:    Map[Method, Map[PC, Iterable[Method]]]
+        private[this] val callsMap:    Map[Method, Map[PC, Iterable[Method]]],
+        private[this] val cbsCount: Int
 ) {
 
     /**
@@ -119,6 +120,8 @@ class CallGraph private[cg] (
     /** Number of methods that call at least one other method. */
     def callsCount: Int = callsMap.size
 
+    def callBySignatureCount: Int = cbsCount
+    
     def callEdgesCount: Int = {
         val perMethodCallTargetsCount =
             callsMap.map { e ⇒

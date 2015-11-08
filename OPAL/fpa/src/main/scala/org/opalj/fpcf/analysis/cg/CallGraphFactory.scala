@@ -153,7 +153,7 @@ object CallGraphFactory {
             return ComputedCallGraph.empty(theProject)
 
         import scala.collection.{Map, Set}
-        type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
+        type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException], Int)
 
         import java.util.concurrent.Callable
         import java.util.concurrent.Executors
@@ -168,16 +168,17 @@ object CallGraphFactory {
                 def call(): MethodAnalysisResult = {
                     val classFile = theProject.classFile(method)
                     try {
-                        val (callEdges, unresolveableMethodCalls) =
+                        val (callEdges, unresolveableMethodCalls, cbsCallCount) =
                             extract(theProject, classFile, method)
-                        (callEdges, unresolveableMethodCalls, None)
+                        (callEdges, unresolveableMethodCalls, None, cbsCallCount)
                     } catch {
                         case ct: scala.util.control.ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒
                             (
                                 (method, Map.empty[PC, /*Callees*/ Set[Method]]),
                                 List.empty,
-                                Some(CallGraphConstructionException(classFile, method, t))
+                                Some(CallGraphConstructionException(classFile, method, t)),
+                                0
                             )
                     }
                 }
@@ -233,7 +234,7 @@ object CallGraphFactory {
         var analyzedMethods = 0
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
-            val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception) =
+            val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception, cbsCallCount) =
                 completionService.take().get()
             futuresCount -= 1
             analyzedMethods += 1
@@ -265,6 +266,7 @@ object CallGraphFactory {
             if (exception.isDefined)
                 exceptions = exception.get :: exceptions
             builder.addCallEdges(callSite)
+            builder.incCallBySignatureCount(cbsCallCount)
         }
 
         // TODO use log
