@@ -47,20 +47,8 @@ import org.opalj.log.GlobalLogContext
  */
 class CallBySignatureResolution private (
         val project: SomeProject,
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
-) {
-
-    /**
-     * Given the `name` and `descriptor` of a method declared by an interface, all those
-     * methods are returned that have a matching name and descriptor and which are implemented
-     * by classes (not interfaces) that '''do not inherit''' from the respective interface and
-     * which may have a subclass (in the future) that may implement the interface.
-     *
-     * Hence, when we compute the call graph for a library the returned methods may (in general)
-     * be call targets.
-     */
-    def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] =
-        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
+        // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Iterable[Method]]
+        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
 
     /**
      * Given the `name` and `descriptor` of a method declared by an interface and the `declaringClass`
@@ -75,24 +63,29 @@ class CallBySignatureResolution private (
      * @note This method assumes the closed packages assumption
      */
     def findMethods(
-        name:                     String,
-        descriptor:               MethodDescriptor,
-        declClass:                ObjectType,
-        isOpenPackagesAssumption: Boolean          = true
-    ): Iterable[Method] = {
+        name: String,
+        descriptor: MethodDescriptor,
+        declClass: ObjectType,
+        isOpenPackagesAssumption: Boolean = true): Iterable[Method] = {
+
+        assert(
+            project.classFile(declClass).map(_.isInterfaceDeclaration).getOrElse(true),
+            s"the declaring class ${declClass.toJava} does not define an interface type"
+        )
+
+        
+        // TODO Move down to the calculation
         val classHierarchy = project.classHierarchy
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
             val classFile = project.classFile(method)
-            !classHierarchy.allSuperinterfacetypes(classFile.thisType, false).exists { superType ⇒
-                project.classFile(superType) match {
-                    case Some(cf) ⇒ cf.methods.exists { m ⇒ m.name == name && m.descriptor == descriptor }
-                    case None     ⇒ false
-                }
-            } &&
-                (if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
-                    declClass.packageName == classFile.thisType.packageName
-                else
-                    true) && classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
+            classHierarchy.lookupMethodInSuperinterfaces(classFile, name, descriptor, project).isEmpty &&
+                (
+                    if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
+                        declClass.packageName == classFile.thisType.packageName
+                    else
+                        true
+                ) &&
+                    classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
         }
     }
 
