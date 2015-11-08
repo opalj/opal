@@ -29,27 +29,20 @@
 package org.opalj.fpcf
 
 /**
- * An information associated with an entity. Each property belongs to exactly one
- * property kind identified by a [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
- *
- * Instances of SetProperty will always get negative ids [-X,...,-1] and instances of per
- * entity properties will get positive ids [0,...X]; to be precise the underlying property keys.
- *
+ * 
  * @author Michael Eichberg
  */
-trait Property extends PropertyMetaInformation {
+trait PropertyMetaInformation extends PropertyKind {
 
     /**
-     * Returns `true` if the current property may be refined in the future and, hence,
-     * it is meaningful to register for update events.
+     * The key uniquely identifies this property's category. All property objects
+     * of the same kind have to use the same key.
+     *
+     * In general each `Property` kind is expected to have a companion object that
+     * stores the unique `PropertyKey`.
      */
-    def isRefineable: Boolean
+    def key: PropertyKey
 
-    /**
-     *  Returns `true` if this property is always final and no refinement is possible.
-     */
-    def isFinal = !isRefineable
-
+    final def id = key.id
 }
 
