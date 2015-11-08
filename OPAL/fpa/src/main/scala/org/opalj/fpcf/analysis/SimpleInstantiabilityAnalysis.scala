@@ -91,11 +91,11 @@ class SimpleInstantiabilityAnalysis private (
             cf ← classFiles
             method ← cf.methods if !method.isAbstract
         } {
-            val visibleMethod =
-                if (isOpenLibrary) !method.isPrivate
-                else method.isPublic || (method.isProtected && !cf.isFinal)
+            //            val visibleMethod =
+            //                if (isOpenLibrary) !method.isPrivate
+            //                else method.isPublic || (method.isProtected && !cf.isFinal)
 
-            if (method.isNative && method.isStatic && visibleMethod) {
+            if (method.isNative && method.isStatic /* && visibleMethod */ ) {
                 //println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
                 var instantiatedClasses = Set.empty[EP]
                 classFiles.foreach { classFile ⇒
@@ -120,7 +120,7 @@ class SimpleInstantiabilityAnalysis private (
                             case INVOKESPECIAL(classType, "<init>", _) if classType.packageName == key ⇒
                                 // We found a constructor call.
                                 val classFile = project.classFile(classType)
-                                if (classFile.nonEmpty) {
+                                if (classFile.nonEmpty && !classFile.get.isAbstract) {
                                     instantiatedClasses += EP(classFile.get, Instantiable)
                                 }
                             case _ ⇒
@@ -129,7 +129,10 @@ class SimpleInstantiabilityAnalysis private (
                     pc = body.pcOfNextInstruction(pc)
                 }
             } else {
-                instantiatedClasses += EP(cf, Instantiable)
+                if (cf.isAbstract || cf.isInterfaceDeclaration)
+                    instantiatedClasses += EP(cf, NotInstantiable)
+                else
+                    instantiatedClasses += EP(cf, Instantiable)
             }
         }
 
@@ -158,17 +161,16 @@ class SimpleInstantiabilityAnalysis private (
             //if the class is Serializable or it is unknown, we have to count it as instantiated.
             return EP(classFile, Instantiable)
 
-        val nonFinalClass = !classFile.isFinal
-
-        if (classFile.isPublic || isOpenLibrary) {
+        val notFinal = !classFile.isFinal
+        if ((classFile.isPublic || isOpenLibrary)) {
             if (classFile.constructors exists { cons ⇒
                 cons.isPublic ||
                     (isOpenLibrary && !cons.isPrivate) ||
-                    //If the class not final and public or we analyze an open library we have
-                    //to assume that a subclass is created and instantiated later on.
-                    //Hence, every time a subclass is instantiated all superclass's have to be
-                    //considered instantiated as well.
-                    (nonFinalClass && ((cons.isPackagePrivate && isOpenLibrary) || cons.isProtected))
+                    (notFinal && cons.isProtected)
+                //If the class not final and public or we analyze an open library we have
+                //to assume that a subclass is created and instantiated later on.
+                //Hence, every time a subclass is instantiated all superclass's have to be
+                //considered instantiated as well.
             })
                 return EP(classFile, Instantiable);
         }
@@ -178,7 +180,7 @@ class SimpleInstantiabilityAnalysis private (
 }
 
 /**
- * Companion object for the [[InstantiabilityAnalysis]] class.
+ * Companion object for the [[SimpleInstantiabilityAnalysis]] class.
  */
 object SimpleInstantiabilityAnalysis
         extends FPCFAnalysisRunner[SimpleInstantiabilityAnalysis] {
