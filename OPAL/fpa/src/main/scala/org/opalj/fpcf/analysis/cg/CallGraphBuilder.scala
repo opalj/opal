@@ -72,15 +72,15 @@ class CallGraphBuilder(val project: SomeProject) {
             allCallEdges = callEdges :: allCallEdges
         }
     }
-    
-     /**
+
+    /**
      * Increases the given `callBySignatureCount` of the call graph.
      *
      */
     def incCallBySignatureCount(cbsCount: Int): Unit = {
-      callBySignatureCount += cbsCount
+        callBySignatureCount += cbsCount
     }
-    
+
     /**
      * Builds the final call graph.
      */

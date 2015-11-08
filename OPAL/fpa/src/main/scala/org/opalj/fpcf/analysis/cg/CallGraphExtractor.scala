@@ -76,13 +76,13 @@ trait CallGraphExtractor { extractor ⇒
         //
 
         private[this] var callBySignatureCount = 0
-        
+
         def callBySignatureCallEdges = callBySignatureCount
-        
+
         def addCallBySignatureNumber(count: Int) = callBySignatureCount += count
-        
+
         var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
-        
+
         @inline def addUnresolvedMethodCall(
             callerClass: ReferenceType, caller: Method, pc: PC,
             calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor

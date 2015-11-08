@@ -35,7 +35,6 @@ package cha
 import org.opalj.br.{ClassFile, Method, MethodDescriptor, MethodSignature, ObjectType, PC}
 import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResolutionKey, SomeProject}
 import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
-import net.ceedubs.ficus.Ficus._
 import scala.collection.Set
 import scala.collection.mutable.HashSet
 import org.opalj.log.OPALLogger
@@ -63,14 +62,14 @@ class CHACallGraphExtractor(
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            val project:      SomeProject,
-            val classFile:    ClassFile,
-            val method:       Method,
-            val cbsIndex:     CallBySignatureResolution,
-            val analysisMode: AnalysisMode
+            val project:   SomeProject,
+            val classFile: ClassFile,
+            val method:    Method,
+            val cbsIndex:  CallBySignatureResolution
     ) extends super.AnalysisContext {
 
         final val classHierarchy = project.classHierarchy
+        var cbsCount = 0
 
         def staticCall(
             pc:                 PC,
@@ -185,31 +184,24 @@ class CHACallGraphExtractor(
             name:               String,
             descriptor:         MethodDescriptor
         ): Iterable[Method] = {
-            if (analysisMode eq AnalysisModes.APP)
-                return Iterable.empty[Method];
-            
             val cbsMethods = cbsIndex.findMethods(
                 name,
                 descriptor,
-                declaringClassType,
-                analysisMode eq AnalysisModes.OPA
-            ) 
-            
+                declaringClassType
+            )
+
             cbsCount += cbsMethods.size
-            cbsMethods   
+            cbsMethods
         }
     }
-    
-    var cbsCount = 0
-    
+
     def extract(
         project:   SomeProject,
         classFile: ClassFile,
         method:    Method
     ): CallGraphExtractor.LocalCallGraphInformation = {
-        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
         val cbsIndex = project.get(CallBySignatureResolutionKey)
-        val context = new AnalysisContext(project, classFile, method, cbsIndex, analysisMode)
+        val context = new AnalysisContext(project, classFile, method, cbsIndex)
 
         method.body.get.foreach { (pc, instruction) ⇒
             instruction.opcode match {
@@ -244,7 +236,7 @@ class CHACallGraphExtractor(
             }
         }
 
-        (context.allCallEdges, context.unresolvableMethodCalls, 0)
+        (context.allCallEdges, context.unresolvableMethodCalls, context.cbsCount)
     }
 
 }

@@ -61,7 +61,7 @@ class CallGraph private[cg] (
         val project:                   SomeProject,
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
         private[this] val callsMap:    Map[Method, Map[PC, Iterable[Method]]],
-        private[this] val cbsCount: Int
+        private[this] val cbsCount:    Int
 ) {
 
     /**
@@ -121,7 +121,7 @@ class CallGraph private[cg] (
     def callsCount: Int = callsMap.size
 
     def callBySignatureCount: Int = cbsCount
-    
+
     def callEdgesCount: Int = {
         val perMethodCallTargetsCount =
             callsMap.map { e ⇒
