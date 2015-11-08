@@ -82,6 +82,10 @@ object CHADemo extends DefaultOneStepAnalysis {
 
             println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
         }
+
+        println(s"\n\nOPA: ${newOpaCG.callBySignatureCount}\n")
+        println(s"CPA: ${newCpaCG.callBySignatureCount}\n\n")
+
         val outputTable = s"\n\n#methods: ${methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+
             s"percentage:    | ${getPercentage(oldEntryPoints.size)}% (old)     | ${getPercentage(opaEP.size)}% (opa) | ${getPercentage(cpaEP.size)}% (cpa)\n"+
