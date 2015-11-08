@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 /**
- * 
+ *
  * @author Michael Eichberg
  */
 trait PropertyMetaInformation extends PropertyKind {

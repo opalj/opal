@@ -29,9 +29,9 @@
 package org.opalj.fpcf
 
 private[fpcf] abstract class DefaultPropertyObserver(
-        final val depender: EPK,
+        final val depender:                EPK,
         final val removeAfterNotification: Boolean
-        ) extends PropertyObserver {
+) extends PropertyObserver {
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString
