@@ -1306,7 +1306,7 @@ class PropertyStore private (
             onPropertyComputations foreach { opc ⇒ opc(e, p) }
 
             // 2. update the property
-            properties(pk.id) match {
+            properties(pkId) match {
                 case null ⇒ // No one was interested in this property so far...
                     updateType match {
                         case OneStepFinalUpdate ⇒
