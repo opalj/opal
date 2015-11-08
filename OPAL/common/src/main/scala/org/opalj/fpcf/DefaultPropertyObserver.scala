@@ -28,31 +28,13 @@
  */
 package org.opalj.fpcf
 
-/**
- * A PropertyObserver is a function that is called if the property associated
- * with the respective entity is computed or refined.
- *
- * The parameters of the function are the observed element (dependee) and its
- * (then available/refined) property.
- *
- * ==Core Properties==
- * A `PropertyObserver` never directly executes/continues the analysis but schedules it if
- * necessary.
- *
- * @author Michael Eichberg
- */
-private[fpcf] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
+private[fpcf] abstract class DefaultPropertyObserver(
+        final val depender: EPK,
+        final val removeAfterNotification: Boolean
+        ) extends PropertyObserver {
 
-    /**
-     * The entity and property key for which the property of the observed element
-     * is necessary.
-     */
-    def depender: EPK
-
-    /**
-     * If `true` this observer is immediately deregistered when it is called (for the
-     * first time).
-     */
-    def removeAfterNotification: Boolean
+    override def toString: String = {
+        val id = System.identityHashCode(this).toHexString
+        s"PropertyObserver(depender=$depender,oneTimeOnly=$removeAfterNotification,id=$id)"
+    }
 }
-
