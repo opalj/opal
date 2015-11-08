@@ -34,6 +34,7 @@ import scala.collection.Map
 import scala.collection.mutable.AnyRefMap
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import net.ceedubs.ficus.Ficus._
 
 /**
  * An index that enables the efficient lookup of potential
@@ -47,8 +48,10 @@ import org.opalj.log.GlobalLogContext
  */
 class CallBySignatureResolution private (
         val project: SomeProject,
-        // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Iterable[Method]]
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
+        val methods: Map[(ObjectType /*InterfaceType*/ , String, MethodDescriptor), Iterable[Method]]
+) {
+    // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Iterable[Method]]
+    //val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
 
     /**
      * Given the `name` and `descriptor` of a method declared by an interface and the `declaringClass`
@@ -63,49 +66,37 @@ class CallBySignatureResolution private (
      * @note This method assumes the closed packages assumption
      */
     def findMethods(
-        name: String,
+        name:       String,
         descriptor: MethodDescriptor,
-        declClass: ObjectType,
-        isOpenPackagesAssumption: Boolean = true): Iterable[Method] = {
+        declClass:  ObjectType
+    ): Iterable[Method] = {
 
         assert(
             project.classFile(declClass).map(_.isInterfaceDeclaration).getOrElse(true),
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
-        
-        // TODO Move down to the calculation
-        val classHierarchy = project.classHierarchy
-        methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty).filter { method ⇒
-            val classFile = project.classFile(method)
-            classHierarchy.lookupMethodInSuperinterfaces(classFile, name, descriptor, project).isEmpty &&
-                (
-                    if (!isOpenPackagesAssumption && (classFile.isPackageVisible || method.isPackagePrivate))
-                        declClass.packageName == classFile.thisType.packageName
-                    else
-                        true
-                ) &&
-                    classHierarchy.isSubtypeOf(classFile.thisType, declClass).isNoOrUnknown
-        }
+        val tripleKey = (declClass, name, descriptor)
+        methods.get(tripleKey).getOrElse(Iterable.empty[Method])
     }
 
     def statistics(): Map[String, Any] = {
         Map(
-            "number of method names" →
+            "number of different method interfaceType/name/descriptor pairs" →
                 methods.size,
-            "number of different method name/descriptor pairs" →
-                methods.view.map(kv ⇒ kv._2.size).sum,
             "number of class methods with method signatures matching non-implemented interface methods" →
-                methods.view.map(kv ⇒ kv._2.map(kv ⇒ kv._2.size).sum).sum
+                methods.view.foldLeft(Set.empty[Method]) {
+                    (theMethods, targets: ((ObjectType, String, MethodDescriptor), Iterable[Method])) ⇒
+                        theMethods.++(targets._2)
+                }.size
         )
     }
 
     def methodReferenceStatistics(): Iterable[String] = {
         for {
-            (name, descriptorToMethods) ← methods
-            (descriptor, methods) ← descriptorToMethods
+            ((interfaceType, name, descriptor), theMethods) ← methods
         } yield {
-            val methodInfo = methods.map(project.classFile(_).thisType.toJava).mkString("classes={", ",", "}")
+            val methodInfo = theMethods.map(project.classFile(_).thisType.toJava).mkString("classes={", ",", "}")
             s"${descriptor.toJava(name)} => $methodInfo"
         }
     }
@@ -121,8 +112,9 @@ object CallBySignatureResolution {
     def apply(project: SomeProject): CallBySignatureResolution = {
         val projectIndex = project.get(ProjectIndexKey)
         val classHierarchy = project.classHierarchy
+        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
-        val methods = new AnyRefMap[String /*an interface method name*/ , AnyRefMap[MethodDescriptor /* an interface method descriptor */ , Set[Method]] /*methods defined in classes with matching signatures*/ ](project.methods.size / 3)
+        val methods = new AnyRefMap[(ObjectType, String, MethodDescriptor), Set[Method]] /*methods defined in classes with matching signatures*/ (project.projectMethodsCount / 3)
         def callBySignatureEvaluation(interfaceClassFile: ClassFile, interfaceMethod: Method): Unit = {
             val methodName = interfaceMethod.name
             val methodDescriptor = interfaceMethod.descriptor
@@ -146,32 +138,38 @@ object CallBySignatureResolution {
 
                 val clazzType = clazzClassFile.thisType
 
-                if (!interfaceClassFile.isPublic && interfaceType.packageName != clazzType.packageName)
+                if (interfaceClassFile.isPackageVisible && interfaceType.packageName != clazzType.packageName)
                     return ;
 
                 if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYesOrUnknown)
                     return ;
 
+                if (classHierarchy.lookupMethodInSuperinterfaces(clazzClassFile, methodName, methodDescriptor, project).nonEmpty)
+                    return ;
+
+                val isCpa = analysisMode eq AnalysisModes.CPA
+                if (isCpa && (clazzClassFile.isPackageVisible || m.isPackagePrivate) &&
+                    interfaceType.packageName != clazzType.packageName)
+                    return ;
+
                 //println(s"${interfaceMethod.toJava(interfaceClassFile)} => ${project.classFile(m).thisType.toJava}")
 
-                methods.get(methodName) match {
+                val methodTripleKey = (interfaceType, methodName, methodDescriptor)
+                methods.get(methodTripleKey) match {
                     case None ⇒
-                        val descriptorToMethods = new AnyRefMap[MethodDescriptor, Set[Method]](2)
-                        descriptorToMethods.update(methodDescriptor, Set(m))
-                        methods.update(methodName, descriptorToMethods)
-                    case Some(descriptorToMethods) ⇒
-                        descriptorToMethods.get(methodDescriptor) match {
-                            case None ⇒
-                                descriptorToMethods.put(methodDescriptor, Set(m))
-                            case Some(theMethods) ⇒
-                                descriptorToMethods.put(methodDescriptor, theMethods + m)
-                            case _ ⇒
-                        }
+                        methods.update(methodTripleKey, Set(m))
+                    case Some(theMethods) ⇒
+                        methods.put(methodTripleKey, theMethods + m)
+                    case _ ⇒
                 }
             }
 
             projectIndex.findMethods(methodName, methodDescriptor) foreach analyzeMethod
         }
+
+        if (analysisMode eq AnalysisModes.APP)
+            // if we analyze an application, call by signature is irrelevant
+            return new CallBySignatureResolution(project, Map.empty);
 
         for {
             cf ← project.allClassFiles if cf.isInterfaceDeclaration
@@ -185,7 +183,6 @@ object CallBySignatureResolution {
             Method(_, "toString", MethodDescriptor.JustReturnsString) ← cf.methods
         } println(cf.thisType.toJava)
 
-        methods.values.foreach(_.repack())
         methods.repack()
         new CallBySignatureResolution(project, methods)
     }
