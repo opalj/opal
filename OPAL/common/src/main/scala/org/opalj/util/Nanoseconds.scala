@@ -48,7 +48,11 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal {
     final def toSeconds: Seconds =
         new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
 
-    override def toString: String = timeSpan+" ns"
+    def toString(withUnit: Boolean): String = {
+        if (withUnit) timeSpan+" ns" else timeSpan.toString
+    }
+
+    override def toString: String = toString(withUnit = true)
 }
 /**
  * Defines factory methods and constants related to time spans in [[Nanoseconds]].
