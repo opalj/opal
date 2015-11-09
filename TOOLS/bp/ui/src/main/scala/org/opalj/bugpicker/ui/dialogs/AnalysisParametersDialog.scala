@@ -56,6 +56,9 @@ import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.MultipleSelectionModel
 import scalafx.scene.control.SelectionMode
 import org.opalj.fpcf.FPCFAnalysisRegistry
+import scalafx.scene.layout.VBox
+import scalafx.scene.control.cell.CheckBoxListCell
+import scalafx.beans.property.BooleanProperty
 
 /**
  * @author Arne Lottmann
@@ -99,25 +102,19 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         alignment = Pos.BaselineRight
     }
 
-    val toggleFixpointAnalysesField = new ToggleButton("disabled") {
-        hgrow = Priority.Always
-        alignment = Pos.BaselineLeft
-
-        onAction = { e: ActionEvent ⇒
-            val active = selected.value
-            text = if (active) "enabled" else "disabled"
-            fixpointAnalysesView.disable = !active
-        }
+    case class Item(initialSelection: Boolean, val name: String) {
+        val selected = BooleanProperty(initialSelection)
+        override def toString = name
     }
 
-    val fixpointAnalyses = ObservableBuffer[String](
-        FPCFAnalysisRegistry.analysisDescriptions().toSeq.sorted
-    )
+    val fixpointAnalyses =
+        ObservableBuffer(FPCFAnalysisRegistry.analysisDescriptions().toSeq.sorted.map { Item(false, _) })
 
-    val fixpointAnalysesView = new ListView(fixpointAnalyses) {
+    val fixpointAnalysesView = new ListView[Item] {
         hgrow = Priority.Always
-        disable = true
-        selectionModel().selectionModeProperty().setValue(SelectionMode.MULTIPLE)
+        prefHeight = 250
+        items = fixpointAnalyses
+        cellFactory = CheckBoxListCell.forListView(_.selected)
     }
 
     import BugPickerAnalysis._
@@ -170,23 +167,14 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 4)
 
-                add(new Label("Enable/Disable Fixpoint analyses:"), 0, 5)
-                add(toggleFixpointAnalysesField, 1, 5)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        toggleFixpointAnalysesField.text = "disabled"
-                        toggleFixpointAnalysesField.selected_=(false)
-                        fixpointAnalysesView.disable_=(true)
-                    }
-                }, 2, 5)
-
                 add(new Label("Fixpoint analyses:"), 0, 6)
                 add(fixpointAnalysesView, 1, 6)
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        fixpointAnalysesView.selectionModel.get.clearSelection()
+                        fixpointAnalysesView.items.get.foreach { item ⇒
+                            item.selected.value_=(false)
+                        }
                     }
                 }, 2, 6)
 
@@ -208,7 +196,6 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
                             maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
                             maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
-                            toggleFixpointAnalysesField.selected_=(false)
                             fixpointAnalysesView.disable_=(false)
                             fixpointAnalysesView.selectionModel().clearSelection()
                         }
@@ -294,9 +281,18 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 }
                             }
 
-                            val fpas: Seq[String] = toggleFixpointAnalysesField.selected.value match {
-                                case true ⇒ fixpointAnalysesView.selectionModel().getSelectedItems
-                                case _    ⇒ Seq.empty[String]
+                            val fixpointAnalyses = try {
+                                fixpointAnalysesView.items.get.filter(_.selected()).map { _.toString }
+                            } catch {
+                                case _: Exception | _: Error ⇒ {
+                                    DialogStage.showMessage(
+                                        "Error",
+                                        "You entered an illegal FPCFAnalysis!",
+                                        theStage
+                                    )
+                                    interrupt = true
+                                    Seq.empty[String]
+                                }
                             }
 
                             if (!interrupt) {
@@ -306,7 +302,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                     maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
                                     maxCardinalityOfLongSets = maxCardinalityOfLongSets,
                                     maxCallChainLength = maxCallChainLength,
-                                    fixpointAnalyses = fpas
+                                    fixpointAnalyses = fixpointAnalyses
                                 ))
                                 close()
                             }
@@ -324,17 +320,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
         maxCardinalityOfLongSetsField.text = parameters.maxCardinalityOfLongSets.toString
         maxCallChainLengthField.text = parameters.maxCallChainLength.toString
-        if (parameters.fixpointAnalyses.size == 0) {
-            toggleFixpointAnalysesField.text = "disabled"
-            toggleFixpointAnalysesField.selected = false
-            fixpointAnalysesView.disable = true
-        } else {
-            var i = 0
-            val selection = fixpointAnalysesView.selectionModel()
-            while (i < parameters.fixpointAnalyses.size) {
-                selection.select(i)
-                i += 1
-            }
+        parameters.fixpointAnalyses.foreach { value ⇒
+            val item = fixpointAnalysesView.items.get.find { _.name == value }
+            if (item.nonEmpty)
+                item.get.selected.value_=(true)
+
         }
         showAndWait()
         this.parameters

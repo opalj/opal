@@ -172,7 +172,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
                     s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
                     s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
-                    s"\tmaxCallChainLength=$maxCallChainLength"
+                    s"\tmaxCallChainLength=$maxCallChainLength\n"+
+                    s"\fixpointAnalyses=$fixpointAnalyses"
             )
         }
 
@@ -205,9 +206,14 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        if (fixpointAnalyses.nonEmpty) {
-            val analysisManager = theProject.get(FPCFAnalysisManagerKey)
-            analysisManager.runAll(fixpointAnalyses)(true)
+        println("Fix: "+fixpointAnalyses.map(_.getClass.getSimpleName).mkString(" | "))
+
+        val analysisManager = theProject.get(FPCFAnalysisManagerKey)
+        step(5, "[FPCF-Analysis] Computing Fixpoint Properties (if selected)") {
+            ({
+                fixpointAnalyses.foreach(analysisManager.runWithRecommended(_)(false))
+                theProject.get(SourceElementsPropertyStoreKey).waitOnPropertyComputationCompletion(true)
+            }, None)
         }
 
         //
@@ -508,7 +514,8 @@ object BugPickerAnalysis {
     // 2: FieldValues analysis
     // 3: MethodReturnValues analysis
     // 4: Callgraph
-    final val PreAnalysesCount = 4
+    // 5: FPCF properties
+    final val PreAnalysesCount = 5
 
     // We want to match expressions such as:
     // -maxEvalFactor=1
@@ -533,7 +540,7 @@ object BugPickerAnalysis {
         """-maxCardinalityOfLongSets=(\d+)""".r
     final val DefaultMaxCardinalityOfLongSets = 2
 
-    final val FixpointAnalysesPattern = """-fixpointAnalyses=(.*)""".r
+    final val FixpointAnalysesPattern = """-fixpointAnalyses=(.+)""".r
     final val DefaultFixpointAnalyses = Seq.empty[String]
 
     def resultsAsXHTML(
