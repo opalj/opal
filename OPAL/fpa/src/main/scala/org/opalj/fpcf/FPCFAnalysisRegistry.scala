@@ -111,11 +111,11 @@ object FPCFAnalysisRegistry {
 
     register(
         "[InstantiabilityAnalysis] An analysis which computes if a class can (possibly) can be instantiated.",
-        InstantiabilityAnalysis
+        SimpleInstantiabilityAnalysis
     )
 
     register(
-        "[LibraryLeakageAnalysis] An analysis which computes whether a non-static method can be called via an super or subclass.",
+        "[CallableFromClassesInOtherPackagesAnalysis] An analysis which computes whether a non-static method can be called via an super or subclass.",
         CallableFromClassesInOtherPackagesAnalysis
     )
 
