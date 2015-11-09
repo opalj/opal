@@ -402,7 +402,7 @@ class ProjectExplorer(
                     map { m ⇒
                         val method = scala.xml.Text(m.toJava)
                         s"<i>${method.toString}</i><pre>{\n${
-                            scala.xml.Text(ToJavaLike(AsQuadruples(m, None), indented = true).mkString("\n")).toString
+                            scala.xml.Text(ToJavaLike(AsQuadruples(m, project.classHierarchy, None), indented = true).mkString("\n")).toString
                         }\n}</pre>"
                     }.
                     mkString("<br/>")+
