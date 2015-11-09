@@ -44,7 +44,7 @@ import scala.collection.mutable.HashSet
  * For details: see org.opalj.fpcf.analysis.SimpleInstantiableClassesAnalysis
  *
  * ==Usage==
- * Use the [[InstantiableClassesKey]] to query a project about the instantiable classes.
+ * Use the [[InstantiableClassesIndexKey]] to query a project about the instantiable classes.
  * {{{
  * val instantiableClasses = project.get(InstantiableClassesIndexKey)
  * }}}

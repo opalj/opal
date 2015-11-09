@@ -38,7 +38,7 @@ import org.opalj.br.analyses.SomeProject
  * (either directly or indirectly).
  *
  * @example
- *      To get the index use the [[Project]]'s `get` method and pass in
+ *      To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
  *      `this` object.
  *
  * @author Michael Reif

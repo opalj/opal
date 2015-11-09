@@ -32,19 +32,14 @@ package fpcf
 package analysis
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.log.OPALLogger
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor._
 import org.opalj.br.BooleanType
 import org.opalj.br.VoidType
-import org.opalj.br.FieldType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
-import org.opalj.br.SingleArgumentMethodDescriptor
-import org.opalj.br.NoArgumentMethodDescriptor
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -91,8 +86,9 @@ class CallableFromClassesInOtherPackagesAnalysis private (
         ) {
 
     /**
-     * Determines the [[LibraryLeakage]] property of non-static methods. It is tailored to entry point
-     *  set computation where we have to consider different kind of program/library usage scenarios.
+     * Determines the [[CallableFromClassesInOtherPackages]] property of non-static methods.
+     * It is tailored to entry point set computation where we have to consider different kind of
+     * program/library usage scenarios.
      * Computational differences regarding static methods are :
      *  - private methods can be handled equal in every context
      *  - if OPA is met, all package visible classes are visible which implies that all non-private methods are

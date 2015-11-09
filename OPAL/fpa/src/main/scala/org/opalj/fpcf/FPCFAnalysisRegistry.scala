@@ -100,17 +100,17 @@ object FPCFAnalysisRegistry {
 
     // initialize the registry with the known default analyses
     register(
-        "[MethodAccessibilityAnalysis] An analysis which computes the project accessibility of static melthods property w.r.t. clients.",
+        "[MethodAccessibilityAnalysis] An analysis which computes the project accessibility property of methods w.r.t. clients.",
         MethodAccessibilityAnalysis
     )
 
     register(
-        "[FactoryMethodAnalysis] An analysis which computes whether a static method is an accessible factory method w.r.t. clients.",
+        "[FactoryMethodAnalysis] An analysis which determines if a static method is an accessible factory method w.r.t. clients.",
         FactoryMethodAnalysis
     )
 
     register(
-        "[InstantiabilityAnalysis] An analysis which computes if a class can (possibly) can be instantiated.",
+        "[InstantiabilityAnalysis] An analysis which computes if a class can (possibly) be instantiated.",
         SimpleInstantiabilityAnalysis
     )
 
@@ -125,12 +125,12 @@ object FPCFAnalysisRegistry {
     )
 
     register(
-        "[MutabilityAnalysis] An analysis which computes the entry points of a library/application.",
+        "[MutabilityAnalysis] An analysis which determines if private non-static non-final fields are effectively final.",
         MutabilityAnalysis
     )
 
     register(
-        "[PurityAnalysis] An analysis which computes the entry points of a library/application.",
+        "[PurityAnalysis] An analysis which determines if a method is pure (~ has no side effects).",
         PurityAnalysis
     )
 }
