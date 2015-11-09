@@ -30,26 +30,18 @@ package org.opalj
 package ai
 
 import scala.language.existentials
+
 import java.net.URL
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.CYAN
-import scala.Console.RED
-import scala.Console.RESET
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
-import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.ai.analyses.cg.CallGraphDifferenceReport
 import org.opalj.ai.analyses.cg.CallGraphComparison
 import org.opalj.br.analyses.DefaultOneStepAnalysis

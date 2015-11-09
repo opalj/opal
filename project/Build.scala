@@ -141,7 +141,9 @@ object OPALBuild extends Build {
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),
 		settings = buildSettings 
-	).dependsOn(de % "test->test;compile->compile")
+	).dependsOn(
+		de % "test->test;compile->compile",
+		fpcfa % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	// This project validates OPAL's implemented architecture; hence
@@ -172,7 +174,7 @@ object OPALBuild extends Build {
 		id = "FindRealBugsAnalyses",
 		base = file("OPAL/frb/analyses"),
 		settings = buildSettings
-	).dependsOn(ai % "test->test;compile->compile;it->it")
+	).dependsOn(fpcfa % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	lazy val findRealBugsCLI = Project(

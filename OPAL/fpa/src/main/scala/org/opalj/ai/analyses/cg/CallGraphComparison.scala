@@ -33,17 +33,12 @@ package cg
 
 import scala.language.existentials
 
-import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.CYAN
 import scala.Console.RED
 import scala.Console.RESET
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain
-import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.br.analyses.SomeProject
 
 /**
