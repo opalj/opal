@@ -101,16 +101,18 @@ class FPCFAnalysisManager private[analysis] (project: SomeProject) {
         }
     }
 
-    def runWithRecommendations( // TODO ...Recommended
+    def runWithRecommended(
         runner: FPCFAnalysisRunner[_]
     )(
         waitOnCompletion: Boolean = true
     ): Unit = {
-        val analyses =
-            (runner.recommendations ++ runner.requirements).
-                filterNot { ar ⇒ isDerived(ar.derivedProperties) }
-        runAll(analyses)(false)
-        run(runner, true)
+        if (!isDerived(runner.derivedProperties)) {
+            val analyses =
+                (runner.recommendations ++ runner.requirements).
+                    filterNot { ar ⇒ isDerived(ar.derivedProperties) }
+            runAll(analyses)(false)
+            run(runner, true)
+        }
     }
 
     def isDerived(pKind: PropertyKind): Boolean = derivedProperties.synchronized {
