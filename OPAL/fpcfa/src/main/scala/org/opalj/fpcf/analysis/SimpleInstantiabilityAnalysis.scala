@@ -88,18 +88,30 @@ class SimpleInstantiabilityAnalysis private (
         var instantiatedClasses = Set.empty[EP]
 
         for {
-            cf ← classFiles
+            cf ← classFiles.par
             method ← cf.methods if !method.isAbstract
         } {
-            //            val visibleMethod =
-            //                if (isOpenLibrary) !method.isPrivate
-            //                else method.isPublic || (method.isProtected && !cf.isFinal)
-
-            if (method.isNative && method.isStatic /* && visibleMethod */ ) {
-                //println(cf.thisType.toJava+" with "+method.descriptor.toJava(method.name))
+            if (project.isLibraryType(cf)) {
+                if (cf.isAbstract || cf.isInterfaceDeclaration) {
+                    val hasInstantiableSubtype = project.classHierarchy.allSubtypes(cf.thisType, false).exists { subtype ⇒
+                        project.classFile(subtype) match {
+                            //TODO if cf is not an dependency classfile we should check whether c is instantiable
+                            // => we need a require without an PropertyComputationResult
+                            case Some(cf) ⇒ !cf.isAbstract && !cf.isInterfaceDeclaration
+                            case None     ⇒ true
+                        }
+                    }
+                    if (hasInstantiableSubtype)
+                        instantiatedClasses += EP(cf, Instantiable)
+                    else
+                        instantiatedClasses += EP(cf, NotInstantiable)
+                } else
+                    instantiatedClasses += EP(cf, Instantiable)
+            } else if (method.isNative && method.isStatic) {
                 var instantiatedClasses = Set.empty[EP]
                 classFiles.foreach { classFile ⇒
-                    if (classFile.isAbstract || classFile.isInterfaceDeclaration)
+                    if ((classFile.isAbstract || classFile.isInterfaceDeclaration) &&
+                        (isApplication || (isClosedLibrary && classFile.isPackageVisible)))
                         instantiatedClasses += EP(classFile, NotInstantiable)
                     else
                         instantiatedClasses += EP(classFile, Instantiable)
@@ -120,7 +132,7 @@ class SimpleInstantiabilityAnalysis private (
                             case INVOKESPECIAL(classType, "<init>", _) if classType.packageName == key ⇒
                                 // We found a constructor call.
                                 val classFile = project.classFile(classType)
-                                if (classFile.nonEmpty && !classFile.get.isAbstract) {
+                                if (classFile.nonEmpty) {
                                     instantiatedClasses += EP(classFile.get, Instantiable)
                                 }
                             case _ ⇒
@@ -129,10 +141,8 @@ class SimpleInstantiabilityAnalysis private (
                     pc = body.pcOfNextInstruction(pc)
                 }
             } else {
-                if (cf.isAbstract || cf.isInterfaceDeclaration)
-                    instantiatedClasses += EP(cf, NotInstantiable)
-                else
-                    instantiatedClasses += EP(cf, Instantiable)
+                // we dont know what happens, be conservative
+                instantiatedClasses += EP(cf, Instantiable)
             }
         }
 
@@ -148,11 +158,15 @@ class SimpleInstantiabilityAnalysis private (
     def determineClassInstantiability(classFile: ClassFile): EP = {
         import project.classHierarchy.isSubtypeOf
 
-        if (classFile.isAbstract || classFile.isInterfaceDeclaration)
-            // A class that either never has any constructor (interfaces)
-            // or that must have at least one non-private constructor to make
-            // sense at all.
-            return EP(classFile, NotInstantiable)
+        if (classFile.isAbstract || classFile.isInterfaceDeclaration) {
+            if (isApplication || (isClosedLibrary && classFile.isPackageVisible))
+                // if we analyze an application, abstract classes are not instantiable
+                // if we analyze an library, abstract classes could have subtypes in the future
+                // hence, we have to assume that the methods of the class are called by future subtypes.
+                // if the class is not visible to client, we can consider it as not instantiable, because
+                // we know all subtypes and if a method is invoked then, we will recognize it.
+                return EP(classFile, NotInstantiable);
+        }
 
         val classType = classFile.thisType
 
