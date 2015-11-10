@@ -78,6 +78,10 @@ class EntryPointsAnalysis private (
 
         val classFile = project.classFile(method)
 
+        if (project.isLibraryType(classFile))
+            //we are not interested in library classFiles
+            return NoResult
+
         if (classFile.isInterfaceDeclaration) {
             if (isOpenLibrary)
                 return ImmediateResult(method, IsEntryPoint)
