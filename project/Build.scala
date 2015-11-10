@@ -115,7 +115,7 @@ object OPALBuild extends Build {
 
   	lazy val fpcfa = Project(
   		id = "FixpointComputationsFrameworkAnalyses",
-  		base = file("OPAL/fpa"),
+  		base = file("OPAL/fpcfa"),
   		settings = buildSettings
   	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   	 .configs(IntegrationTest)
