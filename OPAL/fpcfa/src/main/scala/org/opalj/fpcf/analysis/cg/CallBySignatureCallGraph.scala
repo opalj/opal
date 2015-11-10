@@ -58,11 +58,11 @@ import scala.collection.Map
  * @author Michael Eichberg
  */
 class CallBySignatureCallGraph private[cg] (
-        project:                   SomeProject,
+        project:     SomeProject,
         calledByMap: Map[Method, Map[Method, PCs]],
         callsMap:    Map[Method, Map[PC, Iterable[Method]]],
         cbsCount:    Int
-) extends org.opalj.ai.analyses.cg.CallGraph(project, calledByMap, callsMap){
+) extends org.opalj.ai.analyses.cg.CallGraph(project, calledByMap, callsMap) {
 
     def callBySignatureCount: Int = cbsCount
 }
