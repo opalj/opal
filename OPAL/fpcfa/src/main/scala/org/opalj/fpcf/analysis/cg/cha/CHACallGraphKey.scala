@@ -34,6 +34,7 @@ package cha
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.{CallBySignatureResolutionKey, ProjectInformationKey, SomeProject, _}
+import org.opalj.ai.analyses.cg.ComputedCallGraph
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.

@@ -57,7 +57,7 @@ import org.opalj.br.analyses.SomeProject
  *      I.e., the value is never an empty map.
  * @author Michael Eichberg
  */
-class CallGraph private[cg] (
+class CallGraph private[opalj] (
         val project:                   SomeProject,
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
         private[this] val callsMap:    Map[Method, Map[PC, Iterable[Method]]]

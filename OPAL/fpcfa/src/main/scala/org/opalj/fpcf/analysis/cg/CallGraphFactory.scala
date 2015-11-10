@@ -38,6 +38,9 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.br.analyses.InstantiableClassesKey
+import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.ai.analyses.cg.UnresolvedMethodCall
+import org.opalj.ai.analyses.cg.CallGraphConstructionException
 
 /**
  * Factory object to create call graphs.

@@ -6,7 +6,6 @@ package cha
 
 import java.net.URL
 import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
 import org.opalj.br.Method
 
@@ -44,10 +43,10 @@ object CHADemo extends DefaultOneStepAnalysis {
         val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
         println(" Finished Construction of OLD CHA call graph")
         println(" Started Construction of CHA call graph under CPA")
-        val newCpaCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph
+        val newCpaCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
         println(" Finished Construction of CHA call graph under CPA")
         println(" Started Construction of CHA call graph under OPA")
-        val newOpaCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph
+        val newOpaCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
         println(" Finished Construction of CHA call graph under OPA")
         //        val wrongCG = appProject.get(LibraryCHACallGraphKey).callGraph
         // CALL GRAPH STUFF

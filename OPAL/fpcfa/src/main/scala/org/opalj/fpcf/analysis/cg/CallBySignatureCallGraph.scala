@@ -31,49 +31,38 @@ package fpcf
 package analysis
 package cg
 
+import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
+
+import scala.collection.Map
 
 /**
- * Representation of a computed call graph.
+ * Basic representation of a (calculated) call graph.
  *
- * @param entryPoints A function to get the entry points that were used to start
- *      the calculation of the call graph.
+ * ==Terminology==
+ * A method that calls another method is referred to as the `caller`. The method
+ * that is called is called the `callee`. Hence, a caller calls a callee.
  *
+ * ==Thread Safety==
+ * The call graph is effectively immutable and can be accessed by multiple
+ * threads concurrently.
+ * Calls will never block.
+ *
+ * ==Call Graph Construction==
+ * The call graph is constructed by the [[CallGraphFactory]].
+ *
+ * @param calledByMap The map of all methods that are called by at least one method.
+ *      I.e., the value is never the empty map.
+ * @param callsMap The map of all methods that call at least one method.
+ *      I.e., the value is never an empty map.
  * @author Michael Eichberg
  */
-class ComputedCallGraph(
-    val callGraph:              CallGraph,
-    val entryPoints:            () ⇒ Iterable[Method],
-    val unresolvedMethodCalls:  List[UnresolvedMethodCall],
-    val constructionExceptions: List[CallGraphConstructionException]
-)
+class CallBySignatureCallGraph private[cg] (
+        project:                   SomeProject,
+        calledByMap: Map[Method, Map[Method, PCs]],
+        callsMap:    Map[Method, Map[PC, Iterable[Method]]],
+        cbsCount:    Int
+) extends org.opalj.ai.analyses.cg.CallGraph(project, calledByMap, callsMap){
 
-object ComputedCallGraph {
-
-    def apply(
-        callGraph:              CallGraph,
-        entryPoints:            () ⇒ Iterable[Method],
-        unresolvedMethodCalls:  List[UnresolvedMethodCall],
-        constructionExceptions: List[CallGraphConstructionException]
-    ) =
-        new ComputedCallGraph(
-            callGraph,
-            entryPoints,
-            unresolvedMethodCalls,
-            constructionExceptions
-        )
-
-    def unapply(
-        cg: ComputedCallGraph
-    ): Some[(CallGraph, List[UnresolvedMethodCall], List[CallGraphConstructionException])] =
-        Some((cg.callGraph, cg.unresolvedMethodCalls, cg.constructionExceptions))
-
-    def empty(project: SomeProject) =
-        apply(
-            new CallGraph(project, Map.empty, Map.empty, 0),
-            () ⇒ List.empty,
-            List.empty,
-            List.empty
-        )
+    def callBySignatureCount: Int = cbsCount
 }

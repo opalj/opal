@@ -40,6 +40,8 @@ import org.opalj.collection.UID
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
+import org.opalj.ai.analyses.cg.CallGraph
+
 /**
  * Builds a call graph by first collecting all call graph edges before the final
  * `CallGraph` is created.
@@ -159,11 +161,11 @@ class CallGraphBuilder(val project: SomeProject) {
                 )
         }
 
-        new CallGraph(
+        new CallBySignatureCallGraph(
             project,
             Await.result(calledByMapFuture, Duration.Inf),
             callsMap,
             callBySignatureCount
-        )
+        ).asInstanceOf[CallGraph]
     }
 }

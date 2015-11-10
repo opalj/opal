@@ -43,8 +43,8 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
-
 import org.opalj.br.MethodSignature
+import org.opalj.ai.analyses.cg.UnresolvedMethodCall
 
 /**
  * @author Michael Eichberg
