@@ -23,6 +23,7 @@ object CHADemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val entryPointInfo = false
+        val cgDiff = true
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
@@ -39,17 +40,11 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         // CALL GRAPH STUFF
 
-        println(" Started Construction of OLD CHA call graph")
         val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
-        println(" Finished Construction of OLD CHA call graph")
-        println(" Started Construction of CHA call graph under CPA")
         val newCpaCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
-        println(" Finished Construction of CHA call graph under CPA")
-        println(" Started Construction of CHA call graph under OPA")
         val newOpaCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
-        println(" Finished Construction of CHA call graph under OPA")
-        //        val wrongCG = appProject.get(LibraryCHACallGraphKey).callGraph
-        // CALL GRAPH STUFF
+
+        // ENTRY POINT INFO
 
         val cpaEP = cpaStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
 
@@ -82,8 +77,20 @@ object CHADemo extends DefaultOneStepAnalysis {
             println("\n-------------------- END OF ENTRY POINT INFORMATION ------------------------\n")
         }
 
+        // CALL GRAPH DIFF
+
+        if (cgDiff) {
+            val (less, additional) = org.opalj.ai.analyses.cg.CallGraphComparison(project, traditionalCG, newOpaCG)
+
+            println(less.mkString("\n\nEXPECTED:", "\n", "\n\n"))
+            //            println(additional.mkString("\n\nUNEXPECTED:", "\n", "\n\n"))
+            additional.mkString("\n\nUNEXPECTED:", "\n", "\n\n")
+        }
+
         println(s"\n\nOPA: ${newOpaCG.callBySignatureCount}\n")
         println(s"CPA: ${newCpaCG.callBySignatureCount}\n\n")
+
+        println("nonInstClasses(OPA): "+opaProject.get(InstantiableClassesIndexKey).notInstantiable.size)
 
         val outputTable = s"\n\n#methods: ${methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+

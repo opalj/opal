@@ -88,7 +88,7 @@ class SimpleInstantiabilityAnalysis private (
         var instantiatedClasses = Set.empty[EP]
 
         for {
-            cf ← classFiles.par
+            cf ← classFiles
             method ← cf.methods if !method.isAbstract
         } {
             if (project.isLibraryType(cf)) {
