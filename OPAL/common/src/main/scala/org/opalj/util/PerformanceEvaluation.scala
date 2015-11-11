@@ -137,7 +137,7 @@ object PerformanceEvaluation {
      * and returns a textual representation.
      */
     def asMB(bytesCount: Long): String = {
-        val mbs = bytesCount / 1024 / 1024.0
+        val mbs = bytesCount / 1024.0d / 1024.0d
         f"$mbs%.2f MB" // String interpolation
     }
 
@@ -149,7 +149,13 @@ object PerformanceEvaluation {
 
     /**
      * Measures the amount of memory that is used as a side-effect
-     * of executing the given function `f`.
+     * of executing the given function `f`. I.e., the amount of memory is measured that is
+     * used before and after executing `f`; i.e., the permanent data structures that are created
+     * by `f` are measured.
+     *
+     * @note If large data structures are used by `f` that are
+     * 		not used anymore afterwards then it may happen that the used amount of memory
+     * 		is negative.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean

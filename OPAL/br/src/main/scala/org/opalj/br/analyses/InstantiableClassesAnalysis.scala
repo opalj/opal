@@ -40,7 +40,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
  * `java.lang.Math`).
  *
- * A class is not instantiable if:
+ * A class is not (potentially) instantiable if:
  *  - it only defines private constructors and these constructors are not called
  *    by any static method and the class is also not Serializable.
  *
