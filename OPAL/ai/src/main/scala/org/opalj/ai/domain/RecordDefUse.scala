@@ -47,7 +47,7 @@ import org.opalj.collection.mutable.SmallValuesSet
 import scala.collection.mutable.Queue
 
 /**
- * Collects the abstract interpretation time Definition-Use information.
+ * Collects the abstract interpretation time definition/use information.
  * I.e., makes the information available which value is accessed where/where a used
  * value is defined.
  * In general, all regular values are identified using `Int`
@@ -62,16 +62,13 @@ import scala.collection.mutable.Queue
  * successfully completed and the control-flow graph is available. The information
  * is automatically made available, when this plug-in is mixed in.
  *
+ *
  * ==Special Values==
  *
  * ===Parameters===
  * The parameters given to a method have negative `int` values (the first
  * parameter has the value -1, the second -2 and so forth; the computational type
  * category is ignored.).
- *
- * ===Exceptions===
- * Exceptions are generally using the
- *
  *
  * ==Core Properties==
  *
@@ -194,6 +191,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def dumpDefUseInfo(): Node =
         XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
 
+    /**
+     * Creates an XHTML  table node which contains the def/use information.
+     */
     def dumpDefUseTable(): Node = {
         val perInstruction =
             defOps.zip(defLocals).zipWithIndex.
@@ -243,8 +243,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
-     * Returns the instruction which defined the value used by the instruction with the given `pc` and which
-     * is stored at the stack position with the given valueIndex. The first value on
+     * Returns the instruction which defined the value used by the instruction with the given `pc`
+     * and which is stored at the stack position with the given valueIndex. The first value on
      * the stack has index 0.
      */
     def operandOrigin(pc: PC, valueIndex: Int): ValueOrigins = defOps(pc)(valueIndex)
@@ -392,9 +392,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         )
                     else {
                         val joinedHead = (newHead ++ oldHead)
-                        //                        assert(newHead.subsetOf(joinedHead))
-                        //                        assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
-                        //                        assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
+                        // assert(newHead.subsetOf(joinedHead))
+                        // assert(oldHead.subsetOf(joinedHead), s"$newHead ++ $oldHead is $joinedHead")
+                        // assert(joinedHead.size > oldHead.size, s"$newHead ++  $oldHead is $joinedHead")
                         joinDefOps(
                             oldDefOps,
                             lDefOps.tail, rDefOps.tail,
@@ -476,7 +476,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else {
                                     newUsage = true
                                     val joinedDefLocals = n ++ o
-                                    //                                    assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
+                                    // assert(joinedDefLocals.size > o.size, s"$n ++  $o is $joinedDefLocals")
                                     joinedDefLocals
                                 }
                             }
@@ -852,10 +852,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         var iterationCount = 0
         val maxIterationCount = aiResult.code.instructions.size * 50
-        var subroutinePCs = Set.empty[PC]
+        var subroutinePCs: Set[PC] = Set.empty
         val nextPCs: Queue[PC] = Queue(0)
 
-        while (nextPCs.nonEmpty || { nextPCs ++ subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
+        while (nextPCs.nonEmpty || { nextPCs ++= subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
             val currPC = nextPCs.dequeue
             iterationCount += 1
             if (iterationCount > maxIterationCount) {
@@ -869,7 +869,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             }
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
-                //println(s"$currPC: ${instructions(currPC).toString(currPC)} : $nextPCs ::: $subroutinePCs")
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
@@ -886,8 +885,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         throw e
                 }
 
-                //                assert(defLocals(succPC) ne null)
-                //                assert(defOps(succPC) ne null)
+                // assert(defLocals(succPC) ne null)
+                // assert(defOps(succPC) ne null)
 
                 if (scheduleNextPC && !nextPCs.contains(succPC)) {
                     if (instructions(currPC).isInstanceOf[JSRInstruction]) {
@@ -907,7 +906,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
 }
 
-private object UnsupportedOperationComputationalTypeCategory extends (Int ⇒ ComputationalTypeCategory) {
+private object UnsupportedOperationComputationalTypeCategory
+        extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 
