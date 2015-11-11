@@ -133,7 +133,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min  is a conservative approx. which may lead to the
+        // The following value for min is a conservative approx. which may lead to the
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
@@ -636,7 +636,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val invoke = instruction.asInstanceOf[InvocationInstruction]
                 val descriptor = invoke.methodDescriptor
                 stackOp(
-                    invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
+                    invoke.numberOfPoppedOperands(ComputationalTypeCategoryUnavailable),
                     !descriptor.returnType.isVoidType
                 )
 
@@ -841,6 +841,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         scheduleNextPC
     }
 
+    /**
+     * Extracts the definition/use information by using the recorded cfg.
+     */
     abstract override def abstractInterpretationEnded(
         aiResult: AIResult { val domain: defUseDomain.type }
     ): Unit = {
@@ -906,8 +909,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
 }
 
-private object UnsupportedOperationComputationalTypeCategory
-        extends (Int ⇒ ComputationalTypeCategory) {
+private object ComputationalTypeCategoryUnavailable extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 

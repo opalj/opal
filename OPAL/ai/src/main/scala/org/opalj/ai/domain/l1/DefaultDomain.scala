@@ -82,11 +82,10 @@ class DefaultDomain[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
+) extends DefaultConfigurableDomain[String, Source](
+    method.toJava(classFile),
+    project, classFile, method
 )
-        extends DefaultConfigurableDomain[String, Source](
-            method.toJava(classFile),
-            project, classFile, method
-        )
 
 /**
  * Configuration of a domain that uses the most capable `l1` domains and
@@ -96,8 +95,7 @@ class DefaultDomainWithCFG[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-)
-        extends DefaultDomain[Source](project, classFile, method)
+) extends DefaultDomain[Source](project, classFile, method)
         with RecordCFG
 
 /**
@@ -109,7 +107,6 @@ class DefaultDomainWithCFGAndDefUse[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-)
-        extends DefaultDomain[Source](project, classFile, method)
+) extends DefaultDomain[Source](project, classFile, method)
         with RecordDefUse
 

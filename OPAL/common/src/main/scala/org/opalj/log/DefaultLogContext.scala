@@ -35,8 +35,7 @@ case class DefaultLogContext private ( final val startTime: Long) extends LogCon
         this(startTime = System.currentTimeMillis())
     }
 
-    override def toString: String =
-        "project context:"+startTime.toString().drop(6)
+    override def toString: String = "project context:"+startTime.toString().drop(6)
 
     override def newInstance: LogContext = new DefaultLogContext(this.startTime)
 
