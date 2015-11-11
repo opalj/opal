@@ -65,6 +65,7 @@ trait Callees {
                         classHierarchy.lookupImplementingMethods(
                             declaringClassType, name, descriptor,
                             project,
+                            // FIXME Only correct if the code that we are analyzing is an app
                             classesFilter = (cf) ⇒ instantiableClasses.isInstantiable(cf)
                         )
                     },
