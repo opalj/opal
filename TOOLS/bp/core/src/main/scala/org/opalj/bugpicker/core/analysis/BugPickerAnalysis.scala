@@ -74,8 +74,6 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysisRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
-import org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey
-import org.opalj.fpcf.analysis.EntryPointsAnalysis
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -198,9 +196,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         }
 
         val callGraph = step(4, "[Pre-Analysis] Creating the call graph") {
-            //(theProject.get(VTACallGraphKey), None)
-            theProject.get(FPCFAnalysisManagerKey).runWithRecommended(EntryPointsAnalysis)(true)
-            (theProject.get(CHACallGraphKey), None)
+            (theProject.get(VTACallGraphKey), None)
         }
         val callGraphEntryPoints = callGraph.entryPoints().toSet
 
