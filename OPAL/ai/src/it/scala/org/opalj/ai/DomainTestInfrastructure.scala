@@ -30,7 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import java.io.File
 import java.net.URL
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -38,7 +37,6 @@ import scala.util.control.ControlThrowable
 import org.opalj.io.writeAndOpen
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.ai.util.XHTML
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
