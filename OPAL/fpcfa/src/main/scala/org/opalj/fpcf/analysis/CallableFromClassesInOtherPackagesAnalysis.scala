@@ -102,10 +102,6 @@ class CallableFromClassesInOtherPackagesAnalysis private (
             /* private methods are only visible in the scope of the class */
             return ImmediateResult(method, NotCallable);
 
-        val classFile = project.classFile(method)
-        if (classFile.isFinal)
-            return ImmediateResult(method, NotCallable);
-
         if (isOpenLibrary)
             return ImmediateResult(method, Callable);
 
@@ -117,6 +113,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
         // When we reach this point:
         // - the method is public or protected
         // - the class is not final
+        val classFile = project.classFile(method)
         if (classFile.isPublic)
             return ImmediateResult(method, Callable);
 
@@ -126,25 +123,27 @@ class CallableFromClassesInOtherPackagesAnalysis private (
         val methodName = method.name
         val methodDescriptor = method.descriptor
 
-        var subtypes = classHierarchy.directSubtypesOf(classType)
-        while (subtypes.nonEmpty) {
-            val subtype = subtypes.head
-            project.classFile(subtype) match {
-                case Some(subclass) ⇒
-                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
-                        if (subclass.isPublic) {
-                            // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, Callable);
-                        } else
-                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+        if (!classFile.isFinal) {
+            var subtypes = classHierarchy.directSubtypesOf(classType)
+            while (subtypes.nonEmpty) {
+                val subtype = subtypes.head
+                project.classFile(subtype) match {
+                    case Some(subclass) ⇒
+                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                            if (subclass.isPublic) {
+                                // the original method is now visible (and not shadowed)
+                                return ImmediateResult(method, Callable);
+                            } else
+                                subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
-                // we need to continue our search for a class that makes the method visible
-                case None ⇒
-                    // The type hierarchy is obviously not downwards closed; i.e.,
-                    // the project configuration is rather strange! 
-                    return ImmediateResult(method, Callable);
+                    // we need to continue our search for a class that makes the method visible
+                    case None ⇒
+                        // The type hierarchy is obviously not downwards closed; i.e.,
+                        // the project configuration is rather strange! 
+                        return ImmediateResult(method, Callable);
+                }
+                subtypes -= subtype
             }
-            subtypes -= subtype
         }
 
         //Now: A method does not leak through a subclass, but we also have to check the superclasses
