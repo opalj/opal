@@ -85,7 +85,7 @@ import org.opalj.br.instructions._
  *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
- * override the relevant methods (in particular: [[isInterrupted]] and [[tracer]]).
+ * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
  *
  * @author Michael Eichberg
  */
@@ -289,7 +289,7 @@ trait AI[D <: Domain] {
             initialLocals(classFile, method, theDomain)(someLocals)
         )
     }
-
+   
     /**
      * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
@@ -314,7 +314,29 @@ trait AI[D <: Domain] {
         continueInterpretation(
             strictfp, code, theDomain
         )(
-            AI.initialWorkList, List.empty[PC], operandsArray, localsArray, Nil
+            AI.initialWorkList, List.empty[PC], operandsArray, localsArray
+        )
+    }
+    
+        def continueInterpretation(
+        strictfp:  Boolean,
+        code:      Code,
+        theDomain: D
+    )(
+        initialWorkList:  List[PC],
+        alreadyEvaluated: List[PC],
+        theOperandsArray: theDomain.OperandsArray,
+        theLocalsArray:   theDomain.LocalsArray 
+    ): AIResult { val domain: theDomain.type } = {
+        val joinInstructions = code.joinInstructions
+
+        continueInterpretation(
+            strictfp, code, joinInstructions,
+            theDomain
+        )(
+            initialWorkList, alreadyEvaluated,
+            theOperandsArray, theLocalsArray,
+            Nil, null, null
         )
     }
 
@@ -334,7 +356,9 @@ trait AI[D <: Domain] {
         joinInstructions:                    BitSet,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theSubroutinesOperandsArray:         theDomain.OperandsArray,
+        theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): Unit = {
 
         // The following order must not change:
@@ -352,7 +376,9 @@ trait AI[D <: Domain] {
                 d.setMemoryLayout(
                     theOperandsArray.asInstanceOf[d.OperandsArray],
                     theLocalsArray.asInstanceOf[d.LocalsArray],
-                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]]
+                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]],
+                    theSubroutinesOperandsArray.asInstanceOf[d.OperandsArray],
+                    theSubroutinesLocalsArray.asInstanceOf[d.LocalsArray]
                 )
             case _ ⇒ /*nothing to do*/
         }
@@ -366,28 +392,6 @@ trait AI[D <: Domain] {
         }
     }
 
-    def continueInterpretation(
-        strictfp:  Boolean,
-        code:      Code,
-        theDomain: D
-    )(
-        initialWorkList:                     List[PC],
-        alreadyEvaluated:                    List[PC],
-        theOperandsArray:                    theDomain.OperandsArray,
-        theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
-    ): AIResult { val domain: theDomain.type } = {
-        val joinInstructions = code.joinInstructions
-
-        continueInterpretation(
-            strictfp, code, joinInstructions,
-            theDomain
-        )(
-            initialWorkList, alreadyEvaluated,
-            theOperandsArray, theLocalsArray,
-            theMemoryLayoutBeforeSubroutineCall
-        )
-    }
 
     /**
      * Continues the interpretation of/performs an abstract interpretation of
@@ -437,6 +441,16 @@ trait AI[D <: Domain] {
      *      '''The `localsArray` data structure is mutated by OPAL-AI and it is
      *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
+     *
+     * @param theSubroutinesOperandsArray The array that contains the intermediate information
+     *      about the subroutines' operands.
+     *      This value should be `null` unless we are continuing an aborted computation and
+     *      a subroutine was already analyzed.
+     *
+     * @param theSubroutinesLocalsArray The array that contains the intermediate information
+     *      about the subroutines' locals.
+     *      This value should be `null` unless we are continuing an aborted computation and
+     *      a subroutine was already analyzed.
      */
     def continueInterpretation(
         strictfp: Boolean, code: Code, joinInstructions: BitSet,
@@ -446,8 +460,24 @@ trait AI[D <: Domain] {
         alreadyEvaluated:                    List[PC],
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theSubroutinesOperandsArray:         theDomain.OperandsArray,
+        theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
+
+        assert(
+            (theSubroutinesOperandsArray eq null) && (theSubroutinesLocalsArray eq null) ||
+                (theSubroutinesOperandsArray ne null) && (theSubroutinesLocalsArray ne null),
+            "inconsistent subroutine information"
+        )
+        assert(
+            (theSubroutinesOperandsArray eq null) ||
+                theSubroutinesOperandsArray.zipWithIndex.forall { opsPC ⇒
+                    val (ops, pc) = opsPC
+                    (ops eq null) || (theOperandsArray(pc) eq null)
+                },
+            "the regular operands and the subroutines operands contain conflicting information"
+        )
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(strictfp, code, theDomain)(
@@ -483,7 +513,8 @@ trait AI[D <: Domain] {
             strictfp, code, theDomain
         )(
             instructions, joinInstructions,
-            theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
+            theOperandsArray, theLocalsArray,
+            theMemoryLayoutBeforeSubroutineCall, theSubroutinesOperandsArray, theSubroutinesLocalsArray
         )
 
         /*
@@ -498,6 +529,23 @@ trait AI[D <: Domain] {
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
         /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
+        /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
+        /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
+
+        // Integrates the abstract state related to the execution of the subroutines with the main
+        // operands/locals array. The abstract state is the state computed across all executions
+        // of the respective subroutines!
+        def integrateSubroutineInformation(): Unit = {
+            if (subroutinesOperandsArray ne null) {
+                foreachNonNullValue(subroutinesOperandsArray) { (pc, value) ⇒
+                    assert((operandsArray(pc) eq null) && (localsArray(pc) eq null))
+                    val subroutineOperands = subroutinesOperandsArray(pc)
+                    val subroutineLocals = subroutinesLocalsArray(pc)
+                    operandsArray(pc) = subroutineOperands
+                    localsArray(pc) = subroutineLocals
+                }
+            }
+        }
 
         // -------------------------------------------------------------------------------
         //
@@ -820,7 +868,8 @@ trait AI[D <: Domain] {
             assert(
                 (worklist.count(_ == targetPC) != 0) == isTargetScheduled.isYesOrUnknown ||
                     (worklist.count(_ == targetPC) == 0) == isTargetScheduled.isNoOrUnknown,
-                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled (join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
+                s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled "+
+                    s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
 
             worklist =
@@ -834,11 +883,11 @@ trait AI[D <: Domain] {
                     tracer
                 )
 
-            //            assert(
-            //                abruptSubroutineTerminationCount == 0 ||
-            //                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-            //                "an exception handler that handles the abrupt termination of a subroutine "+
-            //                    "is scheduled to be executed as part of the abruptly terminated subroutine")
+            // assert(
+            //   abruptSubroutineTerminationCount == 0 ||
+            //      !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
+            //   "an exception handler that handles the abrupt termination of a subroutine "+
+            //      "is scheduled to be executed as part of the abruptly terminated subroutine")
         }
 
         // THIS IS THE MAIN INTERPRETER LOOP
@@ -848,11 +897,10 @@ trait AI[D <: Domain] {
                     AIResultBuilder.aborted(
                         strictfp, code, joinInstructions, theDomain
                     )(
-                        worklist,
-                        evaluated,
-                        operandsArray,
-                        localsArray,
-                        memoryLayoutBeforeSubroutineCall
+                        worklist, evaluated,
+                        operandsArray, localsArray,
+                        memoryLayoutBeforeSubroutineCall,
+                        subroutinesOperandsArray, subroutinesLocalsArray
                     )
 
                 if (tracer.isDefined) {
@@ -874,14 +922,14 @@ trait AI[D <: Domain] {
                 while (worklist.head < 0) { // while we may return from multiple nested subroutines
                     evaluated = SUBROUTINE_END :: evaluated
                     // the structure is:
-                    // SUBROUTINE_START ::
-                    //   (
-                    //      (RET_PC :: )+
-                    //      SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE  :: lvIndex ::
-                    //   )?
-                    // SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
-                    // SUBROUTINE ::
-                    // remaining worklist
+                    //      SUBROUTINE_START ::
+                    //          (
+                    //              (RET_PC :: )+
+                    //              SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE  :: lvIndex ::
+                    //          )?
+                    //      SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
+                    //      SUBROUTINE ::
+                    //      remaining worklist
                     worklist = worklist.tail // remove SUBROUTINE_START
                     var retPCs = Set.empty[PC]
                     while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
@@ -906,9 +954,63 @@ trait AI[D <: Domain] {
                     worklist = worklist.tail // remove SUBROUTINE_RETURN_TO_TARGET
                     val returnAddress = worklist.head
                     worklist = worklist.tail.tail // remove the subroutine marker
+
+                    // We need to merge the results of the execution of the subroutines to get
+                    // abstract interpretation time information about the operands/locals across
+                    // all subroutine calls; we have to make sure that we extract the information
+                    // belonging to the correct subroutine (if we have nested subroutine calls)
+                    var subroutineLevel = 0
+                    var trace = evaluated.tail
+                    var subroutine: List[PC] = Nil
+                    while (trace.head != SUBROUTINE_START || subroutineLevel != 0) {
+                        trace.head match {
+                            case SUBROUTINE_START ⇒ subroutineLevel -= 1
+                            case SUBROUTINE_END   ⇒ subroutineLevel += 1
+                            case pc ⇒
+                                if (subroutineLevel == 0) subroutine = pc :: subroutine
+                        }
+                        trace = trace.tail
+                    }
+                    if (subroutinesOperandsArray eq null) {
+                        // ... we finished the analysis of a subroutine for the first time.
+                        subroutinesOperandsArray = new Array(instructions.length)
+                        subroutinesLocalsArray = new Array(instructions.length)
+                        subroutine.foreach { pc ⇒
+                            if (pc >= 0) {
+                                subroutinesOperandsArray(pc) = operandsArray(pc)
+                                subroutinesLocalsArray(pc) = localsArray(pc)
+                            }
+                        }
+                    } else {
+                        subroutine.foreach { pc ⇒
+                            if (pc >= 0) {
+                                val currentOperands = operandsArray(pc)
+                                assert(currentOperands ne null)
+
+                                val mergedOperands = subroutinesOperandsArray(pc)
+                                if (mergedOperands eq null) {
+                                    subroutinesOperandsArray(pc) = currentOperands
+                                    subroutinesLocalsArray(pc) = localsArray(pc)
+                                } else {
+                                    // we have to merge the results from a previous execution of the
+                                    // subroutine with the current results
+                                    theDomain.join(
+                                        pc,
+                                        mergedOperands, subroutinesLocalsArray(pc),
+                                        currentOperands, localsArray(pc)
+                                    ) match {
+                                        case NoUpdate ⇒ /*nothing to do...*/
+                                        case SomeUpdate((newOperands, newLocals)) ⇒
+                                            subroutinesOperandsArray(pc) = newOperands
+                                            subroutinesLocalsArray(pc) = newLocals
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     val targets = retPCs.map { retPC ⇒
                         if (tracer.isDefined) {
-                            val subroutine = evaluated.tail.takeWhile(_ != SUBROUTINE_START)
                             tracer.get.returnFromSubroutine(theDomain)(
                                 retPC,
                                 returnAddress,
@@ -946,15 +1048,14 @@ trait AI[D <: Domain] {
                     // one further instruction, but we may have evaluated that one
                     // already and the evaluation context didn't change).
                     if (worklist.isEmpty) {
+                        integrateSubroutineInformation()
                         val result =
                             AIResultBuilder.completed(
                                 strictfp, code, joinInstructions, theDomain
                             )(
                                 evaluated, operandsArray, localsArray
                             )
-
                         if (tracer.isDefined) tracer.get.result(result)
-
                         return result;
                     }
                 }
@@ -1343,6 +1444,8 @@ trait AI[D <: Domain] {
                         val returnTarget = pcOfNextInstruction
                         val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
                         evaluated = SUBROUTINE_START :: evaluated
+                        // FIXME we have to make sure that "theOperands|LocalsArray" are used
+                        // to store the results of the main abstraction
                         memoryLayoutBeforeSubroutineCall =
                             (branchTarget, operandsArray.clone, localsArray.clone) ::
                                 memoryLayoutBeforeSubroutineCall
@@ -1519,7 +1622,7 @@ trait AI[D <: Domain] {
                                     pc,
                                     index,
                                     firstKey,
-                                    switch.npairs(switch.npairs.size - 1)._1
+                                    switch.npairs.last._1
                                 ).isYesOrUnknown) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
@@ -2087,13 +2190,13 @@ trait AI[D <: Domain] {
                     // UNARY EXPRESSIONS
                     //
                     case 119 /*dneg*/ ⇒
-                        fallThrough(theDomain.dneg(pc, strictfp, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.dneg(pc, strictfp, operands.head) :: operands.tail)
                     case 118 /*fneg*/ ⇒
-                        fallThrough(theDomain.fneg(pc, strictfp, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.fneg(pc, strictfp, operands.head) :: operands.tail)
                     case 117 /*lneg*/ ⇒
-                        fallThrough(theDomain.lneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.lneg(pc, operands.head) :: operands.tail)
                     case 116 /*ineg*/ ⇒
-                        fallThrough(theDomain.ineg(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.ineg(pc, operands.head) :: operands.tail)
 
                     //
                     // BINARY EXPRESSIONS
@@ -2238,7 +2341,7 @@ trait AI[D <: Domain] {
                     // GENERIC STACK MANIPULATION
                     //
                     case 89 /*dup*/ ⇒
-                        fallThrough((operands.head) :: operands)
+                        fallThrough(operands.head :: operands)
                     case 90 /*dup_x1*/ ⇒
                         val v1 :: v2 :: rest = operands
                         fallThrough(v1 :: v2 :: v1 :: rest)
@@ -2289,41 +2392,39 @@ trait AI[D <: Domain] {
                     //
                     case 144 /*d2f*/ ⇒
                         fallThrough(
-                            theDomain.d2f(pc, strictfp, operands.head) :: (operands.tail)
+                            theDomain.d2f(pc, strictfp, operands.head) :: operands.tail
                         )
                     case 142 /*d2i*/ ⇒
-                        fallThrough(theDomain.d2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.d2i(pc, operands.head) :: operands.tail)
                     case 143 /*d2l*/ ⇒
-                        fallThrough(theDomain.d2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.d2l(pc, operands.head) :: operands.tail)
 
                     case 141 /*f2d*/ ⇒
-                        fallThrough(
-                            theDomain.f2d(pc, strictfp, operands.head) :: (operands.tail)
-                        )
+                        fallThrough(theDomain.f2d(pc, strictfp, operands.head) :: operands.tail)
                     case 139 /*f2i*/ ⇒
-                        fallThrough(theDomain.f2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.f2i(pc, operands.head) :: operands.tail)
                     case 140 /*f2l*/ ⇒
-                        fallThrough(theDomain.f2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.f2l(pc, operands.head) :: operands.tail)
 
                     case 145 /*i2b*/ ⇒
-                        fallThrough(theDomain.i2b(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2b(pc, operands.head) :: operands.tail)
                     case 146 /*i2c*/ ⇒
-                        fallThrough(theDomain.i2c(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2c(pc, operands.head) :: operands.tail)
                     case 135 /*i2d*/ ⇒
-                        fallThrough(theDomain.i2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2d(pc, operands.head) :: operands.tail)
                     case 134 /*i2f*/ ⇒
-                        fallThrough(theDomain.i2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2f(pc, operands.head) :: operands.tail)
                     case 133 /*i2l*/ ⇒
-                        fallThrough(theDomain.i2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2l(pc, operands.head) :: operands.tail)
                     case 147 /*i2s*/ ⇒
-                        fallThrough(theDomain.i2s(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.i2s(pc, operands.head) :: operands.tail)
 
                     case 138 /*l2d*/ ⇒
-                        fallThrough(theDomain.l2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.l2d(pc, operands.head) :: operands.tail)
                     case 137 /*l2f*/ ⇒
-                        fallThrough(theDomain.l2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.l2f(pc, operands.head) :: operands.tail)
                     case 136 /*l2i*/ ⇒
-                        fallThrough(theDomain.l2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.l2i(pc, operands.head) :: operands.tail)
 
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
@@ -2439,6 +2540,7 @@ trait AI[D <: Domain] {
             }
         }
 
+        integrateSubroutineInformation()
         val result =
             AIResultBuilder.completed(
                 strictfp, code, joinInstructions, theDomain

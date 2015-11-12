@@ -133,7 +133,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min is a conservative approx. which may lead to the
+        // The following value for min  is a conservative approx. which may lead to the
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
@@ -636,7 +636,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val invoke = instruction.asInstanceOf[InvocationInstruction]
                 val descriptor = invoke.methodDescriptor
                 stackOp(
-                    invoke.numberOfPoppedOperands(ComputationalTypeCategoryUnavailable),
+                    invoke.numberOfPoppedOperands(UnsupportedOperationComputationalTypeCategory),
                     !descriptor.returnType.isVoidType
                 )
 
@@ -853,23 +853,25 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
 
-        var iterationCount = 0
-        val maxIterationCount = aiResult.code.instructions.size * 50
+        //DEBUG var iterationCount = 0
+        //DEBUG val maxIterationCount = aiResult.code.instructions.size * 50
         var subroutinePCs: Set[PC] = Set.empty
         val nextPCs: Queue[PC] = Queue(0)
 
-        while (nextPCs.nonEmpty || { nextPCs ++= subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
+        while (nextPCs.nonEmpty ||
+            // we want to evaluate the subroutines only once!
+            { nextPCs ++= subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
             val currPC = nextPCs.dequeue
-            iterationCount += 1
-            if (iterationCount > maxIterationCount) {
-                var s = "\nThe analysis failed! "
-                s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
-                println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
-                if (iterationCount > 1.1 * maxIterationCount) {
-                    org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
-                    throw new UnknownError(s)
-                }
-            }
+            //DEBUG iterationCount += 1
+            //DEBUG if (iterationCount > maxIterationCount) {
+            //DEBUG     var s = "\nThe analysis failed! "
+            //DEBUG     s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
+            //DEBUG     println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
+            //DEBUG     if (iterationCount > 1.1 * maxIterationCount) {
+            //DEBUG         org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
+            //DEBUG         throw new UnknownError(s)
+            //DEBUG     }
+            //DEBUG }
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -893,6 +895,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 if (scheduleNextPC && !nextPCs.contains(succPC)) {
                     if (instructions(currPC).isInstanceOf[JSRInstruction]) {
+                        // first let's collect all subroutinePCs to make sure that we evaluate
+                        // the subroutines only once
                         subroutinePCs += succPC
                     } else {
                         nextPCs.enqueue(succPC)
@@ -909,7 +913,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
 }
 
-private object ComputationalTypeCategoryUnavailable extends (Int ⇒ ComputationalTypeCategory) {
+private object UnsupportedOperationComputationalTypeCategory
+        extends (Int ⇒ ComputationalTypeCategory) {
 
     def apply(i: Int): Nothing = throw new UnsupportedOperationException
 

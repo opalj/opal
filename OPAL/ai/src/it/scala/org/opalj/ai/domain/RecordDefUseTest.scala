@@ -31,11 +31,13 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.scalatest.FunSpec
+import scala.collection.JavaConverters._
 
 /**
  * This integration test tests if the collected def/use information make sense.
@@ -63,72 +65,113 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelLongValuesShiftOperators
-        with RecordDefUse
+        with RecordDefUse // <=== we are going to test!
 
-    describe("getting def/use information") {
+    def analyzeProject(name : String, project : Project[java.net.URL]) : Unit = {
+        info(s"the loaded project ($name) contains ${project.methodsCount} methods")
 
-        it("should be possible to calculate the def/use information for all methods of the JDK") {
+        val comparisonCount = new java.util.concurrent.atomic.AtomicLong(0)
+        val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
 
-            val comparisonCount = new java.util.concurrent.atomic.AtomicLong(0)
-            val project = org.opalj.br.TestSupport.createJREProject
-
-            info(s"the loaded project contains ${project.methodsCount} methods")
-            val failures = new java.util.concurrent.atomic.AtomicInteger(0)
-
-            project.parForeachMethodWithBody() { m ⇒
-                val (_, classFile, method) = m
-                val domain = new DefUseDomain(method, project)
-                val body = method.body.get
+        project.parForeachMethodWithBody() { m ⇒
+            val (_, classFile, method) = m
+            val domain = new DefUseDomain(method, project)
+            val body = method.body.get
+            try {
                 val r = BaseAI(classFile, method, domain)
-                try {
-                    r.operandsArray.zipWithIndex.foreach { opsPC ⇒
-                        val (ops, pc) = opsPC
-                        if ((ops ne null) &&
-                            // Note:
-                            // In case of handlers, the def/use information
-                            // is slightly different when compared with the
-                            // information recorded by the reference values domain.
-                            !body.exceptionHandlers.exists(_.handlerPC == pc)) {
-                            ops.zipWithIndex.foreach { opValueIndex ⇒
+                r.operandsArray.zipWithIndex.foreach { opsPC ⇒
+                    val (ops, pc) = opsPC
+                    if ((ops ne null) &&
+                      // Note:
+                      // In case of handlers, the def/use information
+                      // is slightly different when compared with the
+                      // information recorded by the reference values domain.
+                      !body.exceptionHandlers.exists(_.handlerPC == pc)) {
+                        ops.zipWithIndex.foreach { opValueIndex ⇒
 
-                                val (op, valueIndex) = opValueIndex
-                                val domainOrigins = domain.origin(op).toSet
+                            val (op, valueIndex) = opValueIndex
+                            val domainOrigins = domain.origin(op).toSet
 
-                                val defUseOrigins = try {
-                                    domain.operandOrigin(pc, valueIndex)
-                                } catch {
-                                    case t: Throwable ⇒
-                                        fail(s"${method.toJava(classFile)} no def/use information avaiable for pc=$pc and stack index=$valueIndex", t)
-                                }
-                                def haveSameOrigins: Boolean = {
-                                    domainOrigins forall { o ⇒
-                                        defUseOrigins.contains(o) ||
-                                            defUseOrigins.exists(duo ⇒
-                                                body.exceptionHandlers.exists(_.handlerPC == duo)
-                                            )
-                                    }
-                                }
-                                if (!haveSameOrigins) {
-                                    val message =
-                                        s"{pc=$pc: operands[$valueIndex] == domain: $domainOrigins vs defUse: $defUseOrigins}"
-                                    fail(s"${method.toJava(classFile)}$message")
-                                }
-                                comparisonCount.incrementAndGet
+                            val defUseOrigins = try {
+                                domain.operandOrigin(pc, valueIndex)
+                            } catch {
+                                case t: Throwable ⇒
+                                    fail(s"no def/use information avaiable for "+
+                                      s"pc=$pc and stack index=$valueIndex",
+                                        t)
                             }
+                            def haveSameOrigins: Boolean = {
+                                domainOrigins forall { o ⇒
+                                    defUseOrigins.contains(o) ||
+                                      defUseOrigins.exists(duo ⇒
+                                          body.exceptionHandlers.exists(_.handlerPC == duo)
+                                      )
+                                }
+                            }
+                            if (!haveSameOrigins) {
+                                val message =
+                                    s"{pc=$pc: operands[$valueIndex] == domain: $domainOrigins vs defUse: $defUseOrigins}"
+                                fail(message)
+                            }
+                            comparisonCount.incrementAndGet
                         }
                     }
-                } catch {
-                    case t: Throwable ⇒
-                        t.printStackTrace()
-                        failures.incrementAndGet()
                 }
+            } catch {
+                case t: Throwable ⇒ failures.add((method.toJava(classFile), t))
+            }
+        }
+
+        val baseMessage = s"compared origin information of ${comparisonCount.get} values"
+        if (failures.size > 0) {
+            val failureMessages = for { (failure, exception) ← failures.asScala } yield {
+                var root: Throwable = exception
+                while (root.getCause != null) root = root.getCause
+                val location =
+                    if(root.getStackTrace() != null && root.getStackTrace().length > 0) {
+                        val stackTraceElement = root.getStackTrace()(0)
+                        stackTraceElement.getClassName+" { "+
+                          stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
+                          " }"
+                    } else {
+                        "<location unavailable>"
+                    }
+                failure+" ["+root.getClass.getSimpleName+": "+root.getMessage+"; location: "+location+"] "
             }
 
-            val baseMessage = s"compared origin information of ${comparisonCount.get} values"
-            if (failures.get > 0)
-                fail(failures.get + s" exceptions occured ($baseMessage)")
-            else
-                info(baseMessage)
+            fail(failures.size + s" exceptions occured ($baseMessage) in: "+
+              failureMessages.mkString("\n", "\n", "\n"))
+        } else
+            info(baseMessage)
+    }
+
+
+    describe("getting def/use information") {
+        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+        import reader.AllClassFiles
+
+        it("should be possible to calculate the def/use information for all methods of the JDK") {
+            val project = org.opalj.br.TestSupport.createJREProject
+            analyzeProject("JDK", project)
+        }
+
+        it ("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
+            val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+            val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
+            analyzeProject("OPAL-0.3", project)
+        }
+
+        it( "should be possible to calculate the def/use information for all methods of the OPAL-08-14-2014 snapshot") {
+            val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+            val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
+                def accept(dir: java.io.File, name: String) =
+                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
+            })
+            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
+            opalJARs.size should not be (0)
+            val project = Project(AllClassFiles(opalJARs), Traversable.empty)
+
+            analyzeProject("OPAL-08-14-2014 snapshot", project)
         }
     }
 }
