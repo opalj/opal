@@ -196,4 +196,111 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
         testEnsemblesAreNonEmpty(specification)
     }
+
+    /*
+     * outgoing every_element_should_implement_method constraint
+     */
+    it should ("validate the every_element_should_implement_method constraint with no violations") in {
+        val specification = new Specification(project) {
+            ensemble('Mathematics)(ClassMatcher("mathematics.Mathematics",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            'Mathematics every_element_should_implement_method MethodWithName("operation1")
+
+        }
+        specification.analyze() should be(empty)
+
+        testEnsemblesAreNonEmpty(specification)
+    }
+
+    it should ("validate the every_element_should_implement_method constraint with violations") in {
+        val specification = new Specification(project) {
+            ensemble('Operations)(ClassMatcher("mathematics.Operations",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            'Operations every_element_should_implement_method MethodWithName("operation1")
+        }
+        specification.analyze() should not be (empty)
+
+        testEnsemblesAreNonEmpty(specification)
+    }
+
+    /*
+     * outgoing every_element_should_extend constraint
+     */
+    it should ("validate the every_element_should_extend constraint with no violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+            ensemble('Address)(ClassMatcher("entity.impl.Address",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            ensemble('User)(ClassMatcher("entity.impl.User",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            ensemble('AbstractEntity)(ClassMatcher("entity.AbstractEntity",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            'Address every_element_should_extend 'AbstractEntity
+
+        }
+
+        specification.analyze() should be(empty)
+
+        testEnsemblesAreNonEmpty(specification)
+    }
+
+    it should ("validate the every_element_should_extend constraint with violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+            ensemble('Address)(ClassMatcher("entity.impl.Address",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            ensemble('User)(ClassMatcher("entity.impl.User",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            ensemble('AbstractEntity)(ClassMatcher("entity.AbstractEntity",
+                matchPrefix = false, matchMethods = false, matchFields = false))
+
+            'Address every_element_should_extend 'User
+
+        }
+
+        specification.analyze() should not be (empty)
+
+        testEnsemblesAreNonEmpty(specification)
+    }
+
+    /*
+     * outgoing every_element_should_be_annotated_with constraint
+     */
+    it should ("validate every_element_should_be_annotated_with constraint with no violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+
+            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+
+            'EntityId every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Id"))
+        }
+
+        specification.analyze() should be(empty)
+
+        testEnsemblesAreNonEmpty(specification)
+
+    }
+
+    it should ("validate every_element_should_be_annotated_with constraint with violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+
+            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+
+            'EntityId every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Entity"))
+        }
+
+        specification.analyze() should not be (empty)
+
+        testEnsemblesAreNonEmpty(specification)
+
+    }
+
 }
