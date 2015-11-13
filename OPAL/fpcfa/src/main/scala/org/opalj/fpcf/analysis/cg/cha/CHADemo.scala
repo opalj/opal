@@ -1,3 +1,31 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2015
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.opalj
 package fpcf
 package analysis
@@ -12,13 +40,13 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.MethodWithBody
 
 object CHADemo extends DefaultOneStepAnalysis {
 
     override def title: String = "Test stuff."
 
-    override def description: String =
-        ""
+    override def description: String =        ""
 
     override def doAnalyze(
         project:       Project[URL],
@@ -27,8 +55,8 @@ object CHADemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val entryPointInfo = false
-        val cgDiff = false
-        val instantiatedCLassesInfo = false
+        val cgDiff = true
+        val instantiatedClassesInfo = false
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
@@ -51,9 +79,9 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         // ENTRY POINT INFO
 
-        val cpaEP = cpaStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
+        val cpaEP = cpaStore.collect { case (m @ MethodWithBody(_), IsEntryPoint) ⇒ m }.toSet
 
-        val opaEP = opaStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
+        val opaEP = opaStore.collect { case (m @ MethodWithBody(_), IsEntryPoint) ⇒ m }.toSet
 
         val cbs = project.get(CallBySignatureResolutionKey)
 
@@ -95,7 +123,7 @@ object CHADemo extends DefaultOneStepAnalysis {
         println(s"\n\nOPA: ${newOpaCG.callBySignatureCount}\n")
         println(s"CPA: ${newCpaCG.callBySignatureCount}\n\n")
 
-        if (instantiatedCLassesInfo) {
+        if (instantiatedClassesInfo) {
             val opaNon = opaProject.get(InstantiableClassesIndexKey).notInstantiable
             val cpaNon = cpaProject.get(InstantiableClassesIndexKey).notInstantiable
             println("nonInstClasses(OPA): "+opaNon.size)
