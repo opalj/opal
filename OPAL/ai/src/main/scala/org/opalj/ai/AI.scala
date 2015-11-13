@@ -289,7 +289,7 @@ trait AI[D <: Domain] {
             initialLocals(classFile, method, theDomain)(someLocals)
         )
     }
-   
+
     /**
      * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
@@ -317,8 +317,8 @@ trait AI[D <: Domain] {
             AI.initialWorkList, List.empty[PC], operandsArray, localsArray
         )
     }
-    
-        def continueInterpretation(
+
+    def continueInterpretation(
         strictfp:  Boolean,
         code:      Code,
         theDomain: D
@@ -326,7 +326,7 @@ trait AI[D <: Domain] {
         initialWorkList:  List[PC],
         alreadyEvaluated: List[PC],
         theOperandsArray: theDomain.OperandsArray,
-        theLocalsArray:   theDomain.LocalsArray 
+        theLocalsArray:   theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
         val joinInstructions = code.joinInstructions
 
@@ -391,7 +391,6 @@ trait AI[D <: Domain] {
             case _ ⇒ /*nothing to do*/
         }
     }
-
 
     /**
      * Continues the interpretation of/performs an abstract interpretation of
