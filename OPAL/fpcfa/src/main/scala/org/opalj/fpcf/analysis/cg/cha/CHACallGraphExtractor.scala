@@ -37,9 +37,6 @@ import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResoluti
 import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
 import scala.collection.Set
 import scala.collection.mutable.HashSet
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger
-
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
  * basically collects – for all invoke instructions of a method – the potential target
@@ -164,17 +161,26 @@ class CHACallGraphExtractor(
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 
             val cbsCalls =
-                if (isInterfaceInvocation) callBySignature(pc, declaringClassType, name, descriptor)
-                else Iterable.empty[Method]
+                if (isInterfaceInvocation)
+                    callBySignature(pc, declaringClassType, name, descriptor)
+                else
+                    Set.empty[Method]
 
-            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor) ++ cbsCalls
-            if (callees.isEmpty) {
+            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
+
+            assert(
+                (callees & cbsCalls).isEmpty,
+                s"CHACallGraphExtractor: call by signature calls for ${method.toJava(classFile)} are not disjunct with normal callees: "+
+                    (callees & cbsCalls).map { m ⇒ m.toJava(project.classFile(m)) }.mkString("\n")
+            )
+
+            if (callees.isEmpty && cbsCalls.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
                     declaringClassType, name, descriptor
                 )
             } else {
-                addCallEdge(pc, callees)
+                addCallEdge(pc, callees ++ cbsCalls)
             }
         }
 
@@ -183,14 +189,14 @@ class CHACallGraphExtractor(
             declaringClassType: ObjectType,
             name:               String,
             descriptor:         MethodDescriptor
-        ): Iterable[Method] = {
+        ): Set[Method] = {
             val cbsMethods = cbsIndex.findMethods(
                 name,
                 descriptor,
                 declaringClassType
             )
 
-            cbsCount += cbsMethods.size
+            this.cbsCount += cbsMethods.size
             cbsMethods
         }
     }

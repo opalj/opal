@@ -46,7 +46,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
     override def title: String = "Test stuff."
 
-    override def description: String =        ""
+    override def description: String = ""
 
     override def doAnalyze(
         project:       Project[URL],
@@ -55,7 +55,7 @@ object CHADemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val entryPointInfo = false
-        val cgDiff = true
+        val cgDiff = false
         val instantiatedClassesInfo = false
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
@@ -74,8 +74,14 @@ object CHADemo extends DefaultOneStepAnalysis {
         // CALL GRAPH STUFF
 
         val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
-        val newCpaCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
-        val newOpaCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey).callGraph.asInstanceOf[CallBySignatureCallGraph]
+
+        val cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        val opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+
+        val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        println(execpetions)
+        val newCpaCG = cpaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
+        val newOpaCG = opaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
 
         // ENTRY POINT INFO
 
@@ -113,11 +119,11 @@ object CHADemo extends DefaultOneStepAnalysis {
         // CALL GRAPH DIFF
 
         if (cgDiff) {
-            val (less, additional) = org.opalj.ai.analyses.cg.CallGraphComparison(project, traditionalCG, newOpaCG)
+            val (unexpected, expected) = org.opalj.ai.analyses.cg.CallGraphComparison(project, newOpaCG, newCpaCG)
 
-            println(less.mkString("\n\nEXPECTED:", "\n", "\n\n"))
+            println(unexpected.mkString("\n\nUNEXPECTED:", "\n\n", "\n\n"))
             //            println(additional.mkString("\n\nUNEXPECTED:", "\n", "\n\n"))
-            additional.mkString("\n\nUNEXPECTED:", "\n", "\n\n")
+            println(expected.mkString("\n\nADDITIONAL:", "\n\n", "\n\n"))
         }
 
         println(s"\n\nOPA: ${newOpaCG.callBySignatureCount}\n")

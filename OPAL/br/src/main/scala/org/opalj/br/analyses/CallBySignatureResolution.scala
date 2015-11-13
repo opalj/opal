@@ -48,9 +48,9 @@ import net.ceedubs.ficus.Ficus._
  */
 class CallBySignatureResolution private (
         val project: SomeProject,
-        val methods: Map[(ObjectType /*InterfaceType*/ , String, MethodDescriptor), Iterable[Method]]
+        val methods: Map[(ObjectType /*InterfaceType*/ , String, MethodDescriptor), Set[Method]]
 ) {
-    // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Iterable[Method]]
+    // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Set[Method]]
     //val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
 
     /**
@@ -69,7 +69,7 @@ class CallBySignatureResolution private (
         name:       String,
         descriptor: MethodDescriptor,
         declClass:  ObjectType
-    ): Iterable[Method] = {
+    ): Set[Method] = {
 
         assert(
             project.classFile(declClass).map(_.isInterfaceDeclaration).getOrElse(true),
@@ -77,7 +77,7 @@ class CallBySignatureResolution private (
         )
 
         val tripleKey = (declClass, name, descriptor)
-        methods.get(tripleKey).getOrElse(Iterable.empty[Method])
+        methods.get(tripleKey).getOrElse(Set.empty[Method])
     }
 
     def statistics(): Map[String, Any] = {
@@ -133,15 +133,16 @@ object CallBySignatureResolution {
                 if (clazzClassFile.isFinal)
                     return ;
 
-                if (!clazzClassFile.constructors.exists { cons ⇒ !cons.isPrivate }) // effictively final
+                if (!clazzClassFile.constructors.exists { cons ⇒ !cons.isPrivate }) // effectively final
                     return ;
 
                 val clazzType = clazzClassFile.thisType
 
+                // FIXME Lifted methods by means of a public subinterface (without methods) that inherits from a package private interface
                 if (interfaceClassFile.isPackageVisible && interfaceType.packageName != clazzType.packageName)
                     return ;
 
-                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYesOrUnknown)
+                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes/* we want to get a sound overapprox. not: OrUnknown*/)
                     return ;
 
                 if (classHierarchy.lookupMethodInSuperinterfaces(clazzClassFile, methodName, methodDescriptor, project).nonEmpty)
