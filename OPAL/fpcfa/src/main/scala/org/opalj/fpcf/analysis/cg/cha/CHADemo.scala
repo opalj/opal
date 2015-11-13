@@ -8,6 +8,10 @@ import java.net.URL
 import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
 import org.opalj.br.Method
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
 
 object CHADemo extends DefaultOneStepAnalysis {
 
@@ -23,7 +27,8 @@ object CHADemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val entryPointInfo = false
-        val cgDiff = true
+        val cgDiff = false
+        val instantiatedCLassesInfo = false
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
@@ -90,7 +95,49 @@ object CHADemo extends DefaultOneStepAnalysis {
         println(s"\n\nOPA: ${newOpaCG.callBySignatureCount}\n")
         println(s"CPA: ${newCpaCG.callBySignatureCount}\n\n")
 
-        println("nonInstClasses(OPA): "+opaProject.get(InstantiableClassesIndexKey).notInstantiable.size)
+        if (instantiatedCLassesInfo) {
+            val opaNon = opaProject.get(InstantiableClassesIndexKey).notInstantiable
+            val cpaNon = cpaProject.get(InstantiableClassesIndexKey).notInstantiable
+            println("nonInstClasses(OPA): "+opaNon.size)
+            println("nonInstClasses(CPA): "+cpaNon.size)
+            println((cpaNon -- opaNon).mkString("\n"))
+        }
+
+        val callBySignaturePossibilities = true
+        if (callBySignaturePossibilities) {
+            println("OPA STATISTICS\n\n"+opaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
+            println("CPA STATISTICS\n\n"+cpaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
+        }
+
+        val callSiteInfo = true
+        if (callSiteInfo) {
+            // 0 = virtual, 1 = interface, 2 = special, 3 = static 
+            val map = scala.collection.mutable.Map[Int, Int](0 → 0, 1 → 0, 2 → 0, 3 → 4)
+            def incCallNum(callType: Int): Unit = {
+                map.get(callType) match {
+                    case Some(count) ⇒ map.update(callType, count + 1)
+                    case _           ⇒
+                }
+            }
+
+            for {
+                cf ← project.allClassFiles
+                m ← cf.methods if m.body.isDefined
+            } {
+                m.body.get.foreach { (pc, instruction) ⇒
+                    instruction.opcode match {
+                        case INVOKEVIRTUAL.opcode   ⇒ incCallNum(0)
+                        case INVOKEINTERFACE.opcode ⇒ incCallNum(1)
+                        case INVOKESPECIAL.opcode   ⇒ incCallNum(2)
+                        case INVOKESTATIC.opcode    ⇒ incCallNum(3)
+                        case _                      ⇒
+                    }
+                }
+            }
+
+            println("0 = virtual, 1 = interface, 2 = special, 3 = static")
+            println(map.toSeq.sortBy(_._1).mkString("\n\ninvocation counts:\n\n", "\n", "\n\n"))
+        }
 
         val outputTable = s"\n\n#methods: ${methodsCount}\n"+
             s"#entry points: | ${oldEntryPoints.size} (old)     | ${opaEP.size} (opa) v     | ${cpaEP.size} (cpa)\n"+
