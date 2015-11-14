@@ -462,15 +462,23 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case _ ⇒ IndexedSeq.empty
                 }
 
-                if !annotations.foldLeft(false) {
-                    (v: Boolean, a: Annotation) ⇒
-                        v || annotationPredicates.foldLeft(!matchAny) {
-                            (matched: Boolean, m: AnnotationPredicate) ⇒
-                                if (matchAny) {
-                                    matched || m(a)
-                                } else {
-                                    matched && m(a)
-                                }
+//              if !annotations.foldLeft(false) {
+//                  (v: Boolean, a: Annotation) ⇒
+//                      v || annotationPredicates.foldLeft(!matchAny) {
+//                          (matched: Boolean, m: AnnotationPredicate) ⇒
+//                              if (matchAny) {
+//                                  matched || m(a)
+//                              } else {
+//                                  matched && m(a)
+//                              }
+//                      }
+//              }
+                if !annotationPredicates.foldLeft(!matchAny) {
+                    (v: Boolean, m: AnnotationPredicate) ⇒
+                        if (!matchAny) {
+                            v && annotations.exists { a ⇒ m(a) }
+                        } else {
+                            v || annotations.exists { a ⇒ m(a) }
                         }
                 }
             } yield {
