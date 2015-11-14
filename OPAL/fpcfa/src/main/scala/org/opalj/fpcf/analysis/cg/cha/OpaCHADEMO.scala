@@ -34,7 +34,10 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
         // CALL GRAPH STUFF
-        val newOpaCG = opaProject.get(CHACallGraphKey).callGraph
+        val ccg = opaProject.get(CHACallGraphKey)
+        val execpetions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        println(execpetions)
+        val newOpaCG = ccg.callGraph
         // CALL GRAPH STUFF
 
         val opaEP = opaStore.entities { (p: Property) ⇒
