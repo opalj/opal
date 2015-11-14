@@ -123,6 +123,27 @@ final class ClassFile private (
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
     /**
+     * Returns `true` if the class is final or if it only defines private constructors.
+     */
+    def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
+
+    /**
+     * Tests if the methods declared by this class and those declare by the other class have
+     * compatible signatures. I.e., this tests whether this class could inherit from the given
+     * interface/class. Hence, this test returns `true` if this class inherits from the
+     * given class.
+     */
+    def methodSignaturesAreCompatible(
+        classFile:     ClassFile,
+        filterMethods: Method ⇒ Boolean = (m: Method) ⇒ true
+    )(
+        implicit
+        repository: ClassFileRepository
+    ): Answer = {
+        ???
+    }
+
+    /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
      * will return `true`.
      *
@@ -349,8 +370,7 @@ final class ClassFile private (
      * The SourceFile attribute is an optional attribute [...]. There can be
      * at most one `SourceFile` attribute.
      */
-    def sourceFile: Option[String] =
-        attributes collectFirst { case SourceFile(s) ⇒ s }
+    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
 
     /**
      * The SourceDebugExtension attribute is an optional attribute [...]. There can be
@@ -397,9 +417,7 @@ final class ClassFile private (
         }
     }
 
-    def hasDefaultConstructor: Boolean = {
-        constructors exists { _.parametersCount == 0 }
-    }
+    def hasDefaultConstructor: Boolean = constructors exists { _.parametersCount == 0 }
 
     /**
      * All defined instance methods. I.e., all methods that are not static,

@@ -56,16 +56,11 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
  * Signature polymorphic methods are correctly resolved (done by the method
  * `lookupImplementingMethod` defined in `ClassHierarchy`.)
  *
- * ==Thread Safety==
- * '''This domain is not thread-safe'''. However, given the strong coupling of a
- * domain instance to a specific method this is usually not an issue.
- *
  * @author Michael Eichberg
  */
 class CHACallGraphExtractor(
-    val cache: CallGraphCache[MethodSignature, Set[Method]]
-)
-        extends CallGraphExtractor {
+        val cache: CallGraphCache[MethodSignature, Set[Method]]
+) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
             val project:   SomeProject,
@@ -207,7 +202,7 @@ class CHACallGraphExtractor(
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     context.nonVirtualCall(
                         pc, declaringClass, name, descriptor,
-                        receiverIsNull = No /*the receiver is "this" object*/
+                        receiverIsNull = No /*the receiver is "this"*/
                     )
 
                 case INVOKESTATIC.opcode ⇒

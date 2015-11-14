@@ -60,6 +60,7 @@ class CallGraphBuilder(val project: SomeProject) {
     type PCs = collection.mutable.UShortSet
 
     private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
+
     private[this] var callBySignatureCount = 0
 
     /**
@@ -69,17 +70,10 @@ class CallGraphBuilder(val project: SomeProject) {
      * then this edge will be added to the potential targets for the respective
      * invoke instruction (referred to by the `(Method,PC)` pair).
      */
-    def addCallEdges(callEdges: (Method, Map[PC, Set[Method]])): Unit = {
+    def addCallEdges(callEdges: (Method, Map[PC, Set[Method]]), cbsCount: Int): Unit = {
         if (callEdges._2.nonEmpty) {
             allCallEdges = callEdges :: allCallEdges
         }
-    }
-
-    /**
-     * Increases the given `callBySignatureCount` of the call graph.
-     *
-     */
-    def incCallBySignatureCount(cbsCount: Int): Unit = {
         callBySignatureCount += cbsCount
     }
 

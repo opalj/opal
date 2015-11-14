@@ -52,6 +52,9 @@ trait CallGraphExtractor { extractor ⇒
 
     import CallGraphExtractor.LocalCallGraphInformation
 
+    /**
+     * This method may be executed concurrently for multiple different methods.
+     */
     def extract(
         project:   SomeProject,
         classFile: ClassFile,

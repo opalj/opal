@@ -156,7 +156,7 @@ object CallGraphFactory {
             return ComputedCallGraph.empty(theProject)
 
         import scala.collection.{Map, Set}
-        type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException], Int)
+        type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException], Int /*CBSCount*/ )
 
         import java.util.concurrent.Callable
         import java.util.concurrent.Executors
@@ -178,10 +178,13 @@ object CallGraphFactory {
                         case ct: scala.util.control.ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒
                             (
-                                (method, Map.empty[PC, /*Callees*/ Set[Method]]),
+                                (
+                                    method,
+                                    Map.empty[PC, /*Callees*/ Set[Method]]
+                                ),
                                 List.empty,
-                                Some(CallGraphConstructionException(classFile, method, t)),
-                                0
+                                    Some(CallGraphConstructionException(classFile, method, t)),
+                                    0
                             )
                     }
                 }
@@ -268,11 +271,9 @@ object CallGraphFactory {
                 unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
             if (exception.isDefined)
                 exceptions = exception.get :: exceptions
-            builder.addCallEdges(callSite)
-            builder.incCallBySignatureCount(cbsCallCount)
+            builder.addCallEdges(callSite, cbsCallCount)
         }
 
-        // TODO use log
         if (debug)
             OPALLogger.info(
                 "progress - call graph",

@@ -267,7 +267,6 @@ object CallGraphFactory {
             builder.addCallEdges(callSite)
         }
 
-        // TODO use log
         if (debug)
             OPALLogger.info(
                 "progress - call graph",

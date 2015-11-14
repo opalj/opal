@@ -356,8 +356,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         method:    Method
     ): CallGraphExtractor.LocalCallGraphInformation = {
 
-        // The following optimization (using the plain CHA algorithm for all methods
-        // that do not virtual method calls) may lead to some additional edges (if
+        // The following optimization (which uses the plain CHA algorithm for all methods
+        // that do not have virtual method calls) may lead to some additional edges (if
         // the underlying code contains dead code), but the improvement is worth the
         // very few additional edges due to statically identifiable dead code!
         val hasVirtualMethodCalls =

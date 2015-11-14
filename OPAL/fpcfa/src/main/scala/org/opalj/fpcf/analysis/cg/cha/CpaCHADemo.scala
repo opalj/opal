@@ -33,7 +33,7 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{ BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey }
+import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
 import org.opalj.log.OPALLogger
@@ -50,14 +50,15 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
     //OPALLogger.updateLogger(GlobalLogContext, new ConsoleOPALLogger(true, Warn))
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
         val cpaStore = cpaProject.get(SourceElementsPropertyStoreKey)
 
         val methodsCount: Double = project.methodsCount.toDouble
-        def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
+        def getPercentage(value: Double): String = "%1.2f" format (value / methodsCount * 100d)
 
         val newCpaCG = cpaProject.get(CHACallGraphKey).callGraph
 
@@ -68,7 +69,7 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
 
         BasicReport(
             s"#entry points    : ${cpaEP.size}\n"+
-                s"percentage   : ${getPercentage(cpaEP.size)}\n"+
+                s"percentage   : ${getPercentage(cpaEP.size.toDouble)}\n"+
                 s"#call edges  : ${newCpaCG.callEdgesCount}\n"
         )
     }

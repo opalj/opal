@@ -84,7 +84,7 @@ class SimpleInstantiabilityAnalysis private (
 ) with CodeAnalysisMode {
 
     import project.classHierarchy.allSubtypes
-    
+
     def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP] = {
 
         var instantiatedClasses = Set.empty[EP]
@@ -93,9 +93,9 @@ class SimpleInstantiabilityAnalysis private (
             cf ← classFiles
             method ← cf.methods if !method.isAbstract
         } {
-            
+
             if (project.isLibraryType(cf)) {
-                if (cf.isAbstract ) {
+                if (cf.isAbstract) {
                     val hasInstantiableSubtype = allSubtypes(cf.thisType, reflexive = false).exists { subtype ⇒
                         project.classFile(subtype) match {
                             //TODO if cf is not an dependency classfile we should check whether c is instantiable
@@ -113,7 +113,7 @@ class SimpleInstantiabilityAnalysis private (
             } else if (method.isNative && method.isStatic) {
                 var instantiatedClasses = Set.empty[EP]
                 classFiles.foreach { classFile ⇒
-                    if (classFile.isAbstract  &&
+                    if (classFile.isAbstract &&
                         (isApplication || (isClosedLibrary && classFile.isPackageVisible)))
                         instantiatedClasses += EP(classFile, NotInstantiable)
                     else
@@ -122,7 +122,7 @@ class SimpleInstantiabilityAnalysis private (
                 // we can stop here, we have to assume that native methods instantiate every package visible class
                 return instantiatedClasses;
 
-            } else if (method.body.nonEmpty) {                 // prevents the analysis of native instance methods..
+            } else if (method.body.nonEmpty) { // prevents the analysis of native instance methods..
 
                 val body = method.body.get
                 val instructions = body.instructions

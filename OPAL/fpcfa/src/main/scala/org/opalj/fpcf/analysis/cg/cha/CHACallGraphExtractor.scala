@@ -37,6 +37,7 @@ import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResoluti
 import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
 import scala.collection.Set
 import scala.collection.mutable.HashSet
+
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
  * basically collects – for all invoke instructions of a method – the potential target
