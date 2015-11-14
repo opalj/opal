@@ -32,6 +32,7 @@ package analysis
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import scala.collection.mutable.ListBuffer
 
 /**
  * @author Michael Reif
@@ -98,7 +99,7 @@ class MethodAccessibilityAnalysis private[analysis] (
         val methodDescriptor = method.descriptor
         val methodName = method.name
 
-        var subtypes = classHierarchy.directSubtypesOf(classType)
+        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
             project.classFile(subtype) match {

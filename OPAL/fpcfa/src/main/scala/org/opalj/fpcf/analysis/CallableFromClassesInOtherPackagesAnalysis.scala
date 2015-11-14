@@ -40,6 +40,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.VoidType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
+import scala.collection.mutable.ListBuffer
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -124,7 +125,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
         val methodDescriptor = method.descriptor
 
         if (!classFile.isFinal) {
-            var subtypes = classHierarchy.directSubtypesOf(classType)
+            val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
             while (subtypes.nonEmpty) {
                 val subtype = subtypes.head
                 project.classFile(subtype) match {
