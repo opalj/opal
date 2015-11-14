@@ -31,10 +31,11 @@ package br
 package analyses
 
 import scala.collection.Map
-import scala.collection.mutable.AnyRefMap
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
+import java.util.concurrent.{ConcurrentHashMap ⇒ JCHashMap}
+import scala.collection.immutable.Set
 import net.ceedubs.ficus.Ficus._
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 /**
  * An index that enables the efficient lookup of potential
@@ -50,8 +51,6 @@ class CallBySignatureResolution private (
         val project: SomeProject,
         val methods: Map[(ObjectType /*InterfaceType*/ , String, MethodDescriptor), Set[Method]]
 ) {
-    // TODO Remodel: Map[(ObjectType/*InterfaceType*/,String,MethodDescriptor),Set[Method]]
-    //val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
 
     /**
      * Given the `name` and `descriptor` of a method declared by an interface and the `declaringClass`
@@ -109,83 +108,302 @@ class CallBySignatureResolution private (
  */
 object CallBySignatureResolution {
 
-    def apply(project: SomeProject): CallBySignatureResolution = {
+    /*
+   * A method is considered inheritable by if:
+   * 	- it is either public or projected
+   *  - OPA is applied and the method is package private
+   *  
+   * @note This does not consider the visibility of the method's class,
+   *       hence, it should be checked separately if the class can be subclassed.
+   */
+    private[this] def isInheritableMethod(
+        method: Method
+    )(
+        implicit
+        analysisMode: AnalysisMode
+    ): Boolean = {
+        if (method.isPrivate)
+            return false;
+
+        if (method.isPackagePrivate)
+            // package visible methods are only inheritable under OPA
+            // if the AnalysisMode isn't OPA, it can only be CPA
+            //  => call by signature does not matter in the an APP context
+            return (analysisMode eq AnalysisModes.OPA)
+
+        // method is public or protected
+        true
+    }
+
+    private[this] def hasSubclassProxyForMethod(
+        classType:          ObjectType,
+        method:             Method,
+        interfaceClassFile: ClassFile,
+        project:            SomeProject,
+        cache:              JCHashMap[Method, Answer]
+    )(
+        implicit
+        analysisMode: AnalysisMode
+    ): Answer = {
+
+        cache.get(method) match {
+            case null   ⇒
+            case answer ⇒ answer
+        }
+
+        val classHierarchy = project.classHierarchy
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
+
+        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
+            project.classFile(subtype) match {
+                case Some(subclass) if subclass.isClassDeclaration ⇒
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                        if (subclass.isPublic) {
+                            // the original method is now visible (and not shadowed)
+                            cache.put(method, Yes)
+                            return Yes;
+                        } else
+                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+                // we need to continue our search for a class that makes the method visible
+                case None ⇒
+                    // The type hierarchy is obviously not downwards closed; i.e.,
+                    // the project configuration is rather strange! 
+                    cache.put(method, Unknown)
+                    return Unknown;
+                case _ ⇒
+            }
+            subtypes -= subtype
+        }
+
+        // non of the subtypes acts as proxy
+        cache.put(method, No)
+        return No;
+    }
+
+    private[this] def hasSubclassInheritingTheInterface(
+        classType:          ObjectType,
+        method:             Method,
+        interfaceClassFile: ClassFile,
+        project:            SomeProject,
+        cache:              JCHashMap[Method, Answer]
+    )(
+        implicit
+        analysisMode: AnalysisMode
+    ): Answer = {
+
+        cache.get(method) match {
+            case null   ⇒
+            case answer ⇒ answer
+        }
+
+        val classHierarchy = project.classHierarchy
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
+
+        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
+            project.classFile(subtype) match {
+                case Some(subclass) if subclass.isClassDeclaration ⇒
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                        if (classHierarchy.isSubtypeOf(subtype, interfaceClassFile.thisType).isYes) {
+                            cache.put(method, Yes)
+                            // the original method is now visible and the interface is implemented
+                            return Yes;
+                        } else
+                            // we need to continue our search for a class that makes the method visible
+                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+
+                case _ ⇒ cache.put(method, Unknown)
+            }
+            subtypes -= subtype
+        }
+
+        // non of the subtypes acts as proxy
+        cache.put(method, No)
+        No
+    }
+
+    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
+        implicit val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
+        if (analysisMode eq AnalysisModes.APP)
+            // if we analyze an application, call by signature is irrelevant
+            return new CallBySignatureResolution(project, Map.empty);
+
         val projectIndex = project.get(ProjectIndexKey)
         val classHierarchy = project.classHierarchy
-        val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
 
-        val methods = new AnyRefMap[(ObjectType, String, MethodDescriptor), Set[Method]] /*methods defined in classes with matching signatures*/ (project.projectMethodsCount / 3)
-        def callBySignatureEvaluation(interfaceClassFile: ClassFile, interfaceMethod: Method): Unit = {
-            val methodName = interfaceMethod.name
-            val methodDescriptor = interfaceMethod.descriptor
+        val proxyCache = new JCHashMap[Method, Answer]((project.methodsCount * 0.1).toInt)
+        val subclassCache = new JCHashMap[Method, Answer]((project.methodsCount * 0.1).toInt)
+
+        val methods = new JCHashMap[(ObjectType, String, MethodDescriptor), Set[Method]] /*methods defined in classes with matching signatures*/ (project.projectMethodsCount / 4)
+        var visitedInterface = Set.empty[ObjectType]
+
+        val enumType = ObjectType("java/lang/Enum")
+
+        def callBySignatureEvaluation(
+            interfaceClassFile: ClassFile,
+            method:             Method,
+            targetMethods:      Iterable[Method] = Set.empty
+        ): Unit = {
+
+            val methodName = method.name
+            val methodDescriptor = method.descriptor
             val interfaceType = interfaceClassFile.thisType
-
             def analyzeMethod(m: Method): Unit = {
                 if (m.isAbstract)
                     return ;
 
-                if (m.isPrivate)
+                if (!isInheritableMethod(m))
                     return ;
 
                 val clazzClassFile = project.classFile(m)
                 if (!clazzClassFile.isClassDeclaration)
                     return ;
-                if (clazzClassFile.isFinal)
-                    return ;
 
-                if (!clazzClassFile.constructors.exists { cons ⇒ !cons.isPrivate }) // effectively final
+                if (clazzClassFile.isEffectivelyFinal)
                     return ;
 
                 val clazzType = clazzClassFile.thisType
 
-                // FIXME Lifted methods by means of a public subinterface (without methods) that inherits from a package private interface
-                if (interfaceClassFile.isPackageVisible && interfaceType.packageName != clazzType.packageName)
+                if ((clazzType eq ObjectType.Object) || (enumType eq clazzType))
                     return ;
 
-                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes/* we want to get a sound overapprox. not: OrUnknown*/)
+                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes)
                     return ;
 
-                if (classHierarchy.lookupMethodInSuperinterfaces(clazzClassFile, methodName, methodDescriptor, project).nonEmpty)
+                if (hasSubclassInheritingTheInterface(clazzType, m, interfaceClassFile, project, subclassCache).isYes)
                     return ;
 
-                val isCpa = analysisMode eq AnalysisModes.CPA
-                if (isCpa && (clazzClassFile.isPackageVisible || m.isPackagePrivate) &&
-                    interfaceType.packageName != clazzType.packageName)
+                if (!clazzClassFile.isPublic &&
+                    (analysisMode eq AnalysisModes.CPA) &&
+                    !hasSubclassProxyForMethod(clazzType, m, interfaceClassFile, project, proxyCache).isYesOrUnknown)
                     return ;
-
-                //println(s"${interfaceMethod.toJava(interfaceClassFile)} => ${project.classFile(m).thisType.toJava}")
 
                 val methodTripleKey = (interfaceType, methodName, methodDescriptor)
                 methods.get(methodTripleKey) match {
-                    case None ⇒
-                        methods.update(methodTripleKey, Set(m))
-                    case Some(theMethods) ⇒
+                    case null ⇒
+                        methods.put(methodTripleKey, Set(m))
+                    case theMethods ⇒
                         methods.put(methodTripleKey, theMethods + m)
-                    case _ ⇒
                 }
             }
 
-            projectIndex.findMethods(methodName, methodDescriptor) foreach analyzeMethod
+            val possibleCbsTargets =
+                if (targetMethods.isEmpty)
+                    projectIndex.findMethods(methodName, methodDescriptor)
+                else
+                    targetMethods
+
+            possibleCbsTargets foreach analyzeMethod
+            for {
+                subtype ← classHierarchy.directSubtypesOf(interfaceType)
+                cf ← project.classFile(subtype)
+                if cf.isInterfaceDeclaration && !visitedInterface.contains(subtype)
+            } {
+                visitedInterface = visitedInterface + subtype
+                cf.methods foreach { method ⇒
+                    callBySignatureEvaluation(cf, method, possibleCbsTargets)
+                }
+            }
         }
 
-        if (analysisMode eq AnalysisModes.APP)
-            // if we analyze an application, call by signature is irrelevant
-            return new CallBySignatureResolution(project, Map.empty);
+        // Execution starts here: 
 
-        for {
-            cf ← project.allClassFiles if cf.isInterfaceDeclaration
-            m ← cf.methods if !m.isStatic // this includes (in particular) the static initializer
-        } {
-            callBySignatureEvaluation(cf, m)
+        println("START COMP")
+
+        project.parForeachClassFile(isInterrupted) { cf ⇒
+            if (cf.isInterfaceDeclaration &&
+                classHierarchy.allSuperinterfacetypes(cf.thisType, reflexive = false).isEmpty) {
+                cf.methods.foreach { method ⇒
+                    if (!method.isStatic)
+                        callBySignatureEvaluation(cf, method)
+                }
+
+            }
         }
 
-        for {
-            cf ← project.allClassFiles if cf.isInterfaceDeclaration
-            Method(_, "toString", MethodDescriptor.JustReturnsString) ← cf.methods
-        } println(cf.thisType.toJava)
+        println("FINISHED COMPUTATION")
 
-        methods.repack()
-        new CallBySignatureResolution(project, methods)
+        new CallBySignatureResolution(project, methods.asScala)
+
     }
+
+    //  def apply(project: SomeProject): CallBySignatureResolution = {
+    //    val projectIndex = project.get(ProjectIndexKey)
+    //    val classHierarchy = project.classHierarchy
+    //    val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
+    //
+    //    val methods = new AnyRefMap[(ObjectType, String, MethodDescriptor), Set[Method]] /*methods defined in classes with matching signatures*/ (project.projectMethodsCount / 3)
+    //    def callBySignatureEvaluation(interfaceClassFile: ClassFile, interfaceMethod: Method): Unit = {
+    //      val methodName = interfaceMethod.name
+    //      val methodDescriptor = interfaceMethod.descriptor
+    //      val interfaceType = interfaceClassFile.thisType
+    //
+    //      def analyzeMethod(m: Method): Unit = {
+    //        if (m.isAbstract)
+    //          return ;
+    //
+    //        if (m.isPrivate)
+    //          return ;
+    //
+    //        val clazzClassFile = project.classFile(m)
+    //        if (!clazzClassFile.isClassDeclaration)
+    //          return ;
+    //        if (clazzClassFile.isFinal)
+    //          return ;
+    //
+    //        if (!clazzClassFile.constructors.exists { cons ⇒ !cons.isPrivate }) // effectively final
+    //          return ;
+    //
+    //        val clazzType = clazzClassFile.thisType
+    //
+    //        // FIXME Lifted methods by means of a public subinterface (without methods) that inherits from a package private interface
+    //        if (interfaceClassFile.isPackageVisible && interfaceType.packageName != clazzType.packageName)
+    //          return ;
+    //
+    //        if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes /* we want to get a sound overapprox. not: OrUnknown*/ )
+    //          return ;
+    //
+    //        if (classHierarchy.lookupMethodInSuperinterfaces(clazzClassFile, methodName, methodDescriptor, project).nonEmpty)
+    //          return ;
+    //
+    //        val isCpa = analysisMode eq AnalysisModes.CPA
+    //        if (isCpa && (clazzClassFile.isPackageVisible || m.isPackagePrivate) &&
+    //          interfaceType.packageName != clazzType.packageName)
+    //          return ;
+    //
+    //        //println(s"${interfaceMethod.toJava(interfaceClassFile)} => ${project.classFile(m).thisType.toJava}")
+    //
+    //        val methodTripleKey = (interfaceType, methodName, methodDescriptor)
+    //        methods.get(methodTripleKey) match {
+    //          case None ⇒
+    //            methods.update(methodTripleKey, Set(m))
+    //          case Some(theMethods) ⇒
+    //            methods.put(methodTripleKey, theMethods + m)
+    //          case _ ⇒
+    //        }
+    //      }
+    //
+    //      projectIndex.findMethods(methodName, methodDescriptor) foreach analyzeMethod
+    //    }
+    //
+    //    if (analysisMode eq AnalysisModes.APP)
+    //      // if we analyze an application, call by signature is irrelevant
+    //      return new CallBySignatureResolution(project, Map.empty);
+    //
+    //    for {
+    //      cf ← project.allClassFiles if cf.isInterfaceDeclaration
+    //      m ← cf.methods if !m.isStatic // this includes (in particular) the static initializer
+    //    } {
+    //      callBySignatureEvaluation(cf, m)
+    //    }
+    //
+    //    methods.repack()
+    //    new CallBySignatureResolution(project, methods)
+    //  }
 
 }

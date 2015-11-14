@@ -51,7 +51,7 @@ object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatur
      * Computes the [[CallBySignatureResolution]] for the given project.
      */
     override protected def compute(project: SomeProject): CallBySignatureResolution = {
-        CallBySignatureResolution(project)
+        CallBySignatureResolution(project, () ⇒ Thread.currentThread().isInterrupted())
     }
 }
 
