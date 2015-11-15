@@ -159,7 +159,7 @@ object CallBySignatureResolution {
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
             project.classFile(subtype) match {
-                case Some(subclass) if subclass.isClassDeclaration ⇒
+                case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
                         if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
@@ -325,8 +325,6 @@ object CallBySignatureResolution {
 
         // Execution starts here: 
 
-        println("START COMP")
-
         project.parForeachClassFile(isInterrupted) { cf ⇒
             if (cf.isInterfaceDeclaration &&
                 classHierarchy.allSuperinterfacetypes(cf.thisType, reflexive = false).isEmpty) {
@@ -337,8 +335,6 @@ object CallBySignatureResolution {
 
             }
         }
-
-        println("FINISHED COMPUTATION")
 
         new CallBySignatureResolution(project, methods.asScala)
 
