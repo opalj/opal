@@ -179,7 +179,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         )
 
         var foundNestedTypes: Set[ObjectType] = Set.empty
-        outerClass.foreachNestedClass(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
+        outerClass.foreachNestedClass({ nc ⇒ foundNestedTypes += nc.thisType })(innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
@@ -194,10 +194,10 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
                 var nestedClasses: List[Type] = Nil
-                classFile.foreachNestedClass(project, { c ⇒
+                classFile.foreachNestedClass({ c ⇒
                     nestedClasses = c.thisType :: nestedClasses
                     innerClassesCount += 1
-                })
+                })(project)
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
             } catch {
