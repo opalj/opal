@@ -47,8 +47,10 @@ object ClassHierarchyExtractor {
         import reader.Java8Framework.ClassFiles
 
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy supertype filterprefix <JAR file>+")
-            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            println("Usage:     java …ClassHierarchy supertype filterprefix <JAR file>+")
+            println("Example:   … java.lang.Enum \"\" .../rt.jar")
+            println("      	    lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter." )				
+            println("Copyright: 2015 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
@@ -74,7 +76,7 @@ object ClassHierarchyExtractor {
             "# Class hierarchy for: "+
                 supertypeName+
                 " limited to subclasses that start with: "+
-                filterPrefix
+                "\""+filterPrefix+"\""                
         )
         val allRelevantSubtypes =
             classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒

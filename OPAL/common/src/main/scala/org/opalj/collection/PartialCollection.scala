@@ -27,33 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package collection
 
 /**
- * The ''key'' object to get global field access information.
+ * Identifies a collection as being (guaranteed) complete or as being potentially incomplete.
  *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ * This class is typically used by analysis that derive some results and which are also able to
+ * do so in case of incomplete information. But in the latter case the analysis may not be able
+ * to determine whether the derived information is complete or not. For example, imagine you
+ * are analyzing some library (but not the JDK). In this case the class hierarchy will be incomplete
+ * and every analysis using it may compute incomplete information.
+ *
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation] {
+sealed trait PartialCollection[S] {
 
     /**
-     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
-     *
-     * @return `Nil`.
+     * The underlying collection.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    def s: S
 
     /**
-     * Computes the field access information.
+     * Returns `true` if the underlying collection is guaranteed to contain all elements with
+     * respect to some query/analysis. I.e., if the analysis is not conclusive, then `false`
+     * is returned. However, it may still be the case that the underlying collection contains
+     * all elements, but that cannot be deduced.
      */
-    override protected def compute(project: SomeProject): FieldAccessInformation = {
+    def isComplete: Boolean
 
-        FieldAccessInformationAnalysis.doAnalyze(
-            project, () ⇒ Thread.currentThread().isInterrupted()
-        )
-    }
+    /**
+     * Returns `true` if the underlying collection is not guaranteed to contain all elements (w.r.t.
+     * some query/analysis/...
+     */
+    final def isIncomplete: Boolean = !isComplete
 }
 
+case class Complete[S](s: S) extends PartialCollection[S] { final val isComplete = true }
+
+case class Incomplete[S](s: S) extends PartialCollection[S] { final val isComplete = false }

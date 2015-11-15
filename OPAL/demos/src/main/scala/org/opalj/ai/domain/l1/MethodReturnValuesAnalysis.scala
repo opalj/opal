@@ -63,8 +63,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         override val project: Project[java.net.URL],
         val ai:               InterruptableAI[_],
         val method:           Method
-    )
-            extends CorrelationalDomain
+    )           extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultTypeLevelIntegerValues
@@ -108,8 +107,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         }
     }
 
-    override def title: String =
-        "Derives Information About Returned Values"
+    override def title: String = "Derives Information About Returned Values"
 
     override def description: String =
         "Identifies methods where we can – statically – derive more precise return type/value information."
@@ -119,7 +117,6 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ) = {
-
         val methodsWithRefinedReturnTypes = time {
             for {
                 classFile ← theProject.allClassFiles.par
@@ -153,7 +150,7 @@ case class RefinedReturnType(
         refinedType: Option[Domain#DomainValue]
 ) {
 
-    override def toString = {
+    override def toString() : String = {
         import Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 

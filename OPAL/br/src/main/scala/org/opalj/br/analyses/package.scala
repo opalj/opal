@@ -29,8 +29,12 @@
 package org.opalj
 package br
 
+import scala.language.implicitConversions
+
 import java.io.File
 import java.net.URL
+import org.opalj.collection.PartialCollection
+import scala.collection.Map
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -40,14 +44,14 @@ import java.net.URL
  */
 package object analyses {
 
-    import language.implicitConversions
-
     /**
      * Type alias for Project's with an arbitrary sources.
      */
     type SomeProject = Project[_]
 
     type ProgressEvent = ProgressEvents.Value
+
+    type DeclaredMethods = Map[ObjectType, PartialCollection[Set[Method]]]
 
     /**
      * Shortens an absolute path to one relative to the current working directory.

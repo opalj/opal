@@ -66,7 +66,7 @@ trait Callees {
                             declaringClassType, name, descriptor,
                             project,
                             // FIXME Only correct if the code that we are analyzing is an app
-                            classesFilter = (cf) ⇒ instantiableClasses.isInstantiable(cf)
+                            classesFilter = (cf) ⇒ !instantiableClasses.isNotInstantiable(cf)
                         )
                     },
                     syncOnEvaluation = true //false
@@ -76,7 +76,7 @@ trait Callees {
                 classHierarchy.lookupImplementingMethods(
                     declaringClassType, name, descriptor,
                     project,
-                    classesFilter = (cf) ⇒ instantiableClasses.isInstantiable(cf)
+                    classesFilter = (cf) ⇒ !instantiableClasses.isNotInstantiable(cf)
                 )
 
             case /*Unknown <=> the type is unknown */ _ ⇒

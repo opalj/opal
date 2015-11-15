@@ -96,7 +96,7 @@ object CallGraphFactory {
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
 
-            val classIsInstantiable = instantiableClasses.isInstantiable(classFile.thisType)
+            val classIsInstantiable = !instantiableClasses.isNotInstantiable(classFile.thisType)
 
             val isNonPrivate = !method.isPrivate
 
