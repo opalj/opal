@@ -94,10 +94,9 @@ class ClassHierarchy private (
     assert(knownTypesMap.length == subinterfaceTypesMap.length)
 
     /**
-     * Returns the set of all root types; if the class hierarchy
-     * is complete then this set contains exactly one element and
+     * Returns the set of all types which have no super type; that is all (pseudo) root types;
+     * if the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
-     * I.e., this set contains all types which have no super type.
      *
      * @note
      *    If we load an application and all the jars used to implement it or a library

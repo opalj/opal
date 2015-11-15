@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,30 +30,30 @@ package org.opalj
 package br
 package analyses
 
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.Set
+import scala.collection.mutable.HashSet
+import org.opalj.br.instructions.INVOKESPECIAL
+
 /**
- * The ''key'' object to get global field access information.
- *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ * Stores the information about those classes that are not instantiable. The set of
+ * classes that are not instantiable is usually only a small fraction of all classes and hence, more
+ * efficient to store/access).
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation] {
+class InstantiableClasses(
+        val project:         SomeProject,
+        val notInstantiable: Set[ObjectType]
+) {
 
-    /**
-     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    def isNotInstantiable(classType: ObjectType): Boolean = notInstantiable.contains(classType)
 
-    /**
-     * Computes the field access information.
-     */
-    override protected def compute(project: SomeProject): FieldAccessInformation = {
+    def statistics: Map[String, Int] = Map(
+        "# of not instantiable classes in the project" → notInstantiable.size
+    )
 
-        FieldAccessInformationAnalysis.doAnalyze(
-            project, () ⇒ Thread.currentThread().isInterrupted()
-        )
-    }
+    override def toString(): String = notInstantiable.mkString("Not instantiable: ", ", ", ".")
+
 }
 

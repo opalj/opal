@@ -38,10 +38,9 @@ package analyses
  * @author Michael Eichberg
  */
 case class ReportableAnalysisAdapter[Source, AnalysisResult](
-    analysis:  Analysis[Source, AnalysisResult],
-    converter: AnalysisResult ⇒ String
-)
-        extends Analysis[Source, ReportableAnalysisResult] {
+        analysis:  Analysis[Source, AnalysisResult],
+        converter: AnalysisResult ⇒ String
+) extends Analysis[Source, ReportableAnalysisResult] {
 
     override def description = analysis.description
     override def title = analysis.title
@@ -52,8 +51,6 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
         parameters:             Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement
     ): ReportableAnalysisResult = {
-        new BasicReport(
-            converter(analysis.analyze(project, parameters, initProgressManagement))
-        )
+        new BasicReport(converter(analysis.analyze(project, parameters, initProgressManagement)))
     }
 }

@@ -123,24 +123,3 @@ object InstantiableClassesAnalysis {
     }
 }
 
-/**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author Michael Eichberg
- */
-class InstantiableClasses(
-        val project:         SomeProject,
-        val notInstantiable: Set[ObjectType]
-) {
-
-    def isInstantiable(classType: ObjectType): Boolean =
-        !notInstantiable.contains(classType)
-
-    def statistics: Map[String, Int] = Map(
-        "# of not instantiable classes in the project" → notInstantiable.size
-    )
-
-}
-

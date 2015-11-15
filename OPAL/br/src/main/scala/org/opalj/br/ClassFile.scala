@@ -128,22 +128,6 @@ final class ClassFile private (
     def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
 
     /**
-     * Tests if the methods declared by this class and those declare by the other class have
-     * compatible signatures. I.e., this tests whether this class could inherit from the given
-     * interface/class. Hence, this test returns `true` if this class inherits from the
-     * given class.
-     */
-    def methodSignaturesAreCompatible(
-        classFile:     ClassFile,
-        filterMethods: Method ⇒ Boolean = (m: Method) ⇒ true
-    )(
-        implicit
-        repository: ClassFileRepository
-    ): Answer = {
-        ???
-    }
-
-    /**
      * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
      * will return `true`.
      *
@@ -203,17 +187,21 @@ final class ClassFile private (
      * This method relies on the inner classes attribute to identify anonymous inner
      * classes.
      */
-    def isAnonymousInnerClass: Boolean = isClassDeclaration &&
-        innerClasses.map(_.exists { i ⇒
-            i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
-        }).getOrElse(false)
+    def isAnonymousInnerClass: Boolean = {
+        isClassDeclaration &&
+            innerClasses.map { ics ⇒
+                ics.exists { i ⇒
+                    i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
+                }
+            }.getOrElse(false)
+    }
 
     /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
      * nested classes that are not defined in the scope of a nested class of this
      * class.
      */
-    def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
+    def nestedClasses(implicit classFileRepository: ClassFileRepository): Seq[ObjectType] = {
 
         import classFileRepository.logContext
 
@@ -333,13 +321,15 @@ final class ClassFile private (
      * }}}
      */
     def foreachNestedClass(
-        classFileRepository: ClassFileRepository,
-        f:                   (ClassFile) ⇒ Unit
+        f: (ClassFile) ⇒ Unit
+    )(
+        implicit
+        classFileRepository: ClassFileRepository
     ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType ⇒
             classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
                 f(nestedClassFile)
-                nestedClassFile.foreachNestedClass(classFileRepository, f)
+                nestedClassFile.foreachNestedClass(f)
             }
         }
     }
@@ -352,19 +342,21 @@ final class ClassFile private (
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
      */
-    def outerType: Option[(ObjectType, Int)] =
+    def outerType: Option[(ObjectType, Int)] = {
         innerClasses flatMap { innerClasses ⇒
             innerClasses collectFirst {
                 case InnerClass(`thisType`, Some(outerType), _, accessFlags) ⇒
                     (outerType, accessFlags)
             }
         }
+    }
 
     /**
      * Each class file optionally defines a class signature.
      */
-    def classSignature: Option[ClassSignature] =
+    def classSignature: Option[ClassSignature] = {
         attributes collectFirst { case s: ClassSignature ⇒ s }
+    }
 
     /**
      * The SourceFile attribute is an optional attribute [...]. There can be
@@ -380,8 +372,9 @@ final class ClassFile private (
      *
      * The returned Array must not be mutated.
      */
-    def sourceDebugExtension: Option[Array[Byte]] =
+    def sourceDebugExtension: Option[Array[Byte]] = {
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+    }
 
     /**
      * All constructors/instance initialization methods (`<init>`) defined by this class.
@@ -423,10 +416,11 @@ final class ClassFile private (
      * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
      */
-    def instanceMethods: Iterable[Method] =
+    def instanceMethods: Iterable[Method] = {
         methods.view filterNot { method ⇒
             method.isStatic || method.isConstructor || method.isStaticInitializer
         }
+    }
 
     /**
      * The static initializer of this class.
@@ -462,7 +456,7 @@ final class ClassFile private (
     /**
      * Returns the field with the given name, if any.
      *
-     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findField(name: String): Option[Field] = {
         @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
@@ -489,7 +483,7 @@ final class ClassFile private (
      *
      * @note Though the methods are sorted, no guarantee is given which method is
      *      returned if multiple methods are defined with the same name.
-     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findMethod(name: String): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
