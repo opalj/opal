@@ -44,7 +44,7 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
             p == IsEntryPoint
         }
 
-        val cbs = project.get(CallBySignatureResolutionKey)
+        val cbs = opaProject.get(CallBySignatureResolutionKey)
         println(cbs.statistics)
 
         BasicReport(

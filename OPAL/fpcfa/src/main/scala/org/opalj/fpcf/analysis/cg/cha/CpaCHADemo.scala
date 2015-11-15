@@ -60,11 +60,14 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
         val methodsCount: Double = project.methodsCount.toDouble
         def getPercentage(value: Double): String = "%1.2f" format (value / methodsCount * 100d)
 
-        val newCpaCG = cpaProject.get(CHACallGraphKey).callGraph
+        val ccg = cpaProject.get(CHACallGraphKey)
+        val execpetions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        println(execpetions)
+        val newCpaCG = ccg.callGraph
 
         val cpaEP = cpaStore.entities { (p: Property) ⇒ p == IsEntryPoint }
 
-        val cbs = project.get(CallBySignatureResolutionKey)
+        val cbs = cpaProject.get(CallBySignatureResolutionKey)
         println(cbs.statistics)
 
         BasicReport(

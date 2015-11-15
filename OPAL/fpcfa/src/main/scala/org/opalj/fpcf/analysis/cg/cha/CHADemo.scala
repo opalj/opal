@@ -89,13 +89,10 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         val opaEP = opaStore.collect { case (m @ MethodWithBody(_), IsEntryPoint) ⇒ m }.toSet
 
-        val cbs = project.get(CallBySignatureResolutionKey)
-
-        println(cbs.statistics)
-        val differenceCpa = cpaEP -- oldEntryPoints
-        val differenceOpa = opaEP -- oldEntryPoints
-
         if (entryPointInfo) {
+
+            val differenceCpa = cpaEP -- oldEntryPoints
+            val differenceOpa = opaEP -- oldEntryPoints
             println("\n\nEntryPoints not detected by the old appoach. (see CallGraphFactory for details)")
             println("\n SIZE: "+differenceCpa.size)
             println(differenceCpa.collect {
