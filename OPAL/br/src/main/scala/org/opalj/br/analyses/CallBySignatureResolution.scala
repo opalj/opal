@@ -272,7 +272,7 @@ object CallBySignatureResolution {
                 if ((clazzType eq ObjectType.Object) || (enumType eq clazzType))
                     return ;
 
-                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes)
+                if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes /* we want to get a sound overapprox. not: OrUnknown*/ )
                     return ;
 
                 if (hasSubclassInheritingTheInterface(clazzType, m, interfaceClassFile, project, subclassCache).isYes)

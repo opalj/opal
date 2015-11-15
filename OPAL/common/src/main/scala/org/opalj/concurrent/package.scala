@@ -238,7 +238,7 @@ package object concurrent {
      * Executes a given function f for each element in the given workqueue. `f` is – of course –
      * also allowed to add elements to the workqueue; however `f` must do so concurrently. Given
      * that `f` may be executed in parallel, `f` has to be thread-safe.
-     * 
+     *
      * @example
      * {{{
      * val workQueue = new ConcurrentLinkedQueue[T]()
@@ -270,7 +270,7 @@ package object concurrent {
         def schedule(): Unit = {
             while (!workQueue.isEmpty()) {
                 val next = workQueue.poll()
-                if (next != null) { 
+                if (next != null) {
                     // schedule is executed concurrently, hence some other thread
                     // may grapped the (last remaining) value in between. 
                     futuresCountMutex.synchronized { futuresCount += 1 }
@@ -278,16 +278,16 @@ package object concurrent {
                     future.onComplete { result ⇒
                         // the workQueue may contain one to many new entries to work on
                         result match {
-                            case Failure(t) ⇒ 
+                            case Failure(t) ⇒
                                 exceptionsMutex.synchronized { exceptions = t :: exceptions }
-                            case _          ⇒
-                                /* nothing special to do */
+                            case _ ⇒
+                            /* nothing special to do */
                         }
                         schedule();
-                        futuresCountMutex.synchronized { 
+                        futuresCountMutex.synchronized {
                             futuresCount -= 1
-                            futuresCountMutex.notify() 
-                            }
+                            futuresCountMutex.notify()
+                        }
                     }(executionContext)
                 }
             }
