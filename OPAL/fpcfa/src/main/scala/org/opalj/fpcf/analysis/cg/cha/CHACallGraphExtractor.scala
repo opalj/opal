@@ -171,7 +171,9 @@ class CHACallGraphExtractor(
 
             assert(
                 (callees & cbsCalls).isEmpty,
-                s"CHACallGraphExtractor: call by signature calls for ${method.toJava(classFile)} are not disjunct with normal callees: "+
+                s"CHACallGraphExtractor: call by signature calls for $name on ${declaringClassType.toJava} \n\n"+
+                    s"${cbsCalls.map { project.classFile(_).thisType.toJava }.mkString(", ")}}\n\n"+
+                    s"are not disjunct with normal callees: ${callees.map { project.classFile(_).thisType.toJava }.mkString(", ")}}\n\n common:"+
                     (callees & cbsCalls).map { m ⇒ m.toJava(project.classFile(m)) }.mkString("\n")
             )
 
