@@ -46,6 +46,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.util.Failure
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -230,6 +232,75 @@ package object concurrent {
                 t += 1
             }
         }
+    }
+
+    /**
+     * Executes a given function f for each element in the given workqueue. `f` is – of course –
+     * also allowed to add elements to the workqueue; however `f` must do so concurrently. Given
+     * that `f` may be executed in parallel, `f` has to be thread-safe.
+     * 
+     * @example
+     * {{{
+     * val workQueue = new ConcurrentLinkedQueue[T]()
+     * workQueue.add(<T>)
+     * val exceptions =
+     * 		whileNonEmpty(workQueue) { t ⇒
+     * 			// do something with t
+     * 			if (<some condition>) { workQueue.add(nextT) }
+     * 		}
+     * }}}
+     */
+    def whileNonEmpty[T >: Null <: AnyRef, U](
+        // the workQueue may be filled as a side effect of executing f
+        workQueue:     ConcurrentLinkedQueue[T],
+        isInterrupted: () ⇒ Boolean             = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: T ⇒ U
+    )(
+        implicit
+        executionContext: ExecutionContext
+    ): List[Throwable] = {
+
+        val exceptionsMutex = new Object
+        var exceptions: List[Throwable] = Nil
+
+        val futuresCountMutex = new Object
+        var futuresCount = 0
+
+        def schedule(): Unit = {
+            while (!workQueue.isEmpty()) {
+                val next = workQueue.poll()
+                if (next != null) { 
+                    // schedule is executed concurrently, hence some other thread
+                    // may grapped the (last remaining) value in between. 
+                    futuresCountMutex.synchronized { futuresCount += 1 }
+                    val future = Future[Unit] { f(next) }(executionContext)
+                    future.onComplete { result ⇒
+                        // the workQueue may contain one to many new entries to work on
+                        result match {
+                            case Failure(t) ⇒ 
+                                exceptionsMutex.synchronized { exceptions = t :: exceptions }
+                            case _          ⇒
+                                /* nothing special to do */
+                        }
+                        schedule();
+                        futuresCountMutex.synchronized { 
+                            futuresCount -= 1
+                            futuresCountMutex.notify() 
+                            }
+                    }(executionContext)
+                }
+            }
+        }
+
+        schedule();
+
+        // let's wait until the workqueue is empty
+        futuresCountMutex.synchronized {
+            while (futuresCount > 0) futuresCountMutex.wait();
+        }
+
+        exceptionsMutex.synchronized { exceptions }
     }
 }
 
