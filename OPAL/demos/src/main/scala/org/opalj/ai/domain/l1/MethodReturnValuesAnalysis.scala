@@ -63,7 +63,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         override val project: Project[java.net.URL],
         val ai:               InterruptableAI[_],
         val method:           Method
-    )           extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultTypeLevelIntegerValues
@@ -150,7 +150,7 @@ case class RefinedReturnType(
         refinedType: Option[Domain#DomainValue]
 ) {
 
-    override def toString() : String = {
+    override def toString(): String = {
         import Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 

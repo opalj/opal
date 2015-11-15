@@ -159,9 +159,9 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
             // Since we're looking for `private` fields we only have to analyze their
             // class'es methods - and the methods of any inner classes.
             val classFiles = scala.collection.mutable.Set[ClassFile]() + classFile
-            classFile.foreachNestedClass(project, { nestedClass ⇒
+            classFile.foreachNestedClass({ nestedClass ⇒
                 classFiles += nestedClass
-            })
+            })(project)
 
             val methods = classFiles.map(_.methods).flatten
             val constructors = classFiles.map(_.constructors).flatten
