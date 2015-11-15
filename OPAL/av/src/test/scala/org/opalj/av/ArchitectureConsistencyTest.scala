@@ -303,4 +303,46 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
     }
 
+    /*
+     * outgoing every_element_should_be_annotated_with (multiple annotations) constraint
+     */
+    it should ("validate every_element_should_be_annotated_with (multiple annotations) constraint with no violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+
+            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+
+            'EntityId every_element_should_be_annotated_with
+                ("(entity.annotation.Id - entity.annotation.Column)",
+                    Seq(AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith("entity.annotation.Column",
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(false))))
+        }
+
+        specification.analyze() should be(empty)
+
+        testEnsemblesAreNonEmpty(specification)
+
+    }
+
+    it should ("validate every_element_should_be_annotated_with (multiple annotations) constraint with violations") in {
+        val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
+        val specification = new Specification(project) {
+
+            ensemble('EntityId)(FieldMatcher(AllClasses, theName = Some("id")))
+
+            'EntityId every_element_should_be_annotated_with
+                ("(entity.annotation.Id - entity.annotation.Column)",
+                    Seq(AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith("entity.annotation.Column",
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(true))))
+        }
+
+        specification.analyze() should not be (empty)
+
+        testEnsemblesAreNonEmpty(specification)
+
+    }
+
+
 }
