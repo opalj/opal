@@ -338,7 +338,7 @@ object DeadEdgesAnalysis {
                             /*alreadyEvaluated =*/ List(),
                             zOperandsArray,
                             zLocalsArray,
-                            List.empty
+                            List.empty, null, null // we don't care about the state of subroutines
                         )
                         val exceptionValue = zOperandsArray(athrowPC).head
                         val throwsError =
