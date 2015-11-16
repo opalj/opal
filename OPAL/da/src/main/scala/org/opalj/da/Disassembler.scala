@@ -58,7 +58,7 @@ object Disassembler {
 
     def processClassFile(classFile: ClassFile): Unit = {
         try {
-            val file = writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
+            val file = writeAndOpen(classFile.toXHTML().toString, classFile.fqn, ".html")
             println(s"Generated the HTML documentation $file.")
         } catch {
             case OpeningFileFailedException(file, cause) ⇒

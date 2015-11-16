@@ -366,7 +366,7 @@ class ProjectExplorer(
             method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
         val classFile = decompileClassFile(project, cf.thisType)
         if (classFile.isDefined) {
-            val content = classFile.get.toXHTML.toString
+            val content = classFile.get.toXHTML().toString
             byteView.engine.loadContent(content)
         } else {
             byteView.engine.loadContent(Messages.NO_BYTECODE_FOUND)

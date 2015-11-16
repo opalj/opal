@@ -154,12 +154,12 @@ case class ClassFile(
         </details>
     }
 
-    def toXHTML: Node =
+    def toXHTML(css: String = ClassFile.TheCSS): Node =
         <html>
             <head>
                 <title>Java Bytecode of { fqn }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
-                <style type="text/css">{ scala.xml.Unparsed(ClassFile.TheCSS) }</style>
+                <style type="text/css">{ scala.xml.Unparsed(css) }</style>
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
             </head>
             <body>
