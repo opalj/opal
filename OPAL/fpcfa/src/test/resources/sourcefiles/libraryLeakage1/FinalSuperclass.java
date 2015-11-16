@@ -50,8 +50,8 @@ public final class FinalSuperclass {
 	}
 	
 	@CallabilityProperty(
-			opa=CallabilityKeys.NotCallable,
-			cpa=CallabilityKeys.NotCallable)
+			opa=CallabilityKeys.Callable,
+			cpa=CallabilityKeys.Callable)
 	public void publicMethod(){
 		privateMethod();
 		protectedMethod();
@@ -60,15 +60,15 @@ public final class FinalSuperclass {
 	}
 	
 	@CallabilityProperty(
-			opa=CallabilityKeys.NotCallable,
+			opa=CallabilityKeys.Callable,
 			cpa=CallabilityKeys.NotCallable)
 	protected void protectedMethod(){
 		System.out.println("protected");
 	}
 	
 	@CallabilityProperty(
-			opa=CallabilityKeys.NotCallable,
-			cpa=CallabilityKeys.NotCallable)
+			opa=CallabilityKeys.Callable,
+			cpa=CallabilityKeys.Callable)
 	public final void publicFinalMethod(){
 		System.out.println("public and final");
 	}

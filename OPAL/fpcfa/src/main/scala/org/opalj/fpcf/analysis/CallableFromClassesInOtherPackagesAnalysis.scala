@@ -111,10 +111,13 @@ class CallableFromClassesInOtherPackagesAnalysis private (
             /* a package private method can not leak to the client under CPA */
             return ImmediateResult(method, NotCallable);
 
+        val classFile = project.classFile(method)
+        if (classFile.isEffectivelyFinal && !method.isPublic)
+            return ImmediateResult(method, NotCallable);
+
         // When we reach this point:
         // - the method is public or protected
         // - the class is not final
-        val classFile = project.classFile(method)
         if (classFile.isPublic)
             return ImmediateResult(method, Callable);
 

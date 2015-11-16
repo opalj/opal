@@ -42,7 +42,7 @@ abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTe
 
     override def testFileName = "classfiles/methodVisibilityTest.jar"
 
-    override def testFilePath = "fpa"
+    override def testFilePath = "fpcfa"
 
     override def analysisRunner = MethodAccessibilityAnalysis
 

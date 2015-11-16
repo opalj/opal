@@ -42,7 +42,7 @@ abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFi
 
     override def testFileName = "classfiles/callableFromClassesInOtherPackagesTest.jar"
 
-    override def testFilePath = "fpa"
+    override def testFilePath = "fpcfa"
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 

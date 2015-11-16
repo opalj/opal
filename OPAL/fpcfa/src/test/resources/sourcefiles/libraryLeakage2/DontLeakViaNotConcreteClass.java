@@ -49,10 +49,12 @@ class DontLeakViaNotConcreteClass {
 	 * This is weird. This method should be exposed to the client by the
 	 * DontLeakViaAbstractClass but the compiler somehow introduces a method
 	 * with the same name that prevent that method from being exposed.
+	 * 
+	 * THIS DEPENDS ON THE COMPILER; UNCOMMENTED FOR NOW
 	 */
-	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
-	public void iDoNotLeak() {
-	}
+//	@CallabilityProperty(cpa = CallabilityKeys.NotCallable)
+//	public void iDoNotLeak() {
+//	}
 
 	/**
 	 * Package visible methods can not leak when the closed packages assumption

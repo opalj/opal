@@ -15,7 +15,7 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def testFileName = "classfiles/entryPointTest.jar"
 
-    override def testFilePath = "fpa"
+    override def testFilePath = "fpcfa"
 
     override def analysisRunner = EntryPointsAnalysis
 
