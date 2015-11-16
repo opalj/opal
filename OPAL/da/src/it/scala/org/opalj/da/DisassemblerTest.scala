@@ -83,7 +83,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
             parClassFiles.foreach { e ⇒
                 val (classFile, url) = e
                 try {
-                    classFile.toXHTML.toString.length() should be > (0)
+                    classFile.toXHTML().toString.length() should be > (0)
                     transformationCounter.incrementAndGet()
                     // ideally: should be valid HTML
                 } catch {
