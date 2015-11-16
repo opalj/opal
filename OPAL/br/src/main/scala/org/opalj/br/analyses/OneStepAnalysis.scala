@@ -39,14 +39,16 @@ package analyses
 trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
 
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): AnalysisResult
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): AnalysisResult
 
     final def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None): AnalysisResult = {
+        project:                Project[Source],
+        parameters:             Seq[String]                = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
+    ): AnalysisResult = {
 
         val pm = initProgressManagement(1)
         pm.progress(1, ProgressEvents.Start, Some(title))

@@ -365,7 +365,8 @@ object UIDSet1 {
  */
 final class UIDSet2[T <: UID] private[collection] (
     final val e1: T,
-    final val e2: T)
+    final val e2: T
+)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 2
@@ -449,7 +450,8 @@ final class UIDSet2[T <: UID] private[collection] (
 final class UIDSet3[T <: UID] private[collection] (
     final val e1: T,
     final val e2: T,
-    final val e3: T)
+    final val e3: T
+)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 3
@@ -528,7 +530,8 @@ final class UIDSet4[T <: UID] private[collection] (
     final val e1: T,
     final val e2: T,
     final val e3: T,
-    final val e4: T)
+    final val e4: T
+)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 4
@@ -609,7 +612,8 @@ final class UIDSet4[T <: UID] private[collection] (
 }
 
 private final class UIDArraySet[T <: UID](
-    private final val es: Array[UID])
+    private final val es: Array[UID]
+)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     def this(e1: T, e2: T, e3: T, e4: T, e5: T) {
@@ -629,7 +633,8 @@ private final class UIDArraySet[T <: UID](
                 es(1).asInstanceOf[T],
                 es(2).asInstanceOf[T],
                 es(3).asInstanceOf[T],
-                es(4).asInstanceOf[T])
+                es(4).asInstanceOf[T]
+            )
         else {
             val newLength = es.length - 1
             val newEs = new Array[UID](newLength)

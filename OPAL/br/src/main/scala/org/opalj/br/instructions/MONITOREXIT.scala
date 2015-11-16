@@ -47,12 +47,14 @@ case object MONITOREXIT extends SynchronizationInstruction {
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, jvmExceptions)
+                this, currentPC, code, jvmExceptions
+            )
 }

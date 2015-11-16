@@ -96,8 +96,9 @@ object ClassValue { val tag = 'c' }
 trait StructuredElementValue extends ElementValue {}
 
 case class EnumValue(
-        type_name_index: Int,
-        const_name_index: Int) extends StructuredElementValue {
+        type_name_index:  Int,
+        const_name_index: Int
+) extends StructuredElementValue {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val et = parseFieldType(type_name_index)

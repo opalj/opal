@@ -63,14 +63,16 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.OutOfMemoryError)
+                this, currentPC, code, ObjectType.OutOfMemoryError
+            )
 
     override def toString: String = "NEW "+objectType.toJava
 

@@ -31,8 +31,8 @@ package ai
 package analyses
 package cg
 
-import scala.collection.{ Set, Map }
-import scala.collection.mutable.{ Map ⇒ MutableMap }
+import scala.collection.{Set, Map}
+import scala.collection.mutable.{Map ⇒ MutableMap}
 
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.UID
@@ -81,7 +81,7 @@ class CallGraphBuilder(val project: SomeProject) {
         import scala.concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import scala.collection.mutable.{ OpenHashMap, AnyRefMap, WrappedArray }
+        import scala.collection.mutable.{OpenHashMap, AnyRefMap, WrappedArray}
 
         val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
 
@@ -141,16 +141,19 @@ class CallGraphBuilder(val project: SomeProject) {
             if (callSite.contains(pc)) {
                 callSite.update(
                     pc,
-                    new WrappedArray.ofRef((callees ++ callSite(pc)).toArray))
+                    new WrappedArray.ofRef((callees ++ callSite(pc)).toArray)
+                )
             } else
                 callSite.put(
                     pc,
-                    new WrappedArray.ofRef(callees.toArray))
+                    new WrappedArray.ofRef(callees.toArray)
+                )
         }
 
         new CallGraph(
             project,
             Await.result(calledByMapFuture, Duration.Inf),
-            callsMap)
+            callsMap
+        )
     }
 }

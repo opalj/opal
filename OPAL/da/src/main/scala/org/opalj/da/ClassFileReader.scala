@@ -93,48 +93,54 @@ object ClassFileReader
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     def ClassFile(
-        cp: Constant_Pool,
+        cp:            Constant_Pool,
         minor_version: Int, major_version: Int,
         access_flags: Int, this_class: CPIndex, super_class: CPIndex,
         interfaces: Interfaces, fields: Fields, methods: Methods,
-        attributes: Attributes): ClassFile =
+        attributes: Attributes
+    ): ClassFile =
         new ClassFile(
             cp, minor_version, major_version, access_flags,
             this_class, super_class, interfaces, fields, methods, attributes
         )
 
     def Field_Info(
-        cp: Constant_Pool,
+        cp:           Constant_Pool,
         access_flags: Int, name_index: Int, descriptor_index: Int,
-        attributes: Attributes): Field_Info =
+        attributes: Attributes
+    ): Field_Info =
         new Field_Info(
             access_flags, name_index, descriptor_index, attributes
         )
 
     def Method_Info(
-        cp: Constant_Pool,
+        cp:          Constant_Pool,
         accessFlags: Int, name_index: Int, descriptor_index: Int,
-        attributes: Attributes): Method_Info =
+        attributes: Attributes
+    ): Method_Info =
         new Method_Info(
             accessFlags, name_index, descriptor_index, attributes
         )
 
     type SourceFile_attribute = da.SourceFile_attribute
     def SourceFile_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Int, sourceFile_index: Int): SourceFile_attribute =
+        cp:                   Constant_Pool,
+        attribute_name_index: Int, sourceFile_index: Int
+    ): SourceFile_attribute =
         new SourceFile_attribute(attribute_name_index, sourceFile_index)
 
     type Signature_attribute = da.Signature_attribute
     def Signature_attribute(
         cp: Constant_Pool, ap: AttributeParent, attribute_name_index: Int,
-        signature_index: Int): Signature_attribute =
+        signature_index: Int
+    ): Signature_attribute =
         new Signature_attribute(attribute_name_index, signature_index)
 
     type ConstantValue_attribute = da.ConstantValue_attribute
     def ConstantValue_attribute(
         cp: Constant_Pool, attribute_name_index: Int,
-        constantvalue_index: Int): ConstantValue_attribute =
+        constantvalue_index: Int
+    ): ConstantValue_attribute =
         new ConstantValue_attribute(attribute_name_index, constantvalue_index)
 
     type Synthetic_attribute = da.Synthetic_attribute
@@ -148,7 +154,8 @@ object ClassFileReader
     type SourceDebugExtension_attribute = da.SourceDebugExtension_attribute
     def SourceDebugExtension_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        debug_extension: Array[Byte]): SourceDebugExtension_attribute =
+        debug_extension: Array[Byte]
+    ): SourceDebugExtension_attribute =
         new SourceDebugExtension_attribute(attribute_name_index, debug_extension)
 
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
@@ -156,16 +163,18 @@ object ClassFileReader
     type InnerClasses_attribute = da.InnerClasses_attribute
     def InnerClasses_attribute(
         cp: Constant_Pool, attribute_name_index: Int,
-        classes: InnerClasses): InnerClasses_attribute =
+        classes: InnerClasses
+    ): InnerClasses_attribute =
         new InnerClasses_attribute(attribute_name_index, classes)
 
     type InnerClassesEntry = da.InnerClassesEntry
     def InnerClassesEntry(
-        cp: Constant_Pool,
-        inner_class_info_index: Int,
-        outer_class_info_index: Int,
-        inner_name_index: Int,
-        inner_class_access_flags: Int): InnerClassesEntry =
+        cp:                       Constant_Pool,
+        inner_class_info_index:   Int,
+        outer_class_info_index:   Int,
+        inner_name_index:         Int,
+        inner_class_access_flags: Int
+    ): InnerClassesEntry =
         new InnerClassesEntry(
             inner_class_info_index, outer_class_info_index,
             inner_name_index,
@@ -177,30 +186,34 @@ object ClassFileReader
     type Exceptions_attribute = da.Exceptions_attribute
     def Exceptions_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        exception_index_table: ExceptionIndexTable): Exceptions_attribute =
+        exception_index_table: ExceptionIndexTable
+    ): Exceptions_attribute =
         new Exceptions_attribute(attribute_name_index, exception_index_table)
 
     val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
 
     type Instructions = da.Code
     def Instructions(
-        cp: Constant_Pool,
-        instructions: Array[Byte]): Instructions =
+        cp:           Constant_Pool,
+        instructions: Array[Byte]
+    ): Instructions =
         new Instructions(instructions)
 
     type ExceptionTableEntry = da.ExceptionTableEntry
     def ExceptionTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int, end_pc: Int, handler_pc: Int, catch_type: Int): ExceptionTableEntry =
+        cp:       Constant_Pool,
+        start_pc: Int, end_pc: Int, handler_pc: Int, catch_type: Int
+    ): ExceptionTableEntry =
         new ExceptionTableEntry(start_pc, end_pc, handler_pc, catch_type)
 
     type Code_attribute = da.Code_attribute
     def Code_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         max_stack: Int, max_locals: Int,
-        instructions: Instructions,
+        instructions:    Instructions,
         exception_table: ExceptionHandlers,
-        attributes: Attributes): Code_attribute =
+        attributes:      Attributes
+    ): Code_attribute =
         new Code_attribute(
             attribute_name_index, attribute_length,
             max_stack, max_locals,
@@ -212,15 +225,17 @@ object ClassFileReader
     type EnclosingMethod_attribute = da.EnclosingMethod_attribute
     def EnclosingMethod_attribute(
         cp: Constant_Pool, attribute_name_index: Int,
-        class_index: Int,
-        method_index: Int): EnclosingMethod_attribute =
+        class_index:  Int,
+        method_index: Int
+    ): EnclosingMethod_attribute =
         new EnclosingMethod_attribute(attribute_name_index, class_index, method_index)
 
     type LineNumberTable_attribute = da.LineNumberTable_attribute
     def LineNumberTable_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Int, attribute_length: Int,
-        line_number_table: LineNumbers): LineNumberTable_attribute =
+        line_number_table: LineNumbers
+    ): LineNumberTable_attribute =
         new LineNumberTable_attribute(attribute_name_index, line_number_table)
 
     val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry] = implicitly
@@ -231,14 +246,16 @@ object ClassFileReader
     type LocalVariableTable_attribute = da.LocalVariableTable_attribute
     def LocalVariableTable_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        local_variable_table: LocalVariables): LocalVariableTable_attribute =
+        local_variable_table: LocalVariables
+    ): LocalVariableTable_attribute =
         new LocalVariableTable_attribute(attribute_name_index, local_variable_table)
 
     val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry] = implicitly
     type LocalVariableTableEntry = da.LocalVariableTableEntry
     def LocalVariableTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int, length: Int, name_index: Int, descriptor_index: Int, index: Int): LocalVariableTableEntry =
+        cp:       Constant_Pool,
+        start_pc: Int, length: Int, name_index: Int, descriptor_index: Int, index: Int
+    ): LocalVariableTableEntry =
         new LocalVariableTableEntry(start_pc, length, name_index, descriptor_index, index)
 
     val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
@@ -246,15 +263,17 @@ object ClassFileReader
     type LocalVariableTypeTable_attribute = da.LocalVariableTypeTable_attribute
     def LocalVariableTypeTable_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        local_variable_type_table: LocalVariableTypes): LocalVariableTypeTable_attribute =
+        local_variable_type_table: LocalVariableTypes
+    ): LocalVariableTypeTable_attribute =
         new LocalVariableTypeTable_attribute(
             attribute_name_index, local_variable_type_table
         )
 
     type LocalVariableTypeTableEntry = da.LocalVariableTypeTableEntry
     def LocalVariableTypeTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int, length: Int, name_index: Int, signature_index: Int, index: Int): LocalVariableTypeTableEntry =
+        cp:       Constant_Pool,
+        start_pc: Int, length: Int, name_index: Int, signature_index: Int, index: Int
+    ): LocalVariableTypeTableEntry =
         new LocalVariableTypeTableEntry(
             start_pc, length, name_index, signature_index, index
         )
@@ -265,8 +284,9 @@ object ClassFileReader
     type ElementValuePair = da.ElementValuePair
     type ElementValue = da.ElementValue
     def ElementValuePair(
-        cp: Constant_Pool,
-        element_name_index: Int, element_value: ElementValue): ElementValuePair =
+        cp:                 Constant_Pool,
+        element_name_index: Int, element_value: ElementValue
+    ): ElementValuePair =
         new ElementValuePair(element_name_index, element_value)
 
     def ByteValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
@@ -311,40 +331,47 @@ object ClassFileReader
 
     val AnnotationManifest: ClassTag[Annotation] = implicitly
     def Annotation(
-        cp: Constant_Pool,
-        type_index: Int,
-        element_value_pairs: ElementValuePairs): Annotation =
+        cp:                  Constant_Pool,
+        type_index:          Int,
+        element_value_pairs: ElementValuePairs
+    ): Annotation =
         new Annotation(type_index, element_value_pairs)
 
     type AnnotationDefault_attribute = da.AnnotationDefault_attribute
     def AnnotationDefault_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        element_value: ElementValue) =
+        element_value: ElementValue
+    ) =
         new AnnotationDefault_attribute(attribute_name_index, attribute_length, element_value)
 
     type RuntimeVisibleAnnotations_attribute = da.RuntimeVisibleAnnotations_attribute
     def RuntimeVisibleAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        annotations: Annotations) =
+        annotations: Annotations
+    ) =
         new RuntimeVisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeInvisibleAnnotations_attribute = da.RuntimeInvisibleAnnotations_attribute
     def RuntimeInvisibleAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        annotations: Annotations) =
+        annotations: Annotations
+    ) =
         new RuntimeInvisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
     def RuntimeVisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
+        parameter_annotations: ParameterAnnotations
+    ) =
         new RuntimeVisibleParameterAnnotations_attribute(
-            attribute_name_index, attribute_length, parameter_annotations)
+            attribute_name_index, attribute_length, parameter_annotations
+        )
 
     type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
+        parameter_annotations: ParameterAnnotations
+    ) =
         new RuntimeInvisibleParameterAnnotations_attribute(
             attribute_name_index, attribute_length, parameter_annotations
         )
@@ -354,9 +381,10 @@ object ClassFileReader
     type StackMapFrame = da.StackMapFrame
     type StackMapTable_attribute = da.StackMapTable_attribute
     def StackMapTable_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Int, attribute_length: Int,
-        stack_map_frames: StackMapFrames) =
+        stack_map_frames: StackMapFrames
+    ) =
         new StackMapTable_attribute(attribute_name_index, attribute_length, stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
@@ -365,8 +393,9 @@ object ClassFileReader
     type VerificationTypeInfo = da.VerificationTypeInfo
 
     def SameLocals1StackItemFrame(
-        frame_type: Int,
-        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        frame_type:                   Int,
+        verification_type_info_stack: VerificationTypeInfo
+    ): StackMapFrame =
         new SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
 
     def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame =
@@ -376,22 +405,25 @@ object ClassFileReader
         new SameFrameExtended(frame_type, offset_delta)
 
     def AppendFrame(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame =
+        frame_type:                    Int,
+        offset_delta:                  Int,
+        verification_type_info_locals: VerificationTypeInfoLocals
+    ): StackMapFrame =
         new AppendFrame(frame_type, offset_delta, verification_type_info_locals)
 
     def SameLocals1StackItemFrameExtended(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        frame_type:                   Int,
+        offset_delta:                 Int,
+        verification_type_info_stack: VerificationTypeInfo
+    ): StackMapFrame =
         new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
 
     def FullFrame(
-        frame_type: Int,
-        offset_delta: Int,
+        frame_type:                    Int,
+        offset_delta:                  Int,
         verification_type_info_locals: VerificationTypeInfoLocals,
-        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
+        verification_type_info_stack:  VerificationTypeInfoStack
+    ): StackMapFrame =
         new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
     type TopVariableInfo = da.TopVariableInfo
@@ -428,40 +460,47 @@ object ClassFileReader
 
     type MethodParameters_attribute = da.MethodParameters_attribute
     def MethodParameters_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: CPIndex,
-        attribute_length: Int,
-        parameters: MethodParameters): MethodParameters_attribute =
+        attribute_length:     Int,
+        parameters:           MethodParameters
+    ): MethodParameters_attribute =
         new MethodParameters_attribute(attribute_name_index, attribute_length, parameters)
 
     type MethodParameter = da.MethodParameter
     def MethodParameter(
-        cp: Constant_Pool,
-        name_index: CPIndex,
-        access_flags: Int): MethodParameter =
+        cp:           Constant_Pool,
+        name_index:   CPIndex,
+        access_flags: Int
+    ): MethodParameter =
         new MethodParameter(name_index, access_flags)
 
     type TypeAnnotationTarget = da.TypeAnnotationTarget
     def ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int): TypeAnnotationTarget =
+        type_parameter_index: Int
+    ): TypeAnnotationTarget =
         new ParameterDeclarationOfClassOrInterface(type_parameter_index)
 
     def ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int): TypeAnnotationTarget =
+        type_parameter_index: Int
+    ): TypeAnnotationTarget =
         new ParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
     def SupertypeTarget(
-        supertype_index: Int): TypeAnnotationTarget =
+        supertype_index: Int
+    ): TypeAnnotationTarget =
         new SupertypeTarget(supertype_index)
 
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget =
+        bound_index:          Int
+    ): TypeAnnotationTarget =
         new TypeBoundOfParameterDeclarationOfClassOrInterface(type_parameter_index, bound_index)
 
     def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget =
+        bound_index:          Int
+    ): TypeAnnotationTarget =
         new TypeBoundOfParameterDeclarationOfMethodOrConstructor(type_parameter_index, bound_index)
 
     def FieldDeclaration: TypeAnnotationTarget =
@@ -482,9 +521,10 @@ object ClassFileReader
 
     type LocalvarTableEntry = da.LocalvarTableEntry
     def LocalvarTableEntry(
-        start_pc: Int,
-        length: Int,
-        local_variable_table_index: Int): LocalvarTableEntry =
+        start_pc:                   Int,
+        length:                     Int,
+        local_variable_table_index: Int
+    ): LocalvarTableEntry =
         new LocalvarTableEntry(start_pc, length, local_variable_table_index)
 
     def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget =
@@ -500,36 +540,43 @@ object ClassFileReader
         new New(offset)
 
     def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int): TypeAnnotationTarget =
+        offset: Int
+    ): TypeAnnotationTarget =
         new MethodReferenceExpressionNew(offset)
 
     def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int): TypeAnnotationTarget =
+        offset: Int
+    ): TypeAnnotationTarget =
         new MethodReferenceExpressionIdentifier(offset)
 
     def CastExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget =
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget =
         new CastExpression(offset, type_argument_index)
 
     def ConstructorInvocation(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget =
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget =
         new ConstructorInvocation(offset, type_argument_index)
 
     def MethodInvocation(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget =
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget =
         new MethodInvocation(offset, type_argument_index)
 
     def ConstructorInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget =
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget =
         new ConstructorInMethodReferenceExpression(offset, type_argument_index)
 
     def MethodInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget =
+        offset:              Int,
+        type_argument_index: Int
+    ): TypeAnnotationTarget =
         new MethodInMethodReferenceExpression(offset, type_argument_index)
 
     type TypeAnnotationPath = da.TypeAnnotationPath
@@ -565,24 +612,27 @@ object ClassFileReader
 
     type TypeAnnotation = da.TypeAnnotation
     def TypeAnnotation(
-        cp: Constant_Pool,
-        target: TypeAnnotationTarget,
-        path: TypeAnnotationPath,
-        type_index: CPIndex,
-        element_value_pairs: ElementValuePairs): TypeAnnotation =
+        cp:                  Constant_Pool,
+        target:              TypeAnnotationTarget,
+        path:                TypeAnnotationPath,
+        type_index:          CPIndex,
+        element_value_pairs: ElementValuePairs
+    ): TypeAnnotation =
         new TypeAnnotation(target, path, type_index, element_value_pairs)
 
     type RuntimeInvisibleTypeAnnotations_attribute = da.RuntimeInvisibleTypeAnnotations_attribute
     def RuntimeInvisibleTypeAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: CPIndex, attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute =
+        annotations: TypeAnnotations
+    ): RuntimeInvisibleTypeAnnotations_attribute =
         new RuntimeInvisibleTypeAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeVisibleTypeAnnotations_attribute = da.RuntimeVisibleTypeAnnotations_attribute
     def RuntimeVisibleTypeAnnotations_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: CPIndex,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute =
+        attribute_length:     Int,
+        annotations:          TypeAnnotations
+    ): RuntimeVisibleTypeAnnotations_attribute =
         new RuntimeVisibleTypeAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 }

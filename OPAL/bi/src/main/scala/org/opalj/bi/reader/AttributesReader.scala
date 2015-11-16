@@ -62,10 +62,11 @@ trait AttributesReader
      * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
-        ap: AttributeParent,
-        cp: Constant_Pool,
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
         attribute_name_index: Int,
-        in: DataInputStream): Unknown_attribute
+        in:                   DataInputStream
+    ): Unknown_attribute
 
     //
     // IMPLEMENTATION
@@ -118,7 +119,8 @@ trait AttributesReader
     private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
+        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+    ): Unit = {
         attributeReaders += reader
     }
 

@@ -77,12 +77,14 @@ object XHTML {
     private[this] def lastDump = _lastDump.get()
 
     def dumpOnFailure[T, D <: Domain](
-        classFile: ClassFile,
-        method: Method,
-        ai: AI[_ >: D],
-        theDomain: D,
-        minimumDumpInterval: Long = 500l)(
-            f: AIResult { val domain: theDomain.type } ⇒ T): T = {
+        classFile:           ClassFile,
+        method:              Method,
+        ai:                  AI[_ >: D],
+        theDomain:           D,
+        minimumDumpInterval: Long       = 500l
+    )(
+        f: AIResult { val domain: theDomain.type } ⇒ T
+    ): T = {
         val result = ai(classFile, method, theDomain)
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -121,12 +123,14 @@ object XHTML {
      * @param f The function that performs the validation of the results.
      */
     def dumpOnFailureDuringValidation[T](
-        classFile: Option[ClassFile],
-        method: Option[Method],
-        code: Code,
-        result: AIResult,
-        minimumDumpInterval: Long = 500l)(
-            f: ⇒ T): T = {
+        classFile:           Option[ClassFile],
+        method:              Option[Method],
+        code:                Code,
+        result:              AIResult,
+        minimumDumpInterval: Long              = 500l
+    )(
+        f: ⇒ T
+    ): T = {
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
@@ -140,7 +144,8 @@ object XHTML {
                         dump(
                             classFile.get, method.get,
                             "Dump generated due to exception: "+e.getMessage,
-                            result),
+                            result
+                        ),
                         "AIResult",
                         ".html"
                     )
@@ -152,10 +157,11 @@ object XHTML {
     }
 
     def dump(
-        classFile: ClassFile,
-        method: Method,
+        classFile:    ClassFile,
+        method:       Method,
         resultHeader: String,
-        result: AIResult): Node = {
+        result:       AIResult
+    ): Node = {
         import result._
 
         val title = s"${classFile.thisType.toJava}{ ${method.toJava} }"
@@ -166,7 +172,9 @@ object XHTML {
                 <h1>{ title }</h1>,
                 annotationsAsXHTML(method),
                 scala.xml.Unparsed(resultHeader),
-                dumpTable(code, domain)(operandsArray, localsArray)))
+                dumpTable(code, domain)(operandsArray, localsArray)
+            )
+        )
     }
 
     def annotationsAsXHTML(method: Method) =
@@ -181,13 +189,15 @@ object XHTML {
         </div>
 
     def dump(
-        classFile: Option[ClassFile],
-        method: Option[Method],
-        code: Code,
+        classFile:    Option[ClassFile],
+        method:       Option[Method],
+        code:         Code,
         resultHeader: Option[String],
-        domain: Domain)(
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]): Node = {
+        domain:       Domain
+    )(
+        operandsArray: TheOperandsArray[domain.Operands],
+        localsArray:   TheLocalsArray[domain.Locals]
+    ): Node = {
 
         def methodToString(method: Method): String = {
             if (method.isStatic)
@@ -216,10 +226,12 @@ object XHTML {
     }
 
     private def dumpTable(
-        code: Code,
-        domain: Domain)(
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]): Node = {
+        code:   Code,
+        domain: Domain
+    )(
+        operandsArray: TheOperandsArray[domain.Operands],
+        localsArray:   TheLocalsArray[domain.Locals]
+    ): Node = {
 
         val indexedExceptionHandlers = indexExceptionHandlers(code).toSeq.sortWith(_._2 < _._2)
         val exceptionHandlers =
@@ -287,12 +299,16 @@ object XHTML {
         code.exceptionHandlers.zipWithIndex.toMap
 
     private def dumpInstructions(
-        code: Code,
-        domain: Domain,
-        operandsOnly: Boolean)(
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals])(
-                implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
+        code:         Code,
+        domain:       Domain,
+        operandsOnly: Boolean
+    )(
+        operandsArray: TheOperandsArray[domain.Operands],
+        localsArray:   TheLocalsArray[domain.Locals]
+    )(
+        implicit
+        ids: Option[AnyRef ⇒ Int]
+    ): Array[Node] = {
 
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
@@ -306,23 +322,29 @@ object XHTML {
                 belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
-                operandsOnly)(
-                    operands, locals)
+                operandsOnly
+            )(
+                    operands, locals
+                )
         }
     }
 
     def dumpInstruction(
-        pc: Int,
-        lineNumber: Option[Int],
-        instruction: Instruction,
+        pc:                Int,
+        lineNumber:        Option[Int],
+        instruction:       Instruction,
         isJoinInstruction: Boolean,
-        subroutineId: Int,
+        subroutineId:      Int,
         exceptionHandlers: Option[String],
-        domain: Domain,
-        operandsOnly: Boolean)(
-            operands: domain.Operands,
-            locals: domain.Locals)(
-                implicit ids: Option[AnyRef ⇒ Int]): Node = {
+        domain:            Domain,
+        operandsOnly:      Boolean
+    )(
+        operands: domain.Operands,
+        locals:   domain.Locals
+    )(
+        implicit
+        ids: Option[AnyRef ⇒ Int]
+    ): Node = {
 
         val pcAsXHTML =
             Unparsed(
@@ -354,8 +376,11 @@ object XHTML {
     }
 
     def dumpStack(
-        operands: Operands[_ <: AnyRef])(
-            implicit ids: Option[AnyRef ⇒ Int]): Node =
+        operands: Operands[_ <: AnyRef]
+    )(
+        implicit
+        ids: Option[AnyRef ⇒ Int]
+    ): Node =
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -365,8 +390,11 @@ object XHTML {
         }
 
     def dumpLocals(
-        locals: Locals[_ <: AnyRef /**/ ])(
-            implicit ids: Option[AnyRef ⇒ Int]): Node = {
+        locals: Locals[_ <: AnyRef /**/ ]
+    )(
+        implicit
+        ids: Option[AnyRef ⇒ Int]
+    ): Node = {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)

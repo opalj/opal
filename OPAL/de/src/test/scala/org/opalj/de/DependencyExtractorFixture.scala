@@ -64,8 +64,9 @@ object DependencyExtractorFixture extends FunSuite {
             methodDescriptorToString(vMethod.name, vMethod.descriptor)
 
     def methodDescriptorToString(
-        name: String,
-        descriptor: MethodDescriptor): String = {
+        name:       String,
+        descriptor: MethodDescriptor
+    ): String = {
         name+"("+descriptor.parameterTypes.map { sourceElementName(_) }.mkString(", ")+")"
     }
 
@@ -78,9 +79,10 @@ object DependencyExtractorFixture extends FunSuite {
     }
 
     def extractDependencies(
-        folder: String,
-        jarFile: String,
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor): Map[(String, String, DependencyType), Int] = {
+        folder:                    String,
+        jarFile:                   String,
+        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor
+    ): Map[(String, String, DependencyType), Int] = {
         var dependencies: Map[(String, String, DependencyType), Int] = Map.empty
 
         val dependencyExtractor =
@@ -90,9 +92,11 @@ object DependencyExtractorFixture extends FunSuite {
                     override def processDependency(
                         source: VirtualSourceElement,
                         target: VirtualSourceElement,
-                        dType: DependencyType): Unit = {
+                        dType:  DependencyType
+                    ): Unit = {
                         val key = ((vseToString(source), vseToString(target), dType))
-                        dependencies = dependencies.updated(key,
+                        dependencies = dependencies.updated(
+                            key,
                             dependencies.getOrElse(key, 0) + 1
                         )
                     }

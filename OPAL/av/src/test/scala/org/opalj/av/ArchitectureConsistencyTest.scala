@@ -32,6 +32,7 @@ package checking
 import org.junit.runner.RunWith
 
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.{BooleanValue, StringValue}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 import org.scalatest._
@@ -202,8 +203,10 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
      */
     it should ("validate the every_element_should_implement_method constraint with no violations") in {
         val specification = new Specification(project) {
-            ensemble('Mathematics)(ClassMatcher("mathematics.Mathematics",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('Mathematics)(ClassMatcher(
+                "mathematics.Mathematics",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
             'Mathematics every_element_should_implement_method MethodWithName("operation1")
 
@@ -215,8 +218,10 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
     it should ("validate the every_element_should_implement_method constraint with violations") in {
         val specification = new Specification(project) {
-            ensemble('Operations)(ClassMatcher("mathematics.Operations",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('Operations)(ClassMatcher(
+                "mathematics.Operations",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
             'Operations every_element_should_implement_method MethodWithName("operation1")
         }
@@ -231,14 +236,20 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should ("validate the every_element_should_extend constraint with no violations") in {
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
-            ensemble('Address)(ClassMatcher("entity.impl.Address",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('Address)(ClassMatcher(
+                "entity.impl.Address",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
-            ensemble('User)(ClassMatcher("entity.impl.User",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('User)(ClassMatcher(
+                "entity.impl.User",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
-            ensemble('AbstractEntity)(ClassMatcher("entity.AbstractEntity",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('AbstractEntity)(ClassMatcher(
+                "entity.AbstractEntity",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
             'Address every_element_should_extend 'AbstractEntity
 
@@ -252,14 +263,20 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should ("validate the every_element_should_extend constraint with violations") in {
         val project = ClassFiles(locateTestResources("classfiles/entity.jar", "av"))
         val specification = new Specification(project) {
-            ensemble('Address)(ClassMatcher("entity.impl.Address",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('Address)(ClassMatcher(
+                "entity.impl.Address",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
-            ensemble('User)(ClassMatcher("entity.impl.User",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('User)(ClassMatcher(
+                "entity.impl.User",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
-            ensemble('AbstractEntity)(ClassMatcher("entity.AbstractEntity",
-                matchPrefix = false, matchMethods = false, matchFields = false))
+            ensemble('AbstractEntity)(ClassMatcher(
+                "entity.AbstractEntity",
+                matchPrefix = false, matchMethods = false, matchFields = false
+            ))
 
             'Address every_element_should_extend 'User
 
@@ -314,9 +331,13 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
             'EntityId every_element_should_be_annotated_with
                 ("(entity.annotation.Id - entity.annotation.Column)",
-                    Seq(AnnotatedWith("entity.annotation.Id"),
-                        AnnotatedWith("entity.annotation.Column",
-                            "name" -> StringValue("id"), "nullable" -> BooleanValue(false))))
+                    Seq(
+                        AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith(
+                            "entity.annotation.Column",
+                            "name" → StringValue("id"), "nullable" → BooleanValue(false)
+                        )
+                    ))
         }
 
         specification.analyze() should be(empty)
@@ -333,9 +354,13 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
             'EntityId every_element_should_be_annotated_with
                 ("(entity.annotation.Id - entity.annotation.Column)",
-                    Seq(AnnotatedWith("entity.annotation.Id"),
-                        AnnotatedWith("entity.annotation.Column",
-                            "name" -> StringValue("id"), "nullable" -> BooleanValue(true))))
+                    Seq(
+                        AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith(
+                            "entity.annotation.Column",
+                            "name" → StringValue("id"), "nullable" → BooleanValue(true)
+                        )
+                    ))
         }
 
         specification.analyze() should not be (empty)
@@ -343,6 +368,5 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
         testEnsemblesAreNonEmpty(specification)
 
     }
-
 
 }

@@ -46,9 +46,10 @@ import org.opalj.br.analyses.Project
 object MutabilityAssessment extends DefaultOneStepAnalysis {
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         import org.opalj.util.PerformanceEvaluation.time
 

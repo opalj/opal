@@ -61,7 +61,7 @@ object GetCallees {
      * Prints information about the callees of a method.
      */
     def main(args: Array[String]): Unit = {
-        import Console.{ RED, RESET }
+        import Console.{RED, RESET}
         import language.existentials
 
         if (args.size < 3 || args.size > 4) {
@@ -172,18 +172,20 @@ object GetCallees {
                         ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
                         XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
-                        ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
-                    )
+                        ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>"))
                 val evaluationDump =
                     dump(
                         Some(classFile), Some(method), method.body.get,
                         header,
-                        ife.domain)(
-                            ife.operandsArray, ife.localsArray)
+                        ife.domain
+                    )(
+                            ife.operandsArray, ife.localsArray
+                        )
                 org.opalj.io.writeAndOpen(
                     evaluationDump,
                     "StateOfFailedAbstractInterpretation",
-                    ".html")
+                    ".html"
+                )
                 throw ife
         }
     }

@@ -41,7 +41,8 @@ import org.opalj.bi.reader.SkipUnknown_attributeReader
  * @author Michael Eichberg
  */
 class Java8LibraryFrameworkWithCaching(
-    final val cache: BytecodeInstructionsCache)
+    final val cache: BytecodeInstructionsCache
+)
         extends ConstantPoolBinding
         with FieldsBinding
         with MethodsBinding

@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import java.net.URL
 
 /**
@@ -45,9 +45,10 @@ object MaxLocalsEvaluation extends AnalysisExecutor with OneStepAnalysis[URL, Ba
         "Collects information about the maxium number of registers required per method."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
@@ -80,7 +81,6 @@ object MaxLocalsEvaluation extends AnalysisExecutor with OneStepAnalysis[URL, Ba
             methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+
             "MaxLocals Distribution:\n"+
             "#Locals\t\tFrequency:\n"+
-            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")
-        )
+            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n"))
     }
 }

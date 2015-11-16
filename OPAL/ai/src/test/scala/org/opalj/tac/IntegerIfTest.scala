@@ -103,7 +103,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 != op_1) goto 8;"))
             }
 
@@ -114,7 +115,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 == op_1) goto 8;"))
             }
 
@@ -125,7 +127,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 >= op_1) goto 8;"))
             }
 
@@ -136,7 +139,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 < op_1) goto 8;"))
             }
 
@@ -147,7 +151,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 <= op_1) goto 8;"))
             }
 
@@ -158,7 +163,8 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("5: if(op_0 > op_1) goto 8;"))
             }
         }
@@ -202,11 +208,13 @@ class IntegerIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8),
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 != op_1) goto 8;",
                     "7: return op_0 /*an int*/;",
-                    "9: return op_0 /*an int*/;"))
+                    "9: return op_0 /*an int*/;"
+                ))
             }
 
             it("should correctly reflect the equals case") {
@@ -220,11 +228,13 @@ class IntegerIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8),
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 == op_1) goto 8;",
                     "7: return op_0 /*an int*/;",
-                    "9: return op_0 /*an int*/;"))
+                    "9: return op_0 /*an int*/;"
+                ))
             }
 
             it("should correctly reflect the greater-equals case") {
@@ -237,13 +247,17 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE, Integer.MAX_VALUE - 1).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE, Integer.MAX_VALUE - 1).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 >= op_1) goto 8;",
                     "7: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(Integer.MAX_VALUE - 1)+"]*/;",
-                    "9: return op_0 /*an int*/;"))
+                    "9: return op_0 /*an int*/;"
+                ))
             }
 
             it("should correctly reflect the less-then case") {
@@ -257,12 +271,16 @@ class IntegerIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8),
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE + 1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE + 1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]
+                    )
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 < op_1) goto 8;",
                     "7: return op_0 /*an int*/;",
-                    "9: return op_0 /*int ∈ ["+(Integer.MIN_VALUE + 1)+","+Integer.MAX_VALUE+"]*/;"))
+                    "9: return op_0 /*int ∈ ["+(Integer.MIN_VALUE + 1)+","+Integer.MAX_VALUE+"]*/;"
+                ))
             }
 
             it("should correctly reflect the less-equals case") {
@@ -275,13 +293,17 @@ class IntegerIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE + 1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE + 1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 <= op_1) goto 8;",
                     "7: return op_0 /*int ∈ ["+(Integer.MIN_VALUE + 1)+","+Integer.MAX_VALUE+"]*/;",
-                    "9: return op_0 /*an int*/;"))
+                    "9: return op_0 /*an int*/;"
+                ))
             }
 
             it("should correctly reflect the greater-then case") {
@@ -295,12 +317,16 @@ class IntegerIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8),
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE, Integer.MAX_VALUE - 1).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE, Integer.MAX_VALUE - 1).asInstanceOf[domain.DomainValue]
+                    )
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "5: if(op_0 > op_1) goto 8;",
                     "7: return op_0 /*an int*/;",
-                    "9: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(Integer.MAX_VALUE - 1)+"]*/;"))
+                    "9: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(Integer.MAX_VALUE - 1)+"]*/;"
+                ))
             }
         }
     }

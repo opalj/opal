@@ -72,7 +72,8 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
         "com/sun/org/apache/xml/internal/security/",
         "com/sun/org/glassfish/",
         "org/jcp/xml/dsig/internal/",
-        "com/sun/java/accessibility/")
+        "com/sun/java/accessibility/"
+    )
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 
@@ -80,9 +81,10 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
             "Counts the number of public methods in non-restricted packages."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
             val methods =
                 (
                     for {

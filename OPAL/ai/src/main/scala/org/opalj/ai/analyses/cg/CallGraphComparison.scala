@@ -54,9 +54,10 @@ import org.opalj.br.analyses.SomeProject
 object CallGraphComparison {
 
     def apply(
-        project: SomeProject,
+        project:       SomeProject,
         lessPreciseCG: CallGraph,
-        morePreciseCG: CallGraph): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
+        morePreciseCG: CallGraph
+    ): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
         var reports: List[CallGraphDifferenceReport] = Nil
         lessPreciseCG.foreachCallingMethod { (method, allCalleesLPCG /*: Map[PC, Iterable[Method]]*/ ) ⇒
             val allCalleesMPCG = morePreciseCG.calls(method)
@@ -112,10 +113,11 @@ sealed trait CallGraphDifferenceReport {
 }
 
 case class AdditionalCallTargets(
-    project: SomeProject,
-    method: Method,
-    pc: PC,
-    callTargets: Iterable[Method])
+    project:     SomeProject,
+    method:      Method,
+    pc:          PC,
+    callTargets: Iterable[Method]
+)
         extends CallGraphDifferenceReport {
 
     final val differenceClassifier = BLUE+"[Additional]"+RESET
@@ -125,10 +127,11 @@ case class AdditionalCallTargets(
  *
  */
 case class UnexpectedCallTargets(
-    project: SomeProject,
-    method: Method,
-    pc: PC,
-    callTargets: Iterable[Method])
+    project:     SomeProject,
+    method:      Method,
+    pc:          PC,
+    callTargets: Iterable[Method]
+)
         extends CallGraphDifferenceReport {
 
     final val differenceClassifier = RED+"[Unexpected]"+RESET

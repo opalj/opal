@@ -125,12 +125,14 @@ trait JoinStabilization extends CoreDomainFunctionality {
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */
     override protected[this] def joinValues(
-        pc: PC,
-        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        pc:   PC,
+        left: DomainValue, right: DomainValue
+    ): Update[DomainValue] = {
 
         joinedValues.getOrElseUpdate(
             new IdentityPair(left, right),
-            super.joinValues(pc, left, right))
+            super.joinValues(pc, left, right)
+        )
     }
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */

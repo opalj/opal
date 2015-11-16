@@ -55,9 +55,10 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()
@@ -82,7 +83,8 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
                         Severity.Error,
                         classFile.thisType,
                         "Does not satisfy java.lang.Object's equals-hashCode "+
-                            "contract.") :: reports
+                            "contract."
+                    ) :: reports
                 }
             }
         }

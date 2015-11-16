@@ -45,15 +45,17 @@ trait FieldsBinding extends FieldsReader {
     val Field_InfoManifest: ClassTag[Field_Info] = implicitly
 
     def Field_Info(
-        cp: Constant_Pool,
-        access_flags: Int,
-        name_index: Constant_Pool_Index,
+        cp:               Constant_Pool,
+        access_flags:     Int,
+        name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes): Field_Info = {
+        attributes:       Attributes
+    ): Field_Info = {
         Field(
             access_flags,
             cp(name_index).asString,
             cp(descriptor_index).asFieldType,
-            attributes)
+            attributes
+        )
     }
 }

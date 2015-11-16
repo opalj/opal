@@ -220,14 +220,15 @@ object ClassFileFactory {
      *          used to call call the method on the receiver.
      */
     def Proxy(
-        definingType: TypeDeclaration,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        receiverType: ObjectType,
-        receiverMethodName: String,
+        definingType:             TypeDeclaration,
+        methodName:               String,
+        methodDescriptor:         MethodDescriptor,
+        receiverType:             ObjectType,
+        receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction: Opcode,
-        bridgeMethodDescriptor: Option[MethodDescriptor] = None): ClassFile = {
+        invocationInstruction:    Opcode,
+        bridgeMethodDescriptor:   Option[MethodDescriptor] = None
+    ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
         val receiverParameters = receiverMethodDescriptor.parameterTypes
@@ -239,7 +240,8 @@ object ClassFileFactory {
                     invocationInstruction,
                     receiverType,
                     receiverMethodDescriptor,
-                    methodDescriptor)) {
+                    methodDescriptor
+                )) {
                 IndexedSeq.empty
             } else {
                 IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
@@ -276,13 +278,15 @@ object ClassFileFactory {
             createFactoryMethod(
                 definingType.objectType,
                 fields.map(_.fieldType),
-                factoryMethodName)
+                factoryMethodName
+            )
         ) ++ bridgeMethodDescriptor.map { bridgeMethodDescriptor ⇒
                 IndexedSeq(createBridgeMethod(
                     methodName,
                     bridgeMethodDescriptor,
                     methodDescriptor,
-                    definingType.objectType))
+                    definingType.objectType
+                ))
             }.getOrElse(IndexedSeq.empty)
 
         ClassFile(0, 49,
@@ -311,10 +315,11 @@ object ClassFileFactory {
      * implicit `this` parameter becomes explicit.
      */
     def isVirtualMethodReference(
-        opcode: Opcode,
-        targetMethodDeclaringType: ObjectType,
-        targetMethodDescriptor: MethodDescriptor,
-        proxyInterfaceMethodDescriptor: MethodDescriptor): Boolean = {
+        opcode:                         Opcode,
+        targetMethodDeclaringType:      ObjectType,
+        targetMethodDescriptor:         MethodDescriptor,
+        proxyInterfaceMethodDescriptor: MethodDescriptor
+    ): Boolean = {
         (opcode == INVOKEVIRTUAL.opcode || opcode == INVOKEINTERFACE.opcode) &&
             targetMethodDescriptor.parametersCount + 1 ==
             proxyInterfaceMethodDescriptor.parametersCount &&
@@ -325,10 +330,11 @@ object ClassFileFactory {
      * Creates a field of the specified type with the given name.
      */
     def createField(
-        accessFlags: Int = (bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask),
-        name: String,
-        fieldType: FieldType,
-        attributes: Seq[Attribute] = Seq.empty): Field = {
+        accessFlags: Int            = (bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask),
+        name:        String,
+        fieldType:   FieldType,
+        attributes:  Seq[Attribute] = Seq.empty
+    ): Field = {
 
         Field(accessFlags, name, fieldType, attributes)
     }
@@ -348,7 +354,8 @@ object ClassFileFactory {
      */
     def createConstructor(
         definingType: TypeDeclaration,
-        fields: IndexedSeq[Field]): Method = {
+        fields:       IndexedSeq[Field]
+    ): Method = {
         // it doesn't make sense that the superClassType is not defined
         val theSuperclassType = definingType.theSuperclassType.get
         val theType = definingType.objectType
@@ -385,12 +392,14 @@ object ClassFileFactory {
      * given superclass.
      */
     def callSuperDefaultConstructor(
-        theSuperclassType: ObjectType): Array[Instruction] =
+        theSuperclassType: ObjectType
+    ): Array[Instruction] =
         Array(
             ALOAD_0,
             INVOKESPECIAL(
                 theSuperclassType,
-                "<init>", NoArgumentAndNoReturnValueMethodDescriptor),
+                "<init>", NoArgumentAndNoReturnValueMethodDescriptor
+            ),
             null,
             null
         )
@@ -408,7 +417,8 @@ object ClassFileFactory {
      */
     def copyParametersToInstanceFields(
         declaringType: ObjectType,
-        fields: IndexedSeq[Field]): Array[Instruction] = {
+        fields:        IndexedSeq[Field]
+    ): Array[Instruction] = {
 
         val requiredInstructions =
             computeNumberOfInstructionsForParameterLoading(fields.map(_.fieldType), 1) +
@@ -439,8 +449,9 @@ object ClassFileFactory {
      * as `fieldTypes` onto the stack.
      */
     private def computeNumberOfInstructionsForParameterLoading(
-        fieldTypes: Seq[FieldType],
-        localVariableOffset: Int): Int = {
+        fieldTypes:          Seq[FieldType],
+        localVariableOffset: Int
+    ): Int = {
         var numberOfInstructions = 0
         var localVariableIndex = localVariableOffset
         fieldTypes foreach { ft ⇒
@@ -461,9 +472,10 @@ object ClassFileFactory {
      * @see [[createConstructor]]
      */
     def createFactoryMethod(
-        typeToCreate: ObjectType,
-        fieldTypes: IndexedSeq[FieldType],
-        factoryMethodName: String): Method = {
+        typeToCreate:      ObjectType,
+        fieldTypes:        IndexedSeq[FieldType],
+        factoryMethodName: String
+    ): Method = {
         val numberOfInstructionsForParameterLoading: Int =
             computeNumberOfInstructionsForParameterLoading(fieldTypes, 0)
         val numberOfInstructions =
@@ -490,7 +502,8 @@ object ClassFileFactory {
         instructions(currentPC) = INVOKESPECIAL(
             typeToCreate,
             "<init>",
-            MethodDescriptor(fieldTypes, VoidType))
+            MethodDescriptor(fieldTypes, VoidType)
+        )
         currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         instructions(currentPC) = ARETURN
         val body = Code(
@@ -515,20 +528,22 @@ object ClassFileFactory {
      * in terms of parameter types and return type.
      */
     def proxyMethod(
-        definingType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        staticParameters: Seq[Field],
-        receiverType: ObjectType,
-        receiverMethodName: String,
+        definingType:             ObjectType,
+        methodName:               String,
+        methodDescriptor:         MethodDescriptor,
+        staticParameters:         Seq[Field],
+        receiverType:             ObjectType,
+        receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction: Opcode): Method = {
+        invocationInstruction:    Opcode
+    ): Method = {
 
         val code =
             createProxyMethodBytecode(
                 definingType, methodName, methodDescriptor, staticParameters,
                 receiverType, receiverMethodName, receiverMethodDescriptor,
-                invocationInstruction)
+                invocationInstruction
+            )
 
         Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, Seq(code))
     }
@@ -546,14 +561,15 @@ object ClassFileFactory {
      * @see [[parameterForwardingInstructions]]
      */
     private def createProxyMethodBytecode(
-        definingType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        staticParameters: Seq[Field],
-        receiverType: ObjectType,
-        receiverMethodName: String,
+        definingType:             ObjectType,
+        methodName:               String,
+        methodDescriptor:         MethodDescriptor,
+        staticParameters:         Seq[Field],
+        receiverType:             ObjectType,
+        receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction: Opcode): Code = {
+        invocationInstruction:    Opcode
+    ): Code = {
 
         // if the receiver method is not static, we need to push the receiver object
         // onto the stack, which we can retrieve from the receiver field on `this`
@@ -563,7 +579,8 @@ object ClassFileFactory {
                     invocationInstruction,
                     receiverType,
                     receiverMethodDescriptor,
-                    methodDescriptor)) {
+                    methodDescriptor
+                )) {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
@@ -586,7 +603,8 @@ object ClassFileFactory {
 
         val forwardParametersInstructions = parameterForwardingInstructions(
             methodDescriptor, receiverMethodDescriptor, variableOffset,
-            staticParameters, definingType)
+            staticParameters, definingType
+        )
 
         val forwardingCallInstruction: Array[Instruction] =
             (invocationInstruction: @scala.annotation.switch) match {
@@ -636,7 +654,8 @@ object ClassFileFactory {
             else
                 returnAndConvertInstructions(
                     methodDescriptor.returnType.asFieldType,
-                    receiverMethodDescriptor.returnType.asFieldType)
+                    receiverMethodDescriptor.returnType.asFieldType
+                )
 
         val bytecodeInstructions: Array[Instruction] =
             loadReceiverObject ++ forwardingInstructions ++ returnAndConvertInstructionsArray
@@ -661,7 +680,8 @@ object ClassFileFactory {
         val maxStack =
             math.max(
                 (receiverObjectStackSize) + parametersStackSize,
-                returnValueStackSize)
+                returnValueStackSize
+            )
 
         val maxLocals = 1 + receiverObjectStackSize + parametersStackSize +
             returnValueStackSize
@@ -688,10 +708,11 @@ object ClassFileFactory {
      */
     def parameterForwardingInstructions(
         forwarderMethodDescriptor: MethodDescriptor,
-        receiverMethodDescriptor: MethodDescriptor,
-        variableOffset: Int,
-        staticParameters: Seq[Field],
-        definingType: ObjectType): Array[Instruction] = {
+        receiverMethodDescriptor:  MethodDescriptor,
+        variableOffset:            Int,
+        staticParameters:          Seq[Field],
+        definingType:              ObjectType
+    ): Array[Instruction] = {
 
         val receiverParameters = receiverMethodDescriptor.parameterTypes
         val forwarderParameters = forwarderMethodDescriptor.parameterTypes
@@ -876,7 +897,8 @@ object ClassFileFactory {
     @throws[IllegalArgumentException]("if `typeOnStack` is not compatible with `toBeReturnedType` and `typeOnStack` is not `Object`")
     def returnAndConvertInstructions(
         toBeReturnedType: FieldType,
-        typeOnStack: FieldType): Array[Instruction] = {
+        typeOnStack:      FieldType
+    ): Array[Instruction] = {
 
         if (toBeReturnedType eq typeOnStack)
             return Array(ReturnInstruction(toBeReturnedType))
@@ -918,10 +940,11 @@ object ClassFileFactory {
      * before invocation, the appropriate bytecode will be generated as well.
      */
     def createBridgeMethod(
-        methodName: String,
-        bridgeMethodDescriptor: MethodDescriptor,
-        targetMethodDescriptor: MethodDescriptor,
-        targetMethodDeclaringType: ObjectType): Method = {
+        methodName:                String,
+        bridgeMethodDescriptor:    MethodDescriptor,
+        targetMethodDescriptor:    MethodDescriptor,
+        targetMethodDeclaringType: ObjectType
+    ): Method = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
         val targetMethodParameters = targetMethodDescriptor.parameterTypes
@@ -981,7 +1004,8 @@ object ClassFileFactory {
 
         val maxStack =
             targetMethodDescriptor.parameterTypes.map(
-                _.computationalType.operandSize).sum + 1
+                _.computationalType.operandSize
+            ).sum + 1
         val maxLocals =
             maxStack +
                 {

@@ -45,7 +45,8 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
 
     private def error: Nothing =
         throw new BytecodeProcessingFailedException(
-            "this invokedynamic instruction was not resolved")
+            "this invokedynamic instruction was not resolved"
+        )
 
     final def bootstrapMethod: BootstrapMethod = error
 
@@ -136,9 +137,10 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
  * @author Arne Lottmann
  */
 case class UNRESOLVED_INVOKEDYNAMIC(
-    bootstrapMethod: BootstrapMethod,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends INVOKEDYNAMIC
 
 /**
@@ -151,10 +153,11 @@ case class UNRESOLVED_INVOKEDYNAMIC(
  * @author Arne Lottmann
  */
 case class JDK8_LAMBDA_INVOKEDYNAMIC(
-    bootstrapMethod: BootstrapMethod,
-    name: String,
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
     methodDescriptor: MethodDescriptor,
-    invocationResult: ObjectType)
+    invocationResult: ObjectType
+)
         extends INVOKEDYNAMIC
 
 /**
@@ -174,7 +177,8 @@ object INVOKEDYNAMIC {
 
     val lambdaMetafactoryDescriptor =
         MethodDescriptor(
-            IndexedSeq(ObjectType.MethodHandles$Lookup,
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
                 ObjectType.MethodType,

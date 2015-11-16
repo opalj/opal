@@ -32,8 +32,9 @@ package da
 import scala.xml.Node
 
 case class CONSTANT_NameAndType_info(
-        name_index: Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_NameAndType
 

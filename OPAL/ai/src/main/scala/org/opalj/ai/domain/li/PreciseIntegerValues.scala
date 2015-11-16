@@ -31,7 +31,7 @@ package ai
 package domain
 package li
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.br.{ComputationalType, ComputationalTypeInt}
 
 /**
  * Domain to track integer values at a configurable level of precision.
@@ -98,7 +98,8 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
+        locals:   Locals
+    ): (Operands, Locals) =
         (
             operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
             locals.map { local ⇒ if (local eq oldValue) newValue else local }
@@ -109,9 +110,12 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     //
 
     @inline final override def intValue[T](
-        value: DomainValue)(
-            f: Int ⇒ T)(
-                orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        f: Int ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T =
         value match {
             case v: IntegerValue ⇒ f(v.value)
             case _               ⇒ orElse
@@ -125,9 +129,12 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
 
     @inline protected final def intValues[T](
         value1: DomainValue,
-        value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(
-                orElse: ⇒ T): T =
+        value2: DomainValue
+    )(
+        f: (Int, Int) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T =
         intValue(value1) { v1 ⇒
             intValue(value2) { v2 ⇒
                 f(v1, v2)
@@ -142,10 +149,11 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         intValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return Yes
 
@@ -157,10 +165,11 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return No
 
@@ -172,35 +181,39 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def intIsLessThan(
-        pc: PC,
+        pc:           PC,
         smallerValue: DomainValue,
-        largerValue: DomainValue): Answer =
+        largerValue:  DomainValue
+    ): Answer =
         intValues(smallerValue, largerValue) { (v1, v2) ⇒
             Answer(v1 < v2)
         } { Unknown }
 
     override def intIsLessThanOrEqualTo(
-        pc: PC,
+        pc:                  PC,
         smallerOrEqualValue: DomainValue,
-        equalOrLargerValue: DomainValue): Answer =
+        equalOrLargerValue:  DomainValue
+    ): Answer =
         intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
             Answer(v1 <= v2)
         } { Unknown }
 
     override def intEstablishValue(
-        pc: PC,
+        pc:       PC,
         theValue: Int,
-        value: DomainValue,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
+        locals:   Locals
+    ): (Operands, Locals) =
         updateValue(value, IntegerValue(pc, theValue), operands, locals)
 
     override def intEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         intValue(value1) { v1 ⇒
             updateValue(value2, IntegerValue(pc, v1), operands, locals)
         } {
@@ -252,9 +265,10 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def idiv(
-        pc: PC,
+        pc:     PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerValueOrArithmeticException = {
+        value2: DomainValue
+    ): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(VMArithmeticException(pc))
@@ -300,9 +314,10 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def irem(
-        pc: PC,
+        pc:     PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerValueOrArithmeticException = {
+        value2: DomainValue
+    ): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(VMArithmeticException(pc))
@@ -316,7 +331,8 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         } {
             if (throwArithmeticExceptions)
                 ComputedValueOrException(
-                    IntegerValue(pc), VMArithmeticException(pc))
+                    IntegerValue(pc), VMArithmeticException(pc)
+                )
             else
                 ComputedValue(IntegerValue(pc))
         }

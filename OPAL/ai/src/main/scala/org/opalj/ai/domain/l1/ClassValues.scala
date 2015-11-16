@@ -79,7 +79,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
-            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+            other:  DomainSingleOriginReferenceValue
+        ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
                 case that: ClassValue ⇒
@@ -103,8 +104,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         }
 
         override def adapt(
-            target: TargetDomain,
-            targetOrigin: ValueOrigin): target.DomainValue =
+            target:       TargetDomain,
+            targetOrigin: ValueOrigin
+        ): target.DomainValue =
             target.ClassValue(targetOrigin, this.value)
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -154,8 +156,10 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                 !throwClassNotFoundException) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
-                ComputedValueOrException(ClassValue(pc, classValue),
-                    Iterable(ClassNotFoundException(pc)))
+                ComputedValueOrException(
+                    ClassValue(pc, classValue),
+                    Iterable(ClassNotFoundException(pc))
+                )
             }
         } else {
             val elementType = classValue.asArrayType.elementType
@@ -164,18 +168,21 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                 !throwClassNotFoundException) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
-                ComputedValueOrException(ClassValue(pc, classValue),
-                    Iterable(ClassNotFoundException(pc)))
+                ComputedValueOrException(
+                    ClassValue(pc, classValue),
+                    Iterable(ClassNotFoundException(pc))
+                )
             }
         }
     }
 
     abstract override def invokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         import ClassValues._
 
@@ -195,7 +202,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                             throw new DomainException(
                                 "unsupported Class { "+
                                     methodDescriptor.toJava("forName")+
-                                    "}")
+                                    "}"
+                            )
                     }
 
                 case _ ⇒
@@ -210,10 +218,11 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     }
 
     abstract override def getstatic(
-        pc: PC,
+        pc:             PC,
         declaringClass: ObjectType,
-        name: String,
-        fieldType: FieldType) = {
+        name:           String,
+        fieldType:      FieldType
+    ) = {
 
         if (name == "TYPE") {
             declaringClass match {
@@ -242,5 +251,6 @@ private object ClassValues {
     final val forName_String_boolean_ClassLoader =
         MethodDescriptor(
             IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
-            ObjectType.Class)
+            ObjectType.Class
+        )
 }

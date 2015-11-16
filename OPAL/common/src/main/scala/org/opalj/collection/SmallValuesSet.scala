@@ -134,10 +134,11 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * @param offset A value that is added to all values when the string is created.
      */
     protected[collection] def mkString(
-        start: String,
-        sep: String,
-        end: String,
-        offset: Int): String
+        start:  String,
+        sep:    String,
+        end:    String,
+        offset: Int
+    ): String
 
     def mkString(start: String, sep: String, end: String): String
 

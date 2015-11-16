@@ -36,6 +36,7 @@ package analyses
  * @author Michael Eichberg
  */
 case class InconsistentProjectException(
-        message: String) extends Exception(message) {
+        message: String
+) extends Exception(message) {
 
 }

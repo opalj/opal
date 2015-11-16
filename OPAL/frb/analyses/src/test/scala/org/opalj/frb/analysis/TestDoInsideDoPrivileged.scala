@@ -62,7 +62,9 @@ class TestDoInsideDoPrivileged extends AnalysisTest {
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "method",
                     "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+
-                        "doPrivileged block"))
+                        "doPrivileged block"
+                )
+            )
         }
 
     it should "report only 1 issue in DoInsideDoPrivileged.jar" in {

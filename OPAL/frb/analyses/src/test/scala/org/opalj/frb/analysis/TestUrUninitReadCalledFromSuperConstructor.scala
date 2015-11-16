@@ -67,7 +67,9 @@ class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "f",
                     "Called by super constructor ("+superclass+"), while the class' "+
-                        "fields are still uninitialized"))
+                        "fields are still uninitialized"
+                )
+            )
         }
 
     it should "find exactly 1 issue in UrUninitReadCalledFromSuperConstructor.jar" in {

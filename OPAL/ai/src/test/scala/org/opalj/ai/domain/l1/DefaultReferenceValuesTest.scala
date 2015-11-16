@@ -206,7 +206,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                         theObjectValue.refineUpperTypeBound(
                             -1, Serializable,
                             List(theObjectValue),
-                            Locals(IndexedSeq(theFileValue, theObjectValue)))
+                            Locals(IndexedSeq(theFileValue, theObjectValue))
+                        )
                     updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
                     updatedLocals(0).asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
                     updatedLocals(1).asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
@@ -230,7 +231,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1),
                         Unknown, false, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
-                        3)
+                        3
+                    )
 
                 val (refinedOperands, _) = mv1.refineIsNull(-1, No, List(mv1), Locals.empty)
                 refinedOperands.head should be(v2)
@@ -246,7 +248,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
-                        3)
+                        3
+                    )
 
                 val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
@@ -268,7 +271,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         Unknown, false, UIDSet(Member),
-                        3)
+                        3
+                    )
 
                 val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
@@ -287,7 +291,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         Unknown, false, UIDSet(Throwable),
-                        3)
+                        3
+                    )
 
                 val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
@@ -387,12 +392,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1, v2),
                         Yes, true, UIDSet.empty,
-                        nextT())
+                        nextT()
+                    )
                 val mv2 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         No, false, UIDSet(ObjectType.Object),
-                        nextT())
+                        nextT()
+                    )
 
                 val joinResult = mv1.join(-1, mv2)
                 joinResult.updateType should be(StructuralUpdateType)
@@ -410,12 +417,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1),
                         Yes, true, UIDSet.empty,
-                        3)
+                        3
+                    )
                 val mv2 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v2),
                         Unknown, true, UIDSet(ArrayType(IntegerType)),
-                        3)
+                        3
+                    )
 
                 mv1.join(-1, v2) should be(StructuralUpdate(mv2))
             }
@@ -428,13 +437,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val mv1 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
-                        isNull = Yes, true, UIDSet.empty, t = 3)
+                        isNull = Yes, true, UIDSet.empty, t = 3
+                    )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1),
                         Unknown, false, UIDSet(ObjectType.Serializable),
-                        3)
+                        3
+                    )
 
                 val mv_actual = v0.join(-1, mv1)
                 if (mv_actual != StructuralUpdate(mv_expected)) {
@@ -454,13 +465,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         Yes, true, UIDSet.empty,
-                        3)
+                        3
+                    )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1),
                         Unknown, false, UIDSet(ArrayType(ObjectType.Serializable)),
-                        3)
+                        3
+                    )
 
                 val mv_actual = v0.join(-1, mv1)
 
@@ -485,12 +498,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         Unknown, false, UIDSet(ObjectType.Object),
-                        -1)
+                        -1
+                    )
                 val expected_mv1_join_v3 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2_join_v3),
                         Unknown, false, UIDSet(ObjectType.Object),
-                        -1)
+                        -1
+                    )
 
                 val mv1_join_v3 = mv1.join(-1, v3)
                 mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
@@ -507,13 +522,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         No, true, UIDSet(SecurityException),
-                        t = 3)
+                        t = 3
+                    )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         No, false, UIDSet(SecurityException),
-                        3)
+                        3
+                    )
 
                 val mv_actual = v0.join(-1, mv1)
 
@@ -535,13 +552,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v1, v2),
                         No, true, UIDSet(ObjectType.Object),
-                        t = 3)
+                        t = 3
+                    )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v2),
                         Unknown, false, UIDSet(ObjectType.Object),
-                        3)
+                        3
+                    )
 
                 val mv_actual = v0.join(-1, mv1)
 
@@ -789,8 +808,10 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 assert(
                     theDomain.isSubtypeOf(
-                        ObjectType("java/lang/Exception"),
-                        ObjectType("java/lang/Throwable")).isYes)
+                    ObjectType("java/lang/Exception"),
+                    ObjectType("java/lang/Throwable")
+                ).isYes
+                )
 
                 val value78 @ IsReferenceValue(values78) = result.operandsArray(78).head
                 values78.size should be(1)

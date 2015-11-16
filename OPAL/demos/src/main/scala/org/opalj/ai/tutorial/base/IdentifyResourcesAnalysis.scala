@@ -43,9 +43,10 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         "Identifies java.io.File object instantiations using constant strings."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.
         val callSites =
@@ -71,7 +72,8 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         // method that pass a constant string to a method
         class AnalysisDomain(
             override val project: Project[URL],
-            val method: Method)
+            val method:           Method
+        )
                 extends CorrelationalDomain
                 with domain.TheProject
                 with domain.TheMethod
@@ -106,7 +108,8 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
         BasicReport(
             callSitesWithConstantStringParameter.map(callSiteToString(_)).
-                mkString("Methods:\n", "\n", ".\n"))
+                mkString("Methods:\n", "\n", ".\n")
+        )
     }
 }
 

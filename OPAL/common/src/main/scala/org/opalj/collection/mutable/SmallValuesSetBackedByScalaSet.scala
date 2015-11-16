@@ -31,7 +31,8 @@ package collection
 package mutable
 
 private[mutable] final class SmallValuesSetBackedByScalaSet(
-    private[this] var set: Set[Int] = Set.empty)
+    private[this] var set: Set[Int] = Set.empty
+)
         extends SmallValuesSet {
 
     def this(value: Int) { this(Set(value)) }
@@ -84,7 +85,8 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
 
     override protected[collection] def mkString(
         pre: String, sep: String, pos: String,
-        offset: Int): String =
+        offset: Int
+    ): String =
         set.view.map(_ + offset).mkString(pre, sep, pos)
 
     override def mkString(start: String, sep: String, end: String): String =
@@ -95,7 +97,8 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             s"SmallValuesSetBackedByScalaSet(",
             ", ",
             ")",
-            0)
+            0
+        )
     }
 }
 

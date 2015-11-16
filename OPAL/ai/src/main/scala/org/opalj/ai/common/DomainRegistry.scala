@@ -65,8 +65,9 @@ object DomainRegistry {
      */
     def register(
         domainDescription: String,
-        domainClass: Class[_ <: Domain],
-        factory: (SomeProject, ClassFile, Method) ⇒ Domain): Unit = {
+        domainClass:       Class[_ <: Domain],
+        factory:           (SomeProject, ClassFile, Method) ⇒ Domain
+    ): Unit = {
         this.synchronized {
             descriptions += ((domainDescription, domainClass))
             theRegistry += ((domainClass, factory))
@@ -96,9 +97,10 @@ object DomainRegistry {
     // primarily introduced to facilitate the interaction with Java
     def newDomain(
         domainDescription: String,
-        project: SomeProject,
-        classFile: ClassFile,
-        method: Method): Domain = {
+        project:           SomeProject,
+        classFile:         ClassFile,
+        method:            Method
+    ): Domain = {
         this.synchronized {
             val domainClass: Class[_ <: Domain] = descriptions(domainDescription)
             newDomain(domainClass, project, classFile, method)
@@ -117,9 +119,10 @@ object DomainRegistry {
      */
     def newDomain(
         domainClass: Class[_ <: Domain],
-        project: SomeProject,
-        classFile: ClassFile,
-        method: Method): Domain = {
+        project:     SomeProject,
+        classFile:   ClassFile,
+        method:      Method
+    ): Domain = {
         this.synchronized {
             theRegistry(domainClass)(project, classFile, method)
         }

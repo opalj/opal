@@ -76,65 +76,72 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-        pc: PC,
-        value: DomainValue,
-        constraint: String) extends ReifiedConstraint
+        pc:         PC,
+        value:      DomainValue,
+        constraint: String
+    ) extends ReifiedConstraint
 
     /**
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-        pc: PC,
+        pc:     PC,
         value1: DomainValue, value2: DomainValue,
-        constraint: String) extends ReifiedConstraint
+        constraint: String
+    ) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(
-        pc: PC,
-        value: DomainValue,
+        pc:       PC,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
         super.refEstablishIsNull(pc, value, operands, locals)
     }
 
     abstract override def refEstablishIsNonNull(
-        pc: PC,
-        value: DomainValue,
+        pc:       PC,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
         super.refEstablishIsNonNull(pc, value, operands, locals)
     }
 
     abstract override def refEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
         super.refEstablishAreEqual(pc, value1, value2, operands, locals)
     }
 
     abstract override def refEstablishAreNotEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
         super.refEstablishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
     abstract override def refSetUpperTypeBoundOfTopOperand(
-        pc: PC,
-        bound: ReferenceType,
+        pc:       PC,
+        bound:    ReferenceType,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(
             ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
@@ -143,9 +150,10 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refTopOperandIsNull(
-        pc: PC,
+        pc:       PC,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         nextConstraint(
             ReifiedSingleValueConstraint(pc, operands.head, "is null")
         )
@@ -156,55 +164,60 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     // W.r.t. Integer values
 
     abstract override def intEstablishValue(
-        pc: PC,
+        pc:       PC,
         theValue: Int,
-        value: DomainValue,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
         super.intEstablishValue(pc, theValue, value, operands, locals)
     }
 
     abstract override def intEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
         super.intEstablishAreEqual(pc, value1, value2, operands, locals)
     }
 
     abstract override def intEstablishAreNotEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
         super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
     abstract override def intEstablishIsLessThan(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
         super.intEstablishIsLessThan(pc, value1, value2, operands, locals)
     }
 
     abstract override def intEstablishIsLessThanOrEqualTo(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
         super.intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)

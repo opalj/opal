@@ -132,7 +132,8 @@ object AsQuadruples {
                 val value2 :: value1 :: _ = stack
                 val cTpe = value1.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2)))
+                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2))
+                )
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
 
@@ -140,7 +141,8 @@ object AsQuadruples {
                 val value :: _ = stack
                 val cTpe = value.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value)))
+                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value))
+                )
                 schedule(pcOfNextInstruction(pc), stack)
             }
 
@@ -148,7 +150,8 @@ object AsQuadruples {
                 val value :: rest = stack
                 val result = OperandVar(trgtTpe.computationalType, stack)
                 statements(pc) = List(
-                    Assignment(pc, result, PrimitiveTypecastExpr(pc, trgtTpe, value)))
+                    Assignment(pc, result, PrimitiveTypecastExpr(pc, trgtTpe, value))
+                )
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
@@ -410,7 +413,8 @@ object AsQuadruples {
                     statements(pc) = List(
                         Assignment(pc, tempVar, value2),
                         Assignment(pc, newValue2, value1),
-                        Assignment(pc, newValue1, tempVar))
+                        Assignment(pc, newValue1, tempVar)
+                    )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
                 case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
@@ -432,7 +436,8 @@ object AsQuadruples {
                     val indexReg = RegisterVar(ComputationalTypeInt, index)
                     statements(pc) = List(
                         Assignment(pc, indexReg,
-                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const))))
+                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const)))
+                    )
                     schedule(pcOfNextInstruction(pc), stack)
 
                 case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
@@ -489,7 +494,8 @@ object AsQuadruples {
                         else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
                     statements(pc) = List(
                         MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-                            receiver.headOption, params, target))
+                            receiver.headOption, params, target)
+                    )
                     schedule(pcOfNextInstruction(pc), if (target.nonEmpty) { target.get :: rest } else { rest })
 
                 case INVOKESTATIC.opcode ⇒
@@ -501,7 +507,8 @@ object AsQuadruples {
                         else Some(OperandVar(invoke.methodDescriptor.returnType.computationalType, rest))
                     statements(pc) = List(
                         MethodCall(pc, invoke.declaringClass, invoke.name, invoke.methodDescriptor,
-                            None, operands, target))
+                            None, operands, target)
+                    )
                     val newStack = if (target.nonEmpty) { target.get :: rest } else { rest }
                     schedule(pcOfNextInstruction(pc), newStack)
 
@@ -560,7 +567,8 @@ object AsQuadruples {
                     val newVal = OperandVar(ComputationalTypeReference, rest)
                     statements(pc) = List(
                         Assignment(pc, newVal,
-                            NewArray(pc, counts, instr.componentType)))
+                            NewArray(pc, counts, instr.componentType))
+                    )
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
@@ -603,7 +611,9 @@ object AsQuadruples {
                         Assignment(
                             pc,
                             resultVar,
-                            InstanceOf(pc, value1, as[INSTANCEOF](instruction).referenceType)))
+                            InstanceOf(pc, value1, as[INSTANCEOF](instruction).referenceType)
+                        )
+                    )
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case CHECKCAST.opcode ⇒
@@ -613,7 +623,9 @@ object AsQuadruples {
                         Assignment(
                             pc,
                             resultVar,
-                            Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType)))
+                            Checkcast(pc, value1, as[CHECKCAST](instruction).referenceType)
+                        )
+                    )
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case MONITORENTER.opcode ⇒
@@ -635,7 +647,8 @@ object AsQuadruples {
                     val npairs =
                         jumpOffsets map { jo ⇒ val r = (caseValue, jo + pc); caseValue += 1; r }
                     statements(pc) = List(
-                        Switch(pc, defaultTarget, index, npairs))
+                        Switch(pc, defaultTarget, index, npairs)
+                    )
                     schedule(defaultTarget, rest)
                     for (target ← npairs) {
                         schedule(target._2, rest)
@@ -647,7 +660,8 @@ object AsQuadruples {
                     val defaultTarget = pc + tsInst.defaultOffset
                     val npairs = tsInst.npairs.map { x ⇒ (x._1, x._2 + pc) }
                     statements(pc) = List(
-                        Switch(pc, defaultTarget, index, npairs))
+                        Switch(pc, defaultTarget, index, npairs)
+                    )
                     schedule(defaultTarget, rest)
                     for (target ← npairs) {
                         schedule(target._2, rest)

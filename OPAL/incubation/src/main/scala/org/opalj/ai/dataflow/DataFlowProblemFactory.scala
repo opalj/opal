@@ -44,5 +44,6 @@ trait DataFlowProblemFactory {
 
     /*abstract*/ def create[Source](
         project: Project[Source],
-        p: P): DataFlowProblem[Source, P]
+        p:       P
+    ): DataFlowProblem[Source, P]
 }

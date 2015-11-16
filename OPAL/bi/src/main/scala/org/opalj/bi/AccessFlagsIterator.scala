@@ -39,8 +39,9 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * @author Michael Eichberg
  */
 class AccessFlagsIterator private (
-    private[this] var flags: Int,
-    val potentialAccessFlags: IndexedSeq[AccessFlag])
+    private[this] var flags:  Int,
+    val potentialAccessFlags: IndexedSeq[AccessFlag]
+)
         extends Iterator[AccessFlag] {
 
     private[this] var index = -1

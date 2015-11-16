@@ -38,8 +38,9 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class LocalVariableTypeTable_attribute(
-        attribute_name_index: Int,
-        local_variable_type_table: Seq[LocalVariableTypeTableEntry]) extends Attribute {
+        attribute_name_index:      Int,
+        local_variable_type_table: Seq[LocalVariableTypeTableEntry]
+) extends Attribute {
 
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 

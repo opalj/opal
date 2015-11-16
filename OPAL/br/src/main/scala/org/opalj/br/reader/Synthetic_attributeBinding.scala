@@ -45,8 +45,9 @@ trait Synthetic_attributeBinding
     type Synthetic_attribute = br.Attribute
 
     def Synthetic_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index) = br.Synthetic
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index
+    ) = br.Synthetic
 
 }
 

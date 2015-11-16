@@ -70,9 +70,10 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
     override def description: String = "Identifies methods that do not have the same call graph information."
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
         if (unexpected.nonEmpty || additional.nonEmpty) {
             var r = "Found the following difference(s):\n"
@@ -88,9 +89,10 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
     }
 
     def callGraphDiff(
-        project: Project[_],
-        println: String ⇒ Unit,
-        isInterrupted: () ⇒ Boolean): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
+        project:       Project[_],
+        println:       String ⇒ Unit,
+        isInterrupted: () ⇒ Boolean
+    ): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
         // TODO Add support for interrupting the calculation of the control-flow graph
         import CallGraphFactory.defaultEntryPointsForLibraries
         val entryPoints = () ⇒ defaultEntryPointsForLibraries(project)
@@ -112,13 +114,15 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
                 new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                     override def Domain[Source](
                         classFile: ClassFile,
-                        method: Method) =
+                        method:    Method
+                    ) =
                         new DefaultVTACallGraphDomain(
                             project, fieldValueInformation, methodReturnValueInformation,
                             cache,
                             classFile, method //, 4
                         )
-                })
+                }
+            )
         } { ns ⇒ println("creating the more precise call graph took "+ns.toSeconds) }
 
         if (isInterrupted())

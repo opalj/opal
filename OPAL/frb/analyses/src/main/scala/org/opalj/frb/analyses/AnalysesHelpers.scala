@@ -102,7 +102,8 @@ object AnalysesHelpers {
      */
     def collectAnnotationTypes[Source](
         project: Project[Source],
-        name: String): Set[ObjectType] = {
+        name:    String
+    ): Set[ObjectType] = {
         (for {
             classFile ← project.allClassFiles
             if (classFile.isAnnotationDeclaration &&
@@ -122,10 +123,10 @@ object AnalysesHelpers {
      * otherwise.
      */
     def isAnnotatedWith(
-        classFile: ClassFile,
-        annotationTypes: Set[ObjectType]): Boolean = {
+        classFile:       ClassFile,
+        annotationTypes: Set[ObjectType]
+    ): Boolean = {
         classFile.annotations.exists(annotation ⇒
-            annotationTypes.exists(_ == annotation.annotationType)
-        )
+            annotationTypes.exists(_ == annotation.annotationType))
     }
 }

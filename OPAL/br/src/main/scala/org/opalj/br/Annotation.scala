@@ -44,8 +44,9 @@ package br
  * @author Arne Lottmann
  */
 case class Annotation(
-        annotationType: FieldType,
-        elementValuePairs: ElementValuePairs = IndexedSeq.empty) {
+        annotationType:    FieldType,
+        elementValuePairs: ElementValuePairs = IndexedSeq.empty
+) {
 
     def toJava: String = {
         val name = annotationType.toJava
@@ -63,20 +64,24 @@ case class Annotation(
 object Annotation {
 
     def apply(
-        annotationType: FieldType,
-        elementValuePairs: (String, ElementValue)*): Annotation = {
+        annotationType:    FieldType,
+        elementValuePairs: (String, ElementValue)*
+    ): Annotation = {
         new Annotation(
             annotationType,
-            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq)
+            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq
+        )
     }
 
     def apply(
-        annotationType: FieldType,
-        elementValuePair: ElementValuePair,
-        elementValuePairs: ElementValuePair*): Annotation = {
+        annotationType:    FieldType,
+        elementValuePair:  ElementValuePair,
+        elementValuePairs: ElementValuePair*
+    ): Annotation = {
         new Annotation(
             annotationType,
-            (elementValuePair +: elementValuePairs).toIndexedSeq)
+            (elementValuePair +: elementValuePairs).toIndexedSeq
+        )
     }
 
 }

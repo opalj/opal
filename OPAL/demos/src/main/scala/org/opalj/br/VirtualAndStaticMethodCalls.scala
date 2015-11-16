@@ -32,7 +32,7 @@ package br
 import java.net.URL
 
 import org.opalj.br.instructions._
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
 
@@ -49,9 +49,10 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis
         "Counts the number of static and virtual method calls."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String]  = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         var staticCalls = 0
         var virtualCalls = 0

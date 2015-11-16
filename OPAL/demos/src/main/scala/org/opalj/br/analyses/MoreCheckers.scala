@@ -30,7 +30,7 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.util.{ Counting, PerformanceEvaluation }
+import org.opalj.util.{Counting, PerformanceEvaluation}
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
@@ -63,7 +63,7 @@ import org.opalj.util.Nanoseconds
  */
 object MoreCheckers {
 
-    import PerformanceEvaluation.{ time, memory }
+    import PerformanceEvaluation.{time, memory}
 
     private def printUsage(): Unit = {
         println("Usage: java …Main <JAR file containing class files>+")

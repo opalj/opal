@@ -53,7 +53,8 @@ class TestBoxingImmediatelyUnboxedToPerformCoercion extends AnalysisTest {
         "NewIntegerToDoubleValue:40 creates a new Integer object (boxing) and "+
         "immediately calls doubleValue() on it (unboxing)" in {
             val declaringClass = ObjectType(
-                "BoxingImmediatelyUnboxedToPerformCoercion/NewIntegerToDoubleValue")
+                "BoxingImmediatelyUnboxedToPerformCoercion/NewIntegerToDoubleValue"
+            )
             results should contain(LineAndColumnBasedReport(
                 project.source(declaringClass),
                 Severity.Info,
@@ -62,7 +63,8 @@ class TestBoxingImmediatelyUnboxedToPerformCoercion extends AnalysisTest {
                 "test",
                 Some(40),
                 None,
-                "Value boxed and immediately unboxed"))
+                "Value boxed and immediately unboxed"
+            ))
         }
 
     it should "find 1 issue in total" in {

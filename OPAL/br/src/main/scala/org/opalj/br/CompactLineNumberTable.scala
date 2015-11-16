@@ -46,7 +46,8 @@ case class CompactLineNumberTable(
          * </pre>
          *
          */
-    lineNumbers: Array[Byte])
+    lineNumbers: Array[Byte]
+)
         extends LineNumberTable {
 
     def asUnsignedShort(hb: Byte, lb: Byte): Int = {
@@ -55,7 +56,7 @@ case class CompactLineNumberTable(
 
     def lookupLineNumber(pc: PC): Option[Int] = {
         val breaks = new scala.util.control.Breaks
-        import breaks.{ break, breakable }
+        import breaks.{break, breakable}
 
         var lastLineNumber: Option[Int] = None
         var e = 0

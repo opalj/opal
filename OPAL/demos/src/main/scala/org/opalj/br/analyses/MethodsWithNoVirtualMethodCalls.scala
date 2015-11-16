@@ -31,7 +31,7 @@ package br
 package analyses
 
 import java.net.URL
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
+import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.MethodWithBody
 import java.util.concurrent.atomic.AtomicInteger
@@ -50,9 +50,10 @@ object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
     override def description: String = TheAnalysis.description
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val allMethods = new AtomicInteger(0)
 
@@ -72,6 +73,8 @@ object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
             methodsWithoutVirtualMethodCalls.map(_.toString()).seq.toSeq.sorted.mkString(
                 s"${methodsWithoutVirtualMethodCalls.size} methods out of ${allMethods.get} methods with a body perfom no virtual method call\n",
                 "\n",
-                "\n"))
+                "\n"
+            )
+        )
     }
 }

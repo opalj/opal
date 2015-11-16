@@ -50,7 +50,8 @@ import org.opalj.ai.domain.l1._
  */
 private class ImmutabilityAnalysisDomain[Source](
     val project: Project[Source],
-    val method: Method)
+    val method:  Method
+)
         extends CorrelationalDomain
         with TheProject
         with TheMethod
@@ -96,9 +97,10 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = Seq.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[SourceLocationBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = Seq.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[SourceLocationBasedReport[Source]] = {
 
         val immutableAnnotationTypes = collectAnnotationTypes(project, "Immutable")
 
@@ -272,7 +274,8 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
                     PUTFIELD(`thisType`, `fieldName`, `fieldType`) ← body.instructions
                 } yield {
                     method
-                })
+                }
+            )
 
             directSetters.nonEmpty && {
                 var transitiveHull = directSetters
@@ -349,10 +352,12 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
                                     MethodDescriptor(IndexedSeq(), ObjectType.Object)) ⇒
                                 if (fieldType.isArrayType) {
                                     fieldTypeIsImmutable(
-                                        fieldType.asArrayType.elementType)
+                                        fieldType.asArrayType.elementType
+                                    )
                                 } else {
                                     classOnlyHasFieldsWithImmutableTypes(
-                                        fieldType.asObjectType)
+                                        fieldType.asObjectType
+                                    )
                                 }
                             case _ ⇒ false
                         }
@@ -436,7 +441,8 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
                         Severity.Warning,
                         classFile.thisType,
                         field,
-                        message.get)
+                        message.get
+                    )
                 }
             ).toSet
 
@@ -447,7 +453,8 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
                     Severity.Info,
                     classFile,
                     "There was not enough information about this class. We treat it as"+
-                        " mutable.")
+                        " mutable."
+                )
             }).toSet
 
         val cyclicCompositionOutput = (for (classFile ← immutableClassesInACycle) yield {
@@ -455,7 +462,8 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
                 project.source(classFile.thisType),
                 Severity.Info,
                 classFile.thisType,
-                "is part of a cyclic composition. We treat it as mutable.")
+                "is part of a cyclic composition. We treat it as mutable."
+            )
         }).toSet
 
         analysisOutput ++ classNotFoundOutput ++ cyclicCompositionOutput

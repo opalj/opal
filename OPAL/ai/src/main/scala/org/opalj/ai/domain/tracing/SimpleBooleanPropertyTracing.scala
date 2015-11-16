@@ -54,7 +54,8 @@ trait SimpleBooleanPropertyTracing
     def propertyName: String
 
     class BooleanProperty private[SimpleBooleanPropertyTracing] (
-        val state: Boolean)
+        val state: Boolean
+    )
             extends Property {
 
         def join(otherProperty: DomainProperty): Update[DomainProperty] =

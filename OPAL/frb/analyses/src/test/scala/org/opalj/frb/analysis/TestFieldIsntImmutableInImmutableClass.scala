@@ -47,17 +47,20 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
     behavior of "FieldIsntImmutableInImmutableClass"
 
     val project = createProject(
-        Seq("JCIPAnnotations.jar",
+        Seq(
+            "JCIPAnnotations.jar",
             "FieldIsntImmutableInImmutableClass.jar",
             "OwnAnnotations.jar",
-            "JSR305Annotations.jar")
+            "JSR305Annotations.jar"
+        )
     )
 
     val results = new FieldIsntImmutableInImmutableClass[URL].analyze(project).toSet
 
     it should "report a mutable field whatever in CustomAnnotatedWithTrivialMutable" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/CustomAnnotatedWithTrivialMutable")
+            "FieldIsntImmutableInImmutableClass/CustomAnnotatedWithTrivialMutable"
+        )
         results should contain(
             FieldBasedReport(
                 project.source(declaringClass),
@@ -65,14 +68,17 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                 declaringClass,
                 Some(IntegerType),
                 "whatever",
-                "is mutable, because it is not private, and not final."))
+                "is mutable, because it is not private, and not final."
+            )
+        )
     }
 
     it should "report a mutable field foo in "+
         "JCIPAnnotatedWithMutablePublicFinalArray" in {
             val declaringClass = ObjectType(
                 "FieldIsntImmutableInImmutableClass/"+
-                    "JCIPAnnotatedWithMutablePublicFinalArray")
+                    "JCIPAnnotatedWithMutablePublicFinalArray"
+            )
             results should contain(
                 FieldBasedReport(
                     project.source(declaringClass),
@@ -81,14 +87,17 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                     Some(ArrayType(IntegerType)),
                     "foo",
                     "is mutable, because it is a non private final reference "+
-                        "to a mutable object."))
+                        "to a mutable object."
+                )
+            )
         }
 
     it should "report a mutable field mutable in "+
         "JCIPAnnotatedWithMutablePublicFinalField" in {
             val declaringClass = ObjectType(
                 "FieldIsntImmutableInImmutableClass/"+
-                    "JCIPAnnotatedWithMutablePublicFinalField")
+                    "JCIPAnnotatedWithMutablePublicFinalField"
+            )
             results should contain(
                 FieldBasedReport(
                     project.source(declaringClass),
@@ -98,13 +107,16 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                         "NotImmutableWithPublicFields")),
                     "mutable",
                     "is mutable, because it is a non private final reference "+
-                        "to a mutable object."))
+                        "to a mutable object."
+                )
+            )
         }
 
     it should "report mutable field whatever in class "+
         "JCIPAnnotatedWithTrivialMutable" in {
             val declaringClass = ObjectType(
-                "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTrivialMutable")
+                "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTrivialMutable"
+            )
             results should contain(
                 FieldBasedReport(
                     project.source(declaringClass),
@@ -112,12 +124,15 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                     declaringClass,
                     Some(IntegerType),
                     "whatever",
-                    "is mutable, because it is not private, and not final."))
+                    "is mutable, because it is not private, and not final."
+                )
+            )
         }
 
     it should "report mutable field x in class JCIPAnnotatedWithDirectPublicSetter" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithDirectPublicSetter")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithDirectPublicSetter"
+        )
         results should contain(
             FieldBasedReport(
                 project.source(declaringClass),
@@ -125,12 +140,15 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                 declaringClass,
                 Some(IntegerType),
                 "x",
-                "is mutable because it has an (indirect) public setter"))
+                "is mutable because it has an (indirect) public setter"
+            )
+        )
     }
 
     it should "report mutable field x in class JCIPAnnotatedWithIndirectPublicSetter" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithIndirectPublicSetter")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithIndirectPublicSetter"
+        )
         results should contain(
             FieldBasedReport(
                 project.source(declaringClass),
@@ -138,12 +156,15 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                 declaringClass,
                 Some(IntegerType),
                 "x",
-                "is mutable because it has an (indirect) public setter"))
+                "is mutable because it has an (indirect) public setter"
+            )
+        )
     }
 
     it should "report field foo in JCIPAnnotatedWithoutDefensiveCopy" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithoutDefensiveCopy")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithoutDefensiveCopy"
+        )
         results should contain(
             FieldBasedReport(
                 project.source(declaringClass),
@@ -152,12 +173,15 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                 Some(ArrayType(IntegerType)),
                 "foo",
                 "is mutable, because it isn't defensively copied every time it is passed"+
-                    " in or out of the class, or the defensive copy is not deep enough."))
+                    " in or out of the class, or the defensive copy is not deep enough."
+            )
+        )
     }
 
     it should "report field foo in JCIPAnnotatedWithTooShallowDefensiveCopy" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTooShallowDefensiveCopy")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTooShallowDefensiveCopy"
+        )
         results should contain(
             FieldBasedReport(
                 project.source(declaringClass),
@@ -167,12 +191,15 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                     "NotImmutableWithPublicFields")),
                 "foo",
                 "is mutable, because it isn't defensively copied every time it is passed"+
-                    " in or out of the class, or the defensive copy is not deep enough."))
+                    " in or out of the class, or the defensive copy is not deep enough."
+            )
+        )
     }
 
     it should "report field bar in JCIPAnnotatedWithTooShallowDefensiveCopy" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTooShallowDefensiveCopy")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithTooShallowDefensiveCopy"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
@@ -181,24 +208,28 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
                 "NotImmutableWithPublicFields"))),
             "bar",
             "is mutable, because it isn't defensively copied every time it is passed "+
-                "in or out of the class, or the defensive copy is not deep enough."))
+                "in or out of the class, or the defensive copy is not deep enough."
+        ))
     }
 
     it should "report field whatever in class JSR305AnnotatedWithTrivialMutable" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JSR305AnnotatedWithTrivialMutable")
+            "FieldIsntImmutableInImmutableClass/JSR305AnnotatedWithTrivialMutable"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
             declaringClass,
             Some(IntegerType),
             "whatever",
-            "is mutable, because it is not private, and not final."))
+            "is mutable, because it is not private, and not final."
+        ))
     }
 
     it should "report field foo in JCIPAnnotatedWithoutDefensiveCopyAtInput" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithoutDefensiveCopyAtInput")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithoutDefensiveCopyAtInput"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
@@ -206,72 +237,86 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
             Some(ArrayType(IntegerType)),
             "foo",
             "is mutable, because it isn't defensively copied every time it is passed "+
-                "in or out of the class, or the defensive copy is not deep enough."))
+                "in or out of the class, or the defensive copy is not deep enough."
+        ))
     }
 
     it should "report field foo in JCIPAnnotatedWithCyclicFields" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithCyclicFields")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithCyclicFields"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
             declaringClass,
             Some(ObjectType(
-                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsA")),
+                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsA"
+            )),
             "foo",
             "is mutable, because it isn't defensively copied every time it is passed "+
-                "in or out of the class, or the defensive copy is not deep enough."))
+                "in or out of the class, or the defensive copy is not deep enough."
+        ))
     }
 
     it should "report field bar in JCIPAnnotatedWithCyclicFields" in {
         val declaringClass = ObjectType(
-            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithCyclicFields")
+            "FieldIsntImmutableInImmutableClass/JCIPAnnotatedWithCyclicFields"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
             declaringClass,
             Some(ObjectType(
-                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsB")),
+                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsB"
+            )),
             "bar",
             "is mutable, because it isn't defensively copied every time it is passed "+
-                "in or out of the class, or the defensive copy is not deep enough."))
+                "in or out of the class, or the defensive copy is not deep enough."
+        ))
     }
 
     it should "report field foo in JCIPAnnotatedWithDefensiveCopyOfUnknownClass" in {
         val declaringClass = ObjectType(
             "FieldIsntImmutableInImmutableClass/"+
-                "JCIPAnnotatedWithDefensiveCopyOfUnknownClass")
+                "JCIPAnnotatedWithDefensiveCopyOfUnknownClass"
+        )
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Warning,
             declaringClass,
             Some(ObjectType(
-                "FieldIsntImmutableInImmutableClass/MutableClassWithUnknownField")),
+                "FieldIsntImmutableInImmutableClass/MutableClassWithUnknownField"
+            )),
             "foo",
             "is mutable, because it isn't defensively copied every time it is passed "+
-                "in or out of the class, or the defensive copy is not deep enough."))
+                "in or out of the class, or the defensive copy is not deep enough."
+        ))
     }
 
     it should "report that MutableClassWithCyclicFieldsB is part of a "+
         "cyclic composition" in {
             val theClass = ObjectType(
-                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsB")
+                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsB"
+            )
             results should contain(ClassBasedReport(
                 project.source(theClass),
                 Severity.Info,
                 theClass,
-                "is part of a cyclic composition. We treat it as mutable."))
+                "is part of a cyclic composition. We treat it as mutable."
+            ))
         }
 
     it should "report that MutableClassWithCyclicFieldsA is part of a "+
         "cyclic composition" in {
             val theClass = ObjectType(
-                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsA")
+                "FieldIsntImmutableInImmutableClass/MutableClassWithCyclicFieldsA"
+            )
             results should contain(ClassBasedReport(
                 project.source(theClass),
                 Severity.Info,
                 theClass,
-                "is part of a cyclic composition. We treat it as mutable."))
+                "is part of a cyclic composition. We treat it as mutable."
+            ))
         }
 
     it should "find 18 issues in total" in {

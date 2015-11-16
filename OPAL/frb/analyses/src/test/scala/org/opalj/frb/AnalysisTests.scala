@@ -77,8 +77,7 @@ object AnalysisTest {
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
                 locateTestResources("classfiles/analyses/"+filename, "frb/analyses")
-            )
-        ).flatten
+            )).flatten
 
         println("creating project: "+filenames.mkString(", "))
         Project(classFiles, Traversable.empty)

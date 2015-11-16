@@ -60,7 +60,8 @@ class TestCatchesIllegalMonitorStateException extends AnalysisTest {
                     declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "test",
-                    "Handles IllegalMonitorStateException")
+                    "Handles IllegalMonitorStateException"
+                )
             }
         }
 
@@ -75,7 +76,8 @@ class TestCatchesIllegalMonitorStateException extends AnalysisTest {
                     declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "run",
-                    "Handles IllegalMonitorStateException")
+                    "Handles IllegalMonitorStateException"
+                )
             }
         }
 

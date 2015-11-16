@@ -45,9 +45,10 @@ trait SourceFile_attributeBinding
     type SourceFile_attribute = br.SourceFile
 
     def SourceFile_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourceFile_index: Constant_Pool_Index): SourceFile_attribute = {
+        sourceFile_index:     Constant_Pool_Index
+    ): SourceFile_attribute = {
         new SourceFile_attribute(cp(sourceFile_index).asString)
     }
 

@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.{ Method, Code }
+import org.opalj.br.{Method, Code}
 
 /**
  * Provides information about the method that is currently analyzed

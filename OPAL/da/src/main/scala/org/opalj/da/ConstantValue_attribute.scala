@@ -43,7 +43,8 @@ import scala.xml.Node
  */
 case class ConstantValue_attribute(
         attribute_name_index: Int,
-        constantValue_index: Int) extends Attribute {
+        constantValue_index:  Int
+) extends Attribute {
 
     def attribute_length = 2
 

@@ -41,7 +41,8 @@ import org.opalj.collection.mutable.UShortSet
  */
 case class LOOKUPSWITCH(
     defaultOffset: Int,
-    npairs: IndexedSeq[(Int, Int)])
+    npairs:        IndexedSeq[(Int, Int)]
+)
         extends CompoundConditionalBranchInstruction {
 
     final def opcode: Opcode = LOOKUPSWITCH.opcode

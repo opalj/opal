@@ -64,9 +64,10 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         "identifies method which calls themselves using infinite recursion"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String]  = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         // In a real application we should take this from a parameter
         val maxRecursionDepth = 3
@@ -94,7 +95,8 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 result ← inifiniteRecursions(
                     maxRecursionDepth,
                     project, classFile, method,
-                    pcs)
+                    pcs
+                )
             } yield { result }
 
         BasicReport(result.map(_.toString).mkString("\n"))
@@ -109,10 +111,11 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
      */
     def inifiniteRecursions(
         maxRecursionDepth: Int,
-        project: SomeProject,
-        classFile: ClassFile,
-        method: Method,
-        pcs: Seq[PC]): Option[InfiniteRecursion] = {
+        project:           SomeProject,
+        classFile:         ClassFile,
+        method:            Method,
+        pcs:               Seq[PC]
+    ): Option[InfiniteRecursion] = {
 
         assert(maxRecursionDepth > 1)
         assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
@@ -154,8 +157,10 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
             val parameters = mapOperandsToParameters(callOperands, method, domain)
             val aiResult =
                 BaseAI.performInterpretation(
-                    strictfp, body, domain)(
-                        List.empty, parameters)
+                    strictfp, body, domain
+                )(
+                    List.empty, parameters
+                )
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
             val callOperandsList =
@@ -240,8 +245,9 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
 
 case class InfiniteRecursion(
         classFile: ClassFile,
-        method: Method,
-        operands: Iterable[_]) {
+        method:    Method,
+        operands:  Iterable[_]
+) {
 
     override def toString: String = {
         val declaringClassOfMethod = classFile.thisType.toJava

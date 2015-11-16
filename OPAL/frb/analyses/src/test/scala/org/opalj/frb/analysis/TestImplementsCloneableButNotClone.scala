@@ -57,7 +57,9 @@ class TestImplementsCloneableButNotClone extends AnalysisTest {
                 project.source(classToReport),
                 Severity.Error,
                 classToReport,
-                "Implements java.lang.Cloneable but not clone()"))
+                "Implements java.lang.Cloneable but not clone()"
+            )
+        )
     }
 
     it should "find exactly 1 issue in ImplementsCloneableButNotClone.jar" in {

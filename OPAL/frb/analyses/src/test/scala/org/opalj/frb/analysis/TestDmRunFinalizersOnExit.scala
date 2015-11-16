@@ -60,7 +60,9 @@ class TestDmRunFinalizersOnExit extends AnalysisTest {
                 declaringClass,
                 MethodDescriptor.NoArgsAndReturnVoid,
                 "doStuff",
-                "Calls System.runFinalizersOnExit()"))
+                "Calls System.runFinalizersOnExit()"
+            )
+        )
     }
 
     it should "only find 1 issue in DmRunFinalizersOnExit.jar" in {

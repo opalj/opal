@@ -80,8 +80,9 @@ object InstantiableClassesAnalysis {
     // IMPROVE Use the fcf to react on results related to constructor calls from factory methods.
 
     def doAnalyze(
-        project: SomeProject,
-        isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+        project:       SomeProject,
+        isInterrupted: () ⇒ Boolean
+    ): InstantiableClasses = {
 
         val notInstantiable = new ConcurrentLinkedQueue[ObjectType]()
 
@@ -141,14 +142,15 @@ object InstantiableClassesAnalysis {
  * @author Michael Eichberg
  */
 class InstantiableClasses(
-        val project: SomeProject,
-        val notInstantiable: Set[ObjectType]) {
+        val project:         SomeProject,
+        val notInstantiable: Set[ObjectType]
+) {
 
     def isInstantiable(classType: ObjectType): Boolean =
         !notInstantiable.contains(classType)
 
     def statistics: Map[String, Int] = Map(
-        "# of not instantiable classes in the project" -> notInstantiable.size
+        "# of not instantiable classes in the project" → notInstantiable.size
     )
 
 }

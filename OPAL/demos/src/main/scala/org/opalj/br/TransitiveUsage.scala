@@ -71,7 +71,8 @@ object TransitiveUsage extends AnalysisExecutor {
         override def processDependency(
             source: VirtualSourceElement,
             target: VirtualSourceElement,
-            dType: DependencyType): Unit = {
+            dType:  DependencyType
+        ): Unit = {
             def process(vse: VirtualSourceElement): Unit = {
                 vse match {
                     case VirtualClass(declaringClassType) ⇒
@@ -108,9 +109,10 @@ object TransitiveUsage extends AnalysisExecutor {
                 "(Does not take reflective usages into relation)."
 
         override def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))
             extractedTypes += baseType
@@ -125,7 +127,8 @@ object TransitiveUsage extends AnalysisExecutor {
             BasicReport(
                 "To compile: "+baseType.toJava+
                     " the following "+visitedTypes.size+" classes are required:\n"+
-                    visitedTypes.map(_.toJava).mkString("\n"))
+                    visitedTypes.map(_.toJava).mkString("\n")
+            )
         }
     }
 }

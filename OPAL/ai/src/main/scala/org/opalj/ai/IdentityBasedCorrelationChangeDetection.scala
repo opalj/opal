@@ -91,12 +91,13 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 
     /* NOT abstract override [this trait is by purpose NOT stackable] */
     protected[this] override def joinPostProcessing(
-        updateType: UpdateType,
-        pc: PC,
+        updateType:  UpdateType,
+        pc:          PC,
         oldOperands: Operands,
-        oldLocals: Locals,
+        oldLocals:   Locals,
         newOperands: Operands,
-        newLocals: Locals): Update[(Operands, Locals)] = {
+        newLocals:   Locals
+    ): Update[(Operands, Locals)] = {
 
         def liftUpdateType(v1Index: Int, v2Index: Int) = {
             StructuralUpdate((newOperands, newLocals))

@@ -39,7 +39,8 @@ import scala.xml.Node
  */
 case class Signature_attribute(
         attribute_name_index: Int,
-        Signature_index: Int) extends Attribute {
+        Signature_index:      Int
+) extends Attribute {
 
     /**
      * The value of the attribute_length item is fixed; it is always 4.

@@ -50,17 +50,19 @@ trait MethodParameters_attributeBinding
     type MethodParameters_attribute = br.MethodParameterTable
 
     override def MethodParameters_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameters: MethodParameters): MethodParameters_attribute = {
+        attribute_length:     Int,
+        parameters:           MethodParameters
+    ): MethodParameters_attribute = {
         new MethodParameterTable(parameters)
     }
 
     override def MethodParameter(
-        cp: Constant_Pool,
-        name_index: Constant_Pool_Index,
-        access_flags: Int): MethodParameter = {
+        cp:           Constant_Pool,
+        name_index:   Constant_Pool_Index,
+        access_flags: Int
+    ): MethodParameter = {
         new MethodParameter(cp(name_index).asString, access_flags)
     }
 }

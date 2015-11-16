@@ -38,10 +38,11 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class TypeAnnotation(
-        target: TypeAnnotationTarget,
-        path: TypeAnnotationPath,
-        type_index: Constant_Pool_Index,
-        element_value_pairs: IndexedSeq[ElementValuePair]) {
+        target:              TypeAnnotationTarget,
+        path:                TypeAnnotationPath,
+        type_index:          Constant_Pool_Index,
+        element_value_pairs: IndexedSeq[ElementValuePair]
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">

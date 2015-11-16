@@ -71,9 +71,10 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     // UNARY EXPRESSIONS
     //
     override def dneg(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value: DomainValue): DomainValue = DoubleValue(pc)
+        value:    DomainValue
+    ): DomainValue = DoubleValue(pc)
 
     //
     // RELATIONAL OPERATORS
@@ -88,33 +89,38 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     // BINARY EXPRESSIONS
     //
     override def dadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         DoubleValue(pc)
 
     override def ddiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         DoubleValue(pc)
 
     override def drem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         DoubleValue(pc)
 
     override def dmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         DoubleValue(pc)
 
     override def dsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue =
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue =
         DoubleValue(pc)
 
 }

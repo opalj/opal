@@ -68,19 +68,21 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
     domain: ReferenceValuesDomain with Origin ⇒
 
     abstract override def afterEvaluation(
-        pc: PC,
-        instruction: Instruction,
-        oldOperands: Operands,
-        oldLocals: Locals,
-        targetPC: PC,
+        pc:                       PC,
+        instruction:              Instruction,
+        oldOperands:              Operands,
+        oldLocals:                Locals,
+        targetPC:                 PC,
         isExceptionalControlFlow: Boolean,
-        newOperands: Operands,
-        newLocals: Locals): (Operands, Locals) = {
+        newOperands:              Operands,
+        newLocals:                Locals
+    ): (Operands, Locals) = {
 
         @inline def default() =
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, newOperands, newLocals)
+                targetPC, isExceptionalControlFlow, newOperands, newLocals
+            )
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
             if (refIsNull(pc, objectRef).isUnknown)
@@ -103,7 +105,8 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2)
+                        targetPC, isExceptionalControlFlow, operands2, locals2
+                    )
                 } else {
                     // ... the value is not null... even if an exception was thrown,
                     // because the exception is not a VM-level `NullPointerException`
@@ -111,7 +114,8 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2)
+                        targetPC, isExceptionalControlFlow, operands2, locals2
+                    )
                 }
             else
                 default()

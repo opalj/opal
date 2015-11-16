@@ -49,7 +49,8 @@ case object NoResult extends PropertyComputationResult
  * dependent computations (observers).
  */
 case class MultiResult(
-    properties: Traversable[(Entity, Property)])
+    properties: Traversable[(Entity, Property)]
+)
         extends PropertyComputationResult
 
 /**
@@ -61,7 +62,8 @@ case class MultiResult(
  * dependent computations (observers).
  */
 case class ImmediateMultiResult(
-    properties: Traversable[(Entity, Property)])
+    properties: Traversable[(Entity, Property)]
+)
         extends PropertyComputationResult
 
 /**
@@ -115,7 +117,8 @@ object Result {
 case class IntermediateResult(
     e: Entity, p: Property,
     dependeeEs: Traversable[EOptionP],
-    c: Continuation)
+    c:          Continuation
+)
         extends PropertyComputationResult
 
 /**
@@ -127,10 +130,11 @@ case class IntermediateResult(
  *      is required.
  */
 private[fp] abstract class Suspended(
-    val e: Entity,
-    val pk: PropertyKey,
-    val dependeeE: Entity,
-    val dependeePk: PropertyKey)
+    val e:          Entity,
+    val pk:         PropertyKey,
+    val dependeeE:  Entity,
+    val dependeePk: PropertyKey
+)
         extends PropertyComputationResult {
 
     /**
@@ -139,7 +143,8 @@ private[fp] abstract class Suspended(
      */
     def continue(
         dependeeE: Entity,
-        dependeeP: Property): PropertyComputationResult
+        dependeeP: Property
+    ): PropertyComputationResult
 
 }
 

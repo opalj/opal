@@ -38,7 +38,8 @@ import org.opalj.bi.AccessFlagsContexts
  * @author Michael Eichberg
  */
 case class InnerClassTable(
-    innerClasses: InnerClasses)
+    innerClasses: InnerClasses
+)
         extends Attribute {
 
     override def kindId: Int = InnerClassTable.KindId
@@ -51,10 +52,11 @@ object InnerClassTable {
 }
 
 case class InnerClass(
-        innerClassType: ObjectType,
-        outerClassType: Option[ObjectType],
-        innerName: Option[String],
-        innerClassAccessFlags: Int) {
+        innerClassType:        ObjectType,
+        outerClassType:        Option[ObjectType],
+        innerName:             Option[String],
+        innerClassAccessFlags: Int
+) {
 
     override def toString(): String = {
         "InnerClass"+

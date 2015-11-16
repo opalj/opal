@@ -53,10 +53,11 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     type AnnotationDefault_attribute <: Attribute
 
     def AnnotationDefault_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        element_value: ElementValue): AnnotationDefault_attribute
+        attribute_length:     Int,
+        element_value:        ElementValue
+    ): AnnotationDefault_attribute
 
     //
     // IMPLEMENTATION
@@ -72,7 +73,7 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME ->
+    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME →
         ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
             val attributeLength = in.readInt()
             AnnotationDefault_attribute(
