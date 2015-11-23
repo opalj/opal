@@ -49,11 +49,11 @@ object Instantiability extends PropertyMetaInformation {
 
 }
 
-case object NotInstantiable extends Instantiability { final val isRefineable = false }
+case object NotInstantiable extends Instantiability { final val isRefineable: Boolean = false }
 
-case object Instantiable extends Instantiability { final val isRefineable = false }
+case object Instantiable extends Instantiability { final val isRefineable: Boolean = false }
 
-case object MaybeInstantiable extends Instantiability { final val isRefineable = true }
+case object MaybeInstantiable extends Instantiability { final val isRefineable: Boolean = true }
 
 /**
  * This analysis determines which classes can never be instantiated (e.g.,
@@ -139,7 +139,7 @@ class InstantiabilityAnalysis private (
             subtypes ++= project.classHierarchy.directSubtypesOf(subtype)
             subtypes -= subtype
         }
-        // Now: the class is not public has no (yet known) factory method, has no known instantiable subtype,... 
+        // Now: the class is not public has no (yet known) factory method, has no known instantiable subtype,...
         // If the class has no dependees, we know that it is not instantiable
         if (dependees.isEmpty)
             return ImmediateResult(classFile, NotInstantiable)
@@ -218,7 +218,7 @@ class InstantiabilityAnalysis private (
                 return ImmediateResult(classFile, Instantiable);
         }
 
-        // NOW: 
+        // NOW:
         //  - the type is neither abstract nor an interface declaration
         //  - the class does not inherit from Serializable
         //  - the class has no globally visible constructors
@@ -231,20 +231,19 @@ class InstantiabilityAnalysis private (
 /**
  * Companion object for the [[InstantiabilityAnalysis]] class.
  */
-object InstantiabilityAnalysis
-        extends FPCFAnalysisRunner[InstantiabilityAnalysis] {
+object InstantiabilityAnalysis extends FPCFAnalysisRunner {
 
-    private[InstantiabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile ⇒ cf
-    }
+    final def entitySelector: PartialFunction[Entity, ClassFile] =
+        FPCFAnalysisRunner.ClassFileSelector
 
-    protected[analysis] def derivedProperties = Set(Instantiability)
+    override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
 
-    override protected[analysis] def usedProperties = Set(FactoryMethod)
+    override def usedProperties: Set[PropertyKind] = Set(FactoryMethod)
 
-    protected[analysis] def start(project: SomeProject): Unit = {
+    override def recommendations: Set[FPCFAnalysisRunner] = Set(FactoryMethodAnalysis)
+
+    protected[analysis] override def start(project: SomeProject): Unit = {
         new InstantiabilityAnalysis(project)
     }
 
-    override def recommendations = Set(FactoryMethodAnalysis)
 }

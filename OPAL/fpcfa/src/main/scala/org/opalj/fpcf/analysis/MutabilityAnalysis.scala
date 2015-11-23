@@ -35,20 +35,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.instructions.PUTSTATIC
 
-sealed trait Mutability extends Property {
-    final def key = Mutability.key // All instances have to share the SAME key!
-}
-
-object Mutability extends PropertyMetaInformation {
-
-    final val key = PropertyKey.create("Mutability", NonFinal)
-
-}
-
-case object EffectivelyFinal extends Mutability { final val isRefineable = false }
-
-case object NonFinal extends Mutability { final val isRefineable = false }
-
 class MutabilityAnalysis private (
         project:        SomeProject,
         entitySelector: PartialFunction[Entity, ClassFile]
@@ -100,15 +86,14 @@ class MutabilityAnalysis private (
     }
 }
 
-object MutabilityAnalysis extends FPCFAnalysisRunner[MutabilityAnalysis] {
+object MutabilityAnalysis extends FPCFAnalysisRunner {
 
-    private[MutabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile ⇒ cf
-    }
+    def entitySelector: PartialFunction[Entity, ClassFile] = FPCFAnalysisRunner.ClassFileSelector
+
+    def derivedProperties: Set[PropertyKind] = Set(Mutability)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new MutabilityAnalysis(project, entitySelector)
     }
 
-    override protected[analysis] def derivedProperties = Set(Mutability)
 }

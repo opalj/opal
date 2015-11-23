@@ -81,7 +81,7 @@ class SimpleInstantiabilityAnalysis private (
     project,
     SimpleInstantiabilityAnalysis.groupBy,
     SimpleInstantiabilityAnalysis.entitySelector
-) with CodeAnalysisMode {
+) {
 
     import project.classHierarchy.allSubtypes
 
@@ -199,20 +199,20 @@ class SimpleInstantiabilityAnalysis private (
 /**
  * Companion object for the [[SimpleInstantiabilityAnalysis]] class.
  */
-object SimpleInstantiabilityAnalysis
-        extends FPCFAnalysisRunner[SimpleInstantiabilityAnalysis] {
+object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
 
-    private[SimpleInstantiabilityAnalysis] def groupBy: Function[ClassFile, String] = {
+    /*FIXME*/ final def groupBy: Function[ClassFile, String] = {
         case cf: ClassFile ⇒ cf.thisType.packageName
     }
 
-    private[SimpleInstantiabilityAnalysis] def entitySelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile ⇒ cf
+    final def entitySelector: PartialFunction[Entity, ClassFile] = {
+        FPCFAnalysisRunner.ClassFileSelector
     }
 
-    protected[analysis] def start(project: SomeProject): Unit = {
+    override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
+
+    override protected[analysis] def start(project: SomeProject): Unit = {
         new SimpleInstantiabilityAnalysis(project)
     }
 
-    override protected[analysis] def derivedProperties = Set(Instantiability)
 }

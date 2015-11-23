@@ -53,6 +53,8 @@ package object analyses {
 
     type DeclaredMethods = Map[ObjectType, PartialCollection[Set[Method]]]
 
+    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
+
     /**
      * Shortens an absolute path to one relative to the current working directory.
      */

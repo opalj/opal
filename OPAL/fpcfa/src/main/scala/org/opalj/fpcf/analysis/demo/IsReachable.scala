@@ -68,7 +68,7 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             }
         }
 
-        val executer = project.get(FPCFAnalysisManagerKey)
+        val executer = project.get(FPCFAnalysesManagerKey)
 
         executer.runAll(
             CallableFromClassesInOtherPackagesAnalysis,
@@ -80,9 +80,9 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
 
         theProjectStore.waitOnPropertyComputationCompletion(true)
 
-        //        
+        //
         //        theProjectStore.onPropertyDerivation(IsReachable) { e ⇒
-        //            // LET'S do something meaningful:    
+        //            // LET'S do something meaningful:
         //            //      println("is reachable: "+e)
         //            isReachableCount.incrementAndGet()
         //        }

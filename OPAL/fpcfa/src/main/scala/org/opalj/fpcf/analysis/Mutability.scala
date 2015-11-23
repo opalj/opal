@@ -30,21 +30,16 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyStore
-
-/**
- * see [[org.opalj.fpcf.PropertyStore#execute]] for details regarding `groupBy`.
- *
- * @author Michael Reif
- */
-abstract class AbstractGroupedFPCFAnalysis[K, E <: Entity](
-        val project:        SomeProject,
-        val groupBy:        E ⇒ K,
-        val entitySelector: PartialFunction[Entity, E] = PropertyStore.entitySelector()
-) extends FPCFAnalysis {
-
-    def determineProperty(key: K, entities: Seq[E]): Traversable[EP]
-
-    propertyStore.execute(entitySelector, groupBy)(determineProperty)
+sealed trait Mutability extends Property {
+    final def key: org.opalj.fpcf.PropertyKey = Mutability.key // All instances have to share the SAME key!
 }
+
+object Mutability extends PropertyMetaInformation {
+
+    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("Mutability", NonFinal)
+
+}
+
+case object EffectivelyFinal extends Mutability { final val isRefineable: Boolean = false }
+
+case object NonFinal extends Mutability { final val isRefineable: Boolean = false }

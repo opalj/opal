@@ -128,7 +128,7 @@ import org.opalj.collection.mutable.ArrayMap
 // pos = A pair consisting of a property and its observers
 // EPK = An entity and a property key
 // EP = An entity and an associated property
-// 
+//
 // REMARKS:
 // ========
 // SORTING ENTIES IS NOT VERY RELIABLE DUE TO THE CONCURRENT EXECUTION OF THE ANALYSES WRT
@@ -607,10 +607,12 @@ class PropertyStore private (
     }
 
     /**
-     * Executes f for each group of entities which is grouped by the function `groupBy`.
+     * Executes `f` for each group of entities which is grouped by the function `groupBy`.
      *
      * @param groupBy A function that associates every entity E that is selected by the given
-     *                entitySelector function with a specific group.
+     *                entitySelector function with a specific group. If all entities
+     *                are associated with the same group key then `f` will not be
+     *                executed in parallel.
      * @param f The analysis.
      * @tparam K The group key.
      * @tparam E The type of the entities that will be analyzed/passed to `f`.
@@ -640,7 +642,7 @@ class PropertyStore private (
      * of property kind pk, then the new property will be ignored.
      *
      * The function may also access the store to query '''other properties'''; however, this should in
-     * general only be done directly after all previously scheduled computations - that
+     * general only be done after all previously scheduled computations - that
      * compute any properties of interest - have finished (cf. [[waitOnPropertyComputationCompletion]]).
      *
      * This function cannot be used to register a function that (bi-directionally) interacts with
@@ -1271,7 +1273,7 @@ class PropertyStore private (
                     if (dependeeOs ne null) {
                         dependeeOs -= epkO
                         // dependeeOs may be empty now, but - given that dependeeP is not final -
-                        // this is perfectly ok; we generally only null out values if 
+                        // this is perfectly ok; we generally only null out values if
                         // a final property is derived
                     }
                 }
@@ -1646,4 +1648,3 @@ object PropertyStore {
         }
     }
 }
-

@@ -58,7 +58,7 @@ object MethodAccessibilityAnalysisDemo extends MethodAnalysisDemo {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val executer = project.get(FPCFAnalysisManagerKey)
+        val executer = project.get(FPCFAnalysesManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {

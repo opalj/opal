@@ -48,9 +48,9 @@ object EntryPoint extends PropertyMetaInformation {
 
 }
 
-case object IsEntryPoint extends EntryPoint { final val isRefineable = false }
+case object IsEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
 
-case object NoEntryPoint extends EntryPoint { final val isRefineable = false }
+case object NoEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
 
 class EntryPointsAnalysis private (
     project: SomeProject
@@ -142,30 +142,32 @@ class EntryPointsAnalysis private (
     }
 }
 
-object EntryPointsAnalysis extends FPCFAnalysisRunner[EntryPointsAnalysis] {
+object EntryPointsAnalysis extends FPCFAnalysisRunner {
 
-    private[EntryPointsAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+    final def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract && !m.isNative ⇒ m
+    }
+
+    override def derivedProperties: Set[PropertyKind] = Set(EntryPoint)
+
+    override def usedProperties: Set[PropertyKind] = {
+        Set(ProjectAccessibility, CallableFromClassesInOtherPackages, Instantiability)
+    }
+
+    /*
+     * This recommendations are not transitive. All (even indirect) dependencies are listed here.
+     */
+    //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
+    override def recommendations: Set[FPCFAnalysisRunner] = {
+        Set(
+            SimpleInstantiabilityAnalysis,
+            CallableFromClassesInOtherPackagesAnalysis,
+            MethodAccessibilityAnalysis
+        )
     }
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new EntryPointsAnalysis(project)
     }
 
-    override protected[analysis] def derivedProperties =
-        Set(EntryPoint)
-
-    override protected[analysis] def usedProperties =
-        Set(ProjectAccessibility, CallableFromClassesInOtherPackages, Instantiability)
-
-    /*
-     * This recommendations are not transitive. All (even indirect) dependencies are listed here.
-     */
-    //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
-    override def recommendations =
-        Set(
-            SimpleInstantiabilityAnalysis,
-            CallableFromClassesInOtherPackagesAnalysis,
-            MethodAccessibilityAnalysis
-        )
 }

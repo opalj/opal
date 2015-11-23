@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,6 +41,7 @@ import org.opalj.br.VoidType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
 import scala.collection.mutable.ListBuffer
+import org.opalj.fpcf.PropertyKind
 
 /**
  * This property expresses the leakage of methods to the client such that
@@ -49,19 +50,19 @@ import scala.collection.mutable.ListBuffer
  */
 sealed trait CallableFromClassesInOtherPackages extends Property {
 
-    final def key = CallableFromClassesInOtherPackages.key
+    final def key: org.opalj.fpcf.PropertyKey = CallableFromClassesInOtherPackages.key
 
 }
 
 object CallableFromClassesInOtherPackages extends PropertyMetaInformation {
 
-    final val key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
+    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
 
 }
 
-case object Callable extends CallableFromClassesInOtherPackages { final val isRefineable = false }
+case object Callable extends CallableFromClassesInOtherPackages { final val isRefineable: Boolean = false }
 
-case object NotCallable extends CallableFromClassesInOtherPackages { final val isRefineable = false }
+case object NotCallable extends CallableFromClassesInOtherPackages { final val isRefineable: Boolean = false }
 
 /**
  * This Analysis determines the ´LibraryLeakage´ property of a method. A method is considered as leaked
@@ -78,13 +79,9 @@ case object NotCallable extends CallableFromClassesInOtherPackages { final val i
  *  @author Michael Reif
  */
 class CallableFromClassesInOtherPackagesAnalysis private (
-    project:        SomeProject,
-    entitySelector: PartialFunction[Entity, Method] = CallableFromClassesInOtherPackagesAnalysis.entitySelector
-)
-        extends DefaultFPCFAnalysis[Method](
-            project,
-            entitySelector
-        ) {
+        project:        SomeProject,
+        entitySelector: PartialFunction[Entity, Method] = CallableFromClassesInOtherPackagesAnalysis.entitySelector
+) extends DefaultFPCFAnalysis[Method](project, entitySelector) {
 
     /**
      * Determines the [[CallableFromClassesInOtherPackages]] property of non-static methods.
@@ -143,7 +140,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
                     // we need to continue our search for a class that makes the method visible
                     case None ⇒
                         // The type hierarchy is obviously not downwards closed; i.e.,
-                        // the project configuration is rather strange! 
+                        // the project configuration is rather strange!
                         return ImmediateResult(method, Callable);
                 }
                 subtypes -= subtype
@@ -189,14 +186,18 @@ class CallableFromClassesInOtherPackagesAnalysis private (
     }
 }
 
-object CallableFromClassesInOtherPackagesAnalysis
-        extends FPCFAnalysisRunner[CallableFromClassesInOtherPackagesAnalysis] {
+object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
 
-    private[CallableFromClassesInOtherPackagesAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+    /**
+     * Selects all non-static and non-abstract methods.
+     */
+    final def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override protected[analysis] def derivedProperties = Set(CallableFromClassesInOtherPackages)
+    override def derivedProperties: Set[PropertyKind] = {
+        Set(CallableFromClassesInOtherPackages)
+    }
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new CallableFromClassesInOtherPackagesAnalysis(project)

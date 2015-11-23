@@ -70,8 +70,10 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
- * This analysis determines whether a method is pure (I.e., Whether the method
- * only operates on the given state.) This simple analysis only tries to compute the
+ * This analysis determines whether a method is pure. I.e., whether the method
+ * only operates on the given state or
+ * depends on other state/mutable global
+ * state. This simple analysis only tries to compute the
  * purity for methods that
  * only have parameters with a base type.
  *
@@ -84,7 +86,7 @@ class PurityAnalysis private (
 
     final val Purity = org.opalj.fpcf.analysis.Purity.key
 
-    final val Mutability = org.opalj.fpcf.analysis.Mutability.key
+    final val Mutability: org.opalj.fpcf.PropertyKey = org.opalj.fpcf.analysis.Mutability.key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
@@ -256,9 +258,9 @@ class PurityAnalysis private (
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
 
-        // Due to a lack of knowledge, we classify all native methods or methods loaded
-        // using a library class loader as impure...
-        if (method.body.isEmpty /*HERE: method.isNative*/ )
+        // Due to a lack of knowledge, we classify all native methods or methods that
+        // belong to a library (and hence lack the body) as impure...
+        if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
             return ImmediateResult(method, Impure);
 
         // We are currently only able to handle simple methods that just take
@@ -269,35 +271,25 @@ class PurityAnalysis private (
         val purity = determinePurityCont(method, 0, Set.empty)
         purity
     }
-
-    // FIXME Idea of method ordering, do we need this code?
-    //        // Ordering by size (implicit assumption: methods that are short don't call
-    //        // too many other methods...); this ordering is extremely efficient and simple.
-    //        val methodOrdering = new Ordering[Method] {
-    //            def compare(a: Method, b: Method): Int = {
-    //                val aBody = a.body
-    //                val bBody = b.body
-    //                val aSize = if (aBody.isEmpty) -1 else aBody.get.instructions.size
-    //                val bSize = if (bBody.isEmpty) -1 else bBody.get.instructions.size
-    //                bSize - aSize
-    //            }
-    //        }
-    //        projectStore <||~< (entitySelector, methodOrdering, determinePurity)
 }
 
-object PurityAnalysis extends FPCFAnalysisRunner[PurityAnalysis] {
+/**
+ *
+ */
+object PurityAnalysis extends FPCFAnalysisRunner {
 
-    private[PurityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract ⇒ m
+    final def entitySelector: PartialFunction[Entity, Method] = {
+        FPCFAnalysisRunner.NonAbstractMethodSelector
     }
+
+    override def recommendations: Set[FPCFAnalysisRunner] = Set(MutabilityAnalysis)
+
+    override def derivedProperties: Set[PropertyKind] = Set(Purity)
+
+    override def usedProperties: Set[PropertyKind] = Set(Mutability)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new PurityAnalysis(project, entitySelector)
     }
 
-    override def recommendations = Set(MutabilityAnalysis)
-
-    override protected[analysis] def derivedProperties = Set(Purity)
-
-    override protected[analysis] def usedProperties = Set(Mutability)
 }

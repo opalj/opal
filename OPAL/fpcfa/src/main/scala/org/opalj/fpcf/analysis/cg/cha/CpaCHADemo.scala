@@ -35,7 +35,7 @@ package cha
 import java.net.URL
 import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
+import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger

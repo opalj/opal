@@ -33,13 +33,14 @@ package analysis
 import org.opalj.br.Method
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.PropertyKind
 
 /**
  * Common supertrait of all factory method properties.
  */
 sealed trait FactoryMethod extends Property {
 
-    final def key = FactoryMethod.key
+    final def key: org.opalj.fpcf.PropertyKey = FactoryMethod.key
 
 }
 
@@ -55,18 +56,18 @@ object FactoryMethod extends PropertyMetaInformation {
      * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
      * all depended analyses.
      */
-    final val key = PropertyKey.create("FactoryMethod", IsFactoryMethod)
+    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("FactoryMethod", IsFactoryMethod)
 }
 
 /**
  * The respective method is a factory method.
  */
-case object IsFactoryMethod extends FactoryMethod { final val isRefineable = false }
+case object IsFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }
 
 /**
  * The respective method is not a factory method.
  */
-case object NotFactoryMethod extends FactoryMethod { final val isRefineable = false }
+case object NotFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }
 
 /**
  * This analysis identifies a project's factory methods.
@@ -152,13 +153,16 @@ class FactoryMethodAnalysis private (
 /**
  * Companion object for the [[FactoryMethodAnalysis]] class.
  */
-object FactoryMethodAnalysis extends FPCFAnalysisRunner[FactoryMethodAnalysis] {
+object FactoryMethodAnalysis extends FPCFAnalysisRunner {
 
-    private[FactoryMethodAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+    /**
+     * Selects all non-abstract static methods.
+     */
+    def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if m.isStatic && !m.isAbstract ⇒ m
     }
 
-    override def derivedProperties = Set(FactoryMethod)
+    def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new FactoryMethodAnalysis(project)

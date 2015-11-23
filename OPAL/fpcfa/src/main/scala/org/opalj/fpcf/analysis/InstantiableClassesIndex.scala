@@ -57,7 +57,6 @@ class InstantiableClassesIndex private (
         val project:         SomeProject,
         val notInstantiable: Set[ObjectType]
 ) {
-
     def isInstantiable(objectType: ObjectType): Boolean = !notInstantiable.contains(objectType)
 }
 
@@ -71,7 +70,7 @@ class InstantiableClassesIndex private (
 object InstantiableClassesIndex {
 
     def apply(project: SomeProject): InstantiableClassesIndex = {
-        val fpcfManager = project.get(FPCFAnalysisManagerKey)
+        val fpcfManager = project.get(FPCFAnalysesManagerKey)
         if (!fpcfManager.isDerived(Instantiability))
             fpcfManager.run(SimpleInstantiabilityAnalysis, true)
 

@@ -1,5 +1,4 @@
-/**
- * BSD 2-Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -30,39 +29,10 @@
 package org.opalj
 package fpcf
 package analysis
-package demo
 
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.Project
 
-/**
- * Simple factory that can create a new config by a given analysis mode. This is necessary
- * for test purposes because the analysis mode, which is configured in the configuration file,
- * has to be ignored to implement config file independent tests.
- */
-object AnalysisModeConfigFactory {
-
-    private[this] final val cpaConfig =
-        "org.opalj { analysisMode = \"library with closed packages assumption\"}"
-
-    private[this] final val opaConfig =
-        "org.opalj { analysisMode = \"library with open packages assumption\"}"
-
-    private[this] final val appConfig =
-        "org.opalj { analysisMode = \"Application\"}"
-
-    def createConfig(value: AnalysisMode): Config = {
-        value match {
-            case AnalysisModes.LibraryWithOpenPackagesAssumption   ⇒ ConfigFactory.parseString(opaConfig)
-            case AnalysisModes.LibraryWithClosedPackagesAssumption ⇒ ConfigFactory.parseString(cpaConfig)
-            case AnalysisModes.Application                         ⇒ ConfigFactory.parseString(appConfig)
-        }
-    }
-
-    def resetAnalysisMode(project: SomeProject, mode: AnalysisMode): SomeProject = {
-        val testConfig = AnalysisModeConfigFactory.createConfig(mode)
-        Project.recreate(project, testConfig)
-    }
-}
+abstract class DefaultFPCFAnalysis[T <: Entity](
+    project:        SomeProject,
+    entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
+) extends AbstractFPCFAnalysis[T](project, entitySelector)

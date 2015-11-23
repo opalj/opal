@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,13 +30,10 @@ package org.opalj
 package fpcf
 
 import org.opalj.fpcf.analysis._
+
 /**
- * The fixpoint analyses registry is a registry for all analyses that need
- * to be computed with the fixpoint framework because they depend on other analyses.
- *
- * All registered analyses does compute a [[org.opalj.fpcf.Property]] associated with
- * an [[org.opalj.fpcf.Entity]].
- * Instances for entities are, e.g.: ´classes´, ´methods´ or ´fields´.
+ * Registry for all factories for analyses that are implemented
+ * using the fixpoint computations framework.
  *
  * The registry was developed to support configuration purposes where the user/developer
  * choose between different domains.
@@ -52,85 +49,78 @@ import org.opalj.fpcf.analysis._
  */
 object FPCFAnalysisRegistry {
 
-    private[this] var descriptions: Map[String, _ <: FPCFAnalysisRunner[_]] = Map.empty
-    private[this] var theRegistry: Set[FPCFAnalysisRunner[_]] = Set.empty
+    private[this] var descriptions: Map[String, FPCFAnalysisRunner] = Map.empty
+    private[this] var theRegistry: Set[FPCFAnalysisRunner] = Set.empty
 
     /**
-     * Register a new fixpoint analysis that can be used to compute a property of an specific entity.
+     * Registers the factory for a fixpoint analysis that can be
+     * used to compute a specific (set of) property(ies).
      *
-     * @param analysisDescription A short description of the properties that the analysis computes; in
-     *     particular w.r.t. a specific set of entities.
-     * @param analysisClass The object of the analysis.
+     * @param analysisDescription A short description of the properties that the
+     * 		analysis computes; in  particular w.r.t. a specific set of entities.
+     * @param analysisClass The factory.
      */
-    def register[FA <: FPCFAnalysisRunner[_]](
+    def register(
         analysisDescription: String,
-        analysisClass:       FA
+        analysisFactory:     FPCFAnalysisRunner
     ): Unit = {
         this.synchronized {
-            descriptions += ((analysisDescription, analysisClass))
-            theRegistry += analysisClass
+            descriptions += ((analysisDescription, analysisFactory))
+            theRegistry += analysisFactory
         }
-
     }
 
     /**
-     * Returns an `Iterable` to make it possible to iterate over the descriptions of
-     * the analysis. Useful to show the (end-users) some meaningful descriptions.
+     * Returns the descriptions of the registered analyses. These descriptions are
+     * expected to be useful to the end-users.
      */
     def analysisDescriptions(): Iterable[String] = this.synchronized { descriptions.keys }
 
     /**
      * Returns the current view of the registry.
      */
-    def registry: Set[FPCFAnalysisRunner[_]] = this.synchronized { theRegistry }
+    def registry: Set[FPCFAnalysisRunner] = this.synchronized { theRegistry }
 
     /**
-     * Return the FPCFAnalysisRunner object that can be used to analyze a project later on.
-     *
-     * @note This registry does only support scala `object`s. Fixpoint analyses implemented in an class
-     * are currently not (directly) supported by the registry.
+     * Returns the factory for analysis with a matching description.
      */
-    def newFixpointAnalysis(
+    def getFixpointAnalysisFactory(
         analysisDescripition: String
-    ): FPCFAnalysisRunner[_] = {
-        this.synchronized {
-            descriptions(analysisDescripition)
-        }
-    }
+    ): FPCFAnalysisRunner = this.synchronized { descriptions(analysisDescripition) }
 
     // initialize the registry with the known default analyses
     register(
-        "[MethodAccessibilityAnalysis] An analysis which computes the project accessibility property of methods w.r.t. clients.",
+        "[MethodAccessibilityAnalysis] Computes the project accessibility property of methods w.r.t. clients.",
         MethodAccessibilityAnalysis
     )
 
     register(
-        "[FactoryMethodAnalysis] An analysis which determines if a static method is an accessible factory method w.r.t. clients.",
+        "[FactoryMethodAnalysis] Determines if a static method is an accessible factory method w.r.t. clients.",
         FactoryMethodAnalysis
     )
 
     register(
-        "[InstantiabilityAnalysis] An analysis which computes if a class can (possibly) be instantiated.",
+        "[InstantiabilityAnalysis] Computes if a class can (possibly) be instantiated.",
         SimpleInstantiabilityAnalysis
     )
 
     register(
-        "[CallableFromClassesInOtherPackagesAnalysis] An analysis which computes whether a non-static method can be called via an super or subclass.",
+        "[CallableFromClassesInOtherPackagesAnalysis] Computes whether a non-static method can be called via an super or subclass.",
         CallableFromClassesInOtherPackagesAnalysis
     )
 
     register(
-        "[EntryPointAnalysis] An analysis which computes the entry points of a library/application.",
+        "[EntryPointAnalysis] Computes the entry points of a library/application.",
         EntryPointsAnalysis
     )
 
     register(
-        "[MutabilityAnalysis] An analysis which determines if private non-static non-final fields are effectively final.",
+        "[MutabilityAnalysis] Determines if private non-static non-final fields are effectively final.",
         MutabilityAnalysis
     )
 
     register(
-        "[PurityAnalysis] An analysis which determines if a method is pure (~ has no side effects).",
+        "[PurityAnalysis] Determines if a method is pure (~ has no side effects).",
         PurityAnalysis
     )
 }

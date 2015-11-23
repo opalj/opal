@@ -1,4 +1,5 @@
-/* BSD 2-Clause License:
+/**
+ * BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -27,24 +28,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analysis
+package br
+package analyses
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyStore
+import org.opalj.AnalysisModes._
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
 
 /**
- * see [[org.opalj.fpcf.PropertyStore#execute]] for details regarding `groupBy`.
- *
- * @author Michael Reif
+ * Simple factory that can create a new config by a given analysis mode. This is necessary
+ * for test purposes because the analysis mode, which is configured in the configuration file,
+ * has to be ignored to implement config file independent tests.
  */
-abstract class AbstractGroupedFPCFAnalysis[K, E <: Entity](
-        val project:        SomeProject,
-        val groupBy:        E ⇒ K,
-        val entitySelector: PartialFunction[Entity, E] = PropertyStore.entitySelector()
-) extends FPCFAnalysis {
+object AnalysisModeConfigFactory {
 
-    def determineProperty(key: K, entities: Seq[E]): Traversable[EP]
+    private[this] final def createConfig(mode: String) = {
+        s"""org.opalj { analysisMode = "$mode""""
+    }
 
-    propertyStore.execute(entitySelector, groupBy)(determineProperty)
+    private[this] final val cpaConfig: String = {
+        createConfig("library with closed packages assumption")
+    }
+
+    private[this] final val opaConfig: String = {
+        createConfig("library with open packages assumption")
+    }
+
+    private[this] final val appConfig: String = {
+        createConfig("Application")
+    }
+
+    def createConfig(value: AnalysisMode): Config = {
+        ConfigFactory.parseString(
+            value match {
+                case LibraryWithOpenPackagesAssumption   ⇒ opaConfig
+                case LibraryWithClosedPackagesAssumption ⇒ cpaConfig
+                case Application                         ⇒ appConfig
+            }
+        )
+    }
+
+    def resetAnalysisMode(project: SomeProject, mode: AnalysisMode): SomeProject = {
+        val testConfig = AnalysisModeConfigFactory.createConfig(mode)
+        Project.recreate(project, testConfig)
+    }
 }

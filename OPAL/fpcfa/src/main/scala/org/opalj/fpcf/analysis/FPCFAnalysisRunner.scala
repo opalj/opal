@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,19 +30,44 @@ package org.opalj
 package fpcf
 package analysis
 
+import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 
 /**
- * The results of the analysis which the `FPCFAnalysisRunner` object run are saved
- * within the [[PropertyStore]] of the Project.
+ * Provides the generic infrastructure that is implemented by all factories for
+ * FPCF analyses.
+ * Analyses that are created sing this
+ * factory will then be run using the [[PropertyStore]].
+ * I.e., this trait is typically implemented by the singleton object that facilitates
+ * the creation of analyses.
+ * @example
+ * {{{
+ * }}}
+ *
+ * @note It is possible to use an analysis that directly uses the property store and
+ * 		an analysis that uses this factory infrastructure at the same time.
  *
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
+trait FPCFAnalysisRunner {
 
+    /**
+     * The unique id of this factory.
+     *
+     * Every factory for a specific analysis is automatically associated with a unique id.
+     */
     final val uniqueId: Int = FPCFAnalysisRunner.nextId
 
+    /**
+     * Returns a short descriptive name of the analysis for which this is the factory.
+     *
+     * The default name is the name of this class.
+     *
+     * '''This method should be overridden.'''
+     */
     def name: String = {
         val nameCandidate = this.getClass.getSimpleName
         if (nameCandidate.endsWith("$"))
@@ -55,20 +80,24 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * Returns the information which other analyses strictly need to be executed
      * before this analysis can be performed.
      *
-     * @note A analysis has only to be added to the requirements if and only if this analysis
-     * depends on the computed property of the analysis and the property key has no fallback
-     * such that it is only available if the regarding analysis is executed.
+     * @note
+     * 		An analysis should be listed as a requirement if and only if the analysis
+     * 		strictly depends on the computed property of the analysis and the property
+     * 		has no fallback (which is generally not the case!).
+     * 		If no strict requirements are defined then this analysis can be run even
+     * 		if no other analyses are executed. This provides the end user more leeway
+     * 		in specifying the analyses that should be analyzed.
      */
-    def requirements: Set[FPCFAnalysisRunner[_]] = Set.empty
+    def requirements: Set[FPCFAnalysisRunner] = Set.empty
 
     /**
-     * Returns the information which analyses should be executed to achieve
-     * the most precise analysis result.
+     * Returns the information which kind of analyses should be executed to achieve
+     * more precise analysis results.
      *
-     * This set should include all analyses that are required for the most precise result.
-     * Transitively used analyses also should been added here since more than one analysis
-     * could depend on the same property. In this case it has to be specified which analysis is
-     * recommended to derive the properties of this analysis.
+     * This set should include all analyses that are required to get the most precise
+     * result.
+     * FIXME Transitively used analyses also should be added here since more than one analysis
+     * could depend on the same property.
      *
      * Real requirements of the analysis should be added to the requirements definition. The set for
      * recommendations should be disjunct to the requirements set.
@@ -77,7 +106,7 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
      * result. If the set of recommendations is not empty, you may lose precision for every analysis
      * that is not executed in parallel.
      */
-    def recommendations: Set[FPCFAnalysisRunner[_]] = Set.empty
+    def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
     /**
      * Returns a set of integers that contains the id of every [[Property]] or [[SetProperty]] that is derived by
@@ -103,24 +132,31 @@ trait FPCFAnalysisRunner[T <: FPCFAnalysis] {
     protected[analysis] def usedProperties: Set[PropertyKind] = Set.empty
 
     /**
-     * Starts the analysis for the given `project`.
-     *
-     * @note This method is abstract and has to be overridden in any subclass.
+     * Starts the analysis for the given `project`. This method is typically implicitly
+     * called by the [[FPCFAnalysesManager]].
      */
     protected[analysis] def start(project: SomeProject): Unit
 }
 
 /**
- *
- * Companion object of FPCFAnalysisRunner.
+ * Companion object of FPCFAnalysisRunner that defines common helper functions and
+ * values.
  *
  * @author Michael Reif
  */
-private object FPCFAnalysisRunner {
+object FPCFAnalysisRunner {
 
-    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
+    private[this] val idGenerator: AtomicInteger = new AtomicInteger(0)
 
-    private[FPCFAnalysisRunner] def nextId: Int = {
-        idGenerator.getAndIncrement()
+    private[FPCFAnalysisRunner] def nextId: Int = idGenerator.getAndIncrement()
+
+    final val ClassFileSelector: PartialFunction[Entity, ClassFile] = {
+        case cf: ClassFile ⇒ cf
+    }
+
+    final val MethodSelector: PartialFunction[Entity, Method] = { case m: Method ⇒ m }
+
+    final val NonAbstractMethodSelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract ⇒ m
     }
 }

@@ -39,6 +39,7 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.Warn
 import org.opalj.fpcf.analysis.cg.CallGraphFactory
+import org.opalj.br.analyses.AnalysisModeConfigFactory
 
 /**
  * @author Michael Reif
@@ -69,7 +70,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         /* CPA */
 
         val cpaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.CPA)
-        val cpaExecuter = cpaProject.get(FPCFAnalysisManagerKey)
+        val cpaExecuter = cpaProject.get(FPCFAnalysesManagerKey)
 
         var analysisTimeCPA = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
@@ -87,7 +88,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         /* OPA */
 
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
-        val opaExecuter = opaProject.get(FPCFAnalysisManagerKey)
+        val opaExecuter = opaProject.get(FPCFAnalysesManagerKey)
 
         var analysisTimeOPA = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {

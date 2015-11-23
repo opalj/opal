@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,50 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package fpcf
+package analysis
 
-/**
- * Enumeration of the modes used by the subsequent analyses.
- *
- * @author Michael Eichberg
- */
-object AnalysisModes extends Enumeration {
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
-    /**
-     * This mode is to be used if a library is analyzed and the assumption is made
-     * that other developers do not add classes/contribute to the packages of the
-     * analyzed library and, hence, do not make direct use of package-visible functionality.
-     *
-     * It is recommended to use this mode when analyzing a library w.r.t. general
-     * programming errors.
-     */
-    final val LibraryWithClosedPackagesAssumption =
-        Value("library with closed packages assumption")
-
-    final val CPA = LibraryWithClosedPackagesAssumption
+abstract class AbstractFPCFAnalysis[T <: Entity](
+        val project:        SomeProject,
+        val entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
+) extends FPCFAnalysis {
 
     /**
-     * This mode is to be used if a library is analyzed and the assumption is made
-     * that other developers may by purpose/accidentally add classes to this
-     * package and, hence, may make direct use of package-visible functionality.
+     * Implements the analysis.
      *
-     * It is recommended to use this mode when analyzing a library w.r.t. security
-     * issues.
+     * @note This method has to be thread-safe. It will generally be executed
+     * 		concurrently for all selected entities.
+     *
+     * @param entity The entity which should be analyzed.
+     * @return The result of analyzing the given entity.
      */
-    final val LibraryWithOpenPackagesAssumption =
-        Value("library with open packages assumption")
+    def determineProperty(entity: T): PropertyComputationResult
 
-    final val OPA = LibraryWithOpenPackagesAssumption
-
-    final val Application = Value("Application")
-
-    final val APP = Application
-}
-
-/**
- * Common constants related to the analysis mode.
- *
- * @note The package defines the type `AnalysisMode`.
- */
-object AnalysisMode {
-    final val ConfigKey = "org.opalj.analysisMode"
+    // immediately adds this analysis to the PropertyStore
+    propertyStore <||< (entitySelector, determineProperty)
 }

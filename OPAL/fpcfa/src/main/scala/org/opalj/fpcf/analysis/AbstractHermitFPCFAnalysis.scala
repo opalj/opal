@@ -30,22 +30,21 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.SomeProject
 
 /**
+ * An analysis that is conceptually (not technically!) executed in parallel,
+ * but in isolation w.r.t. all other analyses. It cannot interact with other analyses.
  *
  * @author Michael Reif
+ * @author Michael Eichberg
  */
-abstract class AbstractLinearFPCFAnalysis[T <: Entity](
-    val project:        SomeProject,
-    val entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
-)
-        extends FPCFAnalysis {
+abstract class AbstractHermitFPCFAnalysis[T <: Entity](
+        val project:        SomeProject,
+        val entitySelector: PartialFunction[Entity, T] = PropertyStore.entitySelector()
+) extends FPCFAnalysis {
 
     def determineProperty(entity: T): Traversable[EP]
 
-    implicit val propertyStore = project.get(SourceElementsPropertyStoreKey)
-
-    propertyStore.execute(entitySelector)(entity ⇒
-        determineProperty(entity))
+    propertyStore.execute(entitySelector)(determineProperty)
 }

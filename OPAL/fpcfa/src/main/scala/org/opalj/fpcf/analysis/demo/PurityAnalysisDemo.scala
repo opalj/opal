@@ -63,7 +63,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
 
-        val manager = project.get(FPCFAnalysisManagerKey)
+        val manager = project.get(FPCFAnalysesManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
@@ -103,4 +103,3 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(fieldInfo + methodInfo + projectStore+"\nAnalysis time: "+analysisTime)
     }
 }
-

@@ -34,13 +34,13 @@ package cha
 
 import java.net.URL
 import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
 import org.opalj.br.Method
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.AnalysisModeConfigFactory
 
 object CHADemo extends DefaultOneStepAnalysis {
 
@@ -142,7 +142,7 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         val callSiteInfo = true
         if (callSiteInfo) {
-            // 0 = virtual, 1 = interface, 2 = special, 3 = static 
+            // 0 = virtual, 1 = interface, 2 = special, 3 = static
             val map = scala.collection.mutable.Map[Int, Int](0 → 0, 1 → 0, 2 → 0, 3 → 4)
             def incCallNum(callType: Int): Unit = {
                 map.get(callType) match {

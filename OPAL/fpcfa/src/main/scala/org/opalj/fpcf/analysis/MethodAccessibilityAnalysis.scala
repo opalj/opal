@@ -38,20 +38,20 @@ import scala.collection.mutable.ListBuffer
  * @author Michael Reif
  */
 sealed trait ProjectAccessibility extends Property {
-    final def key = ProjectAccessibility.key
+    final def key: org.opalj.fpcf.PropertyKey = ProjectAccessibility.key
 }
 
 object ProjectAccessibility extends PropertyMetaInformation {
 
-    final val key = PropertyKey.create("Accessible", Global)
+    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("Accessible", Global)
 
 }
 
-case object Global extends ProjectAccessibility { final val isRefineable = false }
+case object Global extends ProjectAccessibility { final val isRefineable: Boolean = false }
 
-case object PackageLocal extends ProjectAccessibility { final val isRefineable = false }
+case object PackageLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
 
-case object ClassLocal extends ProjectAccessibility { final val isRefineable = false }
+case object ClassLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
 
 /**
  *
@@ -59,13 +59,9 @@ case object ClassLocal extends ProjectAccessibility { final val isRefineable = f
  * @author Michael Reif
  */
 class MethodAccessibilityAnalysis private[analysis] (
-    project:        SomeProject,
-    entitySelector: PartialFunction[Entity, Method] = MethodAccessibilityAnalysis.entitySelector
-)
-        extends DefaultFPCFAnalysis[Method](
-            project,
-            MethodAccessibilityAnalysis.entitySelector
-        ) {
+        project:        SomeProject,
+        entitySelector: PartialFunction[Entity, Method] = MethodAccessibilityAnalysis.entitySelector
+) extends DefaultFPCFAnalysis[Method](project, entitySelector) {
 
     override def determineProperty(method: Method): PropertyComputationResult = {
         if (method.isPrivate)
@@ -114,7 +110,7 @@ class MethodAccessibilityAnalysis private[analysis] (
                 // we need to continue our search for a class that makes the method visible
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
-                    // the project configuration is rather strange! 
+                    // the project configuration is rather strange!
                     return ImmediateResult(method, Global);
             }
             subtypes -= subtype
@@ -156,42 +152,54 @@ class MethodAccessibilityAnalysis private[analysis] (
 /**
  * Companion object for the [[MethodAccessibilityAnalysis]] class.
  */
-object MethodAccessibilityAnalysis
-        extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
+object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
     private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.key
 
-    private[MethodAccessibilityAnalysis] def entitySelector: PartialFunction[Entity, Method] = {
+    def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
-    protected[analysis] def start(project: SomeProject): Unit = {
+    override protected[analysis] def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project)
     }
 
-    override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
+    override def recommendations: Set[FPCFAnalysisRunner] = {
+        Set(CallableFromClassesInOtherPackagesAnalysis)
+    }
 
-    override protected[analysis] def derivedProperties = Set(ProjectAccessibility)
+    override def derivedProperties: Set[PropertyKind] = {
+        Set(ProjectAccessibility)
+    }
 
-    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages)
+    override def usedProperties: Set[PropertyKind] = {
+        Set(CallableFromClassesInOtherPackages)
+    }
 }
 
 /**
  * Companion object for the [[StaticMethodAccessibilityAnalysis]] class.
  */
-object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner[MethodAccessibilityAnalysis] {
+object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
 
-    private[this] def entitySelector: PartialFunction[Entity, Method] = {
+    final def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if m.isStatic && !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
+    }
+
+    override def recommendations: Set[FPCFAnalysisRunner] = {
+        Set(CallableFromClassesInOtherPackagesAnalysis)
+    }
+
+    override def derivedProperties: Set[PropertyKind] = {
+        Set(ProjectAccessibility)
+    }
+
+    override def usedProperties: Set[PropertyKind] = {
+        Set(CallableFromClassesInOtherPackages)
     }
 
     protected[analysis] def start(project: SomeProject): Unit = {
         new MethodAccessibilityAnalysis(project, entitySelector)
     }
 
-    override def recommendations = Set(CallableFromClassesInOtherPackagesAnalysis)
-
-    override protected[analysis] def derivedProperties = Set(ProjectAccessibility)
-
-    override protected[analysis] def usedProperties = Set(CallableFromClassesInOtherPackages)
 }

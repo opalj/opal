@@ -48,6 +48,7 @@ import scala.concurrent.duration.Duration
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
@@ -124,7 +125,8 @@ class Project[Source] private (
     val libraryMethodsCount:                          Int,
     val libraryFieldsCount:                           Int,
     val codeSize:                                     Long,
-    val classHierarchy:                               ClassHierarchy
+    val classHierarchy:                               ClassHierarchy,
+    val analysisMode:                                 AnalysisMode
 )(
     implicit
     val logContext:      LogContext,
@@ -959,7 +961,8 @@ object Project {
                 libraryMethodsCount,
                 libraryFieldsCount,
                 codeSize,
-                Await.result(classHierarchyFuture, Duration.Inf)
+                Await.result(classHierarchyFuture, Duration.Inf),
+                AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey))
             )
         } catch {
             case t: Throwable ⇒

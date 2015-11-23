@@ -60,7 +60,7 @@ object FactoryAnalysisDemo extends MethodAnalysisDemo {
         // ShadowingAnalysis.analyze(project)
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        val executer = project.get(FPCFAnalysisManagerKey)
+        val executer = project.get(FPCFAnalysesManagerKey)
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
