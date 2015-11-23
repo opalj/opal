@@ -103,13 +103,20 @@ trait AnalysisExecutor {
      * the set of specified parameters is not valid.
      */
     protected def printUsage(): Unit = {
-        println("Usage: java "+
-            this.getClass().getName()+"\n"+
-            "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
-            "[-libcp=<Directories or JAR/class files>]\n"+
-            analysisSpecificParametersDescription)
-        println(analysis.description)
-        println(analysis.copyright)
+        OPALLogger.info(
+            "usage",
+            "java "+
+                this.getClass().getName()+"\n"+
+                "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
+                "[-libcp=<Directories or JAR/class files>]\n"+
+                analysisSpecificParametersDescription
+        )(GlobalLogContext)
+        OPALLogger.info(
+            "info", "description: "+analysis.description
+        )(GlobalLogContext)
+        OPALLogger.info(
+            "info", "copyright: "+analysis.copyright
+        )(GlobalLogContext)
     }
 
     def main(unparsedArgs: Array[String]): Unit = {
@@ -129,7 +136,7 @@ trait AnalysisExecutor {
                 unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
             ).toArray
 
-        if (args.contains("-help")) {
+        if (args.contains("-help") || args.length < unparsedArgs.length) {
             printUsage()
             sys.exit(0)
         }
@@ -180,7 +187,9 @@ trait AnalysisExecutor {
                     (cpParams.map(splitCPath).flatten, notCPArgs)
             }
         }
-        println(s"[info] The classpath is ${cp.mkString}")
+        OPALLogger.info(
+            "setup", s"the classpath is ${cp.mkString}"
+        )(GlobalLogContext)
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
@@ -202,6 +211,10 @@ trait AnalysisExecutor {
         }
         val libcpFiles = verifyFiles(libcp)
 
+        OPALLogger.info(
+            "setup",
+            "analysis specific paramters: "+args2.mkString(",")
+        )(GlobalLogContext)
         val issues = checkAnalysisSpecificParameters(args2)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ println(Console.RED+"[error] "+Console.RESET + i) }
@@ -225,7 +238,7 @@ trait AnalysisExecutor {
         //
         // 3. execute analysis
         //
-        println("[info] Executing analysis: "+analysis.title+".")
+        println("[info] executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
         println(result.consoleReport)
