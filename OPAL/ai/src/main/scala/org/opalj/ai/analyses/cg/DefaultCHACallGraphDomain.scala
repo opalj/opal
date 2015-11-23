@@ -56,10 +56,11 @@ import domain.l0
  * @author Michael Eichberg
  */
 class DefaultCHACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    val project:   Project[Source],
+    val cache:     CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

@@ -56,7 +56,8 @@ class TestProtectedFieldInFinalClass extends AnalysisTest {
             declaringClass,
             Some(IntegerType),
             "i",
-            "Protected field in final class"))
+            "Protected field in final class"
+        ))
     }
 
     it should "find 1 issue in total" in {

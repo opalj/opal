@@ -118,7 +118,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 evps collectFirst {
                     case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒
                         isReflective
-                }).getOrElse(false)
+                }
+            ).getOrElse(false)
 
         val isContainedIn =
             (
@@ -130,7 +131,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                             case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "BasicVTA"))   ⇒ CallGraphAlgorithm.BasicVTA
                             case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "ExtVTA"))     ⇒ CallGraphAlgorithm.ExtVTA
                         }
-                })
+                }
+            )
 
         val receiverClassIsUnknown = !project.classFile(receiver).isDefined
         val algorithmSpecified = isContainedIn != None
@@ -230,14 +232,17 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         val evps = annotation.elementValuePairs
         val Some(receiver) =
             evps collectFirst (
-                { case ElementValuePair("receiverType", StringValue(receiver)) ⇒ ObjectType(receiver) })
+                { case ElementValuePair("receiverType", StringValue(receiver)) ⇒ ObjectType(receiver) }
+            )
         val Some(lineNumber) =
             evps collectFirst (
-                { case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber })
+                { case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber }
+            )
 
         val isReflective: Boolean =
             (evps collectFirst (
-                { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })).getOrElse(false)
+                { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective }
+            )).getOrElse(false)
 
         val receiverClassIsUnknown = !project.classFile(receiver).isDefined
 
@@ -365,10 +370,12 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 } foreach { invokedConstructorsAnnotation ⇒
                     val Some(annotationArray) =
                         invokedConstructorsAnnotation.elementValuePairs collectFirst (
-                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array })
+                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
+                        )
                     val annotations =
                         annotationArray collect (
-                            { case AnnotationValue(annotation) ⇒ annotation })
+                            { case AnnotationValue(annotation) ⇒ annotation }
+                        )
                     annotations foreach (singleConstructorTest(method, _))
                 }
 
@@ -383,10 +390,12 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 } foreach { accessedFieldsAnnotation ⇒
                     val Some(annotationArray) =
                         accessedFieldsAnnotation.elementValuePairs collectFirst (
-                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array })
+                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
+                        )
                     val annotations =
                         annotationArray collect (
-                            { case AnnotationValue(annotation) ⇒ annotation })
+                            { case AnnotationValue(annotation) ⇒ annotation }
+                        )
                     annotations foreach (singleFieldAccessTest(method, _))
                 }
             }

@@ -60,9 +60,10 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
             "Prints information about loads of method handles and types."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
 
             val loads =
                 for {

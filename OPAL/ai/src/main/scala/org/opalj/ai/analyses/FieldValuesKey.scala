@@ -59,7 +59,8 @@ object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
 
         OPALLogger.info(
             "progress",
-            "computing field value information")
+            "computing field value information"
+        )
 
         val result = FieldValuesAnalysis.doAnalyze(
             project,
@@ -69,7 +70,8 @@ object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
 
         OPALLogger.info(
             "progress",
-            s"computed the field value information; refined the type of ${result.size} fields")
+            s"computed the field value information; refined the type of ${result.size} fields"
+        )
 
         result
     }

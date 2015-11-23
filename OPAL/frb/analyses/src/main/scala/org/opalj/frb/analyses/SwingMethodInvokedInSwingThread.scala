@@ -64,9 +64,10 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         // Look for INVOKEVIRTUAL calls to show/pack/setVisible() methods on javax/swing/
         // objects from inside public static main() or methods containing "benchmark" in
@@ -94,7 +95,8 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
                 classFile.thisType,
                 method.descriptor,
                 method.name,
-                "Calls Swing methods while outside Swing thread")
+                "Calls Swing methods while outside Swing thread"
+            )
         }
     }
 }

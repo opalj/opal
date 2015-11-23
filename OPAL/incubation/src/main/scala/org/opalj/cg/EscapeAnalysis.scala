@@ -104,8 +104,11 @@ object EscapeAnalysis {
      * their self reference.
      */
     private[this] def determineSelfReferenceLeakageContinuation(
-        classFile: ClassFile)(
-            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project: SomeProject, store: PropertyStore
+    ): PropertyComputationResult = {
 
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
@@ -173,8 +176,11 @@ object EscapeAnalysis {
     }
 
     def determineSelfReferenceLeakage(
-        classFile: ClassFile)(
-            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project: SomeProject, store: PropertyStore
+    ): PropertyComputationResult = {
 
         if (classFile.thisType eq ObjectType.Object)
             return ImmediateResult(classFile, DoesNotLeakSelfReference);
@@ -190,12 +196,13 @@ object EscapeAnalysis {
 
         store.allHaveProperty(
             /*depender*/ classFile, SelfReferenceLeakage,
-            /*dependees*/ superClassFiles, DoesNotLeakSelfReference) { haveProperty ⇒
-                if (haveProperty)
-                    determineSelfReferenceLeakageContinuation(classFile)
-                else
-                    ImmediateResult(classFile, LeaksSelfReference);
-            }
+            /*dependees*/ superClassFiles, DoesNotLeakSelfReference
+        ) { haveProperty ⇒
+            if (haveProperty)
+                determineSelfReferenceLeakageContinuation(classFile)
+            else
+                ImmediateResult(classFile, LeaksSelfReference);
+        }
     }
 
     def analyze(implicit project: Project[URL]): Unit = {

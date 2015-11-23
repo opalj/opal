@@ -44,38 +44,43 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
-        pc: PC,
-        declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
-        name: String,
+        pc:               PC,
+        declaringClass:   ReferenceType, // e.g., Array[] x = ...; x.clone()
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult
+        operands:         Operands
+    ): MethodCallResult
 
     def invokeinterface(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult
+        operands:         Operands
+    ): MethodCallResult
 
     def invokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult
+        operands:         Operands
+    ): MethodCallResult
 
     def invokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult
+        operands:         Operands
+    ): MethodCallResult
 
     def invokedynamic(
-        pc: PC,
-        bootstrapMethod: BootstrapMethod,
-        name: String,
+        pc:               PC,
+        bootstrapMethod:  BootstrapMethod,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult
+        operands:         Operands
+    ): MethodCallResult
 
 }

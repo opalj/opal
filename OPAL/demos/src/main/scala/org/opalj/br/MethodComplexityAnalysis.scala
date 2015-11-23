@@ -51,15 +51,16 @@ object MethodComplexityAnalysis
     override def description: String = "Estimates the complexity of interpreting the method."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         var executionTime = Nanoseconds.None
 
         val analysisResults = time {
 
-            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
+            import org.opalj.br.analyses.{MethodComplexityAnalysis ⇒ TheAnalysis}
             TheAnalysis.doAnalyze(project, 100, isInterrupted)
 
         } { t ⇒ executionTime += t }

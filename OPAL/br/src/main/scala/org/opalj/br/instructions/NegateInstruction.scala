@@ -44,9 +44,10 @@ abstract class NegateInstruction
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def operator: String = "-"

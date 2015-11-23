@@ -98,9 +98,12 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
         }
 
     @inline final override def longValue[T](
-        value: DomainValue)(
-            ifThen: Long ⇒ T)(
-                orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        ifThen: Long ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T =
         value match {
             case v: TheLongValue ⇒ ifThen(v.value)
             case _               ⇒ orElse
@@ -108,9 +111,12 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
 
     @inline protected final def longValues[T](
         value1: DomainValue,
-        value2: DomainValue)(
-            ifThen: (Long, Long) ⇒ T)(
-                orElse: ⇒ T): T = {
+        value2: DomainValue
+    )(
+        ifThen: (Long, Long) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T = {
         longValue(value1) { v1 ⇒
             longValue(value2) { v2 ⇒
                 ifThen(v1, v2)
@@ -187,9 +193,10 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     override def ldiv(
-        pc: PC,
-        numerator: DomainValue,
-        denominator: DomainValue): LongValueOrArithmeticException = {
+        pc:          PC,
+        numerator:   DomainValue,
+        denominator: DomainValue
+    ): LongValueOrArithmeticException = {
 
         (numerator, denominator) match {
 
@@ -209,16 +216,18 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(LongValue(origin = pc))
         }
     }
 
     override def lrem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): LongValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): LongValueOrArithmeticException = {
         (left, right) match {
 
             case (TheLongValue(n), TheLongValue(d)) ⇒
@@ -237,7 +246,8 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(LongValue(origin = pc))
         }

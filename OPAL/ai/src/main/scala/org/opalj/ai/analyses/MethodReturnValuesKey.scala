@@ -61,13 +61,15 @@ object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInfo
             () ⇒ false, // make it configurable
             (ai: InterruptableAI[Domain], method: Method) ⇒
                 new BaseMethodReturnValuesAnalysisDomain(
-                    project, fieldValueInformation, ai, method)
+                    project, fieldValueInformation, ai, method
+                )
         )
 
         OPALLogger.info(
             "progress",
             "computed the method return value information; "+
-                s"refined the return type of ${result.size} methods")
+                s"refined the return type of ${result.size} methods"
+        )
         result
     }
 }

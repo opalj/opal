@@ -46,9 +46,10 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
         "Collects basic size metrics about a project."
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         // the following is highly inefficient
 

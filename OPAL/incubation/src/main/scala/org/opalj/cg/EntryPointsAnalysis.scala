@@ -64,9 +64,12 @@ object EntryPointsAnalysis {
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineEntryPoints(
-        method: Method)(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project:      SomeProject,
+        projectStore: PropertyStore
+    ): PropertyComputationResult = {
 
         //import project.classHierarchy.isSubtypeOf
 

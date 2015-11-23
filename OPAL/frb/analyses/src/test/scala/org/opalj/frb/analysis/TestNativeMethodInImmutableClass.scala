@@ -47,13 +47,15 @@ class TestNativeMethodInImmutableClass extends AnalysisTest {
     behavior of "NativeMethodInImmutableClass"
 
     val project = createProject(
-        Seq("JCIPAnnotations.jar", "NativeMethodInImmutableClass.jar"))
+        Seq("JCIPAnnotations.jar", "NativeMethodInImmutableClass.jar")
+    )
     val results = new NativeMethodInImmutableClass[URL].analyze(project).toSet
 
     it should "detect that JCIPAnnotatedWithNativeMethod contains native method "+
         "changeFoo" in {
             val declaringClass = ObjectType(
-                "NativeMethodInImmutableClass/JCIPAnnotatedWithNativeMethod")
+                "NativeMethodInImmutableClass/JCIPAnnotatedWithNativeMethod"
+            )
             results should contain(
                 MethodBasedReport(
                     project.source(declaringClass),
@@ -61,7 +63,9 @@ class TestNativeMethodInImmutableClass extends AnalysisTest {
                     declaringClass,
                     MethodDescriptor.apply(IntegerType, VoidType),
                     "changeFoo",
-                    "is a native method in an immutable class."))
+                    "is a native method in an immutable class."
+                )
+            )
         }
 
     it should "detect 1 issue in total" in {

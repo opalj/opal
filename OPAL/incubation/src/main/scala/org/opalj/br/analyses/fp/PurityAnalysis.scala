@@ -66,7 +66,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.fp.{ Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey }
+import org.opalj.fp.{Entity, Property, PropertyComputationResult, PropertyStore, PropertyKey}
 import org.opalj.fp.EOptionP
 import org.opalj.fp.EP
 import org.opalj.fp.EPK
@@ -98,11 +98,14 @@ object PurityAnalysis {
      * This function encapsulates the continuation.
      */
     private def determinePurityCont(
-        method: Method,
-        pc: PC,
-        dependees: Set[EOptionP])(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+        method:    Method,
+        pc:        PC,
+        dependees: Set[EOptionP]
+    )(
+        implicit
+        project:      SomeProject,
+        projectStore: PropertyStore
+    ): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
         val methodDescriptor = method.descriptor
@@ -160,7 +163,8 @@ object PurityAnalysis {
                                 declaringClassType.asObjectType /* this is safe...*/ ,
                                 methodName,
                                 methodDescriptor,
-                                project)
+                                project
+                            )
                         calleeOpt match {
                             case None ⇒
                                 // We know nothing about the target method (it is not
@@ -257,8 +261,11 @@ object PurityAnalysis {
      * Determines the purity of the given method.
      */
     def determinePurity(
-        method: Method)(
-            implicit project: SomeProject, store: PropertyStore): PropertyComputationResult = {
+        method: Method
+    )(
+        implicit
+        project: SomeProject, store: PropertyStore
+    ): PropertyComputationResult = {
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;

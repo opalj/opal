@@ -112,15 +112,18 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
 
     private def getMethods(
-        theClass: ObjectType,
-        repository: ClassFileRepository): Iterable[(ObjectType, Method)] =
+        theClass:   ObjectType,
+        repository: ClassFileRepository
+    ): Iterable[(ObjectType, Method)] =
         repository.classFile(theClass).map { cf ⇒
             cf.methods.map((theClass, _))
         }.getOrElse(Iterable.empty)
 
     private def checkAndReturnMethod(
-        classFile: ClassFile)(
-            filter: Method ⇒ Boolean): Method = {
+        classFile: ClassFile
+    )(
+        filter: Method ⇒ Boolean
+    ): Method = {
         val methods = classFile.methods.filter(filter)
         methods should have size (1)
         val method = methods.head
@@ -186,19 +189,24 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         body.maxStack should be(2)
                         instructions should be(Array(
                             ALOAD_0,
-                            INVOKESPECIAL(ObjectType.Object,
+                            INVOKESPECIAL(
+                                ObjectType.Object,
                                 "<init>",
-                                NoArgumentAndNoReturnValueMethodDescriptor),
+                                NoArgumentAndNoReturnValueMethodDescriptor
+                            ),
                             null,
                             null,
                             ALOAD_0,
                             ALOAD_1,
-                            PUTFIELD(classFile.thisType,
+                            PUTFIELD(
+                                classFile.thisType,
                                 classFile.fields(0).name,
-                                classFile.fields(0).fieldType),
+                                classFile.fields(0).fieldType
+                            ),
                             null,
                             null,
-                            RETURN))
+                            RETURN
+                        ))
                     }
                 }
             }
@@ -227,14 +235,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             NEW(classFile.thisType),
                             null,
                             null,
-                            DUP) ++
+                            DUP
+                        ) ++
                             loadParametersInstructions ++
                             Array(
                                 INVOKESPECIAL(classFile.thisType, "<init>", constructor.descriptor),
                                 null,
                                 null,
                                 ARETURN
-                            ))
+                            )
+                    )
                 }
             }
 
@@ -340,91 +350,102 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 findMethod("methodWithManyParametersAndNoReturnValue").get
 
             it("and produces correctly indexed load instructions") {
-                testMethod(InstanceMethods,
+                testMethod(
+                    InstanceMethods,
                     methodWithManyParametersAndNoReturnValue,
-                    testProject) { (classFile, calleeTypeAndMethod) ⇒
-                        val calleeField = classFile.fields.head
-                        val method = checkAndReturnForwardingMethod(classFile)
-                        val (calleeType, calleeMethod) = calleeTypeAndMethod
-                        val body = method.body.get
-                        val instructions = body.instructions
-                        body.maxStack should be(13)
-                        body.maxLocals should be(14)
-                        instructions should be(Array(
-                            ALOAD_0,
-                            GETFIELD(classFile.thisType,
-                                calleeField.name,
-                                calleeField.fieldType),
-                            null,
-                            null,
-                            DLOAD_1,
-                            FLOAD_3,
-                            LLOAD(4),
-                            null,
-                            ILOAD(6),
-                            null,
-                            ILOAD(7),
-                            null,
-                            ILOAD(8),
-                            null,
-                            ILOAD(9),
-                            null,
-                            ILOAD(10),
-                            null,
-                            ALOAD(11),
-                            null,
-                            ALOAD(12),
-                            null,
-                            INVOKEVIRTUAL(calleeType,
-                                calleeMethod.name,
-                                calleeMethod.descriptor),
-                            null,
-                            null,
-                            RETURN
-                        ))
-                    }
-                testMethod(StaticMethods,
+                    testProject
+                ) { (classFile, calleeTypeAndMethod) ⇒
+                    val calleeField = classFile.fields.head
+                    val method = checkAndReturnForwardingMethod(classFile)
+                    val (calleeType, calleeMethod) = calleeTypeAndMethod
+                    val body = method.body.get
+                    val instructions = body.instructions
+                    body.maxStack should be(13)
+                    body.maxLocals should be(14)
+                    instructions should be(Array(
+                        ALOAD_0,
+                        GETFIELD(
+                            classFile.thisType,
+                            calleeField.name,
+                            calleeField.fieldType
+                        ),
+                        null,
+                        null,
+                        DLOAD_1,
+                        FLOAD_3,
+                        LLOAD(4),
+                        null,
+                        ILOAD(6),
+                        null,
+                        ILOAD(7),
+                        null,
+                        ILOAD(8),
+                        null,
+                        ILOAD(9),
+                        null,
+                        ILOAD(10),
+                        null,
+                        ALOAD(11),
+                        null,
+                        ALOAD(12),
+                        null,
+                        INVOKEVIRTUAL(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ),
+                        null,
+                        null,
+                        RETURN
+                    ))
+                }
+                testMethod(
+                    StaticMethods,
                     staticMethodWithManyParametersAndNoReturnValue,
-                    testProject) { (classFile, calleeTypeAndMethod) ⇒
-                        val method = checkAndReturnForwardingMethod(classFile)
-                        val (calleeType, calleeMethod) = calleeTypeAndMethod
-                        val body = method.body.get
-                        val instructions = body.instructions
-                        body.maxLocals should be(13)
-                        body.maxStack should be(12)
-                        instructions should be(Array(
-                            DLOAD_1,
-                            FLOAD_3,
-                            LLOAD(4),
-                            null,
-                            ILOAD(6),
-                            null,
-                            ILOAD(7),
-                            null,
-                            ILOAD(8),
-                            null,
-                            ILOAD(9),
-                            null,
-                            ILOAD(10),
-                            null,
-                            ALOAD(11),
-                            null,
-                            ALOAD(12),
-                            null,
-                            INVOKESTATIC(calleeType,
-                                calleeMethod.name,
-                                calleeMethod.descriptor),
-                            null,
-                            null,
-                            RETURN
-                        ))
-                    }
+                    testProject
+                ) { (classFile, calleeTypeAndMethod) ⇒
+                    val method = checkAndReturnForwardingMethod(classFile)
+                    val (calleeType, calleeMethod) = calleeTypeAndMethod
+                    val body = method.body.get
+                    val instructions = body.instructions
+                    body.maxLocals should be(13)
+                    body.maxStack should be(12)
+                    instructions should be(Array(
+                        DLOAD_1,
+                        FLOAD_3,
+                        LLOAD(4),
+                        null,
+                        ILOAD(6),
+                        null,
+                        ILOAD(7),
+                        null,
+                        ILOAD(8),
+                        null,
+                        ILOAD(9),
+                        null,
+                        ILOAD(10),
+                        null,
+                        ALOAD(11),
+                        null,
+                        ALOAD(12),
+                        null,
+                        INVOKESTATIC(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ),
+                        null,
+                        null,
+                        RETURN
+                    ))
+                }
             }
 
             it("and handles multiple parameters of the same type correctly") {
                 val methodWithFiveDoubleParameters = testProject.
                     classFile(StaticMethods).get.findMethod(
-                        "doubleDoubleDoubleDoubleDoubleAndNoReturnValue").get
+                        "doubleDoubleDoubleDoubleDoubleAndNoReturnValue"
+                    ).get
                 val proxy =
                     ClassFileFactory.Proxy(
                         TypeDeclaration(
@@ -438,7 +459,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         StaticMethods,
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor,
-                        INVOKESTATIC.opcode)
+                        INVOKESTATIC.opcode
+                    )
 
                 val method = checkAndReturnForwardingMethod(proxy)
                 val body = method.body.get
@@ -457,7 +479,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     INVOKESTATIC(
                         StaticMethods,
                         methodWithFiveDoubleParameters.name,
-                        methodWithFiveDoubleParameters.descriptor),
+                        methodWithFiveDoubleParameters.descriptor
+                    ),
                     null,
                     null,
                     RETURN
@@ -492,8 +515,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             method.name,
                             MethodDescriptor(
                                 IntegerType +: method.parameterTypes,
-                                method.returnType),
-                            invocationInstruction)
+                                method.returnType
+                            ),
+                            invocationInstruction
+                        )
 
                     val constructor = checkAndReturnConstructor(proxy)
                     if (method.isStatic) {
@@ -542,8 +567,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             method.name,
                             MethodDescriptor(
                                 IntegerType +: method.parameterTypes,
-                                method.returnType),
-                            invocationInstruction)
+                                method.returnType
+                            ),
+                            invocationInstruction
+                        )
                     val forwarderMethod = checkAndReturnForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
@@ -621,7 +648,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                 method.parameterTypes,
                                 ObjectType.Object
                             ),
-                            invocationInstruction)
+                            invocationInstruction
+                        )
                     val forwarderMethod = checkAndReturnForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
@@ -644,7 +672,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                 wrapper,
                                 s"${baseType.toJava}Value",
                                 new NoArgumentMethodDescriptor(baseType)
-                            ))
+                            )
+                        )
                     } else if (returnType.isReferenceType) {
                         // just cast
                         val cast = CHECKCAST(returnType.asReferenceType)
@@ -660,7 +689,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             describe("lambda expressions should not be identified as method references") {
                 val Lambdas = lambdasProject.allProjectClassFiles.find(
-                    _.fqn == "lambdas/Lambdas").get
+                    _.fqn == "lambdas/Lambdas"
+                ).get
                 it("they are not constructor references") {
                     for {
                         MethodWithBody(body) ← Lambdas.methods
@@ -676,7 +706,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             targetMethodHandle.opcodeOfUnderlyingInstruction,
                             targetMethodHandle.receiverType.asObjectType,
                             targetMethodHandle.methodDescriptor,
-                            proxyInterfaceMethodDescriptor))
+                            proxyInterfaceMethodDescriptor
+                        ))
                     }
                 }
 
@@ -691,19 +722,22 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
                         assert(!ClassFileFactory.isNewInvokeSpecial(
                             targetMethodHandle.opcodeOfUnderlyingInstruction,
-                            targetMethodHandle.name))
+                            targetMethodHandle.name
+                        ))
                     }
                 }
             }
 
             val MethodReferences = lambdasProject.allProjectClassFiles.find(
-                _.fqn == "lambdas/MethodReferences").get
+                _.fqn == "lambdas/MethodReferences"
+            ).get
 
             describe("references to constructors") {
                 it("should be correctly identified") {
                     val newValueMethod = MethodReferences.findMethod("newValue").get
                     val indy = newValueMethod.body.get.instructions.find(
-                        _.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
+                        _.isInstanceOf[INVOKEDYNAMIC]
+                    ).get.asInstanceOf[INVOKEDYNAMIC]
                     val targetMethod = indy.bootstrapMethod.bootstrapArguments(1).
                         asInstanceOf[MethodCallMethodHandle]
                     val opcode = targetMethod.opcodeOfUnderlyingInstruction
@@ -736,14 +770,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             null,
                             null,
                             DUP
-                        ))
+                        )
+                    )
                 }
             }
 
             describe("references to instance methods") {
                 it("should be correctly identified") {
                     val filterOutEmptyValuesMethod = MethodReferences.findMethod(
-                        "filterOutEmptyValues").get
+                        "filterOutEmptyValues"
+                    ).get
                     val invokedynamic = filterOutEmptyValuesMethod.body.get.instructions.
                         find(_.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
                     val targetMethodHandle = invokedynamic.bootstrapMethod.
@@ -754,7 +790,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         targetMethodHandle.opcodeOfUnderlyingInstruction,
                         targetMethodHandle.receiverType.asObjectType,
                         targetMethodHandle.methodDescriptor,
-                        proxyInterfaceMethodDescriptor))
+                        proxyInterfaceMethodDescriptor
+                    ))
                 }
 
                 val SomeOtherType = ObjectType("SomeOtherType")
@@ -780,7 +817,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     instructions(1) should be(INVOKEVIRTUAL(
                         SomeOtherType,
                         "isThisFull",
-                        MethodDescriptor.JustReturnsBoolean))
+                        MethodDescriptor.JustReturnsBoolean
+                    ))
                 }
             }
         }
@@ -801,7 +839,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         theType,
                         "newInstance",
                         new NoArgumentMethodDescriptor(theType),
-                        INVOKESTATIC.opcode)
+                        INVOKESTATIC.opcode
+                    )
                 val factoryMethod = checkAndReturnFactoryMethod(proxy)
                 factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
             }
@@ -853,11 +892,13 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ObjectType("SomeRandomType"),
                     false,
                     Some(ObjectType.Object),
-                    Set.empty)
+                    Set.empty
+                )
 
             def testConstructor(
-                fieldTypes: IndexedSeq[FieldType],
-                expectedLocals: Int, expectedStack: Int): Unit = {
+                fieldTypes:     IndexedSeq[FieldType],
+                expectedLocals: Int, expectedStack: Int
+            ): Unit = {
                 val fields = fieldTypes.zipWithIndex.map { p ⇒
                     val (ft, i) = p
                     Field(bi.ACC_PRIVATE.mask, "field"+i, ft, Seq.empty)
@@ -906,91 +947,105 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     NoArgumentAndNoReturnValueMethodDescriptor,
                     0,
                     Seq.empty,
-                    ObjectType.Object)
+                    ObjectType.Object
+                )
                 instructions should have size (0)
             }
 
             it("should forward all parameters for identical, non-empty descriptors") {
                 var d = MethodDescriptor(IndexedSeq(IntegerType, ObjectType.String), VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
-                    d, d, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ILOAD_0,
-                            ALOAD_1
-                        ))
+                    d, d, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ILOAD_0,
+                        ALOAD_1
+                    )
+                )
                 d = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
                 ClassFileFactory.parameterForwardingInstructions(
-                    d, d, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ALOAD_0
-                        ))
+                    d, d, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ALOAD_0
+                    )
+                )
                 d = MethodDescriptor((1 to 10).map(_ ⇒ ByteType).toIndexedSeq, VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
-                    d, d, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ILOAD_0,
-                            ILOAD_1,
-                            ILOAD_2,
-                            ILOAD_3,
-                            ILOAD(4),
-                            null,
-                            ILOAD(5),
-                            null,
-                            ILOAD(6),
-                            null,
-                            ILOAD(7),
-                            null,
-                            ILOAD(8),
-                            null,
-                            ILOAD(9),
-                            null
-                        ))
+                    d, d, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ILOAD_0,
+                        ILOAD_1,
+                        ILOAD_2,
+                        ILOAD_3,
+                        ILOAD(4),
+                        null,
+                        ILOAD(5),
+                        null,
+                        ILOAD(6),
+                        null,
+                        ILOAD(7),
+                        null,
+                        ILOAD(8),
+                        null,
+                        ILOAD(9),
+                        null
+                    )
+                )
                 d =
                     MethodDescriptor(
                         IndexedSeq(DoubleType, ObjectType.String, ByteType,
                             LongType, DoubleType, FloatType),
-                        VoidType)
+                        VoidType
+                    )
                 ClassFileFactory.parameterForwardingInstructions(
-                    d, d, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            DLOAD_0,
-                            ALOAD_2,
-                            ILOAD_3,
-                            LLOAD(4),
-                            null,
-                            DLOAD(6),
-                            null,
-                            FLOAD(8),
-                            null
-                        ))
+                    d, d, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        DLOAD_0,
+                        ALOAD_2,
+                        ILOAD_3,
+                        LLOAD(4),
+                        null,
+                        DLOAD(6),
+                        null,
+                        FLOAD(8),
+                        null
+                    )
+                )
             }
             it("should safely convert primitive values") {
                 val d1 =
                     MethodDescriptor(
                         IndexedSeq(ByteType, CharType, ShortType,
                             IntegerType, FloatType, LongType),
-                        VoidType)
+                        VoidType
+                    )
                 val d2 =
                     MethodDescriptor(
                         IndexedSeq(ShortType, ShortType, IntegerType,
                             LongType, DoubleType, DoubleType),
-                        VoidType)
+                        VoidType
+                    )
                 ClassFileFactory.parameterForwardingInstructions(
-                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ILOAD_0,
-                            ILOAD_1,
-                            I2S,
-                            ILOAD_2,
-                            ILOAD_3,
-                            I2L,
-                            FLOAD(4),
-                            null,
-                            F2D,
-                            LLOAD(5),
-                            null,
-                            L2D
-                        ))
+                    d1, d2, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ILOAD_0,
+                        ILOAD_1,
+                        I2S,
+                        ILOAD_2,
+                        ILOAD_3,
+                        I2L,
+                        FLOAD(4),
+                        null,
+                        F2D,
+                        LLOAD(5),
+                        null,
+                        L2D
+                    )
+                )
             }
 
             def valueOfDescriptor(baseType: BaseType): MethodDescriptor =
@@ -1001,77 +1056,85 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     MethodDescriptor(
                         IndexedSeq(ByteType, CharType, ShortType,
                             IntegerType, FloatType, LongType),
-                        VoidType)
+                        VoidType
+                    )
                 val d2 =
                     MethodDescriptor(
                         IndexedSeq(ObjectType.Byte, ObjectType.Character,
                             ObjectType.Short, ObjectType.Integer, ObjectType.Float,
                             ObjectType.Long),
-                        VoidType)
+                        VoidType
+                    )
                 ClassFileFactory.parameterForwardingInstructions(
-                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ILOAD_0,
-                            INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
-                            null,
-                            null,
-                            ILOAD_1,
-                            INVOKESTATIC(ObjectType.Character, "valueOf", valueOfDescriptor(CharType)),
-                            null,
-                            null,
-                            ILOAD_2,
-                            INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
-                            null,
-                            null,
-                            ILOAD_3,
-                            INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
-                            null,
-                            null,
-                            FLOAD(4),
-                            null,
-                            INVOKESTATIC(ObjectType.Float, "valueOf", valueOfDescriptor(FloatType)),
-                            null,
-                            null,
-                            LLOAD(5),
-                            null,
-                            INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
-                            null,
-                            null
-                        ))
+                    d1, d2, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ILOAD_0,
+                        INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                        null,
+                        null,
+                        ILOAD_1,
+                        INVOKESTATIC(ObjectType.Character, "valueOf", valueOfDescriptor(CharType)),
+                        null,
+                        null,
+                        ILOAD_2,
+                        INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                        null,
+                        null,
+                        ILOAD_3,
+                        INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                        null,
+                        null,
+                        FLOAD(4),
+                        null,
+                        INVOKESTATIC(ObjectType.Float, "valueOf", valueOfDescriptor(FloatType)),
+                        null,
+                        null,
+                        LLOAD(5),
+                        null,
+                        INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                        null,
+                        null
+                    )
+                )
             }
             it("should create unboxing instructions for wrapper types") {
                 val d1 = MethodDescriptor(ObjectType.Integer, VoidType)
                 val d2 = MethodDescriptor(IntegerType, VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
-                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            ALOAD_0,
-                            INVOKEVIRTUAL(ObjectType.Integer, "intValue", MethodDescriptor.JustReturnsInteger),
-                            null,
-                            null
-                        )
+                    d1, d2, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        ALOAD_0,
+                        INVOKEVIRTUAL(ObjectType.Integer, "intValue", MethodDescriptor.JustReturnsInteger),
+                        null,
+                        null
                     )
+                )
             }
             it("should cast arbitrary reference types") {
                 val d1 =
                     MethodDescriptor(
                         IndexedSeq(ObjectType.Object, ObjectType.Object),
-                        VoidType)
+                        VoidType
+                    )
                 val d2 =
                     MethodDescriptor(
                         IndexedSeq(ObjectType.String, ArrayType.ArrayOfObjects),
-                        VoidType)
+                        VoidType
+                    )
                 ClassFileFactory.parameterForwardingInstructions(
-                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(Array(
-                        ALOAD_0,
-                        CHECKCAST(ObjectType.String),
-                        null,
-                        null,
-                        ALOAD_1,
-                        CHECKCAST(ArrayType.ArrayOfObjects),
-                        null,
-                        null
-                    ))
+                    d1, d2, 0, Seq.empty, ObjectType.Object
+                ) should be(Array(
+                    ALOAD_0,
+                    CHECKCAST(ObjectType.String),
+                    null,
+                    null,
+                    ALOAD_1,
+                    CHECKCAST(ArrayType.ArrayOfObjects),
+                    null,
+                    null
+                ))
             }
 
             it("should pack everything into an Object[] if necessary") {
@@ -1084,64 +1147,68 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             BooleanType,
                             ObjectType.Integer,
                             LongType,
-                            ShortType), VoidType)
+                            ShortType
+                        ), VoidType
+                    )
                 val d2 = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
                 ClassFileFactory.parameterForwardingInstructions(
-                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
-                        Array(
-                            BIPUSH(7),
-                            null,
-                            ANEWARRAY(ObjectType.Object),
-                            null,
-                            null,
-                            DUP,
-                            ICONST_0,
-                            ILOAD_0,
-                            INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
-                            null,
-                            null,
-                            AASTORE,
-                            DUP,
-                            ICONST_1,
-                            ALOAD_1,
-                            AASTORE,
-                            DUP,
-                            ICONST_2,
-                            ILOAD_2,
-                            INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
-                            null,
-                            null,
-                            AASTORE,
-                            DUP,
-                            ICONST_3,
-                            ILOAD_3,
-                            INVOKESTATIC(ObjectType.Boolean, "valueOf", valueOfDescriptor(BooleanType)),
-                            null,
-                            null,
-                            AASTORE,
-                            DUP,
-                            ICONST_4,
-                            ALOAD(4),
-                            null,
-                            AASTORE,
-                            DUP,
-                            ICONST_5,
-                            LLOAD(5),
-                            null,
-                            INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
-                            null,
-                            null,
-                            AASTORE,
-                            DUP,
-                            BIPUSH(6),
-                            null,
-                            ILOAD(7),
-                            null,
-                            INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
-                            null,
-                            null,
-                            AASTORE
-                        ))
+                    d1, d2, 0, Seq.empty, ObjectType.Object
+                ) should be(
+                    Array(
+                        BIPUSH(7),
+                        null,
+                        ANEWARRAY(ObjectType.Object),
+                        null,
+                        null,
+                        DUP,
+                        ICONST_0,
+                        ILOAD_0,
+                        INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                        null,
+                        null,
+                        AASTORE,
+                        DUP,
+                        ICONST_1,
+                        ALOAD_1,
+                        AASTORE,
+                        DUP,
+                        ICONST_2,
+                        ILOAD_2,
+                        INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                        null,
+                        null,
+                        AASTORE,
+                        DUP,
+                        ICONST_3,
+                        ILOAD_3,
+                        INVOKESTATIC(ObjectType.Boolean, "valueOf", valueOfDescriptor(BooleanType)),
+                        null,
+                        null,
+                        AASTORE,
+                        DUP,
+                        ICONST_4,
+                        ALOAD(4),
+                        null,
+                        AASTORE,
+                        DUP,
+                        ICONST_5,
+                        LLOAD(5),
+                        null,
+                        INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                        null,
+                        null,
+                        AASTORE,
+                        DUP,
+                        BIPUSH(6),
+                        null,
+                        ILOAD(7),
+                        null,
+                        INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                        null,
+                        null,
+                        AASTORE
+                    )
+                )
             }
         }
 
@@ -1162,7 +1229,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             it("should convert Object to any reference type by casting") {
                 Seq(ObjectType.String, ArrayType(LongType), ObjectType.Integer).foreach(
                     t ⇒ ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
-                        Array(CHECKCAST(t.asReferenceType), null, null, ARETURN))
+                        Array(CHECKCAST(t.asReferenceType), null, null, ARETURN)
+                    )
                 )
             }
 
@@ -1173,9 +1241,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         null,
                         null,
                         ARETURN
-                    ))
+                    )
+                )
                 ClassFileFactory.returnAndConvertInstructions(FloatType, LongType) should be(
-                    Array(L2F, FRETURN))
+                    Array(L2F, FRETURN)
+                )
             }
         }
     }
@@ -1194,13 +1264,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
      ************************************** */
 
     private def require(
-        oneOf: Set[Opcode],
-        remainingInstructions: Array[Instruction]): Int = {
+        oneOf:                 Set[Opcode],
+        remainingInstructions: Array[Instruction]
+    ): Int = {
         val indexOfNextFittingInstruction =
             remainingInstructions.filter(_ != null).
                 indexWhere(instruction ⇒ oneOf contains instruction.opcode)
-        assert(indexOfNextFittingInstruction != -1,
-            s"Could not find required instruction ${oneOf.mkString(",")}")
+        assert(
+            indexOfNextFittingInstruction != -1,
+            s"Could not find required instruction ${oneOf.mkString(",")}"
+        )
 
         indexOfNextFittingInstruction + 1
     }
@@ -1214,7 +1287,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ILOAD_3.opcode,
                 ILOAD.opcode
             ),
-            remainingInstructions)
+            remainingInstructions
+        )
 
     private def requireLong(remainingInstructions: Array[Instruction]): Int =
         require(
@@ -1225,7 +1299,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 LLOAD_3.opcode,
                 LLOAD.opcode
             ),
-            remainingInstructions)
+            remainingInstructions
+        )
 
     private def requireFloat(remainingInstructions: Array[Instruction]): Int =
         require(
@@ -1236,7 +1311,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 FLOAD_3.opcode,
                 FLOAD.opcode
             ),
-            remainingInstructions)
+            remainingInstructions
+        )
 
     private def requireDouble(remainingInstructions: Array[Instruction]): Int =
         require(
@@ -1247,7 +1323,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 DLOAD_3.opcode,
                 DLOAD.opcode
             ),
-            remainingInstructions)
+            remainingInstructions
+        )
 
     private def requireReference(remainingInstructions: Array[Instruction]): Int =
         require(
@@ -1259,7 +1336,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ALOAD.opcode,
                 NEW.opcode
             ),
-            remainingInstructions)
+            remainingInstructions
+        )
 
     /**
      * Iterates over the given list of tuples, generating a proxy class file for the
@@ -1267,9 +1345,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
      * test function.
      */
     private def testMethods(
-        methods: Iterable[(ObjectType, Method)],
-        repository: ClassFileRepository)(
-            test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
+        methods:    Iterable[(ObjectType, Method)],
+        repository: ClassFileRepository
+    )(
+        test: (ClassFile, (ObjectType, Method)) ⇒ Unit
+    ): Unit = {
         for {
             (calleeType, calleeMethod) ← methods
         } {
@@ -1279,8 +1359,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
     private def testMethod(
         calleeType: ObjectType, calleeMethod: Method,
-        repository: ClassFileRepository)(
-            test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
+        repository: ClassFileRepository
+    )(
+        test: (ClassFile, (ObjectType, Method)) ⇒ Unit
+    ): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName+"$"+calleeMethodName
@@ -1289,7 +1371,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ObjectType(definingTypeName),
                 false,
                 Some(ObjectType.Object),
-                Set())
+                Set()
+            )
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
         val invocationInstruction: Opcode =

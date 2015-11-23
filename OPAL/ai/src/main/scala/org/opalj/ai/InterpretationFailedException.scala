@@ -57,15 +57,17 @@ sealed trait InterpretationFailedException {
 object InterpretationFailedException {
 
     def apply(
-        theCause: Throwable,
-        theDomain: Domain)(
-            theAI: AI[_ >: theDomain.type],
-            thePc: PC,
-            theWorklist: List[PC],
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIException with InterpretationFailedException = {
+        theCause:  Throwable,
+        theDomain: Domain
+    )(
+        theAI:                               AI[_ >: theDomain.type],
+        thePc:                               PC,
+        theWorklist:                         List[PC],
+        theEvaluated:                        List[PC],
+        theOperandsArray:                    theDomain.OperandsArray,
+        theLocalsArray:                      theDomain.LocalsArray,
+        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+    ): AIException with InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause

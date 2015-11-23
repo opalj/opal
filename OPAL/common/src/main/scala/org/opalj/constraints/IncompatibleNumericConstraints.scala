@@ -36,11 +36,13 @@ package constraints
  * @author Michael Eichberg
  */
 case class IncompatibleNumericConstraints(
-    message: String,
-    constraint1: NumericConstraints.Value,
-    constraint2: NumericConstraints.Value,
-    enableSuppression: Boolean = false,
-    writableStackTrace: Boolean = true)
+    message:            String,
+    constraint1:        NumericConstraints.Value,
+    constraint2:        NumericConstraints.Value,
+    enableSuppression:  Boolean                  = false,
+    writableStackTrace: Boolean                  = true
+)
         extends RuntimeException(
             s"$message (incompatible: $constraint1 and $constraint2)",
-            /*cause = */ null, enableSuppression, writableStackTrace)
+            /*cause = */ null, enableSuppression, writableStackTrace
+        )

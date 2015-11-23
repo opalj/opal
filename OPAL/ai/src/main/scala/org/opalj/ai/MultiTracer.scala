@@ -41,13 +41,15 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def continuingInterpretation(
         strictfp: Boolean,
-        code: Code,
-        domain: Domain)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: domain.OperandsArray,
-            localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
+        code:     Code,
+        domain:   Domain
+    )(
+        initialWorkList:                  List[PC],
+        alreadyEvaluated:                 List[PC],
+        operandsArray:                    domain.OperandsArray,
+        localsArray:                      domain.LocalsArray,
+        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(strictfp, code, domain)(
                 initialWorkList, alreadyEvaluated,
@@ -57,95 +59,118 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def instructionEvalution(
-        domain: Domain)(
-            pc: PC,
-            instruction: Instruction,
-            operands: domain.Operands,
-            locals: domain.Locals): Unit = {
+        domain: Domain
+    )(
+        pc:          PC,
+        instruction: Instruction,
+        operands:    domain.Operands,
+        locals:      domain.Locals
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.instructionEvalution(domain)(pc, instruction, operands, locals)
         }
     }
 
     override def flow(
-        domain: Domain)(
-            currentPC: PC,
-            targetPC: PC,
-            isExceptionalControlFlow: Boolean): Unit = {
+        domain: Domain
+    )(
+        currentPC:                PC,
+        targetPC:                 PC,
+        isExceptionalControlFlow: Boolean
+    ): Unit = {
         tracers foreach { _.flow(domain)(currentPC, targetPC, isExceptionalControlFlow) }
     }
 
     override def noFlow(
-        domain: Domain)(
-            currentPC: PC, targetPC: PC): Unit = {
+        domain: Domain
+    )(
+        currentPC: PC, targetPC: PC
+    ): Unit = {
         tracers foreach { _.noFlow(domain)(currentPC, targetPC) }
     }
 
     override def rescheduled(
-        domain: Domain)(
-            sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean): Unit = {
+        domain: Domain
+    )(
+        sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow)
         }
     }
 
     override def join(
-        domain: Domain)(
-            pc: PC,
-            thisOperands: domain.Operands,
-            thisLocals: domain.Locals,
-            otherOperands: domain.Operands,
-            otherLocals: domain.Locals,
-            result: Update[(domain.Operands, domain.Locals)]): Unit = {
+        domain: Domain
+    )(
+        pc:            PC,
+        thisOperands:  domain.Operands,
+        thisLocals:    domain.Locals,
+        otherOperands: domain.Operands,
+        otherLocals:   domain.Locals,
+        result:        Update[(domain.Operands, domain.Locals)]
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.join(
-                domain)(
-                    pc, thisOperands, thisLocals, otherOperands, otherLocals, result)
+                domain
+            )(
+                pc, thisOperands, thisLocals, otherOperands, otherLocals, result
+            )
         }
     }
 
     override def abruptMethodExecution(
-        domain: Domain)(
-            pc: Int, exception: domain.ExceptionValue): Unit = {
+        domain: Domain
+    )(
+        pc: Int, exception: domain.ExceptionValue
+    ): Unit = {
         tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
 
     override def ret(
-        domain: Domain)(
-            pc: PC,
-            returnAddress: PC,
-            oldWorklist: List[PC],
-            newWorklist: List[PC]): Unit = {
+        domain: Domain
+    )(
+        pc:            PC,
+        returnAddress: PC,
+        oldWorklist:   List[PC],
+        newWorklist:   List[PC]
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.ret(domain)(pc, returnAddress, oldWorklist, newWorklist)
         }
     }
 
     override def jumpToSubroutine(
-        domain: Domain)(
-            pc: PC, target: PC, nestingLevel: Int): Unit = {
+        domain: Domain
+    )(
+        pc: PC, target: PC, nestingLevel: Int
+    ): Unit = {
         tracers foreach { _.jumpToSubroutine(domain)(pc, target, nestingLevel) }
     }
 
     override def returnFromSubroutine(
-        domain: Domain)(
-            pc: Int, returnAddress: Int, subroutineInstructions: List[Int]): Unit = {
+        domain: Domain
+    )(
+        pc: Int, returnAddress: Int, subroutineInstructions: List[Int]
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutineInstructions)
         }
     }
 
     override def abruptSubroutineTermination(
-        domain: Domain)(
-            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
-            terminatedSubroutinesCount: Int,
-            oldWorklist: List[PC],
-            newWorklist: List[PC]): Unit = {
+        domain: Domain
+    )(
+        sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+        terminatedSubroutinesCount: Int,
+        oldWorklist:                List[PC],
+        newWorklist:                List[PC]
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.abruptSubroutineTermination(domain)(
                 sourcePC, targetPC,
                 jumpToSubroutineId, terminatedSubroutinesCount,
-                oldWorklist, newWorklist)
+                oldWorklist, newWorklist
+            )
         }
     }
 
@@ -154,23 +179,27 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def establishedConstraint(
-        domain: Domain)(
-            pc: PC,
-            effectivePC: PC,
-            operands: domain.Operands,
-            locals: domain.Locals,
-            newOperands: domain.Operands,
-            newLocals: domain.Locals): Unit = {
+        domain: Domain
+    )(
+        pc:          PC,
+        effectivePC: PC,
+        operands:    domain.Operands,
+        locals:      domain.Locals,
+        newOperands: domain.Operands,
+        newLocals:   domain.Locals
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.establishedConstraint(domain)(
-                pc, effectivePC, operands, locals, newOperands, newLocals)
+                pc, effectivePC, operands, locals, newOperands, newLocals
+            )
         }
     }
 
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[PC], message: ⇒ String): Unit = {
+        pc: Option[PC], message: ⇒ String
+    ): Unit = {
         tracers foreach { tracer ⇒
             tracer.domainMessage(domain, source, typeID, pc, message)
         }

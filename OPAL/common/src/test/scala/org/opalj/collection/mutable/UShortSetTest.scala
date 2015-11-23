@@ -170,7 +170,8 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                             }
                         ).toSet),
                         "UShortSet-"+8,
-                        ".dot")
+                        ".dot"
+                    )
 
                 fail(s"two many nodes: ${uShortSet.nodeCount} (expected 3})(details: $file)")
             }
@@ -194,7 +195,8 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                     org.opalj.io.writeAndOpen(
                         org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
                         "UShortSet-CREATION_FAILED_FOR_VALUE_"+valueToBeAdded+"-"+ValuesCount,
-                        ".dot")
+                        ".dot"
+                    )
                     throw e
             }
             val nodeCount = uShortSet.nodeCount
@@ -202,7 +204,8 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 val file = org.opalj.io.writeAndOpen(
                     org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
                     "UShortSet-"+ValuesCount,
-                    ".dot")
+                    ".dot"
+                )
                 fail(s"two many nodes: ${uShortSet.nodeCount} (expected << ${ValuesCount / 3})(details: $file)")
             } else {
                 info(s"for storing $ValuesCount values $nodeCount nodes are required")

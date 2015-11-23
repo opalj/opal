@@ -47,10 +47,11 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        line_number_table: LineNumbers): LineNumberTable_attribute
+        attribute_length:     Int,
+        line_number_table:    LineNumbers
+    ): LineNumberTable_attribute
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
 
@@ -74,7 +75,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      *
      */
     registerAttributeReader(
-        LineNumberTable_attributeReader.ATTRIBUTE_NAME -> (
+        LineNumberTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 LineNumberTable_attribute(

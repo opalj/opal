@@ -46,19 +46,23 @@ class TestImmutableClassInheritsMutableClass extends AnalysisTest {
     behavior of "ImmutableClassInheritsMutableClass"
 
     val project = createProject(
-        Seq("JCIPAnnotations.jar", "ImmutableClassInheritsMutableClass.jar"))
+        Seq("JCIPAnnotations.jar", "ImmutableClassInheritsMutableClass.jar")
+    )
 
     val results = new ImmutableClassInheritsMutableClass[URL].analyze(project).toSet
 
     it should "report an immutable class JCIPAnnotatedInheritingFomMutable" in {
         val declaringClass = ObjectType(
-            "ImmutableClassInheritsMutableClass/JCIPAnnotatedInheritingFromMutable")
+            "ImmutableClassInheritsMutableClass/JCIPAnnotatedInheritingFromMutable"
+        )
         results should contain(
             ClassBasedReport(
                 project.source(declaringClass),
                 Severity.Warning,
                 declaringClass,
-                "This immutable class inherits a possibly mutable class."))
+                "This immutable class inherits a possibly mutable class."
+            )
+        )
     }
 
     it should "find 1 issues in total" in {

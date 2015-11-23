@@ -43,26 +43,30 @@ import org.opalj.br.Method
  * @author Michael Eichberg
  */
 class ComputedCallGraph(
-    val callGraph: CallGraph,
-    val entryPoints: () ⇒ Iterable[Method],
-    val unresolvedMethodCalls: List[UnresolvedMethodCall],
-    val constructionExceptions: List[CallGraphConstructionException])
+    val callGraph:              CallGraph,
+    val entryPoints:            () ⇒ Iterable[Method],
+    val unresolvedMethodCalls:  List[UnresolvedMethodCall],
+    val constructionExceptions: List[CallGraphConstructionException]
+)
 
 object ComputedCallGraph {
 
     def apply(
-        callGraph: CallGraph,
-        entryPoints: () ⇒ Iterable[Method],
-        unresolvedMethodCalls: List[UnresolvedMethodCall],
-        constructionExceptions: List[CallGraphConstructionException]) =
+        callGraph:              CallGraph,
+        entryPoints:            () ⇒ Iterable[Method],
+        unresolvedMethodCalls:  List[UnresolvedMethodCall],
+        constructionExceptions: List[CallGraphConstructionException]
+    ) =
         new ComputedCallGraph(
             callGraph,
             entryPoints,
             unresolvedMethodCalls,
-            constructionExceptions)
+            constructionExceptions
+        )
 
     def unapply(
-        cg: ComputedCallGraph): Some[(CallGraph, List[UnresolvedMethodCall], List[CallGraphConstructionException])] =
+        cg: ComputedCallGraph
+    ): Some[(CallGraph, List[UnresolvedMethodCall], List[CallGraphConstructionException])] =
         Some((cg.callGraph, cg.unresolvedMethodCalls, cg.constructionExceptions))
 
     def empty(project: SomeProject) =
@@ -70,5 +74,6 @@ object ComputedCallGraph {
             new CallGraph(project, Map.empty, Map.empty),
             () ⇒ List.empty,
             List.empty,
-            List.empty)
+            List.empty
+        )
 }

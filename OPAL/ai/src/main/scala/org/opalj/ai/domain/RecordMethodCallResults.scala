@@ -73,9 +73,11 @@ trait RecordMethodCallResults
 
     def returnedValueRemapped(
         callerDomain: TargetDomain,
-        callerPC: PC)(
-            originalOperands: callerDomain.Operands,
-            passedParameters: Locals): Option[callerDomain.DomainValue] = {
+        callerPC:     PC
+    )(
+        originalOperands: callerDomain.Operands,
+        passedParameters: Locals
+    ): Option[callerDomain.DomainValue] = {
 
         if (allReturnedValues.isEmpty)
             None
@@ -103,8 +105,9 @@ trait RecordMethodCallResults
             var exceptionValuesPerType: Map[ObjectType, Set[ExceptionValue]] = Map.empty
 
             def handleIsAReferenceValue(
-                exceptionValue: ExceptionValue,
-                exceptionValueProperties: IsAReferenceValue): Unit = {
+                exceptionValue:           ExceptionValue,
+                exceptionValueProperties: IsAReferenceValue
+            ): Unit = {
                 exceptionValueProperties.upperTypeBound match {
                     case UIDSet0 ⇒
                         println("[info] [RecordMethodCallResults.thrownExceptions] Type of exception is unknown.")
@@ -124,7 +127,8 @@ trait RecordMethodCallResults
                     case utb ⇒
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]])
+                                utb.asInstanceOf[UIDSet[ObjectType]]
+                            )
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
@@ -144,7 +148,8 @@ trait RecordMethodCallResults
                             handleIsAReferenceValue(
                                 // TODO [Safety] We should make it possible that a value converts itself to a domain value
                                 anExceptionValue.asDomainValue(this),
-                                anExceptionValue)
+                                anExceptionValue
+                            )
                         }
 
                     case exceptionValueProperties: IsAReferenceValue ⇒

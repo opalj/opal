@@ -58,9 +58,10 @@ class CovariantEqualsMethodDefined[Source]
     //
 
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()
@@ -80,7 +81,8 @@ class CovariantEqualsMethodDefined[Source]
                         project.source(classFile.thisType),
                         Severity.Warning,
                         classFile.thisType,
-                        "Defines a covariant equals method, but does not also define the standard equals method.") :: reports
+                        "Defines a covariant equals method, but does not also define the standard equals method."
+                    ) :: reports
                 }
             }
         }

@@ -42,8 +42,9 @@ import org.opalj.collection.mutable.UShortSet
  */
 case class GETSTATIC(
     declaringClass: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:           String,
+    fieldType:      FieldType
+)
         extends FieldReadAccess {
 
     final def opcode: Opcode = GETSTATIC.opcode
@@ -55,9 +56,10 @@ case class GETSTATIC(
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else

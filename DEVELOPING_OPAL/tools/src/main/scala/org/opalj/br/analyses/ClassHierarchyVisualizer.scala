@@ -30,7 +30,7 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.graphs.{ Node, toDot }
+import org.opalj.graphs.{Node, toDot}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.log.GlobalLogContext
 /**

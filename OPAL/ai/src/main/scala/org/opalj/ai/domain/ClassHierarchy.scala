@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
+import org.opalj.br.analyses.{ClassHierarchy ⇒ DefaultClassHierarchy}
 
 /**
  * Makes a project's class hierarchy available to a `Domain`.

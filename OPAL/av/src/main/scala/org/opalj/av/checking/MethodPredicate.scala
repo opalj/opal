@@ -61,8 +61,9 @@ case class MethodWithName(name: String) extends SourceElementPredicate[Method] {
  * @author Marco Torsello
  */
 case class MethodWithSignature(
-        name: String,
-        descriptor: MethodDescriptor) extends SourceElementPredicate[Method] {
+        name:       String,
+        descriptor: MethodDescriptor
+) extends SourceElementPredicate[Method] {
 
     def apply(method: Method): Boolean = {
         method.name == this.name && method.descriptor == this.descriptor

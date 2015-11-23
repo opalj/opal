@@ -36,9 +36,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-    declaringClass: ObjectType, // a class type to be precise
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    declaringClass:   ObjectType, // a class type to be precise
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends NonVirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKESTATIC.opcode

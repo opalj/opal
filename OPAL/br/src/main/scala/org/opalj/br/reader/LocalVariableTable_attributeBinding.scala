@@ -49,25 +49,28 @@ trait LocalVariableTable_attributeBinding
     override val LocalVariableTableEntryManifest: ClassTag[LocalVariable] = implicitly
 
     override def LocalVariableTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int,
-        length: Int,
-        name_index: Constant_Pool_Index,
+        cp:               Constant_Pool,
+        start_pc:         Int,
+        length:           Int,
+        name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        index: Int): LocalVariable = {
+        index:            Int
+    ): LocalVariable = {
         new LocalVariable(
             start_pc,
             length,
             cp(name_index).asString,
             cp(descriptor_index).asFieldType,
-            index)
+            index
+        )
     }
 
     override def LocalVariableTable_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        local_variable_table: LocalVariables): LocalVariableTable =
+        attribute_length:     Int,
+        local_variable_table: LocalVariables
+    ): LocalVariableTable =
         new LocalVariableTable(local_variable_table)
 
 }

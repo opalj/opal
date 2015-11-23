@@ -59,7 +59,9 @@ class TestCloneDoesNotCallSuperClone extends AnalysisTest {
                 declaringClass,
                 AnalysesHelpers.NoArgsAndReturnObject,
                 "clone",
-                "Missing call to super.clone()"))
+                "Missing call to super.clone()"
+            )
+        )
     }
 
     it should "find 1 issue in total" in {

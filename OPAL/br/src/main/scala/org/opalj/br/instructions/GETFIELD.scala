@@ -50,8 +50,9 @@ import org.opalj.collection.mutable.UShortSet
  */
 case class GETFIELD(
     declaringClass: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:           String,
+    fieldType:      FieldType
+)
         extends FieldReadAccess {
 
     final def opcode: Opcode = GETFIELD.opcode
@@ -63,9 +64,10 @@ case class GETFIELD(
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else

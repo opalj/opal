@@ -33,7 +33,7 @@ package analyses
 import java.net.URL
 
 import scala.collection.Map
-import scala.collection.concurrent.{ TrieMap ⇒ ConcurrentMap }
+import scala.collection.concurrent.{TrieMap ⇒ ConcurrentMap}
 
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassFile
@@ -58,8 +58,9 @@ import org.opalj.ai.analyses.MutabilityRating._
 object ImmutabilityAnalysis {
 
     private def fieldBasedRating(
-        classFile: ClassFile,
-        superclassTypeRating: MutabilityRating): MutabilityRating = {
+        classFile:            ClassFile,
+        superclassTypeRating: MutabilityRating
+    ): MutabilityRating = {
 
         assert(!(classFile.thisType eq ObjectType.Object))
         assert(!classFile.isInterfaceDeclaration)
@@ -82,8 +83,9 @@ object ImmutabilityAnalysis {
     }
 
     private def methodBasedRating(
-        classFile: ClassFile,
-        superclassTypeRating: MutabilityRating): MutabilityRating = {
+        classFile:            ClassFile,
+        superclassTypeRating: MutabilityRating
+    ): MutabilityRating = {
 
         assert(!(classFile.thisType eq ObjectType.Object))
         assert(!classFile.isInterfaceDeclaration)
@@ -123,8 +125,9 @@ object ImmutabilityAnalysis {
      * @return A map with mutability ratings for class types.
      */
     def doAnalyze(
-        project: Project[URL],
-        isInterrupted: () ⇒ Boolean = () ⇒ false): Map[ObjectType, MutabilityRating] = {
+        project:       Project[URL],
+        isInterrupted: () ⇒ Boolean = () ⇒ false
+    ): Map[ObjectType, MutabilityRating] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.foreachDirectSubclass
 

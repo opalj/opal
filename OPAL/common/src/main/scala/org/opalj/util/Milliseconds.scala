@@ -65,7 +65,8 @@ object Milliseconds {
      */
     final def TimeSpan(
         startTimeInMilliseconds: Long,
-        endTimeInMilliseconds: Long): Milliseconds =
+        endTimeInMilliseconds:   Long
+    ): Milliseconds =
         new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
 
 }

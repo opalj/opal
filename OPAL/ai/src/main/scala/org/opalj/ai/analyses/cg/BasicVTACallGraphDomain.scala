@@ -55,10 +55,11 @@ import domain.l0
  * @author Michael Eichberg
  */
 class BasicVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    val project:   Project[Source],
+    val cache:     CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

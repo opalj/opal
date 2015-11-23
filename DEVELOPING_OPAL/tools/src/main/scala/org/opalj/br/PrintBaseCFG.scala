@@ -52,7 +52,7 @@ import java.net.URL
 object PrintBaseCFG {
 
     def main(args: Array[String]): Unit = {
-        import Console.{ RED, RESET }
+        import Console.{RED, RESET}
         import language.existentials
 
         if (args.size != 3) {

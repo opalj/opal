@@ -91,9 +91,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(13, SimpleVar(-7, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
                     Assignment(15, SimpleVar(0, ComputationalTypeInt), IntConst(15, -1)),
                     Assignment(16, SimpleVar(-8, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(18)))
+                    Return(18)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1;",
@@ -108,7 +110,9 @@ class ConstantsTest extends FunSpec with Matchers {
                         "12: r_6 = op_0;",
                         "13: op_0 = -1;",
                         "14: r_7 = op_0;",
-                        "15: return;"))
+                        "15: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the long constants") {
@@ -123,14 +127,18 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(-2, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Assignment(2, SimpleVar(0, ComputationalTypeLong), LongConst(2, 1L)),
                     Assignment(3, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
-                    Return(4)))
+                    Return(4)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0l;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1l;",
                         "4: r_3 = op_0;",
-                        "5: return;"))
+                        "5: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the float constants") {
@@ -147,16 +155,20 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-3, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
                     Assignment(4, SimpleVar(0, ComputationalTypeFloat), FloatConst(4, 2.0f)),
                     Assignment(5, SimpleVar(-4, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0.0f;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1.0f;",
                         "4: r_2 = op_0;",
                         "5: op_0 = 2.0f;",
                         "6: r_3 = op_0;",
-                        "7: return;"))
+                        "7: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the double constants") {
@@ -171,14 +183,18 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(-2, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
                     Assignment(2, SimpleVar(0, ComputationalTypeDouble), DoubleConst(2, 1.0d)),
                     Assignment(3, SimpleVar(-4, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
-                    Return(4)))
+                    Return(4)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0.0d;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1.0d;",
                         "4: r_3 = op_0;",
-                        "5: return;"))
+                        "5: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the null reference constants") {
@@ -191,12 +207,16 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(2)))
+                    Return(2)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = null;",
                         "2: r_1 = op_0;",
-                        "3: return;"))
+                        "3: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the other constant loading instructions") {
@@ -215,9 +235,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(9, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Assignment(10, SimpleVar(0, ComputationalTypeDouble), DoubleConst(10, 10.0d)),
                     Assignment(13, SimpleVar(-6, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
-                    Return(15)))
+                    Return(15)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 10;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 10.0f;",
@@ -226,7 +248,9 @@ class ConstantsTest extends FunSpec with Matchers {
                         "6: r_3 = op_0;",
                         "7: op_0 = 10.0d;",
                         "8: r_5 = op_0;",
-                        "9: return;"))
+                        "9: return;"
+                    )
+                )
             }
         }
 
@@ -256,9 +280,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(13, SimpleVar(-7, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
                     Assignment(15, SimpleVar(0, ComputationalTypeInt), IntConst(15, -1)),
                     Assignment(16, SimpleVar(-8, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(18)))
+                    Return(18)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1;",
@@ -273,7 +299,9 @@ class ConstantsTest extends FunSpec with Matchers {
                         "12: r_6 = op_0;",
                         "13: op_0 = -1;",
                         "14: r_7 = op_0;",
-                        "15: return;"))
+                        "15: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the long constants") {
@@ -290,14 +318,18 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(-2, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Assignment(2, SimpleVar(0, ComputationalTypeLong), LongConst(2, 1L)),
                     Assignment(3, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
-                    Return(4)))
+                    Return(4)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0l;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1l;",
                         "4: r_3 = op_0;",
-                        "5: return;"))
+                        "5: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the float constants") {
@@ -316,16 +348,20 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(3, SimpleVar(-3, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
                     Assignment(4, SimpleVar(0, ComputationalTypeFloat), FloatConst(4, 2.0f)),
                     Assignment(5, SimpleVar(-4, ComputationalTypeFloat), SimpleVar(0, ComputationalTypeFloat)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0.0f;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1.0f;",
                         "4: r_2 = op_0;",
                         "5: op_0 = 2.0f;",
                         "6: r_3 = op_0;",
-                        "7: return;"))
+                        "7: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the double constants") {
@@ -342,14 +378,18 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(1, SimpleVar(-2, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
                     Assignment(2, SimpleVar(0, ComputationalTypeDouble), DoubleConst(2, 1.0d)),
                     Assignment(3, SimpleVar(-4, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
-                    Return(4)))
+                    Return(4)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 0.0d;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 1.0d;",
                         "4: r_3 = op_0;",
-                        "5: return;"))
+                        "5: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the null reference constants") {
@@ -364,12 +404,16 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), NullExpr(0)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(2)))
+                    Return(2)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = null;",
                         "2: r_1 = op_0;",
-                        "3: return;"))
+                        "3: return;"
+                    )
+                )
             }
 
             it("should correctly reflect the other constant loading instructions") {
@@ -390,9 +434,11 @@ class ConstantsTest extends FunSpec with Matchers {
                     Assignment(9, SimpleVar(-4, ComputationalTypeLong), SimpleVar(0, ComputationalTypeLong)),
                     Assignment(10, SimpleVar(0, ComputationalTypeDouble), DoubleConst(10, 10.0d)),
                     Assignment(13, SimpleVar(-6, ComputationalTypeDouble), SimpleVar(0, ComputationalTypeDouble)),
-                    Return(15)))
+                    Return(15)
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: op_0 = 10;",
                         "2: r_1 = op_0;",
                         "3: op_0 = 10.0f;",
@@ -401,7 +447,9 @@ class ConstantsTest extends FunSpec with Matchers {
                         "6: r_3 = op_0;",
                         "7: op_0 = 10.0d;",
                         "8: r_5 = op_0;",
-                        "9: return;"))
+                        "9: return;"
+                    )
+                )
             }
         }
     }

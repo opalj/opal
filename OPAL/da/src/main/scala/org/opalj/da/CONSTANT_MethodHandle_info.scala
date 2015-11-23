@@ -36,8 +36,9 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class CONSTANT_MethodHandle_info(
-        reference_kind: Int,
-        reference_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        reference_kind:  Int,
+        reference_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
 

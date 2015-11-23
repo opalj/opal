@@ -78,7 +78,8 @@ trait MethodCallsHandling extends MethodCallsDomain {
 
     protected[this] def MethodCallResult(
         returnValue: DomainValue,
-        exceptions: Iterable[ExceptionValue]): MethodCallResult = {
+        exceptions:  Iterable[ExceptionValue]
+    ): MethodCallResult = {
         if (exceptions.isEmpty)
             ComputedValue(returnValue)
         else
@@ -86,7 +87,8 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def MethodCallResult(
-        potentialExceptions: Iterable[ExceptionValue]): MethodCallResult = {
+        potentialExceptions: Iterable[ExceptionValue]
+    ): MethodCallResult = {
         if (potentialExceptions.isEmpty)
             ComputationWithSideEffectOnly
         else
@@ -94,8 +96,9 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInvoke(
-        pc: PC,
-        methodDescriptor: MethodDescriptor): MethodCallResult = {
+        pc:               PC,
+        methodDescriptor: MethodDescriptor
+    ): MethodCallResult = {
         val returnType = methodDescriptor.returnType
         val potentialExceptions = getPotentialExceptions(pc)
         if (returnType.isVoidType) {
@@ -106,16 +109,18 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInvoke(
-        pc: PC,
+        pc:           PC,
         targetMethod: Method,
-        operands: Operands): MethodCallResult = {
+        operands:     Operands
+    ): MethodCallResult = {
         handleInvoke(pc, targetMethod.descriptor)
     }
 
     protected[this] def handleInstanceBasedInvoke(
-        pc: PC,
+        pc:               PC,
         methodDescriptor: MethodDescriptor,
-        receiverIsNull: Answer): MethodCallResult = {
+        receiverIsNull:   Answer
+    ): MethodCallResult = {
         val potentialExceptions =
             receiverIsNull match {
                 case Yes ⇒
@@ -136,9 +141,10 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInstanceBasedInvoke(
-        pc: PC,
+        pc:               PC,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
         val receiverIsNull = refIsNull(pc, operands.last)
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
     }
@@ -153,11 +159,12 @@ trait MethodCallsHandling extends MethodCallsDomain {
      *      particular regarding the return type.
      */
     protected[this] def handleInstanceBasedInvoke(
-        pc: PC,
+        pc:               PC,
         methodDescriptor: MethodDescriptor,
-        targetMethods: Set[Method],
-        receiverIsNull: Answer,
-        operands: Operands): MethodCallResult = {
+        targetMethods:    Set[Method],
+        receiverIsNull:   Answer,
+        operands:         Operands
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
     }
 

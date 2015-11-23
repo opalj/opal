@@ -53,9 +53,10 @@ abstract class LoadLocalVariableInstruction extends Instruction {
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
@@ -85,7 +86,8 @@ object LoadLocalVariableInstruction {
      */
     def apply(
         fieldType: FieldType,
-        lvIndex: Int): LoadLocalVariableInstruction =
+        lvIndex:   Int
+    ): LoadLocalVariableInstruction =
         (fieldType.id: @scala.annotation.switch) match {
             case IntegerType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
             case ByteType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)

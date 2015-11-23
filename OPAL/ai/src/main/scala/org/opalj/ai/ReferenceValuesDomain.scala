@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import org.opalj.br.{ ReferenceType, ArrayType, FieldType }
+import org.opalj.br.{ReferenceType, ArrayType, FieldType}
 
 /**
  * Domain that defines all methods that perform computations related to `RefernceValues`.
@@ -64,8 +64,9 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      *      the runtime value `null`.
      */
     /*ABSTRACT*/ def isValueSubtypeOf(
-        value: DomainValue,
-        supertype: ReferenceType): Answer
+        value:     DomainValue,
+        supertype: ReferenceType
+    ): Answer
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
@@ -132,9 +133,10 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * the information to the other aliases.
      */
     def refTopOperandIsNull(
-        pc: PC,
+        pc:       PC,
         operands: Operands,
-        locals: Locals): (Operands, Locals)
+        locals:   Locals
+    ): (Operands, Locals)
 
     /**
      * Called by the abstract interpreter when '''the type bound of the top most stack
@@ -148,10 +150,11 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * the information to the other aliases.
      */
     /*abstract*/ def refSetUpperTypeBoundOfTopOperand(
-        pc: PC,
-        bound: ReferenceType,
+        pc:       PC,
+        bound:    ReferenceType,
         operands: Operands,
-        locals: Locals): (Operands, Locals)
+        locals:   Locals
+    ): (Operands, Locals)
 
     /**
      * Called by the framework when the value is known to be `null`/has to be `null`.
@@ -160,10 +163,11 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * other branch.
      */
     def refEstablishIsNull(
-        pc: PC,
-        value: DomainValue,
+        pc:       PC,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = (operands, locals)
+        locals:   Locals
+    ): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNull = refEstablishIsNull _
 
     /**
@@ -173,10 +177,11 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * other branch.
      */
     def refEstablishIsNonNull(
-        pc: PC,
-        value: DomainValue,
+        pc:       PC,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = (operands, locals)
+        locals:   Locals
+    ): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNonNull = refEstablishIsNonNull _
 
     /**
@@ -184,11 +189,12 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * we are going to analyze the branch where the comparison succeeded.
      */
     def refEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = (operands, locals)
+        locals:   Locals
+    ): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreEqual = refEstablishAreEqual _
 
     /**
@@ -196,11 +202,12 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * we are going to analyze the branch where the comparison failed.
      */
     def refEstablishAreNotEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = (operands, locals)
+        locals:   Locals
+    ): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     // -----------------------------------------------------------------------------------
@@ -222,9 +229,10 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * count is negative.
      */
     def newarray(
-        pc: PC,
-        count: DomainValue,
-        componentType: FieldType): Computation[DomainValue, ExceptionValue]
+        pc:            PC,
+        count:         DomainValue,
+        componentType: FieldType
+    ): Computation[DomainValue, ExceptionValue]
 
     /**
      * Creates a representation of a new multidimensional array.
@@ -232,9 +240,10 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * count is negative.
      */
     def multianewarray(
-        pc: PC,
-        counts: List[DomainValue],
-        arrayType: ArrayType): Computation[DomainValue, ExceptionValue]
+        pc:        PC,
+        counts:    List[DomainValue],
+        arrayType: ArrayType
+    ): Computation[DomainValue, ExceptionValue]
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -260,66 +269,74 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def aastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def bastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def castore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def dastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def fastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def iastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def lastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
 
     def sastore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
@@ -329,7 +346,8 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * Returns the array's length or throws a `NullPointerException`.
      */
     def arraylength(
-        pc: PC,
-        arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
+        pc:       PC,
+        arrayref: DomainValue
+    ): Computation[DomainValue, ExceptionValue]
 
 }

@@ -69,15 +69,19 @@ trait PerformInvocations extends MethodCallsHandling {
     def calledMethodAI: AI[_ >: CalledMethodDomain]
 
     protected[this] def doInvoke(
-        method: Method,
-        calledMethodDomain: CalledMethodDomain)(
-            parameters: calledMethodDomain.Locals): AIResult { val domain: calledMethodDomain.type } = {
+        method:             Method,
+        calledMethodDomain: CalledMethodDomain
+    )(
+        parameters: calledMethodDomain.Locals
+    ): AIResult { val domain: calledMethodDomain.type } = {
         val noOperands = List.empty[calledMethodDomain.DomainValue]
         val isStrict = method.isStrict
         val code = method.body.get
         calledMethodAI.performInterpretation(
-            isStrict, code, calledMethodDomain)(
-                noOperands, parameters)
+            isStrict, code, calledMethodDomain
+        )(
+            noOperands, parameters
+        )
     }
 
     /**
@@ -88,12 +92,14 @@ trait PerformInvocations extends MethodCallsHandling {
      * identity), then the parameter is mapped back to the original operand.
      */
     protected[this] def transformResult(
-        callerPC: PC,
-        calledMethod: Method,
-        originalOperands: callingDomain.Operands,
-        calledMethodDomain: CalledMethodDomain)(
-            passedParameters: calledMethodDomain.Locals,
-            result: AIResult { val domain: calledMethodDomain.type }): MethodCallResult = {
+        callerPC:           PC,
+        calledMethod:       Method,
+        originalOperands:   callingDomain.Operands,
+        calledMethodDomain: CalledMethodDomain
+    )(
+        passedParameters: calledMethodDomain.Locals,
+        result:           AIResult { val domain: calledMethodDomain.type }
+    ): MethodCallResult = {
 
         if (useExceptionsThrownByCalledMethod) {
             val domain = result.domain
@@ -114,8 +120,10 @@ trait PerformInvocations extends MethodCallsHandling {
                 } else {
                     val returnedValue =
                         domain.returnedValueRemapped(
-                            callingDomain, callerPC)(
-                                originalOperands, passedParameters)
+                            callingDomain, callerPC
+                        )(
+                            originalOperands, passedParameters
+                        )
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueOrException(returnedValue.get, thrownExceptions)
                     } else {
@@ -126,8 +134,10 @@ trait PerformInvocations extends MethodCallsHandling {
         } else {
             val returnedValue =
                 calledMethodDomain.returnedValueRemapped(
-                    callingDomain, callerPC)(
-                        originalOperands, passedParameters)
+                    callingDomain, callerPC
+                )(
+                    originalOperands, passedParameters
+                )
             val exceptions = callingDomain.getPotentialExceptions(callerPC)
 
             if (calledMethod.descriptor.returnType eq VoidType) {
@@ -149,18 +159,20 @@ trait PerformInvocations extends MethodCallsHandling {
      * Performs the invocation of the given method using the given operands.
      */
     protected[this] def doInvoke(
-        pc: PC,
+        pc:            PC,
         definingClass: ClassFile,
-        method: Method,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        method:        Method,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         assert(definingClass.methods.contains(method))
         assert(
             method.body.isDefined,
             s"the method ${project.source(definingClass.thisType)}: "+
                 s"${method.toJava(definingClass)} does not have a body "+
-                "(is the project self-consistent?)")
+                "(is the project self-consistent?)"
+        )
 
         val calledMethodDomain = this.calledMethodDomain(definingClass, method)
         val parameters = mapOperandsToParameters(operands, method, calledMethodDomain)
@@ -173,11 +185,12 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     protected[this] def testAndDoInvoke(
-        pc: PC,
+        pc:            PC,
         definingClass: ClassFile,
-        method: Method,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        method:        Method,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         if (project.isLibraryType(definingClass.thisType))
             return fallback();
@@ -186,7 +199,8 @@ trait PerformInvocations extends MethodCallsHandling {
             OPALLogger.logOnce(Error(
                 "project configuration",
                 "the resolved method on a concrete object is abstract: "+
-                    method.toJava(definingClass)))
+                    method.toJava(definingClass)
+            ))
             fallback()
         } else if (!method.isNative) {
             if (!shouldInvocationBePerformed(definingClass, method))
@@ -205,12 +219,13 @@ trait PerformInvocations extends MethodCallsHandling {
     // -----------------------------------------------------------------------------------
 
     protected[this] def doInvokeNonVirtual(
-        pc: PC,
+        pc:                 PC,
         declaringClassType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        operands:           Operands,
+        fallback:           () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         val methodOption =
             try {
@@ -219,7 +234,8 @@ trait PerformInvocations extends MethodCallsHandling {
                     declaringClassType.asObjectType,
                     methodName,
                     methodDescriptor,
-                    project)
+                    project
+                )
             } catch {
                 case ct: ControlThrowable ⇒
                     throw ct;
@@ -230,7 +246,8 @@ trait PerformInvocations extends MethodCallsHandling {
                         "exception occured while resolving method reference: "+
                             declaringClassType.toJava+
                             "{ static "+methodDescriptor.toJava(methodName)+"}"+
-                            ": "+e.getMessage))
+                            ": "+e.getMessage
+                    ))
                     return fallback();
 
                 case e: Throwable ⇒
@@ -253,7 +270,8 @@ trait PerformInvocations extends MethodCallsHandling {
                     "project configuration",
                     "method reference cannot be resolved: "+
                         declaringClassType.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"))
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"
+                ))
                 fallback()
         }
     }
@@ -263,19 +281,21 @@ trait PerformInvocations extends MethodCallsHandling {
      * resolve the target.
      */
     def doInvokeVirtual(
-        pc: PC,
+        pc:             PC,
         declaringClass: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands,
+        fallback:       () ⇒ MethodCallResult
+    ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
         typeOfValue(receiver) match {
             case refValue: IsAReferenceValue if (
                 refValue.isPrecise &&
                 refValue.isNull.isNo && // TODO handle the case that null is unknown
                 refValue.upperTypeBound.isSingletonSet &&
-                refValue.upperTypeBound.head.isObjectType) ⇒
+                refValue.upperTypeBound.head.isObjectType
+            ) ⇒
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 doInvokeNonVirtual(pc, receiverClass, name, descriptor, operands, fallback)
 
@@ -286,11 +306,12 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokevirtual(
-        pc: PC,
+        pc:             PC,
         declaringClass: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokevirtual(pc, declaringClass, name, descriptor, operands)
@@ -300,11 +321,12 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokeinterface(
-        pc: PC,
+        pc:             PC,
         declaringClass: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokeinterface(pc, declaringClass, name, descriptor, operands)
@@ -313,11 +335,12 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -333,11 +356,12 @@ trait PerformInvocations extends MethodCallsHandling {
      * if we have a recursive invocation, the super implementation is called.
      */
     abstract override def invokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        methodName: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         def fallback() =
             super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)

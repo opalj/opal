@@ -64,9 +64,10 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         // For each method doing INVOKESPECIAL followed by INVOKEVIRTUAL on the same
         // java.lang class, where the called method's name ends in "Value"...
@@ -78,7 +79,8 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
             ObjectType("java/lang/Integer"),
             ObjectType("java/lang/Long"),
             ObjectType("java/lang/Float"),
-            ObjectType("java/lang/Double"))
+            ObjectType("java/lang/Double")
+        )
         val theMethods = scala.collection.mutable.HashSet(
             "booleanValue",
             "byteValue",
@@ -87,7 +89,8 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
             "intValue",
             "longValue",
             "floatValue",
-            "doubleValue")
+            "doubleValue"
+        )
 
         var result: List[LineAndColumnBasedReport[Source]] = List.empty
         for {
@@ -122,7 +125,8 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
                                                 method.name,
                                                 body.lineNumber(pc),
                                                 None,
-                                                "Value boxed and immediately unboxed") :: result
+                                                "Value boxed and immediately unboxed"
+                                            ) :: result
                                         // we have matched the sequence
                                         pc = body.pcOfNextInstruction(next_pc)
                                     }

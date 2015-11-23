@@ -94,9 +94,12 @@ object InstructionCountBoundedAI {
      * heuristics which may fail for methods with a certain (hidden) complexity.
      */
     def calculateMaxEvaluationCount(
-        code: Code,
-        maxEvaluationFactor: Double)(
-            implicit logContext: LogContext): Int = {
+        code:                Code,
+        maxEvaluationFactor: Double
+    )(
+        implicit
+        logContext: LogContext
+    ): Int = {
         if (maxEvaluationFactor == Double.PositiveInfinity)
             return Int.MaxValue
 
@@ -128,7 +131,8 @@ object InstructionCountBoundedAI {
                 "effectively unbounded evaluation"+
                     "; instructions size="+code.instructions.size+
                     "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor)
+                    "; maxEvaluationFactor="+maxEvaluationFactor
+            )
         }
 
         if (upperBound > 1000000.0d) {
@@ -138,7 +142,8 @@ object InstructionCountBoundedAI {
                     " instructions) may take execessively long"+
                     "; instructions size="+code.instructions.size+
                     "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor)
+                    "; maxEvaluationFactor="+maxEvaluationFactor
+            )
         }
 
         Math.max(instructionsSize, upperBound).toInt

@@ -58,9 +58,10 @@ class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         import MethodDescriptor.NoArgsAndReturnVoid
 
@@ -83,7 +84,8 @@ class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
                 project.source(classFile.thisType),
                 Severity.Info,
                 classFile.thisType,
-                "Declares useless finalize() method")
+                "Declares useless finalize() method"
+            )
         }
     }
 }

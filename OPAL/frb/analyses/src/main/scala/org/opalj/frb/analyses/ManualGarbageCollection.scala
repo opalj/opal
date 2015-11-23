@@ -58,9 +58,10 @@ class ManualGarbageCollection[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         import MethodDescriptor.NoArgsAndReturnVoid
 
@@ -81,6 +82,7 @@ class ManualGarbageCollection[Source] extends FindRealBugsAnalysis[Source] {
             Severity.Info,
             classFile.thisType,
             method,
-            "Contains unnecessary call to gc()")
+            "Contains unnecessary call to gc()"
+        )
     }
 }

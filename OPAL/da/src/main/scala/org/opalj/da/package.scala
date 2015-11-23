@@ -99,7 +99,8 @@ package object da {
     def parseMethodDescriptor(
         //definingTypeFQN: String,
         methodName: String,
-        descriptor: String): String = {
+        descriptor: String
+    ): String = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
@@ -116,7 +117,8 @@ package object da {
     def methodDescriptorAsInlineNode(
         //definingTypeFQN: String,
         methodName: String,
-        descriptor: String): Node = {
+        descriptor: String
+    ): Node = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {

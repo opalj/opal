@@ -88,4 +88,8 @@ pomExtra in ThisBuild := (
       <name>Michael Eichberg</name>
       <url>http://www.michael-eichberg.de</url>
     </developer>
+    <developer>
+      <id>reif</id>
+      <name>Michael Reif</name>
+    </developer>	
   </developers>)

@@ -61,7 +61,9 @@ class TestLongBitsToDoubleInvokedOnInt extends AnalysisTest {
                     "test",
                     Some(45),
                     None,
-                    "Passing int to Double.longBitsToDouble(long)"))
+                    "Passing int to Double.longBitsToDouble(long)"
+                )
+            )
         }
 
     it should "find 1 issue in total" in {

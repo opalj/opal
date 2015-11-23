@@ -100,7 +100,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 != 0) goto 6;"))
             }
 
@@ -111,7 +112,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 == 0) goto 6;"))
             }
 
@@ -122,7 +124,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 >= 0) goto 6;"))
             }
 
@@ -133,7 +136,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 < 0) goto 6;"))
             }
 
@@ -144,7 +148,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 <= 0) goto 6;"))
             }
 
@@ -155,7 +160,8 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
-                    If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6)
+                ))
                 javaLikeCode.shouldEqual(resultJLC("3: if(op_0 > 0) goto 6;"))
             }
         }
@@ -195,11 +201,13 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), NE, IntConst(-1, 0), 6),
                     DomainValueBasedVar(0, domain.IntegerConstant0),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 != 0) goto 6;",
                     "5: return op_0 /*int = 0*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect the equals case") {
@@ -213,11 +221,13 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), EQ, IntConst(-1, 0), 6),
                     DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 == 0) goto 6;",
                     "5: return op_0 /*an int*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect the greater-equals case") {
@@ -230,13 +240,17 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), GE, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE, -1).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE, -1).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 >= 0) goto 6;",
                     "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+(-1)+"]*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect the less-then case") {
@@ -249,13 +263,17 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), LT, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(0, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(0, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 < 0) goto 6;",
                     "5: return op_0 /*int ∈ [0,"+Integer.MAX_VALUE+"]*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect the less-equals case") {
@@ -268,13 +286,17 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), LE, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(1, Integer.MAX_VALUE).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 <= 0) goto 6;",
                     "5: return op_0 /*int ∈ [1,"+Integer.MAX_VALUE+"]*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect the greater-then case") {
@@ -287,13 +309,17 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(resultAST(
                     If(1, SimpleVar(0, ComputationalTypeInt), GT, IntConst(-1, 0), 6),
-                    DomainValueBasedVar(0,
-                        domain.IntegerRange(Integer.MIN_VALUE, 0).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.IntegerConstant0)))
+                    DomainValueBasedVar(
+                        0,
+                        domain.IntegerRange(Integer.MIN_VALUE, 0).asInstanceOf[domain.DomainValue]
+                    ),
+                    DomainValueBasedVar(0, domain.IntegerConstant0)
+                ))
                 javaLikeCode.shouldEqual(resultJLC(
                     "3: if(op_0 > 0) goto 6;",
                     "5: return op_0 /*int ∈ ["+Integer.MIN_VALUE+","+0+"]*/;",
-                    "7: return op_0 /*int = 0*/;"))
+                    "7: return op_0 /*int = 0*/;"
+                ))
             }
         }
 

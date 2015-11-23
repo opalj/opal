@@ -31,14 +31,15 @@ package ai
 package domain
 package li
 
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 
 class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
+    val id:        I,
+    val project:   Project[Source],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -66,11 +67,13 @@ class DefaultConfigurableDomain[I, Source](
 }
 
 class DefaultDomain[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
+    method:    Method
+)
         extends DefaultConfigurableDomain[String, Source](
             classFile.thisType.toJava+"{ "+method.toJava+"}",
             project,
             classFile,
-            method)
+            method
+        )

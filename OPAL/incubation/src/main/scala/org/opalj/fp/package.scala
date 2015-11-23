@@ -29,7 +29,7 @@
 package org.opalj
 
 import scala.collection.mutable
-import org.opalj.collection.mutable.{ ArrayMap ⇒ OArrayMap }
+import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**

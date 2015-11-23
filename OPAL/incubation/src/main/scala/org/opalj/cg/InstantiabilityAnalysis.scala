@@ -63,9 +63,12 @@ object InstantiabilityAnalysis {
      * Identifies those private static non-final fields that are initialized exactly once.
      */
     def determineInstantiability(
-        classFile: ClassFile)(
-            implicit project: SomeProject,
-            projectStore: PropertyStore): PropertyComputationResult = {
+        classFile: ClassFile
+    )(
+        implicit
+        project:      SomeProject,
+        projectStore: PropertyStore
+    ): PropertyComputationResult = {
 
         import project.classHierarchy.isSubtypeOf
 

@@ -106,7 +106,8 @@ object CallGraphFactory {
                         !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
                         classHierarchy.isSubtypeOf(
                             classFile.thisType,
-                            ObjectType.Serializable).isYesOrUnknown
+                            ObjectType.Serializable
+                        ).isYesOrUnknown
                     )
             }
 
@@ -141,16 +142,17 @@ object CallGraphFactory {
      * the call graph algorithm (and its used cache) have to be thread-safe.
      */
     def create(
-        theProject: SomeProject,
+        theProject:      SomeProject,
         findEntryPoints: () ⇒ Iterable[Method],
-        configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
+        configuration:   CallGraphAlgorithmConfiguration
+    ): ComputedCallGraph = {
         implicit val logContext = theProject.logContext
 
         val entryPoints = findEntryPoints()
         if (entryPoints.isEmpty)
             return ComputedCallGraph.empty(theProject)
 
-        import scala.collection.{ Map, Set }
+        import scala.collection.{Map, Set}
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
         import java.util.concurrent.Callable
@@ -211,7 +213,8 @@ object CallGraphFactory {
                 val secondInstruction = instructions(1)
                 if (secondInstruction != null && (
                     secondInstruction.opcode < 182 ||
-                    secondInstruction.opcode > 186))
+                    secondInstruction.opcode > 186
+                ))
                     minimumSize = 6
             }
             if (instructions.size < minimumSize)
@@ -238,7 +241,8 @@ object CallGraphFactory {
             if (debug && (analyzedMethods % 1000 == 0)) {
                 OPALLogger.info(
                     "progress - call graph",
-                    s"analyzed: $analyzedMethods methods")
+                    s"analyzed: $analyzedMethods methods"
+                )
             }
 
             // 2. ENQUE NEXT METHODS
@@ -267,13 +271,15 @@ object CallGraphFactory {
         if (debug)
             OPALLogger.info(
                 "progress - call graph",
-                "finished analzying the bytecode, constructing the final call graph")
+                "finished analzying the bytecode, constructing the final call graph"
+            )
 
         ComputedCallGraph(
             builder.buildCallGraph,
             findEntryPoints,
             unresolvedMethodCalls,
-            exceptions)
+            exceptions
+        )
     }
 }
 

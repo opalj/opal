@@ -90,7 +90,8 @@ class MethodsWithArraysTest
             Some(classFile),
             Some(method),
             method.body.get,
-            result) {
+            result
+        ) {
                 f(domain)
             }
     }
@@ -101,7 +102,7 @@ class MethodsWithArraysTest
         evaluateMethod("byteArrays", domain ⇒ {
             import domain._
             domain.allReturnedValues should be(
-                Map((15 -> AByteValue))
+                Map((15 → AByteValue))
             )
         })
     }
@@ -110,7 +111,7 @@ class MethodsWithArraysTest
         evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
             domain.allReturnedValues should be(
-                Map((14 -> ABooleanValue))
+                Map((14 → ABooleanValue))
             )
         })
     }
@@ -119,7 +120,8 @@ class MethodsWithArraysTest
         evaluateMethod("covariantArrays", domain ⇒ {
             domain.allReturnedValues.size should be(1)
             domain.isValueSubtypeOf(
-                domain.allReturnedValues(24), ObjectType.Object) should be(Yes)
+                domain.allReturnedValues(24), ObjectType.Object
+            ) should be(Yes)
         })
     }
 
@@ -127,9 +129,11 @@ class MethodsWithArraysTest
         evaluateMethod("integerArraysFrenzy", domain ⇒ {
             domain.allReturnedValues.size should be(2)
             domain.isValueSubtypeOf(
-                domain.allReturnedValues(78), ArrayType(IntegerType)) should be(Yes)
+                domain.allReturnedValues(78), ArrayType(IntegerType)
+            ) should be(Yes)
             domain.isValueSubtypeOf(
-                domain.allReturnedValues(76), ArrayType(ByteType)) should be(Yes)
+                domain.allReturnedValues(76), ArrayType(ByteType)
+            ) should be(Yes)
         })
     }
 }

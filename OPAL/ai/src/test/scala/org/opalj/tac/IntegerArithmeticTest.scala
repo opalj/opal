@@ -115,7 +115,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
             }
 
@@ -127,7 +128,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_1;"))
             }
 
@@ -139,7 +141,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
             }
 
@@ -155,7 +158,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeInt),
                         BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
-                    ReturnValue(4, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(4, SimpleVar(0, ComputationalTypeInt))
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: r_1 = r_1 + 1;"))
             }
 
@@ -171,7 +175,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
                     Assignment(1, SimpleVar(0, ComputationalTypeInt),
                         PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
-                    ReturnValue(2, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(2, SimpleVar(0, ComputationalTypeInt))
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: op_0 = - op_0;"))
             }
 
@@ -183,7 +188,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
             }
 
@@ -195,7 +201,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_1;"))
             }
 
@@ -207,7 +214,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
             }
 
@@ -219,7 +227,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_1;"))
             }
 
@@ -231,7 +240,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_1;"))
             }
 
@@ -243,7 +253,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
@@ -255,7 +266,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_1;"))
             }
 
@@ -267,7 +279,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
-                        BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_1;"))
             }
         }
@@ -313,7 +326,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
             }
 
@@ -328,7 +342,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_1;"))
             }
 
@@ -343,7 +358,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
             }
 
@@ -361,7 +377,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
                     Assignment(1, SimpleVar(-2, ComputationalTypeInt),
                         BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
-                    ReturnValue(4, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(4, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: r_1 = r_1 + 1;"))
             }
 
@@ -379,7 +396,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
                     Assignment(1, SimpleVar(0, ComputationalTypeInt),
                         PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(2, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: op_0 = - op_0;"))
             }
 
@@ -394,7 +412,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
             }
 
@@ -409,7 +428,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_1;"))
             }
 
@@ -424,7 +444,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
             }
 
@@ -439,7 +460,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_1;"))
             }
 
@@ -454,7 +476,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_1;"))
             }
 
@@ -469,7 +492,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
@@ -484,7 +508,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_1;"))
             }
 
@@ -499,7 +524,8 @@ class IntegerArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeInt),
                         BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AnIntegerValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_1;"))
             }
         }

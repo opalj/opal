@@ -56,9 +56,10 @@ package object io {
     @throws[IOException]("if it is not possible to create a temporary file")
     @throws[OpeningFileFailedException]("if it is not possible to open the file")
     def writeAndOpen(
-        node: Node,
+        node:           Node,
         filenamePrefix: String,
-        filenameSuffix: String): File = {
+        filenameSuffix: String
+    ): File = {
 
         val data = node.toString
         writeAndOpen(data, filenamePrefix, filenameSuffix)
@@ -91,9 +92,10 @@ package object io {
     @throws[IOException]("if it is not possible to create a temporary file")
     @throws[OpeningFileFailedException]("if it is not possible to open the file")
     def writeAndOpen(
-        data: String,
+        data:           String,
         filenamePrefix: String,
-        filenameSuffix: String): File = {
+        filenameSuffix: String
+    ): File = {
 
         val file = File.createTempFile(filenamePrefix, filenameSuffix)
         process { new java.io.FileOutputStream(file) } { fos ⇒

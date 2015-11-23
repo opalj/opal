@@ -87,9 +87,10 @@ import org.opalj.br.Field
 object FieldValuesAnalysis {
 
     def doAnalyze(
-        theProject: SomeProject,
-        createDomain: (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
-        isInterrupted: () ⇒ Boolean): FieldValueInformation = {
+        theProject:    SomeProject,
+        createDomain:  (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
+        isInterrupted: () ⇒ Boolean
+    ): FieldValueInformation = {
 
         val results = new ConcurrentHashMap[Field, Domain#DomainValue]
 

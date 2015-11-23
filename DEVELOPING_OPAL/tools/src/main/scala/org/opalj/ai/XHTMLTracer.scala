@@ -43,11 +43,12 @@ import org.opalj.ai.common.XHTML.dumpLocals
 import org.opalj.ai.common.XHTML.dumpStack
 
 case class FlowEntity(
-        pc: PC,
+        pc:          PC,
         instruction: Instruction,
-        operands: Operands[_ >: Null <: Domain#DomainValue],
-        locals: Locals[_ >: Null <: Domain#DomainValue],
-        properties: Option[String]) {
+        operands:    Operands[_ >: Null <: Domain#DomainValue],
+        locals:      Locals[_ >: Null <: Domain#DomainValue],
+        properties:  Option[String]
+) {
     val flowId = FlowEntity.nextFlowId
 }
 
@@ -77,9 +78,10 @@ trait XHTMLTracer extends AITracer {
     }
 
     private def instructionToNode(
-        flowId: Int,
-        pc: PC,
-        instruction: Instruction): xml.Node = {
+        flowId:      Int,
+        pc:          PC,
+        instruction: Instruction
+    ): xml.Node = {
         val openDialog = "$( \"#dialog"+flowId+"\" ).dialog(\"open\");"
         val instructionAsString =
             instruction match {
@@ -106,7 +108,7 @@ trait XHTMLTracer extends AITracer {
     }
 
     def dumpXHTML(title: String): scala.xml.Node = {
-        import scala.collection.immutable.{ SortedMap, SortedSet }
+        import scala.collection.immutable.{SortedMap, SortedSet}
 
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0
@@ -265,13 +267,15 @@ trait XHTMLTracer extends AITracer {
 
     def continuingInterpretation(
         strictfp: Boolean,
-        code: Code,
-        domain: Domain)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: domain.OperandsArray,
-            localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
+        code:     Code,
+        domain:   Domain
+    )(
+        initialWorkList:                  List[PC],
+        alreadyEvaluated:                 List[PC],
+        operandsArray:                    domain.OperandsArray,
+        localsArray:                      domain.LocalsArray,
+        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+    ): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
         else
@@ -282,29 +286,35 @@ trait XHTMLTracer extends AITracer {
     private[this] var continuingWithBranch = true
 
     def flow(
-        domain: Domain)(
-            currentPC: PC,
-            successorPC: PC,
-            isExceptionalControlFlow: Boolean) = {
+        domain: Domain
+    )(
+        currentPC:                PC,
+        successorPC:              PC,
+        isExceptionalControlFlow: Boolean
+    ) = {
         continuingWithBranch = currentPC < successorPC
     }
 
     def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
 
     def rescheduled(
-        domain: Domain)(
-            sourcePC: PC,
-            targetPC: PC,
-            isExceptionalControlFlow: Boolean): Unit = {
+        domain: Domain
+    )(
+        sourcePC:                 PC,
+        targetPC:                 PC,
+        isExceptionalControlFlow: Boolean
+    ): Unit = {
         /*ignored for now*/
     }
 
     def instructionEvalution(
-        domain: Domain)(
-            pc: PC,
-            instruction: Instruction,
-            operands: domain.Operands,
-            locals: domain.Locals): Unit = {
+        domain: Domain
+    )(
+        pc:          PC,
+        instruction: Instruction,
+        operands:    domain.Operands,
+        locals:      domain.Locals
+    ): Unit = {
         if (!continuingWithBranch)
             newBranch()
 
@@ -314,66 +324,83 @@ trait XHTMLTracer extends AITracer {
                 instruction,
                 operands,
                 locals,
-                domain.properties(pc)))
+                domain.properties(pc)
+            )
+        )
         // if we have a call to instruction evaluation without an intermediate
         // flow call, we are continuing the evaluation with a branch
         continuingWithBranch = false
     }
 
     def join(
-        domain: Domain)(
-            pc: PC,
-            thisOperands: domain.Operands,
-            thisLocals: domain.Locals,
-            otherOperands: domain.Operands,
-            otherLocals: domain.Locals,
-            result: Update[(domain.Operands, domain.Locals)]): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        pc:            PC,
+        thisOperands:  domain.Operands,
+        thisLocals:    domain.Locals,
+        otherOperands: domain.Operands,
+        otherLocals:   domain.Locals,
+        result:        Update[(domain.Operands, domain.Locals)]
+    ): Unit = { /*ignored*/ }
 
     def establishedConstraint(
-        domain: Domain)(
-            pc: PC,
-            effectivePC: PC,
-            operands: domain.Operands,
-            locals: domain.Locals,
-            newOperands: domain.Operands,
-            newLocals: domain.Locals): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        pc:          PC,
+        effectivePC: PC,
+        operands:    domain.Operands,
+        locals:      domain.Locals,
+        newOperands: domain.Operands,
+        newLocals:   domain.Locals
+    ): Unit = { /*ignored*/ }
 
     def abruptMethodExecution(
-        domain: Domain)(
-            pc: Int,
-            exception: domain.ExceptionValue): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        pc:        Int,
+        exception: domain.ExceptionValue
+    ): Unit = { /*ignored*/ }
 
     def jumpToSubroutine(
-        domain: Domain)(
-            pc: PC, target: PC, nestingLevel: Int): Unit = { /* ignored */ }
+        domain: Domain
+    )(
+        pc: PC, target: PC, nestingLevel: Int
+    ): Unit = { /* ignored */ }
 
     def returnFromSubroutine(
-        domain: Domain)(
-            pc: PC,
-            returnAddress: PC,
-            subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        pc:                     PC,
+        returnAddress:          PC,
+        subroutineInstructions: List[PC]
+    ): Unit = { /*ignored*/ }
 
     def abruptSubroutineTermination(
-        domain: Domain)(
-            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
-            terminatedSubroutinesCount: Int,
-            oldWorklist: List[PC],
-            newWorklist: List[PC]): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+        terminatedSubroutinesCount: Int,
+        oldWorklist:                List[PC],
+        newWorklist:                List[PC]
+    ): Unit = { /*ignored*/ }
 
     /**
      * Called when a ret instruction is encountered.
      */
     def ret(
-        domain: Domain)(
-            pc: PC,
-            returnAddress: PC,
-            oldWorklist: List[PC],
-            newWorklist: List[PC]): Unit = { /*ignored*/ }
+        domain: Domain
+    )(
+        pc:            PC,
+        returnAddress: PC,
+        oldWorklist:   List[PC],
+        newWorklist:   List[PC]
+    ): Unit = { /*ignored*/ }
 
     def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[PC], message: ⇒ String): Unit = { /*EMPTY*/ }
+        pc: Option[PC], message: ⇒ String
+    ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {
         writeAndOpen(

@@ -33,7 +33,7 @@ package viz
 import java.net.URL
 
 import br._
-import br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -50,11 +50,12 @@ object InstructionStatistics extends AnalysisExecutor {
             "Collects information about the number of instructions per package."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean): BasicReport = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ): BasicReport = {
 
-            import scala.collection.mutable.{ HashSet, HashMap }
+            import scala.collection.mutable.{HashSet, HashMap}
 
             // Collect the number of instructions per package
             // FQPN = FullyQualifiedPackageName
@@ -64,7 +65,8 @@ object InstructionStatistics extends AnalysisExecutor {
                 packageName = classFile.thisType.packageName
                 MethodWithBody(body) ← classFile.methods
             } {
-                instructionsPerFQPN.update(packageName,
+                instructionsPerFQPN.update(
+                    packageName,
                     instructionsPerFQPN.getOrElse(packageName, 0) +
                         body.programCounters.size
                 )
@@ -75,7 +77,8 @@ object InstructionStatistics extends AnalysisExecutor {
 
             def processSubPackages(
                 rootFQPN: String,
-                childPNs: scala.collection.Set[String]): (String, Int) = {
+                childPNs: scala.collection.Set[String]
+            ): (String, Int) = {
 
                 println("PSP::::::::RootFQPN:"+rootFQPN+"  -  ChildPNs:"+childPNs)
 
@@ -89,7 +92,8 @@ object InstructionStatistics extends AnalysisExecutor {
                                         childPN
                                     else
                                         childPN.substring(rootFQPN.length() + 1)
-                                ).replace('/', '.'))
+                                ).replace('/', '.')
+                            )
                         }
                     (
                         childPackages.view.map(_._1).mkString(",\"children\": [{\n", "},{\n", "}]\n"),
@@ -102,7 +106,8 @@ object InstructionStatistics extends AnalysisExecutor {
 
             def processPackage(
                 rootFQPN: String,
-                spn: String): (String, Int) = {
+                spn:      String
+            ): (String, Int) = {
 
                 // Find all immediate child packages. Note that a child package's name
                 // can contain multiple simple package names if the intermediate
@@ -145,8 +150,7 @@ object InstructionStatistics extends AnalysisExecutor {
                         "$$dim": $normalizedInstructions,
                         "$$color": "$color"
                     }"""+children,
-                    allInstructions
-                )
+                    allInstructions)
             }
 
             val theProjectStatistics = {

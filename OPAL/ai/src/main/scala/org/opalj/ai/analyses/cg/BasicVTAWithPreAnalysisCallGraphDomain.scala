@@ -56,12 +56,13 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class BasicVTAWithPreAnalysisCallGraphDomain[Source](
-    val project: Project[Source],
-    val fieldValueInformation: FieldValueInformation,
+    val project:                      Project[Source],
+    val fieldValueInformation:        FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method)
+    val cache:                        CallGraphCache[MethodSignature, Set[Method]],
+    val classFile:                    ClassFile,
+    val method:                       Method
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

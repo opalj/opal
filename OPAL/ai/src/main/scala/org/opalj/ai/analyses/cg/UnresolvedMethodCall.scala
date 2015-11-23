@@ -46,12 +46,13 @@ import br.ReferenceType
  * @author Michael Eichberg
  */
 case class UnresolvedMethodCall(
-        callerClass: ReferenceType,
-        caller: Method,
-        pc: PC,
-        calleeClass: ReferenceType,
-        calleeName: String,
-        calleeDescriptor: MethodDescriptor) {
+        callerClass:      ReferenceType,
+        caller:           Method,
+        pc:               PC,
+        calleeClass:      ReferenceType,
+        calleeName:       String,
+        calleeDescriptor: MethodDescriptor
+) {
 
     import Console._
 

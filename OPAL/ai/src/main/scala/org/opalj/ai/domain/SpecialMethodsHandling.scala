@@ -52,15 +52,17 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
     import SpecialMethodsHandling._
 
     abstract override def invokestatic(
-        pc: PC,
+        pc:                 PC,
         declaringClassType: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        name:               String,
+        methodDescriptor:   MethodDescriptor,
+        operands:           Operands
+    ): MethodCallResult = {
 
         if (!(
             (declaringClassType eq ObjectType.System) &&
-            name == "arraycopy" && methodDescriptor == arraycopyDescriptor))
+            name == "arraycopy" && methodDescriptor == arraycopyDescriptor
+        ))
             return super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands);
 
         val List(length, destPos, dest, sourcePos, source) = operands
@@ -94,7 +96,8 @@ object SpecialMethodsHandling {
     final val arraycopyDescriptor = {
         MethodDescriptor(
             IndexedSeq(Object, IntegerType, Object, IntegerType, IntegerType),
-            VoidType)
+            VoidType
+        )
     }
 
 }

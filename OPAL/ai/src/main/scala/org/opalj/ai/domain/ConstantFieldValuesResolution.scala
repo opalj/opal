@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.{ ObjectType, FieldType }
+import org.opalj.br.{ObjectType, FieldType}
 
 /**
  * Resolves references to final static fields that have simple constant values.
@@ -45,17 +45,17 @@ trait ConstantFieldValuesResolution extends Domain {
     domain: TheProject with ClassHierarchy ⇒
 
     abstract override def getstatic(
-        pc: PC,
+        pc:        PC,
         classType: ObjectType,
         fieldName: String,
-        fieldType: FieldType): Computation[DomainValue, Nothing] = {
+        fieldType: FieldType
+    ): Computation[DomainValue, Nothing] = {
 
         classHierarchy.resolveFieldReference(classType, fieldName, fieldType, project) match {
             case Some(field) if field.isFinal && field.isStatic &&
                 (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) ⇒
                 field.constantFieldValue.map(cv ⇒
-                    ComputedValue(ConstantFieldValue(pc, cv))
-                ).getOrElse(
+                    ComputedValue(ConstantFieldValue(pc, cv))).getOrElse(
                     super.getstatic(pc, classType, fieldName, fieldType)
                 )
 

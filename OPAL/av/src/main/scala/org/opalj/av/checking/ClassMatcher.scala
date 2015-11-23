@@ -76,13 +76,14 @@ case object AllClasses extends ClassMatcher {
  * @author Marco Torsello
  */
 case class DefaultClassMatcher(
-        accessFlagsMatcher: AccessFlagsMatcher = AccessFlagsMatcher.ANY,
-        namePredicate: NamePredicate = RegexNamePredicate(""".*""".r),
-        annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
-        matchSubclasses: Boolean = false,
-        matchImplementingclasses: Boolean = false,
-        val matchMethods: Boolean = true,
-        val matchFields: Boolean = true) extends ClassMatcher {
+        accessFlagsMatcher:       AccessFlagsMatcher   = AccessFlagsMatcher.ANY,
+        namePredicate:            NamePredicate        = RegexNamePredicate(""".*""".r),
+        annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
+        matchSubclasses:          Boolean              = false,
+        matchImplementingclasses: Boolean              = false,
+        val matchMethods:         Boolean              = true,
+        val matchFields:          Boolean              = true
+) extends ClassMatcher {
 
     def isSubClass(classFile: ClassFile, project: SomeProject): Boolean = {
         var sourceClassFile: ClassFile = classFile
@@ -121,7 +122,8 @@ case class DefaultClassMatcher(
         asVirtualSourceElements(
             project.allClassFiles filter { doesMatch },
             matchMethods,
-            matchFields)
+            matchFields
+        )
     }
 
 }
@@ -158,10 +160,11 @@ object ClassMatcher {
     }
 
     def apply(
-        className: String,
-        matchPrefix: Boolean,
+        className:    String,
+        matchPrefix:  Boolean,
         matchMethods: Boolean,
-        matchFields: Boolean): ClassMatcher = {
+        matchFields:  Boolean
+    ): ClassMatcher = {
         require(className.indexOf('*') == -1)
 
         val namePredicate =
@@ -173,7 +176,8 @@ object ClassMatcher {
         new DefaultClassMatcher(
             namePredicate = namePredicate,
             matchMethods = matchMethods,
-            matchFields = matchFields)
+            matchFields = matchFields
+        )
     }
 
     def apply(className: String, matchPrefix: Boolean, matchSubclasses: Boolean): ClassMatcher = {
@@ -186,7 +190,8 @@ object ClassMatcher {
                 Equals(className)
         new DefaultClassMatcher(
             namePredicate = namePredicate,
-            matchSubclasses = matchSubclasses)
+            matchSubclasses = matchSubclasses
+        )
     }
 
     def apply(regex: Regex): ClassMatcher = {
@@ -196,7 +201,8 @@ object ClassMatcher {
     def apply(regex: Regex, matchSubclasses: Boolean): ClassMatcher = {
         new DefaultClassMatcher(
             namePredicate = RegexNamePredicate(regex),
-            matchSubclasses = matchSubclasses)
+            matchSubclasses = matchSubclasses
+        )
     }
 
 }
