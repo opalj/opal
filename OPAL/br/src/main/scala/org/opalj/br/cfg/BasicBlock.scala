@@ -81,7 +81,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     }
 
     /**
-     * Calls the function `f` for all instructions - indentified by their respective
+     * Calls the function `f` for all instructions - identified by their respective
      * pcs - of a basic block.
      *
      * @param f The function that will be called.
@@ -100,7 +100,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     }
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"

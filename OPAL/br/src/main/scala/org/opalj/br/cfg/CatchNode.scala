@@ -47,7 +47,7 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
     final def handlerPC: PC = handler.handlerPC
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def nodeId: Long =

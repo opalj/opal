@@ -118,7 +118,7 @@ object MethodComplexityAnalysis {
                     complexity += high - low
 
                 //
-                // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
+                // STATEMENTS THAT CAN CAUSE EXCEPTIONAL TRANSFER OF CONTROL FLOW
                 //
                 case 191 /*athrow*/         ⇒ complexity += 5
 
