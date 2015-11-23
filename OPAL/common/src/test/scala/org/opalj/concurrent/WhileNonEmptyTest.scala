@@ -122,5 +122,34 @@ class WhileNonEmptyTest extends FunSpec with Matchers with ParallelTestExecution
             exceptions should be(empty)
             processedValues.get() should be(100000 + subsequentlyScheduled.get)
         }
+
+        it("it should be possible process a workqueue that initially contains only one element but adds thousands in multiple steps and occasionally throws an exception") {
+            val processedValues = new AtomicInteger(0)
+            val subsequentlyScheduled = new AtomicInteger(0)
+            val aborted = new AtomicInteger(0)
+            val workQueue = new ConcurrentLinkedQueue[Integer]()
+            for (i ← 0 until 100000) workQueue.add(i)
+            val nextValue = new AtomicInteger(100000)
+            val exceptions =
+                whileNonEmpty(workQueue) { i ⇒
+                    if ((i % 1000) == 0) {
+                        for (i ← 1 until 10) {
+                            subsequentlyScheduled.incrementAndGet()
+                            workQueue.add(nextValue.incrementAndGet())
+                        }
+                    } else if ((i % 1333 == 0)) {
+                        aborted.incrementAndGet()
+                        throw new Exception();
+                    } else {
+                        Thread.sleep(1)
+                    }
+                    processedValues.incrementAndGet()
+                }
+            info("subsequently scheduled: "+subsequentlyScheduled.get)
+            info("number of caught exceptions: "+exceptions.size)
+            exceptions.isEmpty should be(false)
+            exceptions.size should be(aborted.get)
+            processedValues.get() should be(100000 + subsequentlyScheduled.get - aborted.get)
+        }
     }
 }
