@@ -255,6 +255,15 @@ object Method {
     final val writeObjectDescriptor =
         MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
 
+    // FIXME Do what is described and not what is implemente!!!
+    /**
+     * If the declaring class is Externalizable then the methods readObject and writeObject
+     *      are unused. If the declaring class is '''only''' Seralizable then the write and read
+     *      external methods are not serialzation related unless a subclass exists that inherits
+     *      these two methods and implements the interface Externalizable.
+     * @note Calling this method only makes sense if the given class or a subclass thereof
+     *       is actually Serializable.
+     */
     def isObjectSerializationRelated(method: Method): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
@@ -266,6 +275,7 @@ object Method {
             (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
             (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
             (method.name == "writeReplace" && method.descriptor == JustReturnsObject)
+        // add support write/readExternal
     }
 
     final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask

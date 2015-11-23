@@ -231,8 +231,8 @@ trait Issue {
         //            relevance.asEclipseConsoleString+" "+summary
 
         val source = classFile.thisType.toJava.split('$').head
-        "("+source+".java"+line.map(":"+_+") ").getOrElse(") ") +
-            relevance.asEclipseConsoleString+" "+summary.replace('\n', ';')
+        val line = line.map(":"+_+") ").getOrElse(") ")
+        "("+source+".java"+line + relevance.asEclipseConsoleString+" "+summary.replace('\n', ';')
     }
 }
 

@@ -103,19 +103,13 @@ object UnusedMethodsAnalysis {
 
         val callers = callgraph.callGraph calledBy method
         if (callers.isEmpty) {
-
-            val description =
-                methodOrConstructor(method) + (
-                    if (!method.isPrivate) "the class is not instantiable" else ""
-                )
             val relevance: Relevance = rateMethod()
-            // the unused method or constructor issue
             Some(StandardIssue(
                 theProject, classFile, Some(method), None,
                 None,
                 None,
                 "unused method",
-                Some(description),
+                Some(methodOrConstructor(method)),
                 Set(IssueCategory.Comprehensibility),
                 Set(IssueKind.Unused),
                 Seq(),

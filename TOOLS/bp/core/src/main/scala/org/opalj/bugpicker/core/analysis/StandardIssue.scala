@@ -50,6 +50,10 @@ import scala.xml.Unparsed
 /**
  * Describes an issue found by an analysis.
  *
+ * @param summary A short, one line, single sentence description of the issue.
+ * @param description A comprehensive description of the issue potentially along with a
+ *                    description how to fix the issue.
+ *
  * @author Michael Eichberg
  */
 case class StandardIssue(
