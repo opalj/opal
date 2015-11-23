@@ -230,9 +230,10 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
-        currentPC: PC,
-        code: Code,
-        exceptions: List[ObjectType]): UShortSet /* <= mutable by purpose! */ = {
+        currentPC:   PC,
+        code:        Code,
+        exceptions:  List[ObjectType]
+    ): UShortSet /* <= mutable by purpose! */ = {
 
         var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
 
@@ -241,7 +242,8 @@ object Instruction {
                 handler.catchType.isEmpty ||
                     Code.preDefinedClassHierarchy.isSubtypeOf(
                         exception,
-                        handler.catchType.get).isYes
+                        handler.catchType.get
+                    ).isYes
             } match {
                 case Some(handler) ⇒ pcs = handler.startPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
@@ -255,9 +257,10 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
-        currentPC: PC,
-        code: Code,
-        exception: ObjectType): UShortSet /* <= mutable by purpose! */ = {
+        currentPC:   PC,
+        code:        Code,
+        exception:   ObjectType
+    ): UShortSet /* <= mutable by purpose! */ = {
 
         val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
 
@@ -265,7 +268,8 @@ object Instruction {
             handler.catchType.isEmpty ||
                 Code.preDefinedClassHierarchy.isSubtypeOf(
                     exception,
-                    handler.catchType.get).isYes
+                    handler.catchType.get
+                ).isYes
         } match {
             case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
             case None          ⇒ UShortSet(nextInstruction)

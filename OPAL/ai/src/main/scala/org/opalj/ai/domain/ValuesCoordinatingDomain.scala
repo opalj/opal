@@ -30,10 +30,10 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.{ Type, ObjectType, ReferenceType, FieldType }
+import org.opalj.br.{Type, ObjectType, ReferenceType, FieldType}
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.{ Project }
+import org.opalj.br.analyses.{Project}
 
 /**
  * Can be mixed in to create a `Domain` that is intended to be used to coordinate the
@@ -73,85 +73,96 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     def throwClassNotFoundException: Boolean = true
 
     /*override*/ def invokevirtual(
-        pc: PC,
-        declaringClass: ReferenceType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ReferenceType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
+        operands:         Operands
+    ): MethodCallResult =
         throw new UnsupportedOperationException
 
     /*override*/ def invokeinterface(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
+        operands:         Operands
+    ): MethodCallResult =
         throw new UnsupportedOperationException
 
     /*override*/ def invokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
+        operands:         Operands
+    ): MethodCallResult =
         throw new UnsupportedOperationException
 
     /*override*/ def invokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
+        operands:         Operands
+    ): MethodCallResult =
         throw new UnsupportedOperationException
 
     /*override*/ def invokedynamic(
-        pc: PC,
-        bootstrapMethod: BootstrapMethod,
-        name: String,
+        pc:               PC,
+        bootstrapMethod:  BootstrapMethod,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): Computation[DomainValue, ExceptionValues] =
+        operands:         Operands
+    ): Computation[DomainValue, ExceptionValues] =
         throw new UnsupportedOperationException
 
     /* override*/ def getfield(
-        pc: PC,
-        objectref: DomainValue,
+        pc:             PC,
+        objectref:      DomainValue,
         declaringClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
+        name:           String,
+        fieldType:      FieldType
+    ): Computation[DomainValue, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def getstatic(
-        pc: PC,
+        pc:             PC,
         declaringClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[DomainValue, Nothing] =
+        name:           String,
+        fieldType:      FieldType
+    ): Computation[DomainValue, Nothing] =
         throw new UnsupportedOperationException
 
     /*override*/ def putfield(
-        pc: PC,
-        objectref: DomainValue,
-        value: DomainValue,
+        pc:             PC,
+        objectref:      DomainValue,
+        value:          DomainValue,
         declaringClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[Nothing, ExceptionValue] =
+        name:           String,
+        fieldType:      FieldType
+    ): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def putstatic(
-        pc: PC,
-        value: DomainValue,
+        pc:             PC,
+        value:          DomainValue,
         declaringClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[Nothing, Nothing] =
+        name:           String,
+        fieldType:      FieldType
+    ): Computation[Nothing, Nothing] =
         throw new UnsupportedOperationException
 
     /*override*/ def monitorenter(
-        pc: PC,
-        value: DomainValue): Computation[Nothing, ExceptionValue] =
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def monitorexit(
-        pc: PC,
-        value: DomainValue): Computation[Nothing, ExceptionValue] =
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def returnVoid(pc: PC): Unit =

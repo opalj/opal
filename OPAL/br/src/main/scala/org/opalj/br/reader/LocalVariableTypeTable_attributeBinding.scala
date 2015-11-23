@@ -50,26 +50,29 @@ trait LocalVariableTypeTable_attributeBinding
     val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
 
     def LocalVariableTypeTableEntry(
-        cp: Constant_Pool,
-        start_pc: Int,
-        length: Int,
-        name_index: Constant_Pool_Index,
+        cp:              Constant_Pool,
+        start_pc:        Int,
+        length:          Int,
+        name_index:      Constant_Pool_Index,
         signature_index: Constant_Pool_Index,
-        index: Int): LocalVariableType = {
+        index:           Int
+    ): LocalVariableType = {
 
         new LocalVariableType(
             start_pc,
             length,
             cp(name_index).asString,
             cp(signature_index).asFieldTypeSignature,
-            index)
+            index
+        )
     }
 
     def LocalVariableTypeTable_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        local_variable_type_table: LocalVariableTypes) =
+        cp:                        Constant_Pool,
+        attribute_name_index:      Constant_Pool_Index,
+        attribute_length:          Int,
+        local_variable_type_table: LocalVariableTypes
+    ) =
         new LocalVariableTypeTable(local_variable_type_table)
 }
 

@@ -52,14 +52,16 @@ trait FieldsReader extends Constant_PoolAbstractions {
     protected def Attributes(
         ap: AttributeParent,
         cp: Constant_Pool,
-        in: DataInputStream): Attributes
+        in: DataInputStream
+    ): Attributes
 
     def Field_Info(
-        constant_pool: Constant_Pool,
-        access_flags: Int,
-        name_index: Constant_Pool_Index,
+        constant_pool:    Constant_Pool,
+        access_flags:     Int,
+        name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes): Field_Info
+        attributes:       Attributes
+    ): Field_Info
 
     //
     // IMPLEMENTATION

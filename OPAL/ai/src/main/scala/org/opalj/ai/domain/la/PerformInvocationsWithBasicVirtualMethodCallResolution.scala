@@ -51,12 +51,13 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
      * resolve the target.
      */
     override def doInvokeVirtual(
-        pc: PC,
+        pc:             PC,
         declaringClass: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands,
+        fallback:       () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         def handleVirtualInvokeFallback() = {
             val receiver = operands(descriptor.parametersCount)
@@ -65,7 +66,8 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
                 case refValue: IsAReferenceValue if (
                     refValue.isNull.isNo && // TODO handle the case if the value maybe null
                     refValue.upperTypeBound.isSingletonSet &&
-                    refValue.upperTypeBound.head.isObjectType) ⇒
+                    refValue.upperTypeBound.head.isObjectType
+                ) ⇒
                     val methods =
                         callees(refValue.upperTypeBound.head.asObjectType, name, descriptor)
                     if (methods.size == 1) {
@@ -74,7 +76,8 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
                             pc,
                             project.classFile(method), method,
                             operands,
-                            fallback)
+                            fallback
+                        )
                     } else
                         fallback();
 
@@ -87,7 +90,8 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
             pc,
             declaringClass, name, descriptor,
             operands,
-            handleVirtualInvokeFallback)
+            handleVirtualInvokeFallback
+        )
     }
 
 }

@@ -42,13 +42,15 @@ abstract class IntegerRemainderInstruction extends RemainderInstruction {
     final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.ArithmeticException)
+                this, currentPC, code, ObjectType.ArithmeticException
+            )
 
 }

@@ -56,15 +56,17 @@ trait StringValues
      * @param value `null` if and only if the StringValue is not yet completely initialized!
      */
     protected class StringValue(
-        origin: ValueOrigin,
+        origin:    ValueOrigin,
         val value: String,
-        t: Timestamp)
+        t:         Timestamp
+    )
             extends SObjectValue(origin, No, true, ObjectType.String, t) {
         this: DomainStringValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
-            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+            other:  DomainSingleOriginReferenceValue
+        ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
                 case DomainStringValue(that) ⇒
@@ -153,8 +155,9 @@ trait StringValues
     }
 
     abstract override def NewObject(
-        origin: ValueOrigin,
-        objectType: ObjectType): DomainObjectValue = {
+        origin:     ValueOrigin,
+        objectType: ObjectType
+    ): DomainObjectValue = {
 
         if (objectType eq ObjectType.String)
             StringValue(origin, null)
@@ -163,11 +166,12 @@ trait StringValues
     }
 
     abstract override def invokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
+        pc:               PC,
+        declaringClass:   ObjectType,
+        name:             String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
+        operands:         Operands
+    ): MethodCallResult = {
 
         // In general the compiler creates a sequence comparable to the following
         // (1) new String
@@ -187,7 +191,8 @@ trait StringValues
                 if (methodDescriptor == MethodDescriptor.NoArgsAndReturnVoid) {
                     updateAfterEvaluation(
                         newStringValue,
-                        StringValue(newStringValue.origin, "", newStringValue.t))
+                        StringValue(newStringValue.origin, "", newStringValue.t)
+                    )
                     return ComputationWithSideEffectOnly;
 
                 } else if (methodDescriptor == StringValues.ConstructorWithString) {
@@ -196,7 +201,8 @@ trait StringValues
                         case StringValue(s) ⇒
                             updateAfterEvaluation(
                                 newStringValue,
-                                StringValue(newStringValue.origin, s, newStringValue.t))
+                                StringValue(newStringValue.origin, s, newStringValue.t)
+                            )
                             return ComputationWithSideEffectOnly
 
                         case _ ⇒ /* we can do nothing special */
@@ -206,7 +212,8 @@ trait StringValues
                 // is correctly initialized
                 updateAfterEvaluation(
                     newStringValue,
-                    newStringValue.update())
+                    newStringValue.update()
+                )
             }
         }
         super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)

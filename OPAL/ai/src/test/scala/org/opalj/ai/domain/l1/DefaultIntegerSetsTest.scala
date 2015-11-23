@@ -62,7 +62,8 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-        override val maxCardinalityOfIntegerSets: Int = Int.MaxValue)
+        override val maxCardinalityOfIntegerSets: Int = Int.MaxValue
+    )
             extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -109,10 +110,12 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v2 = IntegerSet(SortedSet[Int](1, 3, 5, 6))
 
                 v1.join(-1, v2) should be(StructuralUpdate(
-                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
+                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))
+                ))
 
                 v2.join(-1, v1) should be(StructuralUpdate(
-                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
+                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))
+                ))
             }
 
             it("(join of two sets with positive and negative values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
@@ -127,10 +130,12 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v2 = IntegerSet(SortedSet[Int](-10, -1, 5, 6))
 
                 v1.join(-1, v2) should be(StructuralUpdate(
-                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
+                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))
+                ))
 
                 v2.join(-1, v1) should be(StructuralUpdate(
-                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
+                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))
+                ))
             }
         }
 
@@ -1298,7 +1303,8 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
 
                     // we don't know the size of the array
                     domain.allReturnedValues.head._2 abstractsOver (
-                        domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))) should be(true)
+                        domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))
+                    ) should be(true)
 
                     // get the loop counter at the "icmple instruction" which controls the
                     // loops that initializes the array

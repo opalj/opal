@@ -54,20 +54,21 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     test("test that it can find the first constructor") {
         assert(
             immutableList.findMethod(
-                "<init>",
-                MethodDescriptor(ObjectType.Object, VoidType)
-            ).isDefined
+            "<init>",
+            MethodDescriptor(ObjectType.Object, VoidType)
+        ).isDefined
         )
     }
 
     test("test that it can find the second constructor") {
         assert(
             immutableList.findMethod(
-                "<init>",
-                MethodDescriptor(
-                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
-                    VoidType)
-            ).isDefined
+            "<init>",
+            MethodDescriptor(
+                IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
+                VoidType
+            )
+        ).isDefined
         )
     }
 
@@ -80,30 +81,30 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-                "getNext",
-                MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
-            ).isDefined
+            "getNext",
+            MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "prepend",
-                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
-            ).isDefined
+            "prepend",
+            MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "getIterator",
-                MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
-            ).isDefined
+            "getIterator",
+            MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "get",
-                MethodDescriptor(IndexedSeq(), ObjectType.Object)
-            ).isDefined
+            "get",
+            MethodDescriptor(IndexedSeq(), ObjectType.Object)
+        ).isDefined
         )
 
         assert(immutableList.instanceMethods.size.toInt == 4)

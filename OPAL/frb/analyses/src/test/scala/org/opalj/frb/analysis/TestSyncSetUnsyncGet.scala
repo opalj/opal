@@ -58,7 +58,9 @@ class TestSyncSetUnsyncGet extends AnalysisTest {
                 declaringClass,
                 MethodDescriptor(IndexedSeq.empty, ObjectType.String),
                 "getA",
-                "Is not synchronized like setA"))
+                "Is not synchronized like setA"
+            )
+        )
     }
 
     it should "detect that getter is not synchronized like setter for field 'int b'" in {
@@ -70,7 +72,9 @@ class TestSyncSetUnsyncGet extends AnalysisTest {
                 declaringClass,
                 MethodDescriptor(IndexedSeq.empty, IntegerType),
                 "getB",
-                "Is not synchronized like setB"))
+                "Is not synchronized like setB"
+            )
+        )
     }
 
     it should "find (only) 2 issues in SyncSetUnsyncGet.jar" in {

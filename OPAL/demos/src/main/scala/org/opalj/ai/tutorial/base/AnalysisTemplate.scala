@@ -37,9 +37,10 @@ import org.opalj.br.analyses.Project
 object AnalysisTemplate extends DefaultOneStepAnalysis {
 
     def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         BasicReport(theProject.statistics.mkString("\n"))
     }
 

@@ -48,7 +48,8 @@ trait TypeAnnotationTarget {
 //______________________________
 // type_parameter_target
 case class ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int) extends TypeAnnotationTarget {
+        type_parameter_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
@@ -56,7 +57,8 @@ case class ParameterDeclarationOfClassOrInterface(
 }
 
 case class ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int) extends TypeAnnotationTarget {
+        type_parameter_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
@@ -66,7 +68,8 @@ case class ParameterDeclarationOfMethodOrConstructor(
 //______________________________
 // supertype_target
 case class SupertypeTarget(
-        supertype_index: Int) extends TypeAnnotationTarget {
+        supertype_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(supertype_index).toString(cp) }</span>
@@ -77,7 +80,8 @@ case class SupertypeTarget(
 // type_parameter_bound_target
 case class TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index: Int) extends TypeAnnotationTarget {
+        bound_index:          Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
@@ -85,7 +89,8 @@ case class TypeBoundOfParameterDeclarationOfClassOrInterface(
 }
 case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index: Int) extends TypeAnnotationTarget {
+        bound_index:          Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
@@ -137,23 +142,26 @@ case class Catch(exception_table_index: Int) extends TypeAnnotationTarget {
 }
 
 case class LocalvarTableEntry(
-        start_pc: Int,
-        length: Int,
-        local_variable_table_index: Int) extends TypeAnnotationTarget {
+        start_pc:                   Int,
+        length:                     Int,
+        local_variable_table_index: Int
+) extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[pc: { start_pc }, local vraible table:{ cp(local_variable_table_index).toString(cp) }]</span>
     }
 }
 
 case class LocalvarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]) extends TypeAnnotationTarget {
+        localVarTable: IndexedSeq[LocalvarTableEntry]
+) extends TypeAnnotationTarget {
     type LocalvarTable = IndexedSeq[LocalvarTableEntry]
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[LocalvarDecl:{ for (localVar ← localVarTable) yield localVar.toXHTML(cp) }]</span>
     }
 }
 case class ResourcevarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]) extends TypeAnnotationTarget {
+        localVarTable: IndexedSeq[LocalvarTableEntry]
+) extends TypeAnnotationTarget {
     type LocalvarTable = IndexedSeq[LocalvarTableEntry]
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -174,13 +182,15 @@ case class New(offset: Int) extends TypeAnnotationTarget {
     }
 }
 case class MethodReferenceExpressionNew /*::New*/ (
-        offset: Int) extends TypeAnnotationTarget {
+        offset: Int
+) extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }]</span>
     }
 }
 case class MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int) extends TypeAnnotationTarget {
+        offset: Int
+) extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }]</span>
     }
@@ -189,40 +199,45 @@ case class MethodReferenceExpressionIdentifier /*::Identifier*/ (
 //______________________________
 // type_arguement_target
 case class CastExpression(
-        offset: Int,
-        type_argument_index: Int) extends TypeAnnotationTarget {
+        offset:              Int,
+        type_argument_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
     }
 }
 case class ConstructorInvocation(
-        offset: Int,
-        type_argument_index: Int) extends TypeAnnotationTarget {
+        offset:              Int,
+        type_argument_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
     }
 }
 case class MethodInvocation(
-        offset: Int,
-        type_argument_index: Int) extends TypeAnnotationTarget {
+        offset:              Int,
+        type_argument_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
     }
 }
 case class ConstructorInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int) extends TypeAnnotationTarget {
+        offset:              Int,
+        type_argument_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>
     }
 }
 case class MethodInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int) extends TypeAnnotationTarget {
+        offset:              Int,
+        type_argument_index: Int
+) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>[offset:{ offset }, { cp(type_argument_index).toString(cp) }]</span>

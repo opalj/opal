@@ -58,11 +58,12 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
      * @return `None` when the reflective invocation has failed.
      */
     def invokeReflective(
-        pc: PC,
+        pc:             PC,
         declaringClass: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): Option[MethodCallResult] = {
+        name:           String,
+        descriptor:     MethodDescriptor,
+        operands:       Operands
+    ): Option[MethodCallResult] = {
 
         val (method, jReceiver, jOperands) =
             try {
@@ -89,7 +90,8 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
                 val method =
                     declaringClass.toJavaClass.getDeclaredMethod(
-                        name, jParameterClassTypes: _*)
+                        name, jParameterClassTypes: _*
+                    )
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException ⇒

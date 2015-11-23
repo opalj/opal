@@ -59,7 +59,9 @@ class TestManualGarbageCollection extends AnalysisTest {
                     declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "main",
-                    "Contains unnecessary call to gc()"))
+                    "Contains unnecessary call to gc()"
+                )
+            )
         }
 
     it should "report class SystemGc which invokes java.lang.System.gc()" in {
@@ -71,7 +73,9 @@ class TestManualGarbageCollection extends AnalysisTest {
                 declaringClass,
                 MethodDescriptor.NoArgsAndReturnVoid,
                 "main",
-                "Contains unnecessary call to gc()"))
+                "Contains unnecessary call to gc()"
+            )
+        )
     }
 
     it should "find 2 issues in total" in {

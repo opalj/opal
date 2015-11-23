@@ -30,7 +30,7 @@ package org.opalj
 package collection
 package mutable
 
-import org.opalj.UShort.{ MinValue, MaxValue }
+import org.opalj.UShort.{MinValue, MaxValue}
 import org.opalj.graphs.DefaultMutableNode
 
 /**
@@ -69,7 +69,8 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     protected[collection] def mkString(
         pre: String, sep: String, pos: String,
-        offset: Int): String = {
+        offset: Int
+    ): String = {
         mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
@@ -276,7 +277,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     def +≈:(uShortValue: UShort): UShortSet = {
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
-            s"no ushort value: $uShortValue")
+            s"no ushort value: $uShortValue"
+        )
 
         val newValue: Long = uShortValue.toLong
         val value1 = this.value1
@@ -463,7 +465,8 @@ private object UShortSet4 {
 
 private class UShortSetNode(
         private val set1: UShortSet,
-        private val set2: UShortSet) extends UShortSet {
+        private val set2: UShortSet
+) extends UShortSet {
 
     private[this] var currentMax = (set2: SmallValuesSet).max
     def max = currentMax
@@ -534,7 +537,8 @@ private class UShortSetNode(
     def +≈:(uShortValue: UShort): UShortSet = {
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
-            s"no ushort value: $uShortValue")
+            s"no ushort value: $uShortValue"
+        )
 
         val set1Max = (set1: SmallValuesSet).max
         if (set1Max > uShortValue ||
@@ -596,7 +600,8 @@ private class UShortSetNode(
             System.identityHashCode(this),
             { i: Int ⇒ "UShortSetNode" },
             Map.empty,
-            List(set1.asGraph, set2.asGraph))
+            List(set1.asGraph, set2.asGraph)
+        )
 }
 
 private object EmptyUShortSet extends UShortSet {
@@ -621,7 +626,8 @@ private object EmptyUShortSet extends UShortSet {
     private[mutable] def asGraph: DefaultMutableNode[Int] =
         new DefaultMutableNode[Int](
             System.identityHashCode(this),
-            { i: Int ⇒ "EmptyUShortSet" })
+            { i: Int ⇒ "EmptyUShortSet" }
+        )
 }
 /**
  * Factory to create sets of unsigned short values.

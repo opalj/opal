@@ -61,7 +61,8 @@ import scala.collection.mutable.HashMap
  */
 class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
     val cache: CallGraphCache[MethodSignature, Set[Method]],
-    Domain: (ClassFile, Method) ⇒ TheDomain)
+    Domain:    (ClassFile, Method) ⇒ TheDomain
+)
         extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(val domain: TheDomain)
@@ -73,11 +74,12 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         val method = domain.method
 
         def staticCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            operands: domain.Operands) = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            operands:           domain.Operands
+        ) = {
 
             def handleUnresolvedMethodCall() = {
                 addUnresolvedMethodCall(
@@ -88,12 +90,13 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
 
             if (classHierarchy.isKnown(declaringClassType)) {
                 classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project) match {
-                        case Some(callee) ⇒
-                            addCallEdge(pc, HashSet(callee))
-                        case None ⇒
-                            handleUnresolvedMethodCall()
-                    }
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
             } else {
                 handleUnresolvedMethodCall()
             }
@@ -104,11 +107,12 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
          *      is null. However, appropriate edges are already added to the call graph.
          */
         def doNonVirtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            operands: domain.Operands): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            operands:           domain.Operands
+        ): Unit = {
 
             def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
@@ -119,13 +123,14 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
 
             if (classHierarchy.isKnown(declaringClassType)) {
                 classHierarchy.lookupMethodDefinition(
-                    declaringClassType, name, descriptor, project) match {
-                        case Some(callee) ⇒
-                            val callees = HashSet(callee)
-                            addCallEdge(pc, callees)
-                        case None ⇒
-                            handleUnresolvedMethodCall()
-                    }
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        val callees = HashSet(callee)
+                        addCallEdge(pc, callees)
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
             } else {
                 handleUnresolvedMethodCall()
             }
@@ -138,12 +143,13 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
          *      - the receiver is known not to be null and the type is known to be precise.
          */
         def nonVirtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            receiverIsNull: Answer,
-            operands: domain.Operands): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            receiverIsNull:     Answer,
+            operands:           domain.Operands
+        ): Unit = {
 
             if (receiverIsNull.isYesOrUnknown)
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -152,32 +158,36 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 pc,
                 declaringClassType, name, descriptor,
                 //receiverIsNull,
-                operands)
+                operands
+            )
         }
 
         def doVirtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            operands: domain.Operands): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            operands:           domain.Operands
+        ): Unit = {
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
             if (callees.isEmpty) {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
-                    declaringClassType, name, descriptor)
+                    declaringClassType, name, descriptor
+                )
             } else {
                 addCallEdge(pc, callees)
             }
         }
 
         def virtualCall(
-            pc: PC,
+            pc:                 PC,
             declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor,
-            operands: domain.Operands): Unit = {
+            name:               String,
+            descriptor:         MethodDescriptor,
+            operands:           domain.Operands
+        ): Unit = {
             // MODIFIED CHA - we used the type information that is readily available
             val receiver =
                 domain.typeOfValue(
@@ -208,8 +218,9 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             }
 
             @inline def handleVirtualNonNullCall(
-                upperTypeBound: UpperTypeBound,
-                receiverIsPrecise: Boolean): Unit = {
+                upperTypeBound:    UpperTypeBound,
+                receiverIsPrecise: Boolean
+            ): Unit = {
 
                 assert(upperTypeBound.nonEmpty)
 
@@ -219,17 +230,20 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                         doNonVirtualCall(
                             pc, ObjectType.Object, name, descriptor,
                             //receiverIsNull,
-                            operands)
+                            operands
+                        )
                     else if (receiverIsPrecise)
                         doNonVirtualCall(
                             pc, theType.asObjectType, name, descriptor,
                             //receiverIsNull,
-                            operands.asInstanceOf[domain.Operands])
+                            operands.asInstanceOf[domain.Operands]
+                        )
                     else {
                         doVirtualCall(
                             pc, theType.asObjectType, name, descriptor,
                             //receiverIsNull,
-                            operands)
+                            operands
+                        )
                     }
                 } else {
                     // Recall that the types defining the upper type bound are not in an
@@ -257,7 +271,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                         doVirtualCall(
                             pc, declaringClassType, name, descriptor,
                             ///receiverIsNull,
-                            operands)
+                            operands
+                        )
                     } else {
                         addCallEdge(pc, allCallees)
                     }
@@ -336,9 +351,10 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         new CHACallGraphExtractor(cache /*it should not be used...*/ )
 
     def extract(
-        project: SomeProject,
+        project:   SomeProject,
         classFile: ClassFile,
-        method: Method): CallGraphExtractor.LocalCallGraphInformation = {
+        method:    Method
+    ): CallGraphExtractor.LocalCallGraphInformation = {
 
         // The following optimization (using the plain CHA algorithm for all methods
         // that do not virtual method calls) may lead to some additional edges (if
@@ -367,13 +383,15 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                             context.nonVirtualCall(
                                 pc, ObjectType.Object, name, descriptor,
                                 result.domain.refIsNull(
-                                    pc, operands(descriptor.parametersCount)),
+                                    pc, operands(descriptor.parametersCount)
+                                ),
                                 operands.asInstanceOf[context.domain.Operands]
                             )
                         } else {
                             context.virtualCall(
                                 pc, declaringClass.asObjectType, name, descriptor,
-                                operands.asInstanceOf[context.domain.Operands])
+                                operands.asInstanceOf[context.domain.Operands]
+                            )
                         }
                     }
                 case INVOKEINTERFACE.opcode ⇒
@@ -382,7 +400,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                     if (operands != null) {
                         context.virtualCall(
                             pc, declaringClass, name, descriptor,
-                            operands.asInstanceOf[context.domain.Operands])
+                            operands.asInstanceOf[context.domain.Operands]
+                        )
                     }
 
                 case INVOKESPECIAL.opcode ⇒
@@ -403,7 +422,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                     if (operands != null) {
                         context.staticCall(
                             pc, declaringClass, name, descriptor,
-                            operands.asInstanceOf[context.domain.Operands])
+                            operands.asInstanceOf[context.domain.Operands]
+                        )
                     }
                 case _ ⇒
                 // Nothing to do...

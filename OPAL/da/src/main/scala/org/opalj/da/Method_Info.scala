@@ -38,10 +38,11 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class Method_Info(
-        access_flags: Int,
-        name_index: Constant_Pool_Index,
+        access_flags:     Int,
+        name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes) {
+        attributes:       Attributes
+) {
 
     /**
      * @param definingTypeFQN The FQN of the class defining this field.

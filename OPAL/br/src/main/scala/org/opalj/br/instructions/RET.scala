@@ -46,13 +46,15 @@ case class RET(lvIndex: Int)
     final def length: Int = 2
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         throw new UnsupportedOperationException(
             "to determine the next instruction that will be executed "+
                 "a data-/control-flow analysis needs to be executed; "+
-                "without such an analysis this information is not directly available")
+                "without such an analysis this information is not directly available"
+        )
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 

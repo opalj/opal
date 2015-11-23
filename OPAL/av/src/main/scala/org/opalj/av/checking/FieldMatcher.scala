@@ -46,9 +46,10 @@ import org.opalj.br.Annotation
  */
 case class FieldMatcher(
     declaringClass: ClassLevelMatcher,
-    annotations: AnnotationsPredicate,
-    theType: Option[FieldType],
-    theName: Option[NamePredicate])
+    annotations:    AnnotationsPredicate,
+    theType:        Option[FieldType],
+    theName:        Option[NamePredicate]
+)
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -57,7 +58,8 @@ case class FieldMatcher(
 
     def doesFieldMatch(field: Field): Boolean = {
         (theType.isEmpty || (theType.get eq field.fieldType)) && (
-            (theName.isEmpty || theName.get(field.name))) &&
+            (theName.isEmpty || theName.get(field.name))
+        ) &&
             annotations(field.annotations)
     }
 
@@ -83,11 +85,12 @@ case class FieldMatcher(
 object FieldMatcher {
 
     def apply(
-        declaringClass: ClassLevelMatcher = AllClasses,
+        declaringClass:       ClassLevelMatcher    = AllClasses,
         annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
-        theType: Option[String] = None,
-        theName: Option[String] = None,
-        matchPrefix: Boolean = false): FieldMatcher = {
+        theType:              Option[String]       = None,
+        theName:              Option[String]       = None,
+        matchPrefix:          Boolean              = false
+    ): FieldMatcher = {
 
         assert(theName.isDefined || !matchPrefix)
 
@@ -106,7 +109,8 @@ object FieldMatcher {
             declaringClass,
             annotationsPredicate,
             theType.map(fqn ⇒ FieldType(fqn.replace('.', '/'))),
-            nameMatcher)
+            nameMatcher
+        )
     }
 
 }

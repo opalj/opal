@@ -73,9 +73,10 @@ sealed trait VirtualSourceElement extends SourceElement with Ordered[VirtualSour
 object VirtualSourceElement {
 
     def asVirtualSourceElements(
-        classFiles: Traversable[ClassFile],
-        includeMethods: Boolean = true,
-        includeFields: Boolean = true): Set[VirtualSourceElement] = {
+        classFiles:     Traversable[ClassFile],
+        includeMethods: Boolean                = true,
+        includeFields:  Boolean                = true
+    ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 
         classFiles foreach { classFile ⇒
@@ -142,8 +143,9 @@ sealed trait VirtualClassMember extends VirtualSourceElement
  */
 final case class VirtualField(
         declaringClassType: ObjectType,
-        name: String,
-        fieldType: FieldType) extends VirtualClassMember {
+        name:               String,
+        fieldType:          FieldType
+) extends VirtualClassMember {
 
     override def isField: Boolean = true
 
@@ -197,8 +199,9 @@ final case class VirtualField(
  */
 sealed class VirtualMethod(
     val declaringClassType: ReferenceType,
-    val name: String,
-    val descriptor: MethodDescriptor)
+    val name:               String,
+    val descriptor:         MethodDescriptor
+)
         extends VirtualClassMember {
 
     override def isMethod: Boolean = true
@@ -255,23 +258,26 @@ object VirtualMethod {
 
     def apply(
         declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor): VirtualMethod =
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): VirtualMethod =
         new VirtualMethod(declaringClassType, name, descriptor)
 
     def unapply(virtualMethod: VirtualMethod): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((
             virtualMethod.declaringClassType,
             virtualMethod.name,
-            virtualMethod.descriptor))
+            virtualMethod.descriptor
+        ))
     }
 }
 
 final class VirtualForwardingMethod(
     declaringClassType: ReferenceType,
-    name: String,
-    descriptor: MethodDescriptor,
-    val target: Method)
+    name:               String,
+    descriptor:         MethodDescriptor,
+    val target:         Method
+)
         extends VirtualMethod(declaringClassType, name, descriptor) {
 
     override def toJava: String =
@@ -283,9 +289,10 @@ object VirtualForwardingMethod {
 
     def apply(
         declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        target: Method): VirtualMethod =
+        name:               String,
+        descriptor:         MethodDescriptor,
+        target:             Method
+    ): VirtualMethod =
         new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
 
     def unapply(virtualMethod: VirtualForwardingMethod): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
@@ -293,6 +300,7 @@ object VirtualForwardingMethod {
             virtualMethod.declaringClassType,
             virtualMethod.name,
             virtualMethod.descriptor,
-            virtualMethod.target))
+            virtualMethod.target
+        ))
     }
 }

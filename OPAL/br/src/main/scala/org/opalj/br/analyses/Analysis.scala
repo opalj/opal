@@ -85,9 +85,10 @@ trait Analysis[Source, +AnalysisResult] {
      *      has to be specified/documented by the analysis.
      */
     def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement): AnalysisResult
+        project:                Project[Source],
+        parameters:             Seq[String]                = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ): AnalysisResult
 
     /**
      * A textual description of this analysis.

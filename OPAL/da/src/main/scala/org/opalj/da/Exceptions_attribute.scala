@@ -45,8 +45,9 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class Exceptions_attribute(
-        attribute_name_index: Int,
-        exception_index_table: IndexedSeq[Constant_Pool_Index]) extends Attribute {
+        attribute_name_index:  Int,
+        exception_index_table: IndexedSeq[Constant_Pool_Index]
+) extends Attribute {
 
     assert(exception_index_table.nonEmpty)
 

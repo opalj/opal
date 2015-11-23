@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import java.net.URL
 import org.opalj.br.analyses.ClassHierarchy
 
@@ -75,7 +75,8 @@ object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor wit
             methods.mkString(
                 "Methods:\n\t",
                 "\n\t",
-                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n")
+                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n"
+            )
         )
     }
 }

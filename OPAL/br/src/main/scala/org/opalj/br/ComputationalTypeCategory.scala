@@ -37,7 +37,8 @@ package br
  * @author Michael Eichberg
  */
 sealed abstract class ComputationalTypeCategory(
-        val operandSize: Byte) {
+        val operandSize: Byte
+) {
     /**
      * Identifies the computational type category.
      */

@@ -44,9 +44,10 @@ import org.opalj.br.Annotation
  * @author Marco Torsello
  */
 case class MethodMatcher(
-    classLevelMatcher: ClassLevelMatcher = AllClasses,
-    annotationsPredicate: AnnotationsPredicate = AnyAnnotations,
-    methodPredicate: SourceElementPredicate[Method] = AnyMethod)
+    classLevelMatcher:    ClassLevelMatcher              = AllClasses,
+    annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
+    methodPredicate:      SourceElementPredicate[Method] = AnyMethod
+)
         extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -85,18 +86,21 @@ object MethodMatcher {
 
     def apply(
         annotationsPredicate: AnnotationsPredicate,
-        methodPredicate: SourceElementPredicate[_ >: Method]): MethodMatcher = {
+        methodPredicate:      SourceElementPredicate[_ >: Method]
+    ): MethodMatcher = {
         new MethodMatcher(annotationsPredicate = annotationsPredicate, methodPredicate = methodPredicate)
     }
 
     def apply(
         classLevelMatcher: ClassLevelMatcher,
-        methodPredicate: SourceElementPredicate[Method]): MethodMatcher = {
+        methodPredicate:   SourceElementPredicate[Method]
+    ): MethodMatcher = {
         new MethodMatcher(classLevelMatcher, methodPredicate = methodPredicate)
     }
 
     def apply(
-        annotationsPredicate: AnnotationsPredicate): MethodMatcher = {
+        annotationsPredicate: AnnotationsPredicate
+    ): MethodMatcher = {
         new MethodMatcher(annotationsPredicate = annotationsPredicate)
     }
 
@@ -109,8 +113,9 @@ object MethodMatcher {
     }
 
     def apply(
-        classLevelMatcher: ClassLevelMatcher,
-        annotationPredicate: AnnotationPredicate): MethodMatcher = {
+        classLevelMatcher:   ClassLevelMatcher,
+        annotationPredicate: AnnotationPredicate
+    ): MethodMatcher = {
         new MethodMatcher(classLevelMatcher, HasAtLeastTheAnnotations(annotationPredicate))
     }
 

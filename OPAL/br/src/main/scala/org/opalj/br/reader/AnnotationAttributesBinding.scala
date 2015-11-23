@@ -66,39 +66,44 @@ trait AnnotationAttributesBinding
     type RuntimeInvisibleParameterAnnotations_attribute = RuntimeInvisibleParameterAnnotationTable
 
     def AnnotationDefault_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        element_value: ElementValue) = {
+        attribute_length:     Int,
+        element_value:        ElementValue
+    ) = {
         element_value
     }
 
     def RuntimeVisibleAnnotations_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: Annotations) =
+        attribute_length:     Int,
+        annotations:          Annotations
+    ) =
         new RuntimeVisibleAnnotations_attribute(annotations)
 
     def RuntimeInvisibleAnnotations_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: Annotations) =
+        attribute_length:     Int,
+        annotations:          Annotations
+    ) =
         new RuntimeInvisibleAnnotations_attribute(annotations)
 
     def RuntimeVisibleParameterAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
+        cp:                    Constant_Pool,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int,
+        parameter_annotations: ParameterAnnotations
+    ) =
         new RuntimeVisibleParameterAnnotations_attribute(parameter_annotations)
 
     def RuntimeInvisibleParameterAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
+        cp:                    Constant_Pool,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int,
+        parameter_annotations: ParameterAnnotations
+    ) =
         new RuntimeInvisibleParameterAnnotations_attribute(parameter_annotations)
 
 }

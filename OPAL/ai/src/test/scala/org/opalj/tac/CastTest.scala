@@ -91,7 +91,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 strg,
                 "4: r_3 = op_2;",
-                "5: return;")
+                "5: return;"
+            )
 
             def shortResultJLC(strg: String) = Array(
                 "0: r_0 = this;",
@@ -99,7 +100,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 strg,
                 "4: r_2 = op_1;",
-                "5: return;")
+                "5: return;"
+            )
 
             def typecheckResultJLC(strg: String) = Array(
                 "0: r_0 = this;",
@@ -107,7 +109,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 "3: op_1 = op_0 instanceof "+strg+";",
                 "4: r_2 = op_1;",
-                "5: return;")
+                "5: return;"
+            )
 
             def castResultAST(from: ComputationalType, to: BaseType): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -115,7 +118,8 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
                 Assignment(1, SimpleVar(from.category.toInt, to.computationalType), PrimitiveTypecastExpr(1, to, SimpleVar(0, from))),
                 Assignment(2, SimpleVar(-2 - from.category, to.computationalType), SimpleVar(from.category.toInt, to.computationalType)),
-                Return(3))
+                Return(3)
+            )
 
             def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -123,7 +127,8 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(1, SimpleVar(0, ComputationalTypeReference), refTp)),
                 Assignment(4, SimpleVar(-3, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)),
-                Return(5))
+                Return(5)
+            )
 
             it("should correctly reflect the instanceof Object instruction") {
                 val statements = AsQuadruples(TypecheckStringMethod, None)
@@ -159,14 +164,16 @@ class CastTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(1, SimpleVar(0, ComputationalTypeReference), Checkcast(1, SimpleVar(0, ComputationalTypeReference), listType)),
                     Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(5)))
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
                     "2: op_0 = r_1;",
                     s"3: op_0 = (${listType.toJava}) op_0;",
                     "4: r_2 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect the d2f instruction") {
@@ -328,7 +335,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 strg,
                 "4: r_3 = op_2;",
-                "5: return;")
+                "5: return;"
+            )
 
             def shortResultJLC(strg: String) = Array(
                 "0: r_0 = this;",
@@ -336,7 +344,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 strg,
                 "4: r_2 = op_1;",
-                "5: return;")
+                "5: return;"
+            )
 
             def typecheckResultJLC(strg: String) = Array(
                 "0: r_0 = this;",
@@ -344,7 +353,8 @@ class CastTest extends FunSpec with Matchers {
                 "2: op_0 = r_1;",
                 "3: op_1 = op_0 instanceof "+strg+";",
                 "4: r_2 = op_1;",
-                "5: return;")
+                "5: return;"
+            )
 
             def castResultAST(from: ComputationalType, to: BaseType): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -352,7 +362,8 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
                 Assignment(1, SimpleVar(from.category.toInt, to.computationalType), PrimitiveTypecastExpr(1, to, SimpleVar(0, from))),
                 Assignment(2, SimpleVar(-2 - from.category, to.computationalType), SimpleVar(from.category.toInt, to.computationalType)),
-                Return(3))
+                Return(3)
+            )
 
             def typecheckResultAST(refTp: ReferenceType): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -360,7 +371,8 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(1, SimpleVar(1, ComputationalTypeInt), InstanceOf(1, SimpleVar(0, ComputationalTypeReference), refTp)),
                 Assignment(4, SimpleVar(-3, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)),
-                Return(5))
+                Return(5)
+            )
 
             it("should correctly reflect the instanceof Object instruction") {
                 val domain = new DefaultDomain(project, CastInstructionsClassFile, TypecheckStringMethod)
@@ -402,13 +414,13 @@ class CastTest extends FunSpec with Matchers {
                         Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                         Assignment(1, SimpleVar(0, ComputationalTypeReference), Checkcast(1, SimpleVar(0, ComputationalTypeReference), ReferenceType("java/util/List"))),
                         Assignment(4, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                        Return(5))
+                        Return(5)
+                    )
                 if (!(statements.toSeq == expected.toSeq)) {
                     fail(expected.
                         zip(statements).
                         map(ev ⇒ ev._1.toString()+" == "+ev._2.toString()+" = "+(ev._1 == ev._2)).
-                        mkString("\n")
-                    )
+                        mkString("\n"))
                 }
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
@@ -416,7 +428,8 @@ class CastTest extends FunSpec with Matchers {
                     "2: op_0 = r_1;",
                     "3: op_0 = (java.util.List) op_0;",
                     "4: r_2 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect the d2f instruction") {

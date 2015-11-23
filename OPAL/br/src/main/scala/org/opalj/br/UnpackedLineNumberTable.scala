@@ -35,7 +35,8 @@ package br
  * @author Michael Eichberg
  */
 case class UnpackedLineNumberTable(
-    lineNumbers: LineNumbers)
+    lineNumbers: LineNumbers
+)
         extends LineNumberTable {
 
     /**
@@ -49,7 +50,7 @@ case class UnpackedLineNumberTable(
     def lookupLineNumber(pc: PC): Option[Int] = {
         import scala.util.control.Breaks
         val breaks = new Breaks
-        import breaks.{ break, breakable }
+        import breaks.{break, breakable}
 
         val lnsIterator = lineNumbers.iterator
         var lastLineNumber: LineNumber = null
@@ -85,5 +86,6 @@ case class UnpackedLineNumberTable(
  * @author Michael Eichberg
  */
 case class LineNumber(
-    startPC: Int,
-    lineNumber: Int)
+    startPC:    Int,
+    lineNumber: Int
+)

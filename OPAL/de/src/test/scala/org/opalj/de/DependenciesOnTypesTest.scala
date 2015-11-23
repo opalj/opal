@@ -66,7 +66,8 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
                 override def processDependency(
                     source: VirtualSourceElement,
                     target: VirtualSourceElement,
-                    dType: DependencyType): Unit = {
+                    dType:  DependencyType
+                ): Unit = {
                     if (target.isClass) {
                         val VirtualClass(targetType) = target
                         extractedObjectTypes += targetType
@@ -74,15 +75,17 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
                 }
 
                 override def processDependency(
-                    source: VirtualSourceElement,
+                    source:   VirtualSourceElement,
                     baseType: BaseType,
-                    dType: DependencyType): Unit =
+                    dType:    DependencyType
+                ): Unit =
                     extractedBaseTypes += baseType
 
                 override def processDependency(
-                    source: VirtualSourceElement,
+                    source:    VirtualSourceElement,
                     arrayType: ArrayType,
-                    dType: DependencyType): Unit =
+                    dType:     DependencyType
+                ): Unit =
                     extractedArrayTypes += arrayType
             }
         )
@@ -106,7 +109,8 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
     it should "extract a dependency to java.lang.Object" in {
         assert(
             extractedObjectTypes contains ObjectType.Object,
-            "the extractor did no report an existing dependency to java.lang.Object")
+            "the extractor did no report an existing dependency to java.lang.Object"
+        )
     }
 
     it should "extract a dependency to the type java.lang.Object[]" in {

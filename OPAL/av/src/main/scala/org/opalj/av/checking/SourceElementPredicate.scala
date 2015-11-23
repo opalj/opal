@@ -32,7 +32,7 @@ package checking
 
 import org.opalj.br.ConcreteSourceElement
 import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.br.{ Attributes ⇒ SourceElementAttributes }
+import org.opalj.br.{Attributes ⇒ SourceElementAttributes}
 
 /**
  * A predicate related to a specific source element.
@@ -42,7 +42,8 @@ import org.opalj.br.{ Attributes ⇒ SourceElementAttributes }
 trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S ⇒ Boolean) { left ⇒
 
     def and[T <: ConcreteSourceElement, X <: S with T](
-        right: SourceElementPredicate[T]): SourceElementPredicate[X] = {
+        right: SourceElementPredicate[T]
+    ): SourceElementPredicate[X] = {
 
         new SourceElementPredicate[X] {
             def apply(s: X): Boolean = left(s) && right(s)
@@ -52,7 +53,8 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S ⇒ Boolean
     }
 
     final def having[T <: ConcreteSourceElement, X <: S with T](
-        right: SourceElementPredicate[T]): SourceElementPredicate[X] = and(right)
+        right: SourceElementPredicate[T]
+    ): SourceElementPredicate[X] = and(right)
 
     /**
      * Returns a human readable representation of this predicate that is well suited
@@ -66,7 +68,8 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S ⇒ Boolean
 }
 
 case class AccessFlags(
-    accessFlags: AccessFlagsMatcher)
+    accessFlags: AccessFlagsMatcher
+)
         extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
@@ -82,7 +85,8 @@ case class AccessFlags(
  * @author Michael Eichberg
  */
 case class Attributes(
-    attributes: SourceElementAttributes)
+    attributes: SourceElementAttributes
+)
         extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {

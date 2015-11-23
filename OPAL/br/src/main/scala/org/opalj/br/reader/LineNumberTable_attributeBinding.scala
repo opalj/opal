@@ -50,10 +50,11 @@ trait UnpackedLineNumberTable_attributeBinding
     type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
     def LineNumberTable_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        line_number_table: LineNumbers): UnpackedLineNumberTable =
+        attribute_length:     Int,
+        line_number_table:    LineNumbers
+    ): UnpackedLineNumberTable =
         new UnpackedLineNumberTable(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
@@ -76,10 +77,11 @@ trait CompactLineNumberTable_attributeBinding
     type LineNumberTable_attribute = br.CompactLineNumberTable
 
     def LineNumberTable_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        line_number_table: Array[Byte]): CompactLineNumberTable =
+        attribute_length:     Int,
+        line_number_table:    Array[Byte]
+    ): CompactLineNumberTable =
         new CompactLineNumberTable(line_number_table)
 
     /**
@@ -97,7 +99,8 @@ trait CompactLineNumberTable_attributeBinding
             // we have at most one line number table
             attributes
         else throw new UnsupportedOperationException(
-            "multiple line number tables are not yet supported; contact the OPAL team")
+            "multiple line number tables are not yet supported; contact the OPAL team"
+        )
 
     }
 }

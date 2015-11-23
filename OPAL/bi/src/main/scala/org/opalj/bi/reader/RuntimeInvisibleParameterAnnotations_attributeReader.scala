@@ -53,10 +53,11 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
      * `RuntimeInvisibleParameterAnnotations_attribute`.
      */
     protected def RuntimeInvisibleParameterAnnotations_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations): RuntimeInvisibleParameterAnnotations_attribute
+        constant_pool:         Constant_Pool,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int,
+        parameter_annotations: ParameterAnnotations
+    ): RuntimeInvisibleParameterAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -77,7 +78,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
      * </pre>
      */
     registerAttributeReader(
-        RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
+        RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeInvisibleParameterAnnotations_attribute(

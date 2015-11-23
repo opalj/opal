@@ -59,9 +59,10 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = UShortSet.empty
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs = UShortSet.empty
 
 }
 

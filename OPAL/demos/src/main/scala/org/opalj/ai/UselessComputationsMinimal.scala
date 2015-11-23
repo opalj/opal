@@ -69,9 +69,10 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         with domain.ProjectBasedClassHierarchy
 
     def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒

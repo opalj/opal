@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.{ Future ⇒ JFuture }
+import java.util.concurrent.{Future ⇒ JFuture}
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -55,8 +55,9 @@ import java.util.concurrent.CancellationException
  * @author Michael Eichberg
  */
 class OPALThreadPoolExecutor(
-    n: Int,
-    val group: ThreadGroup) extends ThreadPoolExecutor(
+    n:         Int,
+    val group: ThreadGroup
+) extends ThreadPoolExecutor(
     n, n,
     60L, TimeUnit.SECONDS, // this is a fixed size pool
     new LinkedBlockingQueue[Runnable](),

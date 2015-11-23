@@ -46,14 +46,16 @@ case object MONITORENTER extends SynchronizationInstruction {
     final val jvmExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = {
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.NullPointerException)
+                this, currentPC, code, ObjectType.NullPointerException
+            )
     }
 
 }

@@ -42,7 +42,8 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[URL],
-        val method: Method)
+        val method:           Method
+    )
             extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -68,9 +69,10 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         "Identifies java.io.File object instantiations using constant strings."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.
@@ -117,7 +119,8 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                 "Only found "+callSites.size+" candidates."
             else
                 callSitesWithConstantStringParameter.map(callSiteToString(_)).
-                    mkString("Methods:\n", "\n", ".\n"))
+                    mkString("Methods:\n", "\n", ".\n")
+        )
     }
 
 }

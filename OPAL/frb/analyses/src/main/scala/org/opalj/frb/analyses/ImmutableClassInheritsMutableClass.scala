@@ -56,9 +56,10 @@ class ImmutableClassInheritsMutableClass[Source] extends FindRealBugsAnalysis[So
      * @return true if the supertype is annotated with an immutable annotation
      */
     private def superTypeIsAnnotatedWithImmutable(
-        project: Project[Source],
-        supertype: ObjectType,
-        allTheImmutableTypes: Set[ObjectType]): Boolean = {
+        project:              Project[Source],
+        supertype:            ObjectType,
+        allTheImmutableTypes: Set[ObjectType]
+    ): Boolean = {
         val classFile = project.classFile(supertype)
         if (classFile.isDefined) {
             isAnnotatedWith(classFile.get, allTheImmutableTypes)
@@ -75,9 +76,10 @@ class ImmutableClassInheritsMutableClass[Source] extends FindRealBugsAnalysis[So
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         val immutableAnnotationTypes: Set[ObjectType] =
             collectAnnotationTypes(project, "Immutable")
@@ -93,7 +95,8 @@ class ImmutableClassInheritsMutableClass[Source] extends FindRealBugsAnalysis[So
                 project.source(classFile.thisType),
                 Severity.Warning,
                 classFile.thisType,
-                "This immutable class inherits a possibly mutable class.")
+                "This immutable class inherits a possibly mutable class."
+            )
         }
     }
 }

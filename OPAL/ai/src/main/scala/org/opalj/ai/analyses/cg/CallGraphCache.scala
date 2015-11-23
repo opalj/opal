@@ -67,7 +67,8 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CallGraphCache[Contour, Value] private[this] (
-        val NullPointerExceptionDefaultConstructor: Option[Method]) {
+        val NullPointerExceptionDefaultConstructor: Option[Method]
+) {
 
     def this(project: SomeProject) = {
         this(
@@ -87,7 +88,7 @@ class CallGraphCache[Contour, Value] private[this] (
     // RECALL: scala.collection.concurrent.Map's getOrElseUpdate 
     // 			is – as of Scala 2.11.0 – NOT THREAD SAFE
 
-    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
+    import java.util.concurrent.{ConcurrentHashMap ⇒ CHMap}
 
     private[this] val baseCache: CHMap[ObjectType, Value] = new CHMap(512)
 
@@ -126,9 +127,11 @@ class CallGraphCache[Contour, Value] private[this] (
      * returned.
      */
     def getOrElseUpdate(
-        key: ObjectType,
-        contour: Contour)(
-            f: ⇒ Value, syncOnEvaluation: Boolean = true): Value = {
+        key:     ObjectType,
+        contour: Contour
+    )(
+        f: ⇒ Value, syncOnEvaluation: Boolean = true
+    ): Value = {
 
         val typeBasedCache = {
             val id = key.id

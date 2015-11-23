@@ -62,7 +62,8 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
         val entryPoints = () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
             project, entryPoints,
-            new CHACallGraphAlgorithmConfiguration(project))
+            new CHACallGraphAlgorithmConfiguration(project)
+        )
     }
 }
 

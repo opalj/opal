@@ -39,7 +39,7 @@ import org.scalatest.ParallelTestExecution
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br.{ ObjectType, ArrayType }
+import org.opalj.br.{ObjectType, ArrayType}
 
 /**
  * Tests the LongSets Domain.
@@ -54,7 +54,8 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
     final val SomePC = 100000
 
     class LongSetsTestDomain(
-        override val maxCardinalityOfLongSets: Int = Int.MaxValue)
+        override val maxCardinalityOfLongSets: Int = Int.MaxValue
+    )
             extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -407,7 +408,8 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val expected =
                     SortedSet(
                         Long.MinValue + 8l, Long.MinValue + 19l,
-                        Long.MaxValue - 19l, Long.MaxValue - 8l)
+                        Long.MaxValue - 19l, Long.MaxValue - 8l
+                    )
                 lxor(-1, v1, v2) should be(LongSet(expected))
                 lxor(-1, v2, v1) should be(LongSet(expected))
             }

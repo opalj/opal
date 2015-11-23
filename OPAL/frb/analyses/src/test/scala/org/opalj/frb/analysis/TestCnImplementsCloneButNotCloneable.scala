@@ -56,7 +56,8 @@ class TestCnImplementsCloneButNotCloneable extends AnalysisTest {
             ObjectType("CnImplementsCloneButNotCloneable/ImplementsCloneButNotCloneable")
         results should contain(
             ClassBasedReport(project.source(classToReport), Severity.Error, classToReport,
-                "implements clone(), but not Cloneable"))
+                "implements clone(), but not Cloneable")
+        )
     }
 
     it should "only find 1 issue in CnImplementsCloneButNotCloneable.jar" in {

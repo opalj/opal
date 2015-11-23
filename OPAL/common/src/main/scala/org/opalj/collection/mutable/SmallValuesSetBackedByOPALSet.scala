@@ -39,7 +39,8 @@ package mutable
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
     final val offset: Int,
-    private val set: SmallValuesSet)
+    private val set:  SmallValuesSet
+)
         extends SmallValuesSet {
 
     override def min = set.min + offset
@@ -91,7 +92,8 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override protected[collection] def mkString(
         start: String, sep: String, end: String,
-        offset: Int): String =
+        offset: Int
+    ): String =
         set.mkString(start, sep, end, offset)
 
     override def mkString(start: String, sep: String, end: String): String =
@@ -102,7 +104,8 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
             s"SmallValuesSetBackedByOpalSet(offset=$offset;values={",
             ", ",
             "})",
-            offset)
+            offset
+        )
     }
 }
 

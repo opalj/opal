@@ -46,10 +46,11 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
     type RuntimeVisibleParameterAnnotations_attribute <: Attribute
 
     def RuntimeVisibleParameterAnnotations_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations): RuntimeVisibleParameterAnnotations_attribute
+        constant_pool:         Constant_Pool,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int,
+        parameter_annotations: ParameterAnnotations
+    ): RuntimeVisibleParameterAnnotations_attribute
 
     //
     // IMPLEMENTATION
@@ -70,7 +71,7 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
      * </pre>
      */
     registerAttributeReader(
-        RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
+        RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeVisibleParameterAnnotations_attribute(

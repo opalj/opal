@@ -54,10 +54,11 @@ trait Signature_attributeReader extends AttributeReader {
      * or a field type signature otherwise.
      */
     def Signature_attribute(
-        constant_pool: Constant_Pool,
-        ap: AttributeParent,
+        constant_pool:        Constant_Pool,
+        ap:                   AttributeParent,
         attribute_name_index: Constant_Pool_Index,
-        signature_index: Constant_Pool_Index): Signature_attribute
+        signature_index:      Constant_Pool_Index
+    ): Signature_attribute
 
     /* From the Specification
      *
@@ -73,7 +74,7 @@ trait Signature_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        Signature_attributeReader.ATTRIBUTE_NAME -> (
+        Signature_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 /*val attribute_length =*/ in.readInt
                 Signature_attribute(

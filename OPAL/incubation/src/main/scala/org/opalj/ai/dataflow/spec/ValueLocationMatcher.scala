@@ -31,7 +31,7 @@ package ai
 package dataflow
 package spec
 
-import scala.collection.{ Map, Set }
+import scala.collection.{Map, Set}
 
 //import bi.AccessFlagsMatcher
 
@@ -74,10 +74,11 @@ trait ValueLocationMatcher extends AValueLocationMatcher {
 //}
 
 case class Calls(
-        properties: PartialFunction[(ReferenceType, String, MethodDescriptor), Boolean]) extends ValueLocationMatcher {
+        properties: PartialFunction[(ReferenceType, String, MethodDescriptor), Boolean]
+) extends ValueLocationMatcher {
 
     def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        import scala.collection.mutable.{ HashMap, HashSet }
+        import scala.collection.mutable.{HashMap, HashSet}
 
         val result = HashMap.empty[Method, HashSet[PC]]
         for {

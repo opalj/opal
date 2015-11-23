@@ -39,7 +39,8 @@ import scala.xml.Node
  */
 case class LineNumberTable_attribute(
         attribute_name_index: Int,
-        line_number_table: Seq[LineNumberTableEntry]) extends Attribute {
+        line_number_table:    Seq[LineNumberTableEntry]
+) extends Attribute {
 
     def attribute_length: Int = 2 + line_number_table.size * 4
 

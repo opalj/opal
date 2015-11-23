@@ -65,7 +65,8 @@ object ClassHierarchyExtractor {
             Console.err.println(
                 "The specified supertype: "+
                     supertypeName+
-                    " is not defined in the specified jar(s).")
+                    " is not defined in the specified jar(s)."
+            )
             sys.exit(-2)
         }
 
@@ -73,7 +74,8 @@ object ClassHierarchyExtractor {
             "# Class hierarchy for: "+
                 supertypeName+
                 " limited to subclasses that start with: "+
-                filterPrefix)
+                filterPrefix
+        )
         val allRelevantSubtypes =
             classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒
                 candidateType.fqn.startsWith(filterPrefix)

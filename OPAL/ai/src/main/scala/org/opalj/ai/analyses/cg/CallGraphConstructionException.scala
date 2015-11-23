@@ -31,7 +31,7 @@ package ai
 package analyses
 package cg
 
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 
 /**
  * Encapsulates an exception that is thrown during the creation of the call graph.
@@ -43,8 +43,9 @@ import org.opalj.br.{ ClassFile, Method }
  */
 case class CallGraphConstructionException(
         classFile: ClassFile,
-        method: Method,
-        cause: Throwable) {
+        method:    Method,
+        cause:     Throwable
+) {
 
     import Console._
 

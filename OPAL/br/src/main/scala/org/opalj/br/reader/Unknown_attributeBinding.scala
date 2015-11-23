@@ -46,9 +46,10 @@ trait Unknown_attributeBinding
     type Unknown_attribute = br.UnknownAttribute
 
     def Unknown_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        info: Array[Byte]): Unknown_attribute =
+        info:                 Array[Byte]
+    ): Unknown_attribute =
         new Unknown_attribute(cp(attribute_name_index).asString, info)
 
 }

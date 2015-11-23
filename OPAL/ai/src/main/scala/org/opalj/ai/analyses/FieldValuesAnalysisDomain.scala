@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package analyses
 
-import scala.collection.mutable.{ Map ⇒ MutableMap }
+import scala.collection.mutable.{Map ⇒ MutableMap}
 import org.opalj.ai.Computation
 import org.opalj.ai.Domain
 import org.opalj.ai.NoUpdate
@@ -66,7 +66,8 @@ import org.opalj.br.MethodSignature
  */
 class BaseFieldValuesAnalysisDomain(
     override val project: SomeProject,
-    val classFile: ClassFile)
+    val classFile:        ClassFile
+)
         extends Domain
         with domain.TheProject
         with domain.ProjectBasedClassHierarchy
@@ -86,7 +87,7 @@ class BaseFieldValuesAnalysisDomain(
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization {
 
-    import scala.collection.mutable.{ Map ⇒ MutableMap }
+    import scala.collection.mutable.{Map ⇒ MutableMap}
 
     val thisClassType: ObjectType = classFile.thisType
 
@@ -107,7 +108,7 @@ class BaseFieldValuesAnalysisDomain(
                 // test that the initialization can be made by the declaring class only:
                 if field.isFinal || field.isPrivate
             } yield { field.name }
-        MutableMap.empty ++ relevantFields.map(_ -> None)
+        MutableMap.empty ++ relevantFields.map(_ → None)
     }
 
     def hasCandidateFields: Boolean = fieldInformation.nonEmpty
@@ -146,9 +147,10 @@ class BaseFieldValuesAnalysisDomain(
     }
 
     private def updateFieldInformation(
-        value: DomainValue,
+        value:              DomainValue,
         declaringClassType: ObjectType,
-        name: String): Unit = {
+        name:               String
+    ): Unit = {
         if ((declaringClassType eq thisClassType) &&
             fieldInformation.contains(name)) {
             fieldInformation(name) match {
@@ -167,12 +169,13 @@ class BaseFieldValuesAnalysisDomain(
     }
 
     override def putfield(
-        pc: PC,
-        objectref: DomainValue,
-        value: DomainValue,
+        pc:                 PC,
+        objectref:          DomainValue,
+        value:              DomainValue,
         declaringClassType: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[Nothing, ExceptionValue] = {
+        name:               String,
+        fieldType:          FieldType
+    ): Computation[Nothing, ExceptionValue] = {
 
         updateFieldInformation(value, declaringClassType, name)
 
@@ -180,11 +183,12 @@ class BaseFieldValuesAnalysisDomain(
     }
 
     override def putstatic(
-        pc: PC,
-        value: DomainValue,
+        pc:                 PC,
+        value:              DomainValue,
         declaringClassType: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[Nothing, Nothing] = {
+        name:               String,
+        fieldType:          FieldType
+    ): Computation[Nothing, Nothing] = {
 
         updateFieldInformation(value, declaringClassType, name)
 
@@ -194,11 +198,12 @@ class BaseFieldValuesAnalysisDomain(
 }
 
 class FPFieldValuesAnalysisDomain(
-    project: SomeProject,
-    val fieldValueInformation: FieldValueInformation,
+    project:                          SomeProject,
+    val fieldValueInformation:        FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    classFile: ClassFile)
+    val cache:                        CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    classFile:                        ClassFile
+)
         extends BaseFieldValuesAnalysisDomain(project, classFile)
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions

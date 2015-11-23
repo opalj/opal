@@ -42,15 +42,16 @@ trait LibraryClassFileBinding extends ClassFileBinding {
     this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
 
     override def ClassFile(
-        cp: Constant_Pool,
+        cp:            Constant_Pool,
         minor_version: Int, major_version: Int,
-        access_flags: Int,
-        this_class_index: Constant_Pool_Index,
+        access_flags:      Int,
+        this_class_index:  Constant_Pool_Index,
         super_class_index: Constant_Pool_Index,
-        interfaces: IndexedSeq[Constant_Pool_Index],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes): ClassFile = {
+        interfaces:        IndexedSeq[Constant_Pool_Index],
+        fields:            Fields,
+        methods:           Methods,
+        attributes:        Attributes
+    ): ClassFile = {
         super.ClassFile(
             cp,
             minor_version, major_version,
@@ -60,7 +61,8 @@ trait LibraryClassFileBinding extends ClassFileBinding {
             interfaces,
             fields.filter { f ⇒ !f.isPrivate },
             methods.filter { m ⇒ !m.isPrivate },
-            attributes)
+            attributes
+        )
     }
 }
 

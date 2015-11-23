@@ -53,11 +53,12 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
         new UninitializedFieldAccessDuringStaticInitialization[URL].analyze(project).toSet
 
     def MethodReport(
-        className: String,
+        className:  String,
         descriptor: MethodDescriptor,
-        name: String,
-        line: Int,
-        message: String) = {
+        name:       String,
+        line:       Int,
+        message:    String
+    ) = {
         val classType = ObjectType("UninitializedFieldAccessDuringStaticInitialization/"+className)
         LineAndColumnBasedReport(project.source(classType), Severity.Error, classType,
             descriptor, name, Some(line), None,
@@ -73,9 +74,10 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
 
     def GetterReport(
         className: String,
-        name: String,
-        line: Int,
-        message: String) = {
+        name:      String,
+        line:      Int,
+        message:   String
+    ) = {
         MethodReport(className, NoArgsAndReturnInt, name, line, message)
     }
 
@@ -218,7 +220,9 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
                 43,
                 "Access to uninitialized static field "+
                     "'UninitializedFieldAccessDuringStaticInitialization/RecursionSubclass.i1' "+
-                    "during static initialization"))
+                    "during static initialization"
+            )
+        )
     }
 
     it should "detect that Recursion.<clinit>() causes an uninitialized subclass static field access in infiniteRecursion()" in {
@@ -230,7 +234,9 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
                 48,
                 "Access to uninitialized static field "+
                     "'UninitializedFieldAccessDuringStaticInitialization/RecursionSubclass.i2' "+
-                    "during static initialization"))
+                    "during static initialization"
+            )
+        )
     }
 
     it should "detect that StaticNativeMethod.<clinit>() accesses uninitialized subclass static field StaticNativeMethodSubclass.i" in {

@@ -35,7 +35,8 @@ package br
  * @author Michael Eichberg
  */
 case class LocalVariableTypeTable(
-    localVariableTypes: LocalVariableTypes)
+    localVariableTypes: LocalVariableTypes
+)
         extends Attribute {
 
     override def kindId: Int = LocalVariableTypeTable.KindId
@@ -48,8 +49,9 @@ object LocalVariableTypeTable {
 }
 
 case class LocalVariableType(
-    startPC: Int,
-    length: Int,
-    name: String,
+    startPC:   Int,
+    length:    Int,
+    name:      String,
     signature: FieldTypeSignature,
-    index: Int)
+    index:     Int
+)

@@ -42,8 +42,9 @@ import org.opalj.collection.mutable.UShortSet
  */
 case class PUTSTATIC(
     declaringClass: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:           String,
+    fieldType:      FieldType
+)
         extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTSTATIC.opcode
@@ -55,9 +56,10 @@ case class PUTSTATIC(
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString =

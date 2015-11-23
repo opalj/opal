@@ -51,8 +51,10 @@ sealed abstract class DomainValues {
 object DomainValues {
 
     def apply(
-        theDomain: Domain)(
-            domainValues: Iterable[theDomain.DomainValue]): DomainValues { val domain: theDomain.type } = {
+        theDomain: Domain
+    )(
+        domainValues: Iterable[theDomain.DomainValue]
+    ): DomainValues { val domain: theDomain.type } = {
 
         new DomainValues {
             val domain: theDomain.type = theDomain

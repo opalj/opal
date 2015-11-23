@@ -53,27 +53,32 @@ trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
     // BINARY ARITHMETIC EXPRESSIONS
     //
     def fadd(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def fdiv(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def fmul(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def frem(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 
     def fsub(
-        pc: PC,
+        pc:       PC,
         strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+        value1:   DomainValue, value2: DomainValue
+    ): DomainValue
 }

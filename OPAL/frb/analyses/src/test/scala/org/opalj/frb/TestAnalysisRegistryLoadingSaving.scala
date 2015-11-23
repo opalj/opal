@@ -69,10 +69,10 @@ class TestAnalysisRegistryLoadingSaving extends AnalysisTest {
     it should "be able to load analysis class names and states from a valid file." in {
         val registry = FindRealBugs.loadRegistry(locateResource("valid.properties"))
         registry should be(Map(
-            "Analysis1" -> true,
-            "Analysis2" -> true,
-            "Analysis3" -> false,
-            "Analysis4" -> true
+            "Analysis1" → true,
+            "Analysis2" → true,
+            "Analysis3" → false,
+            "Analysis4" → true
         ))
     }
 
@@ -81,13 +81,15 @@ class TestAnalysisRegistryLoadingSaving extends AnalysisTest {
             FindRealBugs.loadRegistry(locateResource("invalid-value-1.properties"))
         }).getMessage() should be(
             "invalid-value-1.properties: Analysis1: invalid value ''"+
-                ", expected 'yes' or 'no'")
+                ", expected 'yes' or 'no'"
+        )
 
         (the[IllegalArgumentException] thrownBy {
             FindRealBugs.loadRegistry(locateResource("invalid-value-2.properties"))
         }).getMessage() should be(
             "invalid-value-2.properties: Analysis1: invalid value '1'"+
-                ", expected 'yes' or 'no'")
+                ", expected 'yes' or 'no'"
+        )
     }
 
     behavior of "FindRealBugs.saveRegistry()"
@@ -96,7 +98,7 @@ class TestAnalysisRegistryLoadingSaving extends AnalysisTest {
         val file = new File(locateResource("empty.properties").getParent(), "test.temp")
 
         println(file.getPath())
-        val registry = Map("a.Test1" -> false, "b.Test2" -> true)
+        val registry = Map("a.Test1" → false, "b.Test2" → true)
 
         FindRealBugs.saveRegistry(file, registry)
         file should exist

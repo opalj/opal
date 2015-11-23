@@ -36,7 +36,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class CONSTANT_Double_info(
-    value: Double)
+    value: Double
+)
         extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Double

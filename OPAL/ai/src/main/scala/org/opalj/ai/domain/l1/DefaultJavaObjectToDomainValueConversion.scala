@@ -63,7 +63,8 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
             InitializedArrayValue(
                 pc,
                 FieldType(fqnInBinaryNotation).asArrayType,
-                List(array.length))
+                List(array.length)
+            )
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
         }

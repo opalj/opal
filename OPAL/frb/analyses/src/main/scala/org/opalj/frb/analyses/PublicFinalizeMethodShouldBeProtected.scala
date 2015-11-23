@@ -56,9 +56,10 @@ class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
         // For all public finalize() methods...
         for {
@@ -71,7 +72,8 @@ class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis
                 Severity.Info,
                 classFile.thisType,
                 method,
-                "Should be protected")
+                "Should be protected"
+            )
         }
     }
 }

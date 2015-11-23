@@ -107,7 +107,8 @@ object OPALLogger extends OPALLogger {
     def initGlobalContextLogger(logger: OPALLogger) = globalContextMutex.synchronized {
         if (globalContextCreated)
             throw new RuntimeException(
-                "the global context is already created; the logger can no longer be changed")
+                "the global context is already created; the logger can no longer be changed"
+            )
         globalContextLogger = logger
     }
 
@@ -116,8 +117,9 @@ object OPALLogger extends OPALLogger {
      * specified logger with the context.
      */
     def register(
-        ctx: LogContext,
-        logger: OPALLogger = new ConsoleOPALLogger(true)): Unit =
+        ctx:    LogContext,
+        logger: OPALLogger = new ConsoleOPALLogger(true)
+    ): Unit =
         this.synchronized {
             if (ctx.id == -1) {
                 val id = nextId
@@ -228,8 +230,9 @@ object OPALLogger extends OPALLogger {
      */
     final def error(
         category: String,
-        message: String,
-        t: Throwable)(implicit ctx: LogContext): Unit = {
+        message:  String,
+        t:        Throwable
+    )(implicit ctx: LogContext): Unit = {
         log(Error(category, message, t))
     }
 }
