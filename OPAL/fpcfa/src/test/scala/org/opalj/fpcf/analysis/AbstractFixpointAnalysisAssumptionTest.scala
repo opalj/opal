@@ -35,7 +35,7 @@ import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.EnumValue
 import org.opalj.br.ElementValuePair
-import org.opalj.fpcf.analysis.demo.AnalysisModeConfigFactory
+import org.opalj.br.analyses.AnalysisModeConfigFactory
 
 /**
  *
