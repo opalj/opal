@@ -53,22 +53,6 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.log.OPALLogger
 
 /**
- * This property determines if an object leaks it's self reference (`this`) by passing
- * it to methods or assigning it to fields.
- */
-sealed trait SelfReferenceLeakage extends Property {
-    final def key = SelfReferenceLeakage.Key
-}
-
-object SelfReferenceLeakage {
-    final val Key = PropertyKey.create("SelfReferenceLeakage", LeaksSelfReference)
-}
-
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
-
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
-
-/**
  * A shallow analysis that determines for each object that is created within a method (new)
  * if it escapes the scope of the method.
  *
