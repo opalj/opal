@@ -32,11 +32,11 @@ package fpcf
 import org.opalj.fpcf.analysis._
 
 /**
- * Registry for all factories for analyses that are implemented
+ * Registry for all analysis factories are implemented
  * using the fixpoint computations framework.
  *
- * The registry was developed to support configuration purposes where the user/developer
- * choose between different domains.
+ * The registry primarily serves as a central container that can be queried
+ * by subsequent tools.
  *
  * The analyses that are part of OPAL are already registered.
  *
