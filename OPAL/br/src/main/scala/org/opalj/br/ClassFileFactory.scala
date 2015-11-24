@@ -110,7 +110,7 @@ object ClassFileFactory {
      * }}}
      *
      * The class, the constructor and the method are public. The field which holds
-     * the receiver object is private and final unles the receiver method is static.
+     * the receiver object is private and final unless the receiver method is static.
      * In this case no receiver field is generated and the constructor
      * does not take an argument of the receiver's type.
      *

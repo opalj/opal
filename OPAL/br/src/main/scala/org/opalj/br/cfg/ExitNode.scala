@@ -45,7 +45,7 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
         throw new UnsupportedOperationException()
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1l
