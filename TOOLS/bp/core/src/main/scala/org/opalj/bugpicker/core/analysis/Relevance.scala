@@ -31,12 +31,12 @@ package bugpicker
 package core
 package analysis
 
-import scala.Console.{RED, YELLOW, RESET}
+import scala.Console.{ RED, YELLOW, RESET }
 
 /**
  * Describes the overall relevance of a finding.
  *
- * When calculating the relevance you should take all
+ * When calculating the relevance of a finding you should take all
  * properties of the associated issue into consideration:
  *  - kind of issue
  *  - category of issue
@@ -49,8 +49,7 @@ import scala.Console.{RED, YELLOW, RESET}
  */
 final case class Relevance(value: Int) extends AnyVal {
 
-    def merge(other: Relevance): Relevance =
-        new Relevance((this.value + other.value) / 2)
+    def merge(other: Relevance): Relevance = new Relevance(Math.max(this.value, other.value))
 
     /**
      * The lower the value, the "whiter" the color. If the value is 100
@@ -82,16 +81,38 @@ final case class Relevance(value: Int) extends AnyVal {
 }
 
 object Relevance {
+
     final val OfUtmostRelevance = Relevance(99)
+
     final val VeryHigh = Relevance(80)
+
     final val High = Relevance(70)
+
     final val DefaultRelevance = Relevance(50)
+
     final val UselessDefensiveProgramming = Relevance(40)
+
     final val Low = Relevance(30)
+
     final val VeryLow = Relevance(10)
+
+    /**
+     * A finding related to a common programming idiom that always produces ''dead
+     * code/suspicious code'' from the point of view of a static analysis. E.e., a dead default
+     * branch in an exception that always just throws an exception.
+     */
     final val CommonIdiom = Relevance(3)
+
+    /**
+     *  An assertion was proven to always hold.
+     */
     final val ProvenAssertion = Relevance(2)
+
     final val OfNoRelevance = Relevance(1)
+
+    /**
+     *  A finding that is most likely not related to the source code.
+     */
     final val TechnicalArtifact = OfNoRelevance
 
     final val Undetermined = Relevance(0)
