@@ -80,7 +80,7 @@ import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
  * various issues in the source code of projects.
  *
  * ==Precision==
- * The analyses are designed such that they do not report false positives to facilitate
+ * The analyses are designed such that they try to avoid to report false positives to facilitate
  * usage of the BugPicker. However, given
  * that we analyze Java bytecode, some findings may be the result of the compilation
  * scheme employed by the compiler and, hence, cannot be resolved at the
@@ -637,4 +637,3 @@ object BugPickerAnalysis {
     }
     //<div id="debug"><span id="debug_info"></span></div> <-- add if you want to debug
 }
-

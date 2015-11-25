@@ -57,6 +57,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
+
     val analysis = this
 
     final val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
@@ -295,4 +296,3 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         issues.map("unknown or illegal parameter: "+_)
     }
 }
-

@@ -31,7 +31,6 @@ package fpcf
 package analysis
 package escape
 
-
 /**
  * This property determines if an object leaks it's self reference (`this`) by passing
  * it to methods or assigning it to fields.
@@ -47,5 +46,4 @@ object SelfReferenceLeakage {
 case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
 
 case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
-
 
