@@ -464,6 +464,7 @@ trait IntegerSetValues
     //
     /*override*/ def ineg(pc: PC, value: DomainValue) =
         value match {
+        case IntegerSet(SingletonSet(Int.MinValue) ) ⇒ value
             case IntegerSet(values) ⇒ IntegerSet(values.map(-_))
             case _                  ⇒ IntegerValue(origin = pc)
         }
@@ -818,4 +819,3 @@ trait IntegerSetValues
         }
 
 }
-

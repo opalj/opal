@@ -541,16 +541,10 @@ trait IntegerRangeValues
     // UNARY EXPRESSIONS
     //
     override def ineg(pc: PC, value: DomainValue) = value match {
-        case IntegerRange(lb, ub) ⇒
-            if (lb == Int.MinValue) { // -Int.MinValue === Int.MinValue
-                if (ub == Int.MinValue)
-                    IntegerRange(Int.MinValue, Int.MinValue)
-                else // ub > Int.MinValue
-                    IntegerValue(pc)
-            } else
-                IntegerRange(-ub, -lb)
-        case _ ⇒
-            IntegerValue(pc)
+        case IntegerRange(_,Int.MinValue)/* => lb is also Int.MinValue*/ => value
+        case IntegerRange(Int.MinValue, _) ⇒ IntegerValue(pc)
+        case IntegerRange(lb, ub) ⇒                IntegerRange(-ub, -lb)
+        case _ ⇒            IntegerValue(pc)
     }
 
     //
@@ -583,10 +577,8 @@ trait IntegerRangeValues
 
             case _ ⇒
                 value2 match {
-                    case IntegerRange(0, 0) ⇒
-                        value1
-                    case _ ⇒
-                        IntegerValue(pc)
+                    case IntegerRange(0, 0) ⇒                        value1
+                    case _ ⇒                        IntegerValue(pc)
                 }
         }
     }
@@ -661,11 +653,9 @@ trait IntegerRangeValues
         }
 
         denominator match {
+            case IntegerRange(1, 1) ⇒ ComputedValue(numerator)
             case IntegerRange(dlb, dub) ⇒
                 if (dlb > 0) {
-                    if (dlb == 1 && dub == 1)
-                        ComputedValue(numerator)
-                    else {
                         // no div by "0"
                         numerator match {
                             case IntegerRange(nlb, nub) ⇒
@@ -673,7 +663,6 @@ trait IntegerRangeValues
                             case _ ⇒
                                 ComputedValue(IntegerValue(pc))
                         }
-                    }
                 } else if (dlb == 0 && dub == 0) {
                     ThrowsException(VMArithmeticException(pc))
                 } else if (dub < 0) {
@@ -909,22 +898,16 @@ trait IntegerRangeValues
 
     override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (_, IntegerRange(0, 0)) ⇒
-                value
+            case (_, IntegerRange(0, 0)) ⇒                value
+            case (IntegerRange(0, 0), _) ⇒                value
 
             // In this case a signed shift does not change the value ([-1,-1]).
-            case (IntegerRange(-1, -1), _) ⇒
-                value
-
-            case (IntegerRange(0, 0), _) ⇒
-                value
+            case (IntegerRange(-1, -1), _) ⇒                value
+            case (_, IntegerRange(31, 31)) ⇒                IntegerRange(-1, 0)
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
                 val r = vlb >> slb
                 IntegerRange(r)
-
-            case (_, IntegerRange(31, 31)) ⇒
-                IntegerRange(-1, 0)
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 // We have one "arbitrary" range of numbers to shift and one range that
@@ -949,16 +932,15 @@ trait IntegerRangeValues
                     IntegerRange(lb, ub)
                 }
 
-            case _ ⇒
-                IntegerValue(pc)
+            case _ ⇒                IntegerValue(pc)
         }
 
     }
 
     override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-            case (_, IntegerRange(0, 0)) ⇒
-                value
+            case (IntegerRange(0, 0),_) ⇒                value
+            case (_, IntegerRange(0, 0)) ⇒                value
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 if (vlb == vub && slb == sub) {
@@ -1202,7 +1184,6 @@ object IntegerRangeValues {
     /**
      * The largest cardinality that makes sense.
      */
-    final val AbsoluteMaxCardinalityOfIntegerRanges =
-        Int.MaxValue.toLong + (-(Int.MinValue).toLong)
+    final val AbsoluteMaxCardinalityOfIntegerRanges = Int.MaxValue.toLong + (-(Int.MinValue).toLong)
 
 }
