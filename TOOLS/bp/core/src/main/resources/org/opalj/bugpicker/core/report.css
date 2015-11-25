@@ -36,7 +36,7 @@ details {
 	display: inherit;
 }
 
-.noDetails details:not([open]) > *:not(:first-child) {
+.noDetails details:not ([open] ) >*:not (:first-child ) {
 	display: none;
 }
 
@@ -47,7 +47,7 @@ div#analysis_controls {
 	padding: 1em;
 	height: 0.9em;
 	margin: 0px;
-	width:100%;
+	width: 100%;
 	overflow: hidden;
 	background-color: rgba(8, 114, 215, 0.95);
 	color: white;
@@ -67,16 +67,16 @@ div#analysis_controls:hover {
 }
 
 div#analysis_controls span#search_box {
-  position: absolute;
-  right: 50px;
-  top: 0px;
-  margin: 10px 20px;
+	position: absolute;
+	right: 50px;
+	top: 0px;
+	margin: 10px 20px;
 }
 
 input#relevance {
-	transform: translate(0px,6px);
-	-webkit-transform: translate(0px,6px);
-	-moz-transform: translate(0px,6px);
+	transform: translate(0px, 6px);
+	-webkit-transform: translate(0px, 6px);
+	-moz-transform: translate(0px, 6px);
 }
 
 div#analysis_parameters {
@@ -88,46 +88,45 @@ div#analysis_results {
 	padding: 0em;
 }
 
-div.an_issue{
+.an_issue {
 	padding: 0.5em;
 	background-color: rgb(241, 244, 255);
-	border: 1px solid  rgb(224, 222, 235);
+	border: 1px solid rgb(224, 222, 235);
 	border-top: 0px;
 	display: none;
 	word-break: break-word;
 }
 
-div.an_issue.issue_visible{
+div.an_issue.issue_visible {
 	display: block;
 }
 
-.issue{
+.issue {
 	margin-top: 1em;
 }
 
 .issue_message {
-	color: rgb(94,94,94);
+	color: rgb(94, 94, 94);
 	font-weight: 300;
 }
 
-div.issue_additional_info{
-	border-top: 1px dashed rgb(200,200,200);
+div.issue_additional_info {
+	border-top: 1px dashed rgb(200, 200, 200);
 	margin-top: 0.3em;
 	padding-top: 0.3em;
 	font-weight: 300;
 }
 
-
-div.declaring_class{
+div.declaring_class {
 	margin-left: 8em;
-
 }
-div.declaring_class:before{
+
+div.declaring_class:before {
 	content: "class:";
 }
 
 details.locals {
-	padding:0;
+	padding: 0;
 	background-color: rgba(174, 177, 255, 0.24);
 	border: 1px solid rgb(172, 172, 205);
 }

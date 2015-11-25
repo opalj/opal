@@ -206,8 +206,6 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        println("Fix: "+fixpointAnalyses.map(_.getClass.getSimpleName).mkString(" | "))
-
         val analysisManager = theProject.get(FPCFAnalysisManagerKey)
         step(5, "[FPCF-Analysis] Computing Fixpoint Properties (if selected)") {
             ({
@@ -584,7 +582,6 @@ object BugPickerAnalysis {
             } else {
                 (NodeSeq.Empty, NodeSeq.Empty)
             }
-
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
@@ -638,5 +635,6 @@ object BugPickerAnalysis {
             </body>
         </html>
     }
+    //<div id="debug"><span id="debug_info"></span></div> <-- add if you want to debug
 }
 
