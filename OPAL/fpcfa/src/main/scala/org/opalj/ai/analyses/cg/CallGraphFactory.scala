@@ -33,11 +33,12 @@ package cg
 
 import org.opalj.log.OPALLogger
 import org.opalj.br._
+import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.br.analyses.InstantiableClassesKey
 
 /**
  * Factory object to create call graphs.
@@ -61,6 +62,27 @@ object CallGraphFactory {
         ObjectType("javax/annotation/PostConstruct"),
         ObjectType("javax/annotation/PreDestroy")
     )
+
+    @inline def isPotentiallySerializationRelated(
+        classFile: ClassFile,
+        method:    Method
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): Boolean = {
+        import classHierarchy.isSubtypeOf
+        val definingType = classFile.thisType
+        val nonFinal = !classFile.isFinal /*we may inherit from Serializable later on...*/
+        // TODO Perform some further checks of the subtypes w.r.t. their Serializability property.
+        lazy val isExternalizable = isSubtypeOf(definingType, ObjectType.Externalizable)
+        lazy val isSerializable = isSubtypeOf(definingType, ObjectType.Serializable)
+
+        Method.isObjectSerializationRelated(
+            method,
+            (isSerializable & !isExternalizable) || nonFinal,
+            isExternalizable || nonFinal
+        )
+    }
 
     /**
      * Returns a list of all entry points that is well suited if we want to
@@ -91,7 +113,7 @@ object CallGraphFactory {
          *    - methods of a "private class" that is never instantiated (dead objects...)
          *
          */
-        val classHierarchy = project.classHierarchy
+        implicit val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
@@ -100,29 +122,16 @@ object CallGraphFactory {
 
             val isNonPrivate = !method.isPrivate
 
-            @inline def isPotentiallySerializationRelated: Boolean = {
-                Method.isObjectSerializationRelated(method) &&
-                    (
-                        !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
-                        classHierarchy.isSubtypeOf(
-                            classFile.thisType,
-                            ObjectType.Serializable
-                        ).isYesOrUnknown
-                    )
-            }
-
             @inline def isImplicitlyUsed: Boolean = {
                 method.annotations.exists { annotation ⇒
                     val annotationType = annotation.annotationType
                     annotationType.isObjectType &&
-                        annotationsIndicatingImplicitUsage.contains(
-                            annotationType.asObjectType
-                        )
+                        annotationsIndicatingImplicitUsage.contains(annotationType.asObjectType)
                 }
             }
 
             if ((classIsInstantiable || method.isStatic) &&
-                (isNonPrivate || isPotentiallySerializationRelated)) {
+                (isNonPrivate || isPotentiallySerializationRelated(classFile, method))) {
                 methods.add(method)
             } else if (isImplicitlyUsed) {
                 methods.add(method)
