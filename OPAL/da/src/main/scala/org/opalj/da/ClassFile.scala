@@ -113,12 +113,14 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML: Seq[Node] =
+    def fieldsToXHTML: Seq[Node] = {
         <table class="fields">{ for (field ← fields) yield field.toXHTML(fqn) }</table>
+    }
 
-    def methodsToXHTML: Seq[Node] =
+    def methodsToXHTML: Seq[Node] = {
         for ((method, index) ← methods.zipWithIndex)
             yield method.toXHTML( /*fqn,*/ index)
+    }
 
     protected def accessFlags: Node = {
         <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>

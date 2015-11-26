@@ -40,5 +40,4 @@ import java.io.File
 case class OpeningFileFailedException(
     file:  File,
     cause: Throwable
-)
-        extends Exception(s"cannot open file $file", cause)
+) extends Exception(s"cannot open file $file", cause)

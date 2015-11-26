@@ -527,7 +527,6 @@ final class Code private (
      */
     def localVariable(pc: PC, index: Int): Option[LocalVariable] = {
         localVariableTable.flatMap { lvs ⇒
-
             lvs.find { lv ⇒
                 val result = lv.index == index &&
                     lv.startPC <= pc &&

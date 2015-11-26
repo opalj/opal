@@ -46,6 +46,9 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 trait SetProperty[E <: AnyRef] extends PropertyKind {
 
+    /**
+     * A unique id that is automatically assigned with each instance of a `SetProperty` kind.
+     */
     // the id is used to efficiently get the respective (identity) set
     final val id = { SetProperty.nextId(this.getClass().getSimpleName) }
 

@@ -34,6 +34,7 @@ package l1
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br._
+import org.opalj.collection.SingletonSet
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
@@ -464,9 +465,9 @@ trait IntegerSetValues
     //
     /*override*/ def ineg(pc: PC, value: DomainValue) =
         value match {
-        case IntegerSet(SingletonSet(Int.MinValue) ) ⇒ value
-            case IntegerSet(values) ⇒ IntegerSet(values.map(-_))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSet(SingletonSet(Int.MinValue)) ⇒ value
+            case IntegerSet(values)                     ⇒ IntegerSet(values.map(-_))
+            case _                                      ⇒ IntegerValue(origin = pc)
         }
 
     //

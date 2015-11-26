@@ -446,6 +446,9 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * is reached or the interpretation was aborted.
      *
      * By default this method does nothing.
+     *
+     * Domains that override this method are expected to do so by means of an abstract override
+     * where they '''always''' also call `super.abstractInterpretationEnded(aiResult)`.
      */
     def abstractInterpretationEnded(
         aiResult: AIResult { val domain: coreDomain.type }

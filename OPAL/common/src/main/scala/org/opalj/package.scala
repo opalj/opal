@@ -154,6 +154,8 @@ package object opalj {
     /**
      * Executes the given function `f` for the first `n` values of the given list.
      * The behavior is undefined if the given list does not have at least `n` elements.
+     *
+     * @note '''This is a macro.'''
      */
     final def forFirstN[T <: AnyRef](
         l: List[T], n: Int
@@ -185,7 +187,7 @@ package object opalj {
      * }
      * }}}
      *
-     * '''This is a macro.'''
+     * @note '''This is a macro.'''
      *
      * @param times The number of times the expression `f` is evaluated. The `times`
      *      expression is evaluated exactly once.
@@ -216,7 +218,9 @@ package object opalj {
      * Iterates over the given range of integer values `[from,to]` and calls the given
      * function f for each value.
      *
-     * If from is smaller than `to` `f` will not be called.
+     * If `from` is smaller or equal to `to`, `f` will not be called.
+     *
+     * @note '''This is a macro.'''
      */
     def iterateTo(from: Int, to: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateTo
 
@@ -224,7 +228,7 @@ package object opalj {
      * Iterates over the given range of integer values `[from,until)` and calls the given
      * function f for each value.
      *
-     * If from is smaller than until `f` will not be called.
+     * If `from` is smaller than `until`, `f` will not be called.
      */
     def iterateUntil(from: Int, until: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateUntil
 }
@@ -317,7 +321,7 @@ private object ControlAbstractionsImplementation {
 
         reify {
             var i = from.splice
-            val max = to.splice // => times is evaluated only once
+            val max = to.splice // => to is evaluated only once
             while (i <= max) {
                 f.splice(i) // => we evaluate f the given number of times
                 i += 1
@@ -337,7 +341,7 @@ private object ControlAbstractionsImplementation {
 
         reify {
             var i = from.splice
-            val max = until.splice // => times is evaluated only once
+            val max = until.splice // => until is evaluated only once
             while (i < max) {
                 f.splice(i) // => we evaluate f the given number of times
                 i += 1

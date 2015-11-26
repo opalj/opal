@@ -31,7 +31,7 @@ package bugpicker
 package core
 package analysis
 
-import scala.Console.{ RED, YELLOW, RESET }
+import scala.Console.{RED, YELLOW, RESET}
 
 /**
  * Describes the overall relevance of a finding.

@@ -181,16 +181,6 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
-
-            //            it("should correctly reflect comparison (using no AI results)") {
-            //                val statements = AsQuadruples(method=DoubleCmpMethod, aiResult= None)
-            //                val javaLikeCode = ToJavaLike(statements)
-            //                TODO
-            //                assert(statements.nonEmpty)
-            //                assert(javaLikeCode.length() > 0)
-            //                statements.shouldEqual()
-            //                javaLikeCode.shouldEqual()
-            //            }
         }
 
         describe("using AI results") {
@@ -320,16 +310,6 @@ class DoubleArithmeticTest extends FunSpec with Matchers {
                 ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
-
-            //            it("should correctly reflect comparison (using no AI results)") {
-            //                val statements = AsQuadruples(method=DoubleCmpMethod, aiResult= None)
-            //                val javaLikeCode = ToJavaLike(statements)
-            //                TODO
-            //                assert(statements.nonEmpty)
-            //                assert(javaLikeCode.length() > 0)
-            //                statements.shouldEqual()
-            //                javaLikeCode.shouldEqual()
-            //            }
         }
     }
 }

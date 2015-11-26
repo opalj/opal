@@ -60,7 +60,6 @@ package object io {
         filenamePrefix: String,
         filenameSuffix: String
     ): File = {
-
         val data = node.toString
         writeAndOpen(data, filenamePrefix, filenameSuffix)
     }

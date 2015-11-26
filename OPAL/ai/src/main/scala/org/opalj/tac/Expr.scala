@@ -29,11 +29,6 @@
 package org.opalj
 package tac
 
-import scala.collection.mutable.BitSet
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.mutable.Locals
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.Domain
 import org.opalj.br._
 

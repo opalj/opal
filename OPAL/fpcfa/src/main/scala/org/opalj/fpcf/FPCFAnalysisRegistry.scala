@@ -84,9 +84,9 @@ object FPCFAnalysisRegistry {
     /**
      * Returns the factory for analysis with a matching description.
      */
-    def getFixpointAnalysisFactory(
-        analysisDescripition: String
-    ): FPCFAnalysisRunner = this.synchronized { descriptions(analysisDescripition) }
+    def getFixpointAnalysisFactory(analysisDescripition: String): FPCFAnalysisRunner = {
+        this.synchronized { descriptions(analysisDescripition) }
+    }
 
     // initialize the registry with the known default analyses
     register(

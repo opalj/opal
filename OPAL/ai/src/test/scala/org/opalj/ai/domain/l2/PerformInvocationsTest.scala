@@ -40,7 +40,9 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestSupport.locateTestResources
 
-import org.opalj.br._
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.domain.DefaultRecordMethodCallResults

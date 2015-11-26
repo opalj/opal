@@ -66,13 +66,12 @@ import org.opalj.bi.VisibilityModifier
  * @author Marco Torsello
  */
 final class Method private (
-    val accessFlags: Int,
-    val name:        String,
-    val descriptor:  MethodDescriptor,
-    val body:        Option[Code],
-    val attributes:  Attributes
-)
-        extends ClassMember with scala.math.Ordered[Method] {
+        val accessFlags: Int,
+        val name:        String,
+        val descriptor:  MethodDescriptor,
+        val body:        Option[Code],
+        val attributes:  Attributes
+) extends ClassMember with scala.math.Ordered[Method] {
 
     final override def isMethod = true
 

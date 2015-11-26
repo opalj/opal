@@ -35,12 +35,13 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
 import scala.collection.SortedSet
-import org.opalj.br._
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
 import org.opalj.collection.commonPrefix
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -67,7 +68,10 @@ import scala.reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing with PostEvaluationMemoryManagement {
+trait ArrayValues
+        extends l1.ReferenceValues
+        with PerInstructionPostProcessing
+        with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
 
     /**
