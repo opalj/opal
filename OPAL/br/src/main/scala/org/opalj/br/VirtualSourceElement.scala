@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import scala.math.Ordered
-import org.opalj.br.analyses.SomeProject
 
 /**
  * A `VirtualSourceElement` is the representation of some source element that is
@@ -63,7 +62,7 @@ sealed trait VirtualSourceElement extends SourceElement with Ordered[VirtualSour
     /**
      * Returns the best line number information available.
      */
-    def getLineNumber(project: SomeProject): Option[Int]
+    def getLineNumber(project: ClassFileRepository): Option[Int]
 
 }
 
@@ -107,7 +106,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def toJava: String = thisType.toJava
 
     // Recall that the class may not be the only one defined in a source file!
-    override def getLineNumber(project: SomeProject): Option[Int] = None
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -154,7 +153,7 @@ final case class VirtualField(
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
 
-    override def getLineNumber(project: SomeProject): Option[Int] = None
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -211,7 +210,7 @@ sealed class VirtualMethod(
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
-    override def getLineNumber(project: SomeProject): Option[Int] = {
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = {
         if (declaringClassType.isArrayType)
             return None;
 
