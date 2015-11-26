@@ -33,7 +33,7 @@ package cg
 
 import org.opalj.log.OPALLogger
 import org.opalj.br._
-import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC

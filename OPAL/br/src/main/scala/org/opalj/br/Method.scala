@@ -254,27 +254,60 @@ object Method {
     final val writeObjectDescriptor =
         MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
 
-    // FIXME Do what is described and not what is implemente!!!
+    final val readObjectInputDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
+
+    final val writeObjectOutputDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
+
     /**
-     * If the declaring class is Externalizable then the methods readObject and writeObject
-     *      are unused. If the declaring class is '''only''' Seralizable then the write and read
-     *      external methods are not serialzation related unless a subclass exists that inherits
-     *      these two methods and implements the interface Externalizable.
+     * Returns `true` if the method is object serialization related.
+     * That is, if the declaring class is `Externalizable` then the methods readObject and
+     * writeObject are unused.
+     * If the declaring class is '''only''' `Seralizable` then the write and read
+     * external methods are not serialization related unless a subclass exists that inherits
+     * these two methods and implements the interface `Externalizable`.
+     *
      * @note Calling this method only makes sense if the given class or a subclass thereof
-     *       is actually Serializable.
+     *       is at least `Serializable`.
+     *
+     * @param method A method defined by a class that inherits from Serializable or which has
+     * 			at least one sublcass that is Serializable and that inherits the given method.
+     * @param isInheritedBySerializableOnlyClass This parameter should be `Yes` iff this method is
+     *      defined in a `Serializable` class or is inherited by at least one class that is
+     *      (just) `Serializable`, but which is not `Externalizable`.
+     * @param isInheritedByExternalizableClass This parameter should be `Yes` iff the method's
+     *      defining class is `Externalizable` or if this method is inherited by at least one class
+     *      that is `Externalizable`.
      */
-    def isObjectSerializationRelated(method: Method): Boolean = {
+    def isObjectSerializationRelated(
+        method:                             Method,
+        isInheritedBySerializableOnlyClass: ⇒ Answer,
+        isInheritedByExternalizableClass:   ⇒ Answer
+    ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
 
         /*The default constructor is used by the deserialization process*/
         (method.name == "<init>" && method.descriptor == NoArgsAndReturnVoid) ||
             (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
-            (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
-            (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
             (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
-            (method.name == "writeReplace" && method.descriptor == JustReturnsObject)
-        // add support write/readExternal
+            (method.name == "writeReplace" && method.descriptor == JustReturnsObject) ||
+            (
+
+                (
+                    (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
+                    (method.name == "writeObject" && method.descriptor == writeObjectDescriptor)
+                ) && isInheritedBySerializableOnlyClass.isYesOrUnknown
+            ) ||
+                    (
+                        method.isPublic /*we are implementing an interface...*/ &&
+                        (
+                            (method.name == "readExternal" && method.descriptor == readObjectInputDescriptor) ||
+                            (method.name == "writeExternal" && method.descriptor == writeObjectOutputDescriptor)
+                        ) &&
+                            isInheritedByExternalizableClass.isYesOrUnknown
+                    )
     }
 
     final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask

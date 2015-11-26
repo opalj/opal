@@ -42,7 +42,7 @@ import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{time, run}
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.{ClassHierarchy, Project}
+import org.opalj.br.analyses.Project
 import org.opalj.de._
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext

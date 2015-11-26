@@ -29,9 +29,11 @@
 package org.opalj
 package br
 
-import analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
 import java.net.URL
-import org.opalj.br.analyses.ClassHierarchy
 
 /**
  * Counts the number of private methods that have at least one parameter with

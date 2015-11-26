@@ -1164,6 +1164,5 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    val preDefinedClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
+    val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 }

@@ -30,20 +30,11 @@ package org.opalj
 package ai
 
 import java.net.URL
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.IF0Instruction
-import org.opalj.br.instructions.IFICMPInstruction
-import org.opalj.ai.analyses.cg.VTACallGraphKey
-import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.ai.analyses.cg.{CallGraphFactory, VTACallGraphKey, ComputedCallGraph}
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 
@@ -63,8 +54,8 @@ object UnusedMethods extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ) = {
-
-        import theProject.classHierarchy.isSubtypeOf
+        implicit val classHierarchy = theProject.classHierarchy
+        import classHierarchy.isSubtypeOf
 
         val results = {
             val ComputedCallGraph(callGraph, _, _) = theProject.get(VTACallGraphKey)
@@ -80,7 +71,7 @@ object UnusedMethods extends DefaultOneStepAnalysis {
                     method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
                 )
                 if !(
-                    Method.isObjectSerializationRelated(method) &&
+                    CallGraphFactory.isPotentiallySerializationRelated(classFile, method) &&
                     isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown
                 )
             } yield {

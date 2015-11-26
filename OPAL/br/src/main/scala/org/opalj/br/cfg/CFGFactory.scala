@@ -26,14 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
+package br
 package cfg
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.HashMap
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction

@@ -40,7 +40,7 @@ import org.opalj.ai.AIResult
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 
 /**

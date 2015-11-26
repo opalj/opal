@@ -28,31 +28,11 @@
  */
 package org.opalj
 package br
-
-import scala.IndexedSeq
+package instructions
 
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
-
-import instructions.AASTORE
-import instructions.ALOAD_0
-import instructions.ANEWARRAY
-import instructions.ARETURN
-import instructions.CHECKCAST
-import instructions.DUP
-import instructions.GETFIELD
-import instructions.INVOKEINTERFACE
-import instructions.INVOKESPECIAL
-import instructions.INVOKESTATIC
-import instructions.INVOKEVIRTUAL
-import instructions.Instruction
-import instructions.LoadConstantInstruction
-import instructions.LoadLocalVariableInstruction
-import instructions.NEW
-import instructions.PUTFIELD
-import instructions.RETURN
-import instructions.ReturnInstruction
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -250,7 +230,7 @@ object ClassFileFactory {
             receiverParameters.dropRight(interfaceMethodParametersCount).
                 zipWithIndex.map { p ⇒
                     val (fieldType, index) = p
-                    createField(fieldType = fieldType, name = s"staticParameter${index}")
+                    createField(fieldType = fieldType, name = s"staticParameter$index")
                 }
         val fields: IndexedSeq[Field] =
             receiverField ++ additionalFieldsForStaticParameters
@@ -330,7 +310,7 @@ object ClassFileFactory {
      * Creates a field of the specified type with the given name.
      */
     def createField(
-        accessFlags: Int            = (bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask),
+        accessFlags: Int            = bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask,
         name:        String,
         fieldType:   FieldType,
         attributes:  Seq[Attribute] = Seq.empty
@@ -422,7 +402,7 @@ object ClassFileFactory {
 
         val requiredInstructions =
             computeNumberOfInstructionsForParameterLoading(fields.map(_.fieldType), 1) +
-                (fields.size) + // ALOAD_0  for each field
+                fields.size + // ALOAD_0  for each field
                 (3 * fields.size) // PUTFIELD for each field
         val instructions = new Array[Instruction](requiredInstructions)
 
@@ -677,11 +657,7 @@ object ClassFileFactory {
                 0
             }
 
-        val maxStack =
-            math.max(
-                (receiverObjectStackSize) + parametersStackSize,
-                returnValueStackSize
-            )
+        val maxStack = math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
 
         val maxLocals = 1 + receiverObjectStackSize + parametersStackSize +
             returnValueStackSize
@@ -721,7 +697,7 @@ object ClassFileFactory {
 
         val receiverTakesObjectArray = receiverParameters.size == 1 &&
             receiverParameters(0) == ArrayType(ObjectType.Object)
-        val callerDoesNotTakeObjectArray = forwarderParameters.size == 0 ||
+        val callerDoesNotTakeObjectArray = forwarderParameters.isEmpty ||
             forwarderParameters(0) != ArrayType(ObjectType.Object)
 
         if (receiverTakesObjectArray && callerDoesNotTakeObjectArray) {
@@ -773,8 +749,9 @@ object ClassFileFactory {
 
                 if (t.isBaseType) {
                     // boxing always needs one instruction
-                    val box = t.asBaseType.boxValue(0)
-                    instructions(nextIndex) = box
+                    val boxInstructions = t.asBaseType.boxValue
+                    val boxInstruction = boxInstructions(0)
+                    instructions(nextIndex) = boxInstruction
                     nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
                 }
 
@@ -871,13 +848,15 @@ object ClassFileFactory {
                             instructions(currentIndex) = conversion
                             currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
                         } else if (rt.isBaseType && ft.isObjectType) {
-                            val conv = ft.asObjectType.unboxValue(0)
-                            instructions(currentIndex) = conv
-                            currentIndex = conv.indexOfNextInstruction(currentIndex, false)
+                            val unboxInstructions = ft.asObjectType.unboxValue
+                            val unboxInstruction = unboxInstructions(0)
+                            instructions(currentIndex) = unboxInstruction
+                            currentIndex = unboxInstruction.indexOfNextInstruction(currentIndex, false)
                         } else if (ft.isBaseType && rt.isObjectType) {
-                            val conv = ft.asBaseType.boxValue(0)
-                            instructions(currentIndex) = conv
-                            currentIndex = conv.indexOfNextInstruction(currentIndex, false)
+                            val boxInstructions = ft.asBaseType.boxValue
+                            val boxInstruction = boxInstructions(0)
+                            instructions(currentIndex) = boxInstruction
+                            currentIndex = boxInstruction.indexOfNextInstruction(currentIndex, false)
                         } else throw new UnknownError("Should not occur: "+ft+" → "+rt)
                     }
                 }

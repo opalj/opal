@@ -43,7 +43,7 @@ import scala.collection.mutable.{Map ⇒ MutableMap, HashSet}
 
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.{ClassHierarchy, Project, SomeProject}
+import org.opalj.br.analyses.{Project, SomeProject}
 
 import org.opalj.de._
 

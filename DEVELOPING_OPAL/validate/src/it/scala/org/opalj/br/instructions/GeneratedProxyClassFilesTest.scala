@@ -28,19 +28,16 @@
  */
 package org.opalj
 package br
+package instructions
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.br.analyses.Project
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -66,7 +63,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         Some(ObjectType.Object),
                         Set.empty
                     )
-                val proxyMethodName = m.name+'$'+"proxy"
+                val proxyMethodName = m.name + '$'+"proxy"
                 val invocationInstruction =
                     if (testProject.classFile(t).get.isInterfaceDeclaration) {
                         INVOKEINTERFACE.opcode
@@ -85,7 +82,8 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         t,
                         m.name,
                         m.descriptor,
-                        invocationInstruction)
+                        invocationInstruction
+                    )
 
                 def verifyMethod(classFile: ClassFile, method: Method): Unit = {
                     val domain = new BaseDomain(testProject, classFile, method)
@@ -126,13 +124,14 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
                 val factoryMethod =
                     proxy.findMethod("$newInstance").getOrElse(
-                        proxy.findMethod("$createInstance").get)
+                        proxy.findMethod("$createInstance").get
+                    )
                 it("should produce a correct factory method") {
                     verifyMethod(proxy, factoryMethod)
                 }
 
             }
-            proxy -> testProject.source(t).get
+            proxy → testProject.source(t).get
         }
 
         describe("the project should be extendable with the generated proxies") {
@@ -140,7 +139,8 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
             it("should have the right amount of class files") {
                 extendedProject.classFilesCount should be(
-                    testProject.classFilesCount + proxies.size)
+                    testProject.classFilesCount + proxies.size
+                )
             }
 
             it("should have the right class files") {

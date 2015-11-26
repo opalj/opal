@@ -28,7 +28,6 @@
  */
 package org.opalj
 package br
-package analyses
 
 import scala.annotation.tailrec
 import scala.collection.{Map, Set, SeqView}

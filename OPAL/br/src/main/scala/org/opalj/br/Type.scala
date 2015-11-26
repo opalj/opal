@@ -40,26 +40,6 @@ import scala.collection.SortedSet
 
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
-// TODO [DESIGN] Resolve cyclic dependency between "br" and "br.instructions"!
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.D2F
-import org.opalj.br.instructions.D2I
-import org.opalj.br.instructions.D2L
-import org.opalj.br.instructions.F2D
-import org.opalj.br.instructions.F2I
-import org.opalj.br.instructions.F2L
-import org.opalj.br.instructions.I2B
-import org.opalj.br.instructions.I2C
-import org.opalj.br.instructions.I2D
-import org.opalj.br.instructions.I2F
-import org.opalj.br.instructions.I2L
-import org.opalj.br.instructions.I2S
-import org.opalj.br.instructions.L2D
-import org.opalj.br.instructions.L2F
-import org.opalj.br.instructions.L2I
 
 /**
  * Represents a JVM type.
@@ -193,25 +173,25 @@ sealed abstract class Type extends UID with Ordered[Type] {
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a BaseType"
+            "a "+this.getClass.getSimpleName+" cannot be cast to a BaseType"
         )
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a FieldType"
+            "a "+this.getClass.getSimpleName+" cannot be cast to a FieldType"
         )
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a NumericType"
+            "a "+this.getClass.getSimpleName+" cannot be cast to a NumericType"
         )
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asIntLikeType: IntLikeType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an IntLikeType"
+            "a "+this.getClass.getSimpleName+" cannot be cast to an IntLikeType"
         )
 
     /**
@@ -287,7 +267,7 @@ sealed abstract class Type extends UID with Ordered[Type] {
 object Type {
 
     def apply(clazz: Class[_]): Type = {
-        if (clazz.isPrimitive()) {
+        if (clazz.isPrimitive) {
             clazz match {
                 case java.lang.Boolean.TYPE   ⇒ BooleanType
                 case java.lang.Byte.TYPE      ⇒ ByteType
@@ -340,7 +320,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 
-    override def toString() = "VoidType"
+    override def toString(): String = "VoidType"
 
 }
 case object VoidType extends VoidType
@@ -365,7 +345,7 @@ sealed abstract class FieldType extends Type {
      *  - unboxing
      */
     @throws[IllegalArgumentException]("if a(n) (un)boxing to the targetType is not possible")
-    def adapt(targetType: Type): Array[Instruction]
+    def adapt[T](targetType: Type)(implicit typeConversionFactory: TypeConversionFactory[T]): T
 }
 /**
  * Factory to parse field type (descriptors) to get field type objects.
@@ -444,13 +424,18 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     val WrapperType: ObjectType
 
-    def boxValue: Array[Instruction]
+    def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T
 
-    final override def adapt(targetType: Type): Array[Instruction] = {
+    final override def adapt[T](
+        targetType: Type
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
         if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
             boxValue
         } else {
-            val message = s"adaptation of ${this.toJava} to ${targetType} is not supported"
+            val message = s"adaptation of ${this.toJava} to $targetType is not supported"
             throw new IllegalArgumentException(message)
         }
     }
@@ -493,10 +478,13 @@ sealed abstract class NumericType protected () extends BaseType {
      *
      * @note The functionality implemented here, basically implements the logic
      *      for handling boxing and unboxing operations.
-     *
-     * @return This default implementation throws an `IllegalArgumentException`.
      */
-    def convertTo(targetType: NumericType): Array[Instruction]
+    def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T
 
     /**
      * Determines if the range of values captured by `this` type is a '''strict'''
@@ -525,17 +513,6 @@ sealed abstract class NumericType protected () extends BaseType {
     override def isNumericType = true
 
     override def asNumericType: this.type = this
-
-}
-
-object NumericType {
-
-    final val IntToByte: Array[Instruction] = Array(I2B)
-    final val IntToChar: Array[Instruction] = Array(I2C)
-    final val IntToDouble: Array[Instruction] = Array(I2D)
-    final val IntToFloat: Array[Instruction] = Array(I2F)
-    final val IntToLong: Array[Instruction] = Array(I2L)
-    final val IntToShort: Array[Instruction] = Array(I2S)
 
 }
 
@@ -581,45 +558,30 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def isWiderThan(targetType: NumericType): Boolean = false
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id |
                 ShortType.id |
-                IntegerType.id ⇒ Array.empty
-            case CharType.id   ⇒ NumericType.IntToChar
-            case LongType.id   ⇒ NumericType.IntToLong
-            case FloatType.id  ⇒ NumericType.IntToFloat
-            case DoubleType.id ⇒ NumericType.IntToDouble
+                IntegerType.id ⇒ NoConversion
+            case CharType.id   ⇒ IntToChar
+            case LongType.id   ⇒ IntToLong
+            case FloatType.id  ⇒ IntToFloat
+            case DoubleType.id ⇒ IntToDouble
         }
     }
 
-    override def boxValue: Array[Instruction] = ByteType.primitiveByteToLangByte
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveByteToLangByte
+    }
 
 }
-case object ByteType extends ByteType {
-
-    final lazy val langByteToPrimitiveByte: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Byte,
-                "byteValue",
-                MethodDescriptor.JustReturnsByte
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveByteToLangByte: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Byte,
-                "valueOf",
-                MethodDescriptor(ByteType, ObjectType.Byte)
-            ),
-            null,
-            null
-        )
-}
+case object ByteType extends ByteType
 
 sealed abstract class CharType private () extends IntLikeType {
 
@@ -647,44 +609,30 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def isWiderThan(targetType: NumericType): Boolean = false
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id                  ⇒ NumericType.IntToByte
-            case ShortType.id                 ⇒ NumericType.IntToShort
-            case CharType.id | IntegerType.id ⇒ Array.empty
-            case LongType.id                  ⇒ NumericType.IntToLong
-            case FloatType.id                 ⇒ NumericType.IntToFloat
-            case DoubleType.id                ⇒ NumericType.IntToDouble
+            case ByteType.id                  ⇒ IntToByte
+            case ShortType.id                 ⇒ IntToShort
+            case CharType.id | IntegerType.id ⇒ NoConversion
+            case LongType.id                  ⇒ IntToLong
+            case FloatType.id                 ⇒ IntToFloat
+            case DoubleType.id                ⇒ IntToDouble
         }
     }
 
-    override def boxValue: Array[Instruction] = CharType.primitiveCharToLangCharacter
+    override def boxValue[T](
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = { typeConversionFactory.PrimitiveCharToLangCharacter }
 
 }
-case object CharType extends CharType {
-
-    final lazy val langCharacterToPrimitiveChar: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Character,
-                "charValue",
-                MethodDescriptor.JustReturnsChar
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveCharToLangCharacter: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Character,
-                "valueOf",
-                MethodDescriptor(CharType, ObjectType.Character)
-            ),
-            null,
-            null
-        )
-}
+case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends NumericType {
 
@@ -713,52 +661,31 @@ sealed abstract class DoubleType private () extends NumericType {
 
     override def isWiderThan(targetType: NumericType): Boolean = targetType ne this
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ DoubleType.Double2Byte
-            case CharType.id    ⇒ DoubleType.Double2Char
-            case ShortType.id   ⇒ DoubleType.Double2Short
-            case IntegerType.id ⇒ DoubleType.Double2Integer
-            case LongType.id    ⇒ DoubleType.Double2Long
-            case FloatType.id   ⇒ DoubleType.Double2Float
-            case DoubleType.id  ⇒ Array.empty
+            case ByteType.id    ⇒ Double2Byte
+            case CharType.id    ⇒ Double2Char
+            case ShortType.id   ⇒ Double2Short
+            case IntegerType.id ⇒ Double2Integer
+            case LongType.id    ⇒ Double2Long
+            case FloatType.id   ⇒ Double2Float
+            case DoubleType.id  ⇒ NoConversion
         }
     }
 
-    override def boxValue: Array[Instruction] = DoubleType.primitiveDoubleToLangDouble
+    override def boxValue[T](
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = { typeConversionFactory.PrimitiveDoubleToLangDouble }
 
 }
-case object DoubleType extends DoubleType {
-
-    final val Double2Byte: Array[Instruction] = Array(D2I, I2B)
-    final val Double2Char: Array[Instruction] = Array(D2I, I2C)
-    final val Double2Short: Array[Instruction] = Array(D2I, I2S)
-    final val Double2Float: Array[Instruction] = Array(D2F)
-    final val Double2Integer: Array[Instruction] = Array(D2I)
-    final val Double2Long: Array[Instruction] = Array(D2L)
-
-    final lazy val langDoubleToPrimitiveDouble: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Double,
-                "doubleValue",
-                MethodDescriptor.JustReturnsDouble
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveDoubleToLangDouble: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Double,
-                "valueOf",
-                MethodDescriptor(DoubleType, ObjectType.Double)
-            ),
-            null,
-            null
-        )
-}
+case object DoubleType extends DoubleType
 
 sealed abstract class FloatType private () extends NumericType {
 
@@ -787,52 +714,30 @@ sealed abstract class FloatType private () extends NumericType {
     override def isWiderThan(targetType: NumericType): Boolean =
         (targetType ne DoubleType) && (targetType ne this)
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ FloatType.Float2Byte
-            case CharType.id    ⇒ FloatType.Float2Char
-            case ShortType.id   ⇒ FloatType.Float2Short
-            case IntegerType.id ⇒ FloatType.Float2Integer
-            case LongType.id    ⇒ FloatType.Float2Long
-            case FloatType.id   ⇒ Array.empty
-            case DoubleType.id  ⇒ FloatType.Float2Double
+            case ByteType.id    ⇒ Float2Byte
+            case CharType.id    ⇒ Float2Char
+            case ShortType.id   ⇒ Float2Short
+            case IntegerType.id ⇒ Float2Integer
+            case LongType.id    ⇒ Float2Long
+            case FloatType.id   ⇒ NoConversion
+            case DoubleType.id  ⇒ Float2Double
         }
     }
 
-    override def boxValue: Array[Instruction] = FloatType.primitiveFloatToLangFloat
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveFloatToLangFloat
+    }
 
 }
-case object FloatType extends FloatType {
-
-    final val Float2Byte: Array[Instruction] = Array(F2I, I2B)
-    final val Float2Char: Array[Instruction] = Array(F2I, I2C)
-    final val Float2Short: Array[Instruction] = Array(F2I, I2S)
-    final val Float2Double: Array[Instruction] = Array(F2D)
-    final val Float2Integer: Array[Instruction] = Array(F2I)
-    final val Float2Long: Array[Instruction] = Array(F2L)
-
-    final lazy val langFloatToPrimitiveFloat: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Float,
-                "floatValue",
-                MethodDescriptor.JustReturnsFloat
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveFloatToLangFloat: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Float,
-                "valueOf",
-                MethodDescriptor(FloatType, ObjectType.Float)
-            ),
-            null,
-            null
-        )
-}
+case object FloatType extends FloatType
 
 sealed abstract class ShortType private () extends IntLikeType {
 
@@ -860,45 +765,30 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def isWiderThan(targetType: NumericType): Boolean = targetType eq ByteType
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ NumericType.IntToByte
-            case ShortType.id   ⇒ Array.empty
-            case CharType.id    ⇒ NumericType.IntToChar
-            case IntegerType.id ⇒ Array.empty
-            case LongType.id    ⇒ NumericType.IntToLong
-            case FloatType.id   ⇒ NumericType.IntToFloat
-            case DoubleType.id  ⇒ NumericType.IntToDouble
+            case ByteType.id    ⇒ IntToByte
+            case ShortType.id   ⇒ NoConversion
+            case CharType.id    ⇒ IntToChar
+            case IntegerType.id ⇒ NoConversion
+            case LongType.id    ⇒ IntToLong
+            case FloatType.id   ⇒ IntToFloat
+            case DoubleType.id  ⇒ IntToDouble
         }
     }
 
-    override def boxValue: Array[Instruction] = ShortType.primitiveShortToLangShort
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveShortToLangShort
+    }
 
 }
-case object ShortType extends ShortType {
-
-    final lazy val langShortToPrimitiveShort: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Short,
-                "shortValue",
-                MethodDescriptor.JustReturnsShort
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveShortToLangShort: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Short,
-                "valueOf",
-                MethodDescriptor(ShortType, ObjectType.Short)
-            ),
-            null,
-            null
-        )
-}
+case object ShortType extends ShortType
 
 sealed abstract class IntegerType private () extends IntLikeType {
 
@@ -930,45 +820,30 @@ sealed abstract class IntegerType private () extends IntLikeType {
             case _                                        ⇒ false
         }
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ NumericType.IntToByte
-            case ShortType.id   ⇒ NumericType.IntToShort
-            case CharType.id    ⇒ NumericType.IntToChar
-            case IntegerType.id ⇒ Array.empty
-            case LongType.id    ⇒ NumericType.IntToLong
-            case FloatType.id   ⇒ NumericType.IntToFloat
-            case DoubleType.id  ⇒ NumericType.IntToDouble
+            case ByteType.id    ⇒ IntToByte
+            case ShortType.id   ⇒ IntToShort
+            case CharType.id    ⇒ IntToChar
+            case IntegerType.id ⇒ NoConversion
+            case LongType.id    ⇒ IntToLong
+            case FloatType.id   ⇒ IntToFloat
+            case DoubleType.id  ⇒ IntToDouble
         }
     }
 
-    override def boxValue: Array[Instruction] = IntegerType.primitiveIntToLangInteger
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveIntToLangInteger
+    }
 
 }
-case object IntegerType extends IntegerType {
-
-    final lazy val langIntegerToPrimitiveInt: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Integer,
-                "intValue",
-                MethodDescriptor.JustReturnsInteger
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveIntToLangInteger: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Integer,
-                "valueOf",
-                MethodDescriptor(IntegerType, ObjectType.Integer)
-            ),
-            null,
-            null
-        )
-}
+case object IntegerType extends IntegerType
 
 sealed abstract class LongType private () extends NumericType {
 
@@ -997,52 +872,30 @@ sealed abstract class LongType private () extends NumericType {
     override def isWiderThan(targetType: NumericType): Boolean =
         targetType.isInstanceOf[IntLikeType]
 
-    override def convertTo(targetType: NumericType): Array[Instruction] = {
+    override def convertTo[T](
+        targetType: NumericType
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        import typeConversionFactory._
         (targetType.id: @scala.annotation.switch) match {
-            case ByteType.id    ⇒ LongType.Long2Byte
-            case CharType.id    ⇒ LongType.Long2Char
-            case ShortType.id   ⇒ LongType.Long2Short
-            case IntegerType.id ⇒ LongType.Long2Integer
-            case LongType.id    ⇒ Array.empty
-            case FloatType.id   ⇒ LongType.Long2Float
-            case DoubleType.id  ⇒ LongType.Long2Double
+            case ByteType.id    ⇒ Long2Byte
+            case CharType.id    ⇒ Long2Char
+            case ShortType.id   ⇒ Long2Short
+            case IntegerType.id ⇒ Long2Integer
+            case LongType.id    ⇒ NoConversion
+            case FloatType.id   ⇒ Long2Float
+            case DoubleType.id  ⇒ Long2Double
         }
     }
 
-    override def boxValue: Array[Instruction] = LongType.primitiveLongToLangLong
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveLongToLangLong
+    }
 
 }
-case object LongType extends LongType {
-
-    final val Long2Byte: Array[Instruction] = Array(L2I, I2B)
-    final val Long2Char: Array[Instruction] = Array(L2I, I2C)
-    final val Long2Short: Array[Instruction] = Array(L2I, I2S)
-    final val Long2Double: Array[Instruction] = Array(L2D)
-    final val Long2Float: Array[Instruction] = Array(L2F)
-    final val Long2Integer: Array[Instruction] = Array(L2I)
-
-    final lazy val langLongToPrimitiveLong: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Long,
-                "longValue",
-                MethodDescriptor.JustReturnsLong
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveLongToLangLong: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Long,
-                "valueOf",
-                MethodDescriptor(LongType, ObjectType.Long)
-            ),
-            null,
-            null
-        )
-}
+case object LongType extends LongType
 
 /**
  * The type of boolean values (true=1, false=0).
@@ -1075,33 +928,12 @@ sealed abstract class BooleanType private () extends BaseType {
 
     override def toString() = "BooleanType"
 
-    override def boxValue: Array[Instruction] = BooleanType.primitiveBooleanToLangBoolean
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveBooleanToLangBoolean
+    }
 
 }
-case object BooleanType extends BooleanType {
-
-    final lazy val langBooleanToPrimitiveBoolean: Array[Instruction] =
-        Array(
-            INVOKEVIRTUAL(
-                ObjectType.Boolean,
-                "booleanValue",
-                MethodDescriptor.JustReturnsBoolean
-            ),
-            null,
-            null
-        )
-
-    final lazy val primitiveBooleanToLangBoolean: Array[Instruction] =
-        Array(
-            INVOKESTATIC(
-                ObjectType.Boolean,
-                "valueOf",
-                MethodDescriptor(BooleanType, ObjectType.Boolean)
-            ),
-            null,
-            null
-        )
-}
+case object BooleanType extends BooleanType
 
 /**
  * Represents an `ObjectType`.
@@ -1138,13 +970,20 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "L"+fqn+";"
 
-    override def toJavaClass: java.lang.Class[_] =
-        classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
 
-    def unboxValue: Array[Instruction] = ObjectType.unboxValue(this)
+    def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        ObjectType.unboxValue(this)
+    }
 
-    override def adapt(targetType: Type): Array[Instruction] =
+    override def adapt[T](
+        targetType: Type
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
         ObjectType.unboxValue(targetType)
+    }
 
     override def toString = "ObjectType("+fqn+")"
 
@@ -1155,11 +994,6 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  * @author Michael Eichberg
  */
 object ObjectType {
-
-    import java.util.concurrent.atomic.AtomicInteger
-    import java.util.concurrent.locks.ReentrantReadWriteLock
-    import java.util.WeakHashMap
-    import java.lang.ref.WeakReference
 
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
@@ -1341,8 +1175,11 @@ object ObjectType {
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
 
+    // Given the importance of "Object Serialization" we also predefine Externalizable
+    final val Externalizable = ObjectType("java/io/Externalizable")
+
     /**
-     * Implicit mapping from a wrapper type to its primtive type.
+     * Implicit mapping from a wrapper type to its primitive type.
      * @example
      * {{{
      * scala> import org.opalj.br._
@@ -1363,23 +1200,13 @@ object ObjectType {
         a
     }
 
-    private[this] lazy val unboxInstructions: Array[Array[Instruction]] = {
-        val a = new Array[Array[Instruction]](Double.id + 1)
-        a(Boolean.id) = BooleanType.langBooleanToPrimitiveBoolean
-        a(Byte.id) = ByteType.langByteToPrimitiveByte
-        a(Character.id) = CharType.langCharacterToPrimitiveChar
-        a(Short.id) = ShortType.langShortToPrimitiveShort
-        a(Integer.id) = IntegerType.langIntegerToPrimitiveInt
-        a(Long.id) = LongType.langLongToPrimitiveLong
-        a(Float.id) = FloatType.langFloatToPrimitiveFloat
-        a(Double.id) = DoubleType.langDoubleToPrimitiveDouble
-        a
-    }
-
-    def unboxValue(wrapperType: Type): Array[Instruction] = {
-        val wid = wrapperType.id
-        assert(wid >= Boolean.id && wid <= Double.id)
-        unboxInstructions(wid)
+    def unboxValue[T](
+        wrapperType: Type
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
+        typeConversionFactory.unboxValue(wrapperType)
     }
 
     /**
@@ -1461,10 +1288,9 @@ object ObjectType {
  * @author Michael Eichberg
  */
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
-    val id:            Int,
-    val componentType: FieldType
-)
-        extends ReferenceType {
+        val id:            Int,
+        val componentType: FieldType
+) extends ReferenceType {
 
     final override def isArrayType = true
 
@@ -1514,8 +1340,14 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Class.forName(toBinaryJavaName)
 
-    override def adapt(targetType: Type): Array[Instruction] =
+    override def adapt[T](
+        targetType: Type
+    )(
+        implicit
+        typeConversionFactory: TypeConversionFactory[T]
+    ): T = {
         throw new UnsupportedOperationException("adaptation of array values is not supported")
+    }
 
     // The default equals and hashCode methods are a perfect fit.
 
@@ -1528,10 +1360,6 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  * @author Michael Eichberg
  */
 object ArrayType {
-
-    import java.util.concurrent.atomic.AtomicInteger
-    import java.util.WeakHashMap
-    import java.lang.ref.WeakReference
 
     private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
 
