@@ -697,21 +697,21 @@ class ClassHierarchy private (
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
         if ((subtype eq theSupertype) || (theSupertype eq Object))
-            return Yes
+            return Yes;
 
         if (subtype eq Object /* && theSupertype != ObjectType.Object*/ )
-            return No
+            return No;
 
         if (isUnknown(subtype))
-            return Unknown
+            return Unknown;
 
         val subtypeIsInterface = isInterface(subtype)
 
         if (isUnknown(theSupertype)) {
             if (isSupertypeInformationComplete(subtype))
-                return No
+                return No;
             else
-                return Unknown
+                return Unknown;
         }
 
         val supertypeIsInterface = isInterface(theSupertype)
@@ -719,14 +719,14 @@ class ClassHierarchy private (
         if (subtypeIsInterface && !supertypeIsInterface)
             // An interface always (only) directly inherits from java.lang.Object
             // and this is already checked before.
-            return No
+            return No;
 
         @inline def implementsInterface(
             subinterfaceType: ObjectType,
             theSupertype:     ObjectType
         ): Answer = {
             if (subinterfaceType eq theSupertype)
-                return Yes
+                return Yes;
 
             val superinterfaceTypes = superinterfaceTypesMap(subinterfaceType.id)
             if (superinterfaceTypes eq null) {
@@ -739,8 +739,8 @@ class ClassHierarchy private (
                 superinterfaceTypes foreach { intermediateType ⇒
                     val anotherAnswer = implementsInterface(intermediateType, theSupertype)
                     if (anotherAnswer.isYes)
-                        return Yes
-                    answer &= anotherAnswer
+                        return Yes;
+                    answer = answer join anotherAnswer
                 }
                 answer
             }
@@ -754,7 +754,7 @@ class ClassHierarchy private (
                     if (doesInheritFromInterface.isYes)
                         Yes
                     else
-                        answerSoFar /*either no or unknown */ & doesInheritFromInterface
+                        answerSoFar /*either no or unknown */ join doesInheritFromInterface
                 } else
                     answerSoFar
             }
@@ -762,7 +762,7 @@ class ClassHierarchy private (
             val superSubclassType = superclassTypeMap(subclassType.id)
             if (superSubclassType ne null) {
                 if (superSubclassType eq theSupertype)
-                    return Yes
+                    return Yes;
 
                 val answer = isSubtypeOf(superSubclassType)
                 if (answer.isYes)

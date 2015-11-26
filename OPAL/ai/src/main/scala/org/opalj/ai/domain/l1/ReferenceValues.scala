@@ -184,7 +184,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         val vIt = values.iterator
         var isNull: Answer = vIt.next().isNull
         while (isNull.isYesOrNo && vIt.hasNext) {
-            isNull = isNull & vIt.next().isNull
+            isNull = isNull join vIt.next().isNull
         }
         isNull
     }
@@ -670,7 +670,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): DomainSingleOriginReferenceValue = {
             val thisUTB = this.theUpperTypeBound
             val thatUTB = that.upperTypeBound
-            val newIsNull = this.isNull & that.isNull
+            val newIsNull = this.isNull join that.isNull
             val newIsPrecise =
                 this.isPrecise && that.isPrecise &&
                     thatUTB.isSingletonSet &&
@@ -983,7 +983,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): DomainSingleOriginReferenceValue = {
             val thisUTB = this.upperTypeBound
             val thatUTB = that.upperTypeBound
-            val newIsNull = this.isNull & that.isNull
+            val newIsNull = this.isNull join that.isNull
             val newIsPrecise = this.isPrecise && that.isPrecise && thisUTB == thatUTB
             val newUTB = classHierarchy.joinReferenceTypes(thisUTB, thatUTB)
             ReferenceValue(origin, newIsNull, newIsPrecise, newUTB, newT)
@@ -1117,7 +1117,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val thisUTB = this.upperTypeBound
             val newValueUTB = newValue.upperTypeBound
             val joinedUTB = classHierarchy.joinUpperTypeBounds(thisUTB, newValueUTB)
-            val newIsNull = this.isNull & newValue.isNull
+            val newIsNull = this.isNull join newValue.isNull
             MultipleReferenceValues(
                 this.values + newValue,
                 newIsNull,
@@ -1160,7 +1160,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newIsNull = {
                 val newIsNull = domain.isNull(newValues)
                 if (newIsNull.isUnknown)
-                    this.isNull & joinedValue.isNull
+                    this.isNull join joinedValue.isNull
                 else
                     newIsNull
             }
@@ -1240,7 +1240,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 if (answer eq Unknown)
                     return answer //isSubtype;
 
-                answer = answer & value.isValueSubtypeOf(supertype)
+                answer = answer join value.isValueSubtypeOf(supertype)
             }
 
             answer
@@ -1541,7 +1541,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     // => As a whole "isNull" has to be Unknown
                     val thisUTB = this.upperTypeBound
                     val thatUTB = thatValue.upperTypeBound
-                    val newIsNull = this.isNull & thatValue.isNull
+                    val newIsNull = this.isNull join thatValue.isNull
                     val newUTB =
                         if (newIsNull.isYes) {
                             UIDSet.empty[ReferenceType]
@@ -1624,7 +1624,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     }
                     val thisUTB = this.upperTypeBound
                     val thatUTB = that.upperTypeBound
-                    val newIsNull = domain.isNull(newValues).ifUnknown(this.isNull & that.isNull)
+                    val newIsNull = domain.isNull(newValues).ifUnknown(this.isNull join that.isNull)
                     val newUTB =
                         if (newIsNull.isYes) {
                             UIDSet.empty[ReferenceType]

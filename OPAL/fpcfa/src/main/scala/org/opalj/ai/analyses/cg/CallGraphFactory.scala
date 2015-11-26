@@ -79,7 +79,7 @@ object CallGraphFactory {
 
         Method.isObjectSerializationRelated(
             method,
-            (isSerializable & !isExternalizable) || nonFinal,
+            !isExternalizable && (isSerializable || nonFinal),
             isExternalizable || nonFinal
         )
     }

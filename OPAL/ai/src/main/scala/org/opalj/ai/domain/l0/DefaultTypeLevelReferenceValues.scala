@@ -151,7 +151,7 @@ trait DefaultTypeLevelReferenceValues
                                 return Yes;
 
                             case intermediateAnswer ⇒
-                                finalAnswer = finalAnswer & intermediateAnswer
+                                finalAnswer = finalAnswer join intermediateAnswer
                                 false
                         }
                     }

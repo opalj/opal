@@ -83,20 +83,48 @@ sealed trait Answer {
     def isYesOrNo: Boolean
 
     /**
+     * Joins this answer and the given answer. In this case `Unknown` will
+     * represent the case that we have both answers; that is we have
+     * a set based view w.r.t. `Answer`s. Hence,
+     * `this join Unknown` is considered as `this join {Yes, No}` where
+     * the set `{Yes, No}` is represented by `Unknown`.
+     *
+     * If the other `Answer` is identical to `this` answer `this` is returned,
+     * otherwise `Unknown` is returned.
+     *
+     */
+    def join(other: Answer): Answer
+
+    /**
      * The negation of this `Answer`. If the answer is `Unknown` the negation is
      * still `Unknown`.
      */
     def negate: Answer
 
     /**
-     * Joins this answer and the given answer.
-     *
-     * If the other `Answer` is identical to this answer `this` answer is returned,
-     * otherwise `Unknown` is returned.
-     *
-     * Facilitates the concatenation of answers using `&=`.
+     * @see [[Answer#negate]]
      */
-    def &(other: Answer): Answer
+    final def unary_! : Answer = this.negate
+
+    /**
+     * The logical conjunction of this answer and the given answer.
+     * In this case Unknown is considered to either represent the
+     * answer Yes or No; hence, `this && other` is treated as
+     * `this && (Yes || No)`.
+     */
+    def &&(other: Answer): Answer
+
+    /**
+     * The logical disjunction of this answer and the given answer.
+     * In this case Unknown is considered to either represent the
+     * answer Yes or No; hence, `this || other` is treated as
+     * `this || (Yes || No)`.
+     */
+    def ||(other: Answer): Answer
+
+    final def ||(other: Boolean): Answer = this || Answer(other)
+
+    final def &&(other: Boolean): Answer = this && Answer(other)
 
     /**
      * If this answer is unknown the given function is evaluated and that
@@ -133,8 +161,17 @@ final case object Yes extends Answer {
     override def isNotYes: Boolean = false
     override def isYesOrNo: Boolean = true
 
-    override def negate = No
-    override def &(other: Answer) = if (other eq this) this else Unknown
+    override def join(other: Answer): Answer = if (other eq this) this else Unknown
+
+    override def negate: No.type = No
+    override def &&(other: Answer): Answer = {
+        other match {
+            case Yes ⇒ this
+            case No  ⇒ No
+            case _   ⇒ Unknown
+        }
+    }
+    override def ||(other: Answer): Yes.type = this
 }
 
 /**
@@ -151,12 +188,22 @@ final case object No extends Answer {
     override def isNotYes: Boolean = true
     override def isYesOrNo: Boolean = true
 
-    override def negate = Yes
-    override def &(other: Answer) = if (other eq this) this else Unknown
+    override def join(other: Answer): Answer = if (other eq this) this else Unknown
+
+    override def negate: Yes.type = Yes
+    override def &&(other: Answer): No.type = this
+    override def ||(other: Answer): Answer = {
+        other match {
+            case Yes ⇒ Yes
+            case No  ⇒ this
+            case _   ⇒ Unknown
+        }
+    }
 }
 
 /**
- * Represents the answer to a question where the answer is `Unknown`.
+ * Represents the answer to a question where the answer is either `Unknown`
+ * or is actuaclly both; that is, `Yes` and `No`.
  *
  * @author Michael Eichberg
  */
@@ -169,8 +216,12 @@ final case object Unknown extends Answer {
     override def isNotYes: Boolean = true
     override def isYesOrNo: Boolean = false
 
-    override def negate = this
-    override def &(other: Answer) = Unknown
+    override def join(other: Answer): Unknown.type = this
+
+    override def negate: Unknown.type = this
+    override def &&(other: Answer): Answer = if (other eq No) No else this
+    override def ||(other: Answer): Answer = if (other eq Yes) Yes else this
+
     override def ifUnknown(f: ⇒ Answer): Answer = f
 }
 
