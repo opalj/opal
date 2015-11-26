@@ -30,14 +30,13 @@ package org.opalj
 package ai
 package domain
 
+import java.io.{ByteArrayOutputStream, PrintStream}
+
 import scala.xml.Node
-import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 import org.opalj.br.instructions._
-import org.opalj.ai.util.containsInPrefix
 import org.opalj.br.Code
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.mutable.ArrayMap
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.ComputationalTypeCategory
@@ -847,14 +846,18 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     abstract override def abstractInterpretationEnded(
         aiResult: AIResult { val domain: defUseDomain.type }
     ): Unit = {
+        super.abstractInterpretationEnded(aiResult)
+
         if (aiResult.wasAborted)
             return ;
 
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
 
-        //DEBUG var iterationCount = 0
-        //DEBUG val maxIterationCount = aiResult.code.instructions.size * 50
+        /* DEBUG
+        var iterationCount = 0
+        val maxIterationCount = aiResult.code.instructions.size * 50
+        DEBUG */
         var subroutinePCs: Set[PC] = Set.empty
         val nextPCs: Queue[PC] = Queue(0)
 
@@ -862,16 +865,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // we want to evaluate the subroutines only once!
             { nextPCs ++= subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
             val currPC = nextPCs.dequeue
-            //DEBUG iterationCount += 1
-            //DEBUG if (iterationCount > maxIterationCount) {
-            //DEBUG     var s = "\nThe analysis failed! "
-            //DEBUG     s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
-            //DEBUG     println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
-            //DEBUG     if (iterationCount > 1.1 * maxIterationCount) {
-            //DEBUG         org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
-            //DEBUG         throw new UnknownError(s)
-            //DEBUG     }
-            //DEBUG }
+            /* DEBUG
+            iterationCount += 1
+            if (iterationCount > maxIterationCount) {
+                var s = "\nThe analysis failed! "
+                s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
+                println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
+                org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
+                throw new UnknownError(s)
+            }
+            DEBUG */
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -883,11 +886,38 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 } catch {
                     case e: Throwable ⇒
-                        println("curr: "+currPC+"; succ: "+succPC)
-                        println(defOps(currPC)+" ... "+defLocals(currPC))
-                        println(e.printStackTrace())
-                        org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
-                        throw e
+                        var message = "Failed calculating def-use information for: "
+                        if (defUseDomain.isInstanceOf[TheMethod]) {
+                            val method = defUseDomain.asInstanceOf[TheMethod].method
+                            if (defUseDomain.isInstanceOf[TheProject]) {
+                                val project = defUseDomain.asInstanceOf[TheProject].project
+                                message += method.toJava(project.classFile(method))+"\n"
+                            } else {
+                                message += method.toJava()+"\n"
+                            }
+                        } else {
+                            message += "<Unknown (the domain does not make information about the method available)>\n"
+                        }
+                        message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
+                        message += ("\tStack: "+defOps(currPC))+"\n"
+                        message += ("\tLocals: "+defLocals(currPC))+"\n"
+                        val bout = new ByteArrayOutputStream()
+                        val pout = new PrintStream(bout)
+                        e.printStackTrace(pout)
+                        pout.flush()
+                        val stacktrace = bout.toString("UTF-8")
+                        message += "\tStacktrace: \n\t"+stacktrace+"\n"
+
+                        println(message)
+
+                        val htmlMessage =
+                            message.
+                                replace("\n", "<br>").
+                                replace("\t", "&nbsp;&nbsp;") +
+                                dumpDefUseInfo().toString
+                        org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
+
+                        throw e;
                 }
 
                 // assert(defLocals(succPC) ne null)
@@ -907,8 +937,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             regularSuccessorsOf(currPC).foreach { handleSuccessor(false) }
             exceptionHandlerSuccessorsOf(currPC).foreach { handleSuccessor(true) }
         }
-
-        super.abstractInterpretationEnded(aiResult)
     }
 
 }
