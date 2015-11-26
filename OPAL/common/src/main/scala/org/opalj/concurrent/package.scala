@@ -29,25 +29,19 @@
 package org
 package opalj
 
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.ThreadFactory
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.{Future ⇒ JFuture}
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.Failure
+import scala.util.control.ControlThrowable
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -199,28 +193,38 @@ package object concurrent {
         isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: Function[T, U]
-    ): Unit = {
+    ): List[Throwable] = {
 
         if (parallelizationLevel == 1) {
-            data.foreach(f)
-            return ;
+            try {
+                data.foreach(f)
+                return Nil;
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ return List(t);
+            }
         }
 
         val max = data.length
         val index = new AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
+        val exceptions = new ConcurrentLinkedQueue[Throwable]()
 
         // Start parallel execution
         {
             var t = 0
             while (t < parallelizationLevel) {
-                futures(t) =
-                    Future[Unit] {
-                        var i: Int = -1
-                        while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                futures(t) = Future[Unit] {
+                    var i: Int = -1
+                    while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                        try {
                             f(data(i))
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct;
+                            case t: Throwable         ⇒ exceptions.add(t)
                         }
                     }
+                }
                 t += 1
             }
         }
@@ -232,6 +236,7 @@ package object concurrent {
                 t += 1
             }
         }
+        exceptions.asScala.toList
     }
 
     /**
