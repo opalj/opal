@@ -68,20 +68,21 @@ package object bytecode {
         fqnA: String, fqnB: String,
         packageSeperatorChar: Int = '.'
     ): Option[String] = {
-        val packageSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
-        if (packageSeperatorIndex <= 0)
+        val pkgSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
+        if (pkgSeperatorIndex <= 0)
             return None;
 
-        val rootPackage = fqnA.substring(0, packageSeperatorIndex)
-        if (packageSeperatorIndex == fqnB.indexOf(packageSeperatorChar) + 1 &&
-            rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
-            commonPackage(
-                fqnA.substring(packageSeperatorIndex, fqnA.length()),
-                fqnB.substring(packageSeperatorIndex, fqnB.length())
-            ) match {
-                    case Some(childPackage) ⇒ Some(rootPackage + childPackage)
-                    case None               ⇒ Some(rootPackage)
-                }
+        val rootPkg = fqnA.substring(0, pkgSeperatorIndex)
+        if (pkgSeperatorIndex == fqnB.indexOf(packageSeperatorChar) + 1 &&
+            rootPkg == fqnB.substring(0, pkgSeperatorIndex)) {
+            val commonPkg = commonPackage(
+                fqnA.substring(pkgSeperatorIndex, fqnA.length()),
+                fqnB.substring(pkgSeperatorIndex, fqnB.length())
+            )
+            commonPkg match {
+                case Some(childPackage) ⇒ Some(rootPkg + childPackage)
+                case None               ⇒ Some(rootPkg)
+            }
         } else {
             None
         }
