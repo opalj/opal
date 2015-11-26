@@ -148,7 +148,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                     s"$pc[line=$line]: the operand stack $op "+
                                         s"value $lVD (${lVD.getClass.getName})"+
                                         s" does not abstract over $rVD (${rVD.getClass.getName})"+
-                                        s" (original: $lValue join $rValue )")
+                                        s" (original: $lValue join $rValue )"
+                                )
                             }
                             // this primarily tests the "isMorePreciseThan" method
                             if (lVD.isMorePreciseThan(rVD)) {
@@ -159,7 +160,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                         s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
                                         s" is more precise than "+
                                         s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
-                                        s" (original: $lValue join $rValue )")
+                                        s" (original: $lValue join $rValue )"
+                                )
                             }
                             true
                         }
@@ -222,7 +224,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             info(
                 "successfully compared the results of "+
                     comparisonCount.get+
-                    " abstract interpretations")
+                    " abstract interpretations"
+            )
         }
     }
 }

@@ -62,8 +62,8 @@ class TestBadlyOverriddenAdapter extends AnalysisIntegrationTest {
                 MethodDescriptor(IndexedSeq(BooleanType), VoidType),
                 "mouseClicked",
                 "Does not override java.awt.event.MouseAdapter.mouseClicked()"+
-                    " (incompatible signatures).")
-            )
+                    " (incompatible signatures)."
+            ))
         }
 
     it should "detect that a class inheriting from java.awt.event.KeyAdapter "+
@@ -78,22 +78,23 @@ class TestBadlyOverriddenAdapter extends AnalysisIntegrationTest {
                 MethodDescriptor.NoArgsAndReturnVoid,
                 "keyTyped",
                 "Does not override java.awt.event.KeyAdapter.keyTyped()"+
-                    " (incompatible signatures).")
-            )
+                    " (incompatible signatures)."
+            ))
         }
 
     it should "detect that a class inheriting from java.awt.event.KeyAdapter "+
         "has multiple keyTyped() methods, but not one of them has a signature that is "+
         "compatible to java.awt.event.KeyAdapter.keyTyped()." in {
             val classToReport = ObjectType(
-                "BadlyOverriddenAdapter/BadlyOverriddenKeyAdapterWithOverload")
+                "BadlyOverriddenAdapter/BadlyOverriddenKeyAdapterWithOverload"
+            )
             results should contain(ClassBasedReport(
                 project.source(classToReport),
                 Severity.Warning,
                 classToReport,
                 "Has multiple 'keyTyped()' methods, but not one of them overrides "+
-                    "java.awt.event.KeyAdapter.keyTyped() (incompatible signatures).")
-            )
+                    "java.awt.event.KeyAdapter.keyTyped() (incompatible signatures)."
+            ))
         }
 
     it should "find 3 issues in total" in {

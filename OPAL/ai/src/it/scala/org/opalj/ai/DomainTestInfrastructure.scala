@@ -57,18 +57,20 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
     def Domain(project: Project[URL], classFile: ClassFile, method: Method): Domain
 
     def analyzeProject(
-        projectName: String,
-        project: Project[URL],
-        maxEvaluationFactor: Double): Unit = {
+        projectName:         String,
+        project:             Project[URL],
+        maxEvaluationFactor: Double
+    ): Unit = {
 
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
-        import performanceEvaluationContext.{ time, getTime }
+        import performanceEvaluationContext.{time, getTime}
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         def analyzeClassFile(
-            source: String,
+            source:    String,
             classFile: ClassFile,
-            method: Method): Option[(String, ClassFile, Method, Throwable)] = {
+            method:    Method
+        ): Option[(String, ClassFile, Method, Throwable)] = {
 
             val body = method.body.get
             try {
@@ -76,13 +78,15 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                     val ai =
                         new InstructionCountBoundedAI[Domain](
                             body,
-                            maxEvaluationFactor)
+                            maxEvaluationFactor
+                        )
                     val result =
                         ai.apply(classFile, method, Domain(project, classFile, method))
                     if (result.wasAborted) {
                         throw new InterruptedException(
                             "evaluation bound (max="+ai.maxEvaluationCount +
-                                s") exceeded (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})")
+                                s") exceeded (maxStack=${body.maxStack}; maxLocals=${body.maxLocals})"
+                        )
                     }
                 }
                 methodsCount.incrementAndGet()
@@ -132,11 +136,13 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
             val node =
                 XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body.toSeq))
+                    scala.xml.NodeSeq.fromSeq(body.toSeq)
+                )
             val file =
                 writeAndOpen(
                     node,
-                    "CrashedAbstractInterpretationsReportFor"+projectName, ".html")
+                    "CrashedAbstractInterpretationsReportFor"+projectName, ".html"
+                )
 
             fail(
                 projectName+": "+

@@ -64,7 +64,7 @@ class TACJDKTest extends FunSpec with Matchers {
                     val (cf, _) = cs
                     cf.methods.filter(_.body.isDefined) foreach { m ⇒
                         try {
-                            ToJavaLike(AsQuadruples(method = m,aiResult = None))
+                            ToJavaLike(AsQuadruples(method = m, aiResult = None))
                             successfullyCompleted.incrementAndGet()
                         } catch {
                             case e: Throwable ⇒ this.synchronized {
@@ -92,7 +92,8 @@ class TACJDKTest extends FunSpec with Matchers {
                             "Errors thrown:\n",
                             "\n",
                             "Number of Successfully completed:"+successfullyCompleted.get+
-                                "; Number of Errors: "+errors.size+"\n")
+                                "; Number of Errors: "+errors.size+"\n"
+                        )
                 fail(message)
             }
         }

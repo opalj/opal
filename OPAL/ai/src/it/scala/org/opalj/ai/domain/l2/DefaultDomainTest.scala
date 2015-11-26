@@ -55,5 +55,3 @@ class DefaultDomainTest extends DomainTestInfrastructure("l2.DefaultDomain") {
 
 }
 
-
-

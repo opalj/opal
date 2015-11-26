@@ -70,10 +70,11 @@ object AnalysisIntegrationTest {
 
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
-                locateTestResources("classfiles/analyses/"+filename,
-                    "frb/analyses")
-            )
-        ).flatten
+                locateTestResources(
+                    "classfiles/analyses/"+filename,
+                    "frb/analyses"
+                )
+            )).flatten
 
         println("Creating Project: "+filenames.mkString(", ")+" and "+" the JRE.")
         Project(classFiles, TestSupport.readJREClassFiles())

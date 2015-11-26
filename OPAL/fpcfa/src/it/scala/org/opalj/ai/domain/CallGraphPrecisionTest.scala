@@ -183,14 +183,16 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     project,
                                     fieldValueInformation, methodReturnValueInformation,
                                     cache,
                                     classFile, method
                                 )
-                        })
+                        }
+                    )
                 VTACG = theVTACG
 
                 info("calculating the (Default) VTA based call graph (2)")
@@ -201,13 +203,15 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     project,
                                     fieldValueInformation, methodReturnValueInformation,
                                     cache, classFile, method
                                 )
-                        })
+                        }
+                    )
 
                 info("comparing the call graphs")
                 val (unexpected, additional) =
@@ -237,11 +241,13 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTACallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new BasicVTACallGraphDomain(
                                     project, cache, classFile, method
                                 )
-                        })
+                        }
+                    )
 
                 info("calculating the default VTA with pre analysis based call graph")
                 val ComputedCallGraph(basicVTAWithPreAnalysisCG, _, _) =
@@ -251,14 +257,16 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new BasicVTAWithPreAnalysisCallGraphDomain(
                                     project,
                                     fieldValueInformation, methodReturnValueInformation,
                                     cache,
                                     classFile, method
                                 )
-                        })
+                        }
+                    )
 
                 {
                     val (unexpected, _ /* additional*/ ) =
@@ -277,14 +285,16 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     project,
                                     fieldValueInformation, methodReturnValueInformation,
                                     cache,
                                     classFile, method
                                 )
-                        })
+                        }
+                    )
 
                 {
                     val (unexpected, _ /*additional*/ ) =
@@ -303,14 +313,16 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
-                                method: Method): CallGraphDomain =
+                                method:    Method
+                            ): CallGraphDomain =
                                 new ExtVTACallGraphDomain(
                                     project,
                                     fieldValueInformation, methodReturnValueInformation,
                                     cache,
                                     classFile, method
                                 )
-                        })
+                        }
+                    )
 
                 info("comparing the variants of the VTA based call graphs")
 

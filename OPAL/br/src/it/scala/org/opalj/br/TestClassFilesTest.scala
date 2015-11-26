@@ -83,7 +83,8 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                     body foreach { (pc, instruction) ⇒
                         assert(
                             instruction.isIsomorphic(pc, pc)(body),
-                            s"$instruction should be isomorphic to itself")
+                            s"$instruction should be isomorphic to itself"
+                        )
                         isomorphicCount += 1
 
                         if (lastPC >= 0 && instruction.opcode != body.instructions(lastPC).opcode) {

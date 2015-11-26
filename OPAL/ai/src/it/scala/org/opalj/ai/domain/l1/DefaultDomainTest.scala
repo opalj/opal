@@ -51,9 +51,10 @@ import org.opalj.br.analyses.Project
 class DefaultDomainTest extends DomainTestInfrastructure("l1.DefaultDomain") {
 
     def Domain(
-        project: Project[URL],
+        project:   Project[URL],
         classFile: ClassFile,
-        method: Method): l1.DefaultDomain[URL] =
+        method:    Method
+    ): l1.DefaultDomain[URL] =
         new l1.DefaultDomain(project, classFile, method)
 
 }
