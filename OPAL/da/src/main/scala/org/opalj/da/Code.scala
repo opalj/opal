@@ -164,7 +164,7 @@ case class Code(instructions: Array[Byte]) {
                 case 189 ⇒
                     <span>
                         <span class="instruction anewarray">anewarray </span>
-                        <span class="type_parameter">{ asObjectType(in.readUnsignedShort) }</span>
+                        <span class="type_parameter">{ asObjectType(in.readUnsignedShort()) }</span>
                     </span>
                 case 176 ⇒ <span class="instruction areturn">areturn</span>
                 case 190 ⇒ <span class="instruction arraylength">arraylength</span>
@@ -190,7 +190,7 @@ case class Code(instructions: Array[Byte]) {
                 case 192 ⇒
                     <span>
                         <span class="instruction checkcast">checkcast </span>
-                        <span class="type_parameter">{ asReferenceType(in.readUnsignedShort) }</span>
+                        <span class="type_parameter">{ asReferenceType(in.readUnsignedShort()) }</span>
                     </span>
                 case 144 ⇒ <span class="instruction d2f">d2f</span>
                 case 142 ⇒ <span class="instruction d2i">d2i</span>
@@ -270,12 +270,12 @@ case class Code(instructions: Array[Byte]) {
                 case 180 ⇒
                     <span>
                         <span class="instruction getfield">getfield </span>
-                        { val c = in.readUnsignedShort; cp(c).asInlineNode }
+                        { val c = in.readUnsignedShort(); cp(c).asInlineNode }
                     </span>
                 case 178 ⇒
                     <span>
                         <span class="instruction getstatic">getstatic </span>
-                        { val c = in.readUnsignedShort; cp(c).asInlineNode }
+                        { val c = in.readUnsignedShort(); cp(c).asInlineNode }
                     </span>
                 case 167 ⇒
                     val targetPC = in.readShort + pc
@@ -361,7 +361,7 @@ case class Code(instructions: Array[Byte]) {
                         <span class="type_parameter fqn">{ referenceType }</span>
                     </span>
                 case 186 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     val signature = cp(c).asInlineNode
@@ -370,7 +370,7 @@ case class Code(instructions: Array[Byte]) {
                         { signature }
                     </span>
                 case 185 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     val signature = cp(c).asInlineNode
@@ -379,21 +379,21 @@ case class Code(instructions: Array[Byte]) {
                         { signature }
                     </span>
                 case 183 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokespecial">invokespecial </span>
                         { signature }
                     </span>
                 case 184 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokespecial">invokestatic  </span>
                         { signature }
                     </span>
                 case 182 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokevirtual">invokevirtual </span>
@@ -442,7 +442,7 @@ case class Code(instructions: Array[Byte]) {
                 case 10  ⇒ <span class="instruction lconst_1">lconst_1</span>
                 case 18 ⇒
                     val constantValue =
-                        cp(in.readUnsignedByte) match {
+                        cp(in.readUnsignedByte()) match {
                             case ci: CONSTANT_Class_info ⇒ Seq(ci.asInlineNode, Text(".class"))
                             case cv                      ⇒ Seq(cv.asInlineNode)
                         }
@@ -452,7 +452,7 @@ case class Code(instructions: Array[Byte]) {
                     </span>
                 case 19 ⇒
                     val constantValue =
-                        cp(in.readUnsignedShort) match {
+                        cp(in.readUnsignedShort()) match {
                             case ci: CONSTANT_Class_info ⇒ Seq(ci.asInlineNode, Text(".class"))
                             case cv                      ⇒ Seq(cv.asInlineNode)
                         }
@@ -504,14 +504,14 @@ case class Code(instructions: Array[Byte]) {
                 case 194 ⇒ <span class="instruction monitorenter">monitorenter</span>
                 case 195 ⇒ <span class="instruction monitorexit">monitorexit</span>
                 case 197 ⇒
-                    val referenceType = cp(in.readUnsignedShort).toString(cp)
+                    val referenceType = cp(in.readUnsignedShort()).toString(cp)
                     val dim = in.readUnsignedByte
                     <span>
                         <span class="instruction multianewarray">multianewarray </span>
                         <span class="type_parameter fqn">{ referenceType }</span>{ dim }
                     </span>
                 case 187 ⇒
-                    val referenceType = cp(in.readUnsignedShort).toString(cp).replace('/', '.')
+                    val referenceType = cp(in.readUnsignedShort()).toString(cp).replace('/', '.')
                     <span>
                         <span class="instruction new">new </span>
                         <span class="type_parameter fqn">{ referenceType }</span>
@@ -521,11 +521,11 @@ case class Code(instructions: Array[Byte]) {
                 case 87  ⇒ <span class="instruction pop">pop</span>
                 case 88  ⇒ <span class="instruction pop2">pop2</span>
                 case 181 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     val signature = cp(c).asInlineNode
                     <span><span class="instruction putfield">putfield </span>{ signature }</span>
                 case 179 ⇒
-                    val c = in.readUnsignedShort
+                    val c = in.readUnsignedShort()
                     val signature = cp(c).asInlineNode
                     <span><span class="instruction putstatic">putstatic </span>{ signature }</span>
                 case 169 ⇒
