@@ -129,8 +129,8 @@ class Project[Source] private (
     val analysisMode:                                 AnalysisMode
 )(
     implicit
-    val logContext:      LogContext,
-    implicit val config: Config
+    val logContext: LogContext,
+    val config:     Config
 )
         extends ClassFileRepository {
 
@@ -196,10 +196,10 @@ class Project[Source] private (
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
     )(
         f: ClassFile ⇒ T
-    ): Unit = {
+    ): List[Throwable] = {
         val classFilesCount = classFiles.length
         if (classFilesCount == 0)
-            return ;
+            return Nil;
 
         val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
         parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
@@ -209,7 +209,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean
     )(
         f: ClassFile ⇒ T
-    ): Unit = {
+    ): List[Throwable] = {
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
@@ -219,7 +219,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: ClassFile ⇒ T
-    ): Unit = {
+    ): List[Throwable] = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
     }
 
@@ -229,9 +229,9 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: ClassFile ⇒ T
-    ): Unit = {
-        parForeachProjectClassFile(isInterrupted)(f)
-        parForeachLibraryClassFile(isInterrupted)(f)
+    ): List[Throwable] = {
+        parForeachProjectClassFile(isInterrupted)(f) :::
+            parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -292,11 +292,11 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: Function[(Source, ClassFile, Method), T]
-    ): Unit = {
+    ): List[Throwable] = {
         val methods = this.methodsWithClassFilesAndSource
         val methodCount = methods.length
         if (methodCount == 0)
-            return ;
+            return Nil;
 
         val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, methodCount)
         parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
