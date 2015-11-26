@@ -31,6 +31,7 @@ package org.opalj
 package fpcf
 package analysis
 
+import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -80,13 +81,13 @@ class EntryPointsAnalysis private (
 
         if (project.isLibraryType(classFile))
             //we are not interested in library classFiles
-            return NoResult
+            return NoResult;
 
         if (classFile.isInterfaceDeclaration) {
             if (isOpenLibrary)
-                return ImmediateResult(method, IsEntryPoint)
+                return ImmediateResult(method, IsEntryPoint);
             else if (classFile.isPublic && (method.isStatic || method.isPublic))
-                return ImmediateResult(method, IsEntryPoint)
+                return ImmediateResult(method, IsEntryPoint);
             else {
                 import propertyStore.require
                 require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
@@ -96,16 +97,8 @@ class EntryPointsAnalysis private (
         }
 
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
-        if (Method.isObjectSerializationRelated(method) &&
-            (
-                !classFile.isFinal && classFile.constructors.exists { cons ⇒ !cons.isPrivate }
-                /*we may inherit from Serializable later on...*/ ||
-                project.classHierarchy.isSubtypeOf(
-                    classFile.thisType,
-                    SerializableType
-                ).isYesOrUnknown
-            )) {
-            return ImmediateResult(method, IsEntryPoint)
+        if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
+            return ImmediateResult(method, IsEntryPoint);
         }
 
         // Now: the method is neither an (static or default) interface method nor and method
@@ -138,7 +131,7 @@ class EntryPointsAnalysis private (
             }
         }
 
-        return require(method, propertyKey, classFile, InstantiabilityKey)(c_inst)
+        require(method, propertyKey, classFile, InstantiabilityKey)(c_inst);
     }
 }
 
