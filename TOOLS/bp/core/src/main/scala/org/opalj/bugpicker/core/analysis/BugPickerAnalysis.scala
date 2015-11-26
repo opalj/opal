@@ -73,7 +73,7 @@ import scala.xml.NodeSeq
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysisRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
-import org.opalj.fpcf.analysis.FPCFAnalysisManagerKey
+import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -153,11 +153,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val fixpointAnalyses = {
             parameters.collectFirst {
                 case FixpointAnalysesPattern(i) ⇒
-                    var fpas = Seq.empty[FPCFAnalysisRunner[_]]
+                    var fpas = Seq.empty[FPCFAnalysisRunner]
                     for (fpa ← i.split(";"))
-                        fpas = fpas :+ FPCFAnalysisRegistry.newFixpointAnalysis(fpa)
+                        fpas = fpas :+ FPCFAnalysisRegistry.getFixpointAnalysisFactory(fpa)
                     fpas
-            }.getOrElse(Seq.empty[FPCFAnalysisRunner[_]])
+            }.getOrElse(Seq.empty[FPCFAnalysisRunner])
         }
 
         val debug = parameters.contains("-debug")
@@ -206,12 +206,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        val analysisManager = theProject.get(FPCFAnalysisManagerKey)
-        step(5, "[FPCF-Analysis] Computing Fixpoint Properties (if selected)") {
-            ({
-                fixpointAnalyses.foreach(analysisManager.runWithRecommended(_)(false))
-                theProject.get(SourceElementsPropertyStoreKey).waitOnPropertyComputationCompletion(true)
-            }, None)
+        val analysesManager = theProject.get(FPCFAnalysesManagerKey)
+        step(5, "[FPCF-Analysis] executing fixpoint analyses") {
+            (
+                {
+                    fixpointAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
+                    theProject.get(SourceElementsPropertyStoreKey).waitOnPropertyComputationCompletion(true)
+                },
+                None
+            )
         }
 
         //
