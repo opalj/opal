@@ -29,14 +29,9 @@
 package org.opalj
 package tac
 
-import scala.collection.mutable.BitSet
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.mutable.Locals
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
 import org.opalj.ai.AIResult
-import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeReturnAddress
 
@@ -49,8 +44,7 @@ import org.opalj.br.ComputationalTypeReturnAddress
 object ToJavaLike {
 
     private def callToJavaLike(name: String, params: List[Expr]): String = {
-        // TODO Check order...
-        params map { toJavaLikeExpr(_) } mkString (s".$name(", ", ", ")")
+        params.reverse map { toJavaLikeExpr(_) } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toJavaLikeExpr(expr: Expr): String = {
