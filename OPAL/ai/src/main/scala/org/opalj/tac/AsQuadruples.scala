@@ -783,10 +783,10 @@ object AsQuadruples {
             registerIndex += 1
         }
         method.descriptor.parameterTypes foreach { parameterType ⇒
-            // TODO use debug information to get better names...
+            val varName = code.localVariable(0, index).map(_.name).getOrElse("p_"+index)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
-            val sourceParam = Param(cTpe, "p_"+index)
+            val sourceParam = Param(cTpe, varName)
             finalStatements += Assignment(-1, targetVar, sourceParam)
             index += 1
             registerIndex += cTpe.category
