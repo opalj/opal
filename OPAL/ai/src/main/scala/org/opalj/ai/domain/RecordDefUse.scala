@@ -135,15 +135,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         instructions = code.instructions
         val codeSize = instructions.size
-        // The following value for min  is a conservative approx. which may lead to the
+        // The following value for min is a conservative approx. which may lead to the
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
         val defOps = new Array[List[ValueOrigins]](codeSize)
         defOps(0) = Nil // the operand stack is empty...
         this.defOps = defOps
-
-        // TODO code.exceptionHandlers
 
         // initialize initial def-use information based on the parameters
         val defLocals = new Array[Registers[ValueOrigins]](codeSize)
@@ -475,8 +473,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                     if ((o ne null) &&
                                         joinInstructions.contains(successorPC) &&
                                         (
-                                            instructions(currentPC).isInstanceOf[JSRInstruction] ||
-                                            instruction.opcode == RET.opcode
+                                            instruction.isInstanceOf[JSRInstruction] ||
+                                            instructions(successorPC).opcode == RET.opcode
                                         )) {
                                         newUsage = true
                                         o
@@ -540,7 +538,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (successorDefOps eq null)
                         List(ValueOrigins(origin = successorPC))
                     else {
-                        //                        assert(successorDefOps.tail.isEmpty)
+                        // assert(successorDefOps.tail.isEmpty)
                         successorDefOps
                     }
                 } else {
@@ -947,8 +945,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             }
 
+            val isCurrentInstructionARETInstruction = instructions(currPC).opcode == RET.opcode
             regularSuccessorsOf(currPC).foreach { succPC ⇒
-                if (instructions(currPC).opcode == RET.opcode) {
+                if (isCurrentInstructionARETInstruction) {
                     // We have to check if we can "already return" to all given targets.
                     // This is only possible for those targets that follow a JSR instruction
                     // that was already evaluated, otherwise we may lack some important def/use
