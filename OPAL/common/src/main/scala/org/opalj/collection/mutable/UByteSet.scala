@@ -37,7 +37,7 @@ import org.opalj.UByte.{MinValue, MaxValue}
  *
  * @author Michael Eichberg
  */
-trait UByteSet extends SmallValuesSet {
+sealed trait UByteSet extends SmallValuesSet {
 
     override def mutableCopy: UByteSet /* The return type is refined! */
 
