@@ -112,7 +112,7 @@ trait FPCFAnalysisRunner {
      * Returns a set of integers that contains the id of every [[Property]] or [[SetProperty]] that is derived by
      * the underlying analysis which is described by this [[FPCFAnalysisRunner]].
      *
-     * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysisManager]] to guarantee the save
+     * This method has to be overridden in every subclass since it is used by the [[FPCFAnalysesManager]] to guarantee the save
      * execution of all FPCFAnalysis.
      */
     protected[analysis] def derivedProperties: Set[PropertyKind]
