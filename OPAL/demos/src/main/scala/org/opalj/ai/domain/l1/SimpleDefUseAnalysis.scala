@@ -34,6 +34,7 @@ package l1
 import java.net.URL
 
 import scala.language.existentials
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
@@ -65,39 +66,49 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
     ) = {
 
         val UnusedDefUseNodes = time {
-            for {
-                classFile ← theProject.allProjectClassFiles.par
-                method ← classFile.methods
-            } yield {
 
-                val ai = new InterruptableAI[Domain]
+            val ret = new ConcurrentLinkedQueue[String]
 
-                val domain =
-                    new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
+            theProject.parForeachMethodWithBody() { m ⇒
 
-                val result = ai(classFile, method, domain)
+                val (_, classFile, method) = m
 
-                val defUseGraph = result.domain.createDefUseGraph(result.domain.code)
+                try {
 
-                def isUnusedNode(n: DefaultMutableNode[ValueOrigin]): Boolean =
-                    n.identifier == Int.MinValue
+                    val ai = new InterruptableAI[Domain]
 
-                val unusedNode = defUseGraph.find(isUnusedNode).get
+                    val domain =
+                        new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
 
-                if (!unusedNode.children.isEmpty)
-                    (
-                        method.toJava(classFile),
-                        unusedNode.children.map(e ⇒ e.toHRR)
-                    )
-                else
-                    None
+                    val result = ai(classFile, method, domain)
+
+                    val defUseGraph =
+                        result.domain.createDefUseGraph(result.domain.code)
+
+                    def isUnusedNode(n: DefaultMutableNode[ValueOrigin]): Boolean =
+                        n.identifier == Int.MinValue
+
+                    val unusedNode = defUseGraph.find(isUnusedNode).get
+
+                    if (!unusedNode.children.isEmpty)
+                        ret.add( //TODO Think about nicer output formatting
+                            method.toJava(classFile)+","+
+                                unusedNode.children.map(e ⇒ e.toHRR).mkString+"\n"
+                        )
+
+                } catch {
+                    case t: Throwable ⇒
+                        t.printStackTrace();
+                }
             }
+            ret
+            
         } { t ⇒ println("Analysis time "+t.toSeconds) }
 
+        UnusedDefUseNodes.equals(UnusedDefUseNodes)
         BasicReport(
-            UnusedDefUseNodes.filter(!_.equals(None)).mkString("\n")
+            UnusedDefUseNodes.toString()
         )
     }
 
 }
-
