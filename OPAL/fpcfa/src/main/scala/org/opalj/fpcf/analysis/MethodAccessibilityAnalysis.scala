@@ -35,25 +35,6 @@ import org.opalj.br.analyses.SomeProject
 import scala.collection.mutable.ListBuffer
 
 /**
- * @author Michael Reif
- */
-sealed trait ProjectAccessibility extends Property {
-    final def key: org.opalj.fpcf.PropertyKey = ProjectAccessibility.key
-}
-
-object ProjectAccessibility extends PropertyMetaInformation {
-
-    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("Accessible", Global)
-
-}
-
-case object Global extends ProjectAccessibility { final val isRefineable: Boolean = false }
-
-case object PackageLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
-
-case object ClassLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
-
-/**
  *
  *
  * @author Michael Reif

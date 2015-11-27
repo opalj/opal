@@ -37,22 +37,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 
-sealed trait EntryPoint extends Property {
-
-    final def key = EntryPoint.key // All instances have to share the SAME key!
-
-}
-
-object EntryPoint extends PropertyMetaInformation {
-
-    final val key = PropertyKey.create("EntryPoint", IsEntryPoint)
-
-}
-
-case object IsEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
-
-case object NoEntryPoint extends EntryPoint { final val isRefineable: Boolean = false }
-
 class EntryPointsAnalysis private (
     project: SomeProject
 ) extends {

@@ -37,24 +37,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 
-sealed trait Instantiability extends Property {
-
-    final def key = Instantiability.key // All instances have to share the SAME key!
-
-}
-
-object Instantiability extends PropertyMetaInformation {
-
-    final val key = PropertyKey.create("Instantiability", Instantiable)
-
-}
-
-case object NotInstantiable extends Instantiability { final val isRefineable: Boolean = false }
-
-case object Instantiable extends Instantiability { final val isRefineable: Boolean = false }
-
-case object MaybeInstantiable extends Instantiability { final val isRefineable: Boolean = true }
-
 /**
  * This analysis determines which classes can never be instantiated (e.g.,
  * `java.lang.Math`).
@@ -71,7 +53,7 @@ case object MaybeInstantiable extends Instantiability { final val isRefineable: 
  * created are always dead.
  *
  * ==Usage==
- * Use the [[FPCFAnalysisManagerKey]] to query the analysis manager of a project. You can run
+ * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
  * the analysis afterwards as follows:
  * {{{
  *  val analysisManager = project.get(FPCFAnalysisManagerKey)

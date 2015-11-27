@@ -52,7 +52,7 @@ import org.opalj.log.OPALLogger
  * created are always dead.
  *
  * ==Usage==
- * Use the [[FPCFAnalysisManagerKey]] to query the analysis manager of a project. You can run
+ * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
  * the analysis afterwards as follows:
  * {{{
  *  val analysisManager = project.get(FPCFAnalysisManagerKey)

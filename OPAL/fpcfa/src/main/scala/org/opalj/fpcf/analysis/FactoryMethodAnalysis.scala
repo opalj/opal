@@ -36,40 +36,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyKind
 
 /**
- * Common supertrait of all factory method properties.
- */
-sealed trait FactoryMethod extends Property {
-
-    final def key: org.opalj.fpcf.PropertyKey = FactoryMethod.key
-
-}
-
-/**
- * Common constants use by all [[FactoryMethod]] properties associated with methods.
- */
-object FactoryMethod extends PropertyMetaInformation {
-
-    /**
-     * The key associated with every FactoryMethod property.
-     * It contains the unique name of the property and the default property that
-     * will be used if no analysis is able to (directly) compute the respective property.
-     * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
-     * all depended analyses.
-     */
-    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("FactoryMethod", IsFactoryMethod)
-}
-
-/**
- * The respective method is a factory method.
- */
-case object IsFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }
-
-/**
- * The respective method is not a factory method.
- */
-case object NotFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }
-
-/**
  * This analysis identifies a project's factory methods.
  *
  * A method is no factory method if:
@@ -79,7 +45,7 @@ case object NotFactoryMethod extends FactoryMethod { final val isRefineable: Boo
  * the instantiability of a class.
  *
  * ==Usage==
- * Use the [[FPCFAnalysisManagerKey]] to query the analysis manager of a project. You can run
+ * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
  * the analysis afterwards as follows:
  * {{{
  *  val analysisManager = project.get(FPCFAnalysisManagerKey)
