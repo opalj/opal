@@ -232,7 +232,7 @@ object CallBySignatureResolution {
 
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
         implicit val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
-        if (analysisMode eq AnalysisModes.APP)
+        if (analysisMode eq AnalysisModes.DESKTOP_APP)
             // if we analyze an application, call by signature is irrelevant
             return new CallBySignatureResolution(project, Map.empty);
 

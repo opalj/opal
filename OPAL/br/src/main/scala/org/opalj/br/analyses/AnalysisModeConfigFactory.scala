@@ -54,8 +54,12 @@ object AnalysisModeConfigFactory {
         createConfig("library with open packages assumption")
     }
 
-    private[this] final val appConfig: String = {
-        createConfig("Application")
+    private[this] final val desktopAppConfig: String = {
+        createConfig("desktop pplication")
+    }
+
+    private[this] final val jeb6AppConfig: String = {
+        createConfig("jeb6 pplication")
     }
 
     def createConfig(value: AnalysisMode): Config = {
@@ -63,7 +67,8 @@ object AnalysisModeConfigFactory {
             value match {
                 case LibraryWithOpenPackagesAssumption   ⇒ opaConfig
                 case LibraryWithClosedPackagesAssumption ⇒ cpaConfig
-                case Application                         ⇒ appConfig
+                case DesktopApplication                  ⇒ desktopAppConfig
+                case Jeb6Application                     ⇒ jeb6AppConfig
             }
         )
     }

@@ -55,6 +55,8 @@ trait FPCFAnalysis {
 
     final def isClosedLibrary: Boolean = project.analysisMode eq CPA
 
-    final def isApplication: Boolean = project.analysisMode eq APP
+    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
+
+    final def isJeb6Application: Boolean = project.analysisMode eq Jeb6Application
 
 }

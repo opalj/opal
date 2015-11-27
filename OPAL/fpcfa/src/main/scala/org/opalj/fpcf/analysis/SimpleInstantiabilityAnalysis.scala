@@ -114,7 +114,7 @@ class SimpleInstantiabilityAnalysis private (
                 var instantiatedClasses = Set.empty[EP]
                 classFiles.foreach { classFile ⇒
                     if (classFile.isAbstract &&
-                        (isApplication || (isClosedLibrary && classFile.isPackageVisible)))
+                        (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible)))
                         instantiatedClasses += EP(classFile, NotInstantiable)
                     else
                         instantiatedClasses += EP(classFile, Instantiable)
@@ -162,7 +162,7 @@ class SimpleInstantiabilityAnalysis private (
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration) {
-            if (isApplication || (isClosedLibrary && classFile.isPackageVisible))
+            if (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible))
                 // if we analyze an application, abstract classes are not instantiable
                 // if we analyze an library, abstract classes could have subtypes in the future
                 // hence, we have to assume that the methods of the class are called by future subtypes.
