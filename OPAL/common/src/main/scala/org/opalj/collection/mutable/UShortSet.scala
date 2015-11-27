@@ -40,7 +40,7 @@ import org.opalj.graphs.DefaultMutableNode
  *
  * @author Michael Eichberg
  */
-trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
+sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.
@@ -548,9 +548,10 @@ private class UShortSetNode(
             val newSet1 = uShortValue +≈: set1
             if (newSet1 eq set1)
                 this
-            else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
+            //else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
+            else if ((set2.getClass eq classOf[UShortSet2]) && (newSet1.getClass eq classOf[UShortSetNode])) {
                 val tempNode = newSet1.asInstanceOf[UShortSetNode]
-                val v = tempNode.set2.asInstanceOf[UShortSet2].min
+                val v = tempNode.set2. /*asInstanceOf[UShortSet2].*/ min
                 new UShortSetNode(tempNode.set1, v +≈: set2)
             } else
                 new UShortSetNode(newSet1, set2)

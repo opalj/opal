@@ -943,10 +943,9 @@ case object BooleanType extends BooleanType
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
-    final val id:  Int,
-    final val fqn: String
-)
-        extends ReferenceType {
+        final val id:  Int,
+        final val fqn: String
+) extends ReferenceType {
 
     override def isObjectType: Boolean = true
 
@@ -1036,7 +1035,8 @@ object ObjectType {
      *      comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
-        cacheRWLock.readLock().lock()
+        val readLock = cacheRWLock.readLock()
+        readLock.lock()
         try {
             val wrOT = cache.get(fqn)
             if (wrOT != null) {
@@ -1045,10 +1045,12 @@ object ObjectType {
                     return OT;
             }
         } finally {
-            cacheRWLock.readLock().unlock()
+            readLock.unlock()
         }
 
-        cacheRWLock.writeLock().lock()
+        // Remember: Lock upgrading is not possible
+        val writeLock = cacheRWLock.writeLock()
+        writeLock.lock()
         try {
             // WE HAVE TO CHECK AGAIN
             val wrOT = cache.get(fqn)
@@ -1066,7 +1068,7 @@ object ObjectType {
                 currentObjectTypeCreationListener(newOT)
             newOT
         } finally {
-            cacheRWLock.writeLock().unlock()
+            writeLock.unlock()
         }
     }
 

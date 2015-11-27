@@ -34,16 +34,18 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 
 import scala.xml.Node
 import scala.collection.BitSet
-import org.opalj.br.instructions._
-import org.opalj.br.Code
-import org.opalj.bytecode.BytecodeProcessingFailedException
+import scala.collection.mutable
+
+import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.ComputationalTypeCategory
-import org.opalj.ai.util.XHTML
-import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.SmallValuesSet
-import scala.collection.mutable.Queue
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br.Code
+import org.opalj.br.ComputationalTypeCategory
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.AnalysisException
+import org.opalj.ai.util.XHTML
 
 /**
  * Collects the abstract interpretation time definition/use information.
@@ -66,16 +68,16 @@ import scala.collection.mutable.Queue
  *
  * ===Parameters===
  * The parameters given to a method have negative `int` values (the first
- * parameter has the value -1, the second -2 and so forth; the computational type
- * category is ignored.).
+ * parameter has the value -1, the second -2 if the first one is a value of computational
+ * type category one and -3 if the first value is of computational type category two and so forth).
  *
  * ==Core Properties==
  *
  * ===Reusability===
  * An instance of this domain can be reused to successively perform abstract
  * interpretations of different methods.
- * The domain's inherited `initProperties` method – which is called by the AI
- * framework –  resets the entire state related to the method.
+ * The domain's inherited `initProperties` method – which is always called by the AI
+ * framework – resets the entire state related to the method.
  *
  * @author Michael Eichberg
  */
@@ -101,8 +103,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         min:    Int = this.min,
         max:    Int = this.max,
         origin: Int
-    ): SmallValuesSet =
+    ): SmallValuesSet = {
         SmallValuesSet.create(min, max, origin)
+    }
 
     private[this] var min: Int = _ // initialized by initProperties
     private[this] var max: Int = _ // initialized by initProperties
@@ -166,14 +169,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         super.initProperties(code, joinInstructions, locals)
     }
 
+    /**
+     * Prints out the information by which values the current values are used.
+     *
+     * @inheritdoc
+     */
     abstract override def properties(
         pc:               Int,
         propertyToString: AnyRef ⇒ String
     ): Option[String] = {
 
-        val thisProperty =
-            Option(used(pc + parametersOffset)).
-                map(_.mkString("UsedBy={", ",", "}"))
+        val thisProperty = Option(used(pc + parametersOffset)).map(_.mkString("UsedBy={", ",", "}"))
 
         super.properties(pc, propertyToString) match {
             case superProperty @ Some(description) ⇒
@@ -187,11 +193,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Creates an XHTML document that contains information about the def-/use
      * information.
      */
-    def dumpDefUseInfo(): Node =
+    def dumpDefUseInfo(): Node = {
         XHTML.createXHTML(Some("Definition/Use Information"), dumpDefUseTable())
+    }
 
     /**
-     * Creates an XHTML  table node which contains the def/use information.
+     * Creates an XHTML table node which contains the def/use information.
      */
     def dumpDefUseTable(): Node = {
         val perInstruction =
@@ -243,7 +250,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     /**
      * Returns the instruction which defined the value used by the instruction with the given `pc`
-     * and which is stored at the stack position with the given valueIndex. The first value on
+     * and which is stored at the stack position with the given valueIndex. The first/top value on
      * the stack has index 0.
      */
     def operandOrigin(pc: PC, valueIndex: Int): ValueOrigins = defOps(pc)(valueIndex)
@@ -373,7 +380,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     joinedDefOps:  List[ValueOrigins] = Nil
                 ): List[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
-                        //                        assert(rDefOps.isEmpty)
+                        // assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
                     }
                     // assert(
@@ -455,7 +462,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 if (o eq null) {
                                     if ((n ne null) &&
                                         joinInstructions.contains(successorPC) &&
-                                        instructions(currentPC).isInstanceOf[JSRInstruction]) {
+                                        (
+                                            instruction.isInstanceOf[JSRInstruction] ||
+                                            instructions(successorPC).opcode == RET.opcode
+                                        )) {
                                         newUsage = true
                                         n
                                     } else {
@@ -464,7 +474,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else if (n eq null) {
                                     if ((o ne null) &&
                                         joinInstructions.contains(successorPC) &&
-                                        instructions(currentPC).isInstanceOf[JSRInstruction]) {
+                                        (
+                                            instructions(currentPC).isInstanceOf[JSRInstruction] ||
+                                            instruction.opcode == RET.opcode
+                                        )) {
                                         newUsage = true
                                         o
                                     } else {
@@ -571,7 +584,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 val oldDefLocals = defLocals(currentPC)
                 val returnAddressValue = oldDefLocals(lvIndex)
                 updateUsageInformation(returnAddressValue, currentPC)
-                propagate(defOps(currentPC), oldDefLocals)
+                val scheduleNextPC = propagate(defOps(currentPC), oldDefLocals)
+                scheduleNextPC
 
             case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
                 | IF_ICMPEQ.opcode | IF_ICMPNE.opcode
@@ -819,9 +833,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // "ERROR" HANDLING
             //
             case 176 /*areturn*/ |
-                175 /*dreturn*/ | 174 /*freturn*/ | 172 /*ireturn*/ | 173 /*lreturn*/ ⇒
-                val message =
-                    s"a return instruction ($instruction) cannot be the source of a flow"
+                175 /*dreturn*/ | 174 /*freturn*/ |
+                172 /*ireturn*/ | 173 /*lreturn*/ ⇒
+                val message = s"a return instruction ($instruction) cannot be the source of a flow"
                 throw BytecodeProcessingFailedException(message)
 
             case opcode ⇒
@@ -854,27 +868,28 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
 
-        /* DEBUG
-        var iterationCount = 0
-        val maxIterationCount = aiResult.code.instructions.size * 50
-        DEBUG */
         var subroutinePCs: Set[PC] = Set.empty
-        val nextPCs: Queue[PC] = Queue(0)
+        val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
 
-        while (nextPCs.nonEmpty ||
-            // we want to evaluate the subroutines only once!
-            { nextPCs ++= subroutinePCs; subroutinePCs = Set.empty; nextPCs.nonEmpty }) {
-            val currPC = nextPCs.dequeue
-            /* DEBUG
-            iterationCount += 1
-            if (iterationCount > maxIterationCount) {
-                var s = "\nThe analysis failed! "
-                s += ("curr: "+currPC+" ... nextPCs: "+nextPCs+" ... subroutinePCs"+subroutinePCs)
-                println(s+"\n"+defOps(currPC)+" ... "+defLocals(currPC))
-                org.opalj.io.writeAndOpen(dumpDefUseInfo().toString, "defuse", ".html")
-                throw new UnknownError(s)
-            }
-            DEBUG */
+        def checkAndScheduleNextSubroutine(): Boolean = {
+            /* we want to evaluate the subroutines only once! */
+
+            // We have to make sure that – before we schedule the evaluation of an 
+            // instruction that is the return target of a subroutine - the call
+            // of the subroutine from the respective location was already analyzed.
+            // Otherwise, the context information may be missing.
+
+            if (subroutinePCs.nonEmpty) {
+                nextPCs += subroutinePCs.head;
+                subroutinePCs = subroutinePCs.tail;
+                true
+            } else
+                false
+        }
+
+        while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
+            val currPC = nextPCs.head
+            nextPCs.remove(currPC)
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -883,10 +898,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         joinInstructions,
                         operandsArray
                     )
-
                 } catch {
                     case e: Throwable ⇒
-                        var message = "Failed calculating def-use information for: "
+                        var message = "failed calculating def-use information for: "
                         if (defUseDomain.isInstanceOf[TheMethod]) {
                             val method = defUseDomain.asInstanceOf[TheMethod].method
                             if (defUseDomain.isInstanceOf[TheProject]) {
@@ -896,7 +910,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 message += method.toJava()+"\n"
                             }
                         } else {
-                            message += "<Unknown (the domain does not make information about the method available)>\n"
+                            message += "<Unknown (the domain does not reference the method)>\n"
                         }
                         message += ("\tCurrent PC: "+currPC+"; SuccessorPC: "+succPC)+"\n"
                         message += ("\tStack: "+defOps(currPC))+"\n"
@@ -908,33 +922,49 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         val stacktrace = bout.toString("UTF-8")
                         message += "\tStacktrace: \n\t"+stacktrace+"\n"
 
-                        println(message)
+                        // val htmlMessage =
+                        // message.
+                        //     replace("\n", "<br>").
+                        //     replace("\t", "&nbsp;&nbsp;") +
+                        //     dumpDefUseInfo().toString
+                        // org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
 
-                        val htmlMessage =
-                            message.
-                                replace("\n", "<br>").
-                                replace("\t", "&nbsp;&nbsp;") +
-                                dumpDefUseInfo().toString
-                        org.opalj.io.writeAndOpen(htmlMessage, "defuse", ".html")
-
-                        throw e;
+                        throw AnalysisException(message, e);
                 }
 
                 // assert(defLocals(succPC) ne null)
                 // assert(defOps(succPC) ne null)
 
-                if (scheduleNextPC && !nextPCs.contains(succPC)) {
-                    if (instructions(currPC).isInstanceOf[JSRInstruction]) {
+                if (scheduleNextPC) {
+                    val opcode = instructions(currPC).opcode
+                    if (opcode == JSR.opcode || opcode == JSR_W.opcode) {
                         // first let's collect all subroutinePCs to make sure that we evaluate
                         // the subroutines only once
                         subroutinePCs += succPC
                     } else {
-                        nextPCs.enqueue(succPC)
+                        nextPCs += succPC
                     }
                 }
             }
 
-            regularSuccessorsOf(currPC).foreach { handleSuccessor(false) }
+            regularSuccessorsOf(currPC).foreach { succPC ⇒
+                if (instructions(currPC).opcode == RET.opcode) {
+                    // We have to check if we can "already return" to all given targets.
+                    // This is only possible for those targets that follow a JSR instruction
+                    // that was already evaluated, otherwise we may lack some important def/use
+                    // information!
+                    val pcOfJSR = // succPC is the pc of the instruction following the JSR(_W)
+                        if (instructions(succPC - 2) ne null)
+                            succPC - 2
+                        else
+                            succPC - 3 /*JSR_W*/
+                    if (defOps(pcOfJSR) != null)
+                        handleSuccessor(false)(succPC)
+                    /* else postponed the scheduling of succPC */
+                } else {
+                    handleSuccessor(false)(succPC)
+                }
+            }
             exceptionHandlerSuccessorsOf(currPC).foreach { handleSuccessor(true) }
         }
     }
