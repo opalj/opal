@@ -62,7 +62,7 @@ trait Instruction {
     /**
      * The index of the next instruction in the code array.
      *
-     * This is primarily a convenience method that delegates to the method
+     * @note This is primarily a convenience method that delegates to the method
      * `indexOfNextInstrution(PC,Boolean)`.  However, given that this is also the
      * standard method called by clients, it is often meaningful to directly implement
      * this. In particular since most instructions cannot be modified by wide.
@@ -84,8 +84,9 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         nextInstructions(currentPC, code, regularSuccessorsOnly = false)
+    }
 
     /**
      * Returns the pcs of the instructions that may be executed next at runtime.
@@ -245,7 +246,7 @@ object Instruction {
                         handler.catchType.get
                     ).isYes
             } match {
-                case Some(handler) ⇒ pcs = handler.startPC +≈: pcs
+                case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
             }
         }
@@ -271,7 +272,7 @@ object Instruction {
                     handler.catchType.get
                 ).isYes
         } match {
-            case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
+            case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
             case None          ⇒ UShortSet(nextInstruction)
         }
     }
