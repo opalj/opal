@@ -330,72 +330,81 @@ final class Code private (
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
+     * In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC): Iterable[ExceptionHandler] = {
-
+    def handlersFor(pc: PC, justExceptions: Boolean = false): List[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        def isNotYetHandled(exception: ObjectType): Boolean = {
-            if (handledExceptions.contains(exception))
-                false
-            else {
-                handledExceptions += exception
+        var ehs = List.empty[ExceptionHandler]
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    if (!handledExceptions.contains(catchType)) {
+                        handledExceptions += catchType
+                        ehs = eh :: ehs
+                    }
+                    true
+                } else {
+                    if (!justExceptions) {
+                        ehs = eh :: ehs
+                    }
+                    false
+                }
+
+            } else {
+                // the handler is not relevant
                 true
             }
         }
-
-        var finallyHandlerAlreadyFound = false
-        def isFirstFinallyHandler(): Boolean = {
-            if (finallyHandlerAlreadyFound)
-                false
-            else {
-                finallyHandlerAlreadyFound = true
-                true
-            }
-        }
-
-        exceptionHandlers.view.filter { handler ⇒
-            handler.startPC <= pc && handler.endPC > pc &&
-                handler.catchType.map(isNotYetHandled(_)).getOrElse(isFirstFinallyHandler())
-        }
+        ehs.reverse
     }
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
      * instruction with the given program counter (`pc`). `Finally` handlers
-     * (`catchType == None`) are ignored.
+     * (`catchType == None`) are not returned but will stop the evaluation (as all further
+     * exception handlers have no further meaning w.r.t. the runtime)!
+     * In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): Iterator[ExceptionHandler] = {
-        var handledExceptions = Set.empty[ObjectType]
-        def isNotYetHandled(exception: ObjectType): Boolean = {
-            if (handledExceptions.contains(exception))
-                false
-            else {
-                handledExceptions += exception
-                true
-            }
-        }
-
-        exceptionHandlers.iterator.filter { handler ⇒
-            val catchType = handler.catchType
-            catchType.isDefined &&
-                handler.startPC <= pc && handler.endPC > pc &&
-                isNotYetHandled(catchType.get)
-        }
-    }
+    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = handlersFor(pc, justExceptions = true)
 
     /**
-     * The set of pc of those instructions that may handle an exception if the evaluation
+     * The set of pcs of those instructions that may handle an exception if the evaluation
      * of the instruction with the given `pc` throws an exception.
+     *
+     * In case of multiple finally handlers only the first one will be returned and no further
+     * exception handlers will be returned. In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      */
     def handlerInstructionsFor(pc: PC): PCs = {
+        var handledExceptions = Set.empty[ObjectType]
+
         var pcs = org.opalj.collection.mutable.UShortSet.empty
-        exceptionHandlers foreach { handler ⇒
-            if (handler.startPC <= pc && handler.endPC > pc)
-                pcs = handler.handlerPC +≈: pcs
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    if (!handledExceptions.contains(catchType)) {
+                        handledExceptions += catchType
+                        pcs = eh.handlerPC +≈: pcs
+                    }
+                    true
+                } else {
+                    pcs = eh.handlerPC +≈: pcs
+                    false // we effectively abort after the first finally handler
+                }
+            } else {
+                // the handler is not relevant
+                true
+            }
         }
         pcs
     }
@@ -1042,35 +1051,6 @@ final class Code private (
      * This attribute's kind id.
      */
     override def kindId: Int = Code.KindId
-
-    //    /**
-    //     * Returns the map of isomorphic instructions.
-    //     *
-    //     * @note
-    //     */
-    //    def isomorphicInstructions(
-    //        startPC1: PC,
-    //        startPC2: PC)(
-    //            implicit map: Array[PC] = { val a = new Array[PC](instructions.length); Arrays.fill(a, -1); a },
-    //            subroutineCallChainLength: Int = 0): Array[PC] = {
-    //
-    //        import scala.language.implicitConversions
-    //        implicit def pcToInstr(pc: PC): Instruction = this.instructions(pc)
-    //        implicit val code = this
-    //
-    //        // assert(startPC1.as)
-    //
-    //        var pc1 = startPC1
-    //        var pc2 = startPC2
-    //        var pc1Instr = pcToInstr(pc1)
-    //        if (pc1Instr.isIsomorphic(pc1, pc2)) {
-    //            map(startPC1) = startPC2
-    //            pc1Instr.nextInstructions(pc1)
-    //
-    //        }
-    //
-    //        map
-    //    }
 
     /**
      * A complete representation of this code attribute (including instructions,
