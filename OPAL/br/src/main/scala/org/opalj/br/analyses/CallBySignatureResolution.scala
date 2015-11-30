@@ -33,7 +33,6 @@ package analyses
 import scala.collection.Map
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHashMap}
 import scala.collection.immutable.Set
-import net.ceedubs.ficus.Ficus._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
@@ -231,10 +230,11 @@ object CallBySignatureResolution {
     }
 
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
-        implicit val analysisMode = AnalysisModes.withName(project.config.as[String]("org.opalj.analysisMode"))
-        if (analysisMode eq AnalysisModes.DESKTOP_APP)
-            // if we analyze an application, call by signature is irrelevant
-            return new CallBySignatureResolution(project, Map.empty);
+        implicit val analysisMode = project.analysisMode
+        if (AnalysisModes.isApplicationLike(analysisMode))
+            throw new IllegalArgumentException(
+                "call-by-signature resolution for application (like) is not supported"
+            )
 
         val projectIndex = project.get(ProjectIndexKey)
         val classHierarchy = project.classHierarchy
