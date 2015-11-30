@@ -119,7 +119,7 @@ object PrintBaseCFG {
     }
 
     def analyzeMethod(project: Project[URL], classFile: ClassFile, method: Method): Unit = {
-        val controlFlowGraph = cfg.CFGFactory(method)
+        val controlFlowGraph = cfg.CFGFactory(method.body.get)
         val rootNodes = Set(controlFlowGraph.startBlock) ++ controlFlowGraph.catchNodes
         val graph = toDot(rootNodes)
         writeAndOpen(graph, classFile.thisType.toJava+"."+method.name, ".cfg.dot")
