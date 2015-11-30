@@ -43,7 +43,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def mnemonic: String = "new"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
 
     final def length: Int = 3
 
@@ -81,5 +81,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 object NEW {
 
     final val opcode = 187
+
+    final val jvmExceptions = List(ObjectType.OutOfMemoryError)
 
 }
