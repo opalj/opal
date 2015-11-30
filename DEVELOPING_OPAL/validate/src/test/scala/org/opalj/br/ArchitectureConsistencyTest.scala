@@ -81,10 +81,10 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                 }
 
                 // BR and Instructions are considered as one...
-                'Br is_only_allowed_to (USE, 'Instructions)
-                'Instructions is_only_allowed_to (USE, 'Br)
-
+                'Br is_only_allowed_to (USE, 'Instructions, 'CFG)
+                'Instructions is_only_allowed_to (USE, 'Br, 'CFG)
                 'CFG is_only_allowed_to (USE, 'Br, 'Instructions)
+
                 'Reader is_only_allowed_to (USE, 'Br, 'Instructions)
                 'Analyses is_only_allowed_to (USE, 'Br, 'CFG, 'Instructions, 'Reader)
 
