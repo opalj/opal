@@ -26,12 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.cfg
+package org.opalj
+package br
+package cfg
 
 import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.Method
-import org.opalj.br.PC
 
 /**
  * Represents the control flow graph of a method.
@@ -55,7 +55,7 @@ import org.opalj.br.PC
  * @author Michael Eichberg
  */
 case class CFG(
-        method:                  Method,
+        code:                    Code,
         normalReturnNode:        ExitNode,
         abnormalReturnNode:      ExitNode,
         private val basicBlocks: Array[BasicBlock],
@@ -84,57 +84,27 @@ case class CFG(
      */
     def allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
 
-    //    /**
-    //     * Determines and returns the set of CFGNodes that are dominated by a given node.
-    //     *
-    //     * Example:
-    //     * Given a graph with blocks A, B, C, D, E and F, with the edges:
-    //     *
-    //     * A->B;
-    //     * A->F;
-    //     * B->C;
-    //     * B->D;
-    //     * C->E;
-    //     * D->E;
-    //     * E->F;
-    //     *
-    //     * In this Scenario, blocksDominatedBy(B), will yield {B,C,D,E}.
-    //     * The method called for B and C will only contain B and C themselves, respectively.
-    //     *
-    //     * @param dominator The CFGNode for which the domination-set is to be computed.
-    //     */
-    //    def blocksDominatedBy(dominator: CFGNode): SomeSet[CFGNode] = {
-    //
-    //        var result = dominator.reachable(reflexive = true)
-    //
-    //        var hasChanged: Boolean = true
-    //
-    //        /*
-    //         * In each Iteration:
-    //         *
-    //         * Remove all blocks who have a predecessor, that is not contained in results.
-    //         * Also remove all of their immediate successors.
-    //         *
-    //         * Exempt from removal is the dominator itself.
-    //         */
-    //        while (hasChanged) {
-    //
-    //            hasChanged = false
-    //
-    //            for {
-    //                block ← result
-    //                if (block ne dominator)
-    //                if (block.predecessors.exists { pred ⇒ !result.contains(pred) })
-    //            } {
-    //                result = result - (block)
-    //                for (succ ← block.successors if (succ ne dominator)) {
-    //                    result = result - (succ)
-    //                }
-    //
-    //                hasChanged = true
-    //            }
-    //        }
-    //        result
-    //    }
+    /**
+     * Iterates over all runtime successors of the instruction with the given pc.
+     *
+     * If the returned set is empty, then the instruction is either a return instruction or an
+     * instruction that always causes an exception to be thrown that is not handled by
+     * a handler of the respective method.
+     *
+     * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
+     */
+    def successors(pc: PC): Set[PC] = {
+        val bb = this.bb(pc)
+        if (bb.endPC > pc) {
+            // it must be - w.r.t. the code array - the next instruction
+            Set(code.instructions(pc).indexOfNextInstruction(pc, code))
+        } else {
+            // the set of successor can be (at the same time) a RegularBB or an ExitNode
+            bb.successors.collect {
+                case bb: BasicBlock ⇒ bb.startPC
+                case cb: CatchNode  ⇒ cb.handlerPC
+            }
+        }
+    }
 
 }
