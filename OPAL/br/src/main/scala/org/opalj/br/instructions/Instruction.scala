@@ -55,7 +55,7 @@ trait Instruction {
      * this instruction fails.
      * I.e., these are neither exceptions that are explicitly created and then thrown
      * by user code nor errors that may arise due to an invalid code base (e.g.
-     * `LinkageError`s).
+     * `LinkageError`s). However, OutOfMemoryErrors are possible.
      */
     def jvmExceptions: List[ObjectType]
 
@@ -239,12 +239,10 @@ object Instruction {
         var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
 
         def processException(exception: ObjectType): Unit = {
+            import Code.preDefinedClassHierarchy.isSubtypeOf
             code.handlersFor(currentPC) find { handler ⇒
-                handler.catchType.isEmpty ||
-                    Code.preDefinedClassHierarchy.isSubtypeOf(
-                        exception,
-                        handler.catchType.get
-                    ).isYes
+                val catchType = handler.catchType
+                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
             } match {
                 case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
@@ -266,11 +264,9 @@ object Instruction {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
 
         code.handlersFor(currentPC) find { handler ⇒
-            handler.catchType.isEmpty ||
-                Code.preDefinedClassHierarchy.isSubtypeOf(
-                    exception,
-                    handler.catchType.get
-                ).isYes
+            import Code.preDefinedClassHierarchy.isSubtypeOf
+            val catchType = handler.catchType
+            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
         } match {
             case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
             case None          ⇒ UShortSet(nextInstruction)
