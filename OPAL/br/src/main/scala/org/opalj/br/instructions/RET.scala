@@ -58,7 +58,7 @@ case class RET(lvIndex: Int)
     ): PCs = {
         // the fallback is only used if we have multiple return instructions
         def fallback() = {
-            val classHierarchy = ClassHierarchy.preInitializedClassHierarchy
+            val classHierarchy = Code.preDefinedClassHierarchy
             val cfg = CFGFactory(code, classHierarchy)
             UShortSet.create((cfg.successors(currentPC).toSeq: _*))
         }
