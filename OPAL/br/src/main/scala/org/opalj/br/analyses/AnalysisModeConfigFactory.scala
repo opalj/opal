@@ -43,7 +43,7 @@ import com.typesafe.config.Config
 object AnalysisModeConfigFactory {
 
     private[this] final def createConfig(mode: String) = {
-        s"""org.opalj { analysisMode = "$mode""""
+        s"""org.opalj { analysisMode = "$mode"}"""
     }
 
     private[this] final val cpaConfig: String = {
