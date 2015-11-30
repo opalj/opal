@@ -62,29 +62,22 @@ object AnalysisModes extends Enumeration {
     final val OPA = LibraryWithOpenPackagesAssumption
 
     /**
-     * This mode is to be used if an application is analyzed which is not a web application.
-     *
-     * It is recommended to use this mode when applying a whole-program analysis to an non-web application.
+     * This mode is to be used if a standard Java application is analyzed which is started by
+     * the JVM by calling the application's main method.
      */
     final val DesktopApplication = Value("desktop application")
 
-    final val DESKTOP_APP = DesktopApplication
-
     /**
-     * This mode is to be used if an web application is analyzed which is developed with JavaEE 6.
-     *
-     * It is recommended to use this mode when analyzing a web application developed with JavaEE 6 with a whole-program analysis.
+     * This mode is to be used if a web application is analyzed which is developed using JavaEE 6.
      */
-    final val Jeb6Application = Value("desktop application")
+    final val JEE6WebApplication = Value("JEE6 web application")
 
-    final val JEB6_APP = Jeb6Application
-
-    final def isLibrary(mode: AnalysisMode): Boolean = {
+    final def isLibraryLike(mode: AnalysisMode): Boolean = {
         (mode eq CPA) || (mode eq OPA)
     }
 
-    final def isApplication(mode: AnalysisMode): Boolean = {
-        (mode eq DESKTOP_APP) || (mode eq JEB6_APP)
+    final def isApplicationLike(mode: AnalysisMode): Boolean = {
+        (mode eq DesktopApplication) || (mode eq JEE6WebApplication)
     }
 }
 
