@@ -234,7 +234,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_0, op_1);",
                     "4: r_1 = op_0;",
                     "5: return;"
                 ))
@@ -457,7 +457,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_0, op_1);",
                     "4: r_1 = op_0;",
                     "5: return;"
                 ))
