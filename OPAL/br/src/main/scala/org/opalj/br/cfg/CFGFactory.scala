@@ -48,6 +48,7 @@ import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -55,6 +56,13 @@ import org.opalj.br.instructions.INVOKESTATIC
  * @author Michael Eichberg
  */
 object CFGFactory {
+
+    def apply(
+        method:         Method,
+        classHierarchy: ClassHierarchy
+    ): Option[CFG] = {
+        method.body.map(code ⇒ apply(code, classHierarchy))
+    }
 
     /**
      * Constructs the control flow graph for a given method.
@@ -74,7 +82,7 @@ object CFGFactory {
      * 		if a certain exception is potentially handled by an exception handler.
      */
     def apply(
-        method:         Method,
+        code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): CFG = {
 
@@ -87,7 +95,6 @@ object CFGFactory {
 
         import classHierarchy.isSubtypeOf
 
-        val code = method.body.get
         val instructions = code.instructions
         val codeSize = instructions.length
 
@@ -286,23 +293,28 @@ object CFGFactory {
                     val currentBB = useRunningBB
                     val jvmExceptions = instruction.jvmExceptions
                     val isMethodInvoke = instruction.isInstanceOf[MethodInvocationInstruction]
-                    if (jvmExceptions.nonEmpty || isMethodInvoke) {
+                    if (jvmExceptions.nonEmpty || 
+                            isMethodInvoke ||
+                            instruction.opcode == INVOKEDYNAMIC.opcode ||
+                            instruction.opcode == ATHROW.opcode) {
                         def linkWithExceptionHandler(eh: ExceptionHandler): Unit = {
                             val catchNode = exceptionHandlers(eh)
                             currentBB.addSuccessor(catchNode)
                             catchNode.addPredecessor(currentBB)
                         }
+                        
+                        // FIXME... we have to handle exceptions related to athrow and invokedynamic (and also finally handlers)
 
                         val exceptionsToHandle: Iterable[ObjectType] =
                             if (isMethodInvoke) {
-                                val caughtExceptions = code.handlersFor(pc).filter(_.catchType.isDefined).map(_.catchType.get).toList
-                                //[DEBUG] println(s"$pc[caught]: "+caughtExceptions.mkString(","))
+                                val handlers = code.handlersFor(pc)
+                                val nonFinallyHandlers = handlers.filter(_.catchType.isDefined)
+                                val caughtExceptions = nonFinallyHandlers.map(_.catchType.get).toList
                                 if (!caughtExceptions.exists(_ eq ObjectType.Throwable)) {
                                     // We add "Throwable" to make sure that - if any exception
                                     // occurs - we never miss an edge. Actually, we have
                                     // no idea which exceptions may be thrown.
                                     val allExceptions = caughtExceptions ++ Iterable(ObjectType.Throwable)
-                                    //[DEBUG] println(s"$pc[all]: "+allExceptions.mkString(","))
                                     allExceptions
                                 } else {
                                     caughtExceptions
@@ -357,7 +369,7 @@ object CFGFactory {
         }
 
         CFG(
-            method,
+            code,
             normalReturnNode, abnormalReturnNode,
             bbs,
             exceptionHandlers.values.toList
