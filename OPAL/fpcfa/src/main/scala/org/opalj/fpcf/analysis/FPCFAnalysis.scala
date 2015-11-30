@@ -32,6 +32,7 @@ package analysis
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.AnalysisModes._
 
 /**
@@ -47,7 +48,7 @@ trait FPCFAnalysis {
 
     def project: SomeProject
 
-    final implicit val propertyStore: org.opalj.fpcf.PropertyStore = project.get(SourceElementsPropertyStoreKey)
+    final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
 
     // The project type:
 
@@ -57,5 +58,5 @@ trait FPCFAnalysis {
 
     final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
 
-    final def isJeb6Application: Boolean = project.analysisMode eq Jeb6Application
+    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
 }
