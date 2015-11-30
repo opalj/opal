@@ -30,8 +30,14 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Return from subroutine.
+ *
+ * @note A RET instruction always returns to an instruction immediately following a JSR(_W)
+ * 		instruction.
  *
  * @author Michael Eichberg
  */
@@ -49,19 +55,39 @@ case class RET(lvIndex: Int)
         currentPC:             PC,
         code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        throw new UnsupportedOperationException(
-            "to determine the next instruction that will be executed "+
-                "a data-/control-flow analysis needs to be executed; "+
-                "without such an analysis this information is not directly available"
-        )
+    ): PCs = {
+        // the fallback is only used if we have multiple return instructions
+        def fallback() = {
+            val classHierarchy = ClassHierarchy.preInitializedClassHierarchy
+            val cfg = CFGFactory(code, classHierarchy)
+            UShortSet.create((cfg.successors(currentPC).toSeq: _*))
+        }
+
+        // If we have just one subroutine it is sufficient to collect the 
+        // successor instructions of all JSR instructions.
+        var jumpTargets = UShortSet.empty
+        code.foreach { (pc, instruction) ⇒
+            if (pc != currentPC) {
+                instruction.opcode match {
+                    case JSR.opcode | JSR_W.opcode ⇒
+                        jumpTargets = (instruction.indexOfNextInstruction(pc, code)) +≈: jumpTargets
+                    case RET.opcode ⇒
+                        // we have found another RET ... hence, we have at least two subroutines
+                        return fallback();
+                    case _ ⇒ // we don't care 
+                }
+            }
+        }
+        jumpTargets
+    }
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
+    }
 
     final def readsLocal: Boolean = true
 
