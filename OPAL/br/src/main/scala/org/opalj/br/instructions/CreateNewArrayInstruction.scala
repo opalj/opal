@@ -46,20 +46,20 @@ abstract class CreateNewArrayInstruction
         (this eq other) || (this == other)
     }
 
-    final def jvmExceptions: List[ObjectType] =
-        CreateNewArrayInstruction.jvmExceptions
+    final def jvmExceptions: List[ObjectType] = CreateNewArrayInstruction.jvmExceptionsAndErrors
 
     final def nextInstructions(
         currentPC:             PC,
         code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandlers(
                 this, currentPC, code, CreateNewArrayInstruction.jvmExceptionsAndErrors
             )
+    }
 
 }
 
