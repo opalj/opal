@@ -67,13 +67,13 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
         currentPC:             PC,
         code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else {
-
             val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
             exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
         }
+    }
 }
 

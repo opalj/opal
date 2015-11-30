@@ -119,8 +119,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
                             if (!haveSameOrigins) {
                                 val message =
                                     s"{pc=$pc: "+
-                                    s"operands[$valueIndex] == domain: "+
-                                    s"$domainOrigins vs defUse: $defUseOrigins}"
+                                        s"operands[$valueIndex] == domain: "+
+                                        s"$domainOrigins vs defUse: $defUseOrigins}"
                                 fail(message)
                             }
                             comparisonCount.incrementAndGet
@@ -166,13 +166,13 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the def/use information for all methods of the JDK") {
             val project = org.opalj.br.TestSupport.createJREProject
-            time{analyzeProject("JDK", project)}{t =>info("the analysis took "+t.toSeconds)            }
+            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
         it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
-            time{analyzeProject("OPAL-0.3", project)}{t =>info("the analysis took "+t.toSeconds)            }
+            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
         it("should be possible to calculate the def/use information for all methods of the OPAL-08-14-2014 snapshot") {
@@ -186,8 +186,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             val project = Project(AllClassFiles(opalJARs), Traversable.empty)
 
             time {
-            analyzeProject("OPAL-08-14-2014 snapshot", project)            
-            }{t =>                info("the analysis took "+t.toSeconds)            }
+                analyzeProject("OPAL-08-14-2014 snapshot", project)
+            } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
     }

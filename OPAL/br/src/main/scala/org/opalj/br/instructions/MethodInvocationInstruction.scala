@@ -42,8 +42,7 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     def declaringClass: ReferenceType
 
-    def asVirtualMethod: VirtualMethod =
-        VirtualMethod(declaringClass, name, methodDescriptor)
+    def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 
     /**
      * Returns `true` if the called method is an instance method and virtual method
@@ -52,9 +51,10 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
      */
     def isVirtualMethodCall: Boolean
 
-    override def toString: String =
+    override def toString: String = {
         this.getClass.getSimpleName+"\n"+
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
+    }
 
 }
 
@@ -97,7 +97,9 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
 
 object VirtualMethodInvocationInstruction {
 
-    def unapply(instruction: VirtualMethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
+    def unapply(
+        instruction: VirtualMethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
     }
 
