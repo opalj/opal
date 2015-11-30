@@ -63,8 +63,8 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(EntryPointsAnalysis.derivedProperties))
-            fpcfManager.runWithRecommended(EntryPointsAnalysis)(true)
+        if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
+            fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
         val entryPoints = getEntryPointsFromPropertyStore(project)
         CallGraphFactory.create(
             project, () ⇒ entryPoints,

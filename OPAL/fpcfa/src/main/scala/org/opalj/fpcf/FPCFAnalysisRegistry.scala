@@ -110,8 +110,8 @@ object FPCFAnalysisRegistry {
     )
 
     register(
-        "[EntryPointAnalysis] Computes the entry points of a library/application.",
-        EntryPointsAnalysis
+        "[LibraryEntryPointAnalysis] Computes the entry points of a library.",
+        LibraryEntryPointsAnalysis
     )
 
     register(

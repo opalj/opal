@@ -37,14 +37,14 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 
-class EntryPointsAnalysis private (
+class LibraryEntryPointsAnalysis private (
     project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.key
     private[this] final val InstantiabilityKey = Instantiability.key
     private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
     private[this] final val SerializableType = ObjectType.Serializable
-} with DefaultFPCFAnalysis[Method](project, EntryPointsAnalysis.entitySelector) {
+} with DefaultFPCFAnalysis[Method](project, LibraryEntryPointsAnalysis.entitySelector) {
 
     val propertyKey = EntryPoint.key
 
@@ -119,7 +119,7 @@ class EntryPointsAnalysis private (
     }
 }
 
-object EntryPointsAnalysis extends FPCFAnalysisRunner {
+object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
 
     final def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract && !m.isNative ⇒ m
@@ -144,7 +144,7 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
     }
 
     protected[analysis] def start(project: SomeProject): Unit = {
-        new EntryPointsAnalysis(project)
+        new LibraryEntryPointsAnalysis(project)
     }
 
 }

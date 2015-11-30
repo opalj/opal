@@ -75,7 +75,7 @@ object IsReachableDemo extends DefaultOneStepAnalysis {
             FactoryMethodAnalysis,
             InstantiabilityAnalysis,
             MethodAccessibilityAnalysis,
-            EntryPointsAnalysis
+            LibraryEntryPointsAnalysis
         )
 
         theProjectStore.waitOnPropertyComputationCompletion(true)
