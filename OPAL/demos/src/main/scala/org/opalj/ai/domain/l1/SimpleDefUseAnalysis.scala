@@ -32,10 +32,8 @@ package domain
 package l1
 
 import java.net.URL
-
 import scala.language.existentials
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
@@ -43,6 +41,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
@@ -65,49 +64,39 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ) = {
 
+        var analysisTime: Seconds = Seconds.None
         val UnusedDefUseNodes = time {
 
-            val ret = new ConcurrentLinkedQueue[String]
+            val results = new ConcurrentLinkedQueue[String]
+            val ai = new InterruptableAI[Domain]
 
             theProject.parForeachMethodWithBody() { m ⇒
-
                 val (_, classFile, method) = m
 
-                try {
+                val domain = new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
 
-                    val ai = new InterruptableAI[Domain]
+                val result = ai(classFile, method, domain)
 
-                    val domain =
-                        new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
+                val defUseGraph =
+                    result.domain.createDefUseGraph(result.domain.code)
 
-                    val result = ai(classFile, method, domain)
+                def isUnusedNode(n: DefaultMutableNode[ValueOrigin]): Boolean =
+                    n.identifier == Int.MinValue
 
-                    val defUseGraph =
-                        result.domain.createDefUseGraph(result.domain.code)
+                val unusedNode = defUseGraph.find(isUnusedNode).get
 
-                    def isUnusedNode(n: DefaultMutableNode[ValueOrigin]): Boolean =
-                        n.identifier == Int.MinValue
-
-                    val unusedNode = defUseGraph.find(isUnusedNode).get
-
-                    if (!unusedNode.children.isEmpty)
-                        ret.add( //TODO Think about nicer output formatting
-                            method.toJava(classFile)+","+
-                                unusedNode.children.map(e ⇒ e.toHRR).mkString+"\n"
-                        )
-
-                } catch {
-                    case t: Throwable ⇒
-                        t.printStackTrace();
-                }
+                if (!unusedNode.children.isEmpty)
+                    results.add( //TODO Think about nicer output formatting
+                        method.toJava(classFile)+","+
+                            unusedNode.children.map(e ⇒ e.toHRR).mkString+"\n"
+                    )
             }
-            ret
+            results
 
-        } { t ⇒ println("Analysis time "+t.toSeconds) }
+        } { t ⇒ analysisTime = t.toSeconds }
 
-        UnusedDefUseNodes.equals(UnusedDefUseNodes)
         BasicReport(
-            UnusedDefUseNodes.toString()
+            UnusedDefUseNodes.toString()+"\nThe analysis took "+analysisTime
         )
     }
 
