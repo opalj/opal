@@ -39,8 +39,7 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class IntegerDivideInstruction extends DivideInstruction {
 
-    final def jvmExceptions: List[ObjectType] =
-        ArithmeticInstruction.jvmExceptions
+    final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
 
     final def nextInstructions(
         currentPC:             PC,
