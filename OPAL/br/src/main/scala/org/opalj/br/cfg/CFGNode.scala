@@ -39,6 +39,10 @@ import org.opalj.graphs.Node
  */
 trait CFGNode extends Node {
 
+    def isBasicBlock: Boolean
+    def isCatchNode: Boolean
+    def isExitNode: Boolean
+
     //
     // MANAGING PREDECESSORS
     //

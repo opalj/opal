@@ -44,6 +44,10 @@ import org.opalj.br.Code
  */
 class BasicBlock(val startPC: PC) extends CFGNode {
 
+    final def isBasicBlock: Boolean = true
+    final def isCatchNode: Boolean = false
+    final def isExitNode: Boolean = false
+
     private[this] var _endPC: PC = 0 // will be initialized at construction time
     private[cfg] def endPC_=(pc: PC): Unit = {
         assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")

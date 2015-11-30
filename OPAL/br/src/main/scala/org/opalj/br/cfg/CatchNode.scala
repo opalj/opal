@@ -46,6 +46,10 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
 
     final def handlerPC: PC = handler.handlerPC
 
+    final def isBasicBlock: Boolean = false
+    final def isCatchNode: Boolean = true
+    final def isExitNode: Boolean = false
+
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //

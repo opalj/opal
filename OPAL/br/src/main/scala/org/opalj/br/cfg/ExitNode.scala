@@ -38,6 +38,10 @@ package org.opalj.br.cfg
  */
 class ExitNode(normalReturn: Boolean) extends CFGNode {
 
+    final def isBasicBlock: Boolean = false
+    final def isCatchNode: Boolean = false
+    final def isExitNode: Boolean = true
+
     override private[cfg] def addSuccessor(successor: CFGNode): Unit =
         throw new UnsupportedOperationException
 
