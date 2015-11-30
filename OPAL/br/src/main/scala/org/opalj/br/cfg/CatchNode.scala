@@ -69,4 +69,6 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
         "shape" → "rectangle"
     )
 
+    override def toString: String = s"CatchNode($handler)"
+
 }
