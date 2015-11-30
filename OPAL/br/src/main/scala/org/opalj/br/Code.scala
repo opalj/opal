@@ -55,14 +55,14 @@ import scala.collection.mutable.Queue
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack:          Int,
-    val maxLocals:         Int,
-    val instructions:      Array[Instruction],
-    val exceptionHandlers: ExceptionHandlers,
-    val attributes:        Attributes
-)
-        extends Attribute
-        with CommonAttributes {
+        val maxStack:          Int,
+        val maxLocals:         Int,
+        val instructions:      Array[Instruction],
+        val exceptionHandlers: ExceptionHandlers,
+        val attributes:        Attributes
+) extends Attribute with CommonAttributes with InstructionsContainer {
+
+    override def instructionsOption: Option[Array[Instruction]] = Some(instructions)
 
     /**
      * Returns a iterator to iterate over the program counters of the instructions

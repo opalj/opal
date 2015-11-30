@@ -39,6 +39,7 @@ import bi.AccessFlagsContexts
 import bi.AccessFlags
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.VisibilityModifier
+import org.opalj.br.instructions.Instruction
 
 /**
  * Represents a single method.
@@ -71,7 +72,9 @@ final class Method private (
         val descriptor:  MethodDescriptor,
         val body:        Option[Code],
         val attributes:  Attributes
-) extends ClassMember with scala.math.Ordered[Method] {
+) extends ClassMember with scala.math.Ordered[Method] with InstructionsContainer {
+
+    final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     final override def isMethod = true
 
