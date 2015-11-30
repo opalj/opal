@@ -102,7 +102,7 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
                 }
             }
             ret
-            
+
         } { t ⇒ println("Analysis time "+t.toSeconds) }
 
         UnusedDefUseNodes.equals(UnusedDefUseNodes)

@@ -58,5 +58,4 @@ trait FPCFAnalysis {
     final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
 
     final def isJeb6Application: Boolean = project.analysisMode eq Jeb6Application
-
 }
