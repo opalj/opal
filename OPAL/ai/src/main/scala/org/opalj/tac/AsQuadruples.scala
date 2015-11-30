@@ -76,7 +76,7 @@ object AsQuadruples {
         val codeSize = instructions.size
 
         // only needed if we find jsr/ret instructions
-        lazy val cfg = CFGFactory.apply(method, classHierarchy)
+        lazy val cfg = CFGFactory.apply(code, classHierarchy)
 
         // Used to determine if we have already transformed the respective instruction.
         val processed = new BitSet(codeSize)
