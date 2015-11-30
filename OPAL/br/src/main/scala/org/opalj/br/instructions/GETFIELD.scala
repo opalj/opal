@@ -49,11 +49,10 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class GETFIELD(
-    declaringClass: ObjectType,
-    name:           String,
-    fieldType:      FieldType
-)
-        extends FieldReadAccess {
+        declaringClass: ObjectType,
+        name:           String,
+        fieldType:      FieldType
+) extends FieldReadAccess {
 
     final def opcode: Opcode = GETFIELD.opcode
 
@@ -67,13 +66,14 @@ case class GETFIELD(
         currentPC:             PC,
         code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC, code))
         else
             Instruction.nextInstructionOrExceptionHandler(
                 this, currentPC, code, ObjectType.NullPointerException
             )
+    }
 
     override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 
