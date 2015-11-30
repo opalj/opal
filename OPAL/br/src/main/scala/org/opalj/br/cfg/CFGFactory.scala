@@ -48,6 +48,9 @@ import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
@@ -153,18 +156,28 @@ object CFGFactory {
                 currentBB
             }
 
-            def connect(sourceBB: BasicBlock, targetBBStartPC: PC): BasicBlock = {
+            /**
+             * Returns the pair consisting of the basic block associated with the current instruction
+             * and the BasicBlock create/associated with targetBBStartPC.
+             */
+            def connect(
+                theSourceBB:     BasicBlock,
+                targetBBStartPC: PC
+            ): ( /*newSourceBB*/ BasicBlock, /*targetBB*/ BasicBlock) = {
                 // We ensure that the basic block associated with the PC `targetBBStartPC`
                 // actually starts with the given PC.
-                var targetBB = bbs(targetBBStartPC)
+                val targetBB = bbs(targetBBStartPC)
                 if (targetBB eq null) {
-                    targetBB = new BasicBlock(targetBBStartPC)
-                    targetBB.setPredecessors(Set(sourceBB))
-                    sourceBB.addSuccessor(targetBB)
-                    bbs(targetBBStartPC) = targetBB
+                    val newTargetBB = new BasicBlock(targetBBStartPC)
+                    newTargetBB.setPredecessors(Set(theSourceBB))
+                    theSourceBB.addSuccessor(newTargetBB)
+                    bbs(targetBBStartPC) = newTargetBB
+                    (theSourceBB, newTargetBB)
                 } else if (targetBB.startPC < targetBBStartPC) {
                     // we have to split the basic block...
                     val newTargetBB = new BasicBlock(targetBBStartPC)
+                    // if a block has to split itself (due to a back link...)
+                    val sourceBB = if (theSourceBB eq targetBB) newTargetBB else theSourceBB
                     newTargetBB.endPC = targetBB.endPC
                     bbs(targetBBStartPC) = newTargetBB
                     // update the bbs associated with the following instruction
@@ -189,16 +202,17 @@ object CFGFactory {
                     newTargetBB.setPredecessors(Set(sourceBB, targetBB))
                     targetBB.setSuccessors(Set(newTargetBB))
                     sourceBB.addSuccessor(newTargetBB)
+                    (sourceBB, newTargetBB)
                 } else {
                     assert(
                         targetBB.startPC == targetBBStartPC,
                         s"targetBB's startPC ${targetBB.startPC} does not equal $pc"
                     )
 
-                    sourceBB.addSuccessor(targetBB)
-                    targetBB.addPredecessor(sourceBB)
+                    theSourceBB.addSuccessor(targetBB)
+                    targetBB.addPredecessor(theSourceBB)
+                    (theSourceBB, targetBB) // <= return
                 }
-                targetBB
             }
 
             (instruction.opcode: @scala.annotation.switch) match {
@@ -230,11 +244,10 @@ object CFGFactory {
                     // hence, we connect this bb with every exception handler in place.
                     var isHandled: Boolean = false
                     val catchNodeSuccessors =
-                        code.exceptionHandlersFor(pc).map { eh ⇒
-                            isHandled =
-                                isHandled ||
-                                    eh.catchType.isEmpty ||
-                                    eh.catchType.get == ObjectType.Throwable
+                        code.handlersFor(pc).map { eh ⇒
+                            val catchType = eh.catchType
+                            isHandled = isHandled ||
+                                catchType.isEmpty || catchType.get == ObjectType.Throwable
                             val catchNode = exceptionHandlers(eh)
                             catchNode.addPredecessor(currentBB)
                             catchNode
@@ -269,20 +282,22 @@ object CFGFactory {
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     // jump
-                    connect(currentBB, pc + IF.branchoffset)
+                    val (selfBB, _ /*targetBB*/ ) = connect(currentBB, pc + IF.branchoffset)
+                    val newCurrentBB = if (selfBB ne currentBB) selfBB else currentBB
                     // fall through case
-                    runningBB = connect(currentBB, code.pcOfNextInstruction(pc))
+                    runningBB = connect(newCurrentBB, code.pcOfNextInstruction(pc))._1
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
                     val SWITCH = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
-                    connect(currentBB, pc + SWITCH.defaultOffset)
-                    SWITCH.jumpOffsets.foreach { offset ⇒ connect(currentBB, pc + offset) }
+                    val (selfBB, _ /*targetBB*/ ) = connect(currentBB, pc + SWITCH.defaultOffset)
+                    val newCurrentBB = if (selfBB ne currentBB) selfBB else currentBB
+                    SWITCH.jumpOffsets.foreach { offset ⇒ connect(newCurrentBB, pc + offset) }
                     runningBB = null
 
                 case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
-                    val currentBB = useRunningBB
+                    val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     currentBB.addSuccessor(normalReturnNode)
                     normalReturnNode.addPredecessor(currentBB)
@@ -290,68 +305,75 @@ object CFGFactory {
 
                 case _ /*ALL STANDARD INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
                     assert(instruction.nextInstructions(pc, code, regularSuccessorsOnly = true).size == 1)
-                    val currentBB = useRunningBB
-                    val jvmExceptions = instruction.jvmExceptions
-                    val isMethodInvoke = instruction.isInstanceOf[MethodInvocationInstruction]
-                    if (jvmExceptions.nonEmpty || 
-                            isMethodInvoke ||
-                            instruction.opcode == INVOKEDYNAMIC.opcode ||
-                            instruction.opcode == ATHROW.opcode) {
-                        def linkWithExceptionHandler(eh: ExceptionHandler): Unit = {
-                            val catchNode = exceptionHandlers(eh)
-                            currentBB.addSuccessor(catchNode)
-                            catchNode.addPredecessor(currentBB)
-                        }
-                        
-                        // FIXME... we have to handle exceptions related to athrow and invokedynamic (and also finally handlers)
 
-                        val exceptionsToHandle: Iterable[ObjectType] =
-                            if (isMethodInvoke) {
-                                val handlers = code.handlersFor(pc)
-                                val nonFinallyHandlers = handlers.filter(_.catchType.isDefined)
-                                val caughtExceptions = nonFinallyHandlers.map(_.catchType.get).toList
-                                if (!caughtExceptions.exists(_ eq ObjectType.Throwable)) {
-                                    // We add "Throwable" to make sure that - if any exception
-                                    // occurs - we never miss an edge. Actually, we have
-                                    // no idea which exceptions may be thrown.
-                                    val allExceptions = caughtExceptions ++ Iterable(ObjectType.Throwable)
-                                    allExceptions
-                                } else {
-                                    caughtExceptions
-                                }
-                            } else {
-                                jvmExceptions
-                            }
-                        exceptionsToHandle.foreach { thrownException ⇒
+                    val currentBB = useRunningBB()
+
+                    def linkWithExceptionHandler(eh: ExceptionHandler): Unit = {
+                        val catchNode = exceptionHandlers(eh)
+                        currentBB.addSuccessor(catchNode)
+                        catchNode.addPredecessor(currentBB)
+                    }
+
+                    def endBasicBlock(): Unit = {
+                        // this instruction may throw an exception; hence it ends this
+                        // basic block
+                        currentBB.endPC = pc
+                        val nextPC = code.pcOfNextInstruction(pc)
+                        runningBB = connect(currentBB, nextPC)._2
+                    }
+
+                    instruction.opcode match {
+                        case INVOKEDYNAMIC.opcode |
+                            INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
+                            INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
+                            // just treat every exception handler as a potential target
                             val isHandled = code.handlersFor(pc).exists { eh ⇒
                                 if (eh.catchType.isEmpty) {
                                     linkWithExceptionHandler(eh)
                                     true // also aborts the evaluation
                                 } else {
-                                    val isCaught = isSubtypeOf(thrownException, eh.catchType.get)
-                                    if (isCaught.isYes) {
-                                        linkWithExceptionHandler(eh)
-                                        true // also aborts the evaluation
-                                    } else if (isCaught.isUnknown) {
-                                        linkWithExceptionHandler(eh)
-                                        false
-                                    } else {
-                                        false
-                                    }
+                                    linkWithExceptionHandler(eh)
+                                    false
                                 }
                             }
                             if (!isHandled) {
-                                // also connect with exit
+                                // also connect with exit unless we found a finally handler
                                 currentBB.addSuccessor(abnormalReturnNode)
                                 abnormalReturnNode.addPredecessor(currentBB)
                             }
-                        }
+                            endBasicBlock()
 
-                        // this instruction may throw an exception; hence it ends this
-                        // basic block
-                        currentBB.endPC = pc
-                        val nextPC = code.pcOfNextInstruction(pc)
-                        runningBB = connect(currentBB, nextPC)
+                        case _ ⇒
+                            val jvmExceptions = instruction.jvmExceptions
+                            var areHandled = true
+                            jvmExceptions.foreach { thrownException ⇒
+                                areHandled &= code.handlersFor(pc).exists { eh ⇒
+                                    val catchType = eh.catchType
+                                    if (catchType.isEmpty) {
+                                        linkWithExceptionHandler(eh)
+                                        true // also aborts the evaluation
+                                    } else {
+                                        val isCaught = isSubtypeOf(thrownException, catchType.get)
+                                        if (isCaught.isYes) {
+                                            linkWithExceptionHandler(eh)
+                                            true // also aborts the evaluation
+                                        } else if (isCaught.isUnknown) {
+                                            linkWithExceptionHandler(eh)
+                                            false
+                                        } else {
+                                            false
+                                        }
+                                    }
+                                }
+                            }
+                            if (!areHandled) {
+                                // also connect with exit unless all exceptions are handled
+                                currentBB.addSuccessor(abnormalReturnNode)
+                                abnormalReturnNode.addPredecessor(currentBB)
+                            }
+                            if (jvmExceptions.nonEmpty) {
+                                endBasicBlock()
+                            }
                     }
             }
             previousPC = pc
@@ -362,7 +384,8 @@ object CFGFactory {
         if (subroutineReturnPCs.nonEmpty) {
             for ((subroutinePC, returnAddresses) ← subroutineReturnPCs) {
                 val returnBBs = returnAddresses.map(bbs(_)).toSet[CFGNode]
-                val retBBs = bbs(subroutinePC).reachable(true).filter(bb ⇒ bb.successors.isEmpty && bb.isInstanceOf[BasicBlock])
+                val subroutineBBs = bbs(subroutinePC).reachable(true)
+                val retBBs = subroutineBBs.filter(bb ⇒ bb.successors.isEmpty && bb.isBasicBlock)
                 retBBs.foreach(_.setSuccessors(returnBBs))
                 returnBBs.foreach { returnBB ⇒ returnBB.setPredecessors(retBBs.toSet) }
             }
