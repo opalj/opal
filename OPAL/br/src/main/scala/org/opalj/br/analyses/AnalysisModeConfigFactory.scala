@@ -58,8 +58,8 @@ object AnalysisModeConfigFactory {
         createConfig("desktop pplication")
     }
 
-    private[this] final val jeb6AppConfig: String = {
-        createConfig("jeb6 pplication")
+    private[this] final val jee6WebAppConfig: String = {
+        createConfig("jee6 web application")
     }
 
     def createConfig(value: AnalysisMode): Config = {
@@ -68,7 +68,7 @@ object AnalysisModeConfigFactory {
                 case LibraryWithOpenPackagesAssumption   ⇒ opaConfig
                 case LibraryWithClosedPackagesAssumption ⇒ cpaConfig
                 case DesktopApplication                  ⇒ desktopAppConfig
-                case Jeb6Application                     ⇒ jeb6AppConfig
+                case JEE6WebApplication                  ⇒ jee6WebAppConfig
             }
         )
     }
