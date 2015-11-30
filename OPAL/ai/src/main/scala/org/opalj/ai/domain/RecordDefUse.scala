@@ -247,17 +247,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
-     * Returns the instruction which defined the value used by the instruction with the given `pc`
-     * and which is stored at the stack position with the given valueIndex. The first/top value on
+     * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
+     * and which is stored at the stack position with the given stackIndex. The first/top value on
      * the stack has index 0.
      */
-    def operandOrigin(pc: PC, valueIndex: Int): ValueOrigins = defOps(pc)(valueIndex)
+    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
     /**
-     * Returns the instructions which define the value found in the register variable with
-     * index `valueIndex` and the program counter `pc`.
+     * Returns the instruction(s) which define the value found in the register variable with
+     * index `registerIndex` and the program counter `pc`.
      */
-    def localOrigin(pc: PC, valueIndex: Int): ValueOrigins = defLocals(pc)(valueIndex)
+    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
      * Creates a multi-graph that represents the method's def-use information. I.e.,
