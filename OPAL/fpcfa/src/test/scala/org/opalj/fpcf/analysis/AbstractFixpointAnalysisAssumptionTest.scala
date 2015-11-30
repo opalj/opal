@@ -72,7 +72,7 @@ abstract class AbstractFixpointAnalysisAssumptionTest extends AbstractFixpointAn
                 annotation.elementValuePairs collectFirst (
                     { case ElementValuePair("cpa", EnumValue(_, property)) ⇒ property }
                 )
-            case AnalysisModes.Application ⇒
+            case AnalysisModes.DesktopApplication ⇒
                 annotation.elementValuePairs collectFirst (
                     { case ElementValuePair("application", EnumValue(_, property)) ⇒ property }
                 )
