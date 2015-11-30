@@ -33,10 +33,15 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
-import org.opalj.br.TestSupport
 import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.collection.mutable.UShortSet
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -48,67 +53,107 @@ import org.opalj.util.Nanoseconds
 @RunWith(classOf[JUnitRunner])
 class BuildCFGsForJRE extends FunSpec with Matchers {
 
+    def analyzeProject(name: String, project: SomeProject): Unit = {
+        val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
+        val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
+        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+            val (_, classFile, method) = m
+            val code = method.body.get
+            try {
+                val cfg = time {
+                    CFGFactory(code)
+                } { t ⇒ executionTime.addAndGet(t.timeSpan) }
+
+                // check that each instruction is associated with a basic block
+                if (!code.programCounters.forall { cfg.bb(_) ne null }) {
+                    fail("not all instructions are associated with a basic block")
+                }
+
+                // check the boundaries
+                var allStartPCs = Set.empty[Int]
+                var allEndPCs = Set.empty[Int]
+                val allBBs = cfg.allBBs
+                allBBs.foreach { bb ⇒
+                    if (bb.startPC > bb.endPC)
+                        fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
+                    if (allStartPCs.contains(bb.startPC))
+                        fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${allBBs.mkString(", ")}")
+                    else
+                        allStartPCs += bb.startPC
+
+                    if (allEndPCs.contains(bb.endPC))
+                        fail(s"the endPC ${bb.endPC} is used by multiple basic blocks")
+                    else
+                        allEndPCs += bb.endPC
+                }
+                // check the wiring
+                cfg.allBBs.foreach { bb ⇒
+                    bb.successors.foreach { successorBB ⇒
+                        if (!successorBB.predecessors.contains(bb))
+                            fail(s"the successor $successorBB does not reference its predecessor $bb")
+                    }
+
+                    bb.predecessors.foreach { predecessorBB ⇒
+                        if (!predecessorBB.successors.contains(bb))
+                            fail(s"the predecessor $predecessorBB does not reference its successor $bb")
+                    }
+                }
+
+                // check the correspondence of "instruction.nextInstruction" and the information
+                // contained in the cfg
+                code.foreach { (pc, instruction) ⇒
+                    val nextInstructions = instruction.nextInstructions(pc, code).iterable.toSet
+                    val cfgSuccessors = cfg.successors(pc)
+                    if (nextInstructions != cfgSuccessors) {
+                        fail(s"the instruction ($instruction) with pc $pc has the following "+
+                            s"instruction successors: $nextInstructions and "+
+                            s"the following cfg successors : $cfgSuccessors (${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                    }
+                }
+
+                methodsCount.incrementAndGet()
+            } catch {
+                case t: Throwable ⇒
+                    errors.add(method.toJava(classFile)+":"+t.getMessage)
+            }
+        }
+        if (!errors.isEmpty())
+            fail(s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
+                s"failed for ${errors.size} methods: ${errors.asScala.mkString("\n")}")
+        else
+            info(s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods in ∑ ${Nanoseconds(executionTime.get).toSeconds}")
+    }
+
     describe("computing the cfg") {
 
-        it("should be possible for all methods belonging to the current JDK") {
-            val project = TestSupport.createJREProject
+        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+        import reader.AllClassFiles
 
-            val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
-            val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
-            project.parForeachMethodWithBody(() ⇒ false) { m ⇒
-                val (_, classFile, method) = m
-                val code = method.body.get
-                try {
-                    val cfg = time {
-                        CFGFactory(method)
-                    } { t ⇒ executionTime.addAndGet(t.timeSpan) }
+        it("should be possible for all methods of the JDK") {
+            val project = org.opalj.br.TestSupport.createJREProject
+            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+        }
 
-                    // check that each instruction is associated with a basic block
-                    if (!code.programCounters.forall { cfg.bb(_) ne null }) {
-                        fail("not all instructions are associated with a basic block")
-                    }
+        it("should be possible for all methods of the OPAL 0.3 snapshot") {
+            val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+            val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
+            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+        }
 
-                    // check the boundaries
-                    var allStartPCs = Set.empty[Int]
-                    var allEndPCs = Set.empty[Int]
-                    val allBBs = cfg.allBBs
-                    allBBs.foreach { bb ⇒
-                        if (bb.startPC > bb.endPC)
-                            fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
-                        if (allStartPCs.contains(bb.startPC))
-                            fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${allBBs.mkString(", ")}")
-                        else
-                            allStartPCs += bb.startPC
+        it("should be possible for all methods of the OPAL-08-14-2014 snapshot") {
+            val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+            val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
+                def accept(dir: java.io.File, name: String) =
+                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
+            })
+            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
+            opalJARs.size should not be (0)
+            val project = Project(AllClassFiles(opalJARs), Traversable.empty)
 
-                        if (allEndPCs.contains(bb.endPC))
-                            fail(s"the endPC ${bb.endPC} is used by multiple basic blocks")
-                        else
-                            allEndPCs += bb.endPC
-                    }
-                    // check the wiring
-                    cfg.allBBs.foreach { bb ⇒
-                        bb.successors.foreach { successorBB ⇒
-                            if (!successorBB.predecessors.contains(bb))
-                                fail(s"the successor $successorBB does not reference its predecessor $bb")
-                        }
-
-                        bb.predecessors.foreach { predecessorBB ⇒
-                            if (!predecessorBB.successors.contains(bb))
-                                fail(s"the predecessor $predecessorBB does not reference its successor $bb")
-                        }
-                    }
-                    methodsCount.incrementAndGet()
-                } catch {
-                    case t: Throwable ⇒
-                        errors.add(method.toJava(classFile)+":"+t.getMessage)
-                }
-            }
-            if (!errors.isEmpty())
-                fail(s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
-                    s"failed for ${errors.size} methods: ${errors.asScala.mkString("\n")}")
-            else
-                info(s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods in ${Nanoseconds(executionTime.get).toSeconds}")
+            time {
+                analyzeProject("OPAL-08-14-2014 snapshot", project)
+            } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
     }
 }
