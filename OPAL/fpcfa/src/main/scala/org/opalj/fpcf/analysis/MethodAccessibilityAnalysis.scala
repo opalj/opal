@@ -122,7 +122,7 @@ class MethodAccessibilityAnalysis private[analysis] (
         }
 
         propertyStore.require(
-            method, MethodAccessibilityAnalysis.propertyKey,
+            method, ProjectAccessibility.key,
             method, CallableFromClassesInOtherPackages.key
         )(
             c
@@ -134,8 +134,6 @@ class MethodAccessibilityAnalysis private[analysis] (
  * Companion object for the [[MethodAccessibilityAnalysis]] class.
  */
 object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
-
-    private[MethodAccessibilityAnalysis] final val propertyKey = ProjectAccessibility.key
 
     def entitySelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
