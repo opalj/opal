@@ -34,7 +34,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 
@@ -48,10 +47,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CodeAttributeTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */
-        with ParallelTestExecution {
+class CodeAttributeTest extends FlatSpec with Matchers {
 
     import CodeAttributeTest._
 
@@ -95,7 +91,7 @@ class CodeAttributeTest
     it should "be able to collect all jump targets" in {
         codeOfPut.collectWithIndex({
             case (pc, cbi: SimpleConditionalBranchInstruction) ⇒
-                Seq(cbi.indexOfNextInstruction(pc, codeOfPut), pc + cbi.branchoffset)
+                Seq(cbi.indexOfNextInstruction(pc)(codeOfPut), pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }
 

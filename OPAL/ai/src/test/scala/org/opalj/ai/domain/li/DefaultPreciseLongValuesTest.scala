@@ -37,7 +37,6 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
 
 /**
  * This test(suite) checks if DefaultPreciseLongValues is working fine
@@ -45,7 +44,7 @@ import org.scalatest.ParallelTestExecution
  * @author Riadh Chtara
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseLongValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
+class DefaultPreciseLongValuesTest extends FlatSpec with Matchers {
 
     object LongValuesTestDomain
         extends Domain

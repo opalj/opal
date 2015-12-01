@@ -37,7 +37,6 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.br.ObjectType
 
@@ -47,10 +46,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseIntegerValuesTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultPreciseIntegerValuesTest extends FlatSpec with Matchers {
 
     import DefaultPreciseIntegerValuesTest._
     val TestDomain = new DefaultPreciseIntegerValuesTest.TestDomain
@@ -158,7 +154,6 @@ object DefaultPreciseIntegerValuesTest {
             with IgnoreSynchronization {
 
         override def maxUpdatesForIntegerValues: Long = 5
-
     }
 
     val testClassFileName = "classfiles/ai.jar"

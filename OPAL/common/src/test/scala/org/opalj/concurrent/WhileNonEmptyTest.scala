@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
+
 import scala.concurrent.ExecutionContext
 
 /**
@@ -45,7 +45,7 @@ import scala.concurrent.ExecutionContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class WhileNonEmptyTest extends FunSpec with Matchers with ParallelTestExecution {
+class WhileNonEmptyTest extends FunSpec with Matchers {
 
     final val ThreadPool = ThreadPoolN(128)
     implicit final val TestExecutionContext = ExecutionContext.fromExecutorService(ThreadPool)

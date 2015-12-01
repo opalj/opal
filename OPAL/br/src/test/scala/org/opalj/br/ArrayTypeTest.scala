@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
 
 /**
  * Tests that Array types are represented as specified.
@@ -38,7 +37,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ArrayTypeTest extends FunSuite with ParallelTestExecution {
+class ArrayTypeTest extends FunSuite {
 
     test("ArrayType (Array of References) Field Descriptor") {
         val fieldType = FieldType("[Ljava/lang/Object;")

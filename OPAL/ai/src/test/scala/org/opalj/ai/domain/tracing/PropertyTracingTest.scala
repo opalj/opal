@@ -37,7 +37,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
@@ -50,7 +49,7 @@ import br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecution {
+class PropertyTracingTest extends FlatSpec with Matchers {
 
     import PropertyTracingTest._
 
@@ -104,13 +103,9 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
          */
         val method = classFile.findMethod(name).get
         val domain = new AnalysisDomain(method)
+        val code = method.body.get
         val result = BaseAI(classFile, method, domain)
-        dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result
-        ) { f(domain) }
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 
     behavior of "an abstract interpreter that enables the tracing of control-flow dependent properties"
@@ -178,6 +173,5 @@ private object PropertyTracingTest {
 
     val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
-    val classFile = classFiles.map(_._1).
-        find(_.thisType.fqn == "ai/domain/Sanitization").get
+    val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/domain/Sanitization").get
 }

@@ -44,9 +44,7 @@ import org.opalj.log.GlobalLogContext
  * @author Tobias Becker
  */
 @RunWith(classOf[JUnitRunner])
-class JoinObjectTypesTest
-        extends FunSpec
-        with Matchers {
+class JoinObjectTypesTest extends FunSpec with Matchers {
 
     val classhierachy =
         ClassHierarchy(

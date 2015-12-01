@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
+
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
 import org.opalj.br.{LongType, FloatType, DoubleType}
@@ -53,7 +53,7 @@ import org.opalj.br.ComputationalType
  * @author Christos Votskos
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultArraysTest extends FunSpec with Matchers {
 
     import DefaultArraysTest._
 
@@ -61,16 +61,10 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
         val domain = new DefaultArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
+        val code = method.body.get
         val result = BaseAI(classFile, method, domain)
 
-        dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result
-        ) {
-                f(domain)
-            }
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 
     describe("array initializations") {

@@ -33,7 +33,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 /**
  * Tests the matching of access flags.
@@ -41,7 +40,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AccessFlagsMatcherTest extends FlatSpec with Matchers with ParallelTestExecution {
+class AccessFlagsMatcherTest extends FlatSpec with Matchers {
 
     import AccessFlagsMatcher._
 

@@ -43,7 +43,7 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Florian Brandherm
  * @author Daniel Klauer
  */
-trait AnalysisTest extends FlatSpec with Matchers with ParallelTestExecution {
+trait AnalysisTest extends FlatSpec with Matchers {
 
     protected def println(m: String): Unit = { info(m) }
 

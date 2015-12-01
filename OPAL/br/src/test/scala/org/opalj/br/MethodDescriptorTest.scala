@@ -30,13 +30,12 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
 
 /**
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class MethodDescriptorTest extends FunSuite with ParallelTestExecution {
+class MethodDescriptorTest extends FunSuite {
 
     test("Parsing: ()V") {
         val md = MethodDescriptor("()V")

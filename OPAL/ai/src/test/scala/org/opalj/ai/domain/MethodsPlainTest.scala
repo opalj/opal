@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.matchers.MatchResult
 
@@ -52,10 +52,7 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsPlainTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */
-        with ParallelTestExecution {
+class MethodsPlainTest extends FlatSpec with Matchers {
 
     private[this] val IrrelevantPC = Int.MinValue
 

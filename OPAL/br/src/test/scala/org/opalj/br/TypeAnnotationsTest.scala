@@ -33,7 +33,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 
@@ -46,7 +45,7 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TypeAnnotationsTest extends FlatSpec with Matchers with ParallelTestExecution {
+class TypeAnnotationsTest extends FlatSpec with Matchers {
 
     import TypeAnnotationsTest._
 
@@ -85,11 +84,10 @@ private object TypeAnnotationsTest {
     //
     //
 
-    val project =
-        Project(
-            ClassFiles(locateTestResources("classfiles/TypeAnnotations.jar", "bi")),
-            Traversable.empty
-        )
+    val project = {
+        val testResources = locateTestResources("classfiles/TypeAnnotations.jar", "bi")
+        Project(ClassFiles(testResources), Traversable.empty)
+    }
 
     //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/ATypeAnnotationUser.class
     //Compiled from "ATypeAnnotationUser.java"

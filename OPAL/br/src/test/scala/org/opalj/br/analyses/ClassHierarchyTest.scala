@@ -47,7 +47,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
-class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll */ {
+class ClassHierarchyTest extends FlatSpec with Matchers {
 
     // -----------------------------------------------------------------------------------
     //

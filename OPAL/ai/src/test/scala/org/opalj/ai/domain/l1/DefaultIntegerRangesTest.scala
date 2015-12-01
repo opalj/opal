@@ -35,9 +35,10 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
+
 import org.opalj.br.{ObjectType, ArrayType, IntegerType}
 import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
+
 /**
  * Tests the IntegerRanges Domain.
  *
@@ -46,7 +47,7 @@ import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfInteger
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000

@@ -35,7 +35,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 
@@ -48,10 +47,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectIndexTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class ProjectIndexTest extends FlatSpec with Matchers {
 
     import ProjectIndexTest._
     //

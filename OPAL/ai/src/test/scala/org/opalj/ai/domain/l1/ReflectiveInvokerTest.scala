@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.junit.JUnitRunner
 
 import br._
@@ -47,7 +47,7 @@ import br._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
+class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
     private[this] val IrrelevantPC = Int.MinValue
 

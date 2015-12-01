@@ -35,15 +35,15 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
-import br._
-import br.reader.Java8Framework.ClassFiles
-import l0._
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.ai.domain.l0._
 
 /**
  * Basic tests of the abstract interpreter related to handling arrays.
@@ -51,10 +51,7 @@ import l0._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithArraysTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class MethodsWithArraysTest extends FlatSpec with Matchers {
 
     import MethodsWithArraysTest._
 
@@ -84,16 +81,10 @@ class MethodsWithArraysTest
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get
+        val code = method.body.get
         val result = BaseAI(classFile, method, domain)
 
-        dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result
-        ) {
-                f(domain)
-            }
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 
     behavior of "the abstract interpreter"

@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 
 import org.opalj.br._
@@ -49,10 +49,7 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPerInstructionPostProcessingTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
 
     import domain.l1
     import MethodsWithExceptionsTest._
@@ -60,8 +57,7 @@ class DefaultPerInstructionPostProcessingTest
 
     class DefaultRecordingDomain(
         val id: String
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy
