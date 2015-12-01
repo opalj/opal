@@ -70,6 +70,30 @@ class MutableNodeLike[I, N <: Node](
 
     def children: List[N] = this.synchronized(theChildren)
 
+    var parents: List[Node] = this.synchronized(Nil)
+
+    lazy val exitNode: DefaultMutableNode[String] = {
+        val exitNode = new DefaultMutableNode[String]("Exit Node")
+
+        this.linkChildren(exitNode)
+
+        exitNode
+    }
+
+    def linkChildren(exitNode: DefaultMutableNode[String]): Unit = {
+        if (hasSuccessors) {
+            for (child ← children) {
+                val c = child.asInstanceOf[MutableNode[I, N]]
+                if (c.parents.count(_ == this) < children.count(_ == child)) {
+                    c.addParent(this)
+                    c.linkChildren(exitNode)
+                }
+            }
+        } else {
+            exitNode.addParent(this)
+        }
+    }
+
     def updateIdentifier(newIdentifier: I) =
         this.synchronized(theIdentifier = newIdentifier)
 
@@ -83,6 +107,10 @@ class MutableNodeLike[I, N <: Node](
 
     def addChildren(furtherChildren: List[N]): Unit = {
         this.synchronized(theChildren = theChildren ::: furtherChildren)
+    }
+
+    def addParent(node: Node): Unit = {
+        this.synchronized(parents = node :: parents)
     }
 
     def hasOneChild: Boolean = this.synchronized(children.nonEmpty && children.tail.isEmpty)
@@ -102,6 +130,5 @@ class MutableNodeLike[I, N <: Node](
     }
 
     override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
-
 }
 

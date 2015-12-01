@@ -55,7 +55,15 @@ trait MutableNode[I, N <: Node] extends Node {
 
     def children: List[N]
 
+    var parents: List[Node]
+
     def addChild(node: N): Unit
+
+    def addParent(node: Node): Unit
+
+    def exitNode: DefaultMutableNode[String]
+
+    def linkChildren(exitNode: DefaultMutableNode[String]): Unit
 
     def hasOneChild: Boolean
 
