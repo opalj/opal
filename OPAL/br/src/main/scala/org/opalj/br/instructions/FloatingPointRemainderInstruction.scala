@@ -37,16 +37,18 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class FloatingPointRemainderInstruction
-        extends RemainderInstruction {
+abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
 }

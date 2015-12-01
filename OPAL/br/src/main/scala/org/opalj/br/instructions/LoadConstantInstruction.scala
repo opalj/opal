@@ -37,9 +37,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class LoadConstantInstruction[T]
-        extends Instruction
-        with ConstantLengthInstruction {
+abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengthInstruction {
 
     /**
      * The value that is put onto the stack.
@@ -55,10 +53,13 @@ abstract class LoadConstantInstruction[T]
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 

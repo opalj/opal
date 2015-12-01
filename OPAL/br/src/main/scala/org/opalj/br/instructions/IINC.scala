@@ -65,10 +65,11 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
 
     final def indexOfWrittenLocal: Int = lvIndex
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: PC)(implicit code: Code): PC = {
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+    }
 
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): PC = {
         if (modifiedByWide) {
             currentPC + 1 + 4
         } else {
@@ -77,10 +78,13 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
     }
     override def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
 

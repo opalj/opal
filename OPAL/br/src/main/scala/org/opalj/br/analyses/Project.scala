@@ -407,8 +407,7 @@ class Project[Source] private (
      * Returns true if the given type file belongs to the library part of the project.
      * This is generally the case if no class file was loaded for the given type.
      */
-    def isLibraryType(objectType: ObjectType): Boolean =
-        !projectTypes.contains(objectType)
+    def isLibraryType(objectType: ObjectType): Boolean = !projectTypes.contains(objectType)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
@@ -416,8 +415,7 @@ class Project[Source] private (
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    def source(objectType: ObjectType): Option[Source] =
-        sources.get(objectType)
+    def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.

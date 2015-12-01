@@ -44,11 +44,13 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
 
     def methodDescriptor: MethodDescriptor
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         if (methodDescriptor.returnType.isVoidType) 0 else 1
+    }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
+    }
 
     final def readsLocal: Boolean = false
 
@@ -65,14 +67,16 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
      */
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else {
             val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
-            exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
+            exceptionHandlerPCs + indexOfNextInstruction(currentPC)
         }
     }
 }

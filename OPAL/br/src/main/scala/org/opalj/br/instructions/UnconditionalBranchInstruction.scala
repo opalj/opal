@@ -56,8 +56,10 @@ abstract class UnconditionalBranchInstruction
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         UShortSet(currentPC + branchoffset)
     }

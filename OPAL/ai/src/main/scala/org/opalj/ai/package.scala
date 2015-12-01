@@ -427,7 +427,7 @@ package object ai {
                     result = f(params) :: result
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc, code)
+            pc = instruction.indexOfNextInstruction(pc)(code)
         }
         result.reverse
     }
@@ -448,7 +448,7 @@ package object ai {
             if (operands ne null) {
                 f(pc, instruction, operands)
             }
-            pc = instruction.indexOfNextInstruction(pc, code)
+            pc = instruction.indexOfNextInstruction(pc)(code)
         }
     }
 

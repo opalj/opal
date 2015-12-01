@@ -38,10 +38,8 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class CHECKCAST(
-    referenceType: ReferenceType
-)
-        extends Instruction
-        with ConstantLengthInstruction {
+        referenceType: ReferenceType
+) extends Instruction with ConstantLengthInstruction {
 
     final def opcode: Opcode = CHECKCAST.opcode
 
@@ -51,8 +49,9 @@ case class CHECKCAST(
 
     final def length: Int = 3
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
+    }
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
@@ -68,14 +67,16 @@ case class CHECKCAST(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.ClassCastException
+                this, currentPC, ObjectType.ClassCastException
             )
     }
 

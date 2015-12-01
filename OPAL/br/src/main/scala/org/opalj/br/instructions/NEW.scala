@@ -51,8 +51,9 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
+    }
 
     final def readsLocal: Boolean = false
 
@@ -64,15 +65,18 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.OutOfMemoryError
+                this, currentPC, ObjectType.OutOfMemoryError
             )
+    }
 
     override def toString: String = "NEW "+objectType.toJava
 

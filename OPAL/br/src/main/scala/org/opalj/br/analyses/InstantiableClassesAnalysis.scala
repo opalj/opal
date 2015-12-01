@@ -52,7 +52,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *      was not analyzed, the result will be that the class is considered to be
  *      instantiable.
  *
- * This information is relevant in various contexts, e.g., to determine
+ * This information is relevant in various contexts, e.g., to determine a
  * precise call graph. For example, instance methods of those objects that cannot be
  * created are always dead.
  *
@@ -63,6 +63,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
  * }}}
  *
  * @note The analysis does not take reflective instantiations into account!
+ *
+ * @note A more precise analysis is available that uses the fixpoint computations framework.
  *
  * @author Michael Eichberg
  */

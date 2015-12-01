@@ -41,9 +41,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-case class RET(lvIndex: Int)
-        extends ControlTransferInstruction
-        with ConstantLengthInstruction {
+case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLengthInstruction {
 
     final def opcode: Opcode = RET.opcode
 
@@ -53,8 +51,10 @@ case class RET(lvIndex: Int)
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         // the fallback is only used if we have multiple return instructions
         def fallback() = {
@@ -70,7 +70,7 @@ case class RET(lvIndex: Int)
             if (pc != currentPC) {
                 instruction.opcode match {
                     case JSR.opcode | JSR_W.opcode ⇒
-                        jumpTargets = (instruction.indexOfNextInstruction(pc, code)) +≈: jumpTargets
+                        jumpTargets = (instruction.indexOfNextInstruction(pc)) +≈: jumpTargets
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
                         return fallback();

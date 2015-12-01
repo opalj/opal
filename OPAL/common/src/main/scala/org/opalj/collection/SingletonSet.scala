@@ -33,6 +33,8 @@ import scala.collection.Set
 
 /**
  * Facilitates the matching of a set that contains a single value.
+ *
+ * @author Michael Eichberg
  */
 object SingletonSet {
 

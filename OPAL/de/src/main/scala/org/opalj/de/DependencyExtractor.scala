@@ -779,7 +779,7 @@ class DependencyExtractor(
 
                 case _ ⇒
             }
-            i = instruction.indexOfNextInstruction(i, code)
+            i = instruction.indexOfNextInstruction(i)(code)
         }
     }
 
@@ -800,9 +800,7 @@ class DependencyExtractor(
         declaringMethod: VirtualMethod,
         instruction:     INVOKEDYNAMIC
     ): Unit = {
-
         DependencyExtractor.warnAboutIncompleteHandlingOfInvokedynamic()
-
         processInvokedynamicRuntimeDependencies(declaringMethod, instruction)
     }
 

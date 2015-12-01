@@ -247,6 +247,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
+     * Returns the set of all instruction which compute a value that is not used in the following.
+     */
+    def unused(): ValueOrigins = {
+        ???
+    }
+
+    /**
      * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
      * and which is stored at the stack position with the given stackIndex. The first/top value on
      * the stack has index 0.

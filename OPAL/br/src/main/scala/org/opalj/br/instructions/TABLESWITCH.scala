@@ -61,7 +61,7 @@ case class TABLESWITCH(
     def caseValues: Seq[Int] =
         (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
@@ -69,8 +69,10 @@ case class TABLESWITCH(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })

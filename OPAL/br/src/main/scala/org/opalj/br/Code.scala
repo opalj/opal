@@ -419,7 +419,7 @@ final class Code private (
      *      array.
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-        instructions(currentPC).indexOfNextInstruction(currentPC, this)
+        instructions(currentPC).indexOfNextInstruction(currentPC)(this)
         // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
         //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         //        val max_pc = instructions.size

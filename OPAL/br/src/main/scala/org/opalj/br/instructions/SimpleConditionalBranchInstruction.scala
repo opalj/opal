@@ -58,14 +58,18 @@ abstract class SimpleConditionalBranchInstruction
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC), currentPC + branchoffset)
+    }
 
-    override def toString(currentPC: Int) =
+    override def toString(currentPC: Int) = {
         getClass.getSimpleName+
             "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
             ", false=↓)"
+    }
 }
 

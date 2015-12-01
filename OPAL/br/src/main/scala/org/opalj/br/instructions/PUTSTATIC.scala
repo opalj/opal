@@ -41,11 +41,10 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class PUTSTATIC(
-    declaringClass: ObjectType,
-    name:           String,
-    fieldType:      FieldType
-)
-        extends FieldWriteAccess {
+        declaringClass: ObjectType,
+        name:           String,
+        fieldType:      FieldType
+) extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTSTATIC.opcode
 
@@ -57,10 +56,13 @@ case class PUTSTATIC(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     override def toString =
         "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava

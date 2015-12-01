@@ -48,8 +48,9 @@ abstract class MethodvisibilityTest extends AbstractFixpointAnalysisAssumptionTe
 
     override def propertyKey: PropertyKey = ProjectAccessibility.key
 
-    override def propertyAnnotation: ObjectType =
+    override def propertyAnnotation: ObjectType = {
         ObjectType("org/opalj/fpcf/test/annotations/ProjectAccessibilityProperty")
+    }
 
     def defaultValue = ProjectAccessibilityKeys.Global.toString
 }

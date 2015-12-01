@@ -34,9 +34,7 @@ package analyses
  * The ''key'' object to get information about the classes that can be instantiated
  * (either, directly or indirectly).
  *
- * @example
- *      To get the index use the [[Project]]'s `get` method and pass in
- *      `this` object.
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
  * @author Michael Eichberg
  */
@@ -53,7 +51,6 @@ object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses]
      * Computes the information which classes are (not) instantiable.
      */
     override protected def compute(project: SomeProject): InstantiableClasses = {
-
         InstantiableClassesAnalysis.doAnalyze(
             project, () ⇒ Thread.currentThread().isInterrupted()
         )

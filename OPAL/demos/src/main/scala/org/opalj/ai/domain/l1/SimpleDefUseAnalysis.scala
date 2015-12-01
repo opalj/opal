@@ -74,7 +74,6 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
                 val (_, classFile, method) = m
 
                 val domain = new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
-
                 val result = ai(classFile, method, domain)
 
                 val defUseGraph =
