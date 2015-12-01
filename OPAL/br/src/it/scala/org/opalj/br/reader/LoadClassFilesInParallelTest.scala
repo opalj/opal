@@ -52,7 +52,7 @@ import org.opalj.bytecode.JRELibraryFolder
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesInParallelTest extends FlatSpec with Matchers with ParallelTestExecution {
+class LoadClassFilesInParallelTest extends FlatSpec with Matchers {
 
     private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
         classFile.thisType.fqn should not be null
