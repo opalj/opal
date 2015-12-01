@@ -98,7 +98,8 @@ package object analyses {
     type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResults(
-        analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, Iterable[SourceLocationBasedReport[File]]](
             analysis,
@@ -107,7 +108,8 @@ package object analyses {
     }
 
     implicit def fileBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
-        analysis: Analysis[File, Option[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, Option[SourceLocationBasedReport[File]]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, Option[SourceLocationBasedReport[File]]](
             analysis,
@@ -116,7 +118,8 @@ package object analyses {
     }
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResult(
-        analysis: Analysis[File, SourceLocationBasedReport[File]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, SourceLocationBasedReport[File]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, SourceLocationBasedReport[File]](
             analysis,
@@ -125,7 +128,8 @@ package object analyses {
     }
 
     implicit def urlBasedReportableAnalysesToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Iterable[ReportableAnalysisResult]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Iterable[ReportableAnalysisResult]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Iterable[ReportableAnalysisResult]](
             analysis,
@@ -134,7 +138,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Iterable[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Iterable[SourceLocationBasedReport[URL]]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Iterable[SourceLocationBasedReport[URL]]](
             analysis,
@@ -143,7 +148,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisToAnalysisWithReportableResult(
-        analysis: Analysis[URL, SourceLocationBasedReport[URL]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, SourceLocationBasedReport[URL]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, SourceLocationBasedReport[URL]](
             analysis,
@@ -152,7 +158,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Option[SourceLocationBasedReport[URL]]](
             analysis,

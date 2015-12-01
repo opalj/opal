@@ -49,11 +49,12 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
     val fieldValueInformation: FieldValueInformation
 
     override def getfield(
-        pc: PC,
-        objectref: DomainValue,
+        pc:             PC,
+        objectref:      DomainValue,
         declaringClass: ObjectType,
-        fieldName: String,
-        fieldType: FieldType): Computation[DomainValue, ExceptionValue] = {
+        fieldName:      String,
+        fieldType:      FieldType
+    ): Computation[DomainValue, ExceptionValue] = {
 
         val field =
             classHierarchy.resolveFieldReference(
@@ -74,10 +75,11 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
      * Returns the field's value.
      */
     override def getstatic(
-        pc: PC,
+        pc:             PC,
         declaringClass: ObjectType,
-        fieldName: String,
-        fieldType: FieldType): Computation[DomainValue, Nothing] = {
+        fieldName:      String,
+        fieldType:      FieldType
+    ): Computation[DomainValue, Nothing] = {
         val field =
             classHierarchy.resolveFieldReference(
                 declaringClass, fieldName, fieldType, project

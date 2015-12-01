@@ -31,7 +31,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import org.opalj.br.instructions.INVOKESTATIC
 
 /**
@@ -48,12 +48,13 @@ object CountClassForNameCalls extends AnalysisExecutor {
             "Counts the number of times Class.forName is called."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
             var classForNameCount = 0
 
-            import ObjectType.{ String, Class }
+            import ObjectType.{String, Class}
             // Next, we create a descriptor of a method that takes a single parameter of
             // type "String" and that returns a value of type Class.
             val descriptor = MethodDescriptor(String, Class)

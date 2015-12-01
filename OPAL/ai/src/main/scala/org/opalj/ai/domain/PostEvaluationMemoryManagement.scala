@@ -52,9 +52,10 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
     private[this] var newValueAfterException: DomainValue = null
 
     protected def updateAfterExecution(
-        oldValue: DomainValue,
+        oldValue:                DomainValue,
         newValueAfterEvaluation: DomainValue,
-        newValueAfterException: DomainValue): Unit = {
+        newValueAfterException:  DomainValue
+    ): Unit = {
         assert(this.oldValue eq null, "another update is already registered")
 
         assert(oldValue ne null)
@@ -76,14 +77,15 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
     }
 
     abstract override def afterEvaluation(
-        pc: PC,
-        instruction: Instruction,
-        oldOperands: Operands,
-        oldLocals: Locals,
-        targetPC: PC,
+        pc:                       PC,
+        instruction:              Instruction,
+        oldOperands:              Operands,
+        oldLocals:                Locals,
+        targetPC:                 PC,
         isExceptionalControlFlow: Boolean,
-        newOperands: Operands,
-        newLocals: Locals): (Operands, Locals) = {
+        newOperands:              Operands,
+        newLocals:                Locals
+    ): (Operands, Locals) = {
         val oldValue = this.oldValue
         if (oldValue ne null) {
             val (operands1, locals1) =
@@ -97,11 +99,13 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, operands1, locals1)
+                targetPC, isExceptionalControlFlow, operands1, locals1
+            )
         } else
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, newOperands, newLocals)
+                targetPC, isExceptionalControlFlow, newOperands, newLocals
+            )
     }
 
 }

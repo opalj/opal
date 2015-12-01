@@ -52,8 +52,9 @@ trait Callees {
 
     @inline def callees(
         declaringClassType: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor): Set[Method] = {
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): Set[Method] = {
 
         classHierarchy.hasSubtypes(declaringClassType) match {
 

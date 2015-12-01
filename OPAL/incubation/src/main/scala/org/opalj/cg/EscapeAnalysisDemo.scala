@@ -54,9 +54,10 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
         "determins escape information related to object belonging to a specific class"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -90,7 +91,8 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(
             leakageInfo +
                 projectStore+
-                "\nAnalysis time: "+analysisTime)
+                "\nAnalysis time: "+analysisTime
+        )
     }
 }
 

@@ -61,9 +61,10 @@ class AnalysisAggregator[Source, AnalysisResult]
     }
 
     def analyze(
-        project: Project[Source],
-        parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): Iterable[AnalysisResult] =
+        project:                Project[Source],
+        parameters:             Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ): Iterable[AnalysisResult] =
         this.synchronized {
             if (analyzeInParallel) {
                 {

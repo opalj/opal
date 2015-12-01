@@ -37,9 +37,10 @@ package instructions
  */
 case class TABLESWITCH(
     defaultOffset: Int,
-    low: Int,
-    high: Int,
-    jumpOffsets: IndexedSeq[Int])
+    low:           Int,
+    high:          Int,
+    jumpOffsets:   IndexedSeq[Int]
+)
         extends CompoundConditionalBranchInstruction {
 
     final def opcode: Opcode = TABLESWITCH.opcode
@@ -67,9 +68,10 @@ case class TABLESWITCH(
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = {
+        currentPC:             PC,
+        code:                  Code,
+        regularSuccessorsOnly: Boolean
+    ): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })
         pcs

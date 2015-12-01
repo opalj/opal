@@ -59,24 +59,27 @@ trait Code_attributeReader extends AttributeReader {
     protected def Attributes(
         ap: AttributeParent,
         cp: Constant_Pool,
-        in: DataInputStream): Attributes
+        in: DataInputStream
+    ): Attributes
 
     def Code_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        max_stack: Int,
-        max_locals: Int,
-        instructions: Instructions,
-        exception_handlers: ExceptionHandlers,
-        attributes: Attributes): Code_attribute
+        attribute_length:     Int,
+        max_stack:            Int,
+        max_locals:           Int,
+        instructions:         Instructions,
+        exception_handlers:   ExceptionHandlers,
+        attributes:           Attributes
+    ): Code_attribute
 
     def ExceptionTableEntry(
         constant_pool: Constant_Pool,
-        start_pc: Int,
-        end_pc: Int,
-        handler_pc: Int,
-        catch_type: Int): ExceptionTableEntry
+        start_pc:      Int,
+        end_pc:        Int,
+        handler_pc:    Int,
+        catch_type:    Int
+    ): ExceptionTableEntry
 
     //
     // IMPLEMENTATION
@@ -105,7 +108,7 @@ trait Code_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        Code_attributeReader.ATTRIBUTE_NAME -> (
+        Code_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 Code_attribute(
                     cp,

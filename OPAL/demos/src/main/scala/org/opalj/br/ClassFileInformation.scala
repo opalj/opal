@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import org.opalj.br.reader.Java8Framework.{ ClassFile ⇒ ClassFileReader }
+import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
 
 /**
  * Loads class files form a JAR archive and prints the signatures of the classes.

@@ -48,35 +48,41 @@ final case class SameFrame(frameType: Int)
     extends StackMapFrame
 
 final case class SameLocals1StackItemFrame(
-    frameType: Int,
-    verificationTypeInfoStackItem: VerificationTypeInfo)
+    frameType:                     Int,
+    verificationTypeInfoStackItem: VerificationTypeInfo
+)
         extends StackMapFrame
 
 final case class SameLocals1StackItemFrameExtended(
-    frameType: Int,
-    offsetDelta: Int,
-    verificationTypeInfoStackItem: VerificationTypeInfo)
+    frameType:                     Int,
+    offsetDelta:                   Int,
+    verificationTypeInfoStackItem: VerificationTypeInfo
+)
         extends StackMapFrame
 
 final case class ChopFrame(
-    frameType: Int,
-    offsetDelta: Int)
+    frameType:   Int,
+    offsetDelta: Int
+)
         extends StackMapFrame
 
 final case class SameFrameExtended(
-    frameType: Int,
-    offsetDelta: Int)
+    frameType:   Int,
+    offsetDelta: Int
+)
         extends StackMapFrame
 
 final case class AppendFrame(
-    frameType: Int,
-    offsetDelta: Int,
-    verificationTypeInfoLocals: VerificationTypeInfoLocals)
+    frameType:                  Int,
+    offsetDelta:                Int,
+    verificationTypeInfoLocals: VerificationTypeInfoLocals
+)
         extends StackMapFrame
 
 final case class FullFrame(
-    frameType: Int,
-    offsetDelta: Int,
+    frameType:                  Int,
+    offsetDelta:                Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals,
-    verificationTypeInfoStack: VerificationTypeInfoStack)
+    verificationTypeInfoStack:  VerificationTypeInfoStack
+)
         extends StackMapFrame

@@ -54,9 +54,10 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         "identifies method which are pure; i.e. which just operate on the passed parameters"
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
 
@@ -116,7 +117,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
                 "\nMutability of private static non-final fields:\n",
                 "\n",
-                s"\nTotal: ${effectivelyFinalFields.size}\n")
+                s"\nTotal: ${effectivelyFinalFields.size}\n"
+            )
 
         val methodInfo =
             pureMethodsAsStrings.toList.sorted.mkString(
@@ -127,7 +129,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         BasicReport(
             fieldInfo + methodInfo +
                 projectStore+
-                "\nAnalysis time: "+analysisTime)
+                "\nAnalysis time: "+analysisTime
+        )
     }
 }
 

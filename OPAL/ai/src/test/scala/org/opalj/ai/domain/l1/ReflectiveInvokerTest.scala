@@ -172,7 +172,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(
             /*p2=*/ IntegerValue(IrrelevantPC, 3),
             /*p1=*/ IntegerValue(IrrelevantPC, 1),
-            receiver)
+            receiver
+        )
 
         //String <String>.substring(int int)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
@@ -268,7 +269,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(
             /*p2=*/ IntegerValue(IrrelevantPC, 1),
             /*p1=*/ IntegerValue(IrrelevantPC, 3),
-            receiver)
+            receiver
+        )
 
         //String <String>.substring(int /*lower*/, int/*upper*/)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)

@@ -73,9 +73,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * given `pc` is used.
      */
     def mergeMultipleExceptionValues(
-        pc: PC,
+        pc:  PC,
         v1s: ExceptionValues,
-        v2s: ExceptionValues): ExceptionValues = {
+        v2s: ExceptionValues
+    ): ExceptionValues = {
 
         var v: List[ExceptionValue] = Nil
         var remainingv2s = v2s
@@ -100,7 +101,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     protected[this] def mergeDEsComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValues],
-        c2: Computation[DomainValue, ExceptionValues]): Computation[DomainValue, ExceptionValues] = {
+        c2: Computation[DomainValue, ExceptionValues]
+    ): Computation[DomainValue, ExceptionValues] = {
 
         c1 match {
             case ComputationWithResultAndException(r1, e1) ⇒
@@ -108,7 +110,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     case ComputationWithResultAndException(r2, e2) ⇒
                         ComputedValueOrException(
                             mergeDomainValues(pc, r1, r2),
-                            mergeMultipleExceptionValues(pc, e1, e2))
+                            mergeMultipleExceptionValues(pc, e1, e2)
+                        )
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
@@ -145,7 +148,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     protected[this] def mergeEsComputations(
         pc: PC,
         c1: Computation[Nothing, ExceptionValues],
-        c2: Computation[Nothing, ExceptionValues]): Computation[Nothing, ExceptionValues] = {
+        c2: Computation[Nothing, ExceptionValues]
+    ): Computation[Nothing, ExceptionValues] = {
 
         (c1, c2) match {
             case (ComputationWithException(e1), ComputationWithException(e2)) ⇒
@@ -168,7 +172,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     protected[this] def mergeDEComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValue],
-        c2: Computation[DomainValue, ExceptionValue]): Computation[DomainValue, ExceptionValue] = {
+        c2: Computation[DomainValue, ExceptionValue]
+    ): Computation[DomainValue, ExceptionValue] = {
 
         c1 match {
             case ComputationWithResultAndException(r1, e1) ⇒
@@ -176,13 +181,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     case ComputationWithResultAndException(r2, e2) ⇒
                         ComputedValueOrException(
                             mergeDomainValues(pc, r1, r2) /*Value*/ ,
-                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
+                        )
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
                         ComputedValueOrException(
                             r1,
-                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
+                        )
                 }
 
             case ComputationWithResult(r1) ⇒
@@ -200,12 +207,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     case ComputationWithResultAndException(r2, e2) ⇒
                         ComputedValueOrException(
                             r2,
-                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
+                        )
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) ⇒
                         ThrowsException(
-                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue]
+                        )
                 }
         }
     }
@@ -257,7 +266,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         final override def computationalType = ComputationalTypeReference
 
         final override def asDomainValue(
-            implicit targetDomain: Domain): targetDomain.DomainReferenceValue = {
+            implicit
+            targetDomain: Domain
+        ): targetDomain.DomainReferenceValue = {
             if (targetDomain ne domain)
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain"
@@ -313,9 +324,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             justThrows(VMNullPointerException(pc))
 
         final override def store(
-            pc: PC,
+            pc:    PC,
             value: DomainValue,
-            index: DomainValue): ArrayStoreResult =
+            index: DomainValue
+        ): ArrayStoreResult =
             justThrows(VMNullPointerException(pc))
 
         final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
@@ -363,9 +375,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * Called by the load method if the index is potentially valid.
          */
         /*ABSTRACT*/ protected def doLoad(
-            pc: PC,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayLoadResult
+            pc:                  PC,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayLoadResult
 
         /**
          * @note It is in general not necessary to override this method. If you need some
@@ -400,10 +413,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * the index is potentially valid.
          */
         /*ABSTRACT*/ protected def doStore(
-            pc: PC,
-            value: DomainValue,
-            index: DomainValue,
-            thrownExceptions: ExceptionValues): ArrayStoreResult
+            pc:               PC,
+            value:            DomainValue,
+            index:            DomainValue,
+            thrownExceptions: ExceptionValues
+        ): ArrayStoreResult
 
         /**
          * @note It is in general not necessary to override this method. If you need some
@@ -411,9 +425,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          *      [[doStore]].
          */
         override def store(
-            pc: PC,
+            pc:    PC,
             value: DomainValue,
-            index: DomainValue): ArrayStoreResult = {
+            index: DomainValue
+        ): ArrayStoreResult = {
             // @note
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class
@@ -544,8 +559,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     final override def isValueSubtypeOf(
-        value: DomainValue,
-        supertype: ReferenceType): Answer =
+        value:     DomainValue,
+        supertype: ReferenceType
+    ): Answer =
         asReferenceValue(value).isValueSubtypeOf(supertype)
 
     /**
@@ -573,9 +589,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      cases in a generic manner.
      */
     override def newarray(
-        pc: PC,
-        count: DomainValue,
-        componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
+        pc:            PC,
+        count:         DomainValue,
+        componentType: FieldType
+    ): Computation[DomainValue, ExceptionValue] = {
         val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
         if (validCount.isNo)
             return throws(VMNegativeArraySizeException(pc))
@@ -595,9 +612,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      cases in a generic manner.
      */
     override def multianewarray(
-        pc: PC,
-        counts: List[DomainValue],
-        arrayType: ArrayType): Computation[DomainArrayValue, ExceptionValue] = {
+        pc:        PC,
+        counts:    List[DomainValue],
+        arrayType: ArrayType
+    ): Computation[DomainArrayValue, ExceptionValue] = {
         var validCounts: Answer = Yes
         counts foreach { (count) ⇒
             val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
@@ -631,9 +649,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      `ArrayValue`.
      */
     override def arrayload(
-        pc: PC,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayLoadResult = {
+        pc:       PC,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayLoadResult = {
         // if the bytecode is valid, the type cast (asArrayValue) is safe
         asArrayAbstraction(arrayref).load(pc, index)
     }
@@ -647,10 +666,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      `ArrayValue`.
      */
     override def arraystore(
-        pc: PC,
-        value: DomainValue,
-        index: DomainValue,
-        arrayref: DomainValue): ArrayStoreResult = {
+        pc:       PC,
+        value:    DomainValue,
+        index:    DomainValue,
+        arrayref: DomainValue
+    ): ArrayStoreResult = {
         // if the bytecode is valid, the type cast (asArrayValue) is safe
         asArrayAbstraction(arrayref).store(pc, value, index)
     }
@@ -663,8 +683,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      some special handling refine the trait `ArrayValue`.
      */
     override def arraylength(
-        pc: PC,
-        arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
+        pc:       PC,
+        arrayref: DomainValue
+    ): Computation[DomainValue, ExceptionValue] = {
         asArrayAbstraction(arrayref).length(pc)
     }
 
@@ -700,8 +721,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     override def NullValue(pc: PC): DomainNullValue
 
     override def ReferenceValue(
-        pc: PC,
-        upperTypeBound: ReferenceType): AReferenceValue = {
+        pc:             PC,
+        upperTypeBound: ReferenceType
+    ): AReferenceValue = {
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else
@@ -724,9 +746,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ObjectValue(pc, ObjectType.Class)
 
     override def InitializedArrayValue(
-        pc: PC,
+        pc:        PC,
         arrayType: ArrayType,
-        counts: List[Int]): DomainArrayValue =
+        counts:    List[Int]
+    ): DomainArrayValue =
         ArrayValue(pc, arrayType)
 
     //
@@ -846,17 +869,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     // runtime/this domain does not support the identification of aliases.
 
     def refSetUpperTypeBoundOfTopOperand(
-        pc: PC,
+        pc:             PC,
         upperTypeBound: ReferenceType,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        operands:       Operands,
+        locals:         Locals
+    ): (Operands, Locals) = {
         (ReferenceValue(pc, upperTypeBound) :: operands.tail, locals)
     }
 
     override def refTopOperandIsNull(
-        pc: PC,
+        pc:       PC,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         (NullValue(pc /*Irrelevant - at least here*/ ) :: operands.tail, locals)
     }
 

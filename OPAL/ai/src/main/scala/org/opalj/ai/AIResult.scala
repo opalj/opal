@@ -207,15 +207,17 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
-        theStrictfp: Boolean,
-        theCode: Code,
+        theStrictfp:         Boolean,
+        theCode:             Code,
         theJoinInstructions: BitSet,
-        theDomain: Domain)(
-            theWorklist: List[PC],
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
+        theDomain:           Domain
+    )(
+        theWorklist:                         List[PC],
+        theEvaluated:                        List[PC],
+        theOperandsArray:                    theDomain.OperandsArray,
+        theLocalsArray:                      theDomain.LocalsArray,
+        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+    ): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val strictfp: Boolean = theStrictfp
@@ -229,10 +231,13 @@ object AIResultBuilder {
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             def continueInterpretation(
-                ai: AI[_ >: domain.type]): AIResult =
+                ai: AI[_ >: domain.type]
+            ): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain)(
-                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+                    strictfp, code, joinInstructions, domain
+                )(
+                    worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
+                )
 
         }
     }
@@ -243,13 +248,15 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
-        theStrictfp: Boolean,
-        theCode: Code,
+        theStrictfp:         Boolean,
+        theCode:             Code,
         theJoinInstructions: BitSet,
-        theDomain: Domain)(
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
+        theDomain:           Domain
+    )(
+        theEvaluated:     List[PC],
+        theOperandsArray: theDomain.OperandsArray,
+        theLocalsArray:   theDomain.LocalsArray
+    ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val strictfp: Boolean = theStrictfp
@@ -262,10 +269,13 @@ object AIResultBuilder {
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
 
             def restartInterpretation(
-                ai: AI[_ >: theDomain.type]): AIResult =
+                ai: AI[_ >: theDomain.type]
+            ): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain)(
-                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+                    strictfp, code, joinInstructions, domain
+                )(
+                    List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
+                )
 
         }
     }

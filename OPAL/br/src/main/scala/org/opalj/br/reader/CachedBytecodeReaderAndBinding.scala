@@ -56,8 +56,9 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
      * [[org.opalj.br.instructions.Instruction]]s.
      */
     def Instructions(
-        cp: Constant_Pool,
-        source: Array[Byte]): Instructions = {
+        cp:     Constant_Pool,
+        source: Array[Byte]
+    ): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -230,7 +231,8 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 116 ⇒ INEG
                 case 193 ⇒
                     cache.INSTANCEOF(
-                        cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
+                        cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
+                    )
                 case 186 ⇒ // INVOKEDYNAMIC
                     val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
@@ -250,28 +252,32 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     INVOKEINTERFACE(
                         declaringClass.asObjectType,
                         cache.MethodName(name),
-                        methodDescriptor)
+                        methodDescriptor
+                    )
                 case 183 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp)
                     INVOKESPECIAL(
                         declaringClass.asObjectType,
                         cache.MethodName(name),
-                        methodDescriptor)
+                        methodDescriptor
+                    )
                 case 184 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKESTATIC(
                         declaringClass.asObjectType,
                         cache.MethodName(name),
-                        methodDescriptor)
+                        methodDescriptor
+                    )
                 case 182 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKEVIRTUAL(
                         declaringClass,
                         cache.MethodName(name),
-                        methodDescriptor)
+                        methodDescriptor
+                    )
                 case 128 ⇒ IOR
                 case 112 ⇒ IREM
                 case 172 ⇒ IRETURN
@@ -377,7 +383,8 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
 
                 case opcode ⇒
                     throw new BytecodeProcessingFailedException(
-                        "unsupported opcode: "+opcode)
+                        "unsupported opcode: "+opcode
+                    )
             }
 
         }

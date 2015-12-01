@@ -35,15 +35,15 @@ import scala.language.existentials
 
 import java.net.URL
 
-import scala.Console.{ RED, BLUE, RESET, BOLD }
+import scala.Console.{RED, BLUE, RESET, BOLD}
 import scala.util.matching.Regex
-import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
+import scala.collection.{Map ⇒ AMap, Set ⇒ ASet}
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
+import scala.collection.mutable.{Map ⇒ MutableMap, HashSet}
 
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.{ ClassHierarchy, Project, SomeProject }
+import org.opalj.br.analyses.{ClassHierarchy, Project, SomeProject}
 
 import org.opalj.de._
 
@@ -68,12 +68,13 @@ sealed trait SpecificationViolation {
  * @author Marco Torsello
  */
 case class DependencyViolation(
-        project: SomeProject,
+        project:           SomeProject,
         dependencyChecker: DependencyChecker,
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dependencyType: DependencyType,
-        description: String) extends SpecificationViolation {
+        source:            VirtualSourceElement,
+        target:            VirtualSourceElement,
+        dependencyType:    DependencyType,
+        description:       String
+) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {
 
@@ -103,11 +104,12 @@ case class DependencyViolation(
  * @author Marco Torsello
  */
 case class PropertyViolation(
-        project: SomeProject,
+        project:         SomeProject,
         propertyChecker: PropertyChecker,
-        source: VirtualSourceElement,
-        propertyType: String,
-        description: String) extends SpecificationViolation {
+        source:          VirtualSourceElement,
+        propertyType:    String,
+        description:     String
+) extends SpecificationViolation {
 
     override def toString(useAnsiColors: Boolean): String = {
 

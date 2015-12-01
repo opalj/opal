@@ -57,11 +57,12 @@ object FindRealBugsPluginInterface {
      * @return The analyses' reports.
      */
     def analyze(
-        inputFileNames: Iterable[String],
+        inputFileNames:        Iterable[String],
         inputLibraryFileNames: Iterable[String],
-        analyses: Set[AnalysisCreator],
-        progressListener: ProgressListener,
-        progressController: ProgressController): Map[Analysis, AnalysisReports] = {
+        analyses:              Set[AnalysisCreator],
+        progressListener:      ProgressListener,
+        progressController:    ProgressController
+    ): Map[Analysis, AnalysisReports] = {
 
         // TODO [Refactor] Responsibility of the caller!
         if (inputFileNames.size == 0) {
@@ -69,8 +70,9 @@ object FindRealBugsPluginInterface {
         }
 
         def loadClassFilesForPlugin(
-            fileNames: Iterable[String],
-            loadAsLibrary: Boolean): Iterable[(ClassFile, URL)] = {
+            fileNames:     Iterable[String],
+            loadAsLibrary: Boolean
+        ): Iterable[(ClassFile, URL)] = {
             loadClassFiles(
                 fileNames,
                 loadAsLibrary,

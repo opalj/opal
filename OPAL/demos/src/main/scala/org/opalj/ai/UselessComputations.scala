@@ -81,9 +81,10 @@ object UselessComputations extends DefaultOneStepAnalysis {
         "Identifies computations that are useless, e.g., comparison against null if the value is known not be null."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val results = {
             val results = for {
@@ -140,9 +141,10 @@ object UselessComputations extends DefaultOneStepAnalysis {
 
 case class UselessComputation(
         classFile: ClassFile,
-        method: Method,
-        pc: PC,
-        message: String) {
+        method:    Method,
+        pc:        PC,
+        message:   String
+) {
 
     def opcode: Int = method.body.get.instructions(pc).opcode
 

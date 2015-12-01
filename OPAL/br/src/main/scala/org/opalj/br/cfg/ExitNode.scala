@@ -45,7 +45,7 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
         throw new UnsupportedOperationException()
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def nodeId: Long = if (normalReturn) Long.MinValue else Long.MinValue + 1l
@@ -58,16 +58,16 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
     override def visualProperties: Map[String, String] = {
         if (normalReturn)
             Map(
-                "labelloc" -> "l",
-                "fillcolor" -> "green",
-                "style" -> "filled"
+                "labelloc" → "l",
+                "fillcolor" → "green",
+                "style" → "filled"
             )
         else
             Map(
-                "labelloc" -> "l",
-                "fillcolor" -> "red",
-                "style" -> "filled",
-                "shape" -> "octagon"
+                "labelloc" → "l",
+                "fillcolor" → "red",
+                "style" → "filled",
+                "shape" → "octagon"
             )
     }
 

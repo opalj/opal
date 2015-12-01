@@ -60,7 +60,9 @@ class TestSwingMethodInvokedInSwingThread extends AnalysisTest {
                     declaringClass,
                     MethodDescriptor(IndexedSeq.empty, IntegerType),
                     "main",
-                    "Calls Swing methods while outside Swing thread"))
+                    "Calls Swing methods while outside Swing thread"
+                )
+            )
         }
 
     it should "find exactly 1 issue in SwingMethodInvokedInSwingThread.jar" in {

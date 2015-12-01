@@ -44,10 +44,11 @@ trait EnclosingMethod_attributeBinding
     type EnclosingMethod_attribute = br.EnclosingMethod
 
     def EnclosingMethod_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        class_index: Constant_Pool_Index,
-        method_index: Constant_Pool_Index): EnclosingMethod_attribute = {
+        class_index:          Constant_Pool_Index,
+        method_index:         Constant_Pool_Index
+    ): EnclosingMethod_attribute = {
 
         if (method_index == 0)
             new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), None, None)
@@ -56,7 +57,8 @@ trait EnclosingMethod_attributeBinding
             new EnclosingMethod_attribute(
                 cp(class_index).asObjectType(cp),
                 Some(nameAndType.name(cp)),
-                Some(nameAndType.methodDescriptor(cp)))
+                Some(nameAndType.methodDescriptor(cp))
+            )
         }
     }
 }

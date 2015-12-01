@@ -90,7 +90,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
 
             case LE ⇒
@@ -103,7 +104,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
 
             case GT ⇒
@@ -114,7 +116,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
 
             case GE ⇒
@@ -127,7 +130,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
 
             case EQ ⇒
@@ -138,7 +142,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
 
             case NE ⇒
@@ -151,7 +156,8 @@ object NumericConstraints extends Enumeration(1) {
                     case _ ⇒
                         throw IncompatibleNumericConstraints(
                             "combining constraints is not possible",
-                            c1, c2)
+                            c1, c2
+                        )
                 }
         }
     }

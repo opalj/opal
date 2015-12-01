@@ -58,10 +58,11 @@ abstract class SourceLocationBasedReport[+S] {
  * A report related to a specific class.
  */
 case class ClassBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
+    source:    Option[S],
+    severity:  Severity,
     classType: ObjectType,
-    message: String)
+    message:   String
+)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
@@ -76,12 +77,13 @@ case class ClassBasedReport[+S](
  * A report related to a specific method.
  */
 case class MethodBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    declaringClass: ObjectType,
+    source:           Option[S],
+    severity:         Severity,
+    declaringClass:   ObjectType,
     methodDescriptor: MethodDescriptor,
-    methodName: String,
-    message: String)
+    methodName:       String,
+    message:          String
+)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
@@ -97,15 +99,17 @@ case class MethodBasedReport[+S](
  */
 object MethodBasedReport {
     def apply[S](
-        source: Option[S],
-        severity: Severity,
+        source:         Option[S],
+        severity:       Severity,
         declaringClass: ObjectType,
-        method: Method,
-        message: String): MethodBasedReport[S] = {
+        method:         Method,
+        message:        String
+    ): MethodBasedReport[S] = {
         new MethodBasedReport(
             source, severity,
             declaringClass, method.descriptor, method.name,
-            message)
+            message
+        )
     }
 }
 
@@ -113,12 +117,13 @@ object MethodBasedReport {
  * A report related to a specific field.
  */
 case class FieldBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
+    source:         Option[S],
+    severity:       Severity,
     declaringClass: ObjectType,
-    fieldType: Option[Type],
-    fieldName: String,
-    message: String)
+    fieldType:      Option[Type],
+    fieldName:      String,
+    message:        String
+)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
@@ -135,11 +140,12 @@ case class FieldBasedReport[+S](
 object FieldBasedReport {
 
     def apply[S](
-        source: Option[S],
-        severity: Severity,
+        source:         Option[S],
+        severity:       Severity,
         declaringClass: ObjectType,
-        field: Field,
-        message: String): FieldBasedReport[S] = {
+        field:          Field,
+        message:        String
+    ): FieldBasedReport[S] = {
         new FieldBasedReport(source, severity, declaringClass,
             Some(field.fieldType), field.name, message)
     }
@@ -149,14 +155,15 @@ object FieldBasedReport {
  * A report related to a specific line and column.
  */
 case class LineAndColumnBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    declaringClass: ObjectType,
+    source:           Option[S],
+    severity:         Severity,
+    declaringClass:   ObjectType,
     methodDescriptor: MethodDescriptor,
-    methodName: String,
-    line: Option[Int],
-    column: Option[Int],
-    message: String)
+    methodName:       String,
+    line:             Option[Int],
+    column:           Option[Int],
+    message:          String
+)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {

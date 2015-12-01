@@ -68,9 +68,10 @@ class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
 
         for (
             classFile ← project.allProjectClassFiles.filter(hasEqualsButNotEqualsObject(_))
@@ -79,7 +80,8 @@ class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
                 project.source(classFile.thisType),
                 Severity.Warning,
                 classFile.thisType,
-                "Missing equals(Object) to override Object.equals(Object)")
+                "Missing equals(Object) to override Object.equals(Object)"
+            )
         }
     }
 }

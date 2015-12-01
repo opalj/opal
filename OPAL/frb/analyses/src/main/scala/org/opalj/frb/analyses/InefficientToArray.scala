@@ -59,8 +59,10 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
     override def description: String = "Reports inefficient toArray(T[]) calls"
 
     private val objectArrayType = ArrayType(ObjectType.Object)
-    private val toArrayDescriptor = MethodDescriptor(IndexedSeq(objectArrayType),
-        objectArrayType)
+    private val toArrayDescriptor = MethodDescriptor(
+        IndexedSeq(objectArrayType),
+        objectArrayType
+    )
     private val collectionInterface = ObjectType("java/util/Collection")
     private val listInterface = ObjectType("java/util/List")
 
@@ -71,10 +73,13 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      * @return true, if checkedType is a collection or list, false otherwise
      */
     private def isCollectionType(
-        classHierarchy: ClassHierarchy)(checkedType: ReferenceType): Boolean = {
+        classHierarchy: ClassHierarchy
+    )(checkedType: ReferenceType): Boolean = {
         checkedType.isObjectType &&
-            (classHierarchy.isSubtypeOf(checkedType.asObjectType,
-                collectionInterface).isNoOrUnknown || checkedType == listInterface)
+            (classHierarchy.isSubtypeOf(
+                checkedType.asObjectType,
+                collectionInterface
+            ).isNoOrUnknown || checkedType == listInterface)
         // TODO needs more heuristic or more analysis
     }
 
@@ -86,9 +91,10 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         val classHierarchy: ClassHierarchy = project.classHierarchy
         val isCollectionType = this.isCollectionType(classHierarchy) _
@@ -116,7 +122,8 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
                 body.lineNumber(pc),
                 None,
                 "Calling x.toArray(new T[0]) is inefficient, should be "+
-                    "x.toArray(new T[x.size()])")
+                    "x.toArray(new T[x.size()])"
+            )
         }
     }
 }

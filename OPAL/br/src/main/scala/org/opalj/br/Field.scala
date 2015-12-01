@@ -66,9 +66,10 @@ import org.opalj.bi.VisibilityModifier
  */
 final class Field private (
     val accessFlags: Int,
-    val name: String, // the name is interned to enable reference comparisons!
-    val fieldType: FieldType,
-    val attributes: Attributes)
+    val name:        String, // the name is interned to enable reference comparisons!
+    val fieldType:   FieldType,
+    val attributes:  Attributes
+)
         extends ClassMember
         with scala.math.Ordered[Field] {
 
@@ -154,14 +155,16 @@ object Field {
 
     def apply(
         accessFlags: Int,
-        name: String,
-        fieldType: FieldType,
-        attributes: Attributes): Field = {
+        name:        String,
+        fieldType:   FieldType,
+        attributes:  Attributes
+    ): Field = {
         new Field(
             accessFlags,
             name.intern(),
             fieldType,
-            attributes)
+            attributes
+        )
     }
 
     def unapply(field: Field): Option[(Int, String, FieldType)] =

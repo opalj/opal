@@ -65,11 +65,12 @@ trait TypeAnnotationsBinding
     // 
 
     override def TypeAnnotation(
-        cp: Constant_Pool,
-        target: TypeAnnotationTarget,
-        path: TypeAnnotationPath,
-        type_index: Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs): TypeAnnotation = {
+        cp:                  Constant_Pool,
+        target:              TypeAnnotationTarget,
+        path:                TypeAnnotationPath,
+        type_index:          Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs
+    ): TypeAnnotation = {
         new TypeAnnotation(target, path, cp(type_index).asFieldType, element_value_pairs)
     }
 
@@ -80,34 +81,41 @@ trait TypeAnnotationsBinding
     //______________________________
     // type_parameter_target
     override def ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int): TAOfParameterDeclarationOfClassOrInterface =
+        type_parameter_index: Int
+    ): TAOfParameterDeclarationOfClassOrInterface =
         TAOfParameterDeclarationOfClassOrInterface(type_parameter_index)
 
     override def ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int): TAOfParameterDeclarationOfMethodOrConstructor =
+        type_parameter_index: Int
+    ): TAOfParameterDeclarationOfMethodOrConstructor =
         TAOfParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
     //______________________________
     // supertype_target
     override def SupertypeTarget(
-        supertype_index: Int): TAOfSupertype =
+        supertype_index: Int
+    ): TAOfSupertype =
         TAOfSupertype(supertype_index)
 
     //______________________________
     // type_parameter_bound_target
     override def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index: Int): TAOfTypeBoundOfParameterDeclarationOfClassOrInterface =
+        bound_index:          Int
+    ): TAOfTypeBoundOfParameterDeclarationOfClassOrInterface =
         TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
             type_parameter_index,
-            bound_index)
+            bound_index
+        )
 
     override def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index: Int): TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor =
+        bound_index:          Int
+    ): TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor =
         TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
             type_parameter_index,
-            bound_index)
+            bound_index
+        )
 
     //______________________________
     // empty_target
@@ -136,9 +144,10 @@ trait TypeAnnotationsBinding
     // localvar_target
 
     override def LocalvarTableEntry(
-        start_pc: Int,
-        length: Int,
-        local_variable_table_index: Int): LocalvarTableEntry = {
+        start_pc:                   Int,
+        length:                     Int,
+        local_variable_table_index: Int
+    ): LocalvarTableEntry = {
         new LocalvarTableEntry(start_pc, length, local_variable_table_index)
     }
 
@@ -155,40 +164,48 @@ trait TypeAnnotationsBinding
     override def New(offset: Int): TAOfNew = TAOfNew(offset)
 
     override def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int): TAOfMethodReferenceExpressionNew =
+        offset: Int
+    ): TAOfMethodReferenceExpressionNew =
         TAOfMethodReferenceExpressionNew(offset)
 
     override def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int): TAOfMethodReferenceExpressionIdentifier =
+        offset: Int
+    ): TAOfMethodReferenceExpressionIdentifier =
         TAOfMethodReferenceExpressionIdentifier(offset)
 
     //______________________________
     // type_arguement_target
     override def CastExpression(
-        offset: Int,
-        type_argument_index: Int): TAOfCastExpression =
+        offset:              Int,
+        type_argument_index: Int
+    ): TAOfCastExpression =
         TAOfCastExpression(offset, type_argument_index)
 
     override def ConstructorInvocation(
-        offset: Int,
-        type_argument_index: Int): TAOfConstructorInvocation =
+        offset:              Int,
+        type_argument_index: Int
+    ): TAOfConstructorInvocation =
         TAOfConstructorInvocation(offset, type_argument_index)
 
     override def MethodInvocation(
-        offset: Int,
-        type_argument_index: Int): TAOfMethodInvocation =
+        offset:              Int,
+        type_argument_index: Int
+    ): TAOfMethodInvocation =
         TAOfMethodInvocation(offset, type_argument_index)
 
     override def ConstructorInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TAOfConstructorInMethodReferenceExpression =
+        offset:              Int,
+        type_argument_index: Int
+    ): TAOfConstructorInMethodReferenceExpression =
         TAOfConstructorInMethodReferenceExpression(
             offset,
-            type_argument_index)
+            type_argument_index
+        )
 
     override def MethodInMethodReferenceExpression(
-        offset: Int,
-        type_argument_index: Int): TAOfMethodInMethodReferenceExpression =
+        offset:              Int,
+        type_argument_index: Int
+    ): TAOfMethodInMethodReferenceExpression =
         TAOfMethodInMethodReferenceExpression(offset, type_argument_index)
 
     //
@@ -199,7 +216,8 @@ trait TypeAnnotationsBinding
         TADirectlyOnType
 
     override def TypeAnnotationPath(
-        path: IndexedSeq[TypeAnnotationPathElement]): TAOnNestedType =
+        path: IndexedSeq[TypeAnnotationPathElement]
+    ): TAOnNestedType =
         TAOnNestedType(path)
 
     override def TypeAnnotationDeeperInArrayType: TADeeperInArrayType.type =
@@ -212,7 +230,8 @@ trait TypeAnnotationsBinding
         TAOnBoundOfWildcardType
 
     override def TypeAnnotationOnTypeArgument(
-        type_argument_index: Int): TAOnTypeArgument =
+        type_argument_index: Int
+    ): TAOnTypeArgument =
         TAOnTypeArgument(type_argument_index)
 
 }

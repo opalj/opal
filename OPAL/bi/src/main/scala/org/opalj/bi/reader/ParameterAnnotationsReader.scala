@@ -55,7 +55,8 @@ trait ParameterAnnotationsReader extends AnnotationAbstractions {
 
     def ParameterAnnotations(
         cp: Constant_Pool,
-        in: DataInputStream): ParameterAnnotations = {
+        in: DataInputStream
+    ): ParameterAnnotations = {
         repeat(in.readUnsignedByte) {
             repeat(in.readUnsignedShort) {
                 Annotation(cp, in)

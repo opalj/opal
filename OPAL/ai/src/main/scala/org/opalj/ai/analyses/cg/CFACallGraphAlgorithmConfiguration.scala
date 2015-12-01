@@ -49,7 +49,8 @@ import org.opalj.br.analyses.SomeProject
  */
 class CFACallGraphAlgorithmConfiguration(
     project: SomeProject,
-    val k: Int = 2)
+    val k:   Int         = 2
+)
         extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     import project.logContext
@@ -60,10 +61,12 @@ class CFACallGraphAlgorithmConfiguration(
 
     def Domain[Source](
         classFile: ClassFile,
-        method: Method) =
+        method:    Method
+    ) =
         new CFACallGraphDomain(
             k,
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
-            classFile, method)
+            classFile, method
+        )
 }

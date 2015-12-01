@@ -53,7 +53,8 @@ trait DependencyProcessor {
     def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit
+        dType:  DependencyType
+    ): Unit
 
     /**
      * Called for each dependency of a source element on an array type.
@@ -67,9 +68,10 @@ trait DependencyProcessor {
      * @param dependencyType The type of the dependency.
      */
     def processDependency(
-        source: VirtualSourceElement,
+        source:    VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit
+        dType:     DependencyType
+    ): Unit
 
     /**
      * Called for each dependency of a source element on a base type (aka primitive type).
@@ -79,9 +81,10 @@ trait DependencyProcessor {
      * @param dependencyType The type of the dependency.
      */
     def processDependency(
-        source: VirtualSourceElement,
+        source:   VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit
+        dType:    DependencyType
+    ): Unit
 
     /**
      * Used, e.g., by the [[DependencyExtractor]] to create representations of
@@ -102,8 +105,9 @@ trait DependencyProcessor {
      */
     def asVirtualField(
         declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length
-        name: String,
-        fieldType: FieldType): VirtualField =
+        name:               String,
+        fieldType:          FieldType
+    ): VirtualField =
         VirtualField(declaringClassType, name, fieldType)
 
     /**
@@ -115,8 +119,9 @@ trait DependencyProcessor {
      */
     def asVirtualMethod(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
-        name: String,
-        descriptor: MethodDescriptor): VirtualMethod =
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): VirtualMethod =
         VirtualMethod(declaringClassType, name, descriptor)
 }
 

@@ -51,8 +51,9 @@ object BootstrapMethodTable {
  * @author Michael Eichberg
  */
 case class BootstrapMethod(
-        methodHandle: MethodHandle,
-        bootstrapArguments: BootstrapArguments) {
+        methodHandle:       MethodHandle,
+        bootstrapArguments: BootstrapArguments
+) {
 
     def toJava: String = methodHandle.toJava
 }

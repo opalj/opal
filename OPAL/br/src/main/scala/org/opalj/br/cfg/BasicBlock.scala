@@ -81,7 +81,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     }
 
     /**
-     * Calls the function `f` for all instructions - indentified by their respective
+     * Calls the function `f` for all instructions - identified by their respective
      * pcs - of a basic block.
      *
      * @param f The function that will be called.
@@ -100,7 +100,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     }
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
@@ -110,17 +110,17 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     override def toHRR: Option[String] = Some(s"[$startPC,$endPC]")
 
     override def visualProperties: Map[String, String] = {
-        var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
+        var visualProperties = Map("shape" → "box", "labelloc" → "l")
 
         if (startPC == 0) {
-            visualProperties += "fillcolor" -> "green"
-            visualProperties += "style" -> "filled"
+            visualProperties += "fillcolor" → "green"
+            visualProperties += "style" → "filled"
         }
 
         if (!hasSuccessors) { // in this case something is very broken (internally)...
-            visualProperties += "shape" -> "octagon"
-            visualProperties += "fillcolor" -> "gray"
-            visualProperties += "style" -> "filled"
+            visualProperties += "shape" → "octagon"
+            visualProperties += "fillcolor" → "gray"
+            visualProperties += "style" → "filled"
         }
 
         visualProperties

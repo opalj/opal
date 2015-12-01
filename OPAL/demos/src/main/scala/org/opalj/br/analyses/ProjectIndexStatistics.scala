@@ -45,9 +45,10 @@ object ProjectIndexStatistics extends DefaultOneStepAnalysis {
         "Statistics about the usage of field/method identifiers in a project."
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         BasicReport(
             project.get(ProjectIndexKey).

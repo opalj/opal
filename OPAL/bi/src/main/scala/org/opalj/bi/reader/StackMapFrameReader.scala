@@ -53,32 +53,38 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     def SameFrame(frame_type: Int): StackMapFrame
 
     def SameLocals1StackItemFrame(
-        frame_type: Int,
-        verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+        frame_type:                   Int,
+        verification_type_info_stack: VerificationTypeInfo
+    ): StackMapFrame
 
     def SameLocals1StackItemFrameExtended(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+        frame_type:                   Int,
+        offset_delta:                 Int,
+        verification_type_info_stack: VerificationTypeInfo
+    ): StackMapFrame
 
     def ChopFrame(
-        frame_type: Int,
-        offset_delta: Int): StackMapFrame
+        frame_type:   Int,
+        offset_delta: Int
+    ): StackMapFrame
 
     def SameFrameExtended(
-        frame_type: Int,
-        offset_delta: Int): StackMapFrame
+        frame_type:   Int,
+        offset_delta: Int
+    ): StackMapFrame
 
     def AppendFrame(
-        frame_type: Int,
-        offset_delta: Int,
-        verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame
+        frame_type:                    Int,
+        offset_delta:                  Int,
+        verification_type_info_locals: VerificationTypeInfoLocals
+    ): StackMapFrame
 
     def FullFrame(
-        frame_type: Int,
-        offset_delta: Int,
+        frame_type:                    Int,
+        offset_delta:                  Int,
         verification_type_info_locals: VerificationTypeInfoLocals,
-        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame
+        verification_type_info_stack:  VerificationTypeInfoStack
+    ): StackMapFrame
 
     //
     // IMPLEMENTATION
@@ -97,7 +103,8 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
             case t if (t < 128) ⇒
                 SameLocals1StackItemFrame(
                     t,
-                    VerificationTypeInfo(cp, in));
+                    VerificationTypeInfo(cp, in)
+                );
 
             /*RESERVED FOR FUTURE USE*/
             case t if (t < 247) ⇒ sys.error("Unknonwn frame type.");
@@ -107,7 +114,8 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 SameLocals1StackItemFrameExtended(
                     247,
                     in.readUnsignedShort,
-                    VerificationTypeInfo(cp, in));
+                    VerificationTypeInfo(cp, in)
+                );
 
             /*Chop_Frame*/
             case t if (t < 251) ⇒ ChopFrame(t, in.readUnsignedShort)

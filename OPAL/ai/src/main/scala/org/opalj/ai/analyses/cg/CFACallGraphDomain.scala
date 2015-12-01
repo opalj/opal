@@ -63,14 +63,15 @@ import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolu
  * @author Michael Eichberg
  */
 class CFACallGraphDomain[Source](
-    val k: Int, // the maximum length of the call chain
-    val project: Project[Source],
-    val fieldValueInformation: FieldValueInformation,
+    val k:                            Int, // the maximum length of the call chain
+    val project:                      Project[Source],
+    val fieldValueInformation:        FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method,
-    val calledMethods: Set[Method] = Set.empty)
+    val cache:                        CallGraphCache[MethodSignature, Set[Method]],
+    val classFile:                    ClassFile,
+    val method:                       Method,
+    val calledMethods:                Set[Method]                                  = Set.empty
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -105,7 +106,8 @@ class CFACallGraphDomain[Source](
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,
-        method: Method): Boolean =
+        method:        Method
+    ): Boolean =
         (method ne this.method) &&
             // we only call methods where we have a chance that the return value
             // actually depends on the calling context and may directly affect
@@ -131,16 +133,18 @@ class CFACallGraphDomain[Source](
             cache,
             classFile,
             method,
-            calledMethods + callingDomain.method)
+            calledMethods + callingDomain.method
+        )
 
     def calledMethodAI: BaseAI.type = BaseAI
 
     override protected[this] def doInvoke(
-        pc: PC,
+        pc:            PC,
         definingClass: ClassFile,
-        method: Method,
-        operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        method:        Method,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         val result = super.doInvoke(pc, definingClass, method, operands, fallback)
         //        if (calledMethods.isEmpty)

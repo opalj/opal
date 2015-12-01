@@ -28,7 +28,7 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.{ Set ⇒ SomeSet }
+import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.HashMap
 import org.opalj.collection.mutable.UShortSet
@@ -78,8 +78,9 @@ object CFGFactory {
      * 		if a certain exception is potentially handled by an exception handler.
      */
     def apply(
-        method: Method,
-        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy): CFG = {
+        method:         Method,
+        classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
+    ): CFG = {
 
         import classHierarchy.isSubtypeOf
 
@@ -97,7 +98,7 @@ object CFGFactory {
         var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
         for (exceptionHandler ← code.exceptionHandlers) {
             val catchNode = new CatchNode(exceptionHandler)
-            exceptionHandlers += (exceptionHandler -> catchNode)
+            exceptionHandlers += (exceptionHandler → catchNode)
             val handlerPC = exceptionHandler.handlerPC
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
@@ -181,7 +182,8 @@ object CFGFactory {
                 } else {
                     assert(
                         targetBB.startPC == targetBBStartPC,
-                        s"targetBB's startPC ${targetBB.startPC} does not equal $pc")
+                        s"targetBB's startPC ${targetBB.startPC} does not equal $pc"
+                    )
 
                     sourceBB.addSuccessor(targetBB)
                     targetBB.addPredecessor(sourceBB)
@@ -203,7 +205,7 @@ object CFGFactory {
                     val subroutinePC = pc + jsrInstr.branchoffset
                     val thisSubroutineReturnPCs = subroutineReturnPCs.getOrElse(subroutinePC, UShortSet.empty)
                     subroutineReturnPCs += (
-                        subroutinePC ->
+                        subroutinePC →
                         (jsrInstr.indexOfNextInstruction(pc) +≈: thisSubroutineReturnPCs)
                     )
                     val currentBB = useRunningBB()
@@ -343,9 +345,11 @@ object CFGFactory {
             }
         }
 
-        CFG(method,
+        CFG(
+            method,
             normalReturnNode, abnormalReturnNode,
             bbs,
-            exceptionHandlers.values.toList)
+            exceptionHandlers.values.toList
+        )
     }
 }

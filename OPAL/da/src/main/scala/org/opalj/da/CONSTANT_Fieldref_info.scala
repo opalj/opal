@@ -33,8 +33,9 @@ package da
  * @author Michael Eichberg
  */
 case class CONSTANT_Fieldref_info(
-    class_index: Constant_Pool_Index,
-    name_and_type_index: Constant_Pool_Index)
+    class_index:         Constant_Pool_Index,
+    name_and_type_index: Constant_Pool_Index
+)
         extends CONSTANT_Ref {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref

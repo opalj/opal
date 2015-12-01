@@ -85,14 +85,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 final class ClassFile private (
-    val version: UShortPair,
-    val accessFlags: Int,
-    val thisType: ObjectType,
+    val version:        UShortPair,
+    val accessFlags:    Int,
+    val thisType:       ObjectType,
     val superclassType: Option[ObjectType],
     val interfaceTypes: Seq[ObjectType],
-    val fields: Fields,
-    val methods: Methods,
-    val attributes: Attributes)
+    val fields:         Fields,
+    val methods:        Methods,
+    val attributes:     Attributes
+)
         extends ConcreteSourceElement {
 
     import ClassFile._
@@ -210,8 +211,7 @@ final class ClassFile private (
                     (
                         innerClass.outerClassType.isEmpty ||
                         (innerClass.outerClassType.get eq thisType)
-                    )
-            ).map(_.innerClassType)
+                    )).map(_.innerClassType)
         }.getOrElse {
             Nil
         }
@@ -228,7 +228,8 @@ final class ClassFile private (
                     "processing bytecode",
                     "the inner class "+thisType.toJava+
                         " does not use the standard naming schema"+
-                        "; the inner classes information may be incomplete")
+                        "; the inner classes information may be incomplete"
+                )
 
                 return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
@@ -246,7 +247,8 @@ final class ClassFile private (
                                     OPALLogger.warn(
                                         "project information",
                                         "cannot get informaton about "+objectType.toJava+
-                                            "; the inner classes information may be incomplete")
+                                            "; the inner classes information may be incomplete"
+                                    )
                             }
                         }
                         nestedTypes
@@ -275,7 +277,8 @@ final class ClassFile private (
                     OPALLogger.warn(
                         "project information",
                         "cannot identify outer type of "+thisType.toJava+
-                            "; the inner classes information may be incomplete")
+                            "; the inner classes information may be incomplete"
+                    )
 
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
@@ -296,7 +299,8 @@ final class ClassFile private (
      */
     def foreachNestedClass(
         classFileRepository: ClassFileRepository,
-        f: (ClassFile) ⇒ Unit): Unit = {
+        f:                   (ClassFile) ⇒ Unit
+    ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType ⇒
             classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
                 f(nestedClassFile)
@@ -561,22 +565,24 @@ object ClassFile {
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
     def apply(
-        minorVersion: Int,
-        majorVersion: Int,
-        accessFlags: Int,
-        thisType: ObjectType,
+        minorVersion:   Int,
+        majorVersion:   Int,
+        accessFlags:    Int,
+        thisType:       ObjectType,
         superclassType: Option[ObjectType],
         interfaceTypes: Seq[ObjectType],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes): ClassFile = {
+        fields:         Fields,
+        methods:        Methods,
+        attributes:     Attributes
+    ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
             thisType, superclassType, interfaceTypes,
             fields sortWith { (f1, f2) ⇒ f1 < f2 },
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
-            attributes)
+            attributes
+        )
     }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {

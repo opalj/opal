@@ -64,7 +64,9 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
                 ObjectType("de/Collection"),
                 ObjectType("de/Type"),
                 ObjectType("AnotherDefault"),
-                ObjectType("de/MyObject")))
+                ObjectType("de/MyObject")
+            )
+        )
     }
 
     import Java8Framework.ClassFile
@@ -94,8 +96,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
                     assert(signature ne null)
                 }
                 case _ ⇒ ;
-            }
-        )
+            })
     }
 
     //

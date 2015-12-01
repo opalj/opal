@@ -45,15 +45,17 @@ trait MethodsBinding extends MethodsReader {
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
+        cp:               Constant_Pool,
+        accessFlags:      Int,
+        name_index:       Int,
         descriptor_index: Int,
-        attributes: Attributes): Method_Info = {
+        attributes:       Attributes
+    ): Method_Info = {
         Method(
             accessFlags,
             cp(name_index).asString,
             cp(descriptor_index).asMethodDescriptor,
-            attributes)
+            attributes
+        )
     }
 }

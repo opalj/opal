@@ -78,11 +78,12 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
         override def propertyName = "isSanitized"
 
         override def invokestatic(
-            pc: Int,
-            declaringClass: ObjectType,
-            name: String,
+            pc:               Int,
+            declaringClass:   ObjectType,
+            name:             String,
             methodDescriptor: MethodDescriptor,
-            operands: Operands): MethodCallResult = {
+            operands:         Operands
+        ): MethodCallResult = {
 
             // let's check if the first parameter (_ == -2) passed to a method is
             // passed to a method called sanitize...

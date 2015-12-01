@@ -59,13 +59,14 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapFrames = IndexedSeq[StackMapFrame]
 
     def StackMapTable_attribute(
-        constant_pool: Constant_Pool,
+        constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        stack_map_frames: StackMapFrames): StackMapTable_attribute
+        attribute_length:     Int,
+        stack_map_frames:     StackMapFrames
+    ): StackMapTable_attribute
 
     registerAttributeReader(
-        StackMapTable_attributeReader.ATTRIBUTE_NAME -> (
+        StackMapTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val length = in.readInt()
                 val entries = in.readUnsignedShort()

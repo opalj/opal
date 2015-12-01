@@ -35,7 +35,8 @@ package br
  * @author Michael Eichberg
  */
 case class MethodParameterTable(
-    parameters: MethodParameters)
+    parameters: MethodParameters
+)
         extends Attribute {
 
     override def kindId: Int = MethodParameterTable.KindId

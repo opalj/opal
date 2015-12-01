@@ -58,7 +58,8 @@ class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
             declaringClass,
             MethodDescriptor.NoArgsAndReturnVoid,
             "finalize",
-            "Should be protected"))
+            "Should be protected"
+        ))
     }
 
     it should "find exactly 1 issue in PublicFinalizeMethodShouldBeProtected.jar" in {

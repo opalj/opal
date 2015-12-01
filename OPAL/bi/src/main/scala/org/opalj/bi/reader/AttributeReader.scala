@@ -56,7 +56,8 @@ trait AttributeReader
      *  name and the parent of the attribute reads in the attribute and returns it.
      */
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
+        reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+    ): Unit
 
     /**
      * Registers a new processor for the list of all attributes of a given class file

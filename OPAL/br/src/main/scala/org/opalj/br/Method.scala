@@ -67,10 +67,11 @@ import org.opalj.bi.VisibilityModifier
  */
 final class Method private (
     val accessFlags: Int,
-    val name: String,
-    val descriptor: MethodDescriptor,
-    val body: Option[Code],
-    val attributes: Attributes)
+    val name:        String,
+    val descriptor:  MethodDescriptor,
+    val body:        Option[Code],
+    val attributes:  Attributes
+)
         extends ClassMember with scala.math.Ordered[Method] {
 
     final override def isMethod = true
@@ -105,9 +106,10 @@ final class Method private (
      *      dispatch.
      */
     def hasSameSignature(
-        name: String,
-        descriptor: MethodDescriptor,
-        ignoreReturnType: Boolean): Boolean = {
+        name:             String,
+        descriptor:       MethodDescriptor,
+        ignoreReturnType: Boolean
+    ): Boolean = {
         this.name == name && {
             if (ignoreReturnType)
                 this.descriptor.equalParameters(descriptor)
@@ -276,9 +278,10 @@ object Method {
      */
     def apply(
         accessFlags: Int,
-        name: String,
-        descriptor: MethodDescriptor,
-        attributes: Attributes): Method = {
+        name:        String,
+        descriptor:  MethodDescriptor,
+        attributes:  Attributes
+    ): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody =
@@ -291,7 +294,8 @@ object Method {
             name.intern(),
             descriptor,
             theBody,
-            remainingAttributes)
+            remainingAttributes
+        )
     }
 
     /**
@@ -304,11 +308,12 @@ object Method {
      * }}}
      */
     def apply(
-        accessFlags: Int = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
-        name: String,
+        accessFlags:    Int                   = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
+        name:           String,
         parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty,
-        returnType: Type = VoidType,
-        attributes: Attributes = Seq.empty[Attribute]): Method = {
+        returnType:     Type                  = VoidType,
+        attributes:     Attributes            = Seq.empty[Attribute]
+    ): Method = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 

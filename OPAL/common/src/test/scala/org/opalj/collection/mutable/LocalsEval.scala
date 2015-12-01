@@ -68,7 +68,8 @@ object LocalsEval extends App {
                 data = data.updated(
                     index,
                     if (currentValue == null)
-                        new Integer(value) else new Integer(currentValue + value))
+                        new Integer(value) else new Integer(currentValue + value)
+                )
                 i += 1
             }
             data

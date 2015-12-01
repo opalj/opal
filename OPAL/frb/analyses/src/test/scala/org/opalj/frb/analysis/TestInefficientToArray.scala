@@ -61,7 +61,9 @@ class TestInefficientToArray extends AnalysisTest {
                     "test",
                     Some(50), None,
                     "Calling x.toArray(new T[0]) is inefficient, "+
-                        "should be x.toArray(new T[x.size()])"))
+                        "should be x.toArray(new T[x.size()])"
+                )
+            )
         }
 
     it should "detect 1 issue in total" in {

@@ -39,11 +39,12 @@ import scala.xml.Node
  * @author Tobias Becker
  */
 case class LocalVariableTableEntry(
-        start_pc: Int,
-        length: Int,
-        name_index: Int,
+        start_pc:         Int,
+        length:           Int,
+        name_index:       Int,
         descriptor_index: Int,
-        index: Int) {
+        index:            Int
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val name = cp(name_index).toString(cp)

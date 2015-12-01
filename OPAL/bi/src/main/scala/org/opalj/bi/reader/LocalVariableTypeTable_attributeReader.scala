@@ -50,18 +50,20 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     implicit val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        local_variable_type_table: LocalVariableTypes): LocalVariableTypeTable_attribute
+        constant_pool:             Constant_Pool,
+        attribute_name_index:      Constant_Pool_Index,
+        attribute_length:          Int,
+        local_variable_type_table: LocalVariableTypes
+    ): LocalVariableTypeTable_attribute
 
     def LocalVariableTypeTableEntry(
-        constant_pool: Constant_Pool,
-        start_pc: Int,
-        length: Int,
-        name_index: Constant_Pool_Index,
+        constant_pool:   Constant_Pool,
+        start_pc:        Int,
+        length:          Int,
+        name_index:      Constant_Pool_Index,
         signature_index: Constant_Pool_Index,
-        index: Int): LocalVariableTypeTableEntry
+        index:           Int
+    ): LocalVariableTypeTableEntry
 
     //
     // IMPLEMENTATION
@@ -86,7 +88,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
      * </pre>
      */
     registerAttributeReader(
-        LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME -> (
+        LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
 

@@ -55,28 +55,32 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
     //
 
     final override def ArrayValue(
-        origin: ValueOrigin,
+        origin:  ValueOrigin,
         theType: ArrayType,
-        values: Array[DomainValue]): DomainConcreteArrayValue =
+        values:  Array[DomainValue]
+    ): DomainConcreteArrayValue =
         ArrayValue(origin, theType, values, nextT())
 
     override def ArrayValue(
-        origin: ValueOrigin,
+        origin:  ValueOrigin,
         theType: ArrayType,
-        values: Array[DomainValue],
-        t: Timestamp): DomainConcreteArrayValue =
+        values:  Array[DomainValue],
+        t:       Timestamp
+    ): DomainConcreteArrayValue =
         new ConcreteArrayValue(origin, theType, values, t)
 
     final override def InitializedArrayValue(
-        origin: ValueOrigin,
+        origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts: List[Int]): DomainInitializedArrayValue =
+        counts:    List[Int]
+    ): DomainInitializedArrayValue =
         InitializedArrayValue(origin, arrayType, counts, nextT())
 
     override def InitializedArrayValue(
-        origin: ValueOrigin,
+        origin:    ValueOrigin,
         arrayType: ArrayType, counts: List[Int],
-        t: Timestamp): DomainInitializedArrayValue = {
+        t: Timestamp
+    ): DomainInitializedArrayValue = {
         new InitializedArrayValue(origin, arrayType, counts.take(2), nextT())
     }
 

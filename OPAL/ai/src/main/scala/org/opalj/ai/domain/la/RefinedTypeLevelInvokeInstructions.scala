@@ -50,10 +50,11 @@ trait RefinedTypeLevelInvokeInstructions extends MethodCallsDomainWithMethodLock
     val methodReturnValueInformation: MethodReturnValueInformation
 
     protected[this] def doInvoke(
-        pc: PC,
-        method: Method,
+        pc:       PC,
+        method:   Method,
         operands: Operands,
-        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        fallback: () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         val returnValue =
             methodReturnValueInformation.getOrElse(method, {

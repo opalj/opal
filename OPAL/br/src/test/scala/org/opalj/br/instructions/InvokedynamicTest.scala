@@ -39,7 +39,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 
 import org.opalj.br.reader.Java8Framework
-import analyses.{ Project, SomeProject }
+import analyses.{Project, SomeProject}
 
 /**
  * Test resolution capabilities of the [[INVOKEDYNAMIC]] instruction.
@@ -139,8 +139,10 @@ class InvokedynamicTest extends FunSpec with Matchers {
                         instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
                         invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
                     } yield {
-                        (invokedynamic.resolveJDK8(jreProject).isDefined,
-                            classFile, method, instruction)
+                        (
+                            invokedynamic.resolveJDK8(jreProject).isDefined,
+                            classFile, method, instruction
+                        )
                     }
                 ).filter(t ⇒ !t._1)
                 if (!failedInstructions.isEmpty) {
@@ -153,7 +155,8 @@ class InvokedynamicTest extends FunSpec with Matchers {
                     }).mkString(
                         "Failed to resolve the following instructions:\n",
                         "\n",
-                        "\nand "+(totalFailures - numberOfFailuresToShow)+" more.")
+                        "\nand "+(totalFailures - numberOfFailuresToShow)+" more."
+                    )
                     fail(msg)
                 }
             }

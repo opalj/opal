@@ -51,9 +51,10 @@ trait AnnotationAbstractions extends Constant_PoolAbstractions {
     type Annotation
 
     def Annotation(
-        constant_pool: Constant_Pool,
-        type_index: Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs): Annotation
+        constant_pool:       Constant_Pool,
+        type_index:          Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs
+    ): Annotation
 
     //
     // IMPLEMENTATION

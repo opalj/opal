@@ -31,7 +31,7 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
@@ -54,7 +54,8 @@ trait SharedValuesDomain[Source]
  * A basic Domain that is used to identify recursive calls.
  */
 class CoordinatingValuesDomain[Source](
-    val project: Project[Source])
+    val project: Project[Source]
+)
         extends ValuesCoordinatingDomain
         with SharedValuesDomain[Source]
 
@@ -72,9 +73,10 @@ class CoordinatingValuesDomain[Source](
  * @author Michael Eichberg
  */
 class SharedDefaultDomain[Source](
-    val project: Project[Source],
+    val project:   Project[Source],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends TheMethod
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
@@ -95,11 +97,12 @@ class SharedDefaultDomain[Source](
 }
 
 class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method,
+    project:                            Project[Source],
+    classFile:                          ClassFile,
+    method:                             Method,
     val frequentEvaluationWarningLevel: Int,
-    val maxCallChainLength: Int)
+    val maxCallChainLength:             Int
+)
         extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocationsWithRecursionDetection
         with RecordCFG
@@ -109,9 +112,10 @@ class DefaultDomain[Source](
     type CalledMethodDomain = ChildDefaultDomain[Source]
 
     def this(
-        project: Project[Source],
+        project:   Project[Source],
         classFile: ClassFile,
-        method: Method) {
+        method:    Method
+    ) {
         this(project, classFile, method, 256, 2)
     }
 
@@ -123,7 +127,8 @@ class DefaultDomain[Source](
         new ChildDefaultDomain(
             project, classFile, method,
             callingDomain,
-            maxCallChainLength - 1)
+            maxCallChainLength - 1
+        )
 
     def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
         maxCallChainLength > 0 && !method.returnType.isVoidType
@@ -135,21 +140,23 @@ class DefaultDomain[Source](
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
             localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
-                if (n ne null) n :: l else l
-            )
+                if (n ne null) n :: l else l)
         CalledMethodsStore(
-            coordinatingDomain, callingDomain.frequentEvaluationWarningLevel)(
-                method, mapOperands(operands, coordinatingDomain))
+            coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
+        )(
+            method, mapOperands(operands, coordinatingDomain)
+        )
     }
 
 }
 
 class ChildDefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method,
-    val callerDomain: PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
-    val maxCallChainLength: Int)
+    project:                Project[Source],
+    classFile:              ClassFile,
+    method:                 Method,
+    val callerDomain:       PerformInvocationsWithRecursionDetection { type CalledMethodDomain = ChildDefaultDomain[Source] },
+    val maxCallChainLength: Int
+)
         extends SharedDefaultDomain[Source](project, classFile, method)
         with ChildPerformInvocationsWithRecursionDetection
         with DefaultRecordMethodCallResults { callingDomain ⇒
@@ -165,7 +172,8 @@ class ChildDefaultDomain[Source](
         new ChildDefaultDomain(
             project, classFile, method,
             callingDomain,
-            maxCallChainLength - 1)
+            maxCallChainLength - 1
+        )
 
 }
 

@@ -47,7 +47,7 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
     final def handlerPC: PC = handler.handlerPC
 
     //
-    // FOR DEBUGING/VISUALIZATION PURPOSES
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
     override def nodeId: Long =
@@ -62,11 +62,11 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
     )
 
     override def visualProperties: Map[String, String] = Map(
-        "shape" -> "box",
-        "labelloc" -> "l",
-        "fillcolor" -> "orange",
-        "style" -> "filled",
-        "shape" -> "rectangle"
+        "shape" → "box",
+        "labelloc" → "l",
+        "fillcolor" → "orange",
+        "style" → "filled",
+        "shape" → "rectangle"
     )
 
 }

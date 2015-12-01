@@ -45,14 +45,16 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions { domain: Valu
     type ThrownException = ExceptionValue
 
     override protected[this] def recordThrownException(
-        pc: PC,
-        value: ExceptionValue): ThrownException =
+        pc:    PC,
+        value: ExceptionValue
+    ): ThrownException =
         value
 
     override protected[this] def joinThrownExceptions(
-        pc: PC,
+        pc:                        PC,
         previouslyThrownException: ThrownException,
-        thrownException: ExceptionValue): ThrownException = {
+        thrownException:           ExceptionValue
+    ): ThrownException = {
 
         if (previouslyThrownException eq thrownException)
             return thrownException;

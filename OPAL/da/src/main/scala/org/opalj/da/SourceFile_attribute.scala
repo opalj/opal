@@ -39,7 +39,8 @@ import scala.xml.Node
  */
 case class SourceFile_attribute(
         attribute_name_index: Int,
-        sourceFile_index: Int) extends Attribute {
+        sourceFile_index:     Int
+) extends Attribute {
 
     def attribute_length = 2
 

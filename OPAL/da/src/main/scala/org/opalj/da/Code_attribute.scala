@@ -39,12 +39,13 @@ import scala.xml.Node
  */
 case class Code_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        max_stack: Int,
-        max_locals: Int,
-        code: Code,
-        exceptionTable: IndexedSeq[ExceptionTableEntry],
-        attributes: Attributes) extends Attribute {
+        attribute_length:     Int,
+        max_stack:            Int,
+        max_locals:           Int,
+        code:                 Code,
+        exceptionTable:       IndexedSeq[ExceptionTableEntry],
+        attributes:           Attributes
+) extends Attribute {
 
     /**
      * @ see `toXHTML(Int)(implicit Constant_Pool)
@@ -53,7 +54,8 @@ case class Code_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(
             "the code attribute needs the method's id; "+
-                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method")
+                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
+        )
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
@@ -66,7 +68,8 @@ case class Code_attribute(
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt }))
+                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt })
+                )
             }
             { exception_handlersAsXHTML }
             { attributesAsXHTML }

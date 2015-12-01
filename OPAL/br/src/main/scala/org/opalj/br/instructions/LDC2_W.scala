@@ -96,7 +96,8 @@ object LDC2_W {
             case d: Double ⇒ LoadDouble(d)
             case _ ⇒
                 throw new BytecodeProcessingFailedException(
-                    "unsupported LDC2_W constant value: "+constantValue)
+                    "unsupported LDC2_W constant value: "+constantValue
+                )
         }
     }
 

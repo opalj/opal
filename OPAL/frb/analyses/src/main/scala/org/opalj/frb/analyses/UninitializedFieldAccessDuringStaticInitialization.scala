@@ -64,9 +64,10 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[LineAndColumnBasedReport[Source]] = {
 
         /*
          * Analyze the method currently active in the given context. Any methods called
@@ -79,10 +80,11 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
          */
         def evaluateMethod(
             analyzedClass: ClassFile,
-            methodStack: Set[Method],
-            classFile: ClassFile,
-            method: Method,
-            initialStatus: FieldStatus): FieldStatus = {
+            methodStack:   Set[Method],
+            classFile:     ClassFile,
+            method:        Method,
+            initialStatus: FieldStatus
+        ): FieldStatus = {
 
             // Prevent infinite recursion in case we're already currently analyzing this
             // method.
@@ -98,7 +100,8 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
                     classFile,
                     method,
                     initialStatus,
-                    evaluateMethod)
+                    evaluateMethod
+                )
 
             BaseAI(classFile, method, domain)
 
@@ -113,8 +116,7 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
             if // We only need to analyze the class if it actually has strict subclasses
             // that have static fields.
             project.classHierarchy.existsSubclass(analyzedClass.thisType, project)(classFile ⇒
-                classFile.fields.exists { field ⇒ field.isStatic }
-            )
+                classFile.fields.exists { field ⇒ field.isStatic })
             clinit @ MethodWithBody(_) ← analyzedClass.staticInitializer
         } {
             // Analyze this <clinit>
@@ -158,7 +160,8 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
                     uninitializedAccess.method.name,
                     uninitializedAccess.lineNumber,
                     None,
-                    message) :: reports
+                    message
+                ) :: reports
             }
         }
 
@@ -200,14 +203,15 @@ private class FieldStatusTracingDomain[Source](
 
     // The method (and its parent class file) analyzed during this run of the AI
     val classFile: ClassFile,
-    val method: Method,
+    val method:    Method,
 
     // The initial status tells us what we can assume on the entry to the method. When
     // analyzing called methods recursively, the call site's status will be passed here.
     val initialStatus: FieldStatus,
 
     // Callback used to analyze invoked methods
-    val evaluateMethod: (ClassFile, Set[Method], ClassFile, Method, FieldStatus) ⇒ FieldStatus)
+    val evaluateMethod: (ClassFile, Set[Method], ClassFile, Method, FieldStatus) ⇒ FieldStatus
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -236,8 +240,10 @@ private class FieldStatusTracingDomain[Source](
      */
     private def isStrictSubtype(declaringClassType: ObjectType): Boolean = {
         declaringClassType != analyzedClass.thisType &&
-            project.classHierarchy.isSubtypeOf(declaringClassType,
-                analyzedClass.thisType).isYes
+            project.classHierarchy.isSubtypeOf(
+                declaringClassType,
+                analyzedClass.thisType
+            ).isYes
     }
 
     /**
@@ -261,10 +267,11 @@ private class FieldStatusTracingDomain[Source](
      * that will be uninitialized during their base class'es <clinit>.
      */
     private def handleFieldAccess(
-        pc: PC,
+        pc:          PC,
         accessClass: ObjectType,
-        fieldName: String,
-        fieldType: FieldType)(actOnRelevantFieldAccess: (PC, Field) ⇒ Unit): Unit = {
+        fieldName:   String,
+        fieldType:   FieldType
+    )(actOnRelevantFieldAccess: (PC, Field) ⇒ Unit): Unit = {
 
         // The class type used in this instruction is just the context through which the
         // field is accessed, not necessarily the class that declared the field.
@@ -273,7 +280,8 @@ private class FieldStatusTracingDomain[Source](
         // to determine the (real) declaring class first.
         val field =
             project.classHierarchy.resolveFieldReference(
-                accessClass, fieldName, fieldType, project)
+                accessClass, fieldName, fieldType, project
+            )
 
         if (field.isDefined) {
             val declaringClassType = project.classFile(field.get).thisType
@@ -296,11 +304,12 @@ private class FieldStatusTracingDomain[Source](
     }
 
     override def putstatic(
-        pc: PC,
-        value: DomainValue,
+        pc:          PC,
+        value:       DomainValue,
         accessClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[Nothing, Nothing] = {
+        name:        String,
+        fieldType:   FieldType
+    ): Computation[Nothing, Nothing] = {
 
         handleFieldAccess(pc, accessClass, name, fieldType) { (pc, field) ⇒
             // Mark the static field as initialized in the status of this instruction.
@@ -311,10 +320,11 @@ private class FieldStatusTracingDomain[Source](
     }
 
     override def getstatic(
-        pc: PC,
+        pc:          PC,
         accessClass: ObjectType,
-        name: String,
-        fieldType: FieldType): Computation[DomainValue, Nothing] = {
+        name:        String,
+        fieldType:   FieldType
+    ): Computation[DomainValue, Nothing] = {
 
         handleFieldAccess(pc, accessClass, name, fieldType) { (pc, field) ⇒
             val status = getStatusAt(pc)
@@ -326,9 +336,12 @@ private class FieldStatusTracingDomain[Source](
             // useless to report multiple uninitialized accesses to the same field on the
             // same code path).
             if (!status.isInitialized(field) && !status.havePreviousUninitializedAccess(field)) {
-                setStatusAt(pc,
+                setStatusAt(
+                    pc,
                     getStatusAt(pc).addUninitializedAccess(
-                        UninitializedAccess(method, pc, field)))
+                        UninitializedAccess(method, pc, field)
+                    )
+                )
             }
         }
 
@@ -336,18 +349,20 @@ private class FieldStatusTracingDomain[Source](
     }
 
     override def invokestatic(
-        pc: Int,
+        pc:          Int,
         accessClass: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        name:        String,
+        descriptor:  MethodDescriptor,
+        operands:    List[DomainValue]
+    ): MethodCallResult = {
 
         // Every static method call must be analyzed recursively, because it may
         // contain interesting `PUTSTATIC`/`GETSTATIC` instructions.
 
         val calledMethod =
             project.classHierarchy.resolveMethodReference(
-                accessClass, name, descriptor, project)
+                accessClass, name, descriptor, project
+            )
 
         if (calledMethod.isDefined) {
             val theCalledMethod = calledMethod.get
@@ -362,7 +377,8 @@ private class FieldStatusTracingDomain[Source](
                         methodStack,
                         project.classFile(theCalledMethod),
                         theCalledMethod,
-                        status)
+                        status
+                    )
 
                 // And combine its results back into the status of the current instruction
                 setStatusAt(pc, status.add(exitStatus))
@@ -401,7 +417,9 @@ private class FieldStatusTracingDomain[Source](
             } else {
                 StructuralUpdate(
                     new FieldStatusProperty(
-                        status.mergeCodePaths(other.status)))
+                        status.mergeCodePaths(other.status)
+                    )
+                )
             }
         }
     }
@@ -449,7 +467,8 @@ private case class FieldStatus(
         val initialized: Set[Field],
 
         // The uninitialized accesses found so far.
-        val uninitializedAccesses: Set[UninitializedAccess]) {
+        val uninitializedAccesses: Set[UninitializedAccess]
+) {
 
     /**
      * Check whether a field is known to be initialized.
@@ -485,8 +504,10 @@ private case class FieldStatus(
      * containing the information of both of them.
      */
     def add(other: FieldStatus): FieldStatus = {
-        FieldStatus(initialized ++ other.initialized,
-            uninitializedAccesses ++ other.uninitializedAccesses)
+        FieldStatus(
+            initialized ++ other.initialized,
+            uninitializedAccesses ++ other.uninitializedAccesses
+        )
     }
 
     /**

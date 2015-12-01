@@ -59,7 +59,8 @@ class TestNonSerializableClassHasASerializableInnerClass extends AnalysisTest {
             classToReport,
             "Has a serializable non-static inner class ("+
                 nonSerializableOuter.replace("/", ".")+
-                "$SerializableInnerClass), but is not serializable itself"))
+                "$SerializableInnerClass), but is not serializable itself"
+        ))
     }
 
     it should "detect that SerializableOuterClass contains NonSerializableInnerClass "+
@@ -74,7 +75,8 @@ class TestNonSerializableClassHasASerializableInnerClass extends AnalysisTest {
                 classToReport,
                 "Has a serializable non-static inner class ("+
                     nonSerializableInner.replace("/", ".")+
-                    "$SerializableInnerInnerClass), but is not serializable itself"))
+                    "$SerializableInnerInnerClass), but is not serializable itself"
+            ))
         }
 
     it should "find exactly 2 issues in "+

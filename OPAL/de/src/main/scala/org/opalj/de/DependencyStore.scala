@@ -46,18 +46,22 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 class DependencyStore(
-        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
+        val dependencies:             Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
         val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
-        val dependenciesOnBaseTypes: Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]) {
+        val dependenciesOnBaseTypes:  Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]
+) {
 
 }
 
 object DependencyStore {
 
     def apply[Source](
-        classFiles: Traversable[ClassFile],
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor)(
-            implicit logContext: LogContext): DependencyStore = {
+        classFiles:                Traversable[ClassFile],
+        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor
+    )(
+        implicit
+        logContext: LogContext
+    ): DependencyStore = {
 
         val dc = time {
             val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
@@ -76,8 +80,11 @@ object DependencyStore {
     }
 
     def apply[Source](
-        classFiles: Traversable[ClassFile])(
-            implicit logContext: LogContext): DependencyStore = {
+        classFiles: Traversable[ClassFile]
+    )(
+        implicit
+        logContext: LogContext
+    ): DependencyStore = {
         val createDependencyExtractor = (dp) ⇒ new DependencyExtractor(dp)
         apply(classFiles, createDependencyExtractor)
     }

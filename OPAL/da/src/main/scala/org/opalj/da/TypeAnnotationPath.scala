@@ -57,7 +57,8 @@ trait TypeAnnotationPathElement {
 }
 
 case class TypeAnnotationPathElements(
-        path: IndexedSeq[TypeAnnotationPathElement]) extends TypeAnnotationPath {
+        path: IndexedSeq[TypeAnnotationPathElement]
+) extends TypeAnnotationPath {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">Path:{ for (elem ← path) yield elem.toXHTML(cp) }]</span>
@@ -89,7 +90,8 @@ case class TypeAnnotationOnBoundOfWildcardType() extends TypeAnnotationPathEleme
 }
 
 case class TypeAnnotationOnTypeArgument(
-        type_argument_index: Int) extends TypeAnnotationPathElement {
+        type_argument_index: Int
+) extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>

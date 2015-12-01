@@ -146,16 +146,20 @@ package object opalj {
      * @note '''This is a macro.'''
      */
     final def foreachNonNullValue[T <: AnyRef](
-        a: Array[T])(
-            f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
+        a: Array[T]
+    )(
+        f: (Int, T) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
      * Executes the given function `f` for the first `n` values of the given list.
      * The behavior is undefined if the given list does not have at least `n` elements.
      */
     final def forFirstN[T <: AnyRef](
-        l: List[T], n: Int)(
-            f: (T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
+        l: List[T], n: Int
+    )(
+        f: (T) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
      * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
@@ -233,9 +237,12 @@ package object opalj {
 private object ControlAbstractionsImplementation {
 
     def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
-        c: Context)(
-            a: c.Expr[Array[T]])(
-                f: c.Expr[(Int, T) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        a: c.Expr[Array[T]]
+    )(
+        f: c.Expr[(Int, T) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -251,9 +258,12 @@ private object ControlAbstractionsImplementation {
     }
 
     def forFirstN[T <: AnyRef: c.WeakTypeTag](
-        c: Context)(
-            l: c.Expr[List[T]], n: c.Expr[Int])(
-                f: c.Expr[T ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        l: c.Expr[List[T]], n: c.Expr[Int]
+    )(
+        f: c.Expr[T ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -270,9 +280,12 @@ private object ControlAbstractionsImplementation {
     }
 
     def repeat[T: c.WeakTypeTag](
-        c: Context)(
-            times: c.Expr[Int])(
-                f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
+        c: Context
+    )(
+        times: c.Expr[Int]
+    )(
+        f: c.Expr[T]
+    ): c.Expr[IndexedSeq[T]] = {
         import c.universe._
 
         reify {
@@ -293,10 +306,13 @@ private object ControlAbstractionsImplementation {
     }
 
     def iterateTo(
-        c: Context)(
-            from: c.Expr[Int],
-            to: c.Expr[Int])(
-                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        from: c.Expr[Int],
+        to:   c.Expr[Int]
+    )(
+        f: c.Expr[(Int) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -310,10 +326,13 @@ private object ControlAbstractionsImplementation {
     }
 
     def iterateUntil(
-        c: Context)(
-            from: c.Expr[Int],
-            until: c.Expr[Int])(
-                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        from:  c.Expr[Int],
+        until: c.Expr[Int]
+    )(
+        f: c.Expr[(Int) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {

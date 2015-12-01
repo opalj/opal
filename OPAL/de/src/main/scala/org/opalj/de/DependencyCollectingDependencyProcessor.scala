@@ -29,9 +29,9 @@
 package org.opalj
 package de
 
-import java.util.concurrent.{ ConcurrentHashMap ⇒ CMap }
+import java.util.concurrent.{ConcurrentHashMap ⇒ CMap}
 import scala.collection.mutable.Set
-import org.opalj.collection.{ asScala, putIfAbsentAndGet }
+import org.opalj.collection.{asScala, putIfAbsentAndGet}
 import org.opalj.br._
 
 /**
@@ -50,7 +50,8 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 class DependencyCollectingDependencyProcessor(
-        val virtualSourceElementsCountHint: Option[Int]) extends DependencyProcessor {
+        val virtualSourceElementsCountHint: Option[Int]
+) extends DependencyProcessor {
 
     private[this] val deps = new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
         // we assume that every source element has roughly ten dependencies on other source elements
@@ -70,13 +71,15 @@ class DependencyCollectingDependencyProcessor(
     def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
 
         val targets =
             putIfAbsentAndGet(
                 deps,
                 source,
-                new CMap[VirtualSourceElement, Set[DependencyType]](16))
+                new CMap[VirtualSourceElement, Set[DependencyType]](16)
+            )
 
         val dependencyTypes =
             putIfAbsentAndGet(targets, target, Set.empty[DependencyType])
@@ -89,15 +92,17 @@ class DependencyCollectingDependencyProcessor(
     }
 
     def processDependency(
-        source: VirtualSourceElement,
+        source:    VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit = {
+        dType:     DependencyType
+    ): Unit = {
 
         val arrayTypes =
             putIfAbsentAndGet(
                 depsOnArrayTypes,
                 source,
-                new CMap[ArrayType, Set[DependencyType]](16))
+                new CMap[ArrayType, Set[DependencyType]](16)
+            )
 
         val dependencyTypes =
             putIfAbsentAndGet(arrayTypes, arrayType, Set.empty[DependencyType])
@@ -110,19 +115,22 @@ class DependencyCollectingDependencyProcessor(
     }
 
     def processDependency(
-        source: VirtualSourceElement,
+        source:   VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit = {
+        dType:    DependencyType
+    ): Unit = {
 
         val baseTypes =
             putIfAbsentAndGet(
                 depsOnBaseTypes,
                 source,
-                new CMap[BaseType, Set[DependencyType]](16))
+                new CMap[BaseType, Set[DependencyType]](16)
+            )
 
         val dependencyTypes =
             putIfAbsentAndGet(
-                baseTypes, baseType, Set.empty[DependencyType])
+                baseTypes, baseType, Set.empty[DependencyType]
+            )
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {

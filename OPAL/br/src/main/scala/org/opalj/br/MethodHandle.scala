@@ -70,26 +70,30 @@ sealed trait FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
     declaringClassType: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:               String,
+    fieldType:          FieldType
+)
         extends FieldReadAccessMethodHandle
 
 case class GetStaticMethodHandle(
     declaringClassType: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:               String,
+    fieldType:          FieldType
+)
         extends FieldReadAccessMethodHandle
 
 case class PutFieldMethodHandle(
     declaringClassType: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:               String,
+    fieldType:          FieldType
+)
         extends FieldWriteAccessMethodHandle
 
 case class PutStaticMethodHandle(
     declaringClassType: ObjectType,
-    name: String,
-    fieldType: FieldType)
+    name:               String,
+    fieldType:          FieldType
+)
         extends FieldWriteAccessMethodHandle
 
 trait MethodCallMethodHandle extends MethodHandle {
@@ -115,45 +119,50 @@ object MethodCallMethodHandle {
 }
 
 case class InvokeVirtualMethodHandle(
-    receiverType: ReferenceType,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKEVIRTUAL.opcode
 }
 
 case class InvokeStaticMethodHandle(
-    receiverType: ReferenceType,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
 }
 
 case class InvokeSpecialMethodHandle(
-    receiverType: ReferenceType,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
 }
 
 case class NewInvokeSpecialMethodHandle(
-    receiverType: ReferenceType,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
 }
 
 case class InvokeInterfaceMethodHandle(
-    receiverType: ReferenceType,
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    receiverType:     ReferenceType,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKEINTERFACE.opcode

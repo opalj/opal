@@ -51,7 +51,8 @@ import scala.xml.Node
  */
 case class InnerClasses_attribute(
         attribute_name_index: Int,
-        innerClasses: Seq[InnerClassesEntry]) extends Attribute {
+        innerClasses:         Seq[InnerClassesEntry]
+) extends Attribute {
 
     def attribute_length = 2 + (innerClasses.size * 8)
 

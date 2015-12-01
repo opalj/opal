@@ -61,8 +61,9 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
-        val ai: InterruptableAI[_],
-        val method: Method)
+        val ai:               InterruptableAI[_],
+        val method:           Method
+    )
             extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -114,9 +115,10 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         "Identifies methods where we can – statically – derive more precise return type/value information."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val methodsWithRefinedReturnTypes = time {
             for {
@@ -138,15 +140,18 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(
-                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"))
+                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"
+            )
+        )
     }
 
 }
 
 case class RefinedReturnType(
-        classFile: ClassFile,
-        method: Method,
-        refinedType: Option[Domain#DomainValue]) {
+        classFile:   ClassFile,
+        method:      Method,
+        refinedType: Option[Domain#DomainValue]
+) {
 
     override def toString = {
         import Console._

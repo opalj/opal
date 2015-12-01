@@ -58,7 +58,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         (
             operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
@@ -84,14 +85,15 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * refined) operands and locals to the `super` method (`stackable traits`).
      */
     def afterEvaluation(
-        pc: PC,
-        instruction: Instruction,
-        oldOperands: Operands,
-        oldLocals: Locals,
-        targetPC: PC,
+        pc:                       PC,
+        instruction:              Instruction,
+        oldOperands:              Operands,
+        oldLocals:                Locals,
+        targetPC:                 PC,
         isExceptionalControlFlow: Boolean,
-        newOperands: Operands,
-        newLocals: Locals): (Operands, Locals) = (newOperands, newLocals)
+        newOperands:              Operands,
+        newLocals:                Locals
+    ): (Operands, Locals) = (newOperands, newLocals)
 
     /**
      * Joins the given operand stacks and local variables.
@@ -122,11 +124,12 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      which identifies the value is dead.
      */
     def join(
-        pc: PC,
-        thisOperands: Operands,
-        thisLocals: Locals,
+        pc:            PC,
+        thisOperands:  Operands,
+        thisLocals:    Locals,
         otherOperands: Operands,
-        otherLocals: Locals): Update[(Operands, Locals)] = {
+        otherLocals:   Locals
+    ): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
         var operandsUpdated: UpdateType = NoUpdateType
@@ -237,8 +240,9 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
     protected[this] def beforeBaseJoin(pc: PC): Unit = { /*empty*/ }
 
     protected[this] def joinValues(
-        pc: PC,
-        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        pc:   PC,
+        left: DomainValue, right: DomainValue
+    ): Update[DomainValue] = {
         left.join(pc, right)
     }
 
@@ -262,12 +266,13 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * @param newLocals The new locals; may be updated.
      */
     protected[this] def joinPostProcessing(
-        updateType: UpdateType,
-        pc: PC,
+        updateType:  UpdateType,
+        pc:          PC,
         oldOperands: Operands,
-        oldLocals: Locals,
+        oldLocals:   Locals,
         newOperands: Operands,
-        newLocals: Locals): Update[(Operands, Locals)] = {
+        newLocals:   Locals
+    ): Update[(Operands, Locals)] = {
         updateType((newOperands, newLocals))
     }
 
@@ -405,18 +410,19 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
-        currentPC: PC,
-        currentOperands: Operands,
-        currentLocals: Locals,
-        successorPC: PC,
-        isSuccessorScheduled: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorScheduled:             Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = worklist
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = worklist
 
     /**
      * Called by the framework after evaluating the instruction with the given pc. I.e.,
@@ -426,12 +432,13 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * By default this method does nothing.
      */
     def evaluationCompleted(
-        pc: PC,
-        worklist: List[PC],
-        evaluated: List[PC],
+        pc:            PC,
+        worklist:      List[PC],
+        evaluated:     List[PC],
         operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): Unit = { /*Nothing*/ }
+        localsArray:   LocalsArray,
+        tracer:        Option[AITracer]
+    ): Unit = { /*Nothing*/ }
 
     /**
      * Called by the abstract interpreter when the abstract interpretation of a method
@@ -441,7 +448,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * By default this method does nothing.
      */
     def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: coreDomain.type }): Unit = {
+        aiResult: AIResult { val domain: coreDomain.type }
+    ): Unit = {
         /* Nothing */
     }
 
@@ -452,9 +460,10 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * is scheduled in the correct context.
      */
     protected[this] def schedule(
-        successorPC: PC,
+        successorPC:                      PC,
         abruptSubroutineTerminationCount: Int,
-        worklist: List[PC]): List[PC] = {
+        worklist:                         List[PC]
+    ): List[PC] = {
         if (abruptSubroutineTerminationCount > 0) {
             var header: List[PC] = Nil
             val relevantWorklist = {

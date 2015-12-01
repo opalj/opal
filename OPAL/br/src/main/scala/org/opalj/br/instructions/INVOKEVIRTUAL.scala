@@ -36,9 +36,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-    declaringClass: ReferenceType, // an interface, class or array type to be precise
-    name: String,
-    methodDescriptor: MethodDescriptor)
+    declaringClass:   ReferenceType, // an interface, class or array type to be precise
+    name:             String,
+    methodDescriptor: MethodDescriptor
+)
         extends VirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKEVIRTUAL.opcode

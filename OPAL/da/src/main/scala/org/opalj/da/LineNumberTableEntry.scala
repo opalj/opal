@@ -38,8 +38,9 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class LineNumberTableEntry(
-        start_pc: Int,
-        line_number: Int) {
+        start_pc:    Int,
+        line_number: Int
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>start_pc: { start_pc }, line_number: { line_number }</div>

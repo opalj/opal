@@ -78,24 +78,27 @@ trait DefaultReferenceValuesBinding
         new NullValue(origin, t)
 
     override protected[domain] def ObjectValue(
-        origin: ValueOrigin,
-        isNull: Answer,
-        isPrecise: Boolean,
+        origin:            ValueOrigin,
+        isNull:            Answer,
+        isPrecise:         Boolean,
         theUpperTypeBound: ObjectType,
-        t: Timestamp): SObjectValue = {
+        t:                 Timestamp
+    ): SObjectValue = {
 
         new SObjectValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
-            theUpperTypeBound, t)
+            theUpperTypeBound, t
+        )
     }
 
     override protected[domain] def ObjectValue(
-        origin: ValueOrigin,
-        isNull: Answer,
+        origin:         ValueOrigin,
+        isNull:         Answer,
         upperTypeBound: UIDSet[ObjectType],
-        t: Timestamp): DomainObjectValue = {
+        t:              Timestamp
+    ): DomainObjectValue = {
 
         if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
@@ -104,30 +107,34 @@ trait DefaultReferenceValuesBinding
     }
 
     override protected[domain] def ArrayValue(
-        origin: ValueOrigin,
-        isNull: Answer,
-        isPrecise: Boolean,
+        origin:            ValueOrigin,
+        isNull:            Answer,
+        isPrecise:         Boolean,
         theUpperTypeBound: ArrayType,
-        t: Timestamp): DomainArrayValue = {
+        t:                 Timestamp
+    ): DomainArrayValue = {
         new ArrayValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
             theUpperTypeBound,
-            t)
+            t
+        )
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: SortedSet[DomainSingleOriginReferenceValue]): DomainMultipleReferenceValues = {
+        values: SortedSet[DomainSingleOriginReferenceValue]
+    ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values)
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: SortedSet[DomainSingleOriginReferenceValue],
-        isNull: Answer,
-        isPrecise: Boolean,
+        values:            SortedSet[DomainSingleOriginReferenceValue],
+        isNull:            Answer,
+        isPrecise:         Boolean,
         theUpperTypeBound: UpperTypeBound,
-        t: Timestamp): DomainMultipleReferenceValues = {
+        t:                 Timestamp
+    ): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)
     }
 }

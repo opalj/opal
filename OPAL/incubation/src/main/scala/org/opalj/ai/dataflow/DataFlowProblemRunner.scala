@@ -55,9 +55,10 @@ trait DataFlowProblemRunner extends AnalysisExecutor {
             dataFlowProblemFactory.description
 
         override def analyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            initProgressManagement: (Int) ⇒ ProgressManagement): ReportableAnalysisResult = {
+            project:                Project[URL],
+            parameters:             Seq[String],
+            initProgressManagement: (Int) ⇒ ProgressManagement
+        ): ReportableAnalysisResult = {
 
             val pm = initProgressManagement(2)
             pm.start(1, "setup")

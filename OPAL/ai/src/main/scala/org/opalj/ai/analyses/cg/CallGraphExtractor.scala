@@ -53,9 +53,10 @@ trait CallGraphExtractor { extractor ⇒
     import CallGraphExtractor.LocalCallGraphInformation
 
     def extract(
-        project: SomeProject,
+        project:   SomeProject,
         classFile: ClassFile,
-        method: Method): LocalCallGraphInformation
+        method:    Method
+    ): LocalCallGraphInformation
 
     def cache: CallGraphCache[MethodSignature, Set[Method]]
 
@@ -77,7 +78,8 @@ trait CallGraphExtractor { extractor ⇒
 
         @inline def addUnresolvedMethodCall(
             callerClass: ReferenceType, caller: Method, pc: PC,
-            calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
+            calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor
+        ): Unit = {
             unresolvableMethodCalls =
                 new UnresolvedMethodCall(
                     callerClass, caller, pc,
@@ -90,8 +92,9 @@ trait CallGraphExtractor { extractor ⇒
         private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
 
         @inline final def addCallEdge(
-            pc: PC,
-            callees: Set[Method]): Unit = {
+            pc:      PC,
+            callees: Set[Method]
+        ): Unit = {
 
             if (callEdgesMap.contains(pc)) {
                 callEdgesMap(pc) ++= callees
@@ -103,7 +106,8 @@ trait CallGraphExtractor { extractor ⇒
         def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
         def addCallToNullPointerExceptionConstructor(
-            callerType: ObjectType, callerMethod: Method, pc: PC): Unit = {
+            callerType: ObjectType, callerMethod: Method, pc: PC
+        ): Unit = {
 
             cache.NullPointerExceptionDefaultConstructor match {
                 case Some(defaultConstructor) ⇒

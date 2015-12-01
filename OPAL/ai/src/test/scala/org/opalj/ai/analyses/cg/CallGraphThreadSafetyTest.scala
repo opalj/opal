@@ -70,7 +70,8 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
             CallGraphFactory.create(
                 project,
                 () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project),
-                testCallGraphAlgorithm)
+                testCallGraphAlgorithm
+            )
         }
 
     //

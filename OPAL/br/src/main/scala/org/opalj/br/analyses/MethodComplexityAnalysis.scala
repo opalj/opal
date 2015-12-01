@@ -50,9 +50,10 @@ import org.opalj.br.instructions._
 object MethodComplexityAnalysis {
 
     def doAnalyze(
-        project: SomeProject,
+        project:       SomeProject,
         maxComplexity: Int,
-        isInterrupted: () ⇒ Boolean): Map[Method, Int] = {
+        isInterrupted: () ⇒ Boolean
+    ): Map[Method, Int] = {
 
         val ratings = new java.util.concurrent.ConcurrentLinkedQueue[(Method, Int)]()
         project.parForeachMethodWithBody(isInterrupted) { m ⇒
@@ -118,7 +119,7 @@ object MethodComplexityAnalysis {
                     complexity += high - low
 
                 //
-                // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
+                // STATEMENTS THAT CAN CAUSE EXCEPTIONAL TRANSFER OF CONTROL FLOW
                 //
                 case 191 /*athrow*/         ⇒ complexity += 5
 

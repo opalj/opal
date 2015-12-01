@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br.{ Type, ReferenceType, ArrayType, ObjectType }
-import org.opalj.br.{ MethodDescriptor, MethodHandle }
+import org.opalj.br.{Type, ReferenceType, ArrayType, ObjectType}
+import org.opalj.br.{MethodDescriptor, MethodHandle}
 
 /**
  * Definition of factory methods to create `ReferenceValues`.
@@ -74,8 +74,9 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Content: '''Unknown'''
      */
     def ReferenceValue(
-        origin: ValueOrigin,
-        referenceType: ReferenceType): DomainReferenceValue
+        origin:        ValueOrigin,
+        referenceType: ReferenceType
+    ): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -96,9 +97,10 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
-        origin: ValueOrigin,
+        origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts: List[Int]): DomainReferenceValue
+        counts:    List[Int]
+    ): DomainReferenceValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
@@ -112,8 +114,9 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Null: '''No''' (This value is not `null`.)
      */
     def NonNullObjectValue(
-        origin: ValueOrigin,
-        objectType: ObjectType): DomainReferenceValue
+        origin:     ValueOrigin,
+        objectType: ObjectType
+    ): DomainReferenceValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -162,8 +165,9 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Null: '''No''' (This value is not `null`.)
      */
     def InitializedObjectValue(
-        origin: ValueOrigin,
-        objectType: ObjectType): DomainReferenceValue
+        origin:     ValueOrigin,
+        objectType: ObjectType
+    ): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value

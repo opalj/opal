@@ -37,8 +37,8 @@ import org.scalatest.FunSpec
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 
-import analyses.{ Project, SomeProject }
-import reader.{ Java8Framework, Java8LibraryFramework }
+import analyses.{Project, SomeProject}
+import reader.{Java8Framework, Java8LibraryFramework}
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
@@ -54,7 +54,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     val project: SomeProject = Project(
         Java8Framework.ClassFiles(testResources),
-        Java8LibraryFramework.ClassFiles(rtJar))
+        Java8LibraryFramework.ClassFiles(rtJar)
+    )
 
     private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
@@ -75,7 +76,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
                 val actualName = invokevirtual.name
                 val actualDescriptor = invokevirtual.methodDescriptor
                 val actualMethod = declaringClassFile.flatMap(
-                    _.findMethod(actualName, actualDescriptor))
+                    _.findMethod(actualName, actualDescriptor)
+                )
                 actualMethod should be('defined)
                 actualMethod should be(invokedMethod)
             }
@@ -128,9 +130,11 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     describe("Invocations of inherited methods on instances of functional interfaces") {
         val testClass = project.classFile(
-            ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")).get
+            ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
+        ).get
         val annotatedMethods = testClass.methods.filter(
-            _.runtimeVisibleAnnotations.nonEmpty)
+            _.runtimeVisibleAnnotations.nonEmpty
+        )
         annotatedMethods.foreach(m ⇒ testMethod(testClass, m.name))
     }
 }

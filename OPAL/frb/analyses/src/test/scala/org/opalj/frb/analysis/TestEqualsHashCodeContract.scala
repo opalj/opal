@@ -53,14 +53,16 @@ class TestEqualsHashCodeContract extends AnalysisTest {
         val classToReport = ObjectType("EqualsHashCodeContract/EqualsWithoutHashCode")
         results should contain(
             ClassBasedReport(project.source(classToReport), Severity.Error, classToReport,
-                "Does not satisfy java.lang.Object's equals-hashCode contract."))
+                "Does not satisfy java.lang.Object's equals-hashCode contract.")
+        )
     }
 
     it should "detect a class with a hashCode() but no equals()" in {
         val classToReport = ObjectType("EqualsHashCodeContract/HashCodeWithoutEquals")
         results should contain(
             ClassBasedReport(project.source(classToReport), Severity.Error, classToReport,
-                "Does not satisfy java.lang.Object's equals-hashCode contract."))
+                "Does not satisfy java.lang.Object's equals-hashCode contract.")
+        )
     }
 
     it should "report only 2 issues in EqualsHashCodeContract.jar" in {

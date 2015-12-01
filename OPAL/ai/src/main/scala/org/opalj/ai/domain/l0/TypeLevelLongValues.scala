@@ -110,9 +110,10 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
      */
     /*override*/ def ldiv(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): LongValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): LongValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), VMArithmeticException(pc))
         else
@@ -136,9 +137,10 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
      */
     /*override*/ def lrem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): LongValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): LongValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), VMArithmeticException(pc))
         else

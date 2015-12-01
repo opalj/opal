@@ -39,7 +39,8 @@ import scala.xml.Node
  */
 case class SourceDebugExtension_attribute(
         attribute_name_index: Int,
-        debug_extension: Array[Byte]) extends Attribute {
+        debug_extension:      Array[Byte]
+) extends Attribute {
 
     def attribute_length = 2
 

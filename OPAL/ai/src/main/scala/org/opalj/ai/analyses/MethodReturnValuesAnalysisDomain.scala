@@ -49,10 +49,11 @@ import org.opalj.br.MethodSignature
  * @author Michael Eichberg
  */
 class BaseMethodReturnValuesAnalysisDomain(
-    override val project: SomeProject,
+    override val project:      SomeProject,
     val fieldValueInformation: FieldValueInformation,
-    val ai: InterruptableAI[_],
-    val method: Method)
+    val ai:                    InterruptableAI[_],
+    val method:                Method
+)
         extends CorrelationalDomain
         with TheProject
         with ProjectBasedClassHierarchy
@@ -110,11 +111,12 @@ class BaseMethodReturnValuesAnalysisDomain(
 }
 
 class FPMethodReturnValuesAnalysisDomain(
-    project: SomeProject,
-    fieldValueInformation: FieldValueInformation,
+    project:                          SomeProject,
+    fieldValueInformation:            FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
-    override val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    ai: InterruptableAI[_],
-    method: Method)
+    override val cache:               CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    ai:                               InterruptableAI[_],
+    method:                           Method
+)
         extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
         with la.RefinedTypeLevelInvokeInstructions

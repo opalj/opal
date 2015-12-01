@@ -57,7 +57,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(IntegerType),
             "a",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "detect an unused private field with constant initializer" in {
@@ -68,7 +69,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(IntegerType),
             "b",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "detect an unused private final field with non-constant initializer" in {
@@ -79,7 +81,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(declaringClass),
             "c",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "detect an unused private final field with constant initializer" in {
@@ -90,7 +93,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(IntegerType),
             "d",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "detect an unused private field called 'serialVersionUID'" in {
@@ -102,7 +106,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(LongType),
             "serialVersionUID",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "detect an unused private field in the presence of inner classes" in {
@@ -114,7 +119,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             declaringClass,
             Some(ObjectType.String),
             "reallyUnused",
-            "Is private and unused"))
+            "Is private and unused"
+        ))
     }
 
     it should "find exactly 6 issues in UnusedPrivateFields.jar" in {

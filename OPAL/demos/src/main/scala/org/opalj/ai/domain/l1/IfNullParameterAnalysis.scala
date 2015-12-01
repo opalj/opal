@@ -39,7 +39,7 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.Iterable
-import scala.collection.{ Set, Map }
+import scala.collection.{Set, Map}
 
 import org.opalj.collection.mutable.Locals
 import org.opalj.ai.CorrelationalDomain
@@ -90,14 +90,17 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
             "the number and kind of thrown exceptions if a parameter is \"null\"."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         // Explicitly specifies that all reference values are not null.
         def setToNonNull(
-            domain: DefaultDomain[URL])(
-                defaultLocals: domain.Locals): domain.Locals = {
+            domain: DefaultDomain[URL]
+        )(
+            defaultLocals: domain.Locals
+        ): domain.Locals = {
             defaultLocals.map { value ⇒
                 if (value == null)
                     // not all local values are used right from the beginning
@@ -136,7 +139,8 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
                     new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(classFile, method, domain2)(None))
                 ai.performInterpretation(method.isStrict, method.body.get, domain2)(
-                    ai.initialOperands(classFile, method, domain2), nonNullLocals)
+                    ai.initialOperands(classFile, method, domain2), nonNullLocals
+                )
 
                 // Let's calculate the diff. The basic idea is to iterate over
                 // all thrown exceptions and to throw away those that are
@@ -154,8 +158,8 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
                                     domain1,
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
-                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin).asInstanceOf[domain1.ExceptionValue]
-                            ).toSet[domain1.DomainReferenceValue]
+                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin
+                                ).asInstanceOf[domain1.ExceptionValue]).toSet[domain1.DomainReferenceValue]
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)
@@ -183,7 +187,8 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
                 val (cf2: ClassFile, _, _) = r
                 cf1.thisType.toString < cf2.thisType.toString
             }.map(e ⇒ (e._2, e._3)).mkString("\n\n")+
-                "Number of findings: "+methodsWithDifferences.size)
+                "Number of findings: "+methodsWithDifferences.size
+        )
     }
 
 }
