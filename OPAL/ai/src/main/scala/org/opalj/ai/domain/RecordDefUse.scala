@@ -247,10 +247,31 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
-     * Returns the set of all instruction which compute a value that is not used in the following.
+     * Returns the union of the set of unused parameters and the set of all instructions which
+     * compute a value that is not used in the following.
      */
     def unused(): ValueOrigins = {
-        ???
+        var unused = SmallValuesSet.empty(min, max)
+
+        // 1. check if the parameters are used...
+        val parametersOffset = this.parametersOffset
+        val defLocals0 = defLocals(0)
+        var parameterIndex = 0
+        while (parameterIndex < parametersOffset) {
+            if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
+                val unusedParameter = -parameterIndex - 1
+                val usedBy = this.usedBy(unusedParameter)
+                if (usedBy eq null) {
+                    unused = unusedParameter +≈: unused
+                    assert(unused.contains(unusedParameter))
+                }
+            }
+            parameterIndex += 1
+        }
+
+        // 2. check instructions
+
+        unused
     }
 
     /**
