@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,27 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
+package org.opalj.eclipse.propertyTester
+import org.eclipse.core.expressions.PropertyTester
 
-import org.opalj.log.LogContext
+import org.eclipse.jdt.core.IJavaElement
 
 /**
- * Enables the lookup of [[ClassFile]]s.
- *
- * @author Michael Eichberg
+ * @author Lukas Becker
+ * @author Simon Bohlender
+ * @author Simon Guendling
+ * @author Felix Zoeller
  */
-trait ClassFileRepository {
+class IJavaElementExtensionTest extends PropertyTester {
 
-    implicit def logContext: LogContext
-
-    def classFile(objectType: ObjectType): Option[ClassFile]
-
-    def classFile(method: Method): ClassFile
-
-    def classFile(field: Field): ClassFile
-
-    def analysisMode: AnalysisMode
-
+    def test(
+        receiver: Object,
+        property: String,
+        args: Array[Object],
+        expectedValue: Object): Boolean = {
+        receiver match {
+            case ije: IJavaElement ⇒
+                val ext: String = ije.getElementName.split('.')(1)
+                (ext == expectedValue)
+            case _ ⇒ false
+        }
+    }
 }
-

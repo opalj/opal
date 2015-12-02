@@ -61,6 +61,13 @@ EclipseKeys.withSource := true
 
 //
 //
+// Publish jars to Eclipse plugin project
+//
+//
+addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
+
+//
+//
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
 //
 //

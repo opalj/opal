@@ -38,10 +38,9 @@ package mutable
  *          is added again before the value is returned.
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
-    final val offset: Int,
-    private val set:  SmallValuesSet
-)
-        extends SmallValuesSet {
+        final val offset: Int,
+        private val set:  SmallValuesSet
+) extends SmallValuesSet {
 
     override def min = set.min + offset
 
@@ -93,11 +92,13 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     override protected[collection] def mkString(
         start: String, sep: String, end: String,
         offset: Int
-    ): String =
+    ): String = {
         set.mkString(start, sep, end, offset)
+    }
 
-    override def mkString(start: String, sep: String, end: String): String =
+    override def mkString(start: String, sep: String, end: String): String = {
         mkString(start, sep, end, offset)
+    }
 
     override def toString(): String = {
         mkString(

@@ -1,0 +1,389 @@
+/* BSD 2-Clause License:
+* Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE. 
+*/
+
+html { font-family: sans-serif; }
+
+body{
+	font-weight: 300;
+	font-size: 14px;
+	overflow-y: scroll;
+	margin: 0 1em;
+}
+
+div#class_file {
+	padding: 1em 0;
+	line-height: 1.3em;
+}
+
+div#class_file:before {
+	content: "Bytecode";
+	display: block;
+	height:35px;
+	font-size: 20px;
+	margin-bottom: 0.5em;
+	border-bottom: 1.8px solid;
+	border-color: #4060D2;	
+}
+
+ol.cp_entries > li {
+	padding-top:0.4em;
+	white-space: nowrap;
+}
+
+ol.cp_entries, ol.exception_table {
+	padding-left: 3em;
+	padding-top:1em;
+	padding-bottom: 1em;
+	padding-right: 0em;
+}
+
+div.methods,div.fields,div.attributes,div.constant_pool {
+	border-top: 1.8px solid;
+	border-color: #4060D2;
+}
+
+summary {
+	display: block;
+	margin-top: 1em;
+	margin-bottom: 0.4em;	
+}
+
+.constant_value{
+	color: #0000FF;
+}
+
+div.cp_ref, div.attributes_ref {	
+	padding-top:0.3em;
+	margin-left:1em;
+}
+
+div.cp_ref > div.cp_entry{
+	border-left:1px solid #666666;
+	padding-left:0.5em;
+	
+	padding-top:0.3em;
+}
+
+.simple_attribute{
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-top: 1em;
+	padding-bottom: 0em;
+}
+
+.attribute_name{
+	color: #d73b04;
+}
+
+.access_flags {
+	color: rgba(0, 0, 100, 0.6);
+}
+
+div#simple_attribute{
+	margin-left: 1.2em;
+}
+
+div#inner_classes{
+	padding-left: 1.7em;
+	padding-bottom: 1em;
+}
+
+div#inner_classes div.inner_class{
+	margin-top: 0.3em;
+}
+
+
+.field_name{
+	font-style:italic;
+	color:#66AA66;
+}
+
+table.fields tr {
+	margin-top:0.3em;
+}
+
+table.fields td {
+	padding-top: 0.1em;
+	padding-right: 0.5em;
+}
+
+table.fields{
+	margin-left: 1.2em;
+	margin-top: 0.7em;
+	margin-bottom: 1.0em;
+}
+div.fields, div.constant_pool, div.attributes, div.methods{
+	margin-bottom: 1.1em;
+}
+
+details.filter_settings{	
+	background-color:#FAFAFA;
+	padding-left: 2.5em;
+	padding-bottom: 1.0em;	
+	margin-top: 1.0em;
+	margin-bottom: 1.0em;
+	border-style: solid;
+    border-width: 1px;
+}
+
+fieldset, div.java_flags, div.jvm_flags, div.name_filter, div.clear{
+	margin-bottom:0.4em;
+}
+
+.filter_settings summary{
+	margin-bottom: 1.2em;	
+	margin-top: 1.2em;	
+}
+
+.method_signature {
+	margin-top: 2em;
+	font-weight: 600;
+}
+
+.method_body {
+	margin-top: 1em;
+	padding:0 0 0 0;
+} 
+
+div.method{
+	margin-top: 2em;
+	outline: 1px solid;
+	outline-offset: 2px;
+	outline-color: #C0C0C0;
+}
+
+table.method_bytecode{
+	margin: 1em 1em 1em 1em;
+}
+
+.annotation{
+	color: #228B22;
+	font-weight:lighter;
+	font-style:italic;
+	padding-left: 1em;
+	padding-top: 1em;
+}
+
+.annotation div{
+	padding-top: 0em;
+}
+
+
+.index, .pc{
+	color: #FFA500;
+}
+
+.line{
+	color: #A5CC00;
+}
+
+th {
+	text-align: left;
+}
+
+th.pc, td.pc, th.line, td.line {
+	width: 3.5em;
+}
+
+td.exception {
+	position: relative;
+}
+
+td.exception div {
+	height: 100%;
+	margin: 0 2px;
+	width: 23px;
+	position: absolute;
+	border-radius: 2px;
+}
+
+td.exception div.exception {
+	background: rgb(255, 168, 152);
+}
+
+td.exception_empty, th.exception_empty, td.exception {
+	background-color: rgb(245, 245, 172);
+}
+
+th.exception_header {
+	width: 2em;
+	max-width: 2em;
+}
+
+td.exception div.exception_handler{
+	background: #77FD77;
+	z-index: 1;
+	height: 15px;
+}
+td.exception div.handler_overlap:before {
+	position: absolute;
+	height: 15px;
+	width: 15px;
+	z-index: 2;
+	background: #77FD77;
+	content: " ";
+	border-radius: 2px;
+}
+
+td.exception span{
+	-webkit-transform: rotate(90deg) translate(0px, -17px);
+	-webkit-transform-origin: 0% 0%;
+	position: absolute;
+	text-align: center;
+	height: 25px;
+	margin-left: 5px;
+	margin-top: 5px;
+	white-space: nowrap;
+	z-index: 3;
+}
+
+ol.exception_table {
+	line-height: 1.5em;
+}
+
+.members {
+	min-width: 900px;
+	width:100%;
+}
+
+.instruction,.lv_index{
+	font-weight:400;
+	font-style:italic;
+	color:#6666AA;
+	float:left;
+}
+.instruction{
+	width:8em;
+}
+.lv_index{
+	width: 4em;
+}
+
+.local_variable_name{
+	font-weight:400;
+}
+
+.reservedwords,.verification{
+	color: #0000ff;
+}
+
+.tooltip:hover > span{
+	display:inline;
+	position:absolute;
+	color:#111;
+	border:1px solid #DCA;
+	background:#fffAF0;}
+.callout {z-index:20;position:absolute;top:30px;border:0;left:-12px;}
+
+.tooltip > span {
+	color:gray;
+	z-index:10;
+	display:none;
+	padding:0.5em 0.5em;
+	margin-top:-0.5em;
+	margin-left:0.5em;
+	line-height:1.5em;
+	border-radius:4px;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-moz-box-shadow: 5px 5px 8px #CCC;
+	-webkit-box-shadow: 5px 5px 8px #CCC;
+	box-shadow: 5px 5px 8px #CCC;
+}
+
+
+
+
+.close {
+	background: #606061;
+	color: #FFFFFF;
+	line-height: 25px;
+	position: absolute;
+	right: -12px;
+	text-align: center;
+	top: -10px;
+	width: 24px;
+	text-decoration: none;
+	font-weight: bold;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	-moz-box-shadow: 1px 1px 3px #000;
+	-webkit-box-shadow: 1px 1px 3px #000;
+	box-shadow: 1px 1px 3px #000;
+}
+.constant_pool_link{
+	padding:10px 10px;
+	margin-top:10px;
+	padding-top:20px;
+	background:-webkit-gradient(linear, 0 0, 0 100%, from(#fac868), to(#f3961c));
+	background:-moz-linear-gradient(#fac868, #f3961c);
+	background:-o-linear-gradient(#fac868, #f3961c);
+	background:linear-gradient(#fac868, #f3961c);
+	-webkit-border-radius:8px;
+	-moz-border-radius:8px;
+	border-radius:8px;
+	-webkit-box-shadow: -3px 4px 8px #989898;
+	-moz-box-shadow: -3px 4px 8px #989898;
+	box-shadow: -3px 4px 8px #989898;
+	color:black;
+	letter-spacing:.06em;
+}
+
+.selfref {
+	color:#888888;
+}
+
+.runtime_visible {
+	color:#ccFFcc;
+}
+
+.runtime_visible {
+	color:#ccDDDD;
+}
+
+.element_value_pair + .element_value_pair::before {
+	content:", ";
+	color:#AA22FF;
+}
+
+.close:hover { background: #00d9ff; }
+
+details .method_body details div{
+	padding-left: 1em;
+	margin-top: 0.2em;
+}
+
+details .method_body details span{
+	padding-left: 1em;
+}
+
+details .method_body details{
+	padding-bottom: 1em;
+}
