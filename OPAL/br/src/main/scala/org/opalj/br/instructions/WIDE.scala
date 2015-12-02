@@ -72,4 +72,6 @@ case object WIDE extends Instruction with ConstantLengthInstruction {
     ): PCs = {
         UShortSet(indexOfNextInstruction(currentPC))
     }
+    
+    final def expressionResult : ExpressionResult = NoExpression
 }

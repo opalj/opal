@@ -67,6 +67,7 @@ abstract class StoreLocalVariableInstruction extends Instruction {
 
     final def indexOfWrittenLocal: Int = lvIndex
 
+    final def expressionResult : ExpressionResult = NoExpression
 }
 
 /**

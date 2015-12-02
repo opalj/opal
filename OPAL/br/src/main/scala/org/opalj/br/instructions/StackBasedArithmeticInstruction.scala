@@ -41,5 +41,7 @@ abstract class StackBasedArithmeticInstruction
         with ConstantLengthInstruction {
 
     final def length: Int = 1
+    
+    final def expressionResult : ExpressionResult = Stack
 
 }

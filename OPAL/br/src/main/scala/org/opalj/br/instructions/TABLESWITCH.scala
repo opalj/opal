@@ -40,8 +40,7 @@ case class TABLESWITCH(
     low:           Int,
     high:          Int,
     jumpOffsets:   IndexedSeq[Int]
-)
-        extends CompoundConditionalBranchInstruction {
+)        extends CompoundConditionalBranchInstruction {
 
     final def opcode: Opcode = TABLESWITCH.opcode
 

@@ -77,5 +77,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
                 this, currentPC, ObjectType.NullPointerException
             )
     }
+    
+    final def expressionResult : ExpressionResult = Stack
 
 }

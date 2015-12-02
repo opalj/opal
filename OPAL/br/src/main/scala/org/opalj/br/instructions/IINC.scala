@@ -86,6 +86,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
         UShortSet(indexOfNextInstruction(currentPC))
     }
 
+    final def expressionResult : ExpressionResult = Register(lvIndex)
+    
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
 
 }

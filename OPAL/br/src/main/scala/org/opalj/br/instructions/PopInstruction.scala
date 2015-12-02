@@ -35,4 +35,4 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait PopInstruction extends StackManagementInstruction
+trait PopInstruction extends StackManagementInstruction 

@@ -67,6 +67,8 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
             nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
         }
     }
+    
+    final def expressionResult : ExpressionResult = Stack
 
 }
 
