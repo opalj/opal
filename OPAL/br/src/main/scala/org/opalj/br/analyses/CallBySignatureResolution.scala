@@ -295,7 +295,7 @@ object CallBySignatureResolution {
 
             val possibleCbsTargets =
                 if (targetMethods.isEmpty)
-                    projectIndex.findMethods(methodName, methodDescriptor).filter { _.isPublic }.view
+                    projectIndex.findMethods(methodName, methodDescriptor).view.filter { _.isPublic }
                 else
                     targetMethods
 

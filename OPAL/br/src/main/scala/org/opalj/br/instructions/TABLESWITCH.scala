@@ -36,11 +36,11 @@ package instructions
  * @author Michael Eichberg
  */
 case class TABLESWITCH(
-    defaultOffset: Int,
-    low:           Int,
-    high:          Int,
-    jumpOffsets:   IndexedSeq[Int]
-)        extends CompoundConditionalBranchInstruction {
+        defaultOffset: Int,
+        low:           Int,
+        high:          Int,
+        jumpOffsets:   IndexedSeq[Int]
+) extends CompoundConditionalBranchInstruction {
 
     final def opcode: Opcode = TABLESWITCH.opcode
 

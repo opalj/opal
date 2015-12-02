@@ -77,8 +77,8 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
                 this, currentPC, ObjectType.OutOfMemoryError
             )
     }
-    
-    final def expressionResult : ExpressionResult = Stack
+
+    final def expressionResult: ExpressionResult = Stack
 
     override def toString: String = "NEW "+objectType.toJava
 

@@ -48,7 +48,7 @@ abstract class ArrayStoreInstruction extends ArrayAccessInstruction {
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
-    
-    final def expressionResult : ExpressionResult = NoExpression
+
+    final def expressionResult: ExpressionResult = NoExpression
 }
 

@@ -60,8 +60,8 @@ abstract class CreateNewArrayInstruction extends Instruction with ConstantLength
                 this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors
             )
     }
-    
-    final def expressionResult : ExpressionResult = Stack
+
+    final def expressionResult: ExpressionResult = Stack
 
 }
 

@@ -39,7 +39,7 @@ abstract class FieldReadAccess extends FieldAccess {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def expressionResult : ExpressionResult = Stack
+    final def expressionResult: ExpressionResult = Stack
 }
 
 /**

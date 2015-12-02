@@ -38,7 +38,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class NumericConversionInstruction        extends Instruction        with ConstantLengthInstruction {
+abstract class NumericConversionInstruction extends Instruction with ConstantLengthInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
@@ -70,6 +70,6 @@ abstract class NumericConversionInstruction        extends Instruction        wi
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
-    
-    final def expressionResult : ExpressionResult = Stack
+
+    final def expressionResult: ExpressionResult = Stack
 }

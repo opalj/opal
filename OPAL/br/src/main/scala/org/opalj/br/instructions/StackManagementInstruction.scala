@@ -38,7 +38,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class StackManagementInstruction        extends Instruction        with ConstantLengthInstruction {
+abstract class StackManagementInstruction extends Instruction with ConstantLengthInstruction {
 
     def jvmExceptions: List[ObjectType] = Nil
 
@@ -66,8 +66,8 @@ abstract class StackManagementInstruction        extends Instruction        with
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
-    
-    final def expressionResult : ExpressionResult = NoExpression
+
+    final def expressionResult: ExpressionResult = NoExpression
 
 }
 

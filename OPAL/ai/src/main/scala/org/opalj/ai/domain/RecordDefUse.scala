@@ -258,18 +258,22 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val defLocals0 = defLocals(0)
         var parameterIndex = 0
         while (parameterIndex < parametersOffset) {
+
             if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
                 val unusedParameter = -parameterIndex - 1
                 val usedBy = this.usedBy(unusedParameter)
-                if (usedBy eq null) {
-                    unused = unusedParameter +≈: unused
-                    assert(unused.contains(unusedParameter))
-                }
+                if (usedBy eq null) { unused = unusedParameter +≈: unused }
             }
             parameterIndex += 1
         }
 
         // 2. check instructions
+        code.foreach { (pc, instruction) ⇒
+            instruction.expressionResult match {
+                case NoExpression        ⇒ // nothing to do
+                case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+            }
+        }
 
         unused
     }

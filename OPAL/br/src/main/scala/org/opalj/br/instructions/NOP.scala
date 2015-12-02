@@ -73,6 +73,6 @@ case object NOP extends Instruction with ConstantLengthInstruction {
         UShortSet(indexOfNextInstruction(currentPC))
     }
 
-    final def expressionResult : ExpressionResult = NoExpression
-    
+    final def expressionResult: ExpressionResult = NoExpression
+
 }
