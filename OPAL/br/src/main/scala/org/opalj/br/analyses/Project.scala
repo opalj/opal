@@ -131,8 +131,7 @@ class Project[Source] private (
     implicit
     val logContext: LogContext,
     val config:     Config
-)
-        extends ClassFileRepository {
+)        extends ClassFileRepository {
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
@@ -422,8 +421,9 @@ class Project[Source] private (
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    override def classFile(objectType: ObjectType): Option[ClassFile] =
+    override def classFile(objectType: ObjectType): Option[ClassFile] = {
         objectTypeToClassFile.get(objectType)
+    }
 
     /**
      * Returns the given method's class file. This method is only defined if
