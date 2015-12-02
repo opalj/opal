@@ -32,6 +32,7 @@ package analysis
 
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
  * The ''key'' object to get information about the classes that can be instantiated
@@ -50,7 +51,7 @@ object InstantiableClassesIndexKey extends ProjectInformationKey[InstantiableCla
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements = Seq(FPCFAnalysesManagerKey, SourceElementsPropertyStoreKey)
 
     /**
      * Computes the information which classes are (not) instantiable.
