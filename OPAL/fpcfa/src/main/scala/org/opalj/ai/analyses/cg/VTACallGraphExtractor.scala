@@ -60,10 +60,9 @@ import scala.collection.mutable.HashMap
  * @author Michael Eichberg
  */
 class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    Domain:    (ClassFile, Method) ⇒ TheDomain
-)
-        extends CallGraphExtractor {
+        val cache: CallGraphCache[MethodSignature, Set[Method]],
+        Domain:    (ClassFile, Method) ⇒ TheDomain
+) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(val domain: TheDomain)
             extends super.AnalysisContext {

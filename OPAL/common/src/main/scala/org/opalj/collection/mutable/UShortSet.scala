@@ -74,8 +74,7 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
         mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
-    def mkString(start: String, sep: String, end: String): String =
-        mkString(start, sep, end, 0)
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
