@@ -22,3 +22,4 @@ Icon?
 local.sbt
 .tmpBin
 .cache-*
+TOOLS/ep/lib
