@@ -47,6 +47,6 @@ trait ClassFileRepository {
     def classFile(field: Field): ClassFile
 
     def analysisMode: AnalysisMode
-    
+
 }
 
