@@ -20,4 +20,3 @@
     1. Right-click in package explorer -> Import
     2. Select "General -> Existing Projects into Workspace"
     3. Browse to OPAL Folder and select "OPALEclipse"
-#
