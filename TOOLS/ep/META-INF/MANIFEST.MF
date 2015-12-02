@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: OPALEclipse
 Bundle-SymbolicName: OPALEclipse;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.0.0
 Bundle-Activator: org.opalj.eclipse.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
@@ -185,3 +185,4 @@ Import-Package: scala;version="2.11.7.v20150622-112736-1fbce4612c",
  scala.xml.persistent;version="1.0.3",
  scala.xml.pull;version="1.0.3",
  scala.xml.transform;version="1.0.3"
+Bundle-Vendor: Technische Universität Darmstadt
