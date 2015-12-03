@@ -179,7 +179,7 @@ object CallBySignatureResolution {
 
         // non of the subtypes acts as proxy
         cache.put(method, No)
-        return No;
+        No
     }
 
     private[this] def hasSubclassInheritingTheInterface(
