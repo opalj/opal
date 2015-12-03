@@ -841,23 +841,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
                 138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
-                193 /*instanceof*/ ⇒
+                193 /*instanceof*/ |
+                CHECKCAST.opcode ⇒
                 stackOp(1, true)
-
-            case CHECKCAST.opcode ⇒
-                // we "just" inspect the top-most stack value
-                val currentDefOps = defOps(currentPC)
-                updateUsageInformation(currentDefOps.head, currentPC)
-                val newDefOps =
-                    if (isExceptionalControlFlow) {
-                        val newDefOps = defOps(successorPC)
-                        if (newDefOps eq null)
-                            List(ValueOrigins(origin = successorPC))
-                        else
-                            newDefOps
-                    } else
-                        currentDefOps
-                propagate(newDefOps, defLocals(currentPC))
 
             //
             // "ERROR" HANDLING
