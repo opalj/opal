@@ -37,6 +37,7 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.br.ClassFile
 import scala.collection.mutable.ListBuffer
 import org.opalj.br.analyses.InjectedClassesInformationKey
+import org.opalj.br.Method
 
 class JavaEEEntryPointsAnalysis private (
     project: SomeProject
@@ -57,8 +58,7 @@ class JavaEEEntryPointsAnalysis private (
             //we are not interested in library classFiles
             return NoResult;
 
-        val hasAnnotatedSubtype = project.classHierarchy.existsSubclass(classFile.thisType, project)(_.annotations.size > 0)
-        val isAnnotated = classFile.annotations.size > 0 || hasAnnotatedSubtype
+        val isAnnotated = classFile.annotations.size > 0
         val willBeInjected = InjectedClasses.isInjected(classFile)
         val result = ListBuffer.empty[(Entity, Property)]
         classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
@@ -73,10 +73,39 @@ class JavaEEEntryPointsAnalysis private (
                 result += ((method, IsEntryPoint))
             } else if (isAnnotated) {
                 result += ((method, IsEntryPoint))
+            } else if (hasAnnotatedSubtypeAndInheritsMethod(classFile, method)) {
+                result += ((method, IsEntryPoint))
             }
         }
 
         ImmediateMultiResult(result.toSet)
+    }
+
+    def hasAnnotatedSubtypeAndInheritsMethod(classFile: ClassFile, method: Method): Boolean = {
+
+        val classHierarchy = project.classHierarchy
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
+
+        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classFile.thisType)
+        while (subtypes.nonEmpty) {
+            val subtype = subtypes.head
+            project.classFile(subtype) match {
+                case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
+                    val isAnnotated = classFile.annotations.size > 0
+                    val inheritsMethod = subclass.findMethod(methodName, methodDescriptor).isEmpty
+                    if (inheritsMethod) {
+                        if (isAnnotated)
+                            return true;
+                        else
+                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+                    }
+                case _ ⇒
+            }
+            subtypes -= subtype
+        }
+
+        false
     }
 }
 
