@@ -57,7 +57,8 @@ class JavaEEEntryPointsAnalysis private (
             //we are not interested in library classFiles
             return NoResult;
 
-        val isAnnotated = classFile.annotations.size > 0
+        val hasAnnotatedSubtype = project.classHierarchy.existsSubclass(classFile.thisType, project)(_.annotations.size > 0)
+        val isAnnotated = classFile.annotations.size > 0 || hasAnnotatedSubtype
         val willBeInjected = InjectedClasses.isInjected(classFile)
         val result = ListBuffer.empty[(Entity, Property)]
         classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
