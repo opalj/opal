@@ -103,11 +103,11 @@ class FallbackBugPickerAnalysisDomain(
     override val maxCardinalityOfIntegerRanges: Long,
     override val maxCardinalityOfLongSets:      Int,
     val /*current*/ method:                     Method
-)
-        extends BaseBugPickerAnalysisDomain
+) extends BaseBugPickerAnalysisDomain
         with domain.l1.DefaultClassValuesBinding
         with domain.l1.RecordAllThrownExceptions
         with domain.RecordCFG
+        with domain.RecordDefUse
 
 /**
  * The base domain that is shared by all domains that are used to perform abstract
@@ -217,8 +217,7 @@ class InvocationBugPickerAnalysisDomain(
     val /*current*/ method:                     Method,
     val currentCallChainLength:                 Int,
     val debug:                                  Boolean
-)
-        extends BasePerformInvocationBugPickerAnalysisDomain
+) extends BasePerformInvocationBugPickerAnalysisDomain
         with domain.RecordMethodCallResults
         with domain.RecordLastReturnedValues
         with domain.RecordAllThrownExceptions
@@ -261,15 +260,15 @@ class RootBugPickerAnalysisDomain(
     val /*current*/ method:                     Method,
     val debug:                                  Boolean,
     val frequentEvaluationWarningLevel:         Int                                                           = 256
-)
-        extends BasePerformInvocationBugPickerAnalysisDomain
+) extends BasePerformInvocationBugPickerAnalysisDomain
         with TheAI[BaseBugPickerAnalysisDomain]
         with TheMemoryLayout // required to extract the initial operands
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
         // always fails etc.)
         with domain.l1.RecordAllThrownExceptions
-        with domain.RecordCFG { callingDomain ⇒
+        with domain.RecordCFG
+        with domain.RecordDefUse { callingDomain ⇒
 
     final def currentCallChainLength: Int = 0
     final def calledMethodAI = ai
