@@ -94,7 +94,7 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
                                 // for instance methods that can be/are inherited
                                 if (method.isStatic ||
                                     method.isPrivate ||
-                                    // check that the method parameter is never used... across all implementations of the method... only then report it...|| 
+                                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
                                     method.name == "<init>") {
                                     if (vo == -1) {
                                         values += "this"
