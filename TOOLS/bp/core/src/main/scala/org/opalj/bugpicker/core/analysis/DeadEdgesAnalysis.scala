@@ -410,7 +410,7 @@ object DeadEdgesAnalysis {
                             ""
                     )
                 ),
-                Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                 Set(IssueKind.DeadPath),
                 hints,
                 if (isTechnicalArtifact)

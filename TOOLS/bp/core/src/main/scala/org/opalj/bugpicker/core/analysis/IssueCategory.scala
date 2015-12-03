@@ -40,13 +40,15 @@ package analysis
  */
 object IssueCategory {
 
-    final val AllCategories = Set(Bug, Flawed, Performance, Comprehensibility)
+    final val AllCategories = {
+        Set(Bug, Smell, Performance, Comprehensibility)
+    }
 
     // Correctness
     final val Bug = "bug"
 
     // Correctness
-    final val Flawed = "flawed"
+    final val Smell = "smell"
 
     // Efficiency
     final val Performance = "performance"

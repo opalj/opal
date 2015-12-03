@@ -203,7 +203,7 @@ object GuardedAndUnguardedAccessAnalysis {
                     if (relevance >= Relevance.VeryHigh.value)
                         IssueCategory.Bug
                     else
-                        IssueCategory.Flawed
+                        IssueCategory.Smell
                 val issues = unguardedAccesses.map(ua ⇒ (ua._3, "unguarded access"))
                 StandardIssue(
                     theProject, classFile, Some(method), Some(guardPC),

@@ -40,8 +40,16 @@ package analysis
  */
 object IssueKind {
 
-    final val AllKinds =
-        Set(ConstantComputation, DeadPath, ThrowsException, UnguardedUse, Unused)
+    final val AllKinds = {
+        Set(
+            ConstantComputation,
+            DeadPath,
+            ThrowsException,
+            UnguardedUse,
+            Unused,
+            Useless
+        )
+    }
 
     final val ConstantComputation = "constant computation"
 
@@ -51,5 +59,16 @@ object IssueKind {
 
     final val UnguardedUse = "unguarded use"
 
+    /**
+     * Something is currently not used, but may be used in the future if additional code
+     * is written. I.e., new methods/classes may use the respective method/field/class.
+     */
     final val Unused = "unused"
+
+    /**
+     * Something is currently unused and cannot be used in the future.
+     *
+     * Useless is in particular related to the implementation of methods.
+     */
+    final val Useless = "useless"
 }

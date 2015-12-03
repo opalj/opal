@@ -57,20 +57,19 @@ import scala.xml.Unparsed
  * @author Michael Eichberg
  */
 case class StandardIssue(
-    project:        SomeProject,
-    classFile:      ClassFile,
-    method:         Option[Method],
-    pc:             Option[PC],
-    operands:       Option[List[_ <: AnyRef]],
-    localVariables: Option[Locals[_ <: AnyRef]],
-    summary:        String,
-    description:    Option[String],
-    categories:     Set[String],
-    kind:           Set[String],
-    otherPCs:       Seq[(PC, String)],
-    relevance:      Relevance
-)
-        extends Issue {
+        project:        SomeProject,
+        classFile:      ClassFile,
+        method:         Option[Method],
+        pc:             Option[PC],
+        operands:       Option[List[_ <: AnyRef]],
+        localVariables: Option[Locals[_ <: AnyRef]],
+        summary:        String,
+        description:    Option[String],
+        categories:     Set[String],
+        kind:           Set[String],
+        otherPCs:       Seq[(PC, String)],
+        relevance:      Relevance
+) extends Issue {
 
     /**
      * Merges this issue with the given issue if both issues refer to the same element.
