@@ -135,7 +135,9 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     }
 
     "A graph with one SCC and once cSCCs" should "contain one cSCCs" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("f" → "b") += ("f" → "a") += ("b" → "f") += ("a" → "e") += ("e" → "d") += ("d" → "c") += ("c" → "e")
+        val g = Graph.empty[AnyRef] +=
+            ("a" → "b") += ("f" → "b") += ("f" → "a") += ("b" → "f") +=
+            ("a" → "e") += ("e" → "d") += ("d" → "c") += ("c" → "e")
         g.vertices.size should be(6)
         g.edges.map(_._2.size).sum should be(8)
         val cSCCs = closedSCCs(g)
@@ -235,5 +237,33 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
         info(s"tested $testedCount permutations")
     }
+
+    "A graph with four nodes with a path which has a connection to one cSCCs" should "contain one cSCCs" in {
+        val data = List(("a" → "b"), ("b" → "c"), ("c" → "a"), ("b" → "d"), ("d" → "d"))
+        data.permutations.foreach { aPermutation ⇒
+            val g = aPermutation.foldLeft(Graph.empty[AnyRef])(_ += _)
+            g.vertices.size should be(4)
+
+            val cSCCs = closedSCCs(g.vertices, g)
+            val expected = List(Set("d"))
+            if (cSCCs != expected) {
+                fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+            }
+
+        }
+    }
+
+    "a graph with two connected sccs which are connected to one cSCC (requires the correct setting of the non-cSCC node)" should "contain one cSCCs" in {
+        val g = org.opalj.graphs.Graph.empty[AnyRef] +=
+            ("a", "b") += ("b", "c") += ("c", "d") += ("d", "e") += ("c", "g") += ("g", "a") +=
+            ("e", "d") += ("g", "h") += ("h", "j") += ("j", "g")
+
+        val cSCCs = closedSCCs(g)
+        val expected = List(Set("e", "d"))
+        if (cSCCs != expected) {
+            fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+        }
+    }
+
 }
 
