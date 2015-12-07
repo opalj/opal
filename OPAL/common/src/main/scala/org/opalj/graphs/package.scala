@@ -29,7 +29,6 @@
 package org.opalj
 
 import scala.collection.mutable
-import java.util.LinkedHashSet
 import scala.collection.mutable.Stack
 
 /**
@@ -87,9 +86,44 @@ package object graphs {
         s
     }
 
-    def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[scala.collection.Set[N]] = {
-        println(s"Computing closed SCCs for $g")
+    final def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[Iterable[N]] = {
+        // println(s"Computing closed SCCs for $g")
         closedSCCs(g.vertices, g)
+    }
+
+    type DFSNum = Int // always a positive number >= 0
+    type CSCCId = Int // always a positive number >= 1
+
+    private[this] val Undetermined: CSCCId = -1
+
+    final def closedSCCs[N >: Null <: AnyRef](
+        ns: Traversable[N],
+        es: N ⇒ Traversable[N]
+    ): List[Iterable[N]] = {
+
+        case class NInfo(val dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+            override def toString: String = {
+                val cSCCId = this.cSCCId match {
+
+                    case Undetermined ⇒ "Undetermined"
+                    case id           ⇒ id.toString
+                }
+                s"(dfsNum=$dfsNum,cSCCId=$cSCCId)"
+            }
+        }
+
+        val nodeInfo: mutable.HashMap[N, NInfo] = mutable.HashMap.empty
+
+        def setDFSNum(n: N, dfsNum: DFSNum): Unit = {
+            assert(nodeInfo.get(n).isEmpty)
+            nodeInfo.put(n, NInfo(dfsNum))
+        }
+        val hasDFSNum: (N) ⇒ Boolean = (n: N) ⇒ nodeInfo.get(n).isDefined
+        val dfsNum: (N) ⇒ DFSNum = (n: N) ⇒ nodeInfo(n).dfsNum
+        val setCSCCId: (N, CSCCId) ⇒ Unit = (n: N, cSCCId: CSCCId) ⇒ nodeInfo(n).cSCCId = cSCCId
+        val cSCCId: (N) ⇒ CSCCId = (n: N) ⇒ nodeInfo(n).cSCCId
+
+        closedSCCs(ns, es, setDFSNum, hasDFSNum, dfsNum, setCSCCId, cSCCId)
     }
 
     /**
@@ -98,29 +132,18 @@ package object graphs {
      * contains an edge to another node that does not belong to the cSCC.
      */
     def closedSCCs[N >: Null <: AnyRef](
-        ns: Traversable[N],
-        es: N ⇒ Traversable[N]
-    ): List[scala.collection.Set[N]] = {
+        ns:        Traversable[N],
+        es:        N ⇒ Traversable[N],
+        setDFSNum: (N, DFSNum) ⇒ Unit,
+        hasDFSNum: (N) ⇒ Boolean,
+        dfsNum:    (N) ⇒ DFSNum,
+        setCSCCId: (N, CSCCId) ⇒ Unit,
+        cSCCId:    (N) ⇒ CSCCId
+    ): List[Iterable[N]] = {
 
-        type DFSNum = Int
-        type CSCCId = Int
-        val NoCSCCNode: CSCCId = Int.MinValue
-        val Undetermined: CSCCId = -1
-        val PathBoundary: Null = null
+        val PathElementSeparator: Null = null
 
-        case class NInfo(val dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
-            override def toString: String = {
-                val cSCCId = this.cSCCId match {
-                    case NoCSCCNode   ⇒ "NoCSCCNode"
-                    case Undetermined ⇒ "Undetermined"
-                    case id           ⇒ id.toString
-                }
-                s"(dfsNum=$dfsNum,cSCCId=$cSCCId)"
-            }
-        }
-
-        val visited = mutable.HashSet.empty[N]
-        var cSCCs = List.empty[scala.collection.Set[N]]
+        var cSCCs = List.empty[Iterable[N]]
 
         /*
          * Performs a depth-first search to locate an initial strongly connected component.
@@ -132,122 +155,114 @@ package object graphs {
          * previous SCC. If so, we merge all nodes as they belong to the same SCC.
          */
 
-        def dfs(n: N): Unit = {
-            if (visited.contains(n))
-                return ;
-
-            visited += n
+        def dfs(n: N, initialDFSNum: DFSNum): DFSNum = {
+            if (hasDFSNum(n))
+                return initialDFSNum;
 
             // CORE DATA STRUCTURES
-            var nextDFSNum = 0
+            var thisPathFirstDFSNum = initialDFSNum
+            var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
-            var path = mutable.LinkedHashMap.empty[N, NInfo]
-            val nodes = mutable.Stack.empty[N]
+            val path = mutable.ArrayBuffer.empty[N]
+            val worklist = mutable.Stack.empty[N]
 
             // HELPER METHODS
-            def addToPath(n: N): NInfo = {
+            def addToPath(n: N): DFSNum = {
+                assert(!hasDFSNum(n))
                 val dfsNum = nextDFSNum
-                val nInfo = NInfo(dfsNum)
-                path.put(n, nInfo)
+                setDFSNum(n, dfsNum)
+                path += n
                 nextDFSNum += 1
-                nInfo
+                dfsNum
             }
-            def pathLength = nextDFSNum
-            def cSCCId(nNInfo: (N, NInfo)): CSCCId = { nNInfo._2.cSCCId }
-            def cSCCIdOf(dfsNum: DFSNum): CSCCId = {
-                // This is potentially computationally expensive
-                path.drop(dfsNum).head._2.cSCCId
-            }
+            def pathLength = nextDFSNum - initialDFSNum
+            def killPath(): Unit = { path.clear(); thisPathFirstDFSNum = nextDFSNum }
+            def reportPath(p: Iterable[N]): Unit = { cSCCs ::= p }
 
             // INITIALIZATION
             addToPath(n)
-            nodes.push(n).push(PathBoundary).pushAll(es(n))
+            worklist.push(n).push(PathElementSeparator).pushAll(es(n))
 
             // PROCESSING
-            while (nodes.nonEmpty) {
-                println(s"path=${path.mkString(",")}; nextDFSNum=$nextDFSNum; nextCSCCId=$nextCSCCId; visited=$visited")
+            while (worklist.nonEmpty) {
+                //                println(s"next iteration { path=${path.map(n ⇒ dfsNum(n)+":"+n).mkString(",")}; "+
+                //                    s"thisParthFirstDFSNum=$thisPathFirstDFSNum; nextDFSNum=$nextDFSNum; nextCSCCId=$nextCSCCId }")
 
-                val n = nodes.pop()
-                if (n eq PathBoundary) { // i.e., we have visited all child elements 
-                    val n = nodes.pop()
-                    val nInfo @ NInfo(nDFSNum, nCSCCId) = path(n)
-                    println(s"visited all children of $n$nInfo")
+                val n = worklist.pop()
+                if (n eq PathElementSeparator) { // i.e., we have visited all child elements 
+                    val n = worklist.pop()
+                    val nDFSNum = dfsNum(n)
+                    if (nDFSNum >= thisPathFirstDFSNum) {
+                        //                        println(s"visited all children of path element $n")
+                        val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
+                        val nCSCCId = cSCCId(n)
+                        nCSCCId match {
+                            case Undetermined ⇒
+                                killPath()
+                            case nCSCCId if nCSCCId == cSCCId(path.last) &&
+                                (
+                                    thisPathNDFSNum == 0 ||
+                                    nCSCCId != cSCCId(path(thisPathNDFSNum - 1))
+                                ) ⇒
+                                reportPath(path.takeRight(pathLength - thisPathNDFSNum))
+                                killPath()
 
-                    nCSCCId match {
-                        case NoCSCCNode ⇒
-                        /*Nothing to do.*/
-                        case Undetermined ⇒
-                            nInfo.cSCCId = NoCSCCNode
-                        case nCSCCId if nCSCCId == cSCCId(path.last) &&
-                            (nDFSNum == 0 || nCSCCId != cSCCIdOf(nDFSNum - 1)) ⇒
-                            cSCCs ::= path.takeRight(pathLength - nDFSNum).keySet
+                            case someCSCCId ⇒
+                                /*nothing to do*/
+                                assert(nDFSNum == 0 || nCSCCId == cSCCId(path.last))
 
-                            // UPDATE THE CORE DATASTRUCTURES
-                            nextDFSNum = nDFSNum
-                            path = path.take(nDFSNum)
-                            path.foreach(n ⇒ n._2.cSCCId = NoCSCCNode)
-
-                        case someCSCCId ⇒
-                        /*nothing to do*/
+                        }
+                    } else {
+                        //                        println(s"visited all children of non-cSCC path element $n")
                     }
-                } else { // i.e., we are (potentially) extending our path
-                    visited += n
-                    println("next node: "+n)
 
-                    path.get(n) match {
-                        case None ⇒
-                            // we have not yet analyzed this node
-                            val nInfo = addToPath(n)
-                            nodes.push(n)
-                            nodes.push(PathBoundary)
-                            es(n) foreach { nextN ⇒
-                                if (visited.contains(nextN)) {
-                                    val nextNInfoOption = path.get(nextN)
-                                    if (nextNInfoOption.isEmpty) {
-                                        // some successor node was analyzed and the successor
-                                        // node may take part in a cSCC, but certainly not this one
-                                        nInfo.cSCCId = NoCSCCNode
-                                    } else if (nextNInfoOption.get.cSCCId == NoCSCCNode) {
-                                        nInfo.cSCCId = NoCSCCNode
-                                    } else {
-                                        nodes.push(nextN)
-                                    }
-                                } else {
-                                    nodes.push(nextN)
-                                }
-                            }
-                        case Some(nInfo @ NInfo(nDFSNum, nCSCCId)) ⇒
-                            // this node was already on the path, hence, we have a cycle
+                } else { // i.e., we are (potentially) extending our path
+                    //                    println(s"next node { $n; dfsNum=${if (hasDFSNum(n)) dfsNum(n) else Undetermined} }")
+
+                    if (hasDFSNum(n)) {
+                        // we have (at least) a cycle...
+                        val nDFSNum = dfsNum(n)
+                        if (nDFSNum >= thisPathFirstDFSNum) {
+                            // this cycle may become a cSCC
+                            val nCSCCId = cSCCId(n)
                             nCSCCId match {
                                 case Undetermined ⇒
                                     // we have a new cycle
-                                    val lastCSCCId = cSCCId(path.last)
-                                    if (lastCSCCId >= Undetermined) {
-                                        val nCSCCId = nextCSCCId
-                                        nextCSCCId += 1
-                                        val cc = path.takeRight(pathLength - nDFSNum)
-                                        cc.foreach(n ⇒ n._2.cSCCId = nCSCCId)
-                                        println(cc.mkString(s"Nodes in a cSCC candidate $nCSCCId: ", ",", ""))
-                                        println("path: "+path.mkString)
-                                    } else // lastCSCCId == NoCSCCNode
-                                        nInfo.cSCCId = NoCSCCNode
+                                    val nCSCCId = nextCSCCId
+                                    nextCSCCId += 1
+                                    val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
+                                    val cc = path.view.takeRight(pathLength - thisPathNDFSNum)
+                                    cc.foreach(n ⇒ setCSCCId(n, nCSCCId))
+                                //                                    println(cc.mkString(s"Nodes in a cSCC candidate $nCSCCId: ", ",", ""))
+                                //                                    println("path: "+path.mkString)
 
-                                case nCSCCId if nCSCCId != NoCSCCNode ⇒
-                                    val lastCSCCId = cSCCId(path.last)
-                                    if (lastCSCCId >= Undetermined)
-                                        path.takeRight(pathLength - nDFSNum).foreach(n ⇒ n._2.cSCCId = nCSCCId)
-                                    else // lastCSCCId == NoCSCCNode
-                                        nInfo.cSCCId = NoCSCCNode
-
-                                case _ ⇒
-                                // Nothing to do...
+                                case nCSCCId ⇒
+                                    val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
+                                    path.view.takeRight(pathLength - thisPathNDFSNum).foreach(n ⇒ setCSCCId(n, nCSCCId))
                             }
+                        } else {
+                            //                            println("this cycle is related to a node that does not take part in a cSCC")
+                            killPath()
+                        }
+                    } else {
+                        // we are visiting the element for the first time
+                        addToPath(n)
+                        worklist.push(n)
+                        worklist.push(PathElementSeparator)
+                        es(n) foreach { nextN ⇒
+                            if (hasDFSNum(nextN) && dfsNum(nextN) < thisPathFirstDFSNum) {
+                                killPath()
+                            } else {
+                                worklist.push(nextN)
+                            }
+                        }
                     }
                 }
             }
+            nextDFSNum
         }
 
-        for (n ← ns) { dfs(n) }
+        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(n, initialDFSNum))
 
         cSCCs
 

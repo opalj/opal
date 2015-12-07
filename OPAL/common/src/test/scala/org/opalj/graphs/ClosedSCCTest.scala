@@ -75,23 +75,23 @@ class ClosedSCCTest extends FlatSpec with Matchers {
 
     "A graph with one node with a self dependency" should "contain one cSCC with the node" in {
         val g = Graph.empty[AnyRef] += ("a", "a")
-        closedSCCs(g.vertices, g) should be(List(Set("a")))
+        closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")))
     }
 
     "A graph with four nodes with two nodes with a self dependency" should "contain two cSCCs with the respective nodes" in {
         val g = Graph.empty[AnyRef] += ("a", "a") += ("b") += ("c" → "c") += ("d")
-        closedSCCs(g.vertices, g).toSet should be(Set(Set("a"), Set("c")))
+        closedSCCs(g.vertices, g).map(_.toSet).toSet should be(Set(Set("a"), Set("c")))
     }
 
     "A graph with two nodes which form a cSCCs" should "contain the cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a")
         println; println(g)
-        closedSCCs(g.vertices, g) should be(List(Set("a")+"b"))
+        closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")+"b"))
     }
 
     "A graph with four nodes which form a cSCCs" should "contain the cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("c" → "d") += ("d" → "a")
-        closedSCCs(g.vertices, g) should be(List(Set("a")+"b"+"c"+"d"))
+        closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")+"b"+"c"+"d"))
     }
 
     "A large tree-like graph " should "not contain a cSCC" in {
@@ -102,7 +102,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     "A graph with three nodes with a cSCC and an incoming dependency" should "contain one cSCC" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a") += ("c" → "a")
         g.edges.size should be(3)
-        val cSCCs = closedSCCs(g.vertices, g)
+        val cSCCs = closedSCCs(g.vertices, g).map(_.toSet)
         val expected = List(Set("a", "b"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -113,7 +113,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a") += ("b" → "c")
         g("a").size should be(1)
         g("b").size should be(2)
-        val cSCCs = closedSCCs(g.vertices, g)
+        val cSCCs = closedSCCs(g.vertices, g).map(_.toSet)
         if (cSCCs.nonEmpty) {
             fail(s"the graph $g contains no closed SCCs, but found $cSCCs")
         }
@@ -125,7 +125,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             val g = aPermutation.foldLeft(Graph.empty[AnyRef])(_ += _)
             g.vertices.size should be(5)
 
-            val cSCCs = closedSCCs(g.vertices, g).toSet
+            val cSCCs = closedSCCs(g.vertices, g).map(_.toSet).toSet
             val expected = Set(Set("a", "b"), Set("e", "d"))
             if (cSCCs != expected) {
                 fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -140,7 +140,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             ("a" → "e") += ("e" → "d") += ("d" → "c") += ("c" → "e")
         g.vertices.size should be(6)
         g.edges.map(_._2.size).sum should be(8)
-        val cSCCs = closedSCCs(g)
+        val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("e", "c", "d"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -156,7 +156,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             ("e" → "a") += ("e" → "b") += ("e" → "c") += ("e" → "d")
         g.vertices.size should be(5)
         g.edges.map(_._2.size).sum should be(20)
-        val cSCCs = closedSCCs(g)
+        val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("a", "b", "c", "d", "e"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -172,7 +172,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             ("e" → "a") += ("e" → "b") += ("e" → "c") += ("e" → "d") += ("e" → "e")
         g.vertices.size should be(5)
         g.edges.map(_._2.size).sum should be(25)
-        val cSCCs = closedSCCs(g)
+        val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("a", "b", "c", "d", "e"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -195,7 +195,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 val g = aPermutation.foldLeft(Graph.empty[AnyRef])(_ += _)
                 g.vertices.size should be(6)
 
-                val cSCCs = closedSCCs(g).toSet
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
                 val expected = Set(Set("a", "b", "c", "d", "e", "f"))
                 if (cSCCs != expected) {
                     fail(s"the graph $g (created with permutation $permutationCount: $aPermutation) "+
@@ -227,7 +227,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 val g = data.foldLeft(Graph.empty[AnyRef])(_ += _)
                 g.vertices.size should be(13)
 
-                val cSCCs = closedSCCs(g).toSet
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
                 val expected = Set(Set("m", "l"), Set("h", "i", "j", "k"), Set("e", "d"))
                 if (cSCCs != expected) {
                     fail(s"the graph $g (created with permutation $permutationCount: $data) "+
@@ -238,13 +238,13 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         info(s"tested $testedCount permutations")
     }
 
-    "A graph with four nodes with a path which has a connection to one cSCCs" should "contain one cSCCs" in {
+    "a graph with four nodes with a path which has a connection to one cSCCs" should "contain one cSCCs" in {
         val data = List(("a" → "b"), ("b" → "c"), ("c" → "a"), ("b" → "d"), ("d" → "d"))
         data.permutations.foreach { aPermutation ⇒
             val g = aPermutation.foldLeft(Graph.empty[AnyRef])(_ += _)
             g.vertices.size should be(4)
 
-            val cSCCs = closedSCCs(g.vertices, g)
+            val cSCCs = closedSCCs(g.vertices, g).map(_.toSet)
             val expected = List(Set("d"))
             if (cSCCs != expected) {
                 fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
@@ -258,7 +258,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             ("a", "b") += ("b", "c") += ("c", "d") += ("d", "e") += ("c", "g") += ("g", "a") +=
             ("e", "d") += ("g", "h") += ("h", "j") += ("j", "g")
 
-        val cSCCs = closedSCCs(g)
+        val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("e", "d"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
