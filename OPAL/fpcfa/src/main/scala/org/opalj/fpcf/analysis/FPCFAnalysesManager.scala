@@ -113,7 +113,7 @@ class FPCFAnalysesManager private[analysis] (project: SomeProject) {
                 (runner.recommendations ++ runner.requirements).
                     filterNot { ar ⇒ isDerived(ar.derivedProperties) }
             runAll(analyses)(false)
-            run(runner, true)
+            run(runner, waitOnCompletion)
         }
     }
 
