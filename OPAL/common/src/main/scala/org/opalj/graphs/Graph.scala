@@ -29,56 +29,64 @@
 package org.opalj
 package graphs
 
-import scala.collection.Map
-import org.opalj.collection.UID
+import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.Set
 
 /**
- * Default implementation of a mutable node of a graph.
- *
- * ==Thread Safety==
- * This is class is '''thread-safe'''.
+ * A very simple representation of a graph that is generally useful, but was designed
+ * to facilitate testing of graph based algorithms.
  *
  * @author Michael Eichberg
  */
-class DefaultMutableNode[I](
-    theIdentifier:       I,
-    identifierToString:  I ⇒ String,
-    theVisualProperties: Map[String, String],
-    theChildren:         List[DefaultMutableNode[I]]
-) extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
-        with MutableNode[I, DefaultMutableNode[I]] {
+class Graph[N >: Null <: AnyRef] private (
+        val vertices: Set[N],
+        val edges:    LinkedHashMap[N, List[N]]
+) extends (N ⇒ Traversable[N]) {
 
-    def this(identifier: I) {
-        this(identifier, id ⇒ id.toString, Map("shape" → "box"), List.empty)
+    def apply(s: N): Traversable[N] = edges.getOrElse(s, List.empty)
+
+    def +=(n: N): this.type = {
+        vertices += n
+        this
     }
 
-    def this(
-        identifier:         I,
-        identifierToString: I ⇒ String
-    ) {
-        this(identifier, identifierToString, Map("shape" → "box"), List.empty)
+    def +=(e: Tuple2[N, N]): this.type = {
+        val (s, t) = e
+        this += (s, t)
     }
 
-    def this(
-        identifier:         I,
-        identifierToString: I ⇒ String     = (_: Any).toString,
-        fillcolor:          Option[String]
-    ) {
-        this(
-            identifier,
-            identifierToString,
-            fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
-                getOrElse(DefaultMutableMode.BaseVirtualPropertiers),
-            List.empty
-        )
+    def +=(s: N, t: N): this.type = {
+        vertices += s += t
+        edges += ((s, t :: edges.getOrElse(s, List.empty)))
+
+        this
     }
 
+    override def toString: String = {
+        "Graph{\n"+
+            vertices.map { v ⇒
+                v.toString() +
+                    edges.getOrElse(v, List.empty).mkString(" => {", ",", "}")
+            }.mkString("\n")+
+            "\n}"
+    }
+
+    def toNodes: Iterable[Node] = {
+        val nodesMap: Map[N, DefaultMutableNode[String]] = vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
+        vertices.foreach { v ⇒
+            val node = nodesMap(v)
+            val successors = this(v).map(v ⇒ nodesMap(v)).toList
+            node.addChildren(successors)
+        }
+        nodesMap.values
+    }
+
+    def toDot: String = {
+        org.opalj.graphs.toDot(toNodes.toSet)
+    }
 }
-object DefaultMutableMode {
 
-    val BaseVirtualPropertiers = Map(
-        "shape" → "box",
-        "style" → "filled", "fillcolor" → "white"
-    )
+object Graph {
 
+    def empty[N >: Null <: AnyRef] = new Graph[N](Set.empty, LinkedHashMap.empty)
 }
