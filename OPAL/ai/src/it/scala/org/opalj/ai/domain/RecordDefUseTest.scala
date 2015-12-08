@@ -144,10 +144,11 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 while (root.getCause != null) root = root.getCause
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        val stackTraceElement = root.getStackTrace()(0)
+                        root.getStackTrace().take(5).map{stackTraceElement =>
                         stackTraceElement.getClassName+" { "+
                             stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
                             " }"
+                        }.mkString("; ")
                     } else {
                         "<location unavailable>"
                     }
