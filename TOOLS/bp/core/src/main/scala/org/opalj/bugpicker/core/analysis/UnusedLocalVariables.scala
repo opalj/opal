@@ -43,6 +43,11 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.ACONST_NULL
+import org.opalj.br.instructions.ICONST_0
+import org.opalj.br.instructions.DCONST_0
+import org.opalj.br.instructions.LCONST_0
+import org.opalj.br.instructions.FCONST_0
 
 /**
  * Identifies unused local variables
@@ -97,6 +102,13 @@ object UnusedLocalVariables {
                             " } is not used"
                         // TODO we need an assessment how important it is to ignore the return value...
                         relevance = Relevance.DefaultRelevance
+                    case ACONST_NULL.opcode |
+                        ICONST_0.opcode |
+                        LCONST_0.opcode |
+                        FCONST_0.opcode |
+                        DCONST_0.opcode  =>
+                        issue = "the constant value ${instruction.toString(vo)} is (most likely) used to initialize a local variable"
+                            relevance = Relevance.TechnicalArtifact
                     case _ ⇒
                         issue = "the value of the expression "+instruction.toString(vo)+" is not used"
                         relevance = Relevance.OfUtmostRelevance
