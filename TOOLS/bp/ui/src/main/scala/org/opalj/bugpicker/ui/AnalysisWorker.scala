@@ -31,19 +31,21 @@ package bugpicker
 package ui
 
 import java.net.URL
+import javafx.concurrent.{Service ⇒ jService}
+import javafx.concurrent.{Task ⇒ jTask}
+
 import scala.io.Source
 import scala.xml.{Node ⇒ xmlNode}
+import scalafx.beans.property.ObjectProperty
+import scalafx.concurrent.Service
+
 import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
+import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import javafx.concurrent.{Service ⇒ jService}
-import javafx.concurrent.{Task ⇒ jTask}
-import scalafx.beans.property.ObjectProperty
-import scalafx.concurrent.Service
 import org.opalj.log.OPALLogger
 import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML

@@ -44,7 +44,7 @@ import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.analysis.Issue
+import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
