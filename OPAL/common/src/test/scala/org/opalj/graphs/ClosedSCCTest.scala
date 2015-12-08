@@ -43,63 +43,62 @@ import org.scalatest.ParallelTestExecution
 @RunWith(classOf[JUnitRunner])
 class ClosedSCCTest extends FlatSpec with Matchers {
 
-    "An empty graph" should "not contain any cSCCs" in {
+    "an empty graph" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef]
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with just one node" should "not contain any cSCCs" in {
+    "a graph with just one node" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with a single path of three elements" should "not contain any cSCCs" in {
+    "a graph with a single path of three elements" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with a single path of 5 elements" should "not contain any cSCCs" in {
+    "a graph with a single path of 5 elements" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("c" → "d") += ("d" → "e")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with a single path of 5 elements, specified in mixed order" should "not contain any cSCCs" in {
+    "a graph with a single path of 5 elements, specified in mixed order" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef] += ("d" → "e") += ("a" → "b") += ("c" → "d") += ("b" → "c")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with multiple nodes, but no edges" should "not contain any cSCCs" in {
+    "a graph with multiple nodes, but no edges" should "not contain any cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with one node with a self dependency" should "contain one cSCC with the node" in {
+    "a graph with one node with a self dependency" should "contain one cSCC with the node" in {
         val g = Graph.empty[AnyRef] += ("a", "a")
         closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")))
     }
 
-    "A graph with four nodes with two nodes with a self dependency" should "contain two cSCCs with the respective nodes" in {
+    "a graph with four nodes with two nodes with a self dependency" should "contain two cSCCs with the respective nodes" in {
         val g = Graph.empty[AnyRef] += ("a", "a") += ("b") += ("c" → "c") += ("d")
         closedSCCs(g.vertices, g).map(_.toSet).toSet should be(Set(Set("a"), Set("c")))
     }
 
-    "A graph with two nodes which form a cSCCs" should "contain the cSCCs" in {
+    "a graph with two nodes which form a cSCCs" should "contain the cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a")
-        println; println(g)
         closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")+"b"))
     }
 
-    "A graph with four nodes which form a cSCCs" should "contain the cSCCs" in {
+    "a graph with four nodes which form a cSCCs" should "contain the cSCCs" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("c" → "d") += ("d" → "a")
         closedSCCs(g.vertices, g).map(_.toSet) should be(List(Set("a")+"b"+"c"+"d"))
     }
 
-    "A large tree-like graph " should "not contain a cSCC" in {
+    "a large tree-like graph " should "not contain a cSCC" in {
         val g = Graph.empty[AnyRef] += ("a", "b") += ("a" → "c") += ("a" → "d") += ("c" → "e") += ("d" → "e") += ("e" → "f")
         closedSCCs(g.vertices, g) should be(List.empty)
     }
 
-    "A graph with three nodes with a cSCC and an incoming dependency" should "contain one cSCC" in {
+    "a graph with three nodes with a cSCC and an incoming dependency" should "contain one cSCC" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a") += ("c" → "a")
         g.edges.size should be(3)
         val cSCCs = closedSCCs(g.vertices, g).map(_.toSet)
@@ -109,7 +108,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A graph with three nodes with a connected component but an outgoing dependency" should "not contain a cSCC" in {
+    "a graph with three nodes with a connected component but an outgoing dependency" should "not contain a cSCC" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "a") += ("b" → "c")
         g("a").size should be(1)
         g("b").size should be(2)
@@ -119,7 +118,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A graph with five nodes with two cSCCs and an incoming dependency" should "contain two cSCCs" in {
+    "a graph with five nodes with two cSCCs and an incoming dependency" should "contain two cSCCs" in {
         val data = List(("a" → "b"), ("b" → "a"), ("c" → "a"), ("d" → "e"), ("e" → "d"), ("c" → "d"))
         data.permutations.foreach { aPermutation ⇒
             val g = aPermutation.foldLeft(Graph.empty[AnyRef])(_ += _)
@@ -134,7 +133,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A graph with one SCC and once cSCCs" should "contain one cSCCs" in {
+    "a graph with one SCC and once cSCCs" should "contain one cSCCs" in {
         val g = Graph.empty[AnyRef] +=
             ("a" → "b") += ("f" → "b") += ("f" → "a") += ("b" → "f") +=
             ("a" → "e") += ("e" → "d") += ("d" → "c") += ("c" → "e")
@@ -147,7 +146,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A large totally connected graph" should "contain one cSCCs" in {
+    "a large totally connected graph" should "contain one cSCCs" in {
         val g = Graph.empty[AnyRef] +=
             ("a" → "b") += ("a" → "c") += ("a" → "d") += ("a" → "e") +=
             ("b" → "a") += ("b" → "c") += ("b" → "d") += ("b" → "e") +=
@@ -163,7 +162,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A large totally connected graph with self dependencies" should "contain one cSCCs" in {
+    "a large totally connected graph with self dependencies" should "contain one cSCCs" in {
         val g = Graph.empty[AnyRef] +=
             ("a" → "a") += ("a" → "b") += ("a" → "c") += ("a" → "d") += ("a" → "e") +=
             ("b" → "a") += ("b" → "b") += ("b" → "c") += ("b" → "d") += ("b" → "e") +=
@@ -179,7 +178,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         }
     }
 
-    "A complex graph with six nodes which creates one cSCC" should "contain one cSCCs" in {
+    "a complex graph with six nodes which creates one cSCC" should "contain one cSCCs" in {
         val data = List(
             ("a" → "b"), ("f" → "b"), ("f" → "a"), ("b" → "f"), ("a" → "e"),
             ("e" → "d"), ("d" → "c"), ("c" → "e"), ("c" → "b")
@@ -206,7 +205,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         info(s"tested $testedCount permutations")
     }
 
-    "A complex graph with several cSCCs and connectected components" should "contain all cSCCs" in {
+    "a complex graph with several cSCCs and connectected components" should "contain all cSCCs" in {
         val data = List(
             ("a" → "b"), ("b" → "c"), ("c" → "a"),
             ("g" → "f"),
@@ -260,6 +259,18 @@ class ClosedSCCTest extends FlatSpec with Matchers {
 
         val cSCCs = closedSCCs(g).map(_.toSet)
         val expected = List(Set("e", "d"))
+        if (cSCCs != expected) {
+            fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+        }
+    }
+
+    "a graph with two cSCCs which are connected by one SCC" should "contain two cSCCs" in {
+        val g = org.opalj.graphs.Graph.empty[AnyRef] += ("a", "b") += ("b", "c") +=
+            ("c", "d") += ("d", "e") += ("c", "g") += ("g", "a") += ("e", "d") +=
+            ("g", "h") += ("h", "j") += ("j", "g") += ("b", "x") += ("y", "x") +=
+            ("x", "z") += ("z", "y")
+        val cSCCs = closedSCCs(g).map(_.toSet).toSet
+        val expected = Set(Set("e", "d"), Set("x", "y", "z"))
         if (cSCCs != expected) {
             fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
         }
