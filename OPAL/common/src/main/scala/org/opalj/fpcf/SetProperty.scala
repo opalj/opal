@@ -28,8 +28,8 @@
  */
 package org.opalj.fpcf
 
-import org.opalj.collection.mutable.ArrayMap
 import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * A set property is a property that is shared by a set of entities. A set property is

@@ -38,7 +38,7 @@ import org.opalj.br.{ClassHierarchy ⇒ DefaultClassHierarchy}
  *
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined in
- * [[org.opalj.br.analyses.ClassHierarchy]].
+ * [[org.opalj.br.ClassHierarchy]].
  *
  * @author Michael Eichberg
  */

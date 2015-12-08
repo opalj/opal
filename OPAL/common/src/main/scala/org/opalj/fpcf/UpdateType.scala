@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 /**
- * The different types of updates distinguished by OPAL.
+ * The different types of updates distinguished by the FPCF.
  *
  * @author Michael Eichberg
  */

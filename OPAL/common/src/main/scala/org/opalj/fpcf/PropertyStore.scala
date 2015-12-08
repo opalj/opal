@@ -43,13 +43,13 @@ import scala.collection.mutable.{HashMap ⇒ HMap}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
+import org.opalj.collection.mutable.ArrayMap
 import org.opalj.concurrent.Locking.{withReadLock, withWriteLock}
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.handleUncaughtException
-import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
-import org.opalj.collection.mutable.ArrayMap
 
 /**
  * The central store which manages the execution of all
@@ -1108,15 +1108,6 @@ class PropertyStore private (
                     }
                 }
             }
-
-            // The algorithm used to compute the scc is described in/inspired by:
-            // Information Processing Letters 74 (2000) 107–114
-            // Path-based depth-first search for strong and biconnected components
-            // Harold N. Gabow 1
-            // Department of Computer Science, University of Colorado at Boulder
-            //
-            // However, we are interested in finding closed sccs; i.e., those strongly connected
-            // components that have no outgoing dependencies.
 
             println("EPKs in cycle (before splitting) ..."+cyclicComputableEPKCandidates)
             var cycles: List[HSet[EPK]] = Nil
