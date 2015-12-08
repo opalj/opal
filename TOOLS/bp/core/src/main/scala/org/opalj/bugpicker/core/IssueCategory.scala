@@ -29,7 +29,6 @@
 package org.opalj
 package bugpicker
 package core
-package analysis
 
 /**
  * Collection of predefined issue categories where

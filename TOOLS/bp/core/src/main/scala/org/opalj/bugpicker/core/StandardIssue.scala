@@ -29,7 +29,6 @@
 package org.opalj
 package bugpicker
 package core
-package analysis
 
 import scala.language.existentials
 import scala.Console.{GREEN, RESET}
