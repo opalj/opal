@@ -241,13 +241,13 @@ trait Issue {
     }
 
     def asBDL: String = {
-        this.analysis+
-            "{"+
-            "\tCategories: "+categories.mkString(", ")+
-            "\tKinds: "+kinds.mkString(", ")+
-            "Relevance: "+relevance.value.toString()+
-            "Package: "+classFile.thisType.packageName+
-            "Class: "+classFile.thisType.simpleName+
+        this.analysis+"\n"+
+            "{"+"\n"+
+            "\tCategories: "+categories.mkString(", ")+"\n"+
+            "\tKinds: "+kinds.mkString(", ")+"\n"+
+            "\tRelevance: "+relevance.value.toString()+"\n"+
+            "\tPackage: "+classFile.thisType.packageName+"\n"+
+            "\tClass: "+classFile.thisType.simpleName+"\n"+
             "}"
     }
 }
