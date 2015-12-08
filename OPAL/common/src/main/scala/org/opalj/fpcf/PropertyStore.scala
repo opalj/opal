@@ -1109,18 +1109,22 @@ class PropertyStore private (
                 }
             }
 
-            println("EPKs in cycle (before splitting) ..."+cyclicComputableEPKCandidates)
-            var cycles: List[HSet[EPK]] = Nil
-            while (cyclicComputableEPKCandidates.nonEmpty) {
-                val epk = cyclicComputableEPKCandidates.head
-                val cycle = HSet.empty[EPK]
-                cyclicComputableEPKCandidates --= determineDependentIncomputableEPKs(epk, cycle)
-                println("cycle            ..."+cycle)
-                println("remaining epks   ..."+cyclicComputableEPKCandidates)
-                cycles = cycle :: cycles
+            val cSCCs: List[Iterable[EPK]] = org.opalj.graphs.closedSCCs[EPK](
+                cyclicComputableEPKCandidates,
+                (epk: EPK) ⇒ observers.get(epk).view.map(_._1)
+            )
+            if (debug) OPALLogger.debug(
+                "analysis progress",
+                cSCCs.
+                    map(_.mkString(" -> ")).
+                    mkString("found the following strongly connected components:\n\t", "\n\t", "\n")
+            )
+            for {
+                cSCC ← cSCCs
+                r ← PropertyKey.resolveCycle(cSCC)
+            } {
+                handleResult(r)
             }
-            println("Cyclic (after splitting)  ..."+cyclicComputableEPKCandidates)
-            println("Cycles:\n"+cycles.mkString("\n"))
 
             // Let's get the set of observers that will never be notified, because
             // there are no open computations related to the respective property.
