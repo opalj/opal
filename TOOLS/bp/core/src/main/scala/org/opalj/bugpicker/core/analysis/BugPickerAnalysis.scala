@@ -412,6 +412,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
+                                    "UselessReevaluation",
                                     theProject, classFile, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
@@ -434,6 +435,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
+                                    "UselessReevaluation",
                                     theProject, classFile, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),

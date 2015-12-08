@@ -56,6 +56,11 @@ trait Issue {
     def project: SomeProject
 
     /**
+     * The unique id of the analysis.
+     */
+    def analysis: String
+
+    /**
      * The primarily affected class file.
      */
     def classFile: ClassFile
@@ -171,7 +176,7 @@ trait Issue {
      * The kind describes how '''this issue manifests itself in the source code'''
      * (see [[IssueKind]] for further details).
      */
-    def kind: Set[String]
+    def kinds: Set[String]
 
     // __________________________________________________________________________________
     //
@@ -233,6 +238,17 @@ trait Issue {
         val source = classFile.thisType.toJava.split('$').head
         val line = this.line.map(":"+_+") ").getOrElse(") ")
         "("+source+".java"+line + relevance.asEclipseConsoleString+" "+summary.replace('\n', ';')
+    }
+
+    def asBDL: String = {
+        this.analysis+
+            "{"+
+            "\tCategories: "+categories.mkString(", ")+
+            "\tKinds: "+kinds.mkString(", ")+
+            "Relevance: "+relevance.value.toString()+
+            "Package: "+classFile.thisType.packageName+
+            "Class: "+classFile.thisType.simpleName+
+            "}"
     }
 }
 

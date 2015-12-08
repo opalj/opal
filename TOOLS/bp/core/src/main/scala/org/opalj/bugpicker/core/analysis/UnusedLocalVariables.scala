@@ -105,6 +105,7 @@ object UnusedLocalVariables {
             }
             if (issue ne null) {
                 issues ::= StandardIssue(
+                    "UnusedLocalVariables",
                     theProject,
                     classFile,
                     Some(method),
