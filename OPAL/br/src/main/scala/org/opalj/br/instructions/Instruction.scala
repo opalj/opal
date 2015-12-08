@@ -195,6 +195,9 @@ trait Instruction {
      * to be an expression if a puts a value on the stack or in a register that is the result of
      * some kind of computation; i.e., just copying, duplicating or moving a value between the
      * stack and the registers is not considered to be an expression.
+     *
+     * @note The CHECKCAST instruction is special in the sense that it just inspects the top-most
+     * 			value.
      */
     def expressionResult: ExpressionResult
 
