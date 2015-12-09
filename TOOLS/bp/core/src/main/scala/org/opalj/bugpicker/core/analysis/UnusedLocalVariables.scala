@@ -49,6 +49,15 @@ import org.opalj.br.instructions.DCONST_0
 import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.Purity
+import org.opalj.fpcf.analysis.Pure
+import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.br.LocalVariable
+import org.opalj.br.instructions.ICONST_M1
+import org.opalj.br.instructions.IINC
 
 /**
  * Identifies unused local variables
@@ -57,19 +66,40 @@ import org.opalj.br.instructions.StoreLocalVariableInstruction
  */
 object UnusedLocalVariables {
 
-    def analyze(
-        theProject: SomeProject,
-        classFile:  ClassFile,
-        method:     Method,
-        result:     AIResult { val domain: Domain with TheCode with RecordDefUse }
+    def apply(
+        theProject:    SomeProject,
+        propertyStore: PropertyStore,
+        callGraph:     CallGraph,
+        classFile:     ClassFile,
+        method:        Method,
+        result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
     ): Seq[StandardIssue] = {
+
+        //
+        //
+        // IDENTIFYING RAW ISSUES
+        //
+        //
 
         if (method.isSynthetic)
             return Nil;
 
-        val unused = result.domain.unused()
+        val operandsArray = result.operandsArray
+        val unused = result.domain.unused().filter { vo ⇒
+            // filter unused local variables related to dead code...
+            // (we have another analysis for that)
+            operandsArray(vo) ne null
+        }
+
         if (unused.isEmpty)
             return Nil;
+
+        //
+        //
+        // POST PROCESSING ISSUES
+        //
+        //
+
         val code = result.domain.code
         val instructions = code.instructions
         var issues = List.empty[StandardIssue]
@@ -140,7 +170,9 @@ object UnusedLocalVariables {
                                 }
                             // else... we filter basically all issues unless we are sure that this is real...
                             case _ ⇒
-                                issue = s"the constant value ${instruction.toString(vo)} is (most likely) used to initialize a local variable"
+                                issue = "the constant value "+
+                                    instruction.toString(vo)+
+                                    "is (most likely) used to initialize a local variable"
                                 relevance = Relevance.TechnicalArtifact
                         }
 
@@ -149,8 +181,10 @@ object UnusedLocalVariables {
                         relevance = Relevance.DefaultRelevance
 
                     case _ ⇒
-                        issue = "the value of the expression "+instruction.toString(vo)+" is not used"
-                        relevance = Relevance.OfUtmostRelevance
+                        issue = "the value of the expression "+
+                            instruction.toString(vo)+
+                            " is not used"
+                        relevance = Relevance.VeryHigh
                 }
 
             }
