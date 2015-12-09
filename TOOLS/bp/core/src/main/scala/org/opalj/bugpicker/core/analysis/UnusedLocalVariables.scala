@@ -94,15 +94,30 @@ object UnusedLocalVariables {
             } else {
                 val instruction = instructions(vo)
                 instruction.opcode match {
+
                     case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
                         INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
-                        issue = "the return value of the call of "+invoke.declaringClass.toJava+
-                            "{ "+
-                            invoke.methodDescriptor.toJava(invoke.name)+
-                            " } is not used"
-                        // TODO we need an assessment how important it is to ignore the return value...
-                        relevance = Relevance.DefaultRelevance
+                        try {
+                            val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
+                            // TODO Use a more precise method to determine if a method has a side effect "pureness" is actually too strong
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
+                                issue = "the return value of the call of "+invoke.declaringClass.toJava+
+                                    "{ "+
+                                    invoke.methodDescriptor.toJava(invoke.name)+
+                                    " } is not used"
+                                relevance = Relevance.OfUtmostRelevance
+                            }
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct
+                            case t: Throwable ⇒
+                                OPALLogger.error(
+                                    "error",
+                                    "assessing analysis result failed; ignoring issue",
+                                    t
+                                )(theProject.logContext)
+                        }
+
                     case ACONST_NULL.opcode |
                         ICONST_0.opcode |
                         ICONST_M1.opcode |
