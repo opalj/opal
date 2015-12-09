@@ -223,6 +223,8 @@ case class StandardIssue(
 
         var infoNodes: List[Node] =
             List(
+                <dt>analysis</dt>,
+                <dd class="analysis_name">{ analysis }</dd>,
                 <dt>class</dt>,
                 <dd class="declaring_class" data-class={ classFile.fqn }>
                     { typeToXHTML(classFile.accessFlags, classFile.thisType, true) }
@@ -277,7 +279,6 @@ case class StandardIssue(
             }
 
             // The primary message...
-            locations ::= <span class="issue_summary">{ summary.split("\n").map(Text(_)).foldLeft(List.empty[Node])((c, n) ⇒ c ++ List(<br/>, n)) }</span>
             locations ::= <br/>
             lineNode.foreach(ln ⇒
                 locations =
@@ -293,14 +294,23 @@ case class StandardIssue(
                 <dd> { locations }</dd>
             infoNodes = infoNodes ::: List(dt, dd)
         }
-        infoNodes = infoNodes ::: List(<dt>relevance</dt>, <dd> { relevance.value.toString + s" (${Relevance.toCategoryName(relevance)})" } </dd>)
+        infoNodes ++= List(
+            <dt>summary</dt>,
+            <dd>
+                <span class="issue_summary">{ summary.split("\n").map(Text(_)).foldLeft(List.empty[Node])((c, n) ⇒ c ++ List(<br/>, n)) }</span>
+            </dd>
+        )
+        infoNodes ++= List(
+            <dt>relevance</dt>,
+            <dd> { relevance.value.toString + s" (${Relevance.toCategoryName(relevance)})" } </dd>
+        )
         val localVariablesAsXHTML = if (basicInfoOnly) None else localVariablesToXHTML
         val summaryNode =
             if (localVariablesAsXHTML.isDefined)
-                <dt class="issue">summary</dt>
+                <dt class="issue">details</dt>
             else
                 <dt class="issue">
-                    summary<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
+                    details<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
                 </dt>
 
         val dataKinds =
