@@ -48,6 +48,7 @@ import org.opalj.br.instructions.ICONST_0
 import org.opalj.br.instructions.DCONST_0
 import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
+import org.opalj.br.instructions.StoreLocalVariableInstruction
 
 /**
  * Identifies unused local variables
@@ -69,8 +70,8 @@ object UnusedLocalVariables {
         val unused = result.domain.unused()
         if (unused.isEmpty)
             return Nil;
-
-        val instructions = result.domain.code.instructions
+        val code = result.domain.code
+        val instructions = code.instructions
         var issues = List.empty[StandardIssue]
         val implicitParameterOffset = if (!method.isStatic) 1 else 0
         unused.foreach { vo ⇒
@@ -106,9 +107,22 @@ object UnusedLocalVariables {
                         ICONST_0.opcode |
                         LCONST_0.opcode |
                         FCONST_0.opcode |
-                        DCONST_0.opcode  =>
-                        issue = "the constant value ${instruction.toString(vo)} is (most likely) used to initialize a local variable"
-                            relevance = Relevance.TechnicalArtifact
+                        DCONST_0.opcode ⇒
+                        val nextPC = code.pcOfNextInstruction(vo)
+                        instructions(nextPC) match {
+                            case StoreLocalVariableInstruction((_, index)) ⇒
+                                val lvOption = code.localVariable(nextPC, index)
+                                if (lvOption.isDefined && (
+                                    lvOption.get.startPC < vo || lvOption.get.startPC > nextPC
+                                )) {
+                                    issue = s"the constant value ${instruction.toString(vo)} is not used"
+                                    relevance = Relevance.Low
+                                }
+                            // else... we filter basically all issues unless we are sure that this is real...
+                            case _ ⇒
+                                issue = s"the constant value ${instruction.toString(vo)} is (most likely) used to initialize a local variable"
+                                relevance = Relevance.TechnicalArtifact
+                        }
                     case _ ⇒
                         issue = "the value of the expression "+instruction.toString(vo)+" is not used"
                         relevance = Relevance.OfUtmostRelevance
