@@ -45,6 +45,12 @@ sealed trait UByteSet extends SmallValuesSet {
 
     override def -(value: Int): UByteSet /* The return type is refined! */
 
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
+        var newSet: UByteSet = EmptyUByteSet
+        this.foreach { v ⇒ if (f(v)) newSet = v +≈: newSet }
+        newSet
+    }
+
     /**
      * Converts the values to a string using the given separator and adding offset
      * to each value.
@@ -108,6 +114,7 @@ private[mutable] object EmptyUByteSet extends UByteSet {
     def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def foreach[U](f: UShort ⇒ U): Unit = {}
     def forall(f: Int ⇒ Boolean): Boolean = true
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = this
 
     def valuesToString(sep: String, offset: Int): String = ""
 
