@@ -125,7 +125,7 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner {
      * Selects all non-abstract static methods.
      */
     def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.isStatic && !m.isAbstract ⇒ m
+        case m: Method if m.body.isDefined & m.isStatic && !m.isAbstract ⇒ m
     }
 
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
