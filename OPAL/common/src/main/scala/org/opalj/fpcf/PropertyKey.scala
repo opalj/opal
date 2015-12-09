@@ -57,31 +57,72 @@ object PropertyKey {
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
     private[this] val fallbackProperties = ArrayBuffer.empty[Entity ⇒ Property]
+    private[this] val cycleResolutionStrategies = ArrayBuffer.empty[Iterable[EPK] ⇒ Iterable[PropertyComputationResult]]
     private[this] var lastKeyId: Int = -1
 
-    def create(name: String, fallback: Property): PropertyKey = {
+    def create(
+        name:                    String,
+        fallbackProperty:        Entity ⇒ Property,
+        cycleResolutionStrategy: Iterable[EPK] ⇒ Iterable[PropertyComputationResult]
+    ): PropertyKey = {
         withWriteLock(lock) {
             lastKeyId += 1
             propertyKeyNames += name
-            fallbackProperties += ((e: Entity) ⇒ fallback)
+            fallbackProperties += fallbackProperty
+            cycleResolutionStrategies += cycleResolutionStrategy
             new PropertyKey(lastKeyId)
         }
     }
 
-    def create(name: String, fallback: Entity ⇒ Property): PropertyKey = {
-        withWriteLock(lock) {
-            lastKeyId += 1
-            propertyKeyNames += name
-            fallbackProperties += fallback
-            new PropertyKey(lastKeyId)
-        }
+    def create(
+        name:                    String,
+        fallback:                Property,
+        cycleResolutionStrategy: Iterable[EPK] ⇒ Iterable[PropertyComputationResult]
+    ): PropertyKey = {
+        create(name, (e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
+
+    def create(
+        name:                    String,
+        fallback:                Entity ⇒ Property,
+        cycleResolutionProperty: Property
+    ): PropertyKey = {
+        create(
+            name,
+            fallback,
+            (epks: Iterable[EPK]) ⇒ { Seq(Result(epks.head.e, cycleResolutionProperty)) }
+        )
+    }
+
+    def create(
+        name:                    String,
+        fallback:                Property,
+        cycleResolutionProperty: Property
+    ): PropertyKey = {
+        create(name, (e: Entity) ⇒ fallback, cycleResolutionProperty)
+    }
+
+    def create(name: String, fallback: Property): PropertyKey = {
+        create(name, fallback, fallback)
+    }
+
+    //
+    // Query the core properties of each property kind
+    // ===============================================
+    //
 
     def name(id: Int): String = withReadLock(lock) { propertyKeyNames(id) }
 
     def fallbackProperty(e: Entity, pk: PropertyKey): Property = {
         withReadLock(lock) {
             fallbackProperties(pk.id)(e)
+        }
+    }
+
+    def resolveCycle(epks: Iterable[EPK]): Iterable[PropertyComputationResult] = {
+        withReadLock(lock) {
+            val epk = epks.head
+            cycleResolutionStrategies(epk.pk.id)(epks)
         }
     }
 

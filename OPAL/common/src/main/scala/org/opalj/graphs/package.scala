@@ -141,6 +141,15 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
+        // The algorithm used to compute the scc is loosely inspired by:
+        // Information Processing Letters 74 (2000) 107–114
+        // Path-based depth-first search for strong and biconnected components
+        // Harold N. Gabow 1
+        // Department of Computer Science, University of Colorado at Boulder
+        //
+        // However, we are interested in finding closed sccs; i.e., those strongly connected
+        // components that have no outgoing dependencies.
+
         val PathElementSeparator: Null = null
 
         var cSCCs = List.empty[Iterable[N]]
@@ -175,7 +184,7 @@ package object graphs {
                 nextDFSNum += 1
                 dfsNum
             }
-            def pathLength = nextDFSNum - initialDFSNum
+            def pathLength = nextDFSNum - initialDFSNum // <=> path.length
             def killPath(): Unit = { path.clear(); thisPathFirstDFSNum = nextDFSNum }
             def reportPath(p: Iterable[N]): Unit = { cSCCs ::= p }
 
@@ -201,7 +210,7 @@ package object graphs {
                                 killPath()
                             case nCSCCId if nCSCCId == cSCCId(path.last) &&
                                 (
-                                    thisPathNDFSNum == 0 ||
+                                    thisPathNDFSNum == 0 /*all elements on the path define a cSCC*/ ||
                                     nCSCCId != cSCCId(path(thisPathNDFSNum - 1))
                                 ) ⇒
                                 reportPath(path.takeRight(pathLength - thisPathNDFSNum))

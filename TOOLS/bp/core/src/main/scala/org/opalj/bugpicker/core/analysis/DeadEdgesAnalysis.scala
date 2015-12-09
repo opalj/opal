@@ -392,6 +392,7 @@ object DeadEdgesAnalysis {
                     isNonExistingDefaultBranchOfSwitch ||
                     isRelatedToCompilationOfFinally
             issues ::= StandardIssue(
+                "DeadEdgesAnalysis",
                 theProject, classFile, Some(method), Some(pc),
                 Some(operands), Some(result.localsArray(pc)),
                 if (isJustDeadPath)

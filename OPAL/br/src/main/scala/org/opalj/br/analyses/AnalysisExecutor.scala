@@ -175,18 +175,27 @@ trait AnalysisExecutor {
             filenames.toSeq.map(verifyFile).flatten
         }
 
-        val (cp, args1) = {
-            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+        val (cp, args1) = try {
+            {
+                def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
 
-            args.partition(_.startsWith("-cp=")) match {
-                case (Array(), notCPArgs) ⇒
-                    (Array(System.getProperty("user.dir")), notCPArgs)
-                case (Array(cpParam), notCPArgs) ⇒
-                    (splitCPath(cpParam), notCPArgs)
-                case (cpParams: Array[String], notCPArgs) ⇒
-                    (cpParams.map(splitCPath).flatten, notCPArgs)
+                args.partition(_.startsWith("-cp=")) match {
+                    case (Array(), notCPArgs) ⇒
+                        (Array(System.getProperty("user.dir")), notCPArgs)
+                    case (Array(cpParam), notCPArgs) ⇒
+                        (splitCPath(cpParam), notCPArgs)
+                    case (cpParams: Array[String], notCPArgs) ⇒
+                        (cpParams.map(splitCPath).flatten, notCPArgs)
+                }
             }
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                println(Console.RED+"[error] failed parsing the classpath:"+Console.RESET)
+                t.printStackTrace()
+                sys.exit(2)
         }
+
         OPALLogger.info(
             "setup", s"the classpath is ${cp.mkString}"
         )(GlobalLogContext)

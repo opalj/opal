@@ -141,6 +141,7 @@ object ThrowsExceptionAnalysis {
                         Relevance.VeryHigh
                 }
                 StandardIssue(
+                    "ThrowsExceptionAnalysis",
                     theProject, classFile, Some(method), Some(pc),
                     Some(operands),
                     Some(result.localsArray(pc)),

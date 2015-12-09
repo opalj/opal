@@ -99,6 +99,7 @@ object UselessComputationsAnalysis {
 
         def Issue(pc: PC, message: String, relevance: Relevance): StandardIssue =
             StandardIssue(
+                "UselessComputationsAnalysis",
                 theProject, classFile, Some(method),
                 Some(pc),
                 Some(result.operandsArray(pc)), Some(result.localsArray(pc)),

@@ -141,6 +141,7 @@ object UnusedMethodsAnalysis {
         if (callers.isEmpty) {
             val relevance: Relevance = rateMethod()
             Some(StandardIssue(
+                "UnusedMethodsAnalysis",
                 theProject, classFile, Some(method), None,
                 None,
                 None,

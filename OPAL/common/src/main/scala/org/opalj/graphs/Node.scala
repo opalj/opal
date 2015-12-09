@@ -36,7 +36,7 @@ import scala.collection.Map
  *
  * Two nodes are considered equal if they have the same unique id.
  *
- * @see [[org.opalj.br.analyses.ClassHierarchy]]'s `toGraph` method for
+ * @see [[org.opalj.br.ClassHierarchy]]'s `toGraph` method for
  *      an example usage.
  *
  * @author Michael Eichberg

@@ -206,6 +206,7 @@ object GuardedAndUnguardedAccessAnalysis {
                         IssueCategory.Smell
                 val issues = unguardedAccesses.map(ua ⇒ (ua._3, "unguarded access"))
                 StandardIssue(
+                    "GuardedAndUnguardedAccessAnalysis",
                     theProject, classFile, Some(method), Some(guardPC),
                     Some(operandsArray(guardPC)),
                     None,
