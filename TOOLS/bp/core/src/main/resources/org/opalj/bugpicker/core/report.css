@@ -88,7 +88,10 @@ div#analysis_results {
 	padding: 0em;
 }
 
-.analysis_name {
+dt.analysis {
+	color: rgb(78, 78, 78);
+}
+dt.analysis + dd {
 	color: rgb(78, 78, 78);
 }
 
