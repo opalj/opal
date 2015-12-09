@@ -223,8 +223,8 @@ case class StandardIssue(
 
         var infoNodes: List[Node] =
             List(
-                <dt>analysis</dt>,
-                <dd class="analysis_name">{ analysis }</dd>,
+                <dt class="analysis">analysis</dt>,
+                <dd>{ analysis }</dd>,
                 <dt>class</dt>,
                 <dd class="declaring_class" data-class={ classFile.fqn }>
                     { typeToXHTML(classFile.accessFlags, classFile.thisType, true) }
@@ -297,7 +297,7 @@ case class StandardIssue(
         infoNodes ++= List(
             <dt>summary</dt>,
             <dd>
-                <span class="issue_summary">{ summary.split("\n").map(Text(_)).foldLeft(List.empty[Node])((c, n) ⇒ c ++ List(<br/>, n)) }</span>
+                <span class="issue_summary">{ Unparsed(summary.replace("\n", "<br>")) }</span>
             </dd>
         )
         infoNodes ++= List(
