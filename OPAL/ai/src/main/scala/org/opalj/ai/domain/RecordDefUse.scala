@@ -247,6 +247,38 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = used(valueOrigin + parametersOffset)
 
     /**
+     * Returns the union of the set of unused parameters and the set of all instructions which
+     * compute a value that is not used in the following.
+     */
+    def unused(): ValueOrigins = {
+        var unused = SmallValuesSet.empty(min, max)
+
+        // 1. check if the parameters are used...
+        val parametersOffset = this.parametersOffset
+        val defLocals0 = defLocals(0)
+        var parameterIndex = 0
+        while (parameterIndex < parametersOffset) {
+
+            if (defLocals0(parameterIndex) ne null) /*we may have parameters with comp. type 2*/ {
+                val unusedParameter = -parameterIndex - 1
+                val usedBy = this.usedBy(unusedParameter)
+                if (usedBy eq null) { unused = unusedParameter +≈: unused }
+            }
+            parameterIndex += 1
+        }
+
+        // 2. check instructions
+        code.foreach { (pc, instruction) ⇒
+            instruction.expressionResult match {
+                case NoExpression        ⇒ // nothing to do
+                case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+            }
+        }
+
+        unused
+    }
+
+    /**
      * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
      * and which is stored at the stack position with the given stackIndex. The first/top value on
      * the stack has index 0.
@@ -809,23 +841,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
                 138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
-                193 /*instanceof*/ ⇒
+                193 /*instanceof*/ |
+                CHECKCAST.opcode ⇒
                 stackOp(1, true)
-
-            case CHECKCAST.opcode ⇒
-                // we "just" inspect the top-most stack value
-                val currentDefOps = defOps(currentPC)
-                updateUsageInformation(currentDefOps.head, currentPC)
-                val newDefOps =
-                    if (isExceptionalControlFlow) {
-                        val newDefOps = defOps(successorPC)
-                        if (newDefOps eq null)
-                            List(ValueOrigins(origin = successorPC))
-                        else
-                            newDefOps
-                    } else
-                        currentDefOps
-                propagate(newDefOps, defLocals(currentPC))
 
             //
             // "ERROR" HANDLING

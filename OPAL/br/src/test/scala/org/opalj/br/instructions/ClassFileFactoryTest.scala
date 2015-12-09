@@ -44,6 +44,7 @@ import org.opalj.br.analyses.Project
  */
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
+
     val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
     val lambdasProject = Project(locateTestResources("classfiles/Lambdas.jar", "br"))
 
@@ -56,10 +57,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     private def getMethods(
         theClass:   ObjectType,
         repository: ClassFileRepository
-    ): Iterable[(ObjectType, Method)] =
+    ): Iterable[(ObjectType, Method)] = {
         repository.classFile(theClass).map { cf ⇒
             cf.methods.map((theClass, _))
         }.getOrElse(Iterable.empty)
+    }
 
     private def checkAndReturnMethod(
         classFile: ClassFile

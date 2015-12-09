@@ -30,7 +30,6 @@ package org.opalj
 package ai
 package util
 
-import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -42,7 +41,7 @@ import org.junit.runner.RunWith
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class UtilTest extends FlatSpec with Matchers with ParallelTestExecution {
+class UtilTest extends FlatSpec with Matchers {
 
     behavior of "the function removeFirstWhile"
 

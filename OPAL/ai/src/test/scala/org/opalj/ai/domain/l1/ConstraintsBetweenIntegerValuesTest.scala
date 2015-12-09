@@ -35,7 +35,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.br.{ObjectType, ArrayType, IntegerType}
 
@@ -45,7 +44,7 @@ import org.opalj.br.{ObjectType, ArrayType, IntegerType}
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers with ParallelTestExecution {
+class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
 

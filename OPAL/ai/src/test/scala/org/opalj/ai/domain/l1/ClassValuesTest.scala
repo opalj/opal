@@ -34,7 +34,6 @@ package l1
 import org.junit.runner.RunWith
 import org.junit.Ignore
 
-import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -49,7 +48,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class ClassValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
+class ClassValuesTest extends FlatSpec with Matchers {
 
     import PlainClassesTest._
 

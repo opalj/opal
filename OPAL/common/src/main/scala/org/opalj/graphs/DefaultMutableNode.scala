@@ -45,8 +45,7 @@ class DefaultMutableNode[I](
     identifierToString:  I ⇒ String,
     theVisualProperties: Map[String, String],
     theChildren:         List[DefaultMutableNode[I]]
-)
-        extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+) extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
         with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(identifier: I) {

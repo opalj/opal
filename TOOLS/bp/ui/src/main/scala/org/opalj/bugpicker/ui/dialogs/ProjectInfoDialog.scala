@@ -55,8 +55,12 @@ object ProjectInfoDialog {
 
     def show(owner: Stage, project: Project[URL], sources: Seq[File]): Unit = {
         if (project == null) {
-            DialogStage.showMessage("Error", "You need to load a project before you can get information about it.", owner)
-            return
+            DialogStage.showMessage(
+                "Error",
+                "You need to load a project before you can get information about it.",
+                owner
+            )
+            return ;
         }
 
         val preferences = BugPicker.loadFilesFromPreferences().getOrElse(LoadedFiles())

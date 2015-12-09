@@ -97,7 +97,7 @@ case class CFG(
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            Set(code.instructions(pc).indexOfNextInstruction(pc, code))
+            Set(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             bb.successors.collect {

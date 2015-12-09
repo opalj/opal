@@ -31,7 +31,6 @@ package util
 
 import org.junit.runner.RunWith
 
-import org.scalatest.ParallelTestExecution
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
@@ -43,7 +42,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestExecution {
+class ControlAbstractionsTest extends FlatSpec with Matchers {
 
     //
     // foreachNonNullValueOf

@@ -67,7 +67,7 @@ trait Instruction {
      * standard method called by clients, it is often meaningful to directly implement
      * this. In particular since most instructions cannot be modified by wide.
      */
-    def indexOfNextInstruction(currentPC: PC, code: Code): Int
+    def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int
 
     /**
      * The index of the next instruction in the code array.
@@ -84,8 +84,8 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        nextInstructions(currentPC, code, regularSuccessorsOnly = false)
+    final def nextInstructions(currentPC: PC)(implicit code: Code): PCs = {
+        nextInstructions(currentPC, regularSuccessorsOnly = false)
     }
 
     /**
@@ -94,7 +94,7 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs
+    def nextInstructions(currentPC: PC, regularSuccessorsOnly: Boolean)(implicit code: Code): PCs
 
     /**
      * Determines if this instruction is isomorphic to the given instruction.
@@ -190,6 +190,15 @@ trait Instruction {
     def indexOfWrittenLocal: Int
 
     /**
+     * Returns the location – [[Stack]], [[Register]] or [[NoExpression]] – where the value
+     * computed by this instruction is stored. In this case an instruction is only considered
+     * to be an expression if a puts a value on the stack or in a register that is the result of
+     * some kind of computation; i.e., just copying, duplicating or moving a value between the
+     * stack and the registers is not considered to be an expression.
+     */
+    def expressionResult: ExpressionResult
+
+    /**
      * Returns a string representation of this instruction. If this instruction is a
      * (conditional) jump instruction then the PCs of the target instructions are
      * given absolute address.
@@ -232,11 +241,13 @@ object Instruction {
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
         currentPC:   PC,
-        code:        Code,
         exceptions:  List[ObjectType]
+    )(
+        implicit
+        code: Code
     ): UShortSet /* <= mutable by purpose! */ = {
 
-        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
+        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC))
 
         def processException(exception: ObjectType): Unit = {
             import Code.preDefinedClassHierarchy.isSubtypeOf
@@ -257,11 +268,13 @@ object Instruction {
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
         currentPC:   PC,
-        code:        Code,
         exception:   ObjectType
+    )(
+        implicit
+        code: Code
     ): UShortSet /* <= mutable by purpose! */ = {
 
-        val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
+        val nextInstruction = instruction.indexOfNextInstruction(currentPC)
 
         code.handlersFor(currentPC) find { handler ⇒
             import Code.preDefinedClassHierarchy.isSubtypeOf

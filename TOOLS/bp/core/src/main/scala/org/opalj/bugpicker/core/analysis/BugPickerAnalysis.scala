@@ -371,6 +371,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 )
 
                 //
+                // FIND UNUSED LOCAL VARIABLES
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        UnusedLocalVariables.analyze(theProject, classFile, method, result)
+                    )
+                )
+
+                //
                 // FIND USELESS EXPRESSION EVALUATIONS
                 //
 
@@ -403,12 +412,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
+                                    "UselessReevaluation",
                                     theProject, classFile, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                                     Set(IssueKind.ConstantComputation),
                                     Seq.empty,
                                     new Relevance(20)
@@ -425,12 +435,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
+                                    "UselessReevaluation",
                                     theProject, classFile, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                                     Set(IssueKind.ConstantComputation),
                                     Seq.empty,
                                     new Relevance(20)

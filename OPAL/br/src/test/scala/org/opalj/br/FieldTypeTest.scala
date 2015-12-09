@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
 
 /**
  * Test the construction and analysis of types.
@@ -38,7 +37,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class FieldTypeTest extends FunSuite with ParallelTestExecution {
+class FieldTypeTest extends FunSuite {
 
     test("Byte Field Descriptor") {
         val fieldType = FieldType("B")

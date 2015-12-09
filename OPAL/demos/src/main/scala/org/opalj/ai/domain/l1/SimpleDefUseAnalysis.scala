@@ -31,9 +31,10 @@ package ai
 package domain
 package l1
 
-import java.net.URL
 import scala.language.existentials
+import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.JavaConverters._
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
@@ -42,6 +43,12 @@ import org.opalj.br.analyses.Project
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import scala.collection.immutable.ListSet
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
@@ -65,38 +72,66 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
     ) = {
 
         var analysisTime: Seconds = Seconds.None
-        val UnusedDefUseNodes = time {
+        val unusedDefUseNodes = time {
 
             val results = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
             theProject.parForeachMethodWithBody() { m ⇒
                 val (_, classFile, method) = m
+                if (!method.isSynthetic) {
 
-                val domain = new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
+                    val domain = new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)
+                    val result = ai(classFile, method, domain)
+                    val instructions = result.domain.code.instructions
+                    val unused = result.domain.unused()
+                    if (unused.nonEmpty) {
+                        var values = ListSet.empty[String]
+                        val implicitParameterOffset = if (!method.isStatic) 1 else 0
+                        unused.foreach { vo ⇒
+                            if (vo < 0) {
+                                // we have to make sure that we do not create an issue report
+                                // for instance methods that can be/are inherited
+                                if (method.isStatic ||
+                                    method.isPrivate ||
+                                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
+                                    method.name == "<init>") {
+                                    if (vo == -1) {
+                                        values += "this"
+                                    } else {
+                                        values += "param:"+(-(vo + implicitParameterOffset))
+                                    }
+                                }
+                            } else {
+                                val instruction = instructions(vo)
+                                instruction.opcode match {
+                                    case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
+                                        INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
+                                        val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
+                                        values +=
+                                            vo.toString+": invoke "+invoke.declaringClass.toJava+
+                                            "{ "+
+                                            invoke.methodDescriptor.toJava(invoke.name)+
+                                            " }"
+                                    case _ ⇒
+                                        values += vo.toString+": "+instruction.toString(vo)
+                                }
 
-                val result = ai(classFile, method, domain)
+                            }
 
-                val defUseGraph =
-                    result.domain.createDefUseGraph(result.domain.code)
-
-                def isUnusedNode(n: DefaultMutableNode[ValueOrigin]): Boolean =
-                    n.identifier == Int.MinValue
-
-                val unusedNode = defUseGraph.find(isUnusedNode).get
-
-                if (!unusedNode.children.isEmpty)
-                    results.add( //TODO Think about nicer output formatting
-                        method.toJava(classFile)+","+
-                            unusedNode.children.map(e ⇒ e.toHRR).mkString+"\n"
-                    )
+                        }
+                        if (values.nonEmpty)
+                            results.add(method.toJava(classFile) + values.mkString("{", ",", "}"))
+                    }
+                }
             }
-            results
+            results.asScala
 
         } { t ⇒ analysisTime = t.toSeconds }
 
         BasicReport(
-            UnusedDefUseNodes.toString()+"\nThe analysis took "+analysisTime
+            unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n")+
+                "The analysis took "+analysisTime+" and found "+unusedDefUseNodes.size+" issues"
         )
     }
 

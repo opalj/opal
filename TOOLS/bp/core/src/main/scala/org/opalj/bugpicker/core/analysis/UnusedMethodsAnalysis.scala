@@ -37,6 +37,8 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.VoidType
 
 /**
  * Identifies unused methods and constructors using the given call graph.
@@ -59,19 +61,53 @@ object UnusedMethodsAnalysis {
      *      Such constructors are usually defined to avoid instantiations of the
      *      respective class. E.g.
      *      `private XYZ(){throw new UnsupportedOperationException()`
+     * - The method is "the finalize" method
      */
     def analyze(
-        theProject: SomeProject,
-        callgraph:  ComputedCallGraph, callgraphEntryPoints: Set[Method],
-        classFile: ClassFile, method: Method
+        theProject:           SomeProject,
+        callgraph:            ComputedCallGraph,
+        callgraphEntryPoints: Set[Method],
+        classFile:            ClassFile,
+        method:               Method
     ): Option[StandardIssue] = {
+
+        if (method.name == "finalize" && (method.descriptor eq MethodDescriptor.NoArgsAndReturnVoid))
+            return None;
 
         if (callgraphEntryPoints.contains(method))
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
 
-            import method.{isConstructor, isPrivate, parametersCount}
+            import method.{isConstructor, isPrivate, parametersCount, descriptor, name}
+
+            // 
+            // Let's handle the standard methods...
+            //
+            if ((name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
+                (name == "hashCode" && descriptor == ObjectHashCodeMethodDescriptor)) {
+                return Relevance.VeryLow;
+            }
+
+            // 
+            // Let's handle standard getter and setter methods...
+            //
+            if (name.length() > 3 &&
+                ((name.startsWith("get") && descriptor.returnType != VoidType && descriptor.parametersCount == 0) ||
+                    (name.startsWith("set") && descriptor.returnType == VoidType && descriptor.parametersCount == 1)) &&
+                    {
+                        val fieldNameCandidate = name.substring(3)
+                        val fieldName = fieldNameCandidate.charAt(0).toLower + fieldNameCandidate.substring(1)
+                        classFile.findField(fieldName).isDefined ||
+                            classFile.findField('_' + fieldName).isDefined ||
+                            classFile.findField('_' + fieldNameCandidate).isDefined
+                    }) {
+                return Relevance.VeryLow;
+            }
+
+            //
+            // IN THE FOLLOWING WE DEAL WITH CONSTRUCTORS
+            //
 
             // Let's check if it is a default constructor
             // which was defined to avoid instantiations of the
@@ -105,6 +141,7 @@ object UnusedMethodsAnalysis {
         if (callers.isEmpty) {
             val relevance: Relevance = rateMethod()
             Some(StandardIssue(
+                "UnusedMethodsAnalysis",
                 theProject, classFile, Some(method), None,
                 None,
                 None,

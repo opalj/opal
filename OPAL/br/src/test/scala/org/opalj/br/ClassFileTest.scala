@@ -30,7 +30,7 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
@@ -42,7 +42,7 @@ import org.scalatest.time.Span
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
+class ClassFileTest extends FunSuite with Matchers {
 
     import reader.Java8Framework.ClassFile
 
@@ -73,9 +73,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     }
 
     test("test that all constructors are returned") {
-        assert(
-            immutableList.constructors.size.toInt == 2
-        )
+        assert(immutableList.constructors.size.toInt == 2)
     }
 
     test("test that it can find all other methods") {

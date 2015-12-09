@@ -39,6 +39,7 @@ abstract class FieldWriteAccess extends FieldAccess {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def expressionResult: ExpressionResult = NoExpression
 }
 
 /**

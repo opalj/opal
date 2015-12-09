@@ -76,8 +76,8 @@ object MethodComplexity extends PropertyMetaInformation {
 class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
 
     def apply(method: Method): MethodComplexity = {
-        val body = method.body.get
-        val instructions = body.instructions
+        implicit val code = method.body.get
+        val instructions = code.instructions
 
         var complexity = instructions.size;
         var hasLoop = false;
@@ -388,7 +388,7 @@ class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
                 complexity = Int.MaxValue
                 nextPCs = Set.empty
             } else {
-                currentInstruction.nextInstructions(pc, body).foreach { nextPC ⇒
+                currentInstruction.nextInstructions(pc).foreach { nextPC ⇒
                     if (evaluatedPCs.contains(nextPC)) {
                         if (nextPC <= pc) {
                             // we have detected a loop

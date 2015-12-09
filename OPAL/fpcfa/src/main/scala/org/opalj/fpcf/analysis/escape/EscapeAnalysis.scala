@@ -107,8 +107,8 @@ class EscapeAnalysis(val debug: Boolean) {
             val returnType = method.returnType
             if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
                 return true;
-            val body = method.body.get
-            val instructions = body.instructions
+            implicit val code = method.body.get
+            val instructions = code.instructions
             val max = instructions.length
             var pc = 0
             while (pc < max) {
@@ -135,7 +135,7 @@ class EscapeAnalysis(val debug: Boolean) {
                             return true;
                     case _ ⇒ /*nothing to do*/
                 }
-                pc = instruction.indexOfNextInstruction(pc, body)
+                pc = instruction.indexOfNextInstruction(pc)
             }
 
             return false;

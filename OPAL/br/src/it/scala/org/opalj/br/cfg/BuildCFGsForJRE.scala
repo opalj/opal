@@ -59,7 +59,7 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
         project.parForeachMethodWithBody(() ⇒ false) { m ⇒
             val (_, classFile, method) = m
-            val code = method.body.get
+            implicit val code = method.body.get
             try {
                 val cfg = time {
                     CFGFactory(code)
@@ -103,7 +103,7 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
                 code.foreach { (pc, instruction) ⇒
-                    val nextInstructions = instruction.nextInstructions(pc, code).iterable.toSet
+                    val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
                     val cfgSuccessors = cfg.successors(pc)
                     if (nextInstructions != cfgSuccessors) {
                         fail(s"the instruction ($instruction) with pc $pc has the following "+

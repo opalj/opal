@@ -35,7 +35,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import scala.collection.immutable.SortedSet
 
@@ -48,15 +47,14 @@ import org.opalj.br.{ObjectType, ArrayType}
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultLongSetsTest extends FunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000
 
     class LongSetsTestDomain(
         override val maxCardinalityOfLongSets: Int = Int.MaxValue
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues

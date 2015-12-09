@@ -38,7 +38,6 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.ObjectType
@@ -55,7 +54,7 @@ import org.opalj.br.IntegerType
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
     class TheDomain
         extends CorrelationalDomain

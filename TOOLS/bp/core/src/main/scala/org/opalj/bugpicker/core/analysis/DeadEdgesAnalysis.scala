@@ -224,7 +224,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true).iterator
+            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).iterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
@@ -374,7 +374,7 @@ object DeadEdgesAnalysis {
                         (pc, s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← $instr")
 
                     case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
-                        val nextPC = instr.indexOfNextInstruction(pc, body)
+                        val nextPC = instr.indexOfNextInstruction(pc)
                         val operands = operandsArray(nextPC)
                         operands != null &&
                             operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
@@ -382,7 +382,7 @@ object DeadEdgesAnalysis {
                         val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                         (
                             pc,
-                            s"${operandsArray(instr.indexOfNextInstruction(pc, body)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                            s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
                         )
                 }
 
@@ -392,6 +392,7 @@ object DeadEdgesAnalysis {
                     isNonExistingDefaultBranchOfSwitch ||
                     isRelatedToCompilationOfFinally
             issues ::= StandardIssue(
+                "DeadEdgesAnalysis",
                 theProject, classFile, Some(method), Some(pc),
                 Some(operands), Some(result.localsArray(pc)),
                 if (isJustDeadPath)
@@ -410,7 +411,7 @@ object DeadEdgesAnalysis {
                             ""
                     )
                 ),
-                Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                 Set(IssueKind.DeadPath),
                 hints,
                 if (isTechnicalArtifact)

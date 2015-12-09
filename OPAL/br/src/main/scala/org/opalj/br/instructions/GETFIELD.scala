@@ -64,14 +64,16 @@ case class GETFIELD(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
     ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.NullPointerException
+                this, currentPC, ObjectType.NullPointerException
             )
     }
 

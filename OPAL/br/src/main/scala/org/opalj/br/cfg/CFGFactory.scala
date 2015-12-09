@@ -85,6 +85,7 @@ object CFGFactory {
      * 		if a certain exception is potentially handled by an exception handler.
      */
     def apply(
+        implicit
         code:           Code,
         classHierarchy: ClassHierarchy = Code.preDefinedClassHierarchy
     ): CFG = {
@@ -304,7 +305,7 @@ object CFGFactory {
                     runningBB = null
 
                 case _ /*ALL STANDARD INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ ⇒
-                    assert(instruction.nextInstructions(pc, code, regularSuccessorsOnly = true).size == 1)
+                    assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
 

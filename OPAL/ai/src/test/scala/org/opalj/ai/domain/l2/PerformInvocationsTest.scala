@@ -33,7 +33,7 @@ package l2
 
 import org.junit.runner.RunWith
 import org.junit.Ignore
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -52,7 +52,7 @@ import org.opalj.ai.domain.DefaultRecordMethodCallResults
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExecution {
+class PerformInvocationsTest extends FlatSpec with Matchers {
 
     import PerformInvocationsTestFixture._
 
@@ -246,8 +246,7 @@ object PerformInvocationsTestFixture {
     abstract class InvocationDomain(
         val project: Project[java.net.URL],
         val method:  Method
-    )
-            extends Domain
+    ) extends Domain
             with l0.TypeLevelInvokeInstructions
             with PerformInvocations
             with DefaultHandlingOfMethodResults
@@ -274,14 +273,20 @@ object PerformInvocationsTestFixture {
 
         type CalledMethodDomain = Domain with MethodCallResults
 
-        def calledMethodDomain(classFiel: ClassFile, method: Method): Domain with MethodCallResults =
+        def calledMethodDomain(
+            classFiel: ClassFile,
+            method:    Method
+        ): Domain with MethodCallResults =
             createInvocationDomain(project, method)
 
         def calledMethodAI = BaseAI
 
     }
 
-    class LiInvocationDomain(project: Project[java.net.URL], method: Method)
+    class LiInvocationDomain(
+        project: Project[java.net.URL],
+        method:  Method
+    )
             extends InvocationDomain(project, method) with LiDomain {
 
         protected[this] def createInvocationDomain(

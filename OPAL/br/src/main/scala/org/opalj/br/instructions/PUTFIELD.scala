@@ -41,11 +41,10 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class PUTFIELD(
-    declaringClass: ObjectType,
-    name:           String,
-    fieldType:      FieldType
-)
-        extends FieldWriteAccess {
+        declaringClass: ObjectType,
+        name:           String,
+        fieldType:      FieldType
+) extends FieldWriteAccess {
 
     final def opcode: Opcode = PUTFIELD.opcode
 
@@ -57,15 +56,18 @@ case class PUTFIELD(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.NullPointerException
+                this, currentPC, ObjectType.NullPointerException
             )
+    }
 
     override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 

@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
@@ -49,10 +49,7 @@ import br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithLoopsTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class MethodsWithLoopsTest extends FlatSpec with Matchers {
 
     import MethodsWithLoopsTest._
 

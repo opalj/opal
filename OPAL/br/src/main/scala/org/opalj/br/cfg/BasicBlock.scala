@@ -99,7 +99,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
         val endPC = this.endPC
         while (pc <= endPC) {
             f(pc)
-            pc = instructions(pc).indexOfNextInstruction(pc, code)
+            pc = instructions(pc).indexOfNextInstruction(pc)
         }
     }
 

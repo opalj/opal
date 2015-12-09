@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="OPALEclipse"
+            id="OPALEclipse">
+      </category>
+      <view
+      		id="org.opalj.eclipse.views.DisassemblerView"
+            icon="icons/opal-logo.png"
+            category="OPALEclipse"            
+            class="org.opalj.eclipse.views.DisassemblerView"
+            restorable="false"
+            name="Bytecode Disassembler" />
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+  <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
+            <menu
+               id="opalMenu"               
+               icon="icons/opal-logo.png"
+               label="Code Comprehension">
+               <command
+                  commandId="opalMenu.disassembler.actionHandler"
+                  id = "opalMenu.disassembler"
+                  label = "Show Bytecode"
+                  style = "push">
+                  <visibleWhen
+				    checkEnabled="false">
+				   	<with variable="selection">
+				      	<iterate
+				           ifEmpty="false">
+				         	<adapt type="org.eclipse.jdt.core.IJavaElement">
+				              <instanceof value="org.eclipse.jdt.core.IJavaElement"/>
+				              <or>
+				              	<test property="org.opalj.eclipse.propertyTester.hasExtension" value="class"/>
+				              	<test property="org.opalj.eclipse.propertyTester.hasExtension" value="jar"/>
+				              	<test property="org.opalj.eclipse.propertyTester.hasExtension" value="java"/>
+				              	<test property="org.opalj.eclipse.propertyTester.hasExtension" value="scala"/>
+				         	  </or>
+				         	</adapt>
+				      	</iterate>
+			   		</with>
+				</visibleWhen>
+              </command>         
+           </menu>
+      </menuContribution>
+   </extension>   
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="org.opalj.eclipse.actions.DisassemblerActionHandler"
+            commandId="opalMenu.disassembler.actionHandler">
+      </handler>
+   </extension>
+   <extension point="org.eclipse.core.expressions.propertyTesters">
+    <propertyTester
+          class="org.opalj.eclipse.propertyTester.IJavaElementExtensionTest"
+          id="org.opalj.eclipse.propertyTester.IJavaElementExtension"
+          namespace="org.opalj.eclipse.propertyTester"
+          properties="hasExtension"
+          type="org.eclipse.jdt.core.IJavaElement">
+    </propertyTester>
+ </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="*">
+         <view
+               id="org.opalj.eclipse.views.DisassemblerView:*"
+               minimized="false"
+               relationship="stack"
+               relative="org.eclipse.ui.editorss"
+               visible="false">
+         </view>
+      </perspectiveExtension>
+   </extension>
+</plugin>

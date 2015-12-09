@@ -34,7 +34,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 /**
  * Tests UByteSet.
@@ -42,7 +41,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class UByteSetTest extends FunSpec with Matchers with ParallelTestExecution {
+class UByteSetTest extends FunSpec with Matchers {
 
     describe("an UByteSet") {
 

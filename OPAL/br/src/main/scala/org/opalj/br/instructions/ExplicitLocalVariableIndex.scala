@@ -49,8 +49,9 @@ trait ExplicitLocalVariableIndex extends Instruction {
         )
     }
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+    }
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         if (modifiedByWide)

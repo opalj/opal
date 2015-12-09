@@ -59,13 +59,21 @@ case class LOOKUPSWITCH(
 
     def caseValues: Seq[Int] = npairs.map(_._1)
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
         indexOfNextInstruction(currentPC, false)
+    }
 
-    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
+    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
+    }
 
-    def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs = {
+    def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         var pcs = UShortSet(currentPC + defaultOffset)
         npairs foreach { npair ⇒
             val (_, offset) = npair

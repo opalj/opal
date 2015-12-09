@@ -109,30 +109,29 @@ import org.opalj.log.DefaultLogContext
  * @author Marco Torsello
  */
 class Project[Source] private (
-    private[this] val projectClassFiles:              Array[ClassFile],
-    private[this] val libraryClassFiles:              Array[ClassFile],
-    private[this] val methods:                        Array[Method], // the concrete methods, sorted by size in descending order
-    private[this] val projectTypes:                   Set[ObjectType], // the types defined by the class files belonging to the project's code
-    private[this] val fieldToClassFile:               AnyRefMap[Field, ClassFile],
-    private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
-    private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
-    private[this] val sources:                        OpenHashMap[ObjectType, Source],
-    private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
-    val projectClassFilesCount:                       Int,
-    val projectMethodsCount:                          Int,
-    val projectFieldsCount:                           Int,
-    val libraryClassFilesCount:                       Int,
-    val libraryMethodsCount:                          Int,
-    val libraryFieldsCount:                           Int,
-    val codeSize:                                     Long,
-    val classHierarchy:                               ClassHierarchy,
-    val analysisMode:                                 AnalysisMode
+        private[this] val projectClassFiles:              Array[ClassFile],
+        private[this] val libraryClassFiles:              Array[ClassFile],
+        private[this] val methods:                        Array[Method], // the concrete methods, sorted by size in descending order
+        private[this] val projectTypes:                   Set[ObjectType], // the types defined by the class files belonging to the project's code
+        private[this] val fieldToClassFile:               AnyRefMap[Field, ClassFile],
+        private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
+        private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
+        private[this] val sources:                        OpenHashMap[ObjectType, Source],
+        private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
+        val projectClassFilesCount:                       Int,
+        val projectMethodsCount:                          Int,
+        val projectFieldsCount:                           Int,
+        val libraryClassFilesCount:                       Int,
+        val libraryMethodsCount:                          Int,
+        val libraryFieldsCount:                           Int,
+        val codeSize:                                     Long,
+        val classHierarchy:                               ClassHierarchy,
+        val analysisMode:                                 AnalysisMode
 )(
-    implicit
-    val logContext: LogContext,
-    val config:     Config
-)
-        extends ClassFileRepository {
+        implicit
+        val logContext: LogContext,
+        val config:     Config
+) extends ClassFileRepository {
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
@@ -407,8 +406,7 @@ class Project[Source] private (
      * Returns true if the given type file belongs to the library part of the project.
      * This is generally the case if no class file was loaded for the given type.
      */
-    def isLibraryType(objectType: ObjectType): Boolean =
-        !projectTypes.contains(objectType)
+    def isLibraryType(objectType: ObjectType): Boolean = !projectTypes.contains(objectType)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
@@ -416,16 +414,16 @@ class Project[Source] private (
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    def source(objectType: ObjectType): Option[Source] =
-        sources.get(objectType)
+    def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    override def classFile(objectType: ObjectType): Option[ClassFile] =
+    override def classFile(objectType: ObjectType): Option[ClassFile] = {
         objectTypeToClassFile.get(objectType)
+    }
 
     /**
      * Returns the given method's class file. This method is only defined if

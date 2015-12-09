@@ -46,7 +46,7 @@ import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.junit.JUnitRunner
 
 /**
@@ -56,15 +56,14 @@ import org.scalatest.junit.JUnitRunner
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
         override val maxCardinalityOfIntegerSets: Int = Int.MaxValue
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues

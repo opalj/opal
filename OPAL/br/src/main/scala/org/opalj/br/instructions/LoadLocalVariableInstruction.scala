@@ -54,10 +54,13 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
@@ -70,6 +73,8 @@ abstract class LoadLocalVariableInstruction extends Instruction {
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+    final def expressionResult: ExpressionResult = NoExpression
 
 }
 /**

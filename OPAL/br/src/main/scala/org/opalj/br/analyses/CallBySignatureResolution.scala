@@ -179,7 +179,7 @@ object CallBySignatureResolution {
 
         // non of the subtypes acts as proxy
         cache.put(method, No)
-        return No;
+        No
     }
 
     private[this] def hasSubclassInheritingTheInterface(
@@ -295,7 +295,7 @@ object CallBySignatureResolution {
 
             val possibleCbsTargets =
                 if (targetMethods.isEmpty)
-                    projectIndex.findMethods(methodName, methodDescriptor).view
+                    projectIndex.findMethods(methodName, methodDescriptor).view.filter { _.isPublic }
                 else
                     targetMethods
 

@@ -69,6 +69,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
     final val IssueKindsPattern = """-kinds=([\w, ]+)""".r
 
+    override def main(unparsedArgs: Array[String]): Unit = {
+        try {
+            super.main(unparsedArgs)
+        } catch {
+            case t: Throwable ⇒ t.printStackTrace()
+        }
+    }
+
     final override val analysisSpecificParametersDescription: String =
         """[-maxEvalFactor=<DoubleValue {[0.1,100),Infinity}=1.75> determines the maximum effort that
             |               the analysis will spend when analyzing a specific method. The effort is
@@ -101,11 +109,12 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
             |               may happen that many analyses are aborted because the evaluation time
             |               is exhausted and – overall – the analysis reports less issues!]
-            |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.
+            |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.]
             |[-kinds=<Issue Kinds="constant computation,dead path,throws exception,
             |                unguarded use,unused">] a comma seperated list of issue kinds
-            |                that should be reported
-            |[-eclipse      creates an eclipse console compatible output).]
+            |                that should be reported.]
+            |[-eclipse      creates an eclipse console compatible output.]
+            |[-bdl          creates a bdl report.]
             |[-html[=<FileName>] generates an HTML report which is written to the optionally
             |               specified location.]
             |[-debug[=<FileName>] turns on the debug mode (more information are logged and
@@ -117,6 +126,18 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     override def title: String = bugPickerAnalysis.title
 
     override def description: String = bugPickerAnalysis.description
+
+    private[this] var cpFiles: Iterable[File] = null
+    private[this] var libcpFiles: Iterable[File] = null
+
+    override def setupProject(
+        cpFiles:    Iterable[File],
+        libcpFiles: Iterable[File]
+    ): Project[URL] = {
+        this.cpFiles = cpFiles
+        this.libcpFiles = libcpFiles
+        super.setupProject(cpFiles, libcpFiles)
+    }
 
     override def analyze(
         theProject:             Project[URL],
@@ -146,7 +167,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         val issues = parameters.collectFirst { case IssueKindsPattern(ks) ⇒ ks } match {
             case Some(ks) ⇒
                 val relevantKinds = ks.split(',').toSet
-                issues1.filter(issue ⇒ (issue.kind intersect (relevantKinds)).nonEmpty)
+                issues1.filter(issue ⇒ (issue.kinds intersect (relevantKinds)).nonEmpty)
             case None ⇒
                 issues1
         }
@@ -155,6 +176,17 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         //
         if (parameters.contains("-eclipse")) {
             val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
+            println(formattedIssues.toSeq.sorted.mkString("\n"))
+        }
+
+        // Generate a report using the bug description language
+        //
+        if (parameters.contains("-bdl")) {
+            val formattedIssues = issues.map { issue ⇒ issue.asBDL }
+            println(s"Analysis of "+cpFiles.mkString(", "))
+            println("Parameters")
+            println(parameters.mkString("\n"))
+            println("Issues")
             println(formattedIssues.toSeq.sorted.mkString("\n"))
         }
 
@@ -232,6 +264,9 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
+
+        OPALLogger.info("analysis progress", "checking parameters")(GlobalLogContext)
+
         var outputFormatGiven = false
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
@@ -284,6 +319,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                 case "-html" ⇒
                     outputFormatGiven = true; true
                 case "-eclipse" ⇒
+                    outputFormatGiven = true; true
+                case "-bdl" ⇒
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true

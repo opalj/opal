@@ -31,11 +31,16 @@ package ai
 package analyses
 package cg
 
-import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.br.analyses.ProjectInformationKey
-
 import br.analyses.ProjectInformationKey
 import br.analyses.SomeProject
+import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.br.Method
+import org.opalj.fpcf.analysis.IsEntryPoint
+import org.opalj.fpcf.analysis.JavaEEEntryPointsAnalysis
+import org.opalj.br.analyses.InstantiableClassesKey
+import org.opalj.br.analyses.InjectedClassesInformationKey
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
@@ -52,21 +57,46 @@ import br.analyses.SomeProject
  *      }}}
  *
  * @author Michael Eichberg
+ * @author Michael Reif
  */
 object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
-    override protected def requirements = List(FieldValuesKey)
+    override protected def requirements =
+        Seq(
+            InjectedClassesInformationKey,
+            FPCFAnalysesManagerKey,
+            SourceElementsPropertyStoreKey,
+            InstantiableClassesKey,
+            FieldValuesKey,
+            MethodReturnValuesKey
+        )
 
     /**
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
 
-        // TODO query the project to decide which configuration to choose
+        val analysisMode = project.analysisMode
+
+        //TODO Develop entry point analysis for desktop applications.
+        val entryPoints = analysisMode match {
+            case AnalysisModes.DesktopApplication ⇒
+                // This entry point set can be used but it is unnecessary imprecise...
+                CallGraphFactory.defaultEntryPointsForLibraries(project)
+            case AnalysisModes.JEE6WebApplication ⇒ {
+                val fpcfManager = project.get(FPCFAnalysesManagerKey)
+                if (!fpcfManager.isDerived(JavaEEEntryPointsAnalysis.derivedProperties))
+                    fpcfManager.runWithRecommended(JavaEEEntryPointsAnalysis)(true)
+                val propertyStore = project.get(SourceElementsPropertyStoreKey)
+                propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
+            }
+            case _ ⇒
+                throw new IllegalArgumentException(s"This call graph does not support the current analysis mode: $analysisMode")
+        }
 
         CallGraphFactory.create(
             project,
-            () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project),
+            () ⇒ entryPoints,
             new DefaultVTACallGraphAlgorithmConfiguration(project)
         )
     }

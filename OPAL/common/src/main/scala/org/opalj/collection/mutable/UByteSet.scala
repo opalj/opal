@@ -56,11 +56,11 @@ sealed trait UByteSet extends SmallValuesSet {
     final protected[collection] def mkString(
         start: String, sep: String, end: String,
         offset: Int
-    ): String =
+    ): String = {
         start + valuesToString(sep, offset) + end
+    }
 
-    def mkString(start: String, sep: String, end: String): String =
-        mkString(start, sep, end, 0)
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     private[mutable] def isLeafNode: Boolean
     private[mutable] def asTreeNode: UByteSetNode

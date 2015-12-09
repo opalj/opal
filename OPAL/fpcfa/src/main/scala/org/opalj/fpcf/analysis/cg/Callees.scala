@@ -38,7 +38,6 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.log.OPALLogger
 

@@ -35,7 +35,7 @@ import scala.language.reflectiveCalls
 
 import org.junit.runner.RunWith
 import org.junit.Ignore
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -52,10 +52,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsWithRecursionDetectionTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matchers {
 
     import PerformInvocationsWithRecursionDetectionTestFixture._
 
@@ -147,8 +144,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     abstract class SharedInvocationDomain(
         project:    Project[java.net.URL],
         val method: Method
-    )
-            extends BaseDomain(project) with Domain
+    ) extends BaseDomain(project) with Domain
             with TheMethod
             with l0.TypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -168,11 +164,10 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class InvocationDomain(
-        project:                            Project[java.net.URL],
-        method:                             Method,
-        val frequentEvaluationWarningLevel: Int                   = 10
-    )
-            extends SharedInvocationDomain(project, method) {
+            project:                            Project[java.net.URL],
+            method:                             Method,
+            val frequentEvaluationWarningLevel: Int                   = 10
+    ) extends SharedInvocationDomain(project, method) {
         callingDomain ⇒
 
         lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
@@ -213,8 +208,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         project:          Project[java.net.URL],
         method:           Method,
         val callerDomain: SharedInvocationDomain
-    )
-            extends SharedInvocationDomain(project, method)
+    ) extends SharedInvocationDomain(project, method)
             with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI

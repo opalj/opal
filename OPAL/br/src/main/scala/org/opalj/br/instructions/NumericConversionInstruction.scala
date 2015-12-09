@@ -38,9 +38,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class NumericConversionInstruction
-        extends Instruction
-        with ConstantLengthInstruction {
+abstract class NumericConversionInstruction extends Instruction with ConstantLengthInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
@@ -48,10 +46,13 @@ abstract class NumericConversionInstruction
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
@@ -69,4 +70,6 @@ abstract class NumericConversionInstruction
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+    final def expressionResult: ExpressionResult = Stack
 }

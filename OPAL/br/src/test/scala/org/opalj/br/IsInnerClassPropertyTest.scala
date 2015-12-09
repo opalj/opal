@@ -37,7 +37,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
 
@@ -47,13 +46,12 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class IsInnerClassPropertyTest extends FlatSpec with Matchers with ParallelTestExecution {
+class IsInnerClassPropertyTest extends FlatSpec with Matchers {
 
-    val project =
-        Project(
-            ClassFiles(locateTestResources("classfiles/Innerclasses.jar", "bi")),
-            Traversable.empty
-        )
+    val project = {
+        val testResources = locateTestResources("classfiles/Innerclasses.jar", "bi")
+        Project(ClassFiles(testResources), Traversable.empty)
+    }
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

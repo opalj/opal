@@ -57,20 +57,20 @@ import scala.xml.Unparsed
  * @author Michael Eichberg
  */
 case class StandardIssue(
-    project:        SomeProject,
-    classFile:      ClassFile,
-    method:         Option[Method],
-    pc:             Option[PC],
-    operands:       Option[List[_ <: AnyRef]],
-    localVariables: Option[Locals[_ <: AnyRef]],
-    summary:        String,
-    description:    Option[String],
-    categories:     Set[String],
-    kind:           Set[String],
-    otherPCs:       Seq[(PC, String)],
-    relevance:      Relevance
-)
-        extends Issue {
+        analysis:       String,
+        project:        SomeProject,
+        classFile:      ClassFile,
+        method:         Option[Method],
+        pc:             Option[PC],
+        operands:       Option[List[_ <: AnyRef]],
+        localVariables: Option[Locals[_ <: AnyRef]],
+        summary:        String,
+        description:    Option[String],
+        categories:     Set[String],
+        kinds:          Set[String],
+        otherPCs:       Seq[(PC, String)],
+        relevance:      Relevance
+) extends Issue {
 
     /**
      * Merges this issue with the given issue if both issues refer to the same element.
@@ -89,8 +89,17 @@ case class StandardIssue(
                 (other.pc != this.pc))
             return None
 
+        val analysis =
+            if (this.analysis.contains(other.analysis))
+                this.analysis
+            else if (other.analysis.contains(this.analysis))
+                other.analysis
+            else
+                this.analysis+", "+other.analysis
+
         Some(
             StandardIssue(
+                analysis,
                 this.project,
                 this.classFile,
                 this.method,
@@ -104,7 +113,7 @@ case class StandardIssue(
                     td.map(_ + od.map("\n"+_).getOrElse("")).orElse(od)
                 },
                 this.categories ++ other.categories,
-                this.kind ++ other.kind,
+                this.kinds ++ other.kinds,
                 (this.otherPCs.toSet ++ other.otherPCs).toSeq.sortWith {
                     (a, b) ⇒ a._1 < b._1 || (a._1 == b._1 && a._2 < b._2)
                 },
@@ -295,14 +304,14 @@ case class StandardIssue(
                     summary<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
                 </dt>
 
-        val dataKind =
-            kind.map(_.replace(' ', '_')).mkString(" ")
+        val dataKinds =
+            kinds.map(_.replace(' ', '_')).mkString(" ")
 
         val dataCategories =
             categories.map(_.replace(' ', '_')).mkString(" ")
 
         val node =
-            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKind } data-category={ dataCategories }>
+            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
                 <dl>
                     { infoNodes }
                     { summaryNode }
@@ -330,11 +339,13 @@ object StandardIssue {
      * Creates a new simple standard issues.
      */
     def apply(
+        analysis:  String,
         project:   SomeProject,
         classFile: ClassFile,
         summary:   String
     ): StandardIssue = {
         new StandardIssue(
+            analysis,
             project,
             classFile,
             None,

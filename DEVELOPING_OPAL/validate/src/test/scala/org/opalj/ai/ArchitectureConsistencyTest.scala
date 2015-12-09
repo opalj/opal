@@ -40,7 +40,7 @@ import org.opalj.av.checking.Specification
 
 /**
  * Tests that the implemented architecture of the abstract interpretation
- * framework is consistent with its specifiation/with the intended
+ * framework is consistent with its specification/with the intended
  * architecture.
  *
  * @author Michael Eichberg

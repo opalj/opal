@@ -30,7 +30,6 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -42,10 +41,7 @@ import org.junit.runner.RunWith
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArrayMapTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class ArrayMapTest extends FlatSpec with Matchers {
 
     import org.opalj.collection.mutable.Locals
 

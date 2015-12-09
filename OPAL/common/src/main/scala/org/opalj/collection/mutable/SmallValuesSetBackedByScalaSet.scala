@@ -31,9 +31,8 @@ package collection
 package mutable
 
 private[mutable] final class SmallValuesSetBackedByScalaSet(
-    private[this] var set: Set[Int] = Set.empty
-)
-        extends SmallValuesSet {
+        private[this] var set: Set[Int] = Set.empty
+) extends SmallValuesSet {
 
     def this(value: Int) { this(Set(value)) }
 

@@ -32,8 +32,7 @@ package collection
 /**
  * A memory-efficient, sorted set of small values that
  * is highly tailored for small(er) sets of small
- * values, where the set will always
- * just grow but stays small. Removing elements is not possible.
+ * values.
  *
  * @author Michael Eichberg
  */

@@ -41,11 +41,10 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class GETSTATIC(
-    declaringClass: ObjectType,
-    name:           String,
-    fieldType:      FieldType
-)
-        extends FieldReadAccess {
+        declaringClass: ObjectType,
+        name:           String,
+        fieldType:      FieldType
+) extends FieldReadAccess {
 
     final def opcode: Opcode = GETSTATIC.opcode
 
@@ -57,13 +56,13 @@ case class GETSTATIC(
 
     final def nextInstructions(
         currentPC:             PC,
-        code:                  Code,
         regularSuccessorsOnly: Boolean
-    ): PCs =
-        if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
-        else
-            UShortSet(indexOfNextInstruction(currentPC, code))
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     override def toString =
         "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
