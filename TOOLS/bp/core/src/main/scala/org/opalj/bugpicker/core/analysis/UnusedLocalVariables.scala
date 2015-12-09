@@ -85,10 +85,14 @@ object UnusedLocalVariables {
                     // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
                     method.name == "<init>") {
                     relevance = Relevance.High
-                    if (vo == -1) {
+                    if (vo == -1 && !method.isStatic) {
                         issue = "the self reference \"this\" is unused"
                     } else {
-                        issue = "the paramter with index "+(-(vo + implicitParameterOffset))+" is unused"
+                        val index = (-(vo + implicitParameterOffset))
+                        code.localVariable(0, index - 1) match {
+                            case Some(lv) ⇒ issue = s"the parameter ${lv.name} is unused"
+                            case None     ⇒ issue = s"the $index. parameter is unused"
+                        }
                     }
                 }
             } else {
