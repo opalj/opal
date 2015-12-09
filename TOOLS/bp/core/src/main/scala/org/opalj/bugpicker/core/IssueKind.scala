@@ -70,4 +70,6 @@ object IssueKind {
      * Useless is in particular related to the implementation of methods.
      */
     final val Useless = "useless"
+
+    final val JavaCollectionAPIUsage = "usage of the Java collection API"
 }

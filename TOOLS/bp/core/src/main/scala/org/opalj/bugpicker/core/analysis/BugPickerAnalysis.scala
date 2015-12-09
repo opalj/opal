@@ -382,6 +382,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 )
 
                 //
+                // FIND STRANGE USES OF THE COLLECTIONS API
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
+                    )
+                )
+
+                //
                 // FIND USELESS EXPRESSION EVALUATIONS
                 //
 
