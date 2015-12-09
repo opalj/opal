@@ -123,6 +123,11 @@ object UnusedLocalVariables {
                                 issue = s"the constant value ${instruction.toString(vo)} is (most likely) used to initialize a local variable"
                                 relevance = Relevance.TechnicalArtifact
                         }
+
+                    case IINC.opcode ⇒
+                        issue = "the incremented value is not used"
+                        relevance = Relevance.DefaultRelevance
+
                     case _ ⇒
                         issue = "the value of the expression "+instruction.toString(vo)+" is not used"
                         relevance = Relevance.OfUtmostRelevance
