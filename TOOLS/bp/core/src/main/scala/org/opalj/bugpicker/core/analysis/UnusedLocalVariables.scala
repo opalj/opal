@@ -105,6 +105,7 @@ object UnusedLocalVariables {
                         relevance = Relevance.DefaultRelevance
                     case ACONST_NULL.opcode |
                         ICONST_0.opcode |
+                        ICONST_M1.opcode |
                         LCONST_0.opcode |
                         FCONST_0.opcode |
                         DCONST_0.opcode ⇒
