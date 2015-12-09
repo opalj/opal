@@ -66,7 +66,7 @@ import org.opalj.fpcf.PropertyKind
  */
 class FactoryMethodAnalysis private (
         project: SomeProject
-) extends AbstractFPCFAnalysis[Method](project, FactoryMethodAnalysis.entitySelector) {
+) extends AbstractFPCFAnalysis[Method](project, FactoryMethodAnalysis.entitySelector(project)) {
 
     /**
      * Determines if the given method is a factory method.
@@ -85,7 +85,7 @@ class FactoryMethodAnalysis private (
         //TODO use escape analysis (still have to be implemented).
 
         if (method.isNative)
-            // We don't now what this static method is doing, hence, we assume that
+            // We don't now what this method is doing, hence, we assume that
             // it may act as a factory method; we can now abort the entire
             // analysis.
             return ImmediateResult(method, IsFactoryMethod)
@@ -124,8 +124,8 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner {
     /**
      * Selects all non-abstract static methods.
      */
-    def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if m.body.isDefined & m.isStatic && !m.isAbstract ⇒ m
+    def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
+        case m: Method if !project.isLibraryType(project.classFile(m)) && m.isStatic && !m.isAbstract ⇒ m
     }
 
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
