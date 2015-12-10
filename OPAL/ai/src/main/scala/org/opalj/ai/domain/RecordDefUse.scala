@@ -230,15 +230,20 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     </tr>
                 }
 
-        <table>
-            <tr>
-                <th class="pc">PC</th>
-                <th class="pc">Used By</th>
-                <th class="stack">Stack</th>
-                <th class="registers">Locals</th>
-            </tr>
-            { perInstruction }
-        </table>
+        <div>
+            <h1>Unused</h1>
+            { unused().mkString("", ", ", "") }
+            <h1>Overview</h1>
+            <table>
+                <tr>
+                    <th class="pc">PC</th>
+                    <th class="pc">Used By</th>
+                    <th class="stack">Stack</th>
+                    <th class="registers">Locals</th>
+                </tr>
+                { perInstruction }
+            </table>
+        </div>
     }
 
     /**
