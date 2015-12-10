@@ -487,22 +487,30 @@ class Project[Source] private (
      * Returns the number of (non-synthetic) methods per method length
      * (size in length of the method's code array).
      */
-    def projectMethodsLengthDistribution: Map[Int, Int] = {
-        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
+    def projectMethodsLengthDistribution: Map[Int, (Int, Set[Method])] = {
+        //        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
+        //
+        //        parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { entity ⇒
+        //            val (_ /*source*/ , _ /*classFile*/ , method) = entity
+        //            if (!method.isSynthetic) {
+        //                data(method.body.get.instructions.length).incrementAndGet()
+        //            }
+        //        }
+        //        val result = LinkedHashMap.empty[Int, Int]
+        //        for (i ← 0 until UShort.MaxValue) {
+        //            val count = data(i).get
+        //            if (count > 0)
+        //                result += ((i, count))
+        //        }
+        //        result
 
-        parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { entity ⇒
-            val (_ /*source*/ , _ /*classFile*/ , method) = entity
-            if (!method.isSynthetic) {
-                data(method.body.get.instructions.length).incrementAndGet()
-            }
+        var data = SortedMap.empty[Int, (Int, Set[Method])]
+        methods.view.filterNot(_.isSynthetic).foreach { method ⇒
+            val size = method.body.get.instructions.length
+            val (count, methods) = data.getOrElse(size, (0, Set.empty[Method]))
+            data += ((size, (count + 1, methods + method)))
         }
-        val result = LinkedHashMap.empty[Int, Int]
-        for (i ← 0 until UShort.MaxValue) {
-            val count = data(i).get
-            if (count > 0)
-                result += ((i, count))
-        }
-        result
+        data
     }
 
     /**
