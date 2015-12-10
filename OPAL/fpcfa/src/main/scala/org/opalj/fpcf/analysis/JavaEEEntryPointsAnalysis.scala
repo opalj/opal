@@ -47,6 +47,7 @@ class JavaEEEntryPointsAnalysis private (
     private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
+    private[this] final val ExceptionHandlerFactory = ObjectType("javax.faces.context.ExceptionHandlerFactory")
 } with DefaultFPCFAnalysis[ClassFile](project, JavaEEEntryPointsAnalysis.entitySelector) {
 
     /**
@@ -61,6 +62,7 @@ class JavaEEEntryPointsAnalysis private (
         val isAnnotated = classFile.annotations.size > 0
         val willBeInjected = InjectedClasses.isInjected(classFile)
         val result = ListBuffer.empty[(Entity, Property)]
+        val isWebFactory = project.classHierarchy.isSubtypeOf(classFile.thisType, ExceptionHandlerFactory).isYesOrUnknown
         classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
 
             if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
@@ -74,6 +76,8 @@ class JavaEEEntryPointsAnalysis private (
             } else if (isAnnotated) {
                 result += ((method, IsEntryPoint))
             } else if (hasAnnotatedSubtypeAndInheritsMethod(classFile, method)) {
+                result += ((method, IsEntryPoint))
+            } else if (isWebFactory && !method.isPrivate) {
                 result += ((method, IsEntryPoint))
             }
         }
