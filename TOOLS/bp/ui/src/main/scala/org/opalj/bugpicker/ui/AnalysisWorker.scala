@@ -45,8 +45,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.log.OPALLogger
+import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 
@@ -66,10 +65,17 @@ class AnalysisWorker(
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
             val parametersAsString = parameters.toStringParameters
-            val (analysisTime, issues, _) =
+            val (analysisTime, issues, exceptions) =
                 AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
             issuez() = issues
             doc() = createHTMLReport(analysisTime, parametersAsString, issues)
+            exceptions.foreach { exception: Exception ⇒
+                OPALLogger.error(
+                    "internal error",
+                    "executing an analysis failed",
+                    exception
+                )(GlobalLogContext)
+            }
         }
 
         def createHTMLReport(
