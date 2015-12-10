@@ -32,6 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.{Set, Map}
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
@@ -39,6 +40,8 @@ import scala.collection.parallel.mutable.ParArray
 import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
+import scala.collection.SortedMap
+import scala.collection.mutable.LinkedHashMap
 import scala.collection.SortedMap
 import scala.collection.generic.FilterMonadic
 import scala.reflect.ClassTag
@@ -48,6 +51,7 @@ import scala.concurrent.duration.Duration
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -61,6 +65,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.DefaultLogContext
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -378,8 +383,14 @@ class Project[Source] private (
             libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
     }
 
+    /**
+     * All methods defined by this project as well as the visible methods defined by the libraries.
+     */
     def methods(): Iterable[Method] = methodToClassFile.keys
 
+    /**
+     * All fields defined by this project as well as the visible fields defined by the libraries.
+     */
     def fields(): Iterable[Field] = fieldToClassFile.keys
 
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
@@ -456,7 +467,7 @@ class Project[Source] private (
      *
      * ((Re)Calculated on-demand.)
      */
-    def statistics: Map[String, Int] =
+    def statistics: Map[String, Int] = {
         Map(
             ("ProjectClassFiles" → projectClassFilesCount),
             ("LibraryClassFiles" → libraryClassFilesCount),
@@ -470,6 +481,63 @@ class Project[Source] private (
                 projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
                     foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
         )
+    }
+
+    /**
+     * Returns the number of (non-synthetic) methods per method length
+     * (size in length of the method's code array).
+     */
+    def projectMethodsLengthDistribution: Map[Int, Int] = {
+        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
+
+        parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { entity ⇒
+            val (_ /*source*/ , _ /*classFile*/ , method) = entity
+            if (!method.isSynthetic) {
+                data(method.body.get.instructions.length).incrementAndGet()
+            }
+        }
+        val result = LinkedHashMap.empty[Int, Int]
+        for (i ← 0 until UShort.MaxValue) {
+            val count = data(i).get
+            if (count > 0)
+                result += ((i, count))
+        }
+        result
+    }
+
+    /**
+     * Returns the number of (non-synthetic) source elements per method length
+     * (size in length of the method's code array). The number of class members of
+     * nested classes are also taken into consideration.
+     */
+    def projectClassMembersPerClassDistribution: Map[Int, (Int, Set[String])] = {
+        val data = OpenHashMap.empty[String, Int]
+
+        projectClassFiles.foreach { classFile ⇒
+            // we want to collect the size in relation to the source code; 
+            //i.e., across all nested classes 
+            val count =
+                classFile.methods.view.filterNot { _.isSynthetic }.size +
+                    classFile.fields.view.filterNot { _.isSynthetic }.size
+
+            var key = classFile.thisType.toJava
+            if (classFile.isInnerClass) {
+                val index = key.indexOf('$')
+                if (index >= 0) {
+                    key = key.substring(0, index)
+                }
+            }
+            data.update(key, data.getOrElse(key, 0) + count + 1 /*+1 for the inner class*/ )
+
+        }
+
+        var result = SortedMap.empty[Int, (Int, Set[String])]
+        for ((typeName, membersCount) ← data) {
+            val (count, typeNames) = result.getOrElse(membersCount, (0, Set.empty[String]))
+            result += ((membersCount, (count + 1, typeNames + typeName)))
+        }
+        result
+    }
 
     /**
      * Returns all available `ClassFile` objects for the given `objectTypes` that

@@ -36,6 +36,8 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 
+import scala.xml.Unparsed
+
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
@@ -93,21 +95,54 @@ object ProjectInfoDialog {
         stage.showAndWait
     }
 
-    private def report(project: Project[URL], preferences: LoadedFiles): String =
+    private def report(project: Project[URL], preferences: LoadedFiles): String = {
+
+        val mlStatistics =
+            <table>
+                <h2>Method Length Distribution</h2>
+                <tr><th>Length of the Method</th><th>Count</th></tr>
+                {
+                    for { (length, count) ← project.projectMethodsLengthDistribution } yield {
+                        <tr><td>{ length }</td><td>{ count }</td></tr>
+                    }
+                }
+            </table>
+
+        val cmpcdStatistics =
+            <table>
+                <h2>Class Members Per Class Distribution</h2>
+                <tr><th>Number of Class Members</th><th>Count</th></tr>
+                {
+                    for { (size, (count, classes)) ← project.projectClassMembersPerClassDistribution } yield {
+                        val countInfo =
+                            if (count <= 2)
+                                classes.mkString(s"$count {", ", ", " }")
+                            else
+                                classes.take(2).mkString(s"$count {", ", ", ", ... }")
+                        <tr><td>{ size }</td><td>{ countInfo }</td></tr>
+                    }
+                }
+            </table>
+
+        val css = Unparsed(
+            """ |body {
+	            |    font: 14px sans-serif;
+                |}
+                |ul, li {
+                |    list-style-type: none;
+                |    padding-left: 0;
+                |}
+                |table { border: 1px solid gray; }
+                |tr:nth-child(even) {background: #CCC}
+                |tr:nth-child(odd) {background: #FFF}""".stripMargin('|')
+        )
+
         <html>
             <head>
-                <style type="text/css"><![CDATA[
-body {
-	font: 14px sans-serif;
-}
-ul, li {
-    list-style-type: none;
-    padding-left: 0;
-}
-    				]]></style>
+                <style type="text/css">{ css }</style>
             </head>
             <body>
-                <h2>Project statistics</h2>
+                <h1>Project statistics</h1>
                 <ul>{ project.statistics.toList.map(e ⇒ e._1+": "+e._2).sorted.map(e ⇒ <li>{ e }</li>) }</ul>
                 <h2>Loaded jar files and directories</h2>
                 <ul>{ preferences.projectFiles.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
@@ -115,6 +150,9 @@ ul, li {
                 <ul>{ preferences.libraries.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
                 <h2>Source directories</h2>
                 <ul>{ preferences.projectSources.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
+                { cmpcdStatistics }
+                { mlStatistics }
             </body>
         </html>.toString
+    }
 }
