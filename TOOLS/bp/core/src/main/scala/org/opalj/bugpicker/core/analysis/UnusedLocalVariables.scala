@@ -80,15 +80,15 @@ object UnusedLocalVariables {
         // IDENTIFYING RAW ISSUES
         //
         //
-
         if (method.isSynthetic)
             return Nil;
 
         val operandsArray = result.operandsArray
-        val unused = result.domain.unused().filter { vo ⇒
+        val allUnused = result.domain.unused()
+        val unused = allUnused.filter { vo ⇒
             // filter unused local variables related to dead code...
             // (we have another analysis for that)
-            operandsArray(vo) ne null
+            vo < 0 || (operandsArray(vo) ne null)
         }
 
         if (unused.isEmpty)
