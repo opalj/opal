@@ -111,15 +111,15 @@ object ProjectInfoDialog {
         val cmpcdStatistics =
             <table>
                 <h2>Class Members Per Class Distribution</h2>
-                <tr><th>Number of Class Members</th><th>Count</th></tr>
+                <tr><th>Number of Class Members</th><th>Count</th><th>Classes</th></tr>
                 {
                     for { (size, (count, classes)) ← project.projectClassMembersPerClassDistribution } yield {
-                        val countInfo =
+                        val classesInfo =
                             if (count <= 2)
-                                classes.mkString(s"$count {", ", ", " }")
+                                classes.mkString(", ")
                             else
-                                classes.take(2).mkString(s"$count {", ", ", ", ... }")
-                        <tr><td>{ size }</td><td>{ countInfo }</td></tr>
+                                classes.take(2).mkString("", ", ", ", ...")
+                        <tr><td>{ size }</td><td>{ count }</td><td>{ classesInfo }</td></tr>
                     }
                 }
             </table>
