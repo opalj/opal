@@ -118,7 +118,7 @@ object CollectionsUsage {
 
                                 case _ ⇒ // other constructors are ignored
                             }
-                            
+
                         } else if (usages.size == 3) {
                             var foundConstructorCall = false
                             var foundAddCall = false

@@ -40,7 +40,6 @@ import org.opalj.br.typeToXHTML
 import org.opalj.collection.mutable.Locals
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.Code
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import scala.xml.UnprefixedAttribute

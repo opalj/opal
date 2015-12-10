@@ -54,8 +54,7 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
 
     def -(value: UByte): UShortSet
 
-    override def filter(f: UShort ⇒ Boolean): UShortSet =
-        super[UShortSet].filter(f)
+    override def filter(f: UShort ⇒ Boolean): UShortSet = super[UShortSet].filter(f)
 
     def ++(values: UShortSet): UShortSet = {
         var newSet = this.mutableCopy

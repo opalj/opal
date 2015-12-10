@@ -33,7 +33,7 @@ package core
 /**
  * Collection of predefined issue categories where
  * each category describes '''the quality property of the software that is
- * affected ''' by the issue.
+ * affected''' by the issue.
  *
  * @author Michael Eichberg
  */
@@ -43,15 +43,37 @@ object IssueCategory {
         Set(Bug, Smell, Performance, Comprehensibility)
     }
 
-    // Correctness
+    /**
+     * We identify something as a "Bug" if and only if we are certain that
+     * the runtime execution is most likely not what the developer intended.
+     *
+     * @note Affected software quality attribute: Correctness
+     */
     final val Bug = "bug"
 
-    // Correctness
+    /**
+     * We identify something as a "Smell" if we believe that
+     * the runtime execution is probably not what the developer intended.
+     *
+     * @note Affected software quality attribute: Correctness
+     */
     final val Smell = "smell"
 
-    // Efficiency
+    /**
+     * Performance issues are generally related to code that does things that
+     * are superfluous; i.e., which - except from using time and memory - have
+     * no meaningful sideeffect compared to a simpler solution.
+     *
+     * @note Affected software quality attribute: Efficiency
+     */
     final val Performance = "performance"
 
+    /**
+     * Code that most likely does what the developer wanted it to do, but
+     * which is too clumsy and can be shortened.
+     *
+     * @note Affected software quality attribute: Efficiency
+     */
     final val Comprehensibility = "comprehensibility"
 
 }

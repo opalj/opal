@@ -31,12 +31,11 @@ package bugpicker
 package core
 
 /**
- * Collection of predefined issue kinds
- * where each issue kind describes how '''the issue manifests itself in the source
- * code'''.
+ * An issue kind describes how '''an issue manifests itself in the source code'''.
  *
  * @author Michael Eichberg
  */
+// This is not an enumeration because this set is extensible by custom analyses.
 object IssueKind {
 
     final val AllKinds = {
@@ -50,12 +49,37 @@ object IssueKind {
         )
     }
 
+    /**
+     * A computation that always returns the same value.
+     */
     final val ConstantComputation = "constant computation"
 
+    /**
+     * A path in a program that will never be executed.
+     */
     final val DeadPath = "dead path"
 
+    /**
+     * A statement, which is not a "throw statement", which always throws an exception.
+     */
     final val ThrowsException = "throws exception"
 
+    /**
+     * Use of a local variable that is not guarded though usage are also guarded.
+     *
+     * @example
+     * {{{
+     * def m(o : Object){
+     *     // guarded use
+     *     if (o ne null) {
+     *         println(o.toString)
+     *     }
+     *
+     *     // unguarded use
+     *     o.hashCode
+     * }
+     * }}}
+     */
     final val UnguardedUse = "unguarded use"
 
     /**
@@ -71,5 +95,8 @@ object IssueKind {
      */
     final val Useless = "useless"
 
+    /**
+     * The Java Collection API is not used in the correct way/as intended.
+     */
     final val JavaCollectionAPIUsage = "usage of the Java collection API"
 }

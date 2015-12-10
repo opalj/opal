@@ -41,8 +41,7 @@ import scala.Console.{RED, YELLOW, RESET}
  *  - category of issue
  *  - accuracy of the analysis
  *
- * @param value A value between 0 (undetermined), 1 (not really relevant) and
- *      100 (absolutely relevant).
+ * @param value A value between 0 (undetermined), 1 (not relevant) and 100 (absolutely relevant).
  *
  * @author Michael Eichberg
  */
@@ -77,6 +76,8 @@ final case class Relevance(value: Int) extends AnyVal {
     def asEclipseConsoleString: String = {
         s"[relevance=$value]"
     }
+
+    def asName: String = Relevance.toCategoryName(this)
 }
 
 object Relevance {
@@ -87,7 +88,8 @@ object Relevance {
 
     final val High = Relevance(70)
 
-    final val DefaultRelevance = Relevance(50)
+    final val Moderate = Relevance(50)
+    final val DefaultRelevance = Moderate
 
     final val UselessDefensiveProgramming = Relevance(40)
 
@@ -96,9 +98,11 @@ object Relevance {
     final val VeryLow = Relevance(10)
 
     /**
-     * A finding related to a common programming idiom that always produces ''dead
-     * code/suspicious code'' from the point of view of a static analysis. E.e., a dead default
-     * branch in an exception that always just throws an exception.
+     * A finding related to a common programming idiom.
+     *
+     * For example, a finding that always produces '''dead
+     * code/suspicious code''' from the point of view of a static analysis.
+     * E.e., a dead default branch in an exception that always just throws an exception.
      */
     final val CommonIdiom = Relevance(3)
 
@@ -118,16 +122,16 @@ object Relevance {
 
     def toCategoryName(relevance: Relevance): String = {
         val r = relevance.value
-        if (r >= 99) "of utmost relevance"
-        else if (r >= 80) "very high"
-        else if (r >= 70) "high"
-        else if (r >= 50) "moderate"
-        else if (r >= 40) "useless defensive programming"
-        else if (r >= 30) "low"
-        else if (r >= 10) "very low"
-        else if (r >= 3) "common programming idiom"
-        else if (r >= 2) "proven assertion"
-        else if (r >= 1) "technical artifact"
+        if (r >= OfUtmostRelevance.value) "of utmost relevance"
+        else if (r >= VeryHigh.value) "very high"
+        else if (r >= High.value) "high"
+        else if (r >= Moderate.value) "moderate"
+        else if (r >= UselessDefensiveProgramming.value) "useless defensive programming"
+        else if (r >= Low.value) "low"
+        else if (r >= VeryLow.value) "very low"
+        else if (r >= CommonIdiom.value) "common programming idiom"
+        else if (r >= ProvenAssertion.value) "proven assertion"
+        else if (r >= OfNoRelevance.value) "irrelevant (technical artifact)"
         else "undetermined"
 
     }

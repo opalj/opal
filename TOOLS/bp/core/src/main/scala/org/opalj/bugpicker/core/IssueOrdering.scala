@@ -31,7 +31,7 @@ package bugpicker
 package core
 
 /**
- * Defines a partial order on issue that sorts [[Issue]]s
+ * Defines a partial order for issues. The issues are sorted
  * first by their class, then by the method(signature) then
  * by the line in which the issue occurs (alternatively by
  * the pc) and at last by the summary.
