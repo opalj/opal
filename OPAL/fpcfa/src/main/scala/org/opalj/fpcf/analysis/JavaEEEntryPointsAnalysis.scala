@@ -96,7 +96,7 @@ class JavaEEEntryPointsAnalysis private (
             val subtype = subtypes.head
             project.classFile(subtype) match {
                 case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
-                    val isAnnotated = classFile.annotations.size > 0
+                    val isAnnotated = subclass.annotations.size > 0
                     val inheritsMethod = subclass.findMethod(methodName, methodDescriptor).isEmpty
                     if (inheritsMethod) {
                         if (isAnnotated)
