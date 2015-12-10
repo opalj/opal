@@ -269,9 +269,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         // 2. check instructions
         code.foreach { (pc, instruction) ⇒
-            instruction.expressionResult match {
-                case NoExpression        ⇒ // nothing to do
-                case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+            if (instruction.opcode != CHECKCAST.opcode) {
+                // a checkcast instruction is already a use
+                instruction.expressionResult match {
+                    case NoExpression        ⇒ // nothing to do
+                    case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused = pc +≈: unused }
+                }
             }
         }
 
@@ -841,9 +844,24 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
                 145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
                 138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
-                193 /*instanceof*/ |
-                CHECKCAST.opcode ⇒
+                193 /*instanceof*/ ⇒
                 stackOp(1, true)
+
+            case CHECKCAST.opcode ⇒
+                val currentDefOps = defOps(currentPC)
+                val op = currentDefOps.head
+                updateUsageInformation(op, currentPC)
+                val newDefOps =
+                    if (isExceptionalControlFlow) {
+                        val successorDefOps = defOps(successorPC)
+                        if (successorDefOps eq null)
+                            List(ValueOrigins(origin = successorPC))
+                        else
+                            successorDefOps
+                    } else {
+                        currentDefOps
+                    }
+                propagate(newDefOps, defLocals(currentPC))
 
             //
             // "ERROR" HANDLING

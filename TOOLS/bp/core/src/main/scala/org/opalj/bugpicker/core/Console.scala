@@ -31,24 +31,23 @@ package bugpicker
 package core
 
 import java.net.URL
-import scala.collection.SortedMap
-import scala.xml.Node
-import org.opalj.io.writeAndOpen
-import org.opalj.io.process
-import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
-import org.opalj.br.analyses.ProgressManagement
-import org.opalj.ai.util.XHTML
-import org.opalj.bugpicker.core.analysis.IssueKind
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
-import org.opalj.log.OPALLogger
 import java.lang.Integer.parseInt
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+import scala.collection.SortedMap
+import scala.xml.Node
+import org.opalj.io.writeAndOpen
+import org.opalj.io.process
+import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.ai.util.XHTML
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the

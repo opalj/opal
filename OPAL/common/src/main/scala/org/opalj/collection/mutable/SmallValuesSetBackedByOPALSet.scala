@@ -89,6 +89,12 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v + offset))
 
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
+        var newSet = this.set
+        set.foreach { v ⇒ if (!f(v + offset)) newSet = newSet - v }
+        new SmallValuesSetBackedByOPALSet(offset, newSet)
+    }
+
     override protected[collection] def mkString(
         start: String, sep: String, end: String,
         offset: Int

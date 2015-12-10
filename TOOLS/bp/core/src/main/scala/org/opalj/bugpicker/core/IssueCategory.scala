@@ -29,46 +29,29 @@
 package org.opalj
 package bugpicker
 package core
-package analysis
 
 /**
- * Collection of predefined issue kinds
- * where each issue kind describes how '''the issue manifests itself in the source
- * code'''.
+ * Collection of predefined issue categories where
+ * each category describes '''the quality property of the software that is
+ * affected ''' by the issue.
  *
  * @author Michael Eichberg
  */
-object IssueKind {
+object IssueCategory {
 
-    final val AllKinds = {
-        Set(
-            ConstantComputation,
-            DeadPath,
-            ThrowsException,
-            UnguardedUse,
-            Unused,
-            Useless
-        )
+    final val AllCategories = {
+        Set(Bug, Smell, Performance, Comprehensibility)
     }
 
-    final val ConstantComputation = "constant computation"
+    // Correctness
+    final val Bug = "bug"
 
-    final val DeadPath = "dead path"
+    // Correctness
+    final val Smell = "smell"
 
-    final val ThrowsException = "throws exception"
+    // Efficiency
+    final val Performance = "performance"
 
-    final val UnguardedUse = "unguarded use"
+    final val Comprehensibility = "comprehensibility"
 
-    /**
-     * Something is currently not used, but may be used in the future if additional code
-     * is written. I.e., new methods/classes may use the respective method/field/class.
-     */
-    final val Unused = "unused"
-
-    /**
-     * Something is currently unused and cannot be used in the future.
-     *
-     * Useless is in particular related to the implementation of methods.
-     */
-    final val Useless = "useless"
 }

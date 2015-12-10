@@ -195,10 +195,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             (theProject.get(MethodReturnValuesKey), None)
         }
 
-        val callGraph = step(4, "[Pre-Analysis] Creating the call graph") {
+        val computedCallGraph = step(4, "[Pre-Analysis] Creating the call graph") {
             (theProject.get(VTACallGraphKey), None)
         }
-        val callGraphEntryPoints = callGraph.entryPoints().toSet
+        val callGraph = computedCallGraph.callGraph
+        val callGraphEntryPoints = computedCallGraph.entryPoints().toSet
 
         //
         //
@@ -207,11 +208,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
 
         val analysesManager = theProject.get(FPCFAnalysesManagerKey)
+        val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
         step(5, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {
                     fixpointAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
-                    theProject.get(SourceElementsPropertyStoreKey).waitOnPropertyComputationCompletion(true)
+                    propertyStore.waitOnPropertyComputationCompletion(true)
                 },
                 None
             )
@@ -242,7 +244,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             // CHECK IF THE METHOD IS USED
             //
             UnusedMethodsAnalysis.analyze(
-                theProject, callGraph, callGraphEntryPoints,
+                theProject, computedCallGraph, callGraphEntryPoints,
                 classFile, method
             ) foreach { issue ⇒ results.add(issue) }
 
@@ -375,7 +377,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(
-                        UnusedLocalVariables.analyze(theProject, classFile, method, result)
+                        UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
+                    )
+                )
+
+                //
+                // FIND STRANGE USES OF THE COLLECTIONS API
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                     )
                 )
 

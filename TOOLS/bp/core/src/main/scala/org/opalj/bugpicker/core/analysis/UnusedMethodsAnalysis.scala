@@ -81,6 +81,12 @@ object UnusedMethodsAnalysis {
 
             import method.{isConstructor, isPrivate, parametersCount, descriptor, name}
 
+            //
+            // Let's handle some technical artifacts related methods...
+            //
+            if (name == "valueOf" && classFile.isEnumDeclaration)
+                return Relevance.Undetermined;
+
             // 
             // Let's handle the standard methods...
             //
@@ -137,23 +143,35 @@ object UnusedMethodsAnalysis {
                 Relevance.DefaultRelevance
         }
 
+        //
+        //
+        // THE ANALYSIS
+        //
+        //
+
         val callers = callgraph.callGraph calledBy method
+
         if (callers.isEmpty) {
             val relevance: Relevance = rateMethod()
-            Some(StandardIssue(
-                "UnusedMethodsAnalysis",
-                theProject, classFile, Some(method), None,
-                None,
-                None,
-                "unused method",
-                Some(methodOrConstructor(method)),
-                Set(IssueCategory.Comprehensibility),
-                Set(IssueKind.Unused),
-                Seq(),
-                relevance
-            ))
-        } else
-            None
+            if (relevance != Relevance.Undetermined) {
+
+                val issue = StandardIssue(
+                    "UnusedMethodsAnalysis",
+                    theProject, classFile, Some(method), None,
+                    None,
+                    None,
+                    "unused method",
+                    Some(methodOrConstructor(method)),
+                    Set(IssueCategory.Comprehensibility),
+                    Set(IssueKind.Unused),
+                    Seq(),
+                    relevance
+                )
+                return Some(issue);
+            }
+        }
+
+        None
     }
 
     def methodOrConstructor(method: Method): String = {

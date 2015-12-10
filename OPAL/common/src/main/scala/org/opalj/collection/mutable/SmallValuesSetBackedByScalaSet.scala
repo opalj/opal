@@ -82,6 +82,10 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
 
     override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v))
 
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
+        new SmallValuesSetBackedByScalaSet(set.filter(f))
+    }
+
     override protected[collection] def mkString(
         pre: String, sep: String, pos: String,
         offset: Int

@@ -29,7 +29,6 @@
 package org.opalj
 package bugpicker
 package core
-package analysis
 
 /**
  * Defines a partial order on issue that sorts [[Issue]]s

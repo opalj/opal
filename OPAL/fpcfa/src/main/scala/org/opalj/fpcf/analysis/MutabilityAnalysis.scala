@@ -56,7 +56,8 @@ class MutabilityAnalysis private (
 
         val concreteMethods = classFile.methods filter { m ⇒
             !m.isStaticInitializer /*the static initializer is only executed once and at the beginning */ &&
-                !m.isNative && !m.isAbstract
+                !m.isNative &&
+                !m.isAbstract
         }
         concreteMethods foreach { m ⇒
             m.body.get foreach { (pc, instruction) ⇒
@@ -88,12 +89,14 @@ class MutabilityAnalysis private (
 
 object MutabilityAnalysis extends FPCFAnalysisRunner {
 
-    def entitySelector: PartialFunction[Entity, ClassFile] = FPCFAnalysisRunner.ClassFileSelector
+    def entitySelector(project: SomeProject): PartialFunction[Entity, ClassFile] = {
+        case cf: ClassFile if !project.isLibraryType(cf) ⇒ cf
+    }
 
     def derivedProperties: Set[PropertyKind] = Set(Mutability)
 
     protected[analysis] def start(project: SomeProject): Unit = {
-        new MutabilityAnalysis(project, entitySelector)
+        new MutabilityAnalysis(project, entitySelector(project))
     }
 
 }

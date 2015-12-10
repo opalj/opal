@@ -43,6 +43,21 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.ACONST_NULL
+import org.opalj.br.instructions.ICONST_0
+import org.opalj.br.instructions.DCONST_0
+import org.opalj.br.instructions.LCONST_0
+import org.opalj.br.instructions.FCONST_0
+import org.opalj.br.instructions.StoreLocalVariableInstruction
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.Purity
+import org.opalj.fpcf.analysis.Pure
+import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.br.LocalVariable
+import org.opalj.br.instructions.ICONST_M1
+import org.opalj.br.instructions.IINC
 
 /**
  * Identifies unused local variables
@@ -51,21 +66,42 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  */
 object UnusedLocalVariables {
 
-    def analyze(
-        theProject: SomeProject,
-        classFile:  ClassFile,
-        method:     Method,
-        result:     AIResult { val domain: Domain with TheCode with RecordDefUse }
+    def apply(
+        theProject:    SomeProject,
+        propertyStore: PropertyStore,
+        callGraph:     CallGraph,
+        classFile:     ClassFile,
+        method:        Method,
+        result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
     ): Seq[StandardIssue] = {
+
+        //
+        //
+        // IDENTIFYING RAW ISSUES
+        //
+        //
 
         if (method.isSynthetic)
             return Nil;
 
-        val unused = result.domain.unused()
+        val operandsArray = result.operandsArray
+        val unused = result.domain.unused().filter { vo ⇒
+            // filter unused local variables related to dead code...
+            // (we have another analysis for that)
+            operandsArray(vo) ne null
+        }
+
         if (unused.isEmpty)
             return Nil;
 
-        val instructions = result.domain.code.instructions
+        //
+        //
+        // POST PROCESSING ISSUES
+        //
+        //
+
+        val code = result.domain.code
+        val instructions = code.instructions
         var issues = List.empty[StandardIssue]
         val implicitParameterOffset = if (!method.isStatic) 1 else 0
         unused.foreach { vo ⇒
@@ -79,27 +115,76 @@ object UnusedLocalVariables {
                     // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
                     method.name == "<init>") {
                     relevance = Relevance.High
-                    if (vo == -1) {
+                    if (vo == -1 && !method.isStatic) {
                         issue = "the self reference \"this\" is unused"
                     } else {
-                        issue = "the paramter with index "+(-(vo + implicitParameterOffset))+" is unused"
+                        val index = (-(vo + implicitParameterOffset))
+                        code.localVariable(0, index - 1) match {
+                            case Some(lv) ⇒ issue = s"the parameter ${lv.name} is unused"
+                            case None     ⇒ issue = s"the $index. parameter is unused"
+                        }
                     }
                 }
             } else {
                 val instruction = instructions(vo)
                 instruction.opcode match {
+
                     case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
                         INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
-                        issue = "the return value of the call of "+invoke.declaringClass.toJava+
-                            "{ "+
-                            invoke.methodDescriptor.toJava(invoke.name)+
-                            " } is not used"
-                        // TODO we need an assessment how important it is to ignore the return value...
+                        try {
+                            val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
+                            // TODO Use a more precise method to determine if a method has a side effect "pureness" is actually too strong
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
+                                issue = "the return value of the call of "+invoke.declaringClass.toJava+
+                                    "{ "+
+                                    invoke.methodDescriptor.toJava(invoke.name)+
+                                    " } is not used"
+                                relevance = Relevance.OfUtmostRelevance
+                            }
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct
+                            case t: Throwable ⇒
+                                OPALLogger.error(
+                                    "error",
+                                    "assessing analysis result failed; ignoring issue",
+                                    t
+                                )(theProject.logContext)
+                        }
+
+                    case ACONST_NULL.opcode |
+                        ICONST_0.opcode |
+                        ICONST_M1.opcode |
+                        LCONST_0.opcode |
+                        FCONST_0.opcode |
+                        DCONST_0.opcode ⇒
+                        val nextPC = code.pcOfNextInstruction(vo)
+                        instructions(nextPC) match {
+                            case StoreLocalVariableInstruction((_, index)) ⇒
+                                val lvOption = code.localVariable(nextPC, index)
+                                if (lvOption.isDefined && (
+                                    lvOption.get.startPC < vo || lvOption.get.startPC > nextPC
+                                )) {
+                                    issue = s"the constant value ${instruction.toString(vo)} is not used"
+                                    relevance = Relevance.Low
+                                }
+                            // else... we filter basically all issues unless we are sure that this is real...
+                            case _ ⇒
+                                issue = "the constant value "+
+                                    instruction.toString(vo)+
+                                    "is (most likely) used to initialize a local variable"
+                                relevance = Relevance.TechnicalArtifact
+                        }
+
+                    case IINC.opcode ⇒
+                        issue = "the incremented value is not used"
                         relevance = Relevance.DefaultRelevance
+
                     case _ ⇒
-                        issue = "the value of the expression "+instruction.toString(vo)+" is not used"
-                        relevance = Relevance.OfUtmostRelevance
+                        issue = "the value of the expression "+
+                            instruction.toString(vo)+
+                            " is not used"
+                        relevance = Relevance.VeryHigh
                 }
 
             }

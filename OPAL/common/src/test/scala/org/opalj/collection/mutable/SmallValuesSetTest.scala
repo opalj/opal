@@ -287,6 +287,53 @@ class SmallValuesSetTest extends FunSpec with Matchers {
 
         }
 
+        it("it should be possible to filter sets") {
+            {
+                val set = SmallValuesSet.empty(300, 310)
+                if (!set.isInstanceOf[SmallValuesSetBackedByOPALSet])
+                    fail("expteced UByteSet base set found "+set.getClass)
+                val filtered = set.+≈:(301).+≈:(304).filter { _ == 304 }
+                filtered.size should be(1)
+                filtered.contains(304) should be(true)
+            }
+            {
+                val set = SmallValuesSet.empty(0, 255)
+                if (!set.isInstanceOf[EmptyUByteSet.type])
+                    fail("expteced UByteSet base set found "+set.getClass)
+                val filtered = set.+≈:(1).+≈:(104).+≈:(105).filter { _ % 2 == 0 }
+                filtered.size should be(1)
+                filtered.contains(104) should be(true)
+            }
+            {
+                val set = SmallValuesSet.empty(-10, 245)
+                if (!set.isInstanceOf[SmallValuesSetBackedByOPALSet])
+                    fail("expteced UByteSet base set found "+set.getClass)
+                val filtered = set.+≈:(-1).+≈:(-9).+≈:(105).filter { _ < 0 }
+                filtered.size should be(2)
+                filtered.contains(-1) should be(true)
+                filtered.contains(-9) should be(true)
+            }
+
+            {
+                val set = SmallValuesSet.empty(0, 65535)
+                if (!set.isInstanceOf[EmptyUShortSet.type])
+                    fail("expteced UShortSet base set found "+set.getClass)
+                val filtered = set.+≈:(1).+≈:(9).+≈:(105).filter { _ > 10 }
+                filtered.size should be(1)
+                filtered.contains(105) should be(true)
+
+            }
+            {
+                val set = SmallValuesSet.empty(-10, 65525)
+                if (!set.isInstanceOf[SmallValuesSetBackedByOPALSet])
+                    fail("expteced UShortSet based set found "+set.getClass)
+                val filtered = set.+≈:(-9).+≈:(-1).+≈:(105).filter { _ > 10 }
+                filtered.size should be(1)
+                filtered.contains(105) should be(true)
+            }
+
+        }
+
     }
 
 }

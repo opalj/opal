@@ -29,7 +29,6 @@
 package org.opalj
 package bugpicker
 package core
-package analysis
 
 import scala.xml.Node
 import scala.xml.Text

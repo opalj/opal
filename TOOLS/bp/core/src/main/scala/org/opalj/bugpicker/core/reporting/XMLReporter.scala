@@ -33,9 +33,11 @@ package reporting
 
 import scala.xml.Node
 import scala.xml.Text
-import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.ai.domain.l1.IntegerRangeValues
 
+/**
+ * Common functionality to create XML/HTML reports.
+ */
 object XMLReporter {
 
     def localVariablesToXHTML(issue: Issue): Option[Node] = {

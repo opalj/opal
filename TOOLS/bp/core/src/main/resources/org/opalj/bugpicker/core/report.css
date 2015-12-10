@@ -88,6 +88,13 @@ div#analysis_results {
 	padding: 0em;
 }
 
+dt.analysis {
+	color: rgb(78, 78, 78);
+}
+dt.analysis + dd {
+	color: rgb(78, 78, 78);
+}
+
 .an_issue {
 	padding: 0.5em;
 	background-color: rgb(241, 244, 255);
