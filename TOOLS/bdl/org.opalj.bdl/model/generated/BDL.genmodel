@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/org.opalj.bdl/src-gen" editDirectory="/org.opalj.bdl.edit/src"
+    editorDirectory="/org.opalj.bdl.editor/src" modelPluginID="org.opalj.bdl" forceOverwrite="true"
+    modelName="BDL" updateClasspath="false" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
+    complianceLevel="6.0" copyrightFields="false" editPluginID="org.opalj.bdl.edit"
+    editorPluginID="org.opalj.bdl.editor" runtimeVersion="2.11">
+  <genPackages prefix="BDL" basePackage="org.opalj.bdl" disposableProviderFactory="true"
+      fileExtensions="bdl" ecorePackage="BDL.ecore#/">
+    <genClasses ecoreClass="BDL.ecore#//Model"/>
+    <genClasses ecoreClass="BDL.ecore#//ModelContainer">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//ModelContainer/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//ModelContainer/parameter"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//ModelContainer/issues"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//ParameterContainer">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//ParameterContainer/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//ParameterContainer/elements"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//ParameterElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//ParameterElement/name"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//ParameterKeyValueElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//ParameterKeyValueElement/value"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//ParameterKeyElement"/>
+    <genClasses ecoreClass="BDL.ecore#//IssuesContainer"/>
+    <genClasses ecoreClass="BDL.ecore#//IssuesTitleElement">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssuesTitleElement/elements"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssuesTitleElement/name"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueElement/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/comment"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueElement/message"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/categories"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/kinds"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/relevance"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/package"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueElement/class"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueSuppressComment">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueSuppressComment/value"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueCategoryElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueCategoryElement/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference BDL.ecore#//IssueCategoryElement/elements"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueKindElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueKindElement/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueKindElement/elements"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueRelevanceElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueRelevanceElement/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueRelevanceElement/relevance"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssuePackageElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssuePackageElement/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssuePackageElement/package"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueClassElement">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueClassElement/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueClassElement/class"/>
+    </genClasses>
+    <genClasses ecoreClass="BDL.ecore#//IssueCategories">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueCategories/bug"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueCategories/smell"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueCategories/performance"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute BDL.ecore#//IssueCategories/comprehensibility"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

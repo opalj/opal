@@ -1,0 +1,68 @@
+grammar org.opalj.bdl.BDL with org.eclipse.xtext.common.Terminals
+
+generate bDL "http://www.opalj.org/bdl/BDL"
+
+Model:
+	ModelContainer;
+ 
+ModelContainer: 
+	name=AnalysisElement
+	parameter=ParameterContainer
+	issues=IssuesContainer
+;
+
+// Title
+AnalysisElement:
+	'Analysis of ' (ID | ':'|'/'|'\\'|','|'.')+
+;
+
+// Parameter ->
+ParameterContainer: name=ParametersElement (elements += ParameterElement)+; // container
+ParametersElement: 'Parameters'; // keyword
+ParameterElement: ParameterKeyValueElement|ParameterKeyElement; // two types of elemenets
+ParameterKeyValueElement: name=ID (':'|'=') value=AnyValues; 	// key value pair
+ParameterKeyElement: name = ID ';';								// key only
+
+// <- Parameter
+
+// Issues ->
+IssuesContainer:IssuesTitleElement (elements += IssueElement)*;	// container
+IssuesTitleElement: name='Issues';								// title
+IssueElement: 													// structure of one issue
+	name +=IssueTypes  (',' name += IssueTypes)*
+	comment=IssueSuppressComment?								// optional comment
+	'{'															// fixed order
+		message=STRING?											// optional message
+		categories=IssueCategoryElement
+		kinds=IssueKindElement
+		relevance=IssueRelevanceElement
+		package=IssuePackageElement
+		class=IssueClassElement
+	 '}'
+;
+
+IssueSuppressComment: '[suppress=' value=(ID|STRING) ']';		// comment-> maybe remove "suppress="?
+IssueCategoryElement:	name='Categories:' 	elements += IssueCategories (',' elements += IssueCategories)*;
+IssueKindElement:		name='Kinds:' 		elements += IssueKinds      (',' elements += IssueKinds)*;
+IssueRelevanceElement:	name='Relevance:'	relevance=INT;
+IssuePackageElement: 	name='Package:'		package=SlashPath;
+IssueClassElement:		name='Class:'		class=IssueClass;
+
+IssueTypes:														// hard coded list of types
+	'DeadEdgesAnalysis'|
+	'UnusedLocalVariables'|
+	'GuardedAndUnguardedAccessAnalysis'|
+	'UnusedMethodsAnalysis'|
+	'UselessComputationsAnalysis';
+IssueCategories:												// hard coded list of categories, maybe remove variable assignment -> no quick proposal then but easier access to the value ...
+	bug					= 'bug'|
+	smell				= 'smell'|
+	performance			= 'performance'|
+	comprehensibility	= 'comprehensibility';
+IssueKinds: 		'constant computation'|'dead path'|'throws exception'|'unguarded use'|'unused'|'useless';
+IssueClass: 		ID ('$' ID)* ('$' INT)*;
+
+// <- Issues
+
+AnyValues: INT | ID | INT ID | INT '.' INT;
+SlashPath: ID ('/' ID)*;
