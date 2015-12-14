@@ -700,6 +700,51 @@ class PropertyStore private (
     }
 
     /**
+     * Registers a function `f` that performs a computation for some root entities `es` and
+     * which returns for each entity `e` a [[PropertyComputationResult]] along with a set of
+     * new(!) entities for which the computation should be performed.
+     *
+     * The set of entities must be disjunct across all returned sets.
+     * This is, e.g., in general given, if we analyze the classes of the class hierarchy
+     * in a top-down fashion.
+     */
+    def <^<[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]](
+        initialEntities: Traversable[ProcessedEntity],
+        initialF:        IncrementalPropertyComputation[ProcessedEntity, F]
+    ): Unit = {
+
+        def bulkScheduleComputations(fes: Traversable[(F, ProcessedEntity)]): Unit = {
+            fes foreach { fe ⇒
+                val (f, e) = fe
+                if (isInterrupted())
+                    return ;
+
+                scheduleComputation(f, e)
+            }
+        }
+
+        def scheduleComputation(f: F, e: ProcessedEntity): Unit = {
+            scheduleRunnable {
+                val (pc, es) = f(e)
+                handleResult(pc)
+                bulkScheduleComputations(es)
+            }
+        }
+
+        initialEntities foreach { ie ⇒
+            if (isInterrupted())
+                return ;
+
+            scheduleRunnable {
+                val (pc, es) = initialF(ie)
+                handleResult(pc)
+                bulkScheduleComputations(es)
+            }
+
+        }
+    }
+
+    /**
      * Registers a function that calculates a property for those elements
      * of the store that pass the filter `f`.
      *
@@ -1159,20 +1204,6 @@ class PropertyStore private (
         }
     }
 
-    private[this] def scheduleRunnable(f: ⇒ Unit): Unit = {
-        scheduleTask(new Runnable {
-            override def run(): Unit = {
-                try {
-                    f
-                } catch {
-                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
-                } finally {
-                    Tasks.taskCompleted()
-                }
-            }
-        })
-    }
-
     /**
      * Schedules the handling of the result of a property computation.
      */
@@ -1218,6 +1249,20 @@ class PropertyStore private (
         scheduleRunnable {
             handleResult(pc(e))
         }
+    }
+
+    private[this] def scheduleRunnable(f: ⇒ Unit): Unit = {
+        scheduleTask(new Runnable {
+            override def run(): Unit = {
+                try {
+                    f
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        })
     }
 
     /**

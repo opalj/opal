@@ -82,6 +82,16 @@ package object fpcf {
      */
     type PropertyComputation = (Entity) ⇒ PropertyComputationResult
 
+    type IncrementalPropertyComputationResult[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]] = (PropertyComputationResult, Traversable[(F, ProcessedEntity)])
+
+    /**
+     * A function that takes an entity and returns a result along with the set of entities
+     * that should be processed next.
+     *
+     * @see [[org.opalj.fpcf#PropertyComputation]] for further details regarding the result.
+     */
+    type IncrementalPropertyComputation[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]] = (ProcessedEntity) ⇒ IncrementalPropertyComputationResult[ProcessedEntity, F]
+
     /**
      * A function that continues the computation of a property. It takes
      * the entity + property of the entity on which the computation depends.

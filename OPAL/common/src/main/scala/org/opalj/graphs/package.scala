@@ -141,6 +141,8 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
+        // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candiate starts!
+
         // The algorithm used to compute the scc is loosely inspired by:
         // Information Processing Letters 74 (2000) 107–114
         // Path-based depth-first search for strong and biconnected components
