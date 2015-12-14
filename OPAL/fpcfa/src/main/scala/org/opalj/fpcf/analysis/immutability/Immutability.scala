@@ -27,11 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package analyses
+package fpcf
+package analysis
+package immutability
+
 
 /**
- * Enumeration of the mutability ratings that can be associated with a class type. The
+ * Specifies the mutability of a class type. The
  * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
  * then "Mutable" and then "Unknown". In most cases analyses that use the mutability
  * rating can treat [[Mutable]] and [[Unknown]] in the same manner.
@@ -78,15 +80,55 @@ package analyses
  * only.
  *
  * ==Interfaces==
- * Are not considered during the analysis as they are always immutable. (All fiels are
+ * Are not considered during the analysis as they are always immutable. (All fields are
  * `static` and `final`.)
  *
  * @author Andre Pacak
  * @author Michael Eichberg
  */
-object MutabilityRating extends Enumeration(4) {
-    val Unknown = Value(0)
-    val Mutable = Value(1)
-    val ConditionallyImmutable = Value(2)
-    val Immutable = Value(3)
+sealed trait Immutability extends Property {
+
+    /**
+     * Returns the key used by all `Immutability` properties.
+     */
+    final def key = Immutability.key
+
 }
+/**
+ * Common constants use by all [[Immutability]] properties associated with methods.
+ */
+object Immutability extends PropertyMetaInformation {
+
+    /**
+     * The key associated with every Immutability property.
+     */
+    final val key =
+        PropertyKey.create(
+            "Immutability",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            Unknown,
+            // When we have a cycle all properties are necessarily at least conditionally immutable
+            // hence, we can leverage the "immutability" 
+            Immutable
+
+        )
+}
+
+/**
+ * An instance of the respective class is effectively immutable. I.e., after creation it is not
+ * possible for a client to set a field or to call a method that updates the internal state 
+ * 
+ */
+case object Immutable extends Immutability { final val isRefineable = false }
+
+case object ConditionallyImmutable extends Immutability { final val isRefineable = false }
+
+case object AtLeastConditionallyImmutable extends Immutability {final val isRefineable = true }
+
+case object Mutable extends Immutability { final val isRefineable = false }
+
+case object Unknown extends Immutability { final val isRefineable = false }
+
+
+

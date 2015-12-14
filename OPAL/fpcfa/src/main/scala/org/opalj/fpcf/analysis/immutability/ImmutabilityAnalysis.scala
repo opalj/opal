@@ -27,23 +27,97 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package analyses
+package fpcf
+package analysis
+package immutability
 
-import java.net.URL
-
-import scala.collection.Map
-import scala.collection.concurrent.{TrieMap ⇒ ConcurrentMap}
-
-import org.opalj.br.ObjectType
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.LoadLocalVariableInstruction
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
-import org.opalj.ai.analyses.MutabilityRating._
+/**
+ * A class file is immutable if it only has fields that are final or effectively final; a sub
+ * class of a class is at most as mutable as its superclass. `java.lang.Object` is immutable.
+ * 
+ * @note In Java, technically, no object is immutable because every object is associated with
+ * 		a monitor and the state of the monitor changes as soon as we acquire the respective lock
+ *      using `synchronized`. I.e., even though an instance of `java.lang.Object` is typically
+ *      regarded as immutable the monitor's state can be changed using `synchronized`. However,
+ *      for this analysis the state regarded to the object's implicit monitor is not considered.
+ */
+ class ImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+
+    val classHierarchy = project.classHierarchy
+    
+    import classHierarchy.{directSubtypesOf => subtypes} 
+    
+    def thisProjectTypes(objectTypes : Traversable[ObjectType]) : Traversable[ClassFile] = {
+        objectTypes.view.
+         map(objectType => project.classFile(objectType)).
+         collect {case Some(classFile) => classFile}
+    }
+    
+    
+    
+   class IPC(val mutability: Immutability) extends (ClassFile => Traversable[(IPC,ClassFile)]) {
+       def apply(classFile : ClassFile) : Traversable[(IPC,ClassFile)]    = {
+       ???
+   }
+}
+    
+    
+    def determineInitialProperty(
+            classFile: ClassFile
+            ): ImmutabilityAnalysisRunner.IncrementalPropertyComputationResult = {
+        val thisType= classFile.thisType
+        
+        if(thisType eq ObjectType.Object)
+            (
+                    ImmediateResult(classFile,Immutable),
+                    thisProjectTypes(subtypes(thisType)).map(cf => (new IPC(Immutable),cf))
+                    )
+        else {
+            val allSubclasses : Traversable [ClassFile] = thisProjectTypes(classHierarchy.allSubclasses(thisType, reflexive = true))
+            (
+                ImmediateMultiResult(allSubclasses.map(subClass => (subClass,Mutable))
+                ),
+                Nil
+            )
+        }
+    }
+
+}
+
+object ImmutabilityAnalysisRunner extends FPCFAnalysisRunner {
+
+     type IncrementalPropertyComputationResult = (PropertyComputationResult, Traversable[(ImmutabilityAnalysis#IPC, ClassFile)])
+
+   type IncrementalPropertyComputation = ClassFile ⇒ IncrementalPropertyComputationResult
+  
+    override def recommendations: Set[FPCFAnalysisRunner] = Set(MutabilityAnalysis)
+
+    override def derivedProperties: Set[PropertyKind] = Set(Immutability)
+
+    override def usedProperties: Set[PropertyKind] = Set(Mutability)
+
+    protected[analysis] def start(project: SomeProject): Unit = {
+        val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
+        start(project, propertyStore)
+    }
+
+    protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): Unit = {
+        import project.classHierarchy.rootTypes
+        val analysis = new ImmutabilityAnalysis(project)
+        propertyStore <^< [ClassFile,IncrementalPropertyComputation]  (
+                rootTypes.map(objectType => project.classFile(objectType).get), 
+                analysis.determineInitialProperty _
+                )
+    }
+
+}
+
+/*
 
 /**
  * This analysis determines which classes in a project are immutable,
@@ -177,3 +251,4 @@ object ImmutabilityAnalysis {
         classification
     }
 }
+*/
