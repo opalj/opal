@@ -392,6 +392,49 @@ class ClassHierarchy private (
     }
 
     /**
+     * Returns all (direct and indirect) subclasses of the given class type (NOT interface type)
+     */
+    def allSubclasses(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
+        assert(!isInterface(objectType))
+        val id = objectType.id
+        println(objectType)
+        val initialIterator = {
+            if (reflexive)
+                Iterator(objectType)
+            else {
+                val subclasses = subclassTypesMap(id)
+                if (subclasses ne null) {
+                    subclasses.iterator
+                } else
+                    return Iterator.empty;
+            }
+        }
+        new Iterator[ObjectType] {
+            var iterators = List[Iterator[ObjectType]](initialIterator)
+
+            @tailrec def advanceToNextNonEmptyIterator: Boolean = {
+                iterators.nonEmpty && {
+                    iterators = iterators.tail
+                    iterators.nonEmpty && (iterators.head.hasNext || advanceToNextNonEmptyIterator)
+                }
+            }
+
+            def hasNext: Boolean = {
+                iterators.nonEmpty && (iterators.head.hasNext || advanceToNextNonEmptyIterator)
+            }
+
+            def next: ObjectType = {
+                val currentIterator = iterators.head
+                val next = currentIterator.next
+                if (!currentIterator.hasNext) advanceToNextNonEmptyIterator
+                val subsubclasses = subclassTypesMap(next.id)
+                if (subsubclasses ne null) iterators = subsubclasses.iterator :: iterators
+                next
+            }
+        }
+    }
+
+    /**
      * Executes the given function `f` for each direct subclass of the given `ObjectType`.
      * In this case the subclass relation is '''not reflexive'''.
      *
