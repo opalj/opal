@@ -79,9 +79,8 @@ case object NotCallable extends CallableFromClassesInOtherPackages { final val i
  *  @author Michael Reif
  */
 class CallableFromClassesInOtherPackagesAnalysis private (
-        project:        SomeProject,
-        entitySelector: PartialFunction[Entity, Method] = CallableFromClassesInOtherPackagesAnalysis.entitySelector
-) extends DefaultFPCFAnalysis[Method](project, entitySelector) {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
     /**
      * Determines the [[CallableFromClassesInOtherPackages]] property of non-static methods.
@@ -199,7 +198,9 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
         Set(CallableFromClassesInOtherPackages)
     }
 
-    protected[analysis] def start(project: SomeProject): Unit = {
-        new CallableFromClassesInOtherPackagesAnalysis(project)
+    protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
 }

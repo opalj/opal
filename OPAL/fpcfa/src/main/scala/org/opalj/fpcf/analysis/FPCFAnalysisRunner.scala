@@ -136,8 +136,8 @@ trait FPCFAnalysisRunner {
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-   final protected[analysis] def start(project: SomeProject): FPCFAnalysis = {
-       start (project, project.get(SourceElementsPropertyStoreKey))
+    final protected[analysis] def start(project: SomeProject): FPCFAnalysis = {
+        start(project, project.get(SourceElementsPropertyStoreKey))
     }
 
     /**
@@ -145,9 +145,9 @@ trait FPCFAnalysisRunner {
      * called by the [[FPCFAnalysesManager]].
      */
     protected[analysis] def start(
-            project: SomeProject,
-            propertyStore : PropertyStore
-            ): FPCFAnalysis
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis
 }
 
 /**
@@ -168,7 +168,7 @@ object FPCFAnalysisRunner {
 
     final val MethodSelector: PartialFunction[Entity, Method] = {
         case m: Method ⇒ m
-        }
+    }
 
     final val NonAbstractMethodSelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract ⇒ m

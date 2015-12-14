@@ -130,11 +130,11 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
 
-    def start(
-            project: SomeProject,
-            propertyStore : PropertyStore
-            ): FPCFAnalysis = {
-       val analysis =  new FactoryMethodAnalysis(project, propertyStore)
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new FactoryMethodAnalysis(project)
         propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }

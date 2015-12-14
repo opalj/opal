@@ -76,12 +76,8 @@ import org.opalj.log.OPALLogger
  * @note The analysis does not take reflective instantiations into account!
  */
 class SimpleInstantiabilityAnalysis private (
-    project: SomeProject
-) extends AbstractGroupedFPCFAnalysis[String, ClassFile](
-    project,
-    SimpleInstantiabilityAnalysis.groupBy,
-    SimpleInstantiabilityAnalysis.entitySelector
-) {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
     import project.classHierarchy.allSubtypes
 
@@ -211,8 +207,12 @@ object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
 
-    override protected[analysis] def start(project: SomeProject): Unit = {
-        new SimpleInstantiabilityAnalysis(project)
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new SimpleInstantiabilityAnalysis(project)
+        propertyStore.execute(entitySelector, groupBy)(analysis.determineProperty)
+        analysis
     }
-
 }

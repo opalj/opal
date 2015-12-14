@@ -36,9 +36,8 @@ import org.opalj.br.ClassFile
 import org.opalj.br.instructions.PUTSTATIC
 
 class MutabilityAnalysis private (
-        project:        SomeProject,
-        entitySelector: PartialFunction[Entity, ClassFile]
-) extends AbstractFPCFAnalysis(project, entitySelector) {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
@@ -95,8 +94,12 @@ object MutabilityAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(Mutability)
 
-    protected[analysis] def start(project: SomeProject): Unit = {
-        new MutabilityAnalysis(project, entitySelector(project))
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new MutabilityAnalysis(project)
+        propertyStore <||< (entitySelector(project), analysis.determineProperty)
+        analysis
     }
-
 }

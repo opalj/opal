@@ -77,11 +77,8 @@ import org.opalj.log.GlobalLogContext
  * @note The analysis does not take reflective instantiations into account!
  */
 class InstantiabilityAnalysis private (
-    project: SomeProject
-) extends DefaultFPCFAnalysis[ClassFile](
-    project,
-    InstantiabilityAnalysis.entitySelector
-) {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
     val propertyKey = Instantiability.key
 
@@ -224,8 +221,12 @@ object InstantiabilityAnalysis extends FPCFAnalysisRunner {
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set(FactoryMethodAnalysis)
 
-    protected[analysis] override def start(project: SomeProject): Unit = {
-        new InstantiabilityAnalysis(project)
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new InstantiabilityAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
-
 }

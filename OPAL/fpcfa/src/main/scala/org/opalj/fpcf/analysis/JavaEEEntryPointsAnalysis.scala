@@ -40,7 +40,7 @@ import org.opalj.br.analyses.InjectedClassesInformationKey
 import org.opalj.br.Method
 
 class JavaEEEntryPointsAnalysis private (
-    project: SomeProject
+    val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.key
     private[this] final val InstantiabilityKey = Instantiability.key
@@ -48,7 +48,7 @@ class JavaEEEntryPointsAnalysis private (
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
     private[this] final val ExceptionHandlerFactory = ObjectType("javax.faces.context.ExceptionHandlerFactory")
-} with DefaultFPCFAnalysis[ClassFile](project, JavaEEEntryPointsAnalysis.entitySelector) {
+} with FPCFAnalysis {
 
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
@@ -130,8 +130,12 @@ object JavaEEEntryPointsAnalysis extends FPCFAnalysisRunner {
         Set()
     }
 
-    protected[analysis] def start(project: SomeProject): Unit = {
-        new JavaEEEntryPointsAnalysis(project)
+    def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new JavaEEEntryPointsAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
-
 }

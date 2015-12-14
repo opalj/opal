@@ -79,7 +79,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-class PurityAnalysis private (        val project:        SomeProject) extends FPCFAnalysis {
+class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     final val Purity = org.opalj.fpcf.analysis.Purity.key
 
@@ -286,12 +286,11 @@ object PurityAnalysis extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set(Mutability)
 
     protected[analysis] def start(
-            project: SomeProject,
-            propertyStore : PropertyStore
-            ): FPCFAnalysis = {
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
         val analysis = new PurityAnalysis(project)
         propertyStore <||< (entitySelector, analysis.determineProperty)
         analysis
     }
-
 }

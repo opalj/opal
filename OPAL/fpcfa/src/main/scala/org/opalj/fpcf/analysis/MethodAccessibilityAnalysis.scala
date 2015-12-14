@@ -40,11 +40,10 @@ import scala.collection.mutable.ListBuffer
  * @author Michael Reif
  */
 class MethodAccessibilityAnalysis private[analysis] (
-        project:        SomeProject,
-        entitySelector: PartialFunction[Entity, Method] = MethodAccessibilityAnalysis.entitySelector
-) extends DefaultFPCFAnalysis[Method](project, entitySelector) {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
-    override def determineProperty(method: Method): PropertyComputationResult = {
+    def determineProperty(method: Method): PropertyComputationResult = {
         if (method.isPrivate)
             return ImmediateResult(method, ClassLocal)
 
@@ -139,8 +138,13 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         case m: Method if !m.isStaticInitializer && (m.isNative || !m.isAbstract) ⇒ m
     }
 
-    override protected[analysis] def start(project: SomeProject): Unit = {
-        new MethodAccessibilityAnalysis(project)
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new MethodAccessibilityAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
 
     override def recommendations: Set[FPCFAnalysisRunner] = {
@@ -177,8 +181,12 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         Set(CallableFromClassesInOtherPackages)
     }
 
-    protected[analysis] def start(project: SomeProject): Unit = {
-        new MethodAccessibilityAnalysis(project, entitySelector)
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+        val analysis = new MethodAccessibilityAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
-
 }
