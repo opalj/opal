@@ -79,10 +79,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-class PurityAnalysis private (
-        project:        SomeProject,
-        entitySelector: PartialFunction[Entity, Method]
-) extends AbstractFPCFAnalysis(project, entitySelector) {
+class PurityAnalysis private (        val project:        SomeProject) extends FPCFAnalysis {
 
     final val Purity = org.opalj.fpcf.analysis.Purity.key
 
@@ -94,7 +91,7 @@ class PurityAnalysis private (
      *
      * This function encapsulates the continuation.
      */
-    private def determinePurityCont(
+    private[this] def determinePurityCont(
         method:    Method,
         pc:        PC,
         dependees: Set[EOptionP]
@@ -288,8 +285,13 @@ object PurityAnalysis extends FPCFAnalysisRunner {
 
     override def usedProperties: Set[PropertyKind] = Set(Mutability)
 
-    protected[analysis] def start(project: SomeProject): Unit = {
-        new PurityAnalysis(project, entitySelector)
+    protected[analysis] def start(
+            project: SomeProject,
+            propertyStore : PropertyStore
+            ): FPCFAnalysis = {
+        val analysis = new PurityAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
+        analysis
     }
 
 }

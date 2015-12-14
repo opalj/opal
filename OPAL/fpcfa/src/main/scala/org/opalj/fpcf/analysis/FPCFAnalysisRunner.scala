@@ -32,6 +32,7 @@ package analysis
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 
@@ -135,7 +136,18 @@ trait FPCFAnalysisRunner {
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    protected[analysis] def start(project: SomeProject): Unit
+   final protected[analysis] def start(project: SomeProject): FPCFAnalysis = {
+       start (project, project.get(SourceElementsPropertyStoreKey))
+    }
+
+    /**
+     * Starts the analysis for the given `project`. This method is typically implicitly
+     * called by the [[FPCFAnalysesManager]].
+     */
+    protected[analysis] def start(
+            project: SomeProject,
+            propertyStore : PropertyStore
+            ): FPCFAnalysis
 }
 
 /**
@@ -154,7 +166,9 @@ object FPCFAnalysisRunner {
         case cf: ClassFile ⇒ cf
     }
 
-    final val MethodSelector: PartialFunction[Entity, Method] = { case m: Method ⇒ m }
+    final val MethodSelector: PartialFunction[Entity, Method] = {
+        case m: Method ⇒ m
+        }
 
     final val NonAbstractMethodSelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract ⇒ m
