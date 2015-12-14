@@ -31,7 +31,6 @@ package fpcf
 package analysis
 package immutability
 
-
 /**
  * Specifies the mutability of a class type. The
  * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
@@ -117,18 +116,16 @@ object Immutability extends PropertyMetaInformation {
 
 /**
  * An instance of the respective class is effectively immutable. I.e., after creation it is not
- * possible for a client to set a field or to call a method that updates the internal state 
- * 
+ * possible for a client to set a field or to call a method that updates the internal state
+ *
  */
 case object Immutable extends Immutability { final val isRefineable = false }
 
 case object ConditionallyImmutable extends Immutability { final val isRefineable = false }
 
-case object AtLeastConditionallyImmutable extends Immutability {final val isRefineable = true }
+case object AtLeastConditionallyImmutable extends Immutability { final val isRefineable = true }
 
 case object Mutable extends Immutability { final val isRefineable = false }
 
 case object Unknown extends Immutability { final val isRefineable = false }
-
-
 

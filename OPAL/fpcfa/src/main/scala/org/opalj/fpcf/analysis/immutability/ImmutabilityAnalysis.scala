@@ -39,49 +39,46 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 /**
  * A class file is immutable if it only has fields that are final or effectively final; a sub
  * class of a class is at most as mutable as its superclass. `java.lang.Object` is immutable.
- * 
+ *
  * @note In Java, technically, no object is immutable because every object is associated with
  * 		a monitor and the state of the monitor changes as soon as we acquire the respective lock
  *      using `synchronized`. I.e., even though an instance of `java.lang.Object` is typically
  *      regarded as immutable the monitor's state can be changed using `synchronized`. However,
  *      for this analysis the state regarded to the object's implicit monitor is not considered.
  */
- class ImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class ImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     val classHierarchy = project.classHierarchy
-    
-    import classHierarchy.{directSubtypesOf => subtypes} 
-    
-    def thisProjectTypes(objectTypes : Traversable[ObjectType]) : Traversable[ClassFile] = {
+
+    import classHierarchy.{directSubtypesOf ⇒ subtypes}
+
+    def thisProjectTypes(objectTypes: Traversable[ObjectType]): Traversable[ClassFile] = {
         objectTypes.view.
-         map(objectType => project.classFile(objectType)).
-         collect {case Some(classFile) => classFile}
+            map(objectType ⇒ project.classFile(objectType)).
+            collect { case Some(classFile) ⇒ classFile }
     }
-    
-    
-    
-   class IPC(val mutability: Immutability) extends (ClassFile => Traversable[(IPC,ClassFile)]) {
-       def apply(classFile : ClassFile) : Traversable[(IPC,ClassFile)]    = {
-       ???
-   }
-}
-    
-    
+
+    class IPC(val mutability: Immutability) extends (ClassFile ⇒ Traversable[(IPC, ClassFile)]) {
+        def apply(classFile: ClassFile): Traversable[(IPC, ClassFile)] = {
+            ???
+        }
+    }
+
     def determineInitialProperty(
-            classFile: ClassFile
-            ): ImmutabilityAnalysisRunner.IncrementalPropertyComputationResult = {
-        val thisType= classFile.thisType
-        
-        if(thisType eq ObjectType.Object)
+        classFile: ClassFile
+    ): (PropertyComputationResult, Traversable[(this.IPC, ClassFile)]) = {
+        val thisType = classFile.thisType
+
+        if (thisType eq ObjectType.Object)
             (
-                    ImmediateResult(classFile,Immutable),
-                    thisProjectTypes(subtypes(thisType)).map(cf => (new IPC(Immutable),cf))
-                    )
+                ImmediateResult(classFile, Immutable),
+                thisProjectTypes(subtypes(thisType)).map(cf ⇒ (new IPC(Immutable), cf))
+            )
         else {
-            val allSubclasses : Traversable [ClassFile] = thisProjectTypes(classHierarchy.allSubclasses(thisType, reflexive = true))
+            val allSubclasses = classHierarchy.allSubclasses(thisType, reflexive = true).toList
+            val allProjectSubclasses: Traversable[ClassFile] = thisProjectTypes(allSubclasses)
             (
-                ImmediateMultiResult(allSubclasses.map(subClass => (subClass,Mutable))
-                ),
+                ImmediateMultiResult(allProjectSubclasses.map(subClass ⇒ (subClass, Mutable))),
                 Nil
             )
         }
@@ -91,10 +88,10 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 object ImmutabilityAnalysisRunner extends FPCFAnalysisRunner {
 
-     type IncrementalPropertyComputationResult = (PropertyComputationResult, Traversable[(ImmutabilityAnalysis#IPC, ClassFile)])
+//    type IncrementalPropertyComputationResult = (PropertyComputationResult, Traversable[(ImmutabilityAnalysis#IPC, ClassFile)])
+//
+//    type IncrementalPropertyComputation = ClassFile ⇒ IncrementalPropertyComputationResult
 
-   type IncrementalPropertyComputation = ClassFile ⇒ IncrementalPropertyComputationResult
-  
     override def recommendations: Set[FPCFAnalysisRunner] = Set(MutabilityAnalysis)
 
     override def derivedProperties: Set[PropertyKind] = Set(Immutability)
@@ -109,10 +106,10 @@ object ImmutabilityAnalysisRunner extends FPCFAnalysisRunner {
     protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): Unit = {
         import project.classHierarchy.rootTypes
         val analysis = new ImmutabilityAnalysis(project)
-        propertyStore <^< [ClassFile,IncrementalPropertyComputation]  (
-                rootTypes.map(objectType => project.classFile(objectType).get), 
-                analysis.determineInitialProperty _
-                )
+        propertyStore <^<[ClassFile,IncrementalPropertyComputation[ClassFile,Traversable[(analysis.IPC,ClassFile)]]] (
+            rootTypes.map(objectType ⇒ project.classFile(objectType).get),
+            analysis.determineInitialProperty _
+        )
     }
 
 }
@@ -251,4 +248,4 @@ object ImmutabilityAnalysis {
         classification
     }
 }
-*/
+*/ 
