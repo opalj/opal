@@ -29,19 +29,20 @@
 package org.opalj
 package fpcf
 package analysis
+package mutation
 
-import scala.language.postfixOps
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.instructions.PUTSTATIC
 
-class MutabilityAnalysis private (
+/**
+ * Determines if a field is always initialized at most once or if a field is or can be mutated
+ * after (lazy) initialization.  
+ */
+class FieldMutatedAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    /**
-     * Identifies those private static non-final fields that are initialized exactly once.
-     */
     def determineProperty(
         classFile: ClassFile
     ): PropertyComputationResult = {
@@ -69,7 +70,7 @@ class MutabilityAnalysis private (
                         val field = classFile.findField(fieldName)
                         if (field.isDefined) { effectivelyFinalFields -= field.get }
                         if (effectivelyFinalFields.isEmpty)
-                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinal)));
+                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinalByAnalysis)));
                     case _ ⇒
                     /*Nothing to do*/
                 }
@@ -80,25 +81,25 @@ class MutabilityAnalysis private (
             if (effectivelyFinalFields.contains(f))
                 (f, EffectivelyFinal)
             else
-                (f, NonFinal)
+                (f, NonFinalByAnalysis)
         }
         ImmediateMultiResult(results)
     }
 }
 
-object MutabilityAnalysis extends FPCFAnalysisRunner {
+object FieldMutatedAnalysis extends FPCFAnalysisRunner {
 
     def entitySelector(project: SomeProject): PartialFunction[Entity, ClassFile] = {
         case cf: ClassFile if !project.isLibraryType(cf) ⇒ cf
     }
 
-    def derivedProperties: Set[PropertyKind] = Set(Mutability)
+    def derivedProperties: Set[PropertyKind] = Set(Mutated)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        val analysis = new MutabilityAnalysis(project)
+        val analysis = new FieldMutatedAnalysis(project)
         propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }
