@@ -29,6 +29,7 @@
 // Author: Thorsten Jacobi
 
 grammar org.opalj.bdl.BDL with org.eclipse.xtext.common.Terminals
+import "http://www.eclipse.org/xtext/common/JavaVMTypes" as jvmTypes
 
 generate bDL "http://www.opalj.org/bdl/BDL"
 
@@ -62,21 +63,24 @@ IssueElement: 													// structure of one issue
 	name +=IssueTypes  (',' name += IssueTypes)*
 	comment=IssueSuppressComment?								// optional comment
 	'{'															// fixed order
-		message=STRING?											// optional message
+		message=IssueMessageElement?											// optional message
 		categories=IssueCategoryElement
 		kinds=IssueKindElement
 		relevance=IssueRelevanceElement
 		package=IssuePackageElement
 		class=IssueClassElement
+		method=IssueMethodElement
 	 '}'
 ;
 
 IssueSuppressComment: '[suppress=' value=(ID|STRING) ']';		// comment-> maybe remove "suppress="?
+IssueMessageElement: message=STRING;
 IssueCategoryElement:	name='Categories:' 	elements += IssueCategories (',' elements += IssueCategories)*;
 IssueKindElement:		name='Kinds:' 		elements += IssueKinds      (',' elements += IssueKinds)*;
 IssueRelevanceElement:	name='Relevance:'	relevance=INT;
 IssuePackageElement: 	name='Package:'		package=SlashPath;
 IssueClassElement:		name='Class:'		class=IssueClass;
+IssueMethodElement:		name='Method:'		method=IssueMethodDefinition;
 
 IssueTypes:														// hard coded list of types
 	'DeadEdgesAnalysis'|
@@ -91,8 +95,15 @@ IssueCategories:												// hard coded list of categories, maybe remove varia
 	comprehensibility	= 'comprehensibility';
 IssueKinds: 		'constant computation'|'dead path'|'throws exception'|'unguarded use'|'unused'|'useless';
 IssueClass: 		ID ('$' ID)* ('$' INT)*;
+IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=ID ('()'|'(' parameter+=MethodTypes (',' parameter+=MethodTypes)*')')
+	
+;
+
 
 // <- Issues
 
 AnyValues: INT | ID | INT ID | INT '.' INT;
 SlashPath: ID ('/' ID)*;
+QualifiedName:	ID ('.' ID)* ('$' ID)?;
+AccessFlags: 'public'|'private'|'protected'|'static'|'SUPER'|'abstract'|'final'|'synchronized'|'SYNTHETIC';
+MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes '[]'+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];

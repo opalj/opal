@@ -51,8 +51,8 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 	def text (IssueElement ele){
 		var String msg = "";
 		
-		if ( (ele.message != null) && (ele.message.length > 0) )
-			msg = ": "+ ele.message;
+		if ( (ele.message != null) && (ele.message.message != null) && (ele.message.message.length > 0) )
+			msg = ": "+ ele.message.message;
 
 		return getFromArray(ele.name,",") + msg;
 	}

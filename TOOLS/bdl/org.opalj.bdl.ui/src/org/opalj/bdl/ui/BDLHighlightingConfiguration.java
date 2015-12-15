@@ -49,6 +49,8 @@ public class BDLHighlightingConfiguration implements IHighlightingConfiguration 
     public static final String Style_Issues_TYPE_ID = "Style_Issues_TYPE";
     public static final String Style_Issues_KEY_ID = "Style_Issues_KEY";
     public static final String Style_Issues_VALUE_ID = "Style_Issues_VALUE";
+    public static final String Style_Method_TYPES_ID = "Style_Method_TYPES";
+    public static final String Style_Issues_MESSAGE_ID = "Style_Issues_MESSAGE";
     
 	@Override
 	public void configure(IHighlightingConfigurationAcceptor acceptor) {
@@ -70,6 +72,11 @@ public class BDLHighlightingConfiguration implements IHighlightingConfiguration 
 				createTextStyle(10, SWT.ITALIC, new RGB(1, 1, 1) ));
 		acceptor.acceptDefaultHighlighting(Style_Issues_TYPE_ID, "Issue type", 
 				createTextStyle(10, 0, new RGB(100, 0, 200) ));
+		acceptor.acceptDefaultHighlighting(Style_Method_TYPES_ID, "Method types", 
+				createTextStyle(10, 0, new RGB(255, 0, 127) ));
+		acceptor.acceptDefaultHighlighting(Style_Issues_MESSAGE_ID, "Issue message", 
+				createTextStyle(10, SWT.ITALIC, new RGB(175, 75, 125) ));
+		
 	}
 
     protected TextStyle defaultTextStyle() {

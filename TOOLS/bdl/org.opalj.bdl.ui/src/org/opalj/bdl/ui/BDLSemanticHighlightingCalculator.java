@@ -41,9 +41,12 @@ import org.opalj.bdl.bDL.IssueCategoryElement;
 import org.opalj.bdl.bDL.IssueClassElement;
 import org.opalj.bdl.bDL.IssueElement;
 import org.opalj.bdl.bDL.IssueKindElement;
+import org.opalj.bdl.bDL.IssueMessageElement;
+import org.opalj.bdl.bDL.IssueMethodElement;
 import org.opalj.bdl.bDL.IssuePackageElement;
 import org.opalj.bdl.bDL.IssueRelevanceElement;
 import org.opalj.bdl.bDL.IssuesTitleElement;
+import org.opalj.bdl.bDL.MethodTypes;
 import org.opalj.bdl.bDL.ModelContainer;
 import org.opalj.bdl.bDL.ParameterContainer;
 import org.opalj.bdl.bDL.ParameterKeyElement;
@@ -80,9 +83,16 @@ public class BDLSemanticHighlightingCalculator implements ISemanticHighlightingC
 						acceptor.addPosition(node.getOffset(), node.getLength(),
 					    		BDLHighlightingConfiguration.Style_Issues_ID);
 					}
-					else if ((semanticElement instanceof IssueElement) && (length2 > 1))
+					else if ((semanticElement instanceof IssueElement) && (length2 > 1)){
 						acceptor.addPosition(node.getOffset(), node.getLength(),
 					    		BDLHighlightingConfiguration.Style_Issues_TYPE_ID);
+					}else if ((semanticElement instanceof MethodTypes)){
+						acceptor.addPosition(node.getOffset(), node.getLength(),
+					    		BDLHighlightingConfiguration.Style_Method_TYPES_ID);
+					}else if ((semanticElement instanceof IssueMessageElement)){
+						acceptor.addPosition(node.getOffset(), node.getLength(),
+					    		BDLHighlightingConfiguration.Style_Issues_MESSAGE_ID);
+					}
 				}else{
 					if (semanticElement instanceof ParameterKeyElement)
 						acceptor.addPosition(node.getOffset(), node.getLength(),
@@ -101,7 +111,14 @@ public class BDLSemanticHighlightingCalculator implements ISemanticHighlightingC
 					{
 						if ((node.getParent().getSemanticElement() == null) || (node.getParent().getSemanticElement().eClass() != semanticElement.eClass()))
 						HighlightSeperatedNode(node, BDLHighlightingConfiguration.Style_Issues_KEY_ID, BDLHighlightingConfiguration.Style_Issues_VALUE_ID, acceptor);
+					}else if (
+							(semanticElement instanceof IssueMethodElement)
+						 )
+					{
+						if ((node.getParent().getSemanticElement() == null) || (node.getParent().getSemanticElement().eClass() != semanticElement.eClass()))
+						HighlightSeperatedNode(node, BDLHighlightingConfiguration.Style_Issues_KEY_ID, null, acceptor);
 					}
+						
 					/*else
 					acceptor.addPosition(node.getOffset(), node.getLength(), 
 				    		BDLHighlightingConfiguration.DEFAULT_ID);*/
@@ -120,7 +137,8 @@ public class BDLSemanticHighlightingCalculator implements ISemanticHighlightingC
 		}else{
 			acceptor.addPosition(node.getOffset(), index,key);
 			acceptor.addPosition(node.getOffset()+index, 1, BDLHighlightingConfiguration.DEFAULT_ID);
-			acceptor.addPosition(node.getOffset()+index+1, node.getLength()-index-1,value);
+			if (value != null)
+				acceptor.addPosition(node.getOffset()+index+1, node.getLength()-index-1,value);
 		}
 	}
 

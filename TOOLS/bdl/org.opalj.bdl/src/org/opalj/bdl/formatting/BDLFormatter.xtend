@@ -62,13 +62,15 @@ public class BDLFormatter extends AbstractDeclarativeFormatter {
 			c.setIndentationDecrement.after(gram.parameterElementRule)
 		c.setLinewrap(1, 1, 1).after(gram.issuesTitleElementRule)
 		c.setLinewrap(1, 1, 1).around(gram.issueElementRule)
-			c.setIndentationIncrement.before(gram.issueCategoryElementRule)
-			c.setLinewrap(1, 1, 1).before(gram.issueCategoryElementRule);
-			c.setLinewrap(1, 1, 1).before(gram.issueKindElementRule);
-			c.setLinewrap(1, 1, 1).before(gram.issueRelevanceElementRule);
-			c.setLinewrap(1, 1, 1).before(gram.issuePackageElementRule);
-			c.setLinewrap(1, 1, 1).around(gram.issueClassElementRule);
-			c.setIndentationDecrement.after(gram.issueClassElementRule)
+			c.setIndentationIncrement.before(gram.issueMessageElementRule)
+				c.setLinewrap(1, 1, 1).before(gram.issueMessageElementRule);
+				c.setLinewrap(1, 1, 1).before(gram.issueCategoryElementRule);
+				c.setLinewrap(1, 1, 1).before(gram.issueKindElementRule);
+				c.setLinewrap(1, 1, 1).before(gram.issueRelevanceElementRule);
+				c.setLinewrap(1, 1, 1).before(gram.issuePackageElementRule);
+				c.setLinewrap(1, 1, 1).around(gram.issueClassElementRule);
+				c.setLinewrap(1, 1, 1).around(gram.issueMethodElementRule);
+			c.setIndentationDecrement.after(gram.issueMethodElementRule)
 	}
 	
 }
