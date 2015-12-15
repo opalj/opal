@@ -1,0 +1,12 @@
+# Based on Java 7
+interface java/lang/Cloneable extends java/lang/Object
+interface java/io/Serializable extends java/lang/Object
+# String related
+interface java/lang/CharSequence extends java/lang/Object
+interface java/lang/Comparable extends java/lang/Object
+class java/lang/String extends java/lang/Object implements java/lang/CharSequence, java/io/Serializable
+# Class related
+interface java/lang/reflect/Type extends java/lang/Object
+interface java/lang/reflect/GenericDeclaration extends java/lang/Object
+interface java/lang/reflect/AnnotatedElement extends java/lang/Object
+class java/lang/Class extends java/lang/Object implements java/io/Serializable, java/lang/reflect/Type, java/lang/reflect/AnnotatedElement, java/lang/reflect/GenericDeclaration

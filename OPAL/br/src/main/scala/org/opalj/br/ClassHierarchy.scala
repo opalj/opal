@@ -91,6 +91,8 @@ class ClassHierarchy private (
     assert(knownTypesMap.length == superinterfaceTypesMap.length)
     assert(knownTypesMap.length == subclassTypesMap.length)
     assert(knownTypesMap.length == subinterfaceTypesMap.length)
+    assert(subclassTypesMap.forall { e ⇒ e == null || e.nonEmpty })
+    assert(subinterfaceTypesMap.forall { e ⇒ e == null || e.nonEmpty })
 
     /**
      * Returns the set of all types which have no super type; that is all (pseudo) root types;
@@ -111,6 +113,17 @@ class ClassHierarchy private (
             objectType != null && superclassTypeMap(objectType.id) == null
         }
         rootTypes
+    }
+
+    def leafTypes: SeqView[ObjectType, Seq[ObjectType]] = {
+        val knownTypesView = knownTypesMap.toSeq.view
+        val leafTypes = knownTypesView filter { objectType ⇒
+            objectType != null && {
+                val objectTypeId = objectType.id
+                (subclassTypesMap(objectTypeId) eq null) && (subinterfaceTypesMap(objectTypeId) eq null)
+            }
+        }
+        leafTypes
     }
 
     private[this] def validateClassHierarchy(): Unit = {
@@ -1866,8 +1879,8 @@ class ClassHierarchy private (
     // TODO [Performance] we could implement a function "intersectWithAllSupertypesOf(baseType: ObjectType,types : Set[ObjectType], reflexive : Boolean) to avoid that we first calculate two sets of supertypes and then need to calculate the intersection
 
     /**
-     * Selects all types of the given set of types that do not have any subtype
-     * in the given set.
+     * Selects all types of the given set of types that '''do not have any subtype
+     * in the given set'''.
      *
      * @param types A set of types that contains for each value (type) stored in the
      *      set all direct and indirect supertypes or none. For example, the intersection

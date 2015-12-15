@@ -63,6 +63,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
+    val jlsCHFile = "ClassHierarchyJLS.ths"
+    val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
+    val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
     val Exception = ObjectType.Exception
@@ -318,6 +322,17 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
                     preInitCH.rootTypes.mkString(", ")
             )
         }
+    }
+
+    behavior of "the default ClassHierarchy's leafTypes method"
+
+    it should "return all leaf types" in {
+        jlsCH.leafTypes.toSet should be(Set(
+            ObjectType("java/lang/String"),
+            ObjectType("java/lang/Class"),
+            ObjectType("java/lang/Cloneable"),
+            ObjectType("java/lang/Comparable")
+        ))
     }
 
     behavior of "the default ClassHierarchy's isKnown method"
