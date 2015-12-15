@@ -56,26 +56,7 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 
 		return getFromArray(ele.name,",") + msg;
 	}
-	
-	/*def text(IssueTypes ele){
-		return rn(ele.deadEdgesAnalysis) + rn(ele.unusedLocalVariables) + rn(ele.guardedAndUnguardedAccessAnalysis) + rn(ele.unusedMethodsAnalysis) + rn(ele.uselessComputationsAnalysis);
-	}*/
-	def rn(String txt){
-		if (txt == null) return "";
-		return txt;
-	}
-	/*def text(ModelContainer ele){
-		ele.analysis.text + getFromArray(ele.analysis.name.titles);
-	}*/
-	
-	/*def text(AnalysisElement ele){
-		'name'
-	}*/
-	
-	/*def text(ParameterContainer ele){
-		ele.parameters.name;
-	}*/
-	
+
 	def getFromArray(String[] ele, String seperator){
 		var t = '';
 		for (var i  = 0; i < ele.length; i++){
@@ -84,11 +65,5 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		}
 		return t;
 	}
-//	def text(Greeting ele) {
-//		'A greeting to ' + ele.name
-//	}
-//
-//	def image(Greeting ele) {
-//		'Greeting.gif'
-//	}
+
 }

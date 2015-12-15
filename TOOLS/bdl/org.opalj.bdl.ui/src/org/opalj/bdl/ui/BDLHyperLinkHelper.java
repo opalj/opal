@@ -50,7 +50,6 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 	
 	@Override
     public void createHyperlinksByOffset(XtextResource resource, int offset, IHyperlinkAcceptor acceptor) {
-		System.out.println("createHyperlinksByOffset");
 		INode node = NodeModelUtils.findLeafNodeAtOffset(resource.getParseResult().getRootNode(), offset);
 		
 		if (
@@ -62,9 +61,6 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 				)
 		   )
 		{
-			//System.out.println("inner");
-			
-			//System.out.println("parent: "+ node.getParent() +"\t"+ node.getSemanticElement());
 			INode parent = node.getParent();
 			while ((parent != null) && (!(parent.getSemanticElement() instanceof IssueElement)))
 					parent = parent.getParent();
@@ -74,17 +70,12 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 			
 				IssuePackageElement pPackage 	= issue.getPackage();
 				IssueClassElement   pClass  	= issue.getClass_();
-				
-				//System.out.println("found\t"+ pPackage +"\t"+ pClass);
+
 				if ( (pPackage != null) && (pClass != null) ){
 					
 					String fullName = pPackage.getPackage().replace("/", ".") +"."+ pClass.getClass_();
-					//System.out.println("full: "+ fullName);
 					IJvmTypeProvider typeProvider = jvmTypeProviderFactory.findOrCreateTypeProvider(resource.getResourceSet());
-					//System.out.println("provider: "+ typeProvider);
-					//System.out.println("typeProvider : "+ typeProvider );
 					JvmType pType = typeProvider.findTypeByName(fullName);
-					//System.out.println("type: "+ pType);
 					if (pType != null)
 						createHyperlinksTo(resource, node.getParent(), pType, acceptor);
 					

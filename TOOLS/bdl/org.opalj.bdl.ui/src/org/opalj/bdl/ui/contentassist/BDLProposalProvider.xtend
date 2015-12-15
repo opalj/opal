@@ -62,13 +62,7 @@ class BDLProposalProvider extends AbstractBDLProposalProvider {
 		
 		acceptor.accept(createCompletionProposal("Issues",context));
 	}
-	
-	/*override complete_ParameterKeyValueElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
-		super.complete_ParameterKeyValueElement(model, ruleCall, context, acceptor)
-		
-		acceptor.accept(createCompletionProposal("name=value",context));
-	}*/
-	
+
 	override complete_ParameterElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
 		//super.complete_ParameterElement(model, ruleCall, context, acceptor)
 		

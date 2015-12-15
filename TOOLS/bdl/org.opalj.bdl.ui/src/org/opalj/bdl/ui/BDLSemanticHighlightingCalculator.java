@@ -53,7 +53,6 @@ public class BDLSemanticHighlightingCalculator implements ISemanticHighlightingC
 
 	@Override
 	public void provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor) {
-		// TODO Auto-generated method stub
 		if (resource == null || resource.getParseResult() == null)
 		    return;
 
