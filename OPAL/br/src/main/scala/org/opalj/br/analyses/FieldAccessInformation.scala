@@ -42,6 +42,12 @@ import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 
+/**
+ * Stores the information where each field is read and written. If the type hierarchy/the project
+ * is incomplete the results are also necessary incomplete.
+ *
+ * @author Michael Eichberg
+ */
 class FieldAccessInformation(
         val project:          SomeProject,
         val allReadAccesses:  Map[Field, Seq[(Method, PCs)]],
@@ -55,18 +61,26 @@ class FieldAccessInformation(
         fieldName:          String
     ): Seq[(Method, PCs)] = {
         for {
-            (field, wa) ← accessInformation
+            (field, accessSites) ← accessInformation
             if project.classFile(field).thisType eq declaringClassType
             if field.name == fieldName
         } {
-            return wa;
+            return accessSites;
         }
 
         Seq.empty
     }
 
+    final def writeAccesses(declaringClass: ClassFile, field: Field): Seq[(Method, PCs)] = {
+        writeAccesses(declaringClass.thisType, field.name)
+    }
+
     def writeAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
         accesses(allWriteAccesses, declaringClassType, fieldName)
+    }
+
+    final def readAccesses(declaringClass: ClassFile, field: Field): Seq[(Method, PCs)] = {
+        readAccesses(declaringClass.thisType, field.name)
     }
 
     def readAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
