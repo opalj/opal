@@ -21,6 +21,7 @@ public class BDLFormatter extends AbstractDeclarativeFormatter {
 	// They will add and preserve newlines around comments
 	override protected void configureFormatting(FormattingConfig c) {
 		var gram = grammarAccess as BDLGrammarAccess 
+
 // It's usually a good idea to activate the following three statements.
 // They will add and preserve newlines around comments
 		c.setLinewrap(0, 1, 2).before(SL_COMMENTRule)

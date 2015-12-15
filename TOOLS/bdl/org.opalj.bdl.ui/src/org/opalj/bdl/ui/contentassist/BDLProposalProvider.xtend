@@ -4,10 +4,67 @@
 package org.opalj.bdl.ui.contentassist
 
 import org.opalj.bdl.ui.contentassist.AbstractBDLProposalProvider
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtext.RuleCall
+import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext
+import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
+import org.opalj.bdl.services.BDLGrammarAccess
+import com.google.inject.Inject
+import org.eclipse.xtext.Keyword
 
 /**
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#content-assist
  * on how to customize the content assistant.
  */
 class BDLProposalProvider extends AbstractBDLProposalProvider {
+	@Inject package extension BDLGrammarAccess grammarAccess
+	
+	override complete_AnalysisElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_AnalysisElement(model, ruleCall, context, acceptor)
+
+  		acceptor.accept(createCompletionProposal("Analysis of ",context));
+	}
+	
+	override complete_ParametersElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_ParametersElement(model, ruleCall, context, acceptor)
+		
+		acceptor.accept(createCompletionProposal("Parameters",context));
+	}
+	
+	override complete_IssuesTitleElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_IssuesTitleElement(model, ruleCall, context, acceptor)
+		
+		acceptor.accept(createCompletionProposal("Issues",context));
+	}
+	
+	/*override complete_ParameterKeyValueElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_ParameterKeyValueElement(model, ruleCall, context, acceptor)
+		
+		acceptor.accept(createCompletionProposal("name=value",context));
+	}*/
+	
+	override complete_ParameterElement(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		//super.complete_ParameterElement(model, ruleCall, context, acceptor)
+		
+		acceptor.accept(createCompletionProposal("name=value",context));
+		acceptor.accept(createCompletionProposal("name;",context));
+	}
+	
+	override complete_IssueTypes(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_IssueTypes(model, ruleCall, context, acceptor)
+		var gram = grammarAccess as BDLGrammarAccess 
+		
+		for (EObject ele: gram.issueTypesRule.alternatives.eContents)
+			if (ele instanceof Keyword)
+				acceptor.accept(createCompletionProposal( (ele as Keyword).value,context));		
+	}
+	
+	override complete_IssueKinds(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_IssueKinds(model, ruleCall, context, acceptor)
+		var gram = grammarAccess as BDLGrammarAccess 
+		
+		for (EObject ele: gram.issueKindsRule.alternatives.eContents)
+			if (ele instanceof Keyword)
+				acceptor.accept(createCompletionProposal( (ele as Keyword).value,context));				
+	}
 }

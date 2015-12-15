@@ -40,5 +40,4 @@ public class BDLUiModule extends org.opalj.bdl.ui.AbstractBDLUiModule {
 	public Class<? extends org.eclipse.xtext.formatting.IFormatter> bindIFormatter() {
 		return BDLFormatter.class;
 	}
-	
 }
