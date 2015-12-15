@@ -39,3 +39,6 @@ TOOLS/bdl/org.opalj.bdl.ui/src/org/opalj/bdl/ui/labeling/BDLDescriptionLabelProv
 TOOLS/bdl/org.opalj.bdl.ui/src/org/opalj/bdl/ui/quickfix/BDLQuickfixProvider.xtend
 TOOLS/bdl/org.opalj.bdl/src/org/opalj/bdl/generator/BDLGenerator.xtend
 TOOLS/bdl/org.opalj.bdl/src/org/opalj/bdl/scoping/BDLScopeProvider.xtend
+TOOLS/bdl/org.opalj.bdl/plugin.xml_gen
+TOOLS/bdl/org.opalj.bdl.ui/plugin.xml_gen
+TOOLS/bdl/org.opalj.bdl.tests/org.opalj.bdl.tests.launch
