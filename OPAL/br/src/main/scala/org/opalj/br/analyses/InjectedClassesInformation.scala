@@ -33,45 +33,43 @@ package analyses
 import org.opalj.br.ObjectType
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
- * A very simple analysis which identifies those types that are injected,e.g. by reflection, by a web server or some framework.
- * This information should be used to compute the entry points of an JaveEE application.
+ * Stores the information which types of objects are (potentially) injected based on the
+ * annotations that are found in the project. For example, by means of
+ * reflection or by a web server or some other comparable framework.
  *
- * @note This analysis is only relevant if the analysis context is JavaEE.
+ * This information is used to compute the entry points of a JaveEE application.
  *
  * @author Michael Reif
  */
-class InjectedClassesInformation private (
-        val injectedTypes: Set[ObjectType]
-) {
+class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
 
-    def isInjected(classFile: ClassFile): Boolean = injectedTypes.contains(classFile.thisType)
+    final def isInjected(classFile: ClassFile): Boolean = isInjected(classFile.thisType)
 
     def isInjected(objectType: ObjectType): Boolean = injectedTypes.contains(objectType)
 }
 
-/*
- * Factory for InjectedClassesInformation
+/**
+ * Factory to create [[InjectedClassesInformation]].
  */
-object InjectedClassesInformation {
-
-    //    private[this] val injectAnnotation = ObjectType("java.inject.Inject")
+object InjectedClassesInformationAnalysis {
 
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClassesInformation = {
 
-        val injectedTypes = new ConcurrentHashMap[ObjectType, Unit]((project.classFilesCount * 0.05).toInt)
+        val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
 
         project.parForeachClassFile(isInterrupted) { cf ⇒
-            cf.fields.filter { _.fieldType.isObjectType }.foreach { field ⇒
-                //TODO check for specific Annotations
+            cf.fields filter { field ⇒ field.fieldType.isObjectType } foreach { field ⇒
+                // IMPROVE Check for specific annotations that are related to "Injections"
                 if (field.annotations.size > 0) {
                     val fieldType = field.fieldType.asObjectType
-                    injectedTypes.put(fieldType, Nil)
+                    injectedTypes.add(fieldType)
                 }
             }
         }
 
-        new InjectedClassesInformation(injectedTypes.keys().asScala.toSet)
+        new InjectedClassesInformation(injectedTypes.asScala.toSet)
     }
 }

@@ -31,8 +31,8 @@ package br
 package analyses
 
 /**
- * The ''key'' object to get information about the types that are injected
- * by an web framework into a field.
+ * The ''key'' object to get information about the types of objects that are potentially injected.
+ * For example, by a web framework or a dependency injection framework.
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
@@ -51,7 +51,7 @@ object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClass
      * Computes the information which types are injected at a field.
      */
     override protected def compute(project: SomeProject): InjectedClassesInformation = {
-        InjectedClassesInformation(project, () ⇒ Thread.currentThread().isInterrupted())
+        InjectedClassesInformationAnalysis(project, () ⇒ Thread.currentThread().isInterrupted())
     }
 }
 
