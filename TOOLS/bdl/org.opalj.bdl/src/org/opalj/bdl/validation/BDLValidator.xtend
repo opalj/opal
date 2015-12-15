@@ -46,36 +46,26 @@ class BDLValidator extends AbstractBDLValidator {
 
 	public static val INVALID_VALUE = 'invalidValue'
 	public static val INVALID_NAME  = 'invalidName'
-//  public static val INVALID_NAME = 'invalidName'
-//
-//	@Check
-//	def checkGreetingStartsWithCapital(Greeting greeting) {
-//		if (!Character.isUpperCase(greeting.name.charAt(0))) {
-//			warning('Name should start with a capital', 
-//					MyDslPackage.Literals.GREETING__NAME,
-//					INVALID_NAME)
-//		}
-//	}
 
+
+	// check to ensure a correct value for a parameter ending with "time" or "factor"
 	@Check
 	def checkKeyValueParameter(ParameterKeyValueElement element){
-		//System.out.println("name:"+ element.name + "\tvalue:"+ element.value);
 		if (element.getName().toLowerCase.endsWith("time"))
 			if (!element.getValue().toLowerCase.matches("[0-9]+[s|ms]"))
-			//if (! ((element.getValue().toLowerCase.endsWith("s")) || (element.getValue().toLowerCase.endsWith("ms"))) )
 				error('Parameter value should be a valid time ending with "s" or "ms"!',
 					BDLPackage.Literals.PARAMETER_KEY_VALUE_ELEMENT__VALUE,
 					INVALID_VALUE
 				);
 		if (element.getName().toLowerCase.endsWith("factor"))
 			if (!element.getValue().toLowerCase.matches("[0-9]+(\\.[0-9]+)?|infinity"))
-			//if (! ((element.getValue().toLowerCase.endsWith("s")) || (element.getValue().toLowerCase.endsWith("ms"))) )
 				error('Parameter value should be a valid factor!',
 					BDLPackage.Literals.PARAMETER_KEY_VALUE_ELEMENT__VALUE,
 					INVALID_VALUE
 				);
 	} 
 	
+	// check to ensure that each parameter name is unique TODO: maybe ignore case?
 	@Check
 	def check(ParameterContainer container){
 		for (ParameterElement e: container.getElements()){
@@ -84,7 +74,6 @@ class BDLValidator extends AbstractBDLValidator {
 					if (e.name.equals(other.name)) 
 						error("Every parameter can only occur once!", other, BDLPackage.Literals.PARAMETER_ELEMENT__NAME, INVALID_NAME);
 			}
-			//(e instanceof analysisparameter)
 		}
 	}
 }
