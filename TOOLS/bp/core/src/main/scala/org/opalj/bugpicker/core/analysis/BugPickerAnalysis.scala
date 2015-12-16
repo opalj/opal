@@ -74,6 +74,8 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysisRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
+import org.opalj.br.analyses.StringConstantsInformationKey
+import org.opalj.br.analyses.FieldAccessInformationKey
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -187,15 +189,23 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             (theProject.get(InstantiableClassesKey), None)
         }
 
-        step(2, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
+        val fieldAccessInformation = step(2, "[Pre-Analysis] Analyzing field accesses") {
+            (theProject.get(FieldAccessInformationKey), None)
+        }
+
+        val stringConstantsInformation = step(3, "[Pre-Analysis] Analyzing the usage of string constants") {
+            (theProject.get(StringConstantsInformationKey), None)
+        }
+
+        step(4, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
             (theProject.get(FieldValuesKey), None)
         }
 
-        step(3, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
+        step(5, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
             (theProject.get(MethodReturnValuesKey), None)
         }
 
-        val computedCallGraph = step(4, "[Pre-Analysis] Creating the call graph") {
+        val computedCallGraph = step(6, "[Pre-Analysis] Creating the call graph") {
             (theProject.get(VTACallGraphKey), None)
         }
         val callGraph = computedCallGraph.callGraph
@@ -209,7 +219,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val analysesManager = theProject.get(FPCFAnalysesManagerKey)
         val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
-        step(5, "[FPCF-Analysis] executing fixpoint analyses") {
+        step(7, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {
                     fixpointAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
@@ -228,8 +238,10 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new ConcurrentLinkedQueue[StandardIssue]()
+
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
+
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
@@ -244,8 +256,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             // CHECK IF THE METHOD IS USED
             //
             UnusedMethodsAnalysis.analyze(
-                theProject, computedCallGraph, callGraphEntryPoints,
-                classFile, method
+                theProject, computedCallGraph, callGraphEntryPoints, classFile, method
             ) foreach { issue ⇒ results.add(issue) }
 
             // ---------------------------------------------------------------------------
@@ -483,6 +494,26 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 val stepId = stepIds.getAndIncrement()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
+
+                    // ---------------------------------------------------------------------------
+                    // Class based analyses
+                    // ---------------------------------------------------------------------------
+
+                    //
+                    // FIND UNUSED FIELDS
+                    //
+                    results.addAll(
+                        scala.collection.JavaConversions.asJavaCollection(
+                            UnusedFields(
+                                theProject, fieldAccessInformation, stringConstantsInformation, classFile
+                            )
+                        )
+                    )
+
+                    // ---------------------------------------------------------------------------
+                    // Analyses of the methods
+                    // ---------------------------------------------------------------------------
+
                     for (method @ MethodWithBody(body) ← classFile.methods) {
                         try {
                             analyzeMethod(classFile, method, body)
@@ -534,11 +565,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 object BugPickerAnalysis {
 
     // 1: InstantiableClasses analysis
-    // 2: FieldValues analysis
-    // 3: MethodReturnValues analysis
-    // 4: Callgraph
-    // 5: FPCF properties
-    final val PreAnalysesCount = 5
+    // 2: FieldAccessInformation
+    // 3: StringConstantsInformation
+    // 4: FieldValues analysis
+    // 5: MethodReturnValues analysis
+    // 6: Callgraph
+    // 7: FPCF properties
+    final val PreAnalysesCount = 7
 
     // We want to match expressions such as:
     // -maxEvalFactor=1
