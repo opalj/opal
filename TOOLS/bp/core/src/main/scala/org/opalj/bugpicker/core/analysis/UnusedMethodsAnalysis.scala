@@ -71,6 +71,9 @@ object UnusedMethodsAnalysis {
         method:               Method
     ): Option[StandardIssue] = {
 
+        if (method.isSynthetic)
+            return None;
+
         if (method.name == "finalize" && (method.descriptor eq MethodDescriptor.NoArgsAndReturnVoid))
             return None;
 
