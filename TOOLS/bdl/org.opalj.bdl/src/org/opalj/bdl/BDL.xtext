@@ -1,0 +1,109 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2015
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+// Author: Thorsten Jacobi
+
+grammar org.opalj.bdl.BDL with org.eclipse.xtext.common.Terminals
+import "http://www.eclipse.org/xtext/common/JavaVMTypes" as jvmTypes
+
+generate bDL "http://www.opalj.org/bdl/BDL"
+
+Model:
+	ModelContainer;
+ 
+ModelContainer: 
+	name=AnalysisElement
+	parameter=ParameterContainer
+	issues=IssuesContainer
+;
+
+// Title
+AnalysisElement:
+	'Analysis of ' (ID | ':'|'/'|'\\'|','|'.')+
+;
+
+// Parameter ->
+ParameterContainer: name=ParametersElement (elements += ParameterElement)+; // container
+ParametersElement: 'Parameters'; // keyword
+ParameterElement: ParameterKeyValueElement|ParameterKeyElement; // two types of elemenets
+ParameterKeyValueElement: name=ID (':'|'=') value=AnyValues; 	// key value pair
+ParameterKeyElement: name = ID ';';								// key only
+
+// <- Parameter
+
+// Issues ->
+IssuesContainer:IssuesTitleElement (elements += IssueElement)*;	// container
+IssuesTitleElement: name='Issues';								// title
+IssueElement: 													// structure of one issue
+	name +=IssueTypes  (',' name += IssueTypes)*
+	comment=IssueSuppressComment?								// optional comment
+	'{'															// fixed order
+		message=IssueMessageElement?											// optional message
+		categories=IssueCategoryElement
+		kinds=IssueKindElement
+		relevance=IssueRelevanceElement
+		package=IssuePackageElement
+		class=IssueClassElement
+		method=IssueMethodElement
+	 '}'
+;
+
+IssueSuppressComment: '[suppress=' value=(ID|STRING) ']';		// comment-> maybe remove "suppress="?
+IssueMessageElement: message=STRING;
+IssueCategoryElement:	name='Categories:' 	elements += IssueCategories (',' elements += IssueCategories)*;
+IssueKindElement:		name='Kinds:' 		elements += IssueKinds      (',' elements += IssueKinds)*;
+IssueRelevanceElement:	name='Relevance:'	relevance=INT;
+IssuePackageElement: 	name='Package:'		package=SlashPath;
+IssueClassElement:		name='Class:'		class=IssueClass;
+IssueMethodElement:		name='Method:'		method=IssueMethodDefinition;
+
+IssueTypes:														// hard coded list of types
+	'DeadEdgesAnalysis'|
+	'UnusedLocalVariables'|
+	'GuardedAndUnguardedAccessAnalysis'|
+	'UnusedMethodsAnalysis'|
+	'UselessComputationsAnalysis';
+IssueCategories:												// hard coded list of categories, maybe remove variable assignment -> no quick proposal then but easier access to the value ...
+	bug					= 'bug'|
+	smell				= 'smell'|
+	performance			= 'performance'|
+	comprehensibility	= 'comprehensibility';
+IssueKinds: 		'constant computation'|'dead path'|'throws exception'|'unguarded use'|'unused'|'useless';
+IssueClass: 		ID ('$' ID)* ('$' INT)*;
+IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=ID ('()'|'(' parameter+=MethodTypes (',' parameter+=MethodTypes)*')')
+	
+;
+
+
+// <- Issues
+
+AnyValues: INT | ID | INT ID | INT '.' INT;
+SlashPath: ID ('/' ID)*;
+QualifiedName:	ID ('.' ID)* ('$' ID)?;
+AccessFlags: 'public'|'private'|'protected'|'static'|'SUPER'|'abstract'|'final'|'synchronized'|'SYNTHETIC';
+MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes '[]'+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];
