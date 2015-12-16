@@ -32,7 +32,7 @@ package core
 
 /**
  * Defines a partial order for issues. The issues are sorted
- * first by their class, then by the method(signature) then
+ * first by the analysis, then by their class, then by the method(signature) then
  * by the line in which the issue occurs (alternatively by
  * the pc) and at last by the summary.
  *
@@ -41,6 +41,12 @@ package core
 object IssueOrdering extends scala.math.Ordering[Issue] {
 
     def compare(x: Issue, y: Issue): Int = {
+        if (x.analysis < y.analysis) {
+            return -1;
+        }
+        if (x.analysis > y.analysis) {
+            return 1;
+        }
         if (x.classFile.fqn < y.classFile.fqn) {
             return -1;
         }

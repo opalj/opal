@@ -81,6 +81,7 @@ case class StandardIssue(
         val oMethod = other.method
 
         if ((other.project ne this.project) ||
+            (other.analysis != this.analysis) ||
             (other.classFile ne this.classFile) ||
             ((oMethod.isDefined && tMethod.isDefined && (oMethod.get ne tMethod.get)) ||
                 (oMethod.isEmpty && tMethod.isDefined) || (oMethod.isDefined && tMethod.isEmpty)) ||
