@@ -63,6 +63,7 @@ object UnusedMethods extends DefaultOneStepAnalysis {
                 classFile ← theProject.allProjectClassFiles.par
                 if !isInterrupted()
                 method ← classFile.methods
+                if !method.isSynthetic
                 if method.body.isDefined
                 if method.isPrivate || method.hasDefaultVisibility
                 if callGraph.calledBy(method).isEmpty
