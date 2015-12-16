@@ -37,10 +37,18 @@ import br.analyses.SomeProject
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.fpcf.analysis.IsEntryPoint
 import org.opalj.fpcf.analysis.JavaEEEntryPointsAnalysis
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.InjectedClassesInformationKey
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.opalj.br.MethodDescriptor
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import java.io.FileWriter
+import java.io.BufferedWriter
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
@@ -60,6 +68,8 @@ import org.opalj.br.analyses.InjectedClassesInformationKey
  * @author Michael Reif
  */
 object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+
+    val fw = new BufferedWriter(new FileWriter("D:/opallog.txt"))
 
     override protected def requirements =
         Seq(
@@ -94,11 +104,44 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
                 throw new IllegalArgumentException(s"This call graph does not support the current analysis mode: $analysisMode")
         }
 
+        // add configured entry points (e.g. called in native code, reflection or a web server)
+
+        val configEntryPoints = getConfigEntryPoints(project)
+
+        // create call graph
+
         CallGraphFactory.create(
             project,
-            () ⇒ entryPoints,
+            () ⇒ entryPoints ++ configEntryPoints,
             new DefaultVTACallGraphAlgorithmConfiguration(project)
         )
+    }
+
+    private[this] def getConfigEntryPoints(project: SomeProject): Set[Method] = {
+        case class EntryPoint(val declaringClass: String, name: String, descriptor: Option[String])
+        if (!project.config.hasPath("org.opalj.callgraph.entryPoints")) {
+            OPALLogger.warn("project config", "no config entry for additional entry points has been found")(project.logContext)
+            return Set.empty;
+        }
+
+        val configEntryPoints = project.config.as[List[EntryPoint]]("org.opalj.callgraph.entryPoints")
+        (configEntryPoints map { ep ⇒
+
+            val ot = ObjectType(ep.declaringClass)
+            project.classFile(ot) match {
+                case Some(cf) ⇒
+                    if (ep.descriptor.isEmpty)
+                        cf.methods.filter { method ⇒ method.name == ep.name }
+                    else {
+                        val md = MethodDescriptor(ep.descriptor.get)
+                        cf.methods.filter { method ⇒
+                            (method.descriptor == md) && (method.name == ep.name)
+                        }
+                    }
+                case None ⇒
+                    IndexedSeq.empty[Method]
+            }
+        }).foldLeft(Set.empty[Method])((res, methods) ⇒ res ++ methods)
     }
 }
 
