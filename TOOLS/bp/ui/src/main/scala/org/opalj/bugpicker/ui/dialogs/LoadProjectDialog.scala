@@ -65,7 +65,10 @@ import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.SelectionMode
 import scalafx.scene.control.ScrollPane
 
-class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[LoadedFiles]) extends Stage {
+class LoadProjectDialog(
+        preferences:    Option[LoadedFiles],
+        recentProjects: Seq[LoadedFiles]
+) extends Stage {
     theStage ⇒
 
     private final val buttonWidth = 200
@@ -482,7 +485,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
 
             val illegalFiles =
                 (for {
-                    file ← db.Files
+                    file ← db.files
                     if !lb.contains(file)
                 } yield {
                     if (file.isDirectory()) {

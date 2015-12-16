@@ -160,7 +160,7 @@ class BugPicker extends Application {
                 maxWidth = 75
                 resizable = false
                 cellValueFactory = { _.value.level }
-                cellFactory = { _ ⇒
+                cellFactory = { (_: Object) ⇒
                     new TableCell[BugPickerLogMessage, String] {
                         item.onChange { (_, _, newV) ⇒
                             newV match {
@@ -183,7 +183,7 @@ class BugPicker extends Application {
                 text = "Message"
                 resizable = false
                 cellValueFactory = { _.value.message }
-                cellFactory = { _ ⇒
+                cellFactory = { (_: Object) ⇒
                     val tc = new TableCell[BugPickerLogMessage, String]
                     val text = new Text()
                     text.wrappingWidthProperty().bind(tc.widthProperty().subtract(20))
