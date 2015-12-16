@@ -29,10 +29,6 @@
 package org.opalj.br
 package analyses
 
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.Warn
 import java.net.URL
 
 /**
@@ -44,7 +40,7 @@ import java.net.URL
 object CallBySignatureInformation extends DefaultOneStepAnalysis {
 
     override def title: String =
-        "computes potential target method for interface methods"
+        "computes potential target methods for interface based method calls"
 
     override def description: String =
         """|Determines for every interface method if there are methods 
