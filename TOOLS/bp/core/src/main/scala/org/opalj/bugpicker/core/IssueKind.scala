@@ -86,7 +86,7 @@ object IssueKind {
      * Something is currently not used, but may be used in the future if additional code
      * is written. I.e., new methods/classes may use the respective method/field/class.
      */
-    final val Unused = "unused"
+    final val Unused = "unused element"
 
     /**
      * Something is currently unused and cannot be used in the future.
@@ -98,5 +98,5 @@ object IssueKind {
     /**
      * The Java Collection API is not used in the correct way/as intended.
      */
-    final val JavaCollectionAPIUsage = "usage of the Java collection API"
+    final val JavaCollectionAPIUsage = "Java collection API usage"
 }
