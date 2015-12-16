@@ -33,12 +33,10 @@ package ui
 import java.net.URL
 import javafx.concurrent.{Service ⇒ jService}
 import javafx.concurrent.{Task ⇒ jTask}
-
 import scala.io.Source
 import scala.xml.{Node ⇒ xmlNode}
 import scalafx.beans.property.ObjectProperty
 import scalafx.concurrent.Service
-
 import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
@@ -48,6 +46,7 @@ import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import scala.util.control.ControlThrowable
 
 /**
  * @author Arne Lottmann
@@ -65,16 +64,24 @@ class AnalysisWorker(
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
             val parametersAsString = parameters.toStringParameters
-            val (analysisTime, issues, exceptions) =
-                AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
-            issuez() = issues
-            doc() = createHTMLReport(analysisTime, parametersAsString, issues)
-            exceptions.foreach { exception: Exception ⇒
-                OPALLogger.error(
-                    "internal error",
-                    "executing an analysis failed",
-                    exception
-                )(GlobalLogContext)
+            try {
+                val (analysisTime, issues, exceptions) =
+                    AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
+                issuez() = issues
+                doc() = createHTMLReport(analysisTime, parametersAsString, issues)
+                exceptions.foreach { exception: Exception ⇒
+                    OPALLogger.error(
+                        "internal error",
+                        "executing an analysis failed",
+                        exception
+                    )(GlobalLogContext)
+                }
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable ⇒
+                    val msg = "severe non-recoverable internal failure"
+                    OPALLogger.error("internal error", msg, t)(GlobalLogContext)
+                    doc() = <h1>Internal Failure</h1>
             }
         }
 
