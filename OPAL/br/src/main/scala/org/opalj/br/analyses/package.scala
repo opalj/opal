@@ -55,6 +55,8 @@ package object analyses {
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
 
+    type StringConstantsInformation = Map[String, List[(Method, PC)]]
+
     /**
      * Shortens an absolute path to one relative to the current working directory.
      */
