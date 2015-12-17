@@ -40,6 +40,11 @@ trait ALoadInstruction extends LoadLocalVariableInstruction {
     final def computationalType: ComputationalType = ComputationalTypeReference
 
 }
-//object ALoadInstruction {
-//
-//}
+object ALoadInstruction {
+
+    /**
+     * Extracts the index of the accessed local variable.
+     */
+    def unapply(li: ALoadInstruction): Some[Int] = Some(li.lvIndex)
+
+}
