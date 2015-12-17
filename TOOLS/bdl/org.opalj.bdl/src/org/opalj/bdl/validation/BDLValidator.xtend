@@ -37,6 +37,12 @@ import org.eclipse.xtext.validation.Check
 import org.opalj.bdl.bDL.ParameterContainer
 import org.opalj.bdl.bDL.ParameterElement
 import org.opalj.bdl.bDL.IssueMethodDefinition
+import org.opalj.bdl.bDL.IssueCategoryElement
+import org.opalj.bdl.bDL.IssueCategories
+import org.opalj.bdl.bDL.IssueKindElement
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 
 /**
  * This class contains custom validation rules. 
@@ -78,12 +84,43 @@ class BDLValidator extends AbstractBDLValidator {
 		}
 	}
 	
+	
+	@Check
+	def check(IssueCategoryElement element){
+		for (IssueCategories cat: element.elements)
+			for (IssueCategories other: element.elements)
+				if (cat != other)
+					if (
+						( (cat.bug==other.bug) && (cat.bug != null))||
+						( (cat.comprehensibility==other.comprehensibility) && (cat.comprehensibility != null))||
+						( (cat.smell==other.smell) && (cat.smell != null))||
+						( (cat.performance==other.performance) && (cat.performance != null))
+					)
+						error("Every category can only occur once!", element, BDLPackage.Literals.ISSUE_CATEGORY_ELEMENT__NAME, INVALID_NAME);
+	}
+	
+	@Check
+	def check(IssueKindElement element){
+		checkStringList(element.elements,
+			element,
+			BDLPackage.Literals.ISSUE_KIND_ELEMENT__ELEMENTS,
+			"Every kind can only occur once!"
+		);
+	}
 	@Check
 	def check(IssueMethodDefinition method){
-		for (var int first = 0; first < method.accessFlags.length; first++){
-			for (var second = first +1; second < method.accessFlags.length; second++)
-				if (method.accessFlags.get(first).equals(method.accessFlags.get(second)))
-					error("Every access flag can only occur once!", method, BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS, INVALID_NAME);
+		checkStringList(method.accessFlags,
+			method,
+			BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS,
+			"Every access flag can only occur once!"
+		);
+	}
+	
+	def checkStringList( EList<String> list, EObject src, EStructuralFeature feature, String message){
+		for (var int first = 0; first < list.length; first++){
+			for (var second = first +1; second < list.length; second++)
+				if (list.get(first).equals(list.get(second)))
+					error(message + ' ("'+ list.get(first) +'")', src, feature, INVALID_NAME);
 		}
 	}
 }

@@ -69,6 +69,8 @@ public class BDLFormatter extends AbstractDeclarativeFormatter {
 				c.setLinewrap(1, 1, 1).before(gram.issueRelevanceElementRule);
 				c.setLinewrap(1, 1, 1).before(gram.issuePackageElementRule);
 				c.setLinewrap(1, 1, 1).around(gram.issueClassElementRule);
+			c.setIndentationDecrement.after(gram.issueClassElementRule)
+			c.setIndentationIncrement.before(gram.issueMethodElementRule)
 				c.setLinewrap(1, 1, 1).around(gram.issueMethodElementRule);
 			c.setIndentationDecrement.after(gram.issueMethodElementRule)
 	}
