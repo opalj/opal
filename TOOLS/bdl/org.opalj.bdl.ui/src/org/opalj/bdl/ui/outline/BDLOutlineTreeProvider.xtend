@@ -53,7 +53,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	// to add/remove filters edit the following things:
 	//	1) add/remove the static key
 	//	2) add/remove to/from KEYS_FILTERBY
-	//	3) add/remove in showPossibleOptionsForFilter
+	//	3) add/remove in getPossibleOptionsForFilter
 	//	4) add/remove in getFilteredIssues
 	
 	public static String KEY_FILTERBY_TYPE 			= 'filter by type';
@@ -72,7 +72,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 		// show the default document structure
 		createNode(parentNode, modelElement);
 		// show filters
-		showPossibleFilters(parentNode, modelElement, new HashSet(KEYS_FILTERBY));
+		showPossibleFilters(parentNode, modelElement, getPossibleFilters(null, getFilteredIssues(modelElement, null )));
 	}
 	
 	override createChildren(IOutlineNode parent, EObject modelElement) {
@@ -88,7 +88,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 		if (KEYS_FILTERBY.contains(parent.text)){ // a filter is selected, show possible parameters
 			showPossibleOptionsForFilter(parent, modelElement, parent.text as String, filteredIssues);
 		}else{ // some filter was selected, show entries
-			var HashSet<String> possible = getPossibleFilters(appliedFilters);
+			var HashSet<String> possible = getPossibleFilters(appliedFilters, filteredIssues);
 			showPossibleFilters(parent, modelElement, possible);
 			
 			// show filtered elements
@@ -98,11 +98,20 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 
 	}
 	
-	def getPossibleFilters(HashMap<String,String> used){
+	def getPossibleFilters(HashMap<String,String> used, HashSet<IssueElement> currentIssues){
+		if (currentIssues.length <= 1) return new HashSet<String>(); // makes no sense to filter ...
 		var possible = new HashSet<String>(KEYS_FILTERBY);
-		
-		for (String sKey : used.keySet)
-			possible.remove(sKey);
+
+		// remove filters which are already used
+		if (used != null)
+			for (String sKey : used.keySet)
+				possible.remove(sKey);
+
+		// remove filters which have only one possible selection
+		for (var i = possible.length-1; i >= 0; i--){
+			if (getPossibleOptionsForFilter( possible.get(i), currentIssues).length <= 1)
+				possible.remove(possible.get(i));
+		}
 		
 		return possible;
 	}
@@ -128,51 +137,53 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, sFilter, false);
 		}
 	}
-	
+
 	def showPossibleOptionsForFilter(IOutlineNode parent, EObject modelElement, String filter, HashSet<IssueElement> currentIssues){
-		var created = new HashSet();
+
+		for (Object ele : getPossibleOptionsForFilter(filter, currentIssues))
+			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, ele.toString, false);
+
+	}
+
+	def HashSet<Object> getPossibleOptionsForFilter(String filter, HashSet<IssueElement> currentIssues){
+		var possible = new HashSet();
 
 		for (IssueElement issue: currentIssues)
 			if (filter.equals(KEY_FILTERBY_TYPE)){
 				for (var i = 0; i < issue.name.length; i++)
-					if (!created.contains(issue.name.get(i))){
-						created.add(issue.name.get(i));
-						createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, issue.name.get(i), false);	
+					if (!possible.contains(issue.name.get(i))){
+						possible.add(issue.name.get(i));
 					}
 			}else if (filter.equals(KEY_FILTERBY_RELEVANCE)){
-				if (!created.contains(issue.relevance.relevance)){
-					created.add(issue.relevance.relevance);
-					createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, issue.relevance.relevance.toString, false);
+				if (!possible.contains(issue.relevance.relevance)){
+					possible.add(issue.relevance.relevance);
 				}
 			}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
 				for (IssueCategories cat : issue.categories.elements){
 					var String sCat = getIssueCategoryKey(cat);
-					if (!created.contains(sCat)){
-						created.add(sCat);
-						createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, sCat, false);
+					if (!possible.contains(sCat)){
+						possible.add(sCat);
 					}	
 				}
 			}else if (filter.equals(KEY_FILTERBY_KINDS)){
 				for (String kind: issue.kinds.elements){
-					if (!created.contains(kind)){
-						created.add(kind);
-						createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, kind, false);
+					if (!possible.contains(kind)){
+						possible.add(kind);
 					}	
 				}
 			}else if (filter.equals(KEY_FILTERBY_PACKAGES)){
-				if (!created.contains(issue.package.package)){
-					created.add(issue.package.package);
-					createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, issue.package.package.toString, false);
+				if (!possible.contains(issue.package.package)){
+					possible.add(issue.package.package);
 				}
 			}else if (filter.equals(KEY_FILTERBY_CLASS)){
-				if (!created.contains(issue.class_.class_)){
-					created.add(issue.class_.class_);
-					createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, issue.class_.class_.toString, false);
+				if (!possible.contains(issue.class_.class_)){
+					possible.add(issue.class_.class_);
 				}
 			}
+
+		return possible;
 	}
-	
-	
+
 	def getFilteredIssues(EObject modelElement, HashMap<String,String> appliedFilters){
 		var ret = new HashSet<IssueElement>();
 		
@@ -183,37 +194,38 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 				var issue = current as IssueElement;
 				
 				var boolean isOK = true;
-				for (String filter: appliedFilters.keySet){
-					var boolean thisFilter = false;
-					if (filter.equals(KEY_FILTERBY_TYPE)){
-						for (var i = 0; i < issue.name.length; i++){
-							if (issue.name.get(i).equals(appliedFilters.get(filter)))
+				if (appliedFilters != null)
+					for (String filter: appliedFilters.keySet){
+						var boolean thisFilter = false;
+						if (filter.equals(KEY_FILTERBY_TYPE)){
+							for (var i = 0; i < issue.name.length; i++){
+								if (issue.name.get(i).equals(appliedFilters.get(filter)))
+									thisFilter = true;
+							}
+						}else if (filter.equals(KEY_FILTERBY_RELEVANCE)){
+							if (issue.relevance.relevance.toString.equals(appliedFilters.get(filter)))
+								thisFilter = true;
+						}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
+							for (var i = 0; i < issue.categories.elements.length; i++){
+								var catK = getIssueCategoryKey(issue.categories.elements.get(i));
+								if (catK.equals(appliedFilters.get(filter)))
+									thisFilter = true;
+							}
+						}else if (filter.equals(KEY_FILTERBY_KINDS)){
+							for (var i = 0; i < issue.kinds.elements.length; i++){
+								if (issue.kinds.elements.get(i).equals(appliedFilters.get(filter)))
+									thisFilter = true;
+							}
+						}else if (filter.equals(KEY_FILTERBY_PACKAGES)){
+							if (issue.package.package.toString.equals(appliedFilters.get(filter)))
+								thisFilter = true;
+						}else if (filter.equals(KEY_FILTERBY_CLASS)){
+							if (issue.class_.class_.toString.equals(appliedFilters.get(filter)))
 								thisFilter = true;
 						}
-					}else if (filter.equals(KEY_FILTERBY_RELEVANCE)){
-						if (issue.relevance.relevance.toString.equals(appliedFilters.get(filter)))
-							thisFilter = true;
-					}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
-						for (var i = 0; i < issue.categories.elements.length; i++){
-							var catK = getIssueCategoryKey(issue.categories.elements.get(i));
-							if (catK.equals(appliedFilters.get(filter)))
-								thisFilter = true;
-						}
-					}else if (filter.equals(KEY_FILTERBY_KINDS)){
-						for (var i = 0; i < issue.kinds.elements.length; i++){
-							if (issue.kinds.elements.get(i).equals(appliedFilters.get(filter)))
-								thisFilter = true;
-						}
-					}else if (filter.equals(KEY_FILTERBY_PACKAGES)){
-						if (issue.package.package.toString.equals(appliedFilters.get(filter)))
-							thisFilter = true;
-					}else if (filter.equals(KEY_FILTERBY_CLASS)){
-						if (issue.class_.class_.toString.equals(appliedFilters.get(filter)))
-							thisFilter = true;
+	
+						isOK = isOK && thisFilter;
 					}
-
-					isOK = isOK && thisFilter;
-				}
 			
 				if (isOK)
 					ret.add(issue);

@@ -36,6 +36,7 @@ import org.opalj.bdl.bDL.BDLPackage
 import org.eclipse.xtext.validation.Check
 import org.opalj.bdl.bDL.ParameterContainer
 import org.opalj.bdl.bDL.ParameterElement
+import org.opalj.bdl.bDL.IssueMethodDefinition
 
 /**
  * This class contains custom validation rules. 
@@ -74,6 +75,15 @@ class BDLValidator extends AbstractBDLValidator {
 					if (e.name.equals(other.name)) 
 						error("Every parameter can only occur once!", other, BDLPackage.Literals.PARAMETER_ELEMENT__NAME, INVALID_NAME);
 			}
+		}
+	}
+	
+	@Check
+	def check(IssueMethodDefinition method){
+		for (var int first = 0; first < method.accessFlags.length; first++){
+			for (var second = first +1; second < method.accessFlags.length; second++)
+				if (method.accessFlags.get(first).equals(method.accessFlags.get(second)))
+					error("Every access flag can only occur once!", method, BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS, INVALID_NAME);
 		}
 	}
 }
