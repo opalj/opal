@@ -23,7 +23,6 @@ local.sbt
 .tmpBin
 .cache-*
 TOOLS/ep/lib
-TOOLS/bdl/org.opalj.bdl/src-gen/
 TOOLS/bdl/org.opalj.bdl/xtend-gen/org/opalj/bdl/scoping/BDLScopeProvider.java
 TOOLS/bdl/org.opalj.bdl.ui/xtend-gen/
 TOOLS/bdl/org.opalj.bdl.ui/src-gen/
