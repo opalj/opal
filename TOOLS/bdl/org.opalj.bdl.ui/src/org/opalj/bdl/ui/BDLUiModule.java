@@ -31,6 +31,7 @@ package org.opalj.bdl.ui;
 
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.xtext.ui.editor.IXtextEditorCallback;
 import org.eclipse.xtext.ui.editor.hyperlinking.IHyperlinkHelper;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.ISemanticHighlightingCalculator;
@@ -65,5 +66,10 @@ public class BDLUiModule extends org.opalj.bdl.ui.AbstractBDLUiModule {
 	
 	public Class<? extends org.eclipse.xtext.formatting.IFormatter> bindIFormatter() {
 		return BDLFormatter.class;
+	}
+	
+	@Override
+	public Class<? extends IXtextEditorCallback> bindIXtextEditorCallback() {
+		return org.eclipse.xtext.ui.editor.IXtextEditorCallback.NullImpl.class;
 	}
 }
