@@ -95,10 +95,7 @@ IssueCategories:												// hard coded list of categories, maybe remove varia
 	comprehensibility	= 'comprehensibility';
 IssueKinds: 		'constant computation'|'dead path'|'throws exception'|'unguarded use'|'unused'|'useless';
 IssueClass: 		ID ('$' ID)* ('$' INT)*;
-IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=ID ('()'|'(' parameter+=MethodTypes (',' parameter+=MethodTypes)*')')
-	
-;
-
+IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=ID ('()'|'(' parameter+=MethodTypes (',' parameter+=MethodTypes)*')');
 
 // <- Issues
 
