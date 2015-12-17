@@ -53,7 +53,7 @@ class BDLValidator extends AbstractBDLValidator {
 	@Check
 	def checkKeyValueParameter(ParameterKeyValueElement element){
 		if (element.getName().toLowerCase.endsWith("time"))
-			if (!element.getValue().toLowerCase.matches("[0-9]+[s|ms]"))
+			if (!element.getValue().toLowerCase.matches("[0-9]+m?s|infinity"))
 				error('Parameter value should be a valid time ending with "s" or "ms"!',
 					BDLPackage.Literals.PARAMETER_KEY_VALUE_ELEMENT__VALUE,
 					INVALID_VALUE
