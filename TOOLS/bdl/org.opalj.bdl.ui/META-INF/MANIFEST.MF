@@ -21,5 +21,6 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: org.opalj.bdl.ui.quickfix,
  org.opalj.bdl.ui.contentassist,
  org.opalj.bdl.ui.internal,
- org.opalj.bdl.ui.contentassist.antlr
+ org.opalj.bdl.ui.contentassist.antlr,
+ org.opalj.bdl.ui.contentassist.antlr.internal
 Bundle-Activator: org.opalj.bdl.ui.internal.BDLActivator
