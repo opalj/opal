@@ -76,7 +76,71 @@ trait RecordCFG
         regularSuccessors = new Array[UShortSet](codeSize)
         exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
 
+        regularPredecessors = null;
+        exceptionHandlerPredecessors = null;
+
+        exitPCs = null;
+
         super.initProperties(code, joinInstructions, initialLocals)
+    }
+
+    private[this] var regularPredecessors: Array[UShortSet] = _
+    private[this] def getRegularPredecessors(): Array[UShortSet] = {
+        if (regularPredecessors == null) {
+            regularPredecessors = new Array[UShortSet](regularSuccessors.length)
+
+            for (pc ← code.programCounters if regularSuccessors(pc) != null) {
+                for (suc ← regularSuccessors(pc)) {
+                    if (regularPredecessors(suc) == null) {
+                        regularPredecessors(suc) = UShortSet.empty
+                    }
+                    regularPredecessors(suc) = pc +≈: regularPredecessors(suc)
+                }
+            }
+        }
+        regularPredecessors
+    }
+
+    private[this] var exceptionHandlerPredecessors: Array[UShortSet] = _
+    private[this] def getExceptionHandlerPredecessors(): Array[UShortSet] = {
+        if (exceptionHandlerPredecessors == null) {
+            exceptionHandlerPredecessors = new Array[UShortSet](exceptionHandlerSuccessors.length)
+
+            for (pc ← code.programCounters if exceptionHandlerSuccessors(pc) != null) {
+                for (suc ← exceptionHandlerSuccessors(pc)) {
+                    if (exceptionHandlerPredecessors(suc) == null) {
+                        exceptionHandlerPredecessors(suc) = UShortSet.empty
+                    }
+                    exceptionHandlerPredecessors(suc) = pc +≈: exceptionHandlerPredecessors(suc)
+                }
+            }
+        }
+        exceptionHandlerPredecessors
+    }
+
+    /**
+     * Returns all PCs that do not have a successor.
+     */
+    private[this] var exitPCs: PCs = _
+    def getExitPCs(): PCs = {
+        if (exitPCs == null) {
+            exitPCs = UShortSet.empty
+            for (pc ← code.programCounters if regularSuccessors(pc) == null && exceptionHandlerSuccessors(pc) == null) {
+                exitPCs = pc +≈: exitPCs.asInstanceOf[UShortSet]
+            }
+        }
+        exitPCs
+    }
+
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
+     * the evaluation of the previous instruction may succeed without raising an exception.
+     *
+     * @param a valid PC
+     */
+    def regularPredecessorsOf(pc: PC): PCs = {
+        val s = getRegularPredecessors()(pc)
+        if (s != null) s else NoPCs
     }
 
     /**
@@ -92,6 +156,17 @@ trait RecordCFG
      */
     def regularSuccessorsOf(pc: PC): PCs = {
         val s = regularSuccessors(pc)
+        if (s != null) s else NoPCs
+    }
+
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
+     * the evaluation of the previous instruction may raise an exception
+     *
+     * @param a valid PC
+     */
+    def exceptionHandlerPredecessorsOf(pc: PC): PCs = {
+        val s = getExceptionHandlerPredecessors()(pc)
         if (s != null) s else NoPCs
     }
 
@@ -130,6 +205,19 @@ trait RecordCFG
                 }
         }
         false
+    }
+
+    /**
+     * Returns the set of all instructions executed just prior to the instruction of the given pc.
+     */
+    def allPredecessorsOf(pc: PC): PCs = {
+        var reg = getRegularPredecessors()(pc)
+        if (reg == null) reg = UShortSet.empty
+
+        var exc = getExceptionHandlerPredecessors()(pc)
+        if (exc == null) exc = UShortSet.empty
+
+        reg ++ exc
     }
 
     /**
