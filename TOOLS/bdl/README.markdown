@@ -1,6 +1,8 @@
 # Overview
 This directory contains the projects to generate the "BugDescriptionLanguage"-plug-in for eclipse.
 An eclipse installation with Xtext support is required ("http://www.itemis.com/en/xtext/download/") for building the projects and the plug-in.
+Additionally the "Eclipse Plug-in Development Environment" is required to run/debug the plug-in within eclipse (it is already included in the Xtext eclipse).
+
 
 # Generating Grammar
 Rightclick on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package and choose "Run As -> MWE2 Workflow"

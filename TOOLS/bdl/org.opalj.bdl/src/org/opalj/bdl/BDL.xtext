@@ -38,7 +38,7 @@ Model:
  
 ModelContainer: 
 	name=AnalysisElement
-	parameter=ParameterContainer
+	parameter=ParameterContainer?
 	issues=IssuesContainer
 ;
 
@@ -51,8 +51,8 @@ AnalysisElement:
 ParameterContainer: name=ParametersElement (elements += ParameterElement)+; // container
 ParametersElement: 'Parameters'; // keyword
 ParameterElement: ParameterKeyValueElement|ParameterKeyElement; // two types of elemenets
-ParameterKeyValueElement: name=ID (':'|'=') value=AnyValues; 	// key value pair
-ParameterKeyElement: name = ID ';';								// key only
+ParameterKeyValueElement: name=DottedID (':'|'=') value=AnyValues; 	// key value pair
+ParameterKeyElement: name =DottedID ';';								// key only
 
 // <- Parameter
 
@@ -69,7 +69,7 @@ IssueElement: 													// structure of one issue
 		relevance=IssueRelevanceElement
 		package=IssuePackageElement
 		class=IssueClassElement
-		method=IssueMethodElement
+		method=IssueMethodElement?
 	 '}'
 ;
 
@@ -99,6 +99,7 @@ IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=I
 
 // <- Issues
 
+DottedID: ID ('.' ID)*;
 AnyValues: INT | ID | INT ID | INT '.' INT;
 SlashPath: ID ('/' ID)*;
 QualifiedName:	ID ('.' ID)* ('$' ID)?;
