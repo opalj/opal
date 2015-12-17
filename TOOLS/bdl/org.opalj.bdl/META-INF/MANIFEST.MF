@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: org.opalj.bdl
-Bundle-Vendor: My Company
+Bundle-Vendor: Software Technology Group @ Technische Universität Darmstadt
 Bundle-Version: 1.0.0.qualifier
 Bundle-SymbolicName: org.opalj.bdl; singleton:=true
 Bundle-ActivationPolicy: lazy
