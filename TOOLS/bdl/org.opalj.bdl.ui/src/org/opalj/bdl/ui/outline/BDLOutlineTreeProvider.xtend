@@ -242,11 +242,6 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 		super._isLeaf(modelElement)
 	}
 	
-	override protected _text(Object modelElement) {
-		super._text(modelElement)
-	}
-
-
 	// map the categories to specific keys to ensure they can compared
 	// also apparently that auto generated IssueCategories-Class does not offer
 	// an obvious function to get the value
