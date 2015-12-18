@@ -32,6 +32,19 @@ package org.opalj.bdl.ui.labeling
 
 import com.google.inject.Inject
 import org.opalj.bdl.bDL.IssueElement
+import org.opalj.bdl.bDL.IssueMessageElement
+import org.opalj.bdl.bDL.IssueCategoryElement
+import org.opalj.bdl.bDL.IssuePackageElement
+import org.opalj.bdl.bDL.IssueClassElement
+import java.util.Random
+import org.opalj.bdl.bDL.IssueKindElement
+import org.opalj.bdl.bDL.IssueRelevanceElement
+import org.opalj.bdl.bDL.IssueMethodElement
+import org.opalj.bdl.ui.outline.BDLOutlineTreeProvider
+import org.opalj.bdl.bDL.ModelContainer
+import org.opalj.bdl.bDL.IssueCategories
+import org.opalj.bdl.bDL.IssueSuppressComment
+
 //import org.opalj.bdl.bDL.IssueTypes
 
 /**
@@ -40,6 +53,8 @@ import org.opalj.bdl.bDL.IssueElement
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#label-provider
  */
 class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider {
+
+	private static int defaultMaxLength = 35;
 
 	@Inject
 	new(org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider delegate) {
@@ -52,9 +67,94 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		var String msg = "";
 		
 		if ( (ele.message != null) && (ele.message.message != null) && (ele.message.message.length > 0) )
-			msg = ": "+ ele.message.message;
+			msg = ": "+ getPreview(ele.message.message, defaultMaxLength);
 
 		return getFromArray(ele.name,",") + msg;
+	}
+
+	def image(ModelContainer element){
+		return "library_obj.png";
+	}
+
+	def image(IssueMessageElement msg){
+		return "message_info.png"
+	}
+	def text (IssueMessageElement msg){
+		return getPreview(msg.message, defaultMaxLength);
+	}
+
+	def image(IssueCategoryElement element) {
+		return "debug_persp.png";
+	}
+	def text(IssueCategoryElement element){
+		var String ret ="";
+		for (IssueCategories cat : element.elements){
+			if (ret != "") ret +=","
+			ret += rn(cat.bug)+rn(cat.smell)+rn(cat.comprehensibility)+rn(cat.performance);
+		}
+		return getPreview(ret, defaultMaxLength);
+	}
+	
+	def rn(String s){
+		if (s == null) return "";
+		return s;
+	}
+	
+	def image(IssuePackageElement element){
+		return "package.png"
+	}
+	def text(IssuePackageElement element){
+		return getPreview(element.getPackage, defaultMaxLength);
+	}
+	def image(IssueClassElement element){
+		return "class.png"
+	}
+	def text(IssueClassElement element){
+		return getPreview(element.getClass_, defaultMaxLength);
+	}
+
+	def image(IssueKindElement element){
+		return "det_pane_hide.png";
+	}
+	def text(IssueKindElement element){
+		var String ret ="";
+		for (String kind : element.elements){
+			if (ret != "") ret +=","
+			ret += kind;
+		}
+		return getPreview(ret, defaultMaxLength);
+	}
+	
+	def image(IssueRelevanceElement element){
+		return "message_warning.png";
+	}
+	def text(IssueRelevanceElement element){
+		return element.relevance.toString;
+	}
+	
+	def image(IssueMethodElement element){
+		return "public_co.png";
+	}
+
+	def image(IssueSuppressComment element){
+		return "readwrite_obj.png"
+	}
+	def text(IssueSuppressComment element){
+		return "Comment: "+ getPreview(element.value, defaultMaxLength);
+	}
+
+
+
+
+
+
+
+	def String getPreview(String in, int maxLength){
+		if (in.length <= maxLength) return in;
+		
+		var String ret = in.substring(0, maxLength-3) + "...";		
+		
+		return ret;
 	}
 
 	def getFromArray(String[] ele, String seperator){
@@ -66,4 +166,24 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		return t;
 	}
 
+
+
+
+
+
+	// provides the images for the custom elements in the outline
+	def image(String element){
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_CATEGORY)
+			return "debuglast_co.png";
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_CLASS)
+			return "class.png";
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_KINDS)
+			return "det_pane_hide.png";
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_PACKAGES)
+			return "package.png";
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_RELEVANCE)
+			return "message_warning.png";
+		if (element == BDLOutlineTreeProvider.KEY_FILTERBY_TYPE)
+			return "class.png";
+	}
 }

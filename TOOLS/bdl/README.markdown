@@ -15,12 +15,8 @@ Click on File->Export in the new window select "Deployable features".
 - Finish
 
 # Plug-in Installation
-1) install "Xtext Redistributable":
-	- add Xtext update site from https://eclipse.org/Xtext/download.html (currently: http://download.eclipse.org/modeling/tmf/xtext/updates/composite/releases/)
-	- in category "Xtext" select "Xtext Redistributable" and install it
-2) install the plug-in:
-	- add the plug-in directory as an update site
-	- select the category "BDL" and finish the installation
+- add the plug-in directory as an update site
+- select the category "BDL" and finish the installation
 
 # Using the Plug-in
 Create or open a file with the extension "bdl".

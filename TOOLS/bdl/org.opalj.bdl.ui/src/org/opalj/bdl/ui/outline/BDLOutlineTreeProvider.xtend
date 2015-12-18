@@ -134,7 +134,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	
 	def showPossibleFilters(IOutlineNode parent, EObject modelElement, HashSet<String> possible){
 		for (String sFilter : possible){
-			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, sFilter, false);
+			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, _image(sFilter), sFilter, false);
 		}
 	}
 
@@ -242,6 +242,9 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 		super._isLeaf(modelElement)
 	}
 	
+	override protected _text(Object modelElement) {
+		super._text(modelElement)
+	}
 
 
 	// map the categories to specific keys to ensure they can compared
