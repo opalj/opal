@@ -48,6 +48,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import com.typesafe.config.ConfigRenderOptions
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -191,6 +192,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         // Generate the HTML report
         //
+
         lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
         parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
             case Some(fileName) ⇒

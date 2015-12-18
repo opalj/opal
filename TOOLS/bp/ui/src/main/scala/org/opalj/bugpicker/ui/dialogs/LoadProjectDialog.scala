@@ -32,11 +32,8 @@ package ui
 package dialogs
 
 import java.io.File
-
 import scala.collection.mutable.ListBuffer
-
 import org.opalj.bugpicker.ui.BugPicker
-
 import scalafx.Includes._
 import scalafx.application.Platform
 import scalafx.event.ActionEvent
@@ -64,6 +61,9 @@ import scalafx.stage.WindowEvent
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.SelectionMode
 import scalafx.scene.control.ScrollPane
+import com.typesafe.config.Config
+import org.opalj.br.analyses.Project
+import com.typesafe.config.ConfigFactory
 
 class LoadProjectDialog(
         preferences:    Option[LoadedFiles],
@@ -107,6 +107,7 @@ class LoadProjectDialog(
         onDragOver = onDragOverBehaviour
         onDragDropped = onDragDroppedBehaviour(libs, this)
     }
+    val config = preferences.map { _.config }.getOrElse(None)
 
     val self = this
 
@@ -532,7 +533,7 @@ class LoadProjectDialog(
         recentProjects.exists(p ⇒ p.projectName == nameTextField.text.value &&
             // this guarantees that identical projects are still loaded
             !(p.projectFiles == jars && p.projectSources == sources &&
-                p.libraries == libs))
+                p.libraries == libs) && p.config == config)
     }
 
     def show(owner: Stage): Option[LoadedFiles] = {
@@ -548,15 +549,17 @@ class LoadProjectDialog(
                 projectName = nameTextField.text.value,
                 projectFiles = jars,
                 projectSources = sources,
-                libraries = libs
+                libraries = libs,
+                config = config
             ))
         }
     }
 }
 
 case class LoadedFiles(
-    projectName:    String    = "",
-    projectFiles:   Seq[File] = Seq.empty,
-    projectSources: Seq[File] = Seq.empty,
-    libraries:      Seq[File] = Seq.empty
+    projectName:    String         = "",
+    projectFiles:   Seq[File]      = Seq.empty,
+    projectSources: Seq[File]      = Seq.empty,
+    libraries:      Seq[File]      = Seq.empty,
+    config:         Option[Config] = None
 )

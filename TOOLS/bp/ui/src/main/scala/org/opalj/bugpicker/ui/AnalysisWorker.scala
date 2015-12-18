@@ -56,19 +56,28 @@ import scala.util.control.ControlThrowable
 class AnalysisWorker(
     doc:                    ObjectProperty[xmlNode],
     project:                Project[URL],
-    parameters:             AnalysisParameters,
     issuez:                 ObjectProperty[Iterable[Issue]],
     initProgressManagement: Int ⇒ ProgressManagement
 ) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
-            val parametersAsString = parameters.toStringParameters
+            val configIterator = project.config.withOnlyPath("org.opalj").entrySet.iterator
+
+            var configParams: Seq[String] = Seq.empty
+            while (configIterator.hasNext) {
+                val entry = configIterator.next()
+                val param = entry.getKey+" = "+entry.getValue.render()
+                configParams = configParams :+ param
+            }
+
+            configParams.sorted
+
             try {
                 val (analysisTime, issues, exceptions) =
-                    AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
+                    AnalysisRunner.analyze(project, Seq.empty, initProgressManagement)
                 issuez() = issues
-                doc() = createHTMLReport(analysisTime, parametersAsString, issues)
+                doc() = createHTMLReport(analysisTime, configParams, issues)
                 exceptions.foreach { exception: Exception ⇒
                     OPALLogger.error(
                         "internal error",
@@ -86,13 +95,13 @@ class AnalysisWorker(
         }
 
         def createHTMLReport(
-            analysisTime:       Nanoseconds,
-            parametersAsString: Seq[String],
-            issues:             Iterable[Issue]
+            analysisTime: Nanoseconds,
+            configString: Seq[String],
+            issues:       Iterable[Issue]
         ): scala.xml.Node = {
             val report =
                 resultsAsXHTML(
-                    parametersAsString, issues, showSearch = true,
+                    configString, issues, showSearch = true,
                     analysisTime
                 )
 

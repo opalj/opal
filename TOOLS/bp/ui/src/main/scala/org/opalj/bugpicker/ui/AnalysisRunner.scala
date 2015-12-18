@@ -62,8 +62,7 @@ object AnalysisRunner extends BugPickerAnalysis {
 
     def runAnalysis(
         stage:   Stage,
-        project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
-        issues:     ObjectProperty[Iterable[Issue]],
+        project: Project[URL], sources: Seq[File], issues: ObjectProperty[Iterable[Issue]],
         sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane
     ): Unit = {
 
@@ -97,7 +96,7 @@ object AnalysisRunner extends BugPickerAnalysis {
 
         val doc = new ObjectProperty[xmlNode]
 
-        val worker = new AnalysisWorker(doc, project, parameters, issues, initProgressManagement)
+        val worker = new AnalysisWorker(doc, project, issues, initProgressManagement)
         worker.handleEvent(WorkerStateEvent.ANY)(
             new WorkerFinishedListener(project, sources, doc, reportView, sourceView, byteView, tabPane)
         )

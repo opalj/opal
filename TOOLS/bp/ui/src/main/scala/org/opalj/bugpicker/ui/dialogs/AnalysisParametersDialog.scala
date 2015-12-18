@@ -59,6 +59,17 @@ import org.opalj.fpcf.FPCFAnalysisRegistry
 import scalafx.scene.layout.VBox
 import scalafx.scene.control.cell.CheckBoxListCell
 import scalafx.beans.property.BooleanProperty
+import scalafx.scene.control.TextArea
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
+import scalafx.scene.control.ScrollPane
+import scalafx.scene.web.HTMLEditor
+import scalafx.scene.control.ContextMenu
+import scalafx.scene.control.cell.TextFieldListCell
+import scalafx.scene.web.WebView
+import com.typesafe.config.ConfigParseOptions
+import scala.collection.parallel.BucketCombiner
 
 /**
  * @author Arne Lottmann
@@ -71,135 +82,32 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
 
     title = "Set analysis parameters"
 
-    var parameters: Option[AnalysisParameters] = None
+    var configuration: Option[Config] = None
     val buttonMinWidth = 80
     val buttonMargin = Insets(10)
 
     width = 640
+    height = 800
 
-    val maxEvalFactorField = new TextField {
+    val configEditor = new TextArea {
         hgrow = Priority.Always
-        alignment = Pos.BaselineRight
+        vgrow = Priority.Always
+        resizable_=(true)
+        wrapText_=(true)
     }
 
-    val maxEvalTimeField = new TextField {
+    new HTMLEditor {
+        contextMenu = (null)
+        vgrow = Priority.Always
         hgrow = Priority.Always
-        alignment = Pos.BaselineRight
     }
-
-    val maxCardinalityOfIntegerRangesField = new TextField {
-        hgrow = Priority.Always
-        alignment = Pos.BaselineRight
-    }
-
-    val maxCardinalityOfLongSetsField = new TextField {
-        hgrow = Priority.Always
-        alignment = Pos.BaselineRight
-    }
-
-    val maxCallChainLengthField = new TextField {
-        hgrow = Priority.Always
-        alignment = Pos.BaselineRight
-    }
-
-    case class Item(initialSelection: Boolean, val name: String) {
-        val selected = BooleanProperty(initialSelection)
-        override def toString = name
-    }
-
-    val fixpointAnalyses =
-        ObservableBuffer(FPCFAnalysisRegistry.analysisDescriptions().toSeq.sorted.map { Item(false, _) })
-
-    val fixpointAnalysesView = new ListView[Item] {
-        hgrow = Priority.Always
-        prefHeight = 250
-        items = fixpointAnalyses
-        cellFactory = CheckBoxListCell.forListView(_.selected)
-    }
-
-    import BugPickerAnalysis._
 
     scene = new Scene {
         root = new BorderPane {
-            center = new GridPane {
-                add(new Label("Maximum evaluation factor:"), 0, 0)
-                add(maxEvalFactorField, 1, 0)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        maxEvalFactorField.text = DefaultMaxEvalFactor.toString
-                    }
-                }, 2, 0)
-
-                add(new Label("Maximum evaluation time (ms):"), 0, 1)
-                add(maxEvalTimeField, 1, 1)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        maxEvalTimeField.text = DefaultMaxEvalTime.timeSpan.toString
-                    }
-                }, 2, 1)
-
-                add(new Label("Maximum cardinality of integer ranges:"), 0, 2)
-                add(maxCardinalityOfIntegerRangesField, 1, 2)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
-                    }
-                }, 2, 2)
-
-                add(new Label("Maximum cardinality of long sets:"), 0, 3)
-                add(maxCardinalityOfLongSetsField, 1, 3)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
-                    }
-                }, 2, 3)
-
-                add(new Label("Maximum length of call chain:"), 0, 4)
-                add(maxCallChainLengthField, 1, 4)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
-                    }
-                }, 2, 4)
-
-                add(new Label("Fixpoint analyses:"), 0, 6)
-                add(fixpointAnalysesView, 1, 6)
-                add(new Button {
-                    text = "Default"
-                    onAction = { e: ActionEvent ⇒
-                        fixpointAnalysesView.items.get.foreach { item ⇒
-                            item.selected.value_=(false)
-                        }
-                    }
-                }, 2, 6)
-
-                children foreach (c ⇒ GridPane.setMargin(c, Insets(10)))
-
-                style = "-fx-border-width: 0 0 1 0; -fx-border-color: #ccc;"
-            }
+            center = configEditor
 
             bottom = new HBox {
                 children = Seq(
-                    new Button {
-                        text = "_Defaults"
-                        mnemonicParsing = true
-                        minWidth = buttonMinWidth.toDouble
-                        margin = buttonMargin
-                        onAction = { e: ActionEvent ⇒
-                            maxEvalFactorField.text = DefaultMaxEvalFactor.toString
-                            maxEvalTimeField.text = DefaultMaxEvalTime.timeSpan.toString
-                            maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
-                            maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
-                            maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
-                            fixpointAnalysesView.disable_=(false)
-                            fixpointAnalysesView.selectionModel().clearSelection()
-                        }
-                    },
                     new Button {
                         text = "_Cancel"
                         mnemonicParsing = true
@@ -208,102 +116,30 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                         onAction = { e: ActionEvent ⇒ close() }
                     },
                     new Button {
-                        text = "_Ok"
+                        text = "_Save"
                         mnemonicParsing = true
                         defaultButton = true
                         minWidth = buttonMinWidth.toDouble
                         margin = buttonMargin
                         onAction = { e: ActionEvent ⇒
                             var interrupt = false
-                            val maxEvalFactor = try {
-                                maxEvalFactorField.text().toDouble
+                            val configText = configEditor.text.getValue
+                            val config = try {
+                                ConfigFactory.parseString(configText)
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage(
                                         "Error",
-                                        "You entered an illegal value for the maximum evaluation factor!",
+                                        "You entered an invalid configuration Please make sure, that you use the HOCON-format!",
                                         theStage
                                     )
                                     interrupt = true
-                                    Double.NaN
-                                }
-                            }
-                            val maxEvalTime = try {
-                                new Milliseconds(maxEvalTimeField.text().toLong)
-                            } catch {
-                                case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage(
-                                        "Error",
-                                        "You entered an illegal value for the maximum evaluation time!",
-                                        theStage
-                                    )
-                                    interrupt = true
-                                    Milliseconds.None
-                                }
-                            }
-                            val maxCardinalityOfIntegerRanges = try {
-                                maxCardinalityOfIntegerRangesField.text().toLong
-                            } catch {
-                                case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage(
-                                        "Error",
-                                        "You entered an illegal value for the maximum cardinality of integer ranges!",
-                                        theStage
-                                    )
-                                    interrupt = true
-                                    Long.MinValue
-                                }
-                            }
-                            val maxCardinalityOfLongSets = try {
-                                maxCardinalityOfLongSetsField.text().toInt
-                            } catch {
-                                case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage(
-                                        "Error",
-                                        "You entered an illegal value for the maximum cardinality of long sets!",
-                                        theStage
-                                    )
-                                    interrupt = true
-                                    Int.MinValue
-                                }
-                            }
-                            val maxCallChainLength = try {
-                                maxCallChainLengthField.text().toInt
-                            } catch {
-                                case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage(
-                                        "Error",
-                                        "You entered an illegal value for the maximum call chain length!",
-                                        theStage
-                                    )
-                                    interrupt = true
-                                    Int.MinValue
-                                }
-                            }
-
-                            val fixpointAnalyses = try {
-                                fixpointAnalysesView.items.get.filter(_.selected()).map { _.toString }
-                            } catch {
-                                case _: Exception | _: Error ⇒ {
-                                    DialogStage.showMessage(
-                                        "Error",
-                                        "You entered an illegal FPCFAnalysis!",
-                                        theStage
-                                    )
-                                    interrupt = true
-                                    Seq.empty[String]
+                                    ConfigFactory.load("")
                                 }
                             }
 
                             if (!interrupt) {
-                                parameters = Some(new AnalysisParameters(
-                                    maxEvalTime = maxEvalTime,
-                                    maxEvalFactor = maxEvalFactor,
-                                    maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
-                                    maxCardinalityOfLongSets = maxCardinalityOfLongSets,
-                                    maxCallChainLength = maxCallChainLength,
-                                    fixpointAnalyses = fixpointAnalyses
-                                ))
+                                configuration = Some(config)
                                 close()
                             }
                         }
@@ -314,19 +150,9 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         }
     }
 
-    def show(parameters: AnalysisParameters): Option[AnalysisParameters] = {
-        maxEvalFactorField.text = parameters.maxEvalFactor.toString
-        maxEvalTimeField.text = parameters.maxEvalTime.timeSpan.toString
-        maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
-        maxCardinalityOfLongSetsField.text = parameters.maxCardinalityOfLongSets.toString
-        maxCallChainLengthField.text = parameters.maxCallChainLength.toString
-        parameters.fixpointAnalyses.foreach { value ⇒
-            val item = fixpointAnalysesView.items.get.find { _.name == value }
-            if (item.nonEmpty)
-                item.get.selected.value_=(true)
-
-        }
+    def show(config: Config): Option[Config] = {
+        configEditor.text = BugPicker.renderConfig(config)
         showAndWait()
-        this.parameters
+        configuration
     }
 }

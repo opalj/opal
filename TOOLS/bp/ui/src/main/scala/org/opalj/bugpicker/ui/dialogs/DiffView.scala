@@ -75,7 +75,8 @@ import scalafx.stage.Modality
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
 
-class DiffView(currentName: String, currentIssues: Iterable[Node], currentParameters: Seq[String], oldAnalysis: StoredAnalysis) extends Stage {
+//FIXME currentParamters are not used anymore
+class DiffView(currentName: String, currentIssues: Iterable[Node], currentParameters: Seq[String] = Seq.empty, oldAnalysis: StoredAnalysis) extends Stage {
     self ⇒
 
     showing.onChange((_, _, newShow) ⇒ {

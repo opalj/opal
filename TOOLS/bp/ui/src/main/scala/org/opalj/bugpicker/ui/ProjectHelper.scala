@@ -32,10 +32,8 @@ package ui
 
 import java.io.File
 import java.net.URL
-
 import scala.collection.JavaConversions
 import scala.language.implicitConversions
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -44,7 +42,6 @@ import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.log.OPALLogger
-
 import scalafx.application.Platform
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
@@ -59,6 +56,8 @@ import scalafx.scene.layout.HBox
 import scalafx.scene.Scene
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 object ProjectHelper {
 
@@ -73,13 +72,15 @@ object ProjectHelper {
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage, projectLogMessages)
+        val config = loadedFiles.config
+        val project = setupProject(files, libs, config, parentStage, projectLogMessages)
         (project, sources)
     }
 
     def setupProject(
         cpFiles:            Iterable[File],
         libcpFiles:         Iterable[File],
+        config:             Option[Config],
         parentStage:        Stage,
         projectLogMessages: ObservableBuffer[BugPickerLogMessage]
     ): Project[URL] = {
@@ -125,9 +126,15 @@ object ProjectHelper {
             }
         }
 
+        val defaultConfig = ConfigFactory.load()
+        val projectConfig = config match {
+            case Some(config) ⇒ config.withFallback(defaultConfig)
+            case None         ⇒ defaultConfig
+        }
         Project(
             classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty
         )(
+            config = projectConfig,
             projectLogger = new BugPickerOPALLogger(projectLogMessages)
         )
     }

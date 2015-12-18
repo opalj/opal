@@ -76,6 +76,15 @@ import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.opalj.util.Milliseconds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
+import com.typesafe.config.ConfigRenderOptions
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -127,55 +136,32 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val progressManagement = initProgressManagement(PreAnalysesCount + classFilesCount)
         import progressManagement.step
 
-        val maxEvalFactor: Double =
-            parameters.
-                collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
-                getOrElse(DefaultMaxEvalFactor)
+        val analysisParameters = theProject.config.as[Config]("org.opalj.bugpicker.analysisParameter")
 
-        val maxEvalTime: Milliseconds =
-            parameters.
-                collectFirst { case MaxEvalTimePattern(l) ⇒ new Milliseconds(parseLong(l).toLong) }.
-                getOrElse(DefaultMaxEvalTime)
-
-        val maxCardinalityOfIntegerRanges: Long =
-            parameters.
-                collectFirst { case MaxCardinalityOfIntegerRangesPattern(i) ⇒ parseLong(i) }.
-                getOrElse(DefaultMaxCardinalityOfIntegerRanges)
-
-        val maxCardinalityOfLongSets: Int =
-            parameters.
-                collectFirst { case MaxCardinalityOfLongSetsPattern(i) ⇒ parseInt(i) }.
-                getOrElse(DefaultMaxCardinalityOfLongSets)
-
-        val maxCallChainLength: Int =
-            parameters.
-                collectFirst { case MaxCallChainLengthPattern(i) ⇒ parseInt(i) }.
-                getOrElse(DefaultMaxCallChainLength)
-
-        val fixpointAnalyses = {
-            parameters.collectFirst {
-                case FixpointAnalysesPattern(i) ⇒
-                    var fpas = Seq.empty[FPCFAnalysisRunner]
-                    for (fpa ← i.split(";"))
-                        fpas = fpas :+ FPCFAnalysisRegistry.getFixpointAnalysisFactory(fpa)
-                    fpas
-            }.getOrElse(Seq.empty[FPCFAnalysisRunner])
+        val maxEvalFactor = analysisParameters.as[Double]("maxEvalFactor")
+        val maxEvalTime = new Milliseconds(analysisParameters.as[Long]("maxEvalTime"))
+        val maxCardinalityOfIntegerRanges = analysisParameters.as[Long]("maxCardinalityOfLongSets")
+        val maxCardinalityOfLongSets = analysisParameters.as[Int]("maxCardinalityOfLongSets")
+        val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
+        val fpcfAnalyses = configuredAnalyses.map { description ⇒
+            FPCFAnalysisRegistry.getFixpointAnalysisFactory(description)
         }
+        val maxCallChainLength = theProject.config.as[Int](
+            "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
+        )
 
         val debug = parameters.contains("-debug")
         if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
+            val renderingOptions = ConfigRenderOptions.defaults().setOriginComments(false).setComments(true).setJson(false);
+            val bugpickerConf = theProject.config.withOnlyPath("org.opalj")
+            val settings = bugpickerConf.root().render(renderingOptions)
             OPALLogger.info(
                 "configuration",
                 cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n")+"\n"+
                     "Settings:"+"\n"+
-                    s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
-                    s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
-                    s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
-                    s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
-                    s"\tmaxCallChainLength=$maxCallChainLength\n"+
-                    s"\fixpointAnalyses=$fixpointAnalyses"
+                    settings
             )
         }
 
@@ -222,7 +208,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         step(7, "[FPCF-Analysis] executing fixpoint analyses") {
             (
                 {
-                    fixpointAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
+                    fpcfAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
                     propertyStore.waitOnPropertyComputationCompletion(true)
                 },
                 None
@@ -600,7 +586,7 @@ object BugPickerAnalysis {
     final val DefaultFixpointAnalyses = Seq.empty[String]
 
     def resultsAsXHTML(
-        parameters:        Seq[String],
+        config:            Seq[String],
         methodsWithIssues: Iterable[Issue],
         showSearch:        Boolean,
         analysisTime:      Nanoseconds
@@ -680,9 +666,7 @@ object BugPickerAnalysis {
                         <summary>Parameters</summary>
                         <ul>
                             {
-                                parameters.filterNot(p ⇒
-                                    p.startsWith("-debug") ||
-                                        p.startsWith("-html") || p.startsWith("-eclipse")).map(p ⇒ <li>{ p }</li>)
+                                config.filterNot(_.contains("debug")).map(p ⇒ <li>{ p }</li>)
                             }
                         </ul>
                     </details>
