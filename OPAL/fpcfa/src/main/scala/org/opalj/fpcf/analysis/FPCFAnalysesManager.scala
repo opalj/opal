@@ -40,7 +40,10 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[analysis] (project: SomeProject) {
+class FPCFAnalysesManager private[analysis] (val project: SomeProject) {
+
+    val propertyStore = project.get(SourceElementsPropertyStoreKey)
+    //  private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
 
     final val debug = {
         project.config.as[Option[Boolean]](FPCFAnalysesManager.ConfigKey).getOrElse(false)
@@ -58,8 +61,6 @@ class FPCFAnalysesManager private[analysis] (project: SomeProject) {
         )
         derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
     }
-
-    private[this] def propertyStore = project.get(SourceElementsPropertyStoreKey)
 
     final def runAll(analyses: FPCFAnalysisRunner*): Unit = {
         runAll(analyses)(true)
@@ -89,7 +90,7 @@ class FPCFAnalysesManager private[analysis] (project: SomeProject) {
                 )(project.logContext)
 
             registerProperties(analysisRunner)
-            analysisRunner.start(project)
+            analysisRunner.start(project,propertyStore)
             if (waitOnCompletion) {
                 propertyStore.waitOnPropertyComputationCompletion(
                     useDefaultForIncomputableProperties = true
