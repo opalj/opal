@@ -68,7 +68,7 @@ IssueElement: 													// structure of one issue
 		kinds=IssueKindElement
 		relevance=IssueRelevanceElement
 		package=IssuePackageElement
-		class=IssueClassElement
+		class=IssueClassElement?
 		method=IssueMethodElement?
 	 '}'
 ;
