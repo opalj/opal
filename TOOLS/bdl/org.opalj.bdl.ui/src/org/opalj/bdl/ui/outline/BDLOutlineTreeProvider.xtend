@@ -44,6 +44,7 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.opalj.bdl.bDL.IssueClassElement
 import org.eclipse.xtext.util.ITextRegion
 import org.eclipse.swt.graphics.Image
+import org.opalj.bdl.bDL.IssueMethodElement
 
 /**
  * Customization of the default outline structure.
@@ -277,6 +278,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	// override for the category element ... troublemaker!
 	override protected _isLeaf(EObject modelElement) {
 		if (modelElement instanceof IssueCategoryElement) return true;
+		if (modelElement instanceof IssueMethodElement) return true;
 		super._isLeaf(modelElement)
 	}
 	

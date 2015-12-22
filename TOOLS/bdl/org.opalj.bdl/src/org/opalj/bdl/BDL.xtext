@@ -104,4 +104,4 @@ AnyValues: INT | ID | INT ID | INT '.' INT;
 SlashPath: ID ('/' ID)*;
 QualifiedName:	ID ('.' ID)* ('$' ID)?;
 AccessFlags: 'public'|'private'|'protected'|'static'|'SUPER'|'abstract'|'final'|'synchronized'|'SYNTHETIC';
-MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes '[]'+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];
+MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes (dimensions+='[]')+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];

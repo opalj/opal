@@ -36,7 +36,6 @@ import org.opalj.bdl.bDL.IssueMessageElement
 import org.opalj.bdl.bDL.IssueCategoryElement
 import org.opalj.bdl.bDL.IssuePackageElement
 import org.opalj.bdl.bDL.IssueClassElement
-import java.util.Random
 import org.opalj.bdl.bDL.IssueKindElement
 import org.opalj.bdl.bDL.IssueRelevanceElement
 import org.opalj.bdl.bDL.IssueMethodElement
@@ -44,6 +43,8 @@ import org.opalj.bdl.ui.outline.BDLOutlineTreeProvider
 import org.opalj.bdl.bDL.ModelContainer
 import org.opalj.bdl.bDL.IssueCategories
 import org.opalj.bdl.bDL.IssueSuppressComment
+import org.opalj.bdl.bDL.IssueMethodDefinition
+import org.opalj.bdl.bDL.MethodTypes
 
 //import org.opalj.bdl.bDL.IssueTypes
 
@@ -135,6 +136,21 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 	def image(IssueMethodElement element){
 		return "public_co.png";
 	}
+	def text(IssueMethodElement element){
+		var IssueMethodDefinition definition = element.method;
+		var String ret = getFromArray( definition.accessFlags, " ");
+		
+		ret += " "+ text(definition.returnType);
+		ret += " "+ definition.name;
+		var paras = '';
+		for (var i  = 0; i < definition.parameter.length; i++){
+			if (paras != '') paras+=",";
+			paras += text(definition.parameter.get(i));
+		}
+		ret += "("+ paras +")";
+		
+		return ret;
+	}
 
 	def image(IssueSuppressComment element){
 		return "readwrite_obj.png"
@@ -142,12 +158,22 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 	def text(IssueSuppressComment element){
 		return "Comment: "+ getPreview(element.value, defaultMaxLength);
 	}
-
-
-
-
-
-
+	
+	def String text(MethodTypes type){
+		if ((type.void != null) 	&& (type.void.length > 0)) 
+			return type.void;
+		if ((type.baseType != null) && (type.baseType.length > 0)) 
+			return type.baseType;
+		if ((type.object != null) 	&& (type.object.length > 0)) 
+			return type.ref.simpleName;
+		if ((type.array != null) 	&& (type.array.length > 0)){
+			//type.dimensions.length
+			var String t = text(type.getSubType) as String;
+			for (var int i = 0; i < type.dimensions.length; i++) t+= "[]"
+			return t
+		}
+		return "<unknown>"
+	}
 
 	def String getPreview(String in, int maxLength){
 		if (in.length <= maxLength) return in;
