@@ -4,16 +4,6 @@ An eclipse installation with Xtext support is required ("http://www.itemis.com/e
 Additionally the "Eclipse Plug-in Development Environment" is required to run/debug the plug-in within eclipse (it is already included in the Xtext eclipse).
 
 
-# Generating Grammar
-Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package and choose "Run As -> MWE2 Workflow"
-
-# Exporting Plug-in
-- Click on File->Export in the new window select "Deployable features".
-- check "org.opalj.bdl.sdk"
-- enter a target Directory 
-- go to Options: make sure that "Categorize repository" is checked and "org.opalj.bdl.sdk\category.xml" is entered
-- Finish
-
 # Plug-in Installation
 - add the plug-in directory as an update site
 - select the category "BDL" and finish the installation
@@ -21,7 +11,14 @@ Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package
 # Using the Plug-in
 - just create or open a file with the extension "bdl" after the plug-in is installed and the correct editor should be started
 
+# Generating the Grammar
+
+
 # Developing
+- Importing the projects
+	During the first import of the projects into eclipse some errors will appear. These errors can be ignored because they will disappear after the grammar is generated. These errors will result in an additional dialogue popping up when the build process is started which can be ignored by clicking continue. Also there will be a question in the console which also should be confirmed.
+- Generating the Grammar
+	Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package and choose "Run As -> MWE2 Workflow"
 - Project "org.opalj.bdl"
 	* Grammar: 
 		-> in the file "org.opalj.bdl.BDL.xtext"
@@ -40,7 +37,7 @@ Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package
 		- each defined style can be edited by the user in the preference dialogue
 		- -> Usage of fonts/styles is located in the file "org.opalj.bdl.ui.BDLSemanticHighlightingCalculator"
 		- traverses the document tree and decides which style has to be used for which document node
-	* Hyper-links
+	* Hyperlinks
 		- -> located in the file "org.opalj.bdl.ui.BDLHyperLinkHelper"
 		- is only needed for the linking of our custom separation of package, class and function
 	* Proposals
@@ -57,3 +54,10 @@ Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package
 	* Definition of Plug-in name & features
 		- "feature.xml" defines the meta data for the plug-in, like name, copyright, dependencies ...
 		- "category.xml" defines the category name which is displayed in the import process
+		
+# Exporting Plug-in
+- Click on File->Export in the new window select "Deployable features".
+- check "org.opalj.bdl.sdk"
+- enter a target Directory 
+- go to Options: make sure that "Categorize repository" is checked and "org.opalj.bdl.sdk\category.xml" is entered
+- Click on Finish and wait for the operation to complete
