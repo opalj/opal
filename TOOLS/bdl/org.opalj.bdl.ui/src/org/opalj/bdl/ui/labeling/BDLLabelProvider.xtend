@@ -41,12 +41,9 @@ import org.opalj.bdl.bDL.IssueRelevanceElement
 import org.opalj.bdl.bDL.IssueMethodElement
 import org.opalj.bdl.ui.outline.BDLOutlineTreeProvider
 import org.opalj.bdl.bDL.ModelContainer
-import org.opalj.bdl.bDL.IssueCategories
 import org.opalj.bdl.bDL.IssueSuppressComment
 import org.opalj.bdl.bDL.IssueMethodDefinition
 import org.opalj.bdl.bDL.MethodTypes
-
-//import org.opalj.bdl.bDL.IssueTypes
 
 /**
  * Provides labels for EObjects.
@@ -55,7 +52,8 @@ import org.opalj.bdl.bDL.MethodTypes
  */
 class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider {
 
-	private static int defaultMaxLength = 35;
+	// limits the length of most returned Strings
+	private static int defaultMaxLength = 42;
 
 	@Inject
 	new(org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider delegate) {
@@ -88,19 +86,9 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		return "debug_persp.png";
 	}
 	def text(IssueCategoryElement element){
-		var String ret ="";
-		for (IssueCategories cat : element.elements){
-			if (ret != "") ret +=","
-			ret += rn(cat.bug)+rn(cat.smell)+rn(cat.comprehensibility)+rn(cat.performance);
-		}
-		return getPreview(ret, defaultMaxLength);
+		return getPreview(getFromArray(element.elements, ","), defaultMaxLength);
 	}
-	
-	def rn(String s){
-		if (s == null) return "";
-		return s;
-	}
-	
+
 	def image(IssuePackageElement element){
 		return "package.png"
 	}
@@ -137,7 +125,7 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		return "public_co.png";
 	}
 	def text(IssueMethodElement element){
-		var IssueMethodDefinition definition = element.method;
+		var IssueMethodDefinition definition = element.getDefinition;
 		var String ret = getFromArray( definition.accessFlags, " ");
 		
 		ret += " "+ text(definition.returnType);
@@ -149,7 +137,7 @@ class BDLLabelProvider extends org.eclipse.xtext.ui.label.DefaultEObjectLabelPro
 		}
 		ret += "("+ paras +")";
 		
-		return ret;
+		return getPreview(ret, defaultMaxLength);
 	}
 
 	def image(IssueSuppressComment element){

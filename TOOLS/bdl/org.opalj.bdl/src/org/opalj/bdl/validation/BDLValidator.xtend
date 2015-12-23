@@ -38,7 +38,6 @@ import org.opalj.bdl.bDL.ParameterContainer
 import org.opalj.bdl.bDL.ParameterElement
 import org.opalj.bdl.bDL.IssueMethodDefinition
 import org.opalj.bdl.bDL.IssueCategoryElement
-import org.opalj.bdl.bDL.IssueCategories
 import org.opalj.bdl.bDL.IssueKindElement
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
@@ -84,21 +83,17 @@ class BDLValidator extends AbstractBDLValidator {
 		}
 	}
 	
-	
+	// checks uniqueness of categories
 	@Check
 	def check(IssueCategoryElement element){
-		for (IssueCategories cat: element.elements)
-			for (IssueCategories other: element.elements)
-				if (cat != other)
-					if (
-						( (cat.bug==other.bug) && (cat.bug != null))||
-						( (cat.comprehensibility==other.comprehensibility) && (cat.comprehensibility != null))||
-						( (cat.smell==other.smell) && (cat.smell != null))||
-						( (cat.performance==other.performance) && (cat.performance != null))
-					)
-						error("Every category can only occur once!", element, BDLPackage.Literals.ISSUE_CATEGORY_ELEMENT__NAME, INVALID_NAME);
+		checkStringList(element.elements,
+			element,
+			BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS,
+			"Every category can only occur once!"
+		);
 	}
 	
+	// check uniqueness of kind elements
 	@Check
 	def check(IssueKindElement element){
 		checkStringList(element.elements,
@@ -107,6 +102,7 @@ class BDLValidator extends AbstractBDLValidator {
 			"Every kind can only occur once!"
 		);
 	}
+	// check uniqueness of access flags
 	@Check
 	def check(IssueMethodDefinition method){
 		checkStringList(method.accessFlags,
@@ -116,6 +112,7 @@ class BDLValidator extends AbstractBDLValidator {
 		);
 	}
 	
+	// checks if a item in a list of strings occurs more than once
 	def checkStringList( EList<String> list, EObject src, EStructuralFeature feature, String message){
 		for (var int first = 0; first < list.length; first++){
 			for (var second = first +1; second < list.length; second++)

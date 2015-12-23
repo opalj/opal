@@ -39,7 +39,6 @@ import org.opalj.bdl.bDL.IssueElement
 import java.util.HashSet
 import java.util.HashMap
 import org.opalj.bdl.bDL.IssueCategoryElement
-import org.opalj.bdl.bDL.IssueCategories
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.opalj.bdl.bDL.IssueClassElement
 import org.eclipse.xtext.util.ITextRegion
@@ -197,10 +196,9 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 				}
 			}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
 				if (issue.categories != null)
-					for (IssueCategories cat : issue.categories.elements){
-						var String sCat = getIssueCategoryKey(cat);
-						if (!possible.contains(sCat)){
-							possible.add(sCat);
+					for (String cat : issue.categories.elements){
+						if (!possible.contains(cat)){
+							possible.add(cat);
 						}	
 					}
 			}else if (filter.equals(KEY_FILTERBY_KINDS)){
@@ -246,8 +244,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 								thisFilter = true;
 						}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
 							for (var i = 0; i < issue.categories.elements.length; i++){
-								var catK = getIssueCategoryKey(issue.categories.elements.get(i));
-								if (catK.equals(appliedFilters.get(filter)))
+								if (issue.categories.elements.get(i).equals(appliedFilters.get(filter)))
 									thisFilter = true;
 							}
 						}else if (filter.equals(KEY_FILTERBY_KINDS)){
@@ -282,25 +279,6 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 		super._isLeaf(modelElement)
 	}
 	
-	// map the categories to specific keys to ensure they can compared
-	// also apparently that auto generated IssueCategories-Class does not offer
-	// an obvious function to get the value
-	public static String KEY_CATEGORY_BUG 				= "bug";
-	public static String KEY_CATEGORY_COMPREHENSIBILITY = "comprehensibility";
-	public static String KEY_CATEGORY_SMELL 			= "smell";
-	public static String KEY_CATEGORY_PERFORMANCE 		= "performance";
-	def getIssueCategoryKey(IssueCategories cat){
-		if ((cat.bug != null) && (cat.bug.length > 0))
-			return KEY_CATEGORY_BUG;
-		if ((cat.smell != null) && (cat.smell.length > 0))
-			return KEY_CATEGORY_SMELL;
-		if ((cat.comprehensibility != null) && (cat.comprehensibility.length > 0))
-			return KEY_CATEGORY_COMPREHENSIBILITY;
-		if ((cat.performance != null) && (cat.performance.length > 0))
-			return KEY_CATEGORY_PERFORMANCE;	
-	}
-
-
 	/*
 	 * this function is nearly identical with the original one
 	 * BUT it removes the text region for the element -> set to empty
