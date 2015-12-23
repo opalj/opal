@@ -35,6 +35,7 @@ import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmMember;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmType;
+import org.eclipse.xtext.common.types.JvmVisibility;
 import org.eclipse.xtext.common.types.access.IJvmTypeProvider;
 import org.eclipse.xtext.common.types.xtext.ui.TypeAwareHyperlinkHelper;
 import org.eclipse.xtext.nodemodel.INode;
@@ -123,13 +124,13 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 				
 				// check name
 				if (definition.getName().equals( member.getSimpleName() ))
-					iValue += 5;
+					iValue += 10;
 			
 				// check return type
 				if (pOP.getReturnType().getSimpleName().equals( 
 						labelProvider.getText(definition.getReturnType()) )
 					)
-					iValue +=2;
+					iValue +=3;
 				// check parameters count
 				if (pOP.getParameters().size() == definition.getParameter().size()){
 					iValue +=1;
@@ -142,15 +143,30 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 							iValue +=2;
 					}
 				}
-				
+				// check access flags, missing: 'SUPER'|'final'|'SYNTHETIC';
+				for (String flag : definition.getAccessFlags()){
+					flag = flag.toLowerCase();
+					if (flag.equals("static") 		&& pOP.isStatic()) 
+						iValue +=1;
+					if (flag.equals("abstract") 	&& pOP.isAbstract()) 
+						iValue +=1;
+					if (flag.equals("synchronized") && pOP.isSynchronized()) 
+						iValue +=1;
+					if (flag.equals("public")		 && (pOP.getVisibility() == JvmVisibility.PUBLIC) )
+						iValue+=1;
+					if (flag.equals("protected")	 && (pOP.getVisibility() == JvmVisibility.PROTECTED) )
+						iValue+=1;
+					if (flag.equals("private")		 && (pOP.getVisibility() == JvmVisibility.PRIVATE) )
+						iValue+=1;
+				}
+
 				if (iValue > iBest){
 					iBest = iValue;
 					pBest = pOP;
 				}
 			}
 		}
-		
-		System.out.println(iBest +"\t"+ pBest);
+
 		return pBest;
 	}
 }
