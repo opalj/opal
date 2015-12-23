@@ -1,7 +1,7 @@
 # Overview
-This directory contains the projects to generate the "BugDescriptionLanguage"-plug-in for eclipse.
-An eclipse installation with Xtext support is required ("http://www.itemis.com/en/xtext/download/") for building the projects and the plug-in.
-Additionally the "Eclipse Plug-in Development Environment" is required to run/debug the plug-in within eclipse (it is already included in the Xtext eclipse).
+This directory contains the projects to generate the "BugDescriptionLanguage"-plug-in for eclipse.  
+An eclipse installation with Xtext support is required ("http://www.itemis.com/en/xtext/download/") for building the projects and the plug-in.  
+Additionally the "Eclipse Plug-in Development Environment" is required to run/debug the plug-in within eclipse (it is already included in the Xtext eclipse).  
 
 
 # Plug-in Installation
@@ -15,10 +15,11 @@ Additionally the "Eclipse Plug-in Development Environment" is required to run/de
 
 
 # Developing
-- Importing the projects
-	During the first import of the projects into eclipse some errors will appear. These errors can be ignored because they will disappear after the grammar is generated. These errors will result in an additional dialogue popping up when the build process is started which can be ignored by clicking continue. Also there will be a question in the console which also should be confirmed.
-- Generating the Grammar
-	Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package and choose "Run As -> MWE2 Workflow"
+- Importing the projects:  
+	During the first import of the projects into eclipse some errors will appear. These errors can be ignored because they will disappear after the grammar is generated.  
+	Also these errors will result in an additional dialogue popping up when the build process is started which can be ignored by clicking continue. There will be a question in the console which should be confirmed.  
+- Generating the Grammar:  
+	Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package and choose "Run As -> MWE2 Workflow"  
 - Project "org.opalj.bdl"
 	* Grammar: 
 		-> in the file "org.opalj.bdl.BDL.xtext"
