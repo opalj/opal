@@ -36,24 +36,24 @@ Right click on "GenerateBDL.mwe2" in project "org.opalj.bdl" in the same package
 
 - Project "org.opalj.bdl.ui"
 	* Font/Styles aka Highlighting 
-		-> Definition of fonts/styles is found in the file "org.opalj.bdl.ui.BDLHighlightingConfiguration"
-			- each defined style can be edited by the user in the preference dialogue
-		-> Usage of fonts/styles is located in the file "org.opalj.bdl.ui.BDLSemanticHighlightingCalculator"
-			-> traverses the document tree and decides which style has to be used for which document node
+		- -> Definition of fonts/styles is found in the file "org.opalj.bdl.ui.BDLHighlightingConfiguration"
+		- each defined style can be edited by the user in the preference dialogue
+		- -> Usage of fonts/styles is located in the file "org.opalj.bdl.ui.BDLSemanticHighlightingCalculator"
+		- traverses the document tree and decides which style has to be used for which document node
 	* Hyper-links
-		-> located in the file "org.opalj.bdl.ui.BDLHyperLinkHelper"
+		- -> located in the file "org.opalj.bdl.ui.BDLHyperLinkHelper"
 		- is only needed for the linking of our custom separation of package, class and function
 	* Proposals
-		-> "org.opalj.bdl.ui.contentassist.BDLProposalProvider.xtend"
+		- -> "org.opalj.bdl.ui.contentassist.BDLProposalProvider.xtend"
 		- defines extra proposals for elements, like a list of possible values for an element
 		- is not needed for the structure of the document
 	* Outline
-		-> The tree definition of the tree structure is located in "org.opalj.bdl.ui.outline.BDLOutlineTreeProvider.xtend"
+		- -> The tree definition of the tree structure is located in "org.opalj.bdl.ui.outline.BDLOutlineTreeProvider.xtend"
 		- also contains the logic for filtering with in the outline
-		-> Icons and text for most elements are defined in the file "org.opalj.bdl.ui.labeling.BDLLabelProvider.xtend"
+		- -> Icons and text for most elements are defined in the file "org.opalj.bdl.ui.labeling.BDLLabelProvider.xtend"
 		- by default every element provides some text to identify it but most of the time the default text is not very helpful ...
 
 - Project "org.opalj.bdl.sdk"
 	* Definition of Plug-in name & features
-		-> "feature.xml" defines the meta data for the plug-in, like name, copyright, dependencies ...
-		-> "category.xml" defines the category name which is displayed in the import process
+		- "feature.xml" defines the meta data for the plug-in, like name, copyright, dependencies ...
+		- "category.xml" defines the category name which is displayed in the import process
