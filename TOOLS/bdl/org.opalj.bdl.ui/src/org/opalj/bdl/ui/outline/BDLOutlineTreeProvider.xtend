@@ -37,11 +37,13 @@ import org.eclipse.xtext.ui.editor.outline.IOutlineNode
 import org.eclipse.xtext.ui.editor.outline.impl.EStructuralFeatureNode
 import org.opalj.bdl.bDL.IssueElement
 import java.util.HashSet
-import org.opalj.bdl.services.BDLGrammarAccess
-import com.google.inject.Inject
 import java.util.HashMap
 import org.opalj.bdl.bDL.IssueCategoryElement
-import org.opalj.bdl.bDL.IssueCategories
+import org.eclipse.emf.ecore.EStructuralFeature
+import org.opalj.bdl.bDL.IssueClassElement
+import org.eclipse.xtext.util.ITextRegion
+import org.eclipse.swt.graphics.Image
+import org.opalj.bdl.bDL.IssueMethodElement
 
 /**
  * Customization of the default outline structure.
@@ -65,8 +67,6 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	
 	public static String[] KEYS_FILTERBY = #[KEY_FILTERBY_TYPE, KEY_FILTERBY_RELEVANCE, KEY_FILTERBY_CATEGORY, KEY_FILTERBY_KINDS, KEY_FILTERBY_PACKAGES, KEY_FILTERBY_CLASS]
 	
-	@Inject package extension BDLGrammarAccess
-	
 	// generates the root structure
 	override protected _createChildren(DocumentRootNode parentNode, EObject modelElement) {
 		// show the default document structure
@@ -76,6 +76,11 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	}
 	
 	override createChildren(IOutlineNode parent, EObject modelElement) {
+
+		if (modelElement instanceof IssueElement){
+			createIssueElementNode(parent, modelElement);
+			return;
+		}
 		
 		if (!(parent instanceof EStructuralFeatureNode)){
 			super.createChildren(parent, modelElement);
@@ -96,6 +101,37 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 				createNode(parent , issue);
 		}
 
+	}
+	
+	// special handling of Package/Class element
+	// -> either have a package or a class element in the outline
+	def createIssueElementNode(IOutlineNode parent, IssueElement element){
+		for (EStructuralFeature feature : BDLPackage.Literals.ISSUE_ELEMENT.EAllStructuralFeatures){
+			if (feature.featureID == BDLPackage.ISSUE_ELEMENT__CLASS){
+				if (
+					(element.class_ != null) 
+				){
+					var IssueClassElement cls = element.class_;
+					var String text = _text(cls).toString;
+					if (element.package != null)
+						text = _text(element.package) + text;
+					
+					createEStructuralFeatureNode(parent, element, BDLPackage.Literals.ISSUE_ELEMENT__CLASS, _image(cls), text, true);
+				}
+			}else if (
+					(feature.featureID == BDLPackage.ISSUE_ELEMENT__PACKAGE) &&
+					(element.eGet(BDLPackage.Literals.ISSUE_ELEMENT__CLASS) != null)
+					)
+			{
+				
+			}else{
+				if (
+					(element.eGet(feature) != null) && 
+					(element.eGet(feature) instanceof EObject)
+				)
+					createNode(parent, element.eGet(feature) as EObject);
+			}
+		}
 	}
 	
 	def getPossibleFilters(HashMap<String,String> used, HashSet<IssueElement> currentIssues){
@@ -134,14 +170,14 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	
 	def showPossibleFilters(IOutlineNode parent, EObject modelElement, HashSet<String> possible){
 		for (String sFilter : possible){
-			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, sFilter, false);
+			createEStructuralFeatureNodeOwn(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, _image(sFilter), sFilter, false);
 		}
 	}
 
 	def showPossibleOptionsForFilter(IOutlineNode parent, EObject modelElement, String filter, HashSet<IssueElement> currentIssues){
 
 		for (Object ele : getPossibleOptionsForFilter(filter, currentIssues))
-			createEStructuralFeatureNode(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, ele.toString, false);
+			createEStructuralFeatureNodeOwn(parent, modelElement, BDLPackage.Literals.MODEL_CONTAINER__NAME, null, ele.toString, false);
 
 	}
 
@@ -155,28 +191,29 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 						possible.add(issue.name.get(i));
 					}
 			}else if (filter.equals(KEY_FILTERBY_RELEVANCE)){
-				if (!possible.contains(issue.relevance.relevance)){
+				if ( (issue.relevance != null) && (!possible.contains(issue.relevance.relevance)) ){
 					possible.add(issue.relevance.relevance);
 				}
 			}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
-				for (IssueCategories cat : issue.categories.elements){
-					var String sCat = getIssueCategoryKey(cat);
-					if (!possible.contains(sCat)){
-						possible.add(sCat);
-					}	
-				}
+				if (issue.categories != null)
+					for (String cat : issue.categories.elements){
+						if (!possible.contains(cat)){
+							possible.add(cat);
+						}	
+					}
 			}else if (filter.equals(KEY_FILTERBY_KINDS)){
-				for (String kind: issue.kinds.elements){
-					if (!possible.contains(kind)){
-						possible.add(kind);
-					}	
-				}
+				if (issue.kinds != null)
+					for (String kind: issue.kinds.elements){
+						if (!possible.contains(kind)){
+							possible.add(kind);
+						}	
+					}
 			}else if (filter.equals(KEY_FILTERBY_PACKAGES)){
-				if (!possible.contains(issue.package.package)){
+				if ( (issue.package != null) && (!possible.contains(issue.package.package))){
 					possible.add(issue.package.package);
 				}
 			}else if (filter.equals(KEY_FILTERBY_CLASS)){
-				if (!possible.contains(issue.class_.class_)){
+				if ( (issue.class_ != null) && (!possible.contains(issue.class_.class_)) ){
 					possible.add(issue.class_.class_);
 				}
 			}
@@ -207,8 +244,7 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 								thisFilter = true;
 						}else if (filter.equals(KEY_FILTERBY_CATEGORY)){
 							for (var i = 0; i < issue.categories.elements.length; i++){
-								var catK = getIssueCategoryKey(issue.categories.elements.get(i));
-								if (catK.equals(appliedFilters.get(filter)))
+								if (issue.categories.elements.get(i).equals(appliedFilters.get(filter)))
 									thisFilter = true;
 							}
 						}else if (filter.equals(KEY_FILTERBY_KINDS)){
@@ -239,26 +275,27 @@ class BDLOutlineTreeProvider extends org.eclipse.xtext.ui.editor.outline.impl.De
 	// override for the category element ... troublemaker!
 	override protected _isLeaf(EObject modelElement) {
 		if (modelElement instanceof IssueCategoryElement) return true;
+		if (modelElement instanceof IssueMethodElement) return true;
 		super._isLeaf(modelElement)
 	}
 	
-
-
-	// map the categories to specific keys to ensure they can compared
-	// also apparently that auto generated IssueCategories-Class does not offer
-	// an obvious function to get the value
-	public static String KEY_CATEGORY_BUG 				= "bug";
-	public static String KEY_CATEGORY_COMPREHENSIBILITY = "comprehensibility";
-	public static String KEY_CATEGORY_SMELL 			= "smell";
-	public static String KEY_CATEGORY_PERFORMANCE 		= "performance";
-	def getIssueCategoryKey(IssueCategories cat){
-		if ((cat.bug != null) && (cat.bug.length > 0))
-			return KEY_CATEGORY_BUG;
-		if ((cat.smell != null) && (cat.smell.length > 0))
-			return KEY_CATEGORY_SMELL;
-		if ((cat.comprehensibility != null) && (cat.comprehensibility.length > 0))
-			return KEY_CATEGORY_COMPREHENSIBILITY;
-		if ((cat.performance != null) && (cat.performance.length > 0))
-			return KEY_CATEGORY_PERFORMANCE;	
-	}
+	/*
+	 * this function is nearly identical with the original one
+	 * BUT it removes the text region for the element -> set to empty
+	 * this SHOULD fix the long loading time of documents in some packages
+	 * where the editor searches for the "best" outline node for a given text
+	 * @see org.eclipse.xtext.ui.editor.outline.actions.OutlineWithEditorLinker.findBestNode(IOutlineNode, ITextRegion)
+	 * (that function iterates over all children in the outline effectively testing all filter options ...)
+	 */
+	def EStructuralFeatureNode createEStructuralFeatureNodeOwn(IOutlineNode parentNode, EObject owner,
+			EStructuralFeature feature, Image image, Object text, boolean isLeaf) {
+		var boolean isFeatureSet = owner.eIsSet(feature);
+		var EStructuralFeatureNode eStructuralFeatureNode = new EStructuralFeatureNode(owner, feature, parentNode, image,
+				text, isLeaf || !isFeatureSet);
+		if (isFeatureSet) {
+			var ITextRegion region = ITextRegion.EMPTY_REGION;
+			eStructuralFeatureNode.setTextRegion(region);
+		}
+		return eStructuralFeatureNode;
+	}	
 }

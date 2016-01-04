@@ -97,4 +97,14 @@ class BDLProposalProvider extends AbstractBDLProposalProvider {
 				acceptor.accept(createCompletionProposal( (ele as Keyword).value,context));		
 	}
 	
+	override complete_IssueCategories(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.complete_IssueCategories(model, ruleCall, context, acceptor)
+		
+		var gram = grammarAccess as BDLGrammarAccess 
+
+		for (EObject ele: gram.issueCategoriesRule.alternatives.eContents)
+			if (ele instanceof Keyword)
+				acceptor.accept(createCompletionProposal( (ele as Keyword).value,context));
+	}
+	
 }
