@@ -65,7 +65,7 @@ final class Code private (
     override def instructionsOption: Option[Array[Instruction]] = Some(instructions)
 
     /**
-     * Returns a iterator to iterate over the program counters of the instructions
+     * Returns an iterator to iterate over the program counters of the instructions
      * of this `Code` block.
      *
      * @see See the method [[foreach]] for an alternative.
