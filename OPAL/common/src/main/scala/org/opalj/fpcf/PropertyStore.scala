@@ -28,6 +28,8 @@
  */
 package org.opalj.fpcf
 
+import scala.language.existentials
+
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.{HashSet ⇒ JHSet}
@@ -386,12 +388,42 @@ class PropertyStore private (
                 assert(dependeeP.key == dependeePK)
                 c(dependeeE, dependeeP)
             case _ /*None*/ ⇒
-                new Suspended(dependerE, dependerPK, dependeeE, dependeePK) {
+                new SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) {
                     override def continue(dependeeP: Property) = {
                         assert(dependeeP.key == dependeePK)
                         c(dependeeE, dependeeP)
                     }
                 }
+        }
+    }
+
+    /**
+     * Returns the property associated with the required entity.
+     */
+    def requireNext(
+        dependerE:  Entity,
+        dependerPK: PropertyKey,
+        dependeeE:  Entity,
+        dependeePK: PropertyKey
+    )(
+        c: IncrementalStep
+    ): IncrementalPropertyComputationResult = {
+        this(dependeeE, dependeePK) match {
+            case Some(dependeeP) ⇒
+                // dependeeP may be already updated, but it is now on the caller to make
+                // a decision whether it will continue listening for further updates or not
+                assert(dependeeP.key == dependeePK)
+                c(dependeeE, dependeeP)
+            case _ /*None*/ ⇒
+                IncrementalPropertyComputationResult(
+                    new SuspendedIPC(dependerE, dependerPK, dependeeE, dependeePK) {
+                        override def continue(dependeeP: Property) = {
+                            assert(dependeeP.key == dependeePK)
+                            c(dependeeE, dependeeP)
+                        }
+                    },
+                    Nil
+                )
         }
     }
 
@@ -417,8 +449,31 @@ class PropertyStore private (
     )(
         c: (Boolean) ⇒ PropertyComputationResult
     ): PropertyComputationResult = {
+        allHaveProperty(
+            dependerE, dependerPK,
+            dependees, expectedP.key, (p: Property) ⇒ p == expectedP
+        )(c)
+    }
 
-        val dependeePK = expectedP.key
+    /**
+     * Tests if all entities satisfy the given property. If the respective properties are
+     * not yet available, the computation will be suspended until the properties of
+     * the respective kind are available. Hence, it only makes sense to use this
+     * function if the respective property is computed by an independent analysis or
+     * if it is an inherent property of the analysis/analyses that the information about the
+     * dependees is guaranteed to become available without requiring information
+     * about the depender.
+     *
+     * This function eagerly tries to determine if the answer is false and only
+     * suspends the computation if the (negative) answer cannot directly be computed.
+     */
+    def allHaveProperty(
+        dependerE: Entity, dependerPK: PropertyKey,
+        dependees: Traversable[Entity], dependeePK: PropertyKey, expectedP: Property ⇒ Boolean
+    )(
+        c: (Boolean) ⇒ PropertyComputationResult
+    ): PropertyComputationResult = {
+
         var remainingEs = dependees
         var unavailableEs: List[Entity] = Nil
         while (remainingEs.nonEmpty) {
@@ -427,7 +482,7 @@ class PropertyStore private (
             remainingEs = remainingEs.tail
             this(dependeeE, dependeePK) match {
                 case Some(dependeeP) ⇒
-                    if (expectedP != dependeeP)
+                    if (expectedP(dependeeP))
                         return c(false);
                 case None ⇒
                     unavailableEs = dependeeE :: unavailableEs
@@ -442,16 +497,21 @@ class PropertyStore private (
         // possible, by using haveProperty again... i.e., we try to minimize the
         // number of suspended computations that we need to create.
         val deependeeE = unavailableEs.head
-        new Suspended(dependerE, dependerPK, deependeeE, dependeePK) {
+        new SuspendedPC(dependerE, dependerPK, deependeeE, dependeePK) {
             override def continue(dependeeP: Property): PropertyComputationResult = {
-                if (expectedP != dependeeP)
+                if (expectedP(dependeeP))
                     return c(false);
 
                 val remainingUnavailableEs = unavailableEs.tail
                 if (remainingUnavailableEs.isEmpty) {
                     c(true)
                 } else {
-                    allHaveProperty(dependerE, dependerPK, remainingUnavailableEs, expectedP)(c)
+                    allHaveProperty(
+                        dependerE, dependerPK,
+                        remainingUnavailableEs, dependeePK, expectedP
+                    )(
+                        c
+                    )
                 }
             }
         }
@@ -708,39 +768,45 @@ class PropertyStore private (
      * This is, e.g., in general given, if we analyze the classes of the class hierarchy
      * in a top-down fashion.
      */
-    def <^<[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]](
-        initialEntities: Traversable[ProcessedEntity],
-        initialF:        IncrementalPropertyComputation[ProcessedEntity, F]
+    def <^<(
+        initialEntities: Traversable[Entity],
+        initialF:        IncrementalPropertyComputation
     ): Unit = {
-
-        def bulkScheduleComputations(fes: Traversable[(F, ProcessedEntity)]): Unit = {
-            fes foreach { fe ⇒
-                val (f, e) = fe
-                if (isInterrupted())
-                    return ;
-
-                scheduleComputation(f, e)
-            }
-        }
-
-        def scheduleComputation(f: F, e: ProcessedEntity): Unit = {
-            scheduleRunnable {
-                val (pc, es) = f(e)
-                handleResult(pc)
-                bulkScheduleComputations(es)
-            }
-        }
 
         initialEntities foreach { ie ⇒
             if (isInterrupted())
                 return ;
 
             scheduleRunnable {
-                val (pc, es) = initialF(ie)
+                val IncrementalPropertyComputationResult(pc, es) = initialF(ie)
                 handleResult(pc)
-                bulkScheduleComputations(es)
+                bulkScheduleIncrementalComputations(es)
             }
+        }
+    }
 
+    private[this] def bulkScheduleIncrementalComputations(
+        fes: Traversable[(IncrementalPropertyComputation, Entity)]
+    ): Unit = {
+        fes foreach { fe ⇒
+            val (f, e) = fe
+            if (isInterrupted())
+                return ;
+
+            scheduleIncrementalComputation(f, e)
+        }
+    }
+
+    private[this] def scheduleIncrementalComputation(
+        f: IncrementalPropertyComputation,
+        e: Entity
+    ): Unit = {
+        scheduleRunnable {
+            val IncrementalPropertyComputationResult(pc, es) = f(e)
+            handleResult(pc)
+            bulkScheduleIncrementalComputations(
+                es.asInstanceOf[Traversable[(IncrementalPropertyComputation, Entity)]]
+            )
         }
     }
 
@@ -1573,8 +1639,8 @@ class PropertyStore private (
                     }
                     update(e, p, IntermediateUpdate)
 
-                case Suspended.id ⇒
-                    val suspended @ Suspended(dependerE, dependerPK, dependeeE, dependeePK) = r
+                case SuspendedPC.id ⇒
+                    val suspended @ SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) = r
                     // CONCEPT
                     // First, let's get the property, then...
                     //  - If we now have a property, let's immediately continue
@@ -1632,6 +1698,55 @@ class PropertyStore private (
                     if (continuation ne null) {
                         //scheduleComputation(dependerE, continuation)
                         /*immediately exec*/ handleResult(continuation())
+                    }
+
+                case SuspendedIPC.id ⇒
+                    val suspended @ SuspendedIPC(dependerE, dependerPK, dependeeE, dependeePK) = r
+
+                    def createAndRegisterObserver(): PropertyObserver = {
+                        val dependerEPK = EPK(dependerE, dependerPK)
+                        val dependeeEPK = EPK(dependeeE, dependeePK)
+                        val o = new DefaultPropertyObserver(
+                            dependerEPK,
+                            removeAfterNotification = true
+                        ) {
+
+                            def apply(dependeeE: Entity, dependeeP: Property): Unit = {
+                                propagationCount.incrementAndGet()
+                                val ipc = (e: AnyRef) ⇒ suspended.continue(dependeeP)
+                                scheduleIncrementalComputation(ipc, dependerE)
+                            }
+                        }
+                        registerObserverWithItsDepender(dependerEPK, dependeeEPK, o)
+                        o
+                    }
+
+                    val (lock, properties) = data.get(dependeeE)
+                    val continuation = withWriteLock(lock) {
+                        val dependeePKId = dependeePK.id
+                        properties(dependeePKId) match {
+                            case null ⇒
+                                properties(dependeePKId) = (null, Buffer(createAndRegisterObserver()))
+                                null
+
+                            case (dependeeP, dependeeOs) ⇒
+                                if (dependeeP eq null) {
+                                    dependeeOs += createAndRegisterObserver()
+                                    null
+                                } else {
+                                    if (debug) OPALLogger.debug(
+                                        "analysis progress",
+                                        "immediately continued the suspended incremental computation of "+
+                                            s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
+                                    )
+                                    /*prepare for immediate exec*/ () ⇒ suspended.continue(dependeeP)
+                                }
+                        }
+                    }
+                    if (continuation ne null) {
+                        val IncrementalPropertyComputationResult(result, nextComputations) = continuation()
+                        handleResult(result)
+                        bulkScheduleIncrementalComputations(nextComputations)
                     }
             }
         }
