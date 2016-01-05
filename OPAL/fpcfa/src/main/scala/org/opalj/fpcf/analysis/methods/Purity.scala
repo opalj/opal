@@ -29,6 +29,11 @@
 package org.opalj
 package fpcf
 package analysis
+package methods
+
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * Common supertrait of all purity properties.

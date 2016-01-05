@@ -29,12 +29,11 @@
 package org.opalj
 package fpcf
 package analysis
+package methods
 
-import scala.language.postfixOps
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.PUTFIELD
@@ -68,14 +67,48 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.fpcf.analysis.fields.EffectivelyFinal
+import org.opalj.fpcf.analysis.immutability.ImmutableType
+import org.opalj.fpcf.analysis.immutability.TypeImmutability
+import org.opalj.fpcf.analysis.fields.FieldUpdates
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.Pure
+import org.opalj.fpcf.analysis.methods.MaybePure
+import org.opalj.fpcf.analysis.methods.Impure
+import org.opalj.fpcf.analysis.methods.ConditionallyPure
 
 /**
  * This analysis determines whether a method is pure. I.e., whether the method
- * only operates on the given state or
- * depends on other state/mutable global
- * state. This simple analysis only tries to compute the
- * purity for methods that
- * only have parameters with a base type.
+ * only operates on the given state (i.e., the method is pure) or
+ * depends on other state/mutable global state. 
+ * 
+ * '''This analysis follows the definition found on wikipedia:'''
+ * 
+ * [...] a function may be considered a pure function if both of the following statements about 
+ * the function hold:
+ *  - 	The function always evaluates to the same result value given the same argument value(s). 
+ *  	The function result value cannot depend on any hidden information or state that may change 
+ *  	while program execution proceeds or between different executions of the program, nor can it 
+ *  	depend on any external input from I/O devices.
+ *  
+ *  	'''[Hence, using true constants (e.g., Math.e) is not a problem as well as creating 
+ *  	intermediate
+ *  	(mutable) data structures. Furthermore, instance method based calls can also be pure if
+ *  	the receiving object is (effectively final).'''
+ *    
+ *  -	Evaluation of the result does not cause any semantically observable side effect or output, 
+ *  	such as mutation of mutable objects or output to I/O devices.
+ *  	The result value need not depend on all (or any) of the argument values. However, it must 
+ *  	depend on nothing other than the argument values. The function may return multiple result 
+ *  	values and these conditions must apply to all returned values for the function to be 
+ *  	considered pure. If an argument is call by reference, any parameter mutation will alter 
+ *  	the value of the argument outside the function, which will render the function impure.
+ *   	'''However, if the referenced object is immutable it is object.'''
  *
  * @author Michael Eichberg
  */
@@ -83,7 +116,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     final val Purity = org.opalj.fpcf.analysis.Purity.key
 
-    final val Mutability: org.opalj.fpcf.PropertyKey = org.opalj.fpcf.analysis.Mutability.key
+    final val Mutability: org.opalj.fpcf.PropertyKey = FieldUpdates.key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
@@ -250,7 +283,10 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     /**
      * Determines the purity of the given method.
      */
-    def determineProperty(method: Method): PropertyComputationResult = {
+    def determineProperty(
+            propertyStore : PropertyStore
+            )(
+                    method: Method): PropertyComputationResult = {
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
@@ -260,13 +296,20 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
             return ImmediateResult(method, Impure);
 
-        // We are currently only able to handle simple methods that just take
-        // primitive values.
-        if (method.parameterTypes.exists { !_.isBaseType })
-            return ImmediateResult(method, Impure);
-
-        val purity = determinePurityCont(method, 0, Set.empty)
-        purity
+        // All parameters either have to be base types or have to be immutable.
+        val referenceTypeParameters = method.parameterTypes.filterNot(_.isBaseType)
+        propertyStore.allHaveProperty(
+                method, Purity, 
+                referenceTypeParameters, ImmutableType
+                ){ areImmutable =>
+            if(areImmutable) {
+            	val purity = determinePurityCont(method, 0, Set.empty)
+            	purity
+            } else {
+                return ImmediateResult(method, Impure);    
+            }
+            
+        }
     }
 }
 
@@ -275,22 +318,19 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
  */
 object PurityAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
+    final val entitySelector: PartialFunction[Entity, Method] = {
         FPCFAnalysisRunner.NonAbstractMethodSelector
     }
 
-    override def recommendations: Set[FPCFAnalysisRunner] = Set(MutabilityAnalysis)
+    override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity)
 
-    override def usedProperties: Set[PropertyKind] = Set(Mutability)
+    override def usedProperties: Set[PropertyKind] = Set(TypeImmutability)
 
-    protected[analysis] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new PurityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore <||< (entitySelector, analysis.determineProperty(propertyStore))
         analysis
     }
 }

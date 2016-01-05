@@ -29,7 +29,7 @@
 package org.opalj
 package fpcf
 package analysis
-package mutation
+package fields
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
@@ -39,7 +39,7 @@ import org.opalj.br.instructions.PUTSTATIC
  * Determines if a field is always initialized at most once or if a field is or can be mutated
  * after (lazy) initialization.
  */
-class FieldMutatedAnalysis private (
+class FieldUpdatesAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -87,19 +87,19 @@ class FieldMutatedAnalysis private (
     }
 }
 
-object FieldMutatedAnalysis extends FPCFAnalysisRunner {
+object FieldUpdatesAnalysis extends FPCFAnalysisRunner {
 
     def entitySelector(project: SomeProject): PartialFunction[Entity, ClassFile] = {
         case cf: ClassFile if !project.isLibraryType(cf) ⇒ cf
     }
 
-    def derivedProperties: Set[PropertyKind] = Set(Mutated)
+    def derivedProperties: Set[PropertyKind] = Set(FieldUpdates)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        val analysis = new FieldMutatedAnalysis(project)
+        val analysis = new FieldUpdatesAnalysis(project)
         propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }

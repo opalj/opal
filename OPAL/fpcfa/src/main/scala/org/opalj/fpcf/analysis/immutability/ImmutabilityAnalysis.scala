@@ -35,10 +35,18 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.analysis.fields.FieldUpdates
+import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
+import org.opalj.fpcf.analysis.fields.EffectivelyFinal
+import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.analyses.FieldAccessInformationKey
 
 /**
- * A class file is immutable if it only has fields that are final or effectively final; a sub
- * class of a class is at most as mutable as its superclass. `java.lang.Object` is immutable.
+ * Analysis the mutability of the instances of a class.
+ * An object is immutable if it only has instance fields that are final or effectively final; a
+ * subclass of a class is at most as mutable as its superclass – `java.lang.Object` is immutable –
+ * a class is conditionally immutable if the instances of the class are not mutable, but the
+ * instances may reference mutable fields.
  *
  * @note In Java, technically, no object is immutable because every object is associated with
  * 		a monitor and the state of the monitor changes as soon as we acquire the respective lock
@@ -46,39 +54,109 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
  *      regarded as immutable the monitor's state can be changed using `synchronized`. However,
  *      for this analysis the state regarded to the object's implicit monitor is not considered.
  */
-class ImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
+class ImmutabilityAnalysis(
+        val project:                SomeProject,
+        val fieldAccessInformation: FieldAccessInformation
+) extends FPCFAnalysis {
 
     val classHierarchy = project.classHierarchy
 
     import classHierarchy.{directSubtypesOf ⇒ subtypes}
+    import propertyStore.require
 
-    def thisProjectTypes(objectTypes: Traversable[ObjectType]): Traversable[ClassFile] = {
+    private def thisProjectClassTypes(objectTypes: Traversable[ObjectType]): Traversable[ClassFile] = {
         objectTypes.view.
             map(objectType ⇒ project.classFile(objectType)).
-            collect { case Some(classFile) ⇒ classFile }
+            collect { case Some(classFile) if !classFile.isInterfaceDeclaration ⇒ classFile }
     }
 
-    class IPC(val mutability: Immutability) extends (ClassFile ⇒ Traversable[(IPC, ClassFile)]) {
-        def apply(classFile: ClassFile): Traversable[(IPC, ClassFile)] = {
+    private def allProjectSubclasses(supertype: ObjectType): Traversable[ClassFile] = {
+        val allSubclasses = classHierarchy.allSubclasses(supertype, reflexive = true).toList
+        thisProjectClassTypes(allSubclasses)
+    }
+
+    // implements the IncrementalPropertyComputation
+    abstract class ImmutabilityComputation(
+            val superclassMutability: ObjectImmutability
+    ) extends (Entity ⇒ IncrementalPropertyComputationResult) {
+
+        def apply(classFileEntity: Entity): IncrementalPropertyComputationResult = {
+            //            val classFile = classFileEntity.asInstanceOf[ClassFile]
+            //            val supertype = classFile.thisType
+            //            
+            //            var currentImmutability = superclassMutability
+            //            val instanceFields = classFile.fields.filter{field => 
+            //                !field.isStatic && !(
+            //                        // The field is effectively final and has a primitive type. The latter
+            //                        // is required because it ensures that we have no effect on the current 
+            //                        // immutability.
+            //                      field.fieldType.isBaseType &&
+            //                (field.isPrivate /* IMPROVE => we know all accesses */)&&
+            //                fieldAccessInformation.writeAccesses(classFile,field).forall{ writeAccess =>
+            //                   val (method,_/*PCs*/) =  writeAccess
+            //                   method.isConstructor /* IMPROVE => only written at initialization time */
+            //                }    
+            //                )}.toList
+            //
+            //            if (instanceFields.isEmpty /*i.e., we have no (relevant) instance fields */) {
+            //                return IncrementalPropertyComputationResult(
+            //                    ImmediateResult(classFile, currentImmutability),
+            //                    thisProjectClassTypes(subtypes(supertype)).map(cf ⇒ (this, cf))
+            //                );
+            //            }
+            //            
+            //            // let's narrow down the list of fields about which we need further information..
+            //            val referenceInstanceFields = instanceFields.filter { field =>
+            //               
+            //            }
+
+            //
+            //            // We have to check for each field whether it is effectively final. 
+            //            // if so, we have to check if the field type's immutability to determine
+            //            // whether this class is Immutable or just ConditionallyImmutable.
+            //            
+            //            def analysis(e: Entity, p: Property) = analysis(p)
+            //
+            //            def analysis(p: Property): PropertyComputationResult = {
+            //                
+            //                val c : Continuation = { (e, p) => p match { 
+            //                    case EffectivelyFinal | Final  =>
+            //                        
+            //                    case _ /* not final... */  =>
+            //                        
+            //                }}
+            //                    val instanceField = instanceFields.head
+            //                    instanceFields = instanceFields.tail
+            //                    require(classFile, Immutability.key, instanceField, Mutated.key) { (e, p) ⇒
+            //
+            //                    }
+            //            }
             ???
         }
     }
 
+    object ImmutableSuperclassComputation extends ImmutabilityComputation(ImmutableObject)
+    object AtLeastConditionallyImmutableSuperclassComputation extends ImmutabilityComputation(AtLeastConditionallyImmutableObject)
+    object ConditionallyImmutableSuperclassComputation extends ImmutabilityComputation(ConditionallyImmutableObject)
+
     def determineInitialProperty(
-        classFile: ClassFile
-    ): (PropertyComputationResult, Traversable[(this.IPC, ClassFile)]) = {
+        classFileEntity: Entity
+    ): IncrementalPropertyComputationResult = {
+        val classFile = classFileEntity.asInstanceOf[ClassFile]
         val thisType = classFile.thisType
 
         if (thisType eq ObjectType.Object)
-            (
-                ImmediateResult(classFile, Immutable),
-                thisProjectTypes(subtypes(thisType)).map(cf ⇒ (new IPC(Immutable), cf))
+            IncrementalPropertyComputationResult(
+                ImmediateResult(classFile, ImmutableObject),
+                thisProjectClassTypes(subtypes(thisType)).map(cf ⇒ (ImmutableSuperclassComputation, cf))
             )
         else {
-            val allSubclasses = classHierarchy.allSubclasses(thisType, reflexive = true).toList
-            val allProjectSubclasses: Traversable[ClassFile] = thisProjectTypes(allSubclasses)
-            (
-                ImmediateMultiResult(allProjectSubclasses.map(subClass ⇒ (subClass, Mutable))),
+            // We don't know anything about thisType's super types, hence, we 
+            // we make the conservative assumption that this type is mutable.
+            IncrementalPropertyComputationResult(
+                ImmediateMultiResult(allProjectSubclasses(thisType).map { subclass ⇒
+                    (subclass, MutableObjectDueToUnknownSupertypes)
+                }),
                 Nil
             )
         }
@@ -88,28 +166,24 @@ class ImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
 object ImmutabilityAnalysisRunner extends FPCFAnalysisRunner {
 
-//    type IncrementalPropertyComputationResult = (PropertyComputationResult, Traversable[(ImmutabilityAnalysis#IPC, ClassFile)])
-//
-//    type IncrementalPropertyComputation = ClassFile ⇒ IncrementalPropertyComputationResult
+    override def recommendations: Set[FPCFAnalysisRunner] = Set(FieldUpdatesAnalysis)
 
-    override def recommendations: Set[FPCFAnalysisRunner] = Set(MutabilityAnalysis)
+    override def derivedProperties: Set[PropertyKind] = Set(ObjectImmutability)
 
-    override def derivedProperties: Set[PropertyKind] = Set(Immutability)
+    override def usedProperties: Set[PropertyKind] = Set(FieldUpdates)
 
-    override def usedProperties: Set[PropertyKind] = Set(Mutability)
-
-    protected[analysis] def start(project: SomeProject): Unit = {
-        val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
-        start(project, propertyStore)
-    }
-
-    protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): Unit = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         import project.classHierarchy.rootTypes
-        val analysis = new ImmutabilityAnalysis(project)
-        propertyStore <^<[ClassFile,IncrementalPropertyComputation[ClassFile,Traversable[(analysis.IPC,ClassFile)]]] (
+        val fieldAccessInformation = project.get(FieldAccessInformationKey)
+        val analysis = new ImmutabilityAnalysis(
+            project,
+            fieldAccessInformation
+        )
+        propertyStore <^< (
             rootTypes.map(objectType ⇒ project.classFile(objectType).get),
             analysis.determineInitialProperty _
         )
+        analysis
     }
 
 }

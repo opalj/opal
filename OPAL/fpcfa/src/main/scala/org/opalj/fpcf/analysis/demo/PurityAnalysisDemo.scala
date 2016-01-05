@@ -38,6 +38,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
 import org.opalj.br.Field
+import org.opalj.fpcf.analysis.fields.FieldUpdates
+import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
+import org.opalj.fpcf.analysis.methods.PurityAnalysis
+import org.opalj.fpcf.analysis.methods.Purity
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -67,10 +71,10 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
         var analysisTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-            manager.runAll(MutabilityAnalysis, PurityAnalysis)
+            manager.runAll(FieldUpdatesAnalysis, PurityAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(Mutability.key)
+        val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(FieldUpdates.key)
         val effectivelyFinalFields: Traversable[(Field, Property)] =
             effectivelyFinalEntities.map(e ⇒ (e._1.asInstanceOf[Field], e._2))
         val effectivelyFinalFieldsAsStrings =

@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 
 import org.opalj.fpcf.analysis._
+import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
+import org.opalj.fpcf.analysis.methods.PurityAnalysis
 
 /**
  * Registry for all analysis factories are implemented
@@ -115,8 +117,8 @@ object FPCFAnalysisRegistry {
     )
 
     register(
-        "[MutabilityAnalysis] Determines if private non-static non-final fields are effectively final.",
-        MutabilityAnalysis
+        "[FieldUpdatesAnalysis] Determines if fields are (effectively) final.",
+        FieldUpdatesAnalysis
     )
 
     register(
