@@ -86,6 +86,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import com.typesafe.config.ConfigRenderOptions
 
+import net.ceedubs.ficus.Ficus._
+
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
  * various issues in the source code of projects.
@@ -108,7 +110,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
     override def title: String = "BugPicker"
 
-    override def description: String = "Finds bugs in Java (byte) code."
+    override def description: String = "Finds code smells in Java (byte) code."
 
     /**
      * Executes the analysis of the project's concrete methods.
@@ -128,6 +130,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         initProgressManagement: (Int) ⇒ ProgressManagement
     ): BugPickerResults = {
 
+        import theProject.config
+        
         implicit val logContext = theProject.logContext
 
         // related to managing the analysis progress
@@ -223,7 +227,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new ConcurrentLinkedQueue[StandardIssue]()
+        val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
+        val issuesPackageFilter = config.as[String]("org.opalj.bugpicker.issues.packages").r
+        def addResults(issues : Iterable[StandardIssue] ): Unit = {
+            val filteredIssues = issues.filter{issue => 
+                val packageName = issue.definingPackageName
+                val allMatches = issuesPackageFilter.findAllMatchIn(packageName).toSeq
+                allMatches.nonEmpty && allMatches.tail.isEmpty && allMatches.head == packageName
+                }
+            filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
+        }
 
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
@@ -241,10 +254,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             //
             // CHECK IF THE METHOD IS USED
             //
-            UnusedMethodsAnalysis.analyze(
+            addResults(
+                    UnusedMethodsAnalysis.analyze(
                 theProject, computedCallGraph, callGraphEntryPoints, classFile, method
-            ) foreach { issue ⇒ results.add(issue) }
-
+            ) 
+            )
+            
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
@@ -336,55 +351,41 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND DEAD CODE
                 //
-                results.addAll(
-                    JavaConversions.asJavaCollection(
-                        DeadEdgesAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                addResults(DeadEdgesAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND SUSPICIOUS CODE
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
+                addResults(
                         GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                   
                 )
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                addResults(                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)                  
                 )
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
+                addResults(
                         UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
-                    )
                 )
 
                 //
                 // FIND UNUSED LOCAL VARIABLES
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
+                addResults(
                         UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
-                    )
                 )
 
                 //
                 // FIND STRANGE USES OF THE COLLECTIONS API
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
+                addResults(
                         CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
-                    )
                 )
 
                 //
@@ -421,7 +422,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                                 StandardIssue(
                                     "UselessReevaluation",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
@@ -444,7 +445,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                                 StandardIssue(
                                     "UselessReevaluation",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
@@ -456,9 +457,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 )
                         }
 
-                    results.addAll(
-                        scala.collection.JavaConversions.asJavaCollection(methodsWithValueReassignment)
-                    )
+                    addResults(                        methodsWithValueReassignment                    )
                 }
 
             } else if (!doInterrupt()) {
@@ -488,11 +487,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     //
                     // FIND UNUSED FIELDS
                     //
-                    results.addAll(
-                        scala.collection.JavaConversions.asJavaCollection(
+                    addResults(
                             UnusedFields(
                                 theProject, fieldAccessInformation, stringConstantsInformation, classFile
-                            )
                         )
                     )
 
@@ -528,7 +525,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     progressManagement.end(stepId)
                 }
             }
-            val rawIssues = JavaConversions.collectionAsScalaIterable(results).toSeq
+            val rawIssues = JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
             OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
             StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
