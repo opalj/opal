@@ -93,7 +93,7 @@ object CFGFactory {
         /*
          * The basic idea of the algorithm is to create the cfg using a single sweep over
          * the instructions and while doing so to determine the basic block boundaries. Here,
-         * the idea is that the current basic block is extended to also capture the current 
+         * the idea is that the current basic block is extended to also capture the current
          * instruction unless the previous instruction ended the basic block.
          */
 
@@ -157,9 +157,9 @@ object CFGFactory {
                 currentBB
             }
 
-            /**
-             * Returns the pair consisting of the basic block associated with the current instruction
-             * and the BasicBlock create/associated with targetBBStartPC.
+            /*
+             * Returns the pair consisting of the basic block associated with the current
+             * instruction and the BasicBlock create/associated with targetBBStartPC.
              */
             def connect(
                 theSourceBB:     BasicBlock,
