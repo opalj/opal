@@ -53,93 +53,89 @@ import scala.collection.BitSet
  * If the mixin order is not correct, the CFG may not be complete.
  *
  * ==Core Properties==
- *  - Thread-safe: '''No'''.
+ *  - Thread-safe: '''No'''; i.e., the domain can only be used by one
+ *  			abstract interpreter at a time.
+ *  			However, using the collected results is thread-safe!
  *  - Reusable: '''Yes'''; all state directly associated with the analyzed code block is
- *          reset by the method `initProperties`.
+ *          	reset by the method `initProperties`.
+ *  - No Partial Results: If the abstract interpretation was aborted the results have
+ *  			no meaning and must not be used; however, if the abstract interpretation
+ *  			is later continued and successfully completed the results are correct.
  *
  * @author Michael Eichberg
+ * @author Marc Eichler
  */
 trait RecordCFG
         extends CoreDomainFunctionality
-        with CustomInitialization { domain: TheCode ⇒
+        with CustomInitialization
+        with ReturnInstructionsDomain { domain: TheCode with ValuesDomain ⇒
 
     private[this] var regularSuccessors: Array[UShortSet] = _
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
+    private[this] var predecessors: Array[UShortSet] = _
+    private[this] var exitPCs: UShortSet = _
 
     abstract override def initProperties(
         code:             Code,
         joinInstructions: BitSet,
         initialLocals:    Locals
     ): Unit = {
-
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
         exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
+        exitPCs = UShortSet.empty;
 
-        regularPredecessors = null;
-        exceptionHandlerPredecessors = null;
-
-        exitPCs = null;
+        // The following values are initialized lazily (when required); after the abstract
+        // interpretation was (successfully) performed!
+        predecessors = null;
 
         super.initProperties(code, joinInstructions, initialLocals)
     }
 
-    private[this] var regularPredecessors: Array[UShortSet] = _
-    private[this] def getRegularPredecessors(): Array[UShortSet] = {
-        if (regularPredecessors == null) {
-            regularPredecessors = new Array[UShortSet](regularSuccessors.length)
-
-            for (pc ← code.programCounters if regularSuccessors(pc) != null) {
-                for (suc ← regularSuccessors(pc)) {
-                    if (regularPredecessors(suc) == null) {
-                        regularPredecessors(suc) = UShortSet.empty
-                    }
-                    regularPredecessors(suc) = pc +≈: regularPredecessors(suc)
-                }
-            }
-        }
-        regularPredecessors
-    }
-
-    private[this] var exceptionHandlerPredecessors: Array[UShortSet] = _
-    private[this] def getExceptionHandlerPredecessors(): Array[UShortSet] = {
-        if (exceptionHandlerPredecessors == null) {
-            exceptionHandlerPredecessors = new Array[UShortSet](exceptionHandlerSuccessors.length)
-
-            for (pc ← code.programCounters if exceptionHandlerSuccessors(pc) != null) {
-                for (suc ← exceptionHandlerSuccessors(pc)) {
-                    if (exceptionHandlerPredecessors(suc) == null) {
-                        exceptionHandlerPredecessors(suc) = UShortSet.empty
-                    }
-                    exceptionHandlerPredecessors(suc) = pc +≈: exceptionHandlerPredecessors(suc)
-                }
-            }
-        }
-        exceptionHandlerPredecessors
-    }
-
     /**
-     * Returns all PCs that do not have a successor.
+     * Returns all PCs that may lead to the ab(normal) termination of the method. I.e.,
+     * those instructions (in particular method call instructions) that may throw
+     * some unhandled exceptions will also be returned; even if the instruction may
+     * also have regular and also exception handlers!
+     *
+     * @note This information is lazily computed.
      */
-    private[this] var exitPCs: PCs = _
-    def getExitPCs(): PCs = {
-        if (exitPCs == null) {
-            exitPCs = UShortSet.empty
-            for (pc ← code.programCounters if regularSuccessors(pc) == null && exceptionHandlerSuccessors(pc) == null) {
-                exitPCs = pc +≈: exitPCs.asInstanceOf[UShortSet]
-            }
-        }
-        exitPCs
-    }
+    def allExitPCs: PCs = exitPCs
 
     /**
-     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
-     * the evaluation of the previous instruction may succeed without raising an exception.
+     * Returns the program counter(s) of the instruction(s) that is(are) executed
+     * before the instruction with the given pc.
+     *
+     * If the instruction with the given `pc` was never executed and empty set is
+     * returned.
      *
      * @param a valid PC
      */
-    def regularPredecessorsOf(pc: PC): PCs = {
-        val s = getRegularPredecessors()(pc)
+    def predecessorsOf(pc: PC): PCs = {
+        val predecessors = {
+            var predecessors = this.predecessors
+            if (predecessors == null) synchronized {
+                predecessors = this.predecessors
+                if (predecessors == null) {
+                    // => this.regularPredecessors == null
+                    predecessors = new Array[UShortSet](regularSuccessors.length)
+                    for (pc ← code.programCounters) {
+                        for (successorPC ← allSuccessorsOf(pc)) {
+                            val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                            predecessors(successorPC) =
+                                if (oldPredecessorsOfSuccessor == null) {
+                                    UShortSet(successorPC)
+                                } else {
+                                    pc +≈: oldPredecessorsOfSuccessor
+                                }
+                        }
+                    }
+                    this.predecessors = predecessors
+                }
+            }
+            predecessors
+        }
+        val s = predecessors(pc)
         if (s != null) s else NoPCs
     }
 
@@ -160,17 +156,6 @@ trait RecordCFG
     }
 
     /**
-     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
-     * the evaluation of the previous instruction may raise an exception
-     *
-     * @param a valid PC
-     */
-    def exceptionHandlerPredecessorsOf(pc: PC): PCs = {
-        val s = getExceptionHandlerPredecessors()(pc)
-        if (s != null) s else NoPCs
-    }
-
-    /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed next if
      * the evaluation of this instruction may raise an exception.
      *
@@ -187,9 +172,13 @@ trait RecordCFG
 
     /**
      * Tests if the instruction with the given `pc` has a successor instruction with
-     * `pc'` that satisfies the given predicate `p`.
+     * a `pc'` that satisfies the given predicate `p`.
      */
-    def hasSuccessor(pc: PC, regularSuccessorsOnly: Boolean, p: PC ⇒ Boolean): Boolean = {
+    def hasSuccessor(
+        pc:                    PC,
+        regularSuccessorsOnly: Boolean,
+        p:                     PC ⇒ Boolean
+    ): Boolean = {
         var visitedSuccessors = UShortSet(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
@@ -199,25 +188,14 @@ trait RecordCFG
             visitedSuccessors = visitedSuccessors ++ successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
-                    l ++ (successorsOf(r, regularSuccessorsOnly).filter { pc ⇒
-                        !visitedSuccessors.contains(pc)
-                    })
+                    l ++ (
+                        successorsOf(r, regularSuccessorsOnly).filter { pc ⇒
+                            !visitedSuccessors.contains(pc)
+                        }
+                    )
                 }
         }
         false
-    }
-
-    /**
-     * Returns the set of all instructions executed just prior to the instruction of the given pc.
-     */
-    def allPredecessorsOf(pc: PC): PCs = {
-        var reg = getRegularPredecessors()(pc)
-        if (reg == null) reg = UShortSet.empty
-
-        var exc = getExceptionHandlerPredecessors()(pc)
-        if (exc == null) exc = UShortSet.empty
-
-        reg ++ exc
     }
 
     /**
@@ -228,14 +206,16 @@ trait RecordCFG
      *
      * @note The set is recalculated on demand.
      */
-    def allSuccessorsOf(pc: PC): PCs =
+    def allSuccessorsOf(pc: PC): PCs = {
         regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
+    }
 
-    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs =
+    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs = {
         if (regularSuccessorOnly)
             regularSuccessorsOf(pc)
         else
             allSuccessorsOf(pc)
+    }
 
     final def foreachSuccessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
         regularSuccessorsOf(pc).foreach { f }
@@ -243,30 +223,14 @@ trait RecordCFG
     }
 
     /**
-     * Returns `true` if the instruction with the given pc has multiple
-     *  predecessors (more than one).
-     *
-     * @note This function calculates the respective information on demand by traversing
-     *      the successors.
+     * Returns `true` if the instruction with the given pc has multiple direct
+     * predecessors (more than one).
      */
-    def hasMultipleRegularPredecessors(pc: PC): Boolean = {
-        var predecessors = 0
-        var i = code.instructions.size - 1
-        while (i >= 0) {
-            val successors = regularSuccessors(i)
-            if ((successors ne null) && successors.contains(pc)) {
-                predecessors += 1
-                if (predecessors > 1)
-                    return true;
-            }
-            i -= 1
-        }
-        false
-    }
+    def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
 
     /**
-     * Tests if the instruction with the given pc is a potential predecessor of the
-     * given successor instruction.
+     * Tests if the instruction with the given pc is a direct or
+     * indirect predecessor of the given successor instruction.
      */
     def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
         var visitedSuccessors = UShortSet(pc)
@@ -278,11 +242,15 @@ trait RecordCFG
             visitedSuccessors = visitedSuccessors ++ successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
-                    l ++ (regularSuccessorsOf(r).filter { pc ⇒ !visitedSuccessors.contains(pc) })
+                    l ++ (regularSuccessorsOf(r).filter { pc ⇒
+                        !visitedSuccessors.contains(pc)
+                    })
                 }
         }
         false
     }
+
+    // METHODS CALLED BY THE ABSTRACT INTERPRETATION FRAMEWORK
 
     /**
      * @inheritdoc
@@ -331,6 +299,81 @@ trait RecordCFG
     }
 
     /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def returnVoid(pc: PC): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.returnVoid(pc)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def ireturn(pc: PC, value: DomainValue): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.ireturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def lreturn(pc: PC, value: DomainValue): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.lreturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def freturn(pc: PC, value: DomainValue): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.freturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def dreturn(pc: PC, value: DomainValue): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.dreturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def areturn(pc: PC, value: DomainValue): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.areturn(pc, value)
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @note This method is only intended to be called by the AI framework.
+     */
+    abstract override def abruptMethodExecution(
+        pc:             PC,
+        exceptionValue: ExceptionValue
+    ): Unit = {
+        exitPCs = pc +≈: exitPCs
+        super.abruptMethodExecution(pc, exceptionValue)
+    }
+
+    // GENERAL HELPER METHODS
+
+    /**
      * Creates a graph representation of the CFG.
      */
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
@@ -346,13 +389,17 @@ trait RecordCFG
                 if (instructions(pc).isInstanceOf[ReturnInstruction]) {
                     visualProperties += "fillcolor" → "green"
                     visualProperties += "style" → "filled"
-                } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
+                } else if (instructions(pc).isInstanceOf[ATHROW.type] && allExitPCs.contains(pc)) {
                     visualProperties += "fillcolor" → "yellow"
                     visualProperties += "style" → "filled"
+                } else if( allExitPCs.contains(pc)){
+                    visualProperties += "fillcolor" → "yellow"
+                    visualProperties += "style" → "filled"
+                    visualProperties += "shape" → "octagon"
                 } else if (allSuccessorsOf(pc).isEmpty) {
                     visualProperties += "fillcolor" → "red"
                     visualProperties += "style" → "filled"
-                    visualProperties += "shape" → "octagon"
+                    visualProperties += "shape" → "doubleoctagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
@@ -411,4 +458,3 @@ trait RecordCFG
         nodes(0)
     }
 }
-
