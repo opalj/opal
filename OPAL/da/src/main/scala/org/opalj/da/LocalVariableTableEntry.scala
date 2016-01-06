@@ -54,9 +54,9 @@ case class LocalVariableTableEntry(
             /
             <span class="local_variable_index"> lv={ index }</span>
             &rArr;
-            <span class="local_variable_name"> { name }</span>
-            :
-            <span class="type fqn"> { descriptor }</span>
+			<span class="type fqn"> { descriptor }</span> 
+			&nbsp;            
+			<span class="local_variable_name"> { name }</span>
         </div>
     }
 
