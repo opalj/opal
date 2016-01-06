@@ -70,7 +70,6 @@ object OPALBuild extends Build {
 		Validate,
 		demos,
 		findRealBugsAnalyses,
-		findRealBugsCLI,
 		incubation)
 
 	/*****************************************************************************
