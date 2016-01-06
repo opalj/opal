@@ -43,15 +43,7 @@ case class CONSTANT_InvokeDynamic_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
 
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        ////        <span class="cp_entry">
-        //            { this.getClass().getSimpleName }
-        //            (bootstrap_method_attr_index={ bootstrap_method_attr_index }
-        //            ,name_and_type_index={ name_and_type_index }
-        //            /*
-        //            <span class="cp_ref">{ cp(name_and_type_index).asCPNode }</span>
-        //            */)
-        //        </span>
+    override def asCPNode(implicit cp: Constant_Pool): Node = {
         <div class="cp_entry">
             { this.getClass().getSimpleName }
             (<div class="attributes_ref">
@@ -65,6 +57,7 @@ case class CONSTANT_InvokeDynamic_info(
             </div>
             )
         </div>
+    }
 
     override def asInlineNode(implicit cp: Constant_Pool): Node = {
         val ntiNode = cp(name_and_type_index).asInlineNode
