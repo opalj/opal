@@ -73,6 +73,7 @@ import org.opalj.br.instructions.LDC_W
 import org.opalj.br.instructions.LDC2_W
 import org.opalj.br.instructions.ICONST_2
 import org.opalj.br.instructions.FCONST_2
+import org.opalj.br.instructions.LoadConstantInstruction
 
 /**
  * Identifies unused local variables in non-synthetic methods.
@@ -118,15 +119,30 @@ object UnusedLocalVariables {
 
         val code = result.domain.code
         val instructions = code.instructions
-        var issues = List.empty[StandardIssue]
         val implicitParameterOffset = if (!method.isStatic) 1 else 0
-        
-        lazy val constantValues : Set[Any] = {
-            code.collectWithIndex{
-                case (pc, LoadConstantInstruction(value)) => value
+
+        var issues = List.empty[StandardIssue]
+
+        // It may happen that a user defines a final local constant
+        // which is then used by the compiler whenever we 
+        // see a reference in the code; in this case we an unused
+        // local variable...
+        // E.g., given the following code:
+        //     final int MAGIC = 12012;
+        //     ...
+        //     if (x == MAGIC) {...}
+        // the value 12012 is then directly used in the comparison
+        // which makes the initial declaration (at the bytecode level)
+        // unused
+        lazy val constantValues: Set[Any] = {
+            val allConstantsValues =
+                code.collectInstructions { case LoadConstantInstruction(value) ⇒ value }
+            val constantValuesOnlyUsedOnces = allConstantsValues.groupBy(v ⇒ v).collect {
+                case (k, occurences) if occurences.tail.isEmpty ⇒ k
             }
+            constantValuesOnlyUsedOnces.toSet
         }
-        
+
         unused.foreach { vo ⇒
             var issue: String = null
             var relevance: Relevance = Relevance.Undetermined
@@ -192,38 +208,43 @@ object UnusedLocalVariables {
                                 // final int i = 0
                                 // if (x == ...) i = j*1; else i = abc();
                                 //
-                                
+
                                 val lvOption = code.localVariable(nextPC, index)
-                                if (lvOption.isDefined && (
-                                    lvOption.get.startPC < vo || lvOption.get.startPC > nextPC
-                                )) {
+                                if (lvOption.isDefined && lvOption.get.startPC < vo) {
                                     issue = s"the constant value ${instruction.toString(vo)} is not used"
                                     relevance = Relevance.Low
                                 }
                             // else... we filter basically all issues unless we are sure that this is real; i.e.,
                             //  - it is not a default value
                             //  - it it not a final local variable 
-                           
+
                             case _ ⇒
                                 issue = "the constant value "+
                                     instruction.toString(vo)+
                                     "is (most likely) used to initialize a local variable"
                                 relevance = Relevance.TechnicalArtifact
                         }
-                    
-                    case BIPUSH.opcode | SIPUSH.opcode | 
-                    ICONST_1.opcode | ICONST_2.opcode | ICONST_3.opcode | ICONST_4.opcode | ICONST_5.opcode | 
-                    LCONST_1.opcode | 
-                    DCONST_1.opcode |
-                    FCONST_1.opcode | FCONST_2.opcode |
-                    LDC.opcode | LDC_W.opcode | LDC2_W.opcode =>
-                        
-                    
+
+                    case BIPUSH.opcode | SIPUSH.opcode |
+                        ICONST_1.opcode | ICONST_2.opcode | ICONST_3.opcode | ICONST_4.opcode | ICONST_5.opcode |
+                        LCONST_1.opcode |
+                        DCONST_1.opcode |
+                        FCONST_1.opcode | FCONST_2.opcode |
+                        LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+                           val LoadConstantInstruction(value) = instruction
+                           if(constantValues.contains(value)){
+                               // => the value is only found once in the source code and
+                               // the value is not used!
+                                issue = "the constant value "+
+                                instruction.toString(vo)+
+                                " is not used"
+                                relevance = Relevance.TechnicalArtifact
+                           }
 
                     case IINC.opcode ⇒
                         issue = "the incremented value is not used"
                         relevance = Relevance.DefaultRelevance
-
+        
                     case _ ⇒
                         issue = "the value of the expression "+
                             instruction.toString(vo)+
@@ -232,7 +253,7 @@ object UnusedLocalVariables {
                 }
 
             }
-        
+
             if (issue ne null) {
                 issues ::= StandardIssue(
                     "UnusedLocalVariables",
