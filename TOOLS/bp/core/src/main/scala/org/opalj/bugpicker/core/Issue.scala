@@ -59,6 +59,8 @@ trait Issue {
      */
     def analysis: String
 
+    def definingPackageName: String = classFile.thisType.packageName
+
     /**
      * The primarily affected class file.
      */
