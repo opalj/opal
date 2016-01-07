@@ -75,7 +75,7 @@ import org.opalj.br.instructions.ICONST_2
 import org.opalj.br.instructions.FCONST_2
 
 /**
- * Identifies unused local variables
+ * Identifies unused local variables in non-synthetic methods.
  *
  * @author Michael Eichberg
  */
@@ -90,15 +90,14 @@ object UnusedLocalVariables {
         result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
     ): Seq[StandardIssue] = {
 
-    		if (method.isSynthetic)
-    			return Nil;
-    		
+        if (method.isSynthetic)
+            return Nil;
+
         //
         //
-        // IDENTIFYING RAW ISSUES
+        // IDENTIFYING RAW ISSUES; IN OTHER WORDS: "THE ANALYSIS" 
         //
         //
-        
 
         val operandsArray = result.operandsArray
         val allUnused = result.domain.unused()
@@ -113,7 +112,7 @@ object UnusedLocalVariables {
 
         //
         //
-        // POST PROCESSING ISSUES
+        // POST PROCESSING ISSUES TO FILTER LIKELY FALSE POSITIVES
         //
         //
 
