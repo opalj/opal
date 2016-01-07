@@ -52,8 +52,8 @@ import org.opalj.fpcf.analysis.methods.PurityAnalysis
  */
 object FPCFAnalysesRegistry {
 
-    @volatile
-    private[this] var descriptionToFactory: Map[String, FPCFAnalysisRunner] = Map.empty
+    private[this] var idToFactory: Map[String, FPCFAnalysisRunner] = Map.empty
+    private[this] var idToDescription: Map[String, String] = Map.empty
 
     /**
      * Registers the factory of a fixpoint analysis that can be
@@ -64,61 +64,76 @@ object FPCFAnalysesRegistry {
      *
      * @param analysisFactory The factory.
      */
-    def register(analysisDescription: String, analysisFactory: FPCFAnalysisRunner): Unit = {
-        descriptionToFactory += ((analysisDescription, analysisFactory))
+    def register(
+        analysisID:          String,
+        analysisDescription: String,
+        analysisFactory:     FPCFAnalysisRunner
+    ): Unit = this.synchronized {
+        idToFactory += ((analysisID, analysisFactory))
+        idToDescription += ((analysisID, analysisDescription))
     }
+
+    /**
+     * Returns the ids of the registered analyses.
+     */
+    def analysisIDs(): Iterable[String] = this.synchronized { idToFactory.keys }
 
     /**
      * Returns the descriptions of the registered analyses. These descriptions are
      * expected to be useful to the end-users.
      */
-    def analysisDescriptions(): Iterable[String] = descriptionToFactory.keys
+    def analysisDescriptions(): Iterable[String] = this.synchronized { idToDescription.values }
 
     /**
      * Returns the current view of the registry.
      */
-    def factories: Iterable[FPCFAnalysisRunner] = descriptionToFactory.values
+    def factories: Iterable[FPCFAnalysisRunner] = this.synchronized { idToFactory.values }
 
     /**
      * Returns the factory for analysis with a matching description.
      */
-    def factory(analysisDescription: String): FPCFAnalysisRunner = {
-        descriptionToFactory(analysisDescription)
-    }
+    def factory(id: String): FPCFAnalysisRunner = this.synchronized { idToFactory(id) }
 
     // initialize the registry with the known default analyses
     register(
-        "[MethodAccessibilityAnalysis] Computes the project accessibility property of methods w.r.t. clients.",
+        "MethodAccessibilityAnalysis",
+        "Computes the project accessibility property of methods w.r.t. clients.",
         MethodAccessibilityAnalysis
     )
 
     register(
-        "[FactoryMethodAnalysis] Determines if a static method is an accessible factory method w.r.t. clients.",
+        "FactoryMethodAnalysis",
+        "Determines if a static method is an accessible factory method w.r.t. clients.",
         FactoryMethodAnalysis
     )
 
     register(
-        "[InstantiabilityAnalysis] Computes if a class can (possibly) be instantiated.",
+        "InstantiabilityAnalysis",
+        "Computes if a class can (possibly) be instantiated.",
         SimpleInstantiabilityAnalysis
     )
 
     register(
-        "[CallableFromClassesInOtherPackagesAnalysis] Computes whether a non-static method can be called via an super or subclass.",
+        "CallableFromClassesInOtherPackagesAnalysis",
+        "Computes whether a non-static method can be called via an super or subclass.",
         CallableFromClassesInOtherPackagesAnalysis
     )
 
     register(
-        "[LibraryEntryPointAnalysis] Computes the entry points of a library.",
+        "LibraryEntryPointAnalysis",
+        "Computes the entry points of a library.",
         LibraryEntryPointsAnalysis
     )
 
     register(
-        "[FieldUpdatesAnalysis] Determines if fields are (effectively) final.",
+        "FieldUpdatesAnalysis",
+        "Determines if fields are (effectively) final.",
         FieldUpdatesAnalysis
     )
 
     register(
-        "[PurityAnalysis] Determines if a method is pure (~ has no side effects).",
+        "PurityAnalysis",
+        "Determines if a method is pure (~ has no side effects).",
         PurityAnalysis
     )
 }
