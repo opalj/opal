@@ -121,6 +121,7 @@ import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import scala.collection.parallel.BucketCombiner
 import com.typesafe.config.Config
+import scala.util.control.ControlThrowable
 
 /**
  * @author Arne Lottmann
@@ -536,12 +537,23 @@ class BugPicker extends Application {
                 projectExplorer.reset(results.get.projectName)
                 Service {
                     Task[Unit] {
-                        val projectAndSources = ProjectHelper.setupProject(results.get, stage, projectLogMessages)
-                        project = projectAndSources._1
-                        sources = projectAndSources._2
-                        BugPicker.storeConfigToPreferences(project)
-                        recentProjects = updateRecentProjects(results.get)
-                        BugPicker.storeRecentProjectsToPreferences(recentProjects)
+                        try {
+                            val projectAndSources = ProjectHelper.setupProject(results.get, stage, projectLogMessages)
+                            project = projectAndSources._1
+                            sources = projectAndSources._2
+                            BugPicker.storeConfigToPreferences(project)
+                            recentProjects = updateRecentProjects(results.get)
+                            BugPicker.storeRecentProjectsToPreferences(recentProjects)
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct
+                            case t: Throwable ⇒
+                                OPALLogger.error(
+                                    "creating project",
+                                    "failed to initialize project: "+t.getMessage,
+                                    t
+                                )(GlobalLogContext)
+                                throw t
+                        }
                         Platform.runLater {
                             tabPane.tabs(2).disable = sources.isEmpty
                             if (!tabPane.selectionModel().isSelected(1)) {
