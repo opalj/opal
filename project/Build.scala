@@ -69,7 +69,6 @@ object OPALBuild extends Build {
 		DeveloperTools,
 		Validate,
 		demos,
-		findRealBugsAnalyses,
 		incubation)
 
 	/*****************************************************************************
@@ -168,13 +167,6 @@ object OPALBuild extends Build {
 	 * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
 	 *
  	 */
-
-	lazy val findRealBugsAnalyses = Project(
-		id = "FindRealBugsAnalyses",
-		base = file("OPAL/frb/analyses"),
-		settings = buildSettings
-	).dependsOn(fpcfa % "test->test;compile->compile;it->it")
-	 .configs(IntegrationTest)
 
 	lazy val incubation = Project(
 		id = "Incubation",

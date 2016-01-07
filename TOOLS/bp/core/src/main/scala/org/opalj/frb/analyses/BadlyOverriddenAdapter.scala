@@ -50,6 +50,32 @@ class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
         "Reports methods with the same name but different signatures when compared to "+
             "those from an AWT/Swing Adapter super class."
 
+    /*
+         * Heuristic to check whether a type is an Adapter.
+         *
+         * @param classType The type to check.
+         * @return `true`, if the given type seems to be an adapter, `false` otherwise.
+         */
+    def isAdapter(classType: ObjectType): Boolean = {
+        (classType.packageName == "java/awt/event" ||
+            classType.packageName == "javax/swing/event") &&
+            classType.fqn.endsWith("Adapter")
+    }
+
+    /*
+         * Determines whether a method overrides a method in a super class.
+         *
+         * @param method The method to check.
+         * @param superclass A super class of the class containing the method.
+         * @return `true`, if the given super class contains a method with the same name
+         * and signature as the given method. `false` otherwise.
+         */
+    def overridesTheAdapter(method: Method, superclass: ClassFile): Boolean = {
+        superclass.methods.exists(supermethod ⇒
+            supermethod.name == method.name &&
+                supermethod.descriptor == method.descriptor)
+    }
+
     /**
      * Runs this analysis on the given project.
      *
@@ -62,32 +88,6 @@ class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
         parameters:    Seq[String]     = List.empty,
         isInterrupted: () ⇒ Boolean
     ): Iterable[SourceLocationBasedReport[Source]] = {
-
-        /*
-         * Heuristic to check whether a type is an Adapter.
-         *
-         * @param classType The type to check.
-         * @return `true`, if the given type seems to be an adapter, `false` otherwise.
-         */
-        def isAdapter(classType: ObjectType): Boolean = {
-            (classType.packageName == "java/awt/event" ||
-                classType.packageName == "javax/swing/event") &&
-                classType.fqn.endsWith("Adapter")
-        }
-
-        /*
-         * Determines whether a method overrides a method in a super class.
-         *
-         * @param method The method to check.
-         * @param superclass A super class of the class containing the method.
-         * @return `true`, if the given super class contains a method with the same name
-         * and signature as the given method. `false` otherwise.
-         */
-        def overridesTheAdapter(method: Method, superclass: ClassFile): Boolean = {
-            superclass.methods.exists(supermethod ⇒
-                supermethod.name == method.name &&
-                    supermethod.descriptor == method.descriptor)
-        }
 
         // For every class implementing an Adapter...
         (for {

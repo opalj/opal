@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,47 +28,52 @@
  */
 package org.opalj
 package frb
-package analysis
+package analyses
 
-import analyses._
+import bi.ACC_PUBLIC
+
 import br._
 import br.analyses._
-import java.net.URL
 
 /**
- * Unit test for BoxingImmediatelyUnboxedToPerformCoercion.
+ * This analysis reports `finalize()` methods that are `public` instead of `protected`.
+ * `finalize()` should never be `public` as it is not intended to be called manually by
+ * other code.
  *
+ * @author Ralf Mitschke
+ * @author Michael Eichberg
  * @author Daniel Klauer
- * @author Peter Spieler
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TestBoxingImmediatelyUnboxedToPerformCoercion extends AnalysisTest {
+class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis[Source] {
 
-    behavior of "the analysis BoxingImmediatelyUnboxedToPerformCoercion"
+    override def description: String = "Reports finalize() methods that are not protected."
 
-    val project = createProject("BoxingImmediatelyUnboxedToPerformCoercion.jar")
-    val results = new BoxingImmediatelyUnboxedToPerformCoercion[URL].analyze(project).toSet
+    /**
+     * Runs this analysis on the given project.
+     *
+     * @param project The project to analyze.
+     * @param parameters Options for the analysis. Currently unused.
+     * @return A list of reports, or an empty list.
+     */
+    def doAnalyze(
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[MethodBasedReport[Source]] = {
 
-    it should "detect that BoxingImmediatelyUnboxedToPerformCoercion/"+
-        "NewIntegerToDoubleValue:40 creates a new Integer object (boxing) and "+
-        "immediately calls doubleValue() on it (unboxing)" in {
-            val declaringClass = ObjectType(
-                "BoxingImmediatelyUnboxedToPerformCoercion/NewIntegerToDoubleValue"
-            )
-            results should contain(LineAndColumnBasedReport(
-                project.source(declaringClass),
+        // For all public finalize() methods...
+        for {
+            classFile ← project.allProjectClassFiles
+            method @ Method(ACC_PUBLIC(), "finalize",
+                MethodDescriptor.NoArgsAndReturnVoid) ← classFile.methods
+        } yield {
+            MethodBasedReport(
+                project.source(classFile.thisType),
                 Severity.Info,
-                declaringClass,
-                MethodDescriptor.NoArgsAndReturnVoid,
-                "test",
-                Some(40),
-                None,
-                "Value boxed and immediately unboxed"
-            ))
+                classFile.thisType,
+                method,
+                "Should be protected"
+            )
         }
-
-    it should "find 1 issue in total" in {
-        results.size should be(1)
     }
 }
-
