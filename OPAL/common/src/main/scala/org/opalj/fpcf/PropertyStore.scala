@@ -1224,11 +1224,11 @@ class PropertyStore private (
                 cyclicComputableEPKCandidates,
                 (epk: EPK) ⇒ observers.get(epk).view.map(_._1)
             )
-            if (debug) OPALLogger.debug(
+            if (debug && cSCCs.nonEmpty) OPALLogger.debug(
                 "analysis progress",
                 cSCCs.
-                    map(_.mkString(" -> ")).
-                    mkString("found the following strongly connected components:\n\t", "\n\t", "\n")
+                    map(_.mkString("", " → ", " ↺")).
+                    mkString("found the following closed strongly connected components:\n\t", "\n\t", "\n")
             )
             for {
                 cSCC ← cSCCs
