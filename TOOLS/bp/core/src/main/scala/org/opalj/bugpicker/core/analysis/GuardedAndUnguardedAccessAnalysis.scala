@@ -106,7 +106,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
     type UnGuardedAccessAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
-    def analyze(
+    def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
     ): List[StandardIssue] = {

@@ -63,7 +63,7 @@ object UnusedMethodsAnalysis {
      *      `private XYZ(){throw new UnsupportedOperationException()`
      * - The method is "the finalize" method
      */
-    def analyze(
+    def apply(
         theProject:           SomeProject,
         callgraph:            ComputedCallGraph,
         callgraphEntryPoints: Set[Method],

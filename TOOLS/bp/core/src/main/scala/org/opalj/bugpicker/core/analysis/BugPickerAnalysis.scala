@@ -260,7 +260,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             // CHECK IF THE METHOD IS USED
             //
             addResults(
-                UnusedMethodsAnalysis.analyze(
+                UnusedMethodsAnalysis(
                     theProject, computedCallGraph, callGraphEntryPoints, classFile, method
                 )
             )
@@ -344,10 +344,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                     XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                             ),
                             result.domain
-                        )(
-                                result.operandsArray,
-                                result.localsArray
-                            ),
+                        )(result.operandsArray,result.localsArray),
                         "AIResult",
                         ".html"
                     )
@@ -356,27 +353,27 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND DEAD CODE
                 //
-                addResults(DeadEdgesAnalysis.analyze(theProject, classFile, method, result))
+                addResults(DeadEdgesAnalysis(theProject, classFile, method, result))
 
                 //
                 // FIND SUSPICIOUS CODE
                 //
-                addResults(
-                    GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
-
-                )
+                addResults(GuardedAndUnguardedAccessAnalysis(theProject, classFile, method, result))
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                addResults(ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result))
+                addResults(ThrowsExceptionAnalysis(theProject, classFile, method, result))
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
-                addResults(
-                    UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
-                )
+                addResults(UselessComputationsAnalysis(theProject, classFile, method, result))
+
+                //
+                // FIND USELESS REEVALUATIONS OF COMPUTATIONS
+                //
+                addResults(UselessReComputationsAnalysis(theProject, classFile, method, result))
 
                 //
                 // FIND UNUSED LOCAL VARIABLES
@@ -392,78 +389,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
-                //
-                // FIND USELESS EXPRESSION EVALUATIONS
-                //
-
-                import result.domain.ConcreteIntegerValue
-                import result.domain.ConcreteLongValue
-                import result.domain
-
-                if (domain.code.localVariableTable.isDefined) {
-                    // This analysis requires debug information to increase the likelihood
-                    // the we identify the correct local variable re-assignments. Otherwise
-                    // we are not able to distinguish the reuse of a "register variable"/
-                    // local variable for a new/different purpose or the situation where
-                    // the same variable is updated the second time using the same
-                    // value.
-
-                    val operandsArray = result.operandsArray
-                    val localsArray = result.localsArray
-                    val code = domain.code
-
-                    val methodsWithValueReassignment =
-                        collectPCWithOperands(domain)(body, operandsArray) {
-                            case (
-                                pc,
-                                IStoreInstruction(index),
-                                Seq(ConcreteIntegerValue(a), _*)
-                                ) if localsArray(pc) != null &&
-                                domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                                code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
-
-                                val lv = code.localVariable(pc, index).get
-
-                                StandardIssue(
-                                    "UselessReevaluation",
-                                    theProject, classFile, None, Some(method), Some(pc),
-                                    Some(operandsArray(pc)),
-                                    Some(localsArray(pc)),
-                                    "useless (re-)assignment",
-                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
-                                    Set(IssueKind.ConstantComputation),
-                                    Seq.empty,
-                                    new Relevance(20)
-                                )
-
-                            case (
-                                pc,
-                                LStoreInstruction(index),
-                                Seq(ConcreteLongValue(a), _*)
-                                ) if localsArray(pc) != null &&
-                                domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                                code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
-
-                                val lv = code.localVariable(pc, index).get
-
-                                StandardIssue(
-                                    "UselessReevaluation",
-                                    theProject, classFile, None, Some(method), Some(pc),
-                                    Some(operandsArray(pc)),
-                                    Some(localsArray(pc)),
-                                    "useless (re-)assignment",
-                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
-                                    Set(IssueKind.ConstantComputation),
-                                    Seq.empty,
-                                    new Relevance(20)
-                                )
-                        }
-
-                    addResults(methodsWithValueReassignment)
-                }
-
+              
             } else if (!doInterrupt()) {
                 OPALLogger.error(
                     "internal error",

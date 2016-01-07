@@ -110,7 +110,7 @@ import org.opalj.br.instructions.PopInstruction
  */
 object DeadEdgesAnalysis {
 
-    def analyze(
+    def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }
     ): Seq[StandardIssue] = {

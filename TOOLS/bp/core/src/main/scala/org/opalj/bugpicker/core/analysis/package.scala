@@ -38,7 +38,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.IntegerType
 
 /**
- * Common constants and helper methods used by the BugPicker.
+ * Common constants and helper methods used by the BugPicker's analyses.
  *
  * @author Michael Eichberg
  */

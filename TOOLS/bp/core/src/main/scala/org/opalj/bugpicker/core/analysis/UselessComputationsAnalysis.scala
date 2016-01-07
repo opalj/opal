@@ -59,7 +59,7 @@ object UselessComputationsAnalysis {
 
     type UselessComputationsAnalysisDomain = Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues
 
-    def analyze(
+    def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: UselessComputationsAnalysisDomain }
     ): Seq[StandardIssue] = {
