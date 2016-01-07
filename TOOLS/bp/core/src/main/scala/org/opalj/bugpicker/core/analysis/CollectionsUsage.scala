@@ -50,8 +50,6 @@ import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analysis.Purity
-import org.opalj.fpcf.analysis.Pure
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.ai.analyses.cg.CallGraph
