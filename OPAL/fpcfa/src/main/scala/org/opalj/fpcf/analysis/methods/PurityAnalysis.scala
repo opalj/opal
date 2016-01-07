@@ -165,6 +165,8 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                             return require(method, Purity, field, Mutability)(c);
 
                         case _ ⇒
+                            // We know nothing about the target field (it is not
+                            // found in the scope of the current project).
                             return ImmediateResult(method, Impure);
                     }
 
@@ -187,7 +189,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                         calleeOpt match {
                             case None ⇒
                                 // We know nothing about the target method (it is not
-                                // found in the scope of the currenr project).
+                                // found in the scope of the current project).
                                 return ImmediateResult(method, Impure);
 
                             case Some(callee) ⇒
@@ -295,6 +297,9 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
         // All parameters either have to be base types or have to be immutable.
         val referenceTypeParameters = method.parameterTypes.filterNot(_.isBaseType)
+        if (!referenceTypeParameters.forall { p ⇒ propertyStore.isKnown(p) })
+            return ImmediateResult(method, Impure);
+
         propertyStore.allHaveProperty(
             method, Purity,
             referenceTypeParameters, ImmutableType
@@ -305,7 +310,6 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             } else {
                 return ImmediateResult(method, Impure);
             }
-
         }
     }
 }
