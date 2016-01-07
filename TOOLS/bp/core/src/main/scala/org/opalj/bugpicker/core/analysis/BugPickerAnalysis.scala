@@ -32,18 +32,26 @@ package core
 package analysis
 
 import java.net.URL
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConversions
-import scala.collection.SortedMap
-import scala.util.control.ControlThrowable
-import scala.xml.Node
-import scala.xml.Unparsed
-import scala.io.Source
 import java.lang.Double.parseDouble
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConversions
+import scala.collection.SortedMap
+import scala.util.control.ControlThrowable
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Unparsed
+import scala.io.Source
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -69,24 +77,16 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
-import scala.xml.NodeSeq
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.util.Milliseconds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
-import com.typesafe.config.ConfigRenderOptions
-
-import net.ceedubs.ficus.Ficus._
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
