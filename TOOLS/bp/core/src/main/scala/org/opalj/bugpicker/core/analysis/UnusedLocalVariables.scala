@@ -231,15 +231,15 @@ object UnusedLocalVariables {
                         DCONST_1.opcode |
                         FCONST_1.opcode | FCONST_2.opcode |
                         LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
-                           val LoadConstantInstruction(value) = instruction
-                           if(constantValues.contains(value)){
-                               // => the value is only found once in the source code and
-                               // the value is not used!
-                                issue = "the constant value "+
+                        val LoadConstantInstruction(value) = instruction
+                        if (constantValues.contains(value)) {
+                            // => the value is only found once in the source code and
+                            // the value is not used!
+                            issue = "the constant value "+
                                 instruction.toString(vo)+
                                 " is not used"
-                                relevance = Relevance.TechnicalArtifact
-                           }
+                            relevance = Relevance.TechnicalArtifact
+                        }
 
                     case IINC.opcode ⇒
                         issue = "the incremented value is not used"

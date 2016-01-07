@@ -436,7 +436,11 @@ class LoadProjectDialog(
                                     theStage
                                 )
                             } else if (jars.isEmpty) {
-                                DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                                DialogStage.showMessage(
+                                    "Error",
+                                    "You have not specified any classes to be analyzed!",
+                                    theStage
+                                )
                             } else if (nameAlreadyExists) {
                                 if (DialogStage.showMessageWithBinaryChoice(
                                     "Warning",
