@@ -142,7 +142,7 @@ object ThrowsExceptionAnalysis {
                 }
                 StandardIssue(
                     "ThrowsExceptionAnalysis",
-                    theProject, classFile, Some(method), Some(pc),
+                    theProject, classFile, field = None, Some(method), Some(pc),
                     Some(operands),
                     Some(result.localsArray(pc)),
                     "causes exception",

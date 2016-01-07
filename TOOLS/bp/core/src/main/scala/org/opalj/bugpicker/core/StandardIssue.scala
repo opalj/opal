@@ -40,6 +40,7 @@ import org.opalj.br.typeToXHTML
 import org.opalj.collection.mutable.Locals
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import scala.xml.UnprefixedAttribute
@@ -58,6 +59,7 @@ case class StandardIssue(
         analysis:       String,
         project:        SomeProject,
         classFile:      ClassFile,
+        field:          Option[Field],
         method:         Option[Method],
         pc:             Option[PC],
         operands:       Option[List[_ <: AnyRef]],
@@ -100,6 +102,7 @@ case class StandardIssue(
                 analysis,
                 this.project,
                 this.classFile,
+                this.field,
                 this.method,
                 this.pc,
                 this.operands.orElse(other.operands),
@@ -356,6 +359,7 @@ object StandardIssue {
             analysis,
             project,
             classFile,
+            None,
             None,
             None,
             None,

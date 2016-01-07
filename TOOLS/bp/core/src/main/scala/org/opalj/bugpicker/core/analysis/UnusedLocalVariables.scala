@@ -244,7 +244,7 @@ object UnusedLocalVariables {
                     case IINC.opcode ⇒
                         issue = "the incremented value is not used"
                         relevance = Relevance.DefaultRelevance
-        
+
                     case _ ⇒
                         issue = "the value of the expression "+
                             instruction.toString(vo)+
@@ -259,6 +259,7 @@ object UnusedLocalVariables {
                     "UnusedLocalVariables",
                     theProject,
                     classFile,
+                    None,
                     Some(method),
                     if (vo >= 0) Some(vo) else None,
                     None,

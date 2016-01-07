@@ -103,7 +103,7 @@ object CollectionsUsage {
                                 case INVOKESPECIAL(_, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                     issues ::= StandardIssue(
                                         "CollectionsUsage",
-                                        theProject, classFile, Some(method), Some(pc),
+                                        theProject, classFile, None, Some(method), Some(pc),
                                         None,
                                         None,
                                         "directly use Collections.emptyList/Collections.emptySet",
@@ -142,7 +142,7 @@ object CollectionsUsage {
                             if (foundAddCall && foundConstructorCall) {
                                 issues ::= StandardIssue(
                                     "CollectionsUsage",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     None,
                                     None,
                                     "directly use Collections.singletonList/Collections.singletonSet",
