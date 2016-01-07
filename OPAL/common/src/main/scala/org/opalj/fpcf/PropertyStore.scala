@@ -181,6 +181,8 @@ class PropertyStore private (
         keys.asScala.toList
     }
 
+    def isKnown(e: Entity): Boolean = keys.contains(e)
+
     // =============================================================================================
     //
     // SET PROPERTIES
