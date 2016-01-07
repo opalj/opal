@@ -226,14 +226,21 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
-        val issuesPackageFilter = config.as[String]("org.opalj.bugpicker.issues.packages").r
+        val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
+        OPALLogger.debug(
+            "project configuration",
+            s"only issues in packages matching $issuesPackageFilterString are shown"
+        )
+        val issuesPackageFilter = issuesPackageFilterString.r
         def addResults(issues: Iterable[StandardIssue]): Unit = {
-            val filteredIssues = issues.filter { issue ⇒
-                val packageName = issue.definingPackageName
-                val allMatches = issuesPackageFilter.findAllMatchIn(packageName).toSeq
-                allMatches.nonEmpty && allMatches.tail.isEmpty && allMatches.head == packageName
+            if (issues.nonEmpty) {
+                val filteredIssues = issues.filter { issue ⇒
+                    val packageName = issue.definingPackageName
+                    val allMatches = issuesPackageFilter.findFirstIn(packageName)
+                    allMatches.isDefined && packageName == allMatches.get
+                }
+                filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
             }
-            filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
         }
 
         val fieldValueInformation = theProject.get(FieldValuesKey)
