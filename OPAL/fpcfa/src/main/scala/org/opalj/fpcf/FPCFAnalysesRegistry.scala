@@ -34,8 +34,8 @@ import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
 
 /**
- * Registry for all analysis factories are implemented
- * using the fixpoint computations framework.
+ * Registry for all factories for analyses that are implemented using the fixpoint computations
+ * framework ('''fpcf''').
  *
  * The registry primarily serves as a central container that can be queried
  * by subsequent tools.
@@ -48,46 +48,42 @@ import org.opalj.fpcf.analysis.methods.PurityAnalysis
  * The registry is thread safe.
  *
  * @author Michael Reif
+ * @author Michael Eichberg
  */
-object FPCFAnalysisRegistry {
+object FPCFAnalysesRegistry {
 
-    private[this] var descriptions: Map[String, FPCFAnalysisRunner] = Map.empty
-    private[this] var theRegistry: Set[FPCFAnalysisRunner] = Set.empty
+    @volatile
+    private[this] var descriptionToFactory: Map[String, FPCFAnalysisRunner] = Map.empty
 
     /**
-     * Registers the factory for a fixpoint analysis that can be
+     * Registers the factory of a fixpoint analysis that can be
      * used to compute a specific (set of) property(ies).
      *
-     * @param analysisDescription A short description of the properties that the
-     * 		analysis computes; in  particular w.r.t. a specific set of entities.
-     * @param analysisClass The factory.
+     * @param analysisDescription A short description of the analysis and the properties that the
+     * 		analysis computes; in particular w.r.t. a specific set of entities.
+     *
+     * @param analysisFactory The factory.
      */
-    def register(
-        analysisDescription: String,
-        analysisFactory:     FPCFAnalysisRunner
-    ): Unit = {
-        this.synchronized {
-            descriptions += ((analysisDescription, analysisFactory))
-            theRegistry += analysisFactory
-        }
+    def register(analysisDescription: String, analysisFactory: FPCFAnalysisRunner): Unit = {
+        descriptionToFactory += ((analysisDescription, analysisFactory))
     }
 
     /**
      * Returns the descriptions of the registered analyses. These descriptions are
      * expected to be useful to the end-users.
      */
-    def analysisDescriptions(): Iterable[String] = this.synchronized { descriptions.keys }
+    def analysisDescriptions(): Iterable[String] = descriptionToFactory.keys
 
     /**
      * Returns the current view of the registry.
      */
-    def registry: Set[FPCFAnalysisRunner] = this.synchronized { theRegistry }
+    def factories: Iterable[FPCFAnalysisRunner] = descriptionToFactory.values
 
     /**
      * Returns the factory for analysis with a matching description.
      */
-    def getFixpointAnalysisFactory(analysisDescripition: String): FPCFAnalysisRunner = {
-        this.synchronized { descriptions(analysisDescripition) }
+    def factory(analysisDescription: String): FPCFAnalysisRunner = {
+        descriptionToFactory(analysisDescription)
     }
 
     // initialize the registry with the known default analyses

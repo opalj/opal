@@ -71,7 +71,7 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import scala.xml.NodeSeq
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysisRegistry
+import org.opalj.fpcf.FPCFAnalysesRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
@@ -131,7 +131,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
     ): BugPickerResults = {
 
         import theProject.config
-        
+
         implicit val logContext = theProject.logContext
 
         // related to managing the analysis progress
@@ -147,9 +147,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val maxCardinalityOfIntegerRanges = analysisParameters.as[Long]("maxCardinalityOfLongSets")
         val maxCardinalityOfLongSets = analysisParameters.as[Int]("maxCardinalityOfLongSets")
         val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
-        val fpcfAnalyses = configuredAnalyses.map { description ⇒
-            FPCFAnalysisRegistry.getFixpointAnalysisFactory(description)
-        }
+        val fpcfAnalyses = configuredAnalyses.map { a ⇒ FPCFAnalysesRegistry.factory(a) }
         val maxCallChainLength = theProject.config.as[Int](
             "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
         )

@@ -55,7 +55,7 @@ import scalafx.scene.control.ListView
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.control.MultipleSelectionModel
 import scalafx.scene.control.SelectionMode
-import org.opalj.fpcf.FPCFAnalysisRegistry
+import org.opalj.fpcf.FPCFAnalysesRegistry
 import scalafx.scene.layout.VBox
 import scalafx.scene.control.cell.CheckBoxListCell
 import scalafx.beans.property.BooleanProperty
