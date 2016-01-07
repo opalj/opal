@@ -153,7 +153,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             val usages =
                 for { (key @ (pc, typeName), exceptionUsage) ← exceptionUsages }
                     yield ExceptionUsage(classFile, method, pc, typeName, exceptionUsage)
- 
+
             if (usages.isEmpty)
                 None
             else {
@@ -183,7 +183,7 @@ case class ExceptionUsage(
         import Console._
         RED + classFile.thisType.toJava + RESET+"{ "+GREEN + method.toJava + RESET+"{ "+
             BOLD+"["+lineNumber+"pc="+definitionSite+"] "+exceptionType+" => "+
-            usageInformation.mkString(", ") + 
+            usageInformation.mkString(", ") +
             RESET+" }"+" }"
     }
 

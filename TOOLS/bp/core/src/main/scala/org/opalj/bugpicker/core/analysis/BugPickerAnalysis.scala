@@ -227,12 +227,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
         val issuesPackageFilter = config.as[String]("org.opalj.bugpicker.issues.packages").r
-        def addResults(issues : Iterable[StandardIssue] ): Unit = {
-            val filteredIssues = issues.filter{issue => 
+        def addResults(issues: Iterable[StandardIssue]): Unit = {
+            val filteredIssues = issues.filter { issue ⇒
                 val packageName = issue.definingPackageName
                 val allMatches = issuesPackageFilter.findAllMatchIn(packageName).toSeq
                 allMatches.nonEmpty && allMatches.tail.isEmpty && allMatches.head == packageName
-                }
+            }
             filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
         }
 
@@ -253,11 +253,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             // CHECK IF THE METHOD IS USED
             //
             addResults(
-                    UnusedMethodsAnalysis.analyze(
-                theProject, computedCallGraph, callGraphEntryPoints, classFile, method
-            ) 
+                UnusedMethodsAnalysis.analyze(
+                    theProject, computedCallGraph, callGraphEntryPoints, classFile, method
+                )
             )
-            
+
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
@@ -355,35 +355,34 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 // FIND SUSPICIOUS CODE
                 //
                 addResults(
-                        GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
-                   
+                    GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
+
                 )
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                addResults(                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)                  
-                )
+                addResults(ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
                 addResults(
-                        UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
+                    UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
                 )
 
                 //
                 // FIND UNUSED LOCAL VARIABLES
                 //
                 addResults(
-                        UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
+                    UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
                 //
                 // FIND STRANGE USES OF THE COLLECTIONS API
                 //
                 addResults(
-                        CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
+                    CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
                 //
@@ -455,7 +454,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 )
                         }
 
-                    addResults(                        methodsWithValueReassignment                    )
+                    addResults(methodsWithValueReassignment)
                 }
 
             } else if (!doInterrupt()) {
@@ -486,8 +485,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // FIND UNUSED FIELDS
                     //
                     addResults(
-                            UnusedFields(
-                                theProject, fieldAccessInformation, stringConstantsInformation, classFile
+                        UnusedFields(
+                            theProject, fieldAccessInformation, stringConstantsInformation, classFile
                         )
                     )
 

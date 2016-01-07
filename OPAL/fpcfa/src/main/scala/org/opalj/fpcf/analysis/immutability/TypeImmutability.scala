@@ -32,8 +32,8 @@ package analysis
 package immutability
 
 /**
- * Specified if all instances of a respective type (this includes the instances of the 
- * type's subtypes) are (conditionally) immutable. 
+ * Specified if all instances of a respective type (this includes the instances of the
+ * type's subtypes) are (conditionally) immutable.
  *
  * @author Michael Eichberg
  */
@@ -97,5 +97,4 @@ case object MutableTypeDueToUnresolvableDependency extends MutableType {
 case object MutableTypeDueToNoAnalysis extends MutableType {
     final val reason = "a dependency cannot be resolved"
 }
-
 

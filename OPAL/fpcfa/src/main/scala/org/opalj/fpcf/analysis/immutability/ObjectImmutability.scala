@@ -118,17 +118,17 @@ object ObjectImmutability extends PropertyMetaInformation {
  * possible for a client to set a field or to call a method that updates the internal state
  *
  */
-case object ImmutableObject extends ObjectImmutability { 
-    final val isRefineable = false 
-    }
+case object ImmutableObject extends ObjectImmutability {
+    final val isRefineable = false
+}
 
-case object ConditionallyImmutableObject extends ObjectImmutability { 
-    final val isRefineable = false 
-    }
+case object ConditionallyImmutableObject extends ObjectImmutability {
+    final val isRefineable = false
+}
 
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
-    final val isRefineable = true 
-    }
+    final val isRefineable = true
+}
 
 sealed trait MutableObject extends ObjectImmutability {
     final val isRefineable = false

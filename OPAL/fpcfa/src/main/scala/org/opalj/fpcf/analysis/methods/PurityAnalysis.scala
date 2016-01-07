@@ -284,9 +284,10 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
      * Determines the purity of the given method.
      */
     def determineProperty(
-            propertyStore : PropertyStore
-            )(
-                    method: Method): PropertyComputationResult = {
+        propertyStore: PropertyStore
+    )(
+        method: Method
+    ): PropertyComputationResult = {
 
         /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
             /* FOR TESTING PURPOSES!!!!! */ return Impossible;
@@ -299,16 +300,16 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         // All parameters either have to be base types or have to be immutable.
         val referenceTypeParameters = method.parameterTypes.filterNot(_.isBaseType)
         propertyStore.allHaveProperty(
-                method, Purity, 
-                referenceTypeParameters, ImmutableType
-                ){ areImmutable =>
-            if(areImmutable) {
-            	val purity = determinePurityCont(method, 0, Set.empty)
-            	purity
+            method, Purity,
+            referenceTypeParameters, ImmutableType
+        ) { areImmutable ⇒
+            if (areImmutable) {
+                val purity = determinePurityCont(method, 0, Set.empty)
+                purity
             } else {
-                return ImmediateResult(method, Impure);    
+                return ImmediateResult(method, Impure);
             }
-            
+
         }
     }
 }
