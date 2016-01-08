@@ -31,9 +31,9 @@ package bugpicker
 package core
 
 /**
- * Collection of predefined issue categories where
- * each category describes '''the quality property of the software that is
- * affected''' by the issue.
+ * Collection of predefined issue categories where each category describes
+ * '''the quality property of the software that is affected''' 
+ * by the issue.
  *
  * @author Michael Eichberg
  */

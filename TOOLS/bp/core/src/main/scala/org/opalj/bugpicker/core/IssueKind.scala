@@ -98,5 +98,5 @@ object IssueKind {
     /**
      * The Java Collection API is not used in the correct way/as intended.
      */
-    final val JavaCollectionAPIUsage = "Java collection API usage"
+    final val JavaCollectionAPIMisusage = "Java collection API Misusage"
 }

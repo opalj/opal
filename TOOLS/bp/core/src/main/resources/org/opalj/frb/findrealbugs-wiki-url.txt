@@ -1,1 +1,1 @@
-https://bitbucket.org/delors/opal/wiki/FindREALBugs/
+http://www.opal-project.de/tools/bugpicker/issues

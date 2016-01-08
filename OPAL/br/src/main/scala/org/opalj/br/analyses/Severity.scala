@@ -60,6 +60,7 @@ abstract class Severity {
  * @author Daniel Klauer
  */
 object Severity {
+
     /**
      * Should be used when reporting an issue that definitely is a bug.
      */
