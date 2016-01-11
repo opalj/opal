@@ -108,43 +108,46 @@ class LongArithmeticTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect addition") {
-                val statements = AsQuadruples(LongAddMethod, None)
+                val statements = AsQuadruples(method = LongAddMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
             }
 
             it("should correctly reflect logical and") {
-                val statements = AsQuadruples(LongAndMethod, None)
+                val statements = AsQuadruples(method = LongAndMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_2;"))
             }
 
             it("should correctly reflect division") {
-                val statements = AsQuadruples(LongDivMethod, None)
+                val statements = AsQuadruples(method = LongDivMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
             }
 
             it("should correctly reflect negation") {
-                val statements = AsQuadruples(LongNegMethod, None)
+                val statements = AsQuadruples(method = LongNegMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -155,108 +158,120 @@ class LongArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), SimpleVar(-2, ComputationalTypeLong)),
                     Assignment(1, SimpleVar(0, ComputationalTypeLong),
                         PrefixExpr(1, ComputationalTypeLong, Negate, SimpleVar(0, ComputationalTypeLong))),
-                    ReturnValue(2, SimpleVar(0, ComputationalTypeLong))))
+                    ReturnValue(2, SimpleVar(0, ComputationalTypeLong))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0;"))
+                        "4: return op_0;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
-                val statements = AsQuadruples(LongMulMethod, None)
+                val statements = AsQuadruples(method = LongMulMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
             }
 
             it("should correctly reflect logical or") {
-                val statements = AsQuadruples(LongOrMethod, None)
+                val statements = AsQuadruples(method = LongOrMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_2;"))
             }
 
             it("should correctly reflect modulo") {
-                val statements = AsQuadruples(LongRemMethod, None)
+                val statements = AsQuadruples(method = LongRemMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
             }
 
             it("should correctly reflect shift right") {
-                val statements = AsQuadruples(LongShRMethod, None)
+                val statements = AsQuadruples(method = LongShRMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_2;"))
             }
 
             it("should correctly reflect shift left") {
-                val statements = AsQuadruples(LongShLMethod, None)
+                val statements = AsQuadruples(method = LongShLMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_2;"))
             }
 
             it("should correctly reflect subtraction") {
-                val statements = AsQuadruples(LongSubMethod, None)
+                val statements = AsQuadruples(method = LongSubMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
 
             it("should correctly reflect arithmetic shift right") {
-                val statements = AsQuadruples(LongAShMethod, None)
+                val statements = AsQuadruples(method = LongAShMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))))
+                        BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_2;"))
             }
 
             it("should correctly reflect logical xor") {
-                val statements = AsQuadruples(LongXOrMethod, None)
+                val statements = AsQuadruples(method = LongXOrMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
-                        BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))))
+                        BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_2;"))
             }
         }
@@ -294,7 +309,7 @@ class LongArithmeticTest extends FunSpec with Matchers {
             it("should correctly reflect addition") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAddMethod, domain)
-                val statements = AsQuadruples(LongAddMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongAddMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -302,14 +317,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Add, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_2;"))
             }
 
             it("should correctly reflect logical and") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAndMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAndMethod, domain)
-                val statements = AsQuadruples(LongAndMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongAndMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -317,14 +333,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, And, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 & op_2;"))
             }
 
             it("should correctly reflect division") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongDivMethod, domain)
-                val statements = AsQuadruples(LongDivMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongDivMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -332,14 +349,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Divide, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_2;"))
             }
 
             it("should correctly reflect negation") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongNegMethod, domain)
-                val statements = AsQuadruples(LongNegMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongNegMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -350,19 +368,23 @@ class LongArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeLong), SimpleVar(-2, ComputationalTypeLong)),
                     Assignment(1, SimpleVar(0, ComputationalTypeLong),
                         PrefixExpr(1, ComputationalTypeLong, Negate, SimpleVar(0, ComputationalTypeLong))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(2, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0 /*ALongValue*/;"))
+                        "4: return op_0 /*ALongValue*/;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongMulMethod, domain)
-                val statements = AsQuadruples(LongMulMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongMulMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -370,14 +392,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Multiply, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_2;"))
             }
 
             it("should correctly reflect logical or") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongOrMethod, domain)
-                val statements = AsQuadruples(LongOrMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongOrMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -385,14 +408,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Or, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 | op_2;"))
             }
 
             it("should correctly reflect modulo") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongRemMethod, domain)
-                val statements = AsQuadruples(LongRemMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongRemMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -400,14 +424,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Modulo, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_2;"))
             }
 
             it("should correctly reflect shift right") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShRMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShRMethod, domain)
-                val statements = AsQuadruples(LongShRMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongShRMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -415,14 +440,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, ShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >> op_2;"))
             }
 
             it("should correctly reflect shift left") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongShLMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongShLMethod, domain)
-                val statements = AsQuadruples(LongShLMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongShLMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -430,14 +456,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, ShiftLeft, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 << op_2;"))
             }
 
             it("should correctly reflect subtraction") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongSubMethod, domain)
-                val statements = AsQuadruples(LongSubMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongSubMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -445,14 +472,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, Subtract, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_2;"))
             }
 
             it("should correctly reflect arithmetic shift right") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongAShMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongAShMethod, domain)
-                val statements = AsQuadruples(LongAShMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongAShMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -460,14 +488,15 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryShiftAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, UnsignedShiftRight, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeInt))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 >>> op_2;"))
             }
 
             it("should correctly reflect logical xor") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, LongXOrMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, LongXOrMethod, domain)
-                val statements = AsQuadruples(LongXOrMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LongXOrMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -475,7 +504,8 @@ class LongArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeLong),
                         BinaryExpr(2, ComputationalTypeLong, XOr, SimpleVar(0, ComputationalTypeLong), SimpleVar(2, ComputationalTypeLong))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.ALongValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 ^ op_2;"))
             }
         }

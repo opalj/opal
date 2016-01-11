@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import org.opalj.br.analyses.SomeProject
+import scala.math.Ordered
 
 /**
  * A `VirtualSourceElement` is the representation of some source element that is
@@ -38,9 +38,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-sealed trait VirtualSourceElement
-        extends SourceElement
-        with scala.math.Ordered[VirtualSourceElement] {
+sealed trait VirtualSourceElement extends SourceElement with Ordered[VirtualSourceElement] {
 
     override def attributes = Nil
 
@@ -52,7 +50,8 @@ sealed trait VirtualSourceElement
     override def compare(that: VirtualSourceElement): Int
 
     /**
-     * Returns the class type of this `VirtualSourceElement`. If this `VirtualSourceElement`
+     * Returns the declared/declaring class type of this `VirtualSourceElement`.
+     * If this `VirtualSourceElement`
      * is a [[VirtualClass]] the returned type is the declared class else it is the
      * declaring class.
      */
@@ -63,7 +62,7 @@ sealed trait VirtualSourceElement
     /**
      * Returns the best line number information available.
      */
-    def getLineNumber(project: SomeProject): Option[Int]
+    def getLineNumber(project: ClassFileRepository): Option[Int]
 
 }
 
@@ -73,18 +72,19 @@ sealed trait VirtualSourceElement
 object VirtualSourceElement {
 
     def asVirtualSourceElements(
-        classFiles: Traversable[ClassFile],
-        includeMethods: Boolean = true,
-        includeFields: Boolean = true): Set[VirtualSourceElement] = {
+        classFiles:     Traversable[ClassFile],
+        includeMethods: Boolean                = true,
+        includeFields:  Boolean                = true
+    ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 
         classFiles foreach { classFile ⇒
             val classType = classFile.thisType
-            sourceElements ++ Iterable(classFile.asVirtualClass)
+            sourceElements += classFile.asVirtualClass
             if (includeMethods)
-                sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(classType))
+                classFile.methods.foreach(sourceElements += _.asVirtualMethod(classType))
             if (includeFields)
-                sourceElements ++= classFile.fields.view.map(_.asVirtualField(classType))
+                classFile.fields.foreach(sourceElements += _.asVirtualField(classType))
         }
         sourceElements
     }
@@ -105,7 +105,8 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
 
     override def toJava: String = thisType.toJava
 
-    def getLineNumber(project: SomeProject): Option[Int] = Some(1)
+    // Recall that the class may not be the only one defined in a source file!
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -141,8 +142,9 @@ sealed trait VirtualClassMember extends VirtualSourceElement
  */
 final case class VirtualField(
         declaringClassType: ObjectType,
-        name: String,
-        fieldType: FieldType) extends VirtualClassMember {
+        name:               String,
+        fieldType:          FieldType
+) extends VirtualClassMember {
 
     override def isField: Boolean = true
 
@@ -151,7 +153,7 @@ final case class VirtualField(
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
 
-    def getLineNumber(project: SomeProject): Option[Int] = None
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -196,8 +198,9 @@ final case class VirtualField(
  */
 sealed class VirtualMethod(
     val declaringClassType: ReferenceType,
-    val name: String,
-    val descriptor: MethodDescriptor)
+    val name:               String,
+    val descriptor:         MethodDescriptor
+)
         extends VirtualClassMember {
 
     override def isMethod: Boolean = true
@@ -207,7 +210,7 @@ sealed class VirtualMethod(
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
-    def getLineNumber(project: SomeProject): Option[Int] = {
+    override def getLineNumber(project: ClassFileRepository): Option[Int] = {
         if (declaringClassType.isArrayType)
             return None;
 
@@ -254,23 +257,26 @@ object VirtualMethod {
 
     def apply(
         declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor): VirtualMethod =
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): VirtualMethod =
         new VirtualMethod(declaringClassType, name, descriptor)
 
     def unapply(virtualMethod: VirtualMethod): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((
             virtualMethod.declaringClassType,
             virtualMethod.name,
-            virtualMethod.descriptor))
+            virtualMethod.descriptor
+        ))
     }
 }
 
 final class VirtualForwardingMethod(
     declaringClassType: ReferenceType,
-    name: String,
-    descriptor: MethodDescriptor,
-    val target: Method)
+    name:               String,
+    descriptor:         MethodDescriptor,
+    val target:         Method
+)
         extends VirtualMethod(declaringClassType, name, descriptor) {
 
     override def toJava: String =
@@ -282,9 +288,10 @@ object VirtualForwardingMethod {
 
     def apply(
         declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor,
-        target: Method): VirtualMethod =
+        name:               String,
+        descriptor:         MethodDescriptor,
+        target:             Method
+    ): VirtualMethod =
         new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
 
     def unapply(virtualMethod: VirtualForwardingMethod): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
@@ -292,6 +299,7 @@ object VirtualForwardingMethod {
             virtualMethod.declaringClassType,
             virtualMethod.name,
             virtualMethod.descriptor,
-            virtualMethod.target))
+            virtualMethod.target
+        ))
     }
 }

@@ -59,7 +59,8 @@ class TestFieldShouldBeFinal extends AnalysisTest {
             declaringClass,
             Some(IntegerType),
             "int2",
-            "Should be final"))
+            "Should be final"
+        ))
     }
 
     it should "detect a non-final public static field with String type" in {
@@ -69,7 +70,8 @@ class TestFieldShouldBeFinal extends AnalysisTest {
             declaringClass,
             Some(ObjectType.String),
             "s2",
-            "Should be final"))
+            "Should be final"
+        ))
     }
 
     it should "find 2 issues in total" in {

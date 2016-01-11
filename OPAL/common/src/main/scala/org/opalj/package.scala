@@ -146,16 +146,22 @@ package object opalj {
      * @note '''This is a macro.'''
      */
     final def foreachNonNullValue[T <: AnyRef](
-        a: Array[T])(
-            f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
+        a: Array[T]
+    )(
+        f: (Int, T) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
      * Executes the given function `f` for the first `n` values of the given list.
      * The behavior is undefined if the given list does not have at least `n` elements.
+     *
+     * @note '''This is a macro.'''
      */
     final def forFirstN[T <: AnyRef](
-        l: List[T], n: Int)(
-            f: (T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
+        l: List[T], n: Int
+    )(
+        f: (T) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
      * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
@@ -181,7 +187,7 @@ package object opalj {
      * }
      * }}}
      *
-     * '''This is a macro.'''
+     * @note '''This is a macro.'''
      *
      * @param times The number of times the expression `f` is evaluated. The `times`
      *      expression is evaluated exactly once.
@@ -212,7 +218,9 @@ package object opalj {
      * Iterates over the given range of integer values `[from,to]` and calls the given
      * function f for each value.
      *
-     * If from is smaller than `to` `f` will not be called.
+     * If `from` is smaller or equal to `to`, `f` will not be called.
+     *
+     * @note '''This is a macro.'''
      */
     def iterateTo(from: Int, to: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateTo
 
@@ -220,7 +228,7 @@ package object opalj {
      * Iterates over the given range of integer values `[from,until)` and calls the given
      * function f for each value.
      *
-     * If from is smaller than until `f` will not be called.
+     * If `from` is smaller than `until`, `f` will not be called.
      */
     def iterateUntil(from: Int, until: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateUntil
 }
@@ -233,9 +241,12 @@ package object opalj {
 private object ControlAbstractionsImplementation {
 
     def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
-        c: Context)(
-            a: c.Expr[Array[T]])(
-                f: c.Expr[(Int, T) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        a: c.Expr[Array[T]]
+    )(
+        f: c.Expr[(Int, T) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -251,9 +262,12 @@ private object ControlAbstractionsImplementation {
     }
 
     def forFirstN[T <: AnyRef: c.WeakTypeTag](
-        c: Context)(
-            l: c.Expr[List[T]], n: c.Expr[Int])(
-                f: c.Expr[T ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        l: c.Expr[List[T]], n: c.Expr[Int]
+    )(
+        f: c.Expr[T ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -270,9 +284,12 @@ private object ControlAbstractionsImplementation {
     }
 
     def repeat[T: c.WeakTypeTag](
-        c: Context)(
-            times: c.Expr[Int])(
-                f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
+        c: Context
+    )(
+        times: c.Expr[Int]
+    )(
+        f: c.Expr[T]
+    ): c.Expr[IndexedSeq[T]] = {
         import c.universe._
 
         reify {
@@ -293,15 +310,18 @@ private object ControlAbstractionsImplementation {
     }
 
     def iterateTo(
-        c: Context)(
-            from: c.Expr[Int],
-            to: c.Expr[Int])(
-                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        from: c.Expr[Int],
+        to:   c.Expr[Int]
+    )(
+        f: c.Expr[(Int) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
             var i = from.splice
-            val max = to.splice // => times is evaluated only once
+            val max = to.splice // => to is evaluated only once
             while (i <= max) {
                 f.splice(i) // => we evaluate f the given number of times
                 i += 1
@@ -310,15 +330,18 @@ private object ControlAbstractionsImplementation {
     }
 
     def iterateUntil(
-        c: Context)(
-            from: c.Expr[Int],
-            until: c.Expr[Int])(
-                f: c.Expr[(Int) ⇒ Unit]): c.Expr[Unit] = {
+        c: Context
+    )(
+        from:  c.Expr[Int],
+        until: c.Expr[Int]
+    )(
+        f: c.Expr[(Int) ⇒ Unit]
+    ): c.Expr[Unit] = {
         import c.universe._
 
         reify {
             var i = from.splice
-            val max = until.splice // => times is evaluated only once
+            val max = until.splice // => until is evaluated only once
             while (i < max) {
                 f.splice(i) // => we evaluate f the given number of times
                 i += 1

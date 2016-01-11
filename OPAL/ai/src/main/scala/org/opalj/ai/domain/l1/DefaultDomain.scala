@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 
 /**
@@ -40,10 +40,11 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
+    val id:        I,
+    val project:   Project[Source],
     val classFile: ClassFile,
-    val method: Method)
+    val method:    Method
+)
         extends CorrelationalDomain
         with DomainId
         with TheProject
@@ -78,22 +79,23 @@ class DefaultConfigurableDomain[I, Source](
  * which uses the method as the id.
  */
 class DefaultDomain[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            method.toJava(classFile),
-            project, classFile, method)
+    method:    Method
+) extends DefaultConfigurableDomain[String, Source](
+    method.toJava(classFile),
+    project, classFile, method
+)
 
 /**
  * Configuration of a domain that uses the most capable `l1` domains and
  * which also records the abstract-interpretation time control flow graph.
  */
 class DefaultDomainWithCFG[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
-        extends DefaultDomain[Source](project, classFile, method)
+    method:    Method
+) extends DefaultDomain[Source](project, classFile, method)
         with RecordCFG
 
 /**
@@ -102,9 +104,9 @@ class DefaultDomainWithCFG[Source](
  * information.
  */
 class DefaultDomainWithCFGAndDefUse[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
-        extends DefaultDomain[Source](project, classFile, method)
+    method:    Method
+) extends DefaultDomain[Source](project, classFile, method)
         with RecordDefUse
 

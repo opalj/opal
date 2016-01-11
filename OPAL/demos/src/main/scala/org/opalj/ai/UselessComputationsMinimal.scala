@@ -69,9 +69,10 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         with domain.ProjectBasedClassHierarchy
 
     def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
@@ -84,7 +85,8 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
                     _: IFICMPInstruction,
                     Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) ⇒
-                    val result = s"${classFile.thisType.toJava}{ ${method.toJava}{ /*pc=$pc:*/ comparison of constant values: $a and $b } }"
+                    val context = method.toJava(classFile)
+                    val result = s"$context: /*pc=$pc:*/ comparison of constant values: $a and $b"
                     results.add(result)
             }
         }

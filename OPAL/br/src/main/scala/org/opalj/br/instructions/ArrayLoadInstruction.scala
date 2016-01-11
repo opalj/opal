@@ -53,14 +53,22 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs = {
+    final def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly) {
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         } else {
             import Instruction.nextInstructionOrExceptionHandlers
-            nextInstructionOrExceptionHandlers(this, currentPC, code, jvmExceptions)
+            nextInstructionOrExceptionHandlers(this, currentPC, jvmExceptions)
         }
     }
+
+    final def expressionResult: ExpressionResult = Stack
 
 }
 

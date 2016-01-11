@@ -26,8 +26,8 @@ parallelExecution in Global := false // the tests/analysis are already paralleli
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 testOptions in ThisBuild <<=
-  baseDirectory map {
-	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+  baseDirectory map { bd =>
+    Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
   }
 
 testOptions in ThisBuild += Tests.Argument("-o")
@@ -61,6 +61,13 @@ EclipseKeys.withSource := true
 
 //
 //
+// Publish jars to Eclipse plugin project
+//
+//
+addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
+
+//
+//
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
 //
 //
@@ -88,4 +95,8 @@ pomExtra in ThisBuild := (
       <name>Michael Eichberg</name>
       <url>http://www.michael-eichberg.de</url>
     </developer>
+    <developer>
+      <id>reif</id>
+      <name>Michael Reif</name>
+    </developer>	
   </developers>)

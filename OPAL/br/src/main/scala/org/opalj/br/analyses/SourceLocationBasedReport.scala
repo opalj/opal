@@ -48,8 +48,9 @@ abstract class SourceLocationBasedReport[+S] {
      * Retrieves the `source` as a human-readable string for use in console reports.
      * Every `SourceLocationBasedReport` should use this as a prefix in its console report string.
      */
-    protected def getSourceAsString(locationIdentifier: (S) ⇒ String): String =
+    protected def getSourceAsString(locationIdentifier: (S) ⇒ String): String = {
         source.map(locationIdentifier(_)).getOrElse("<external>")
+    }
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String
 }
@@ -58,11 +59,11 @@ abstract class SourceLocationBasedReport[+S] {
  * A report related to a specific class.
  */
 case class ClassBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    classType: ObjectType,
-    message: String)
-        extends SourceLocationBasedReport[S] {
+        source:    Option[S],
+        severity:  Severity,
+        classType: ObjectType,
+        message:   String
+) extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
         getSourceAsString(locationIdentifier)+": "+
@@ -76,13 +77,13 @@ case class ClassBasedReport[+S](
  * A report related to a specific method.
  */
 case class MethodBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    declaringClass: ObjectType,
-    methodDescriptor: MethodDescriptor,
-    methodName: String,
-    message: String)
-        extends SourceLocationBasedReport[S] {
+        source:           Option[S],
+        severity:         Severity,
+        declaringClass:   ObjectType,
+        methodDescriptor: MethodDescriptor,
+        methodName:       String,
+        message:          String
+) extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
         getSourceAsString(locationIdentifier)+": "+
@@ -96,30 +97,34 @@ case class MethodBasedReport[+S](
  * Defines factory methods for MethodBasedReports.
  */
 object MethodBasedReport {
+
     def apply[S](
-        source: Option[S],
-        severity: Severity,
+        source:         Option[S],
+        severity:       Severity,
         declaringClass: ObjectType,
-        method: Method,
-        message: String): MethodBasedReport[S] = {
+        method:         Method,
+        message:        String
+    ): MethodBasedReport[S] = {
         new MethodBasedReport(
             source, severity,
             declaringClass, method.descriptor, method.name,
-            message)
+            message
+        )
     }
+
 }
 
 /**
  * A report related to a specific field.
  */
 case class FieldBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    declaringClass: ObjectType,
-    fieldType: Option[Type],
-    fieldName: String,
-    message: String)
-        extends SourceLocationBasedReport[S] {
+        source:         Option[S],
+        severity:       Severity,
+        declaringClass: ObjectType,
+        fieldType:      Option[Type],
+        fieldName:      String,
+        message:        String
+) extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
         getSourceAsString(locationIdentifier)+": "+
@@ -135,11 +140,12 @@ case class FieldBasedReport[+S](
 object FieldBasedReport {
 
     def apply[S](
-        source: Option[S],
-        severity: Severity,
+        source:         Option[S],
+        severity:       Severity,
         declaringClass: ObjectType,
-        field: Field,
-        message: String): FieldBasedReport[S] = {
+        field:          Field,
+        message:        String
+    ): FieldBasedReport[S] = {
         new FieldBasedReport(source, severity, declaringClass,
             Some(field.fieldType), field.name, message)
     }
@@ -149,15 +155,15 @@ object FieldBasedReport {
  * A report related to a specific line and column.
  */
 case class LineAndColumnBasedReport[+S](
-    source: Option[S],
-    severity: Severity,
-    declaringClass: ObjectType,
-    methodDescriptor: MethodDescriptor,
-    methodName: String,
-    line: Option[Int],
-    column: Option[Int],
-    message: String)
-        extends SourceLocationBasedReport[S] {
+        source:           Option[S],
+        severity:         Severity,
+        declaringClass:   ObjectType,
+        methodDescriptor: MethodDescriptor,
+        methodName:       String,
+        line:             Option[Int],
+        column:           Option[Int],
+        message:          String
+) extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
         getSourceAsString(locationIdentifier)+":"+

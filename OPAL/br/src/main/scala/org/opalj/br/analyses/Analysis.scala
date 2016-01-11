@@ -57,7 +57,7 @@ trait Analysis[Source, +AnalysisResult] {
      *      number of steps (Int) that will be performed . The analysis will subsequently
      *      use that object to report status information (related to that part of the analysis)
      *      and to check the interrupted status.
-     *      The number of steps is at lest 1.
+     *      The number of steps is at least 1.
      *      The analysis may call this function multiple times. However, the '''last `End`
      *      event always has be signaled using the first `ProgressManagement` object'''.
      *      In other words, logically nested calls are supported, but chaining is not.
@@ -82,12 +82,13 @@ trait Analysis[Source, +AnalysisResult] {
      *
      * @return The analysis' result. If the analysis was aborted/killed the analysis
      *      should return an appropriate result (which might be `null`) and this
-     *      has to be specifed/documented by the analysis.
+     *      has to be specified/documented by the analysis.
      */
     def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement): AnalysisResult
+        project:                Project[Source],
+        parameters:             Seq[String]                = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ): AnalysisResult
 
     /**
      * A textual description of this analysis.

@@ -38,8 +38,8 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 case class INSTANCEOF(
-    referenceType: ReferenceType)
-        extends Instruction with ConstantLengthInstruction {
+        referenceType: ReferenceType
+) extends Instruction with ConstantLengthInstruction {
 
     final def opcode: Opcode = INSTANCEOF.opcode
 
@@ -67,10 +67,16 @@ case class INSTANCEOF(
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
+
+    final def expressionResult: ExpressionResult = Stack
 
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }

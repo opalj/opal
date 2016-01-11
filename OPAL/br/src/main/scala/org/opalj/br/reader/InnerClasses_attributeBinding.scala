@@ -49,17 +49,19 @@ trait InnerClasses_attributeBinding
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 
     def InnerClasses_attribute(
-        cp: Constant_Pool,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes: InnerClasses): InnerClasses_attribute =
+        inner_classes:        InnerClasses
+    ): InnerClasses_attribute =
         new InnerClasses_attribute(inner_classes)
 
     def InnerClassesEntry(
-        cp: Constant_Pool,
-        inner_class_info_index: Constant_Pool_Index,
-        outer_class_info_index: Constant_Pool_Index,
-        inner_name_index: Constant_Pool_Index,
-        inner_class_access_flags: Int) = {
+        cp:                       Constant_Pool,
+        inner_class_info_index:   Constant_Pool_Index,
+        outer_class_info_index:   Constant_Pool_Index,
+        inner_name_index:         Constant_Pool_Index,
+        inner_class_access_flags: Int
+    ) = {
         new InnerClassesEntry(
             cp(inner_class_info_index).asObjectType(cp),
             if (outer_class_info_index == 0)

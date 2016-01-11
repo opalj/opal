@@ -38,6 +38,7 @@ import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.io.OpeningFileFailedException
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -102,13 +103,20 @@ trait AnalysisExecutor {
      * the set of specified parameters is not valid.
      */
     protected def printUsage(): Unit = {
-        println("Usage: java "+
-            this.getClass().getName()+"\n"+
-            "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
-            "[-libcp=<Directories or JAR/class files>]\n"+
-            analysisSpecificParametersDescription)
-        println(analysis.description)
-        println(analysis.copyright)
+        OPALLogger.info(
+            "usage",
+            "java "+
+                this.getClass().getName()+"\n"+
+                "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
+                "[-libcp=<Directories or JAR/class files>]\n"+
+                analysisSpecificParametersDescription
+        )(GlobalLogContext)
+        OPALLogger.info(
+            "info", "description: "+analysis.description
+        )(GlobalLogContext)
+        OPALLogger.info(
+            "info", "copyright: "+analysis.copyright
+        )(GlobalLogContext)
     }
 
     def main(unparsedArgs: Array[String]): Unit = {
@@ -128,7 +136,7 @@ trait AnalysisExecutor {
                 unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
             ).toArray
 
-        if (args.contains("-help")) {
+        if (args.contains("-help") || args.length < unparsedArgs.length) {
             printUsage()
             sys.exit(0)
         }
@@ -167,19 +175,30 @@ trait AnalysisExecutor {
             filenames.toSeq.map(verifyFile).flatten
         }
 
-        val (cp, args1) = {
-            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+        val (cp, args1) = try {
+            {
+                def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
 
-            args.partition(_.startsWith("-cp=")) match {
-                case (Array(), notCPArgs) ⇒
-                    (Array(System.getProperty("user.dir")), notCPArgs)
-                case (Array(cpParam), notCPArgs) ⇒
-                    (splitCPath(cpParam), notCPArgs)
-                case (cpParams: Array[String], notCPArgs) ⇒
-                    (cpParams.map(splitCPath).flatten, notCPArgs)
+                args.partition(_.startsWith("-cp=")) match {
+                    case (Array(), notCPArgs) ⇒
+                        (Array(System.getProperty("user.dir")), notCPArgs)
+                    case (Array(cpParam), notCPArgs) ⇒
+                        (splitCPath(cpParam), notCPArgs)
+                    case (cpParams: Array[String], notCPArgs) ⇒
+                        (cpParams.map(splitCPath).flatten, notCPArgs)
+                }
             }
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                println(Console.RED+"[error] failed parsing the classpath:"+Console.RESET)
+                t.printStackTrace()
+                sys.exit(2)
         }
-        println(s"[info] The classpath is ${cp.mkString}")
+
+        OPALLogger.info(
+            "setup", s"the classpath is ${cp.mkString}"
+        )(GlobalLogContext)
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
@@ -201,6 +220,10 @@ trait AnalysisExecutor {
         }
         val libcpFiles = verifyFiles(libcp)
 
+        OPALLogger.info(
+            "setup",
+            "analysis specific paramters: "+args2.mkString(",")
+        )(GlobalLogContext)
         val issues = checkAnalysisSpecificParameters(args2)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ println(Console.RED+"[error] "+Console.RESET + i) }
@@ -224,15 +247,16 @@ trait AnalysisExecutor {
         //
         // 3. execute analysis
         //
-        println("[info] Executing analysis: "+analysis.title+".")
+        println("[info] executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
         println(result.consoleReport)
     }
 
     protected def handleParsingExceptions(
-        project: SomeProject,
-        exceptions: Traversable[Throwable]): Unit = {
+        project:    SomeProject,
+        exceptions: Traversable[Throwable]
+    ): Unit = {
         if (exceptions.isEmpty)
             return ;
 
@@ -243,8 +267,9 @@ trait AnalysisExecutor {
     }
 
     def setupProject(
-        cpFiles: Iterable[File],
-        libcpFiles: Iterable[File]): Project[URL] = {
+        cpFiles:    Iterable[File],
+        libcpFiles: Iterable[File]
+    ): Project[URL] = {
 
         OPALLogger.info("creating project", "reading project class files")(GlobalLogContext)
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
@@ -264,7 +289,8 @@ trait AnalysisExecutor {
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext))
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
+                )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -272,9 +298,11 @@ trait AnalysisExecutor {
         val project = Project(classFiles, libraryClassFiles)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
-        OPALLogger.info("project",
+        OPALLogger.info(
+            "project",
             project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.reverse.
-                mkString("project statistics:\n\t", "\n\t", "\n"))(project.logContext)
+                mkString("project statistics:\n\t", "\n\t", "\n")
+        )(project.logContext)
         project
     }
 }

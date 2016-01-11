@@ -39,7 +39,7 @@ import org.opalj.av.checking.Specification
 
 /**
  * Tests that the implemented architecture of the infrastructure project
- * is consistent with its specifiation/with the intended architecture.
+ * is consistent with its specification/with the intended architecture.
  *
  * @author Michael Eichberg
  */

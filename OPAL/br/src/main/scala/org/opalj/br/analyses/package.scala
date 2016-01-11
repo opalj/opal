@@ -29,8 +29,12 @@
 package org.opalj
 package br
 
+import scala.language.implicitConversions
+
 import java.io.File
 import java.net.URL
+import org.opalj.collection.PartialCollection
+import scala.collection.Map
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -40,14 +44,18 @@ import java.net.URL
  */
 package object analyses {
 
-    import language.implicitConversions
-
     /**
      * Type alias for Project's with an arbitrary sources.
      */
     type SomeProject = Project[_]
 
     type ProgressEvent = ProgressEvents.Value
+
+    type DeclaredMethods = Map[ObjectType, PartialCollection[Set[Method]]]
+
+    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
+
+    type StringConstantsInformation = Map[String, List[(Method, PC)]]
 
     /**
      * Shortens an absolute path to one relative to the current working directory.
@@ -98,7 +106,8 @@ package object analyses {
     type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResults(
-        analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, Iterable[SourceLocationBasedReport[File]]](
             analysis,
@@ -107,7 +116,8 @@ package object analyses {
     }
 
     implicit def fileBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
-        analysis: Analysis[File, Option[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, Option[SourceLocationBasedReport[File]]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, Option[SourceLocationBasedReport[File]]](
             analysis,
@@ -116,7 +126,8 @@ package object analyses {
     }
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResult(
-        analysis: Analysis[File, SourceLocationBasedReport[File]]): Analysis[File, ReportableAnalysisResult] = {
+        analysis: Analysis[File, SourceLocationBasedReport[File]]
+    ): Analysis[File, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[File, SourceLocationBasedReport[File]](
             analysis,
@@ -125,7 +136,8 @@ package object analyses {
     }
 
     implicit def urlBasedReportableAnalysesToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Iterable[ReportableAnalysisResult]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Iterable[ReportableAnalysisResult]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Iterable[ReportableAnalysisResult]](
             analysis,
@@ -134,7 +146,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Iterable[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Iterable[SourceLocationBasedReport[URL]]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Iterable[SourceLocationBasedReport[URL]]](
             analysis,
@@ -143,7 +156,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisToAnalysisWithReportableResult(
-        analysis: Analysis[URL, SourceLocationBasedReport[URL]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, SourceLocationBasedReport[URL]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, SourceLocationBasedReport[URL]](
             analysis,
@@ -152,7 +166,8 @@ package object analyses {
     }
 
     implicit def urlBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
-        analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+        analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]
+    ): Analysis[URL, ReportableAnalysisResult] = {
 
         new ReportableAnalysisAdapter[URL, Option[SourceLocationBasedReport[URL]]](
             analysis,

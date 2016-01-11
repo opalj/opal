@@ -113,9 +113,10 @@ class CovariantCompareTo[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
         for (
             classFile ← findComparables(project).
                 filter(hasCompareToButNotCompareToObject(_))
@@ -124,7 +125,8 @@ class CovariantCompareTo[Source] extends FindRealBugsAnalysis[Source] {
                 project.source(classFile.thisType),
                 Severity.Warning,
                 classFile.thisType,
-                "Missing compareTo(Object) to override Comparable.compareTo(Object)")
+                "Missing compareTo(Object) to override Comparable.compareTo(Object)"
+            )
         }
     }
 }

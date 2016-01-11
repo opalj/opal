@@ -71,7 +71,8 @@ trait ProgressListener {
     def analysisCompleted(
         analysis: Analysis,
         position: Int,
-        total: Int,
+        total:    Int,
         timeSpan: Nanoseconds,
-        reports: FindRealBugs.AnalysisReports): Unit
+        reports:  FindRealBugs.AnalysisReports
+    ): Unit
 }

@@ -62,7 +62,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                     "intToIreturn",
                     Some(50),
                     None,
-                    "Increment during return statement is dead code"))
+                    "Increment during return statement is dead code"
+                )
+            )
         }
 
     it should "detect a useless int++ (IINC) instruction in a return statement at "+
@@ -78,7 +80,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                     "intToLreturn",
                     Some(54),
                     None,
-                    "Increment during return statement is dead code"))
+                    "Increment during return statement is dead code"
+                )
+            )
         }
 
     it should "detect a useless int++ (IINC) instruction in a return statement at "+
@@ -94,7 +98,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                     "intToFreturn",
                     Some(58),
                     None,
-                    "Increment during return statement is dead code"))
+                    "Increment during return statement is dead code"
+                )
+            )
         }
 
     it should "detect a useless int++ (IINC) instruction in a return statement at "+
@@ -110,7 +116,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                     "intToDreturn",
                     Some(62),
                     None,
-                    "Increment during return statement is dead code"))
+                    "Increment during return statement is dead code"
+                )
+            )
         }
 
     it should "only find 4 issues in UselessIncrementInReturn.jar" in {

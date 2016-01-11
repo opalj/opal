@@ -30,13 +30,12 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
 
 /**
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ObjectTypeTest extends FunSuite with ParallelTestExecution {
+class ObjectTypeTest extends FunSuite {
 
     test("FieldType factory method") {
         val fieldType = FieldType("Ljava/lang/Object;")

@@ -121,7 +121,7 @@ object FindRealBugs {
      * The default set of FindRealBugs' built-in analyses, all marked as enabled.
      */
     val defaultRegistry: AnalysisRegistry =
-        builtInAnalysisClassNames.map(name ⇒ name -> true).toMap
+        builtInAnalysisClassNames.map(name ⇒ name → true).toMap
 
     /**
      * Analyzes a project using the currently enabled analyses.
@@ -137,10 +137,11 @@ object FindRealBugs {
      * @return List of reports per analysis.
      */
     final def analyze(
-        project: Project[URL],
-        analysisCreators: Set[AnalysisCreator],
-        progressListener: Option[ProgressListener] = None,
-        progressController: Option[ProgressController] = None): Map[Analysis, AnalysisReports] = {
+        project:            Project[URL],
+        analysisCreators:   Set[AnalysisCreator],
+        progressListener:   Option[ProgressListener]   = None,
+        progressController: Option[ProgressController] = None
+    ): Map[Analysis, AnalysisReports] = {
 
         val progressManagement =
             new ProgressManagement {
@@ -177,14 +178,16 @@ object FindRealBugs {
                         analysis.analyze(
                             project,
                             Seq.empty,
-                            (stepCount) ⇒ progressManagement).toSet
+                            (stepCount) ⇒ progressManagement
+                        ).toSet
                     if (reports.nonEmpty) {
-                        results += analysis -> reports
+                        results += analysis → reports
                     }
                     reports
                 } { (time, reports) ⇒
                     progressListener.map(
-                        _.analysisCompleted(analysis, position, total, time, reports))
+                        _.analysisCompleted(analysis, position, total, time, reports)
+                    )
                 }
             }
         }
@@ -201,10 +204,11 @@ object FindRealBugs {
      * @return The loaded `ClassFile`s, ready to be passed to a `Project`.
      */
     def loadClassFiles(
-        inputFileNames: Iterable[String],
-        loadAsLibrary: Boolean,
-        errorHandler: (String) ⇒ Unit,
-        inputFileHandler: (File) ⇒ Unit): Iterable[(ClassFile, URL)] = {
+        inputFileNames:   Iterable[String],
+        loadAsLibrary:    Boolean,
+        errorHandler:     (String) ⇒ Unit,
+        inputFileHandler: (File) ⇒ Unit
+    ): Iterable[(ClassFile, URL)] = {
 
         // Read in files
         val existingFiles = for (arg ← inputFileNames) yield {
@@ -251,10 +255,11 @@ object FindRealBugs {
                     case _ ⇒
                         throw new IllegalArgumentException(
                             file.getName()+": "+name+": invalid value '"+value+"'"+
-                                ", expected 'yes' or 'no'")
+                                ", expected 'yes' or 'no'"
+                        )
                 }
 
-                name -> enabled
+                name → enabled
             }).toMap
         }
     }

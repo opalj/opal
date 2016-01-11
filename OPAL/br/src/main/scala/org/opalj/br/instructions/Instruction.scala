@@ -55,19 +55,19 @@ trait Instruction {
      * this instruction fails.
      * I.e., these are neither exceptions that are explicitly created and then thrown
      * by user code nor errors that may arise due to an invalid code base (e.g.
-     * `LinkageError`s).
+     * `LinkageError`s). However, OutOfMemoryErrors are possible.
      */
     def jvmExceptions: List[ObjectType]
 
     /**
      * The index of the next instruction in the code array.
      *
-     * This is primarily a convenience method that delegates to the method
+     * @note This is primarily a convenience method that delegates to the method
      * `indexOfNextInstrution(PC,Boolean)`.  However, given that this is also the
      * standard method called by clients, it is often meaningful to directly implement
      * this. In particular since most instructions cannot be modified by wide.
      */
-    def indexOfNextInstruction(currentPC: PC, code: Code): Int
+    def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int
 
     /**
      * The index of the next instruction in the code array.
@@ -84,8 +84,9 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        nextInstructions(currentPC, code, regularSuccessorsOnly = false)
+    final def nextInstructions(currentPC: PC)(implicit code: Code): PCs = {
+        nextInstructions(currentPC, regularSuccessorsOnly = false)
+    }
 
     /**
      * Returns the pcs of the instructions that may be executed next at runtime.
@@ -93,7 +94,7 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs
+    def nextInstructions(currentPC: PC, regularSuccessorsOnly: Boolean)(implicit code: Code): PCs
 
     /**
      * Determines if this instruction is isomorphic to the given instruction.
@@ -189,6 +190,18 @@ trait Instruction {
     def indexOfWrittenLocal: Int
 
     /**
+     * Returns the location – [[Stack]], [[Register]] or [[NoExpression]] – where the value
+     * computed by this instruction is stored. In this case an instruction is only considered
+     * to be an expression if a puts a value on the stack or in a register that is the result of
+     * some kind of computation; i.e., just copying, duplicating or moving a value between the
+     * stack and the registers is not considered to be an expression.
+     *
+     * @note The CHECKCAST instruction is special in the sense that it just inspects the top-most
+     * 			value.
+     */
+    def expressionResult: ExpressionResult
+
+    /**
      * Returns a string representation of this instruction. If this instruction is a
      * (conditional) jump instruction then the PCs of the target instructions are
      * given absolute address.
@@ -230,20 +243,22 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
-        currentPC: PC,
-        code: Code,
-        exceptions: List[ObjectType]): UShortSet /* <= mutable by purpose! */ = {
+        currentPC:   PC,
+        exceptions:  List[ObjectType]
+    )(
+        implicit
+        code: Code
+    ): UShortSet /* <= mutable by purpose! */ = {
 
-        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
+        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC))
 
         def processException(exception: ObjectType): Unit = {
+            import Code.preDefinedClassHierarchy.isSubtypeOf
             code.handlersFor(currentPC) find { handler ⇒
-                handler.catchType.isEmpty ||
-                    Code.preDefinedClassHierarchy.isSubtypeOf(
-                        exception,
-                        handler.catchType.get).isYes
+                val catchType = handler.catchType
+                catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
             } match {
-                case Some(handler) ⇒ pcs = handler.startPC +≈: pcs
+                case Some(handler) ⇒ pcs = handler.handlerPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
             }
         }
@@ -255,19 +270,21 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
-        currentPC: PC,
-        code: Code,
-        exception: ObjectType): UShortSet /* <= mutable by purpose! */ = {
+        currentPC:   PC,
+        exception:   ObjectType
+    )(
+        implicit
+        code: Code
+    ): UShortSet /* <= mutable by purpose! */ = {
 
-        val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
+        val nextInstruction = instruction.indexOfNextInstruction(currentPC)
 
         code.handlersFor(currentPC) find { handler ⇒
-            handler.catchType.isEmpty ||
-                Code.preDefinedClassHierarchy.isSubtypeOf(
-                    exception,
-                    handler.catchType.get).isYes
+            import Code.preDefinedClassHierarchy.isSubtypeOf
+            val catchType = handler.catchType
+            catchType.isEmpty || isSubtypeOf(exception, catchType.get).isYes
         } match {
-            case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
+            case Some(handler) ⇒ UShortSet(nextInstruction, handler.handlerPC)
             case None          ⇒ UShortSet(nextInstruction)
         }
     }

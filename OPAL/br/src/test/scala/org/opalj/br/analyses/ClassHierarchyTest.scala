@@ -47,7 +47,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
-class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll */ {
+class ClassHierarchyTest extends FlatSpec with Matchers {
 
     // -----------------------------------------------------------------------------------
     //
@@ -62,6 +62,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
+
+    val jlsCHFile = "ClassHierarchyJLS.ths"
+    val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
+    val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -276,8 +280,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
     val genericWithSuffix_publicSuffix4_1 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix4_1", List(elementType(baseCTS)))))
 
     /** GenericWithSuffix<Base>.Suffix1_1<AlternativeBase>.Suffix1_2 */
-    val genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase = CTS("GenericWithSuffix",
-        List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
+    val genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase = CTS(
+        "GenericWithSuffix",
+        List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_1", List(elementType(baseCTS))))
+    )
 
     /** GenericWithSuffix<Base>.Suffix2_1<Base>.Suffix2_2<Base, AlternativeBase> */
     val genericWithSuffix_Suffix2_2 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix2_1", List(elementType(baseCTS))), SimpleCTS("Suffix2_2", List(elementType(baseCTS), elementType(altBaseCTS)))))
@@ -313,8 +319,20 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         if (preInitCH.rootTypes.size != 1) {
             fail(
                 "The default class hierarchy has unexpected root types: "+
-                    preInitCH.rootTypes.mkString(", "))
+                    preInitCH.rootTypes.mkString(", ")
+            )
         }
+    }
+
+    behavior of "the default ClassHierarchy's leafTypes method"
+
+    it should "return all leaf types" in {
+        jlsCH.leafTypes.toSet should be(Set(
+            ObjectType("java/lang/String"),
+            ObjectType("java/lang/Class"),
+            ObjectType("java/lang/Cloneable"),
+            ObjectType("java/lang/Comparable")
+        ))
     }
 
     behavior of "the default ClassHierarchy's isKnown method"
@@ -500,6 +518,59 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
     it should "not fail if no common subtype exists" in {
         import typesProject.classHierarchy.directSubtypesOf
         directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(Set.empty)
+    }
+
+    behavior of "the ClassHierarchy's allSubclasses method"
+
+    it should "return the empty iterator if the type has no subclasses" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootAAABBCType, false).size should be(0)
+    }
+
+    it should "return the singleton iterator if the type has no subclasses but we want the relation to be reflexive" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootAAABBCType, true).size should be(1)
+    }
+
+    it should "return all subclasses of a leaf-type in the complete type hierarchy" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootType, true).toSet should be(Set(cRootType))
+    }
+
+    it should "return all subclasses (non-reflexive) of a leaf-type in the complete type hierarchy" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootType, false).toSet should be(Set())
+    }
+
+    it should "return all subclasses in the complete type hierarchy" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootAType, true).toSet should be(Set(cRootAType, cRootAABType, cRootAAABBCType))
+    }
+
+    it should "return all subclasses (non-reflexive) in the complete type hierarchy" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(cRootAType, false).toSet should be(Set(cRootAABType, cRootAAABBCType))
+    }
+
+    it should "return all subclasses (non-reflexive) of a class with multiple direct subclasses" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
+            Set(
+                ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
+                ObjectType("java/lang/StringIndexOutOfBoundsException")
+            )
+        )
+    }
+
+    it should "return all subclasses (reflexive) of a class with multiple direct subclasses" in {
+        import typesProject.classHierarchy.allSubclasses
+        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
+            Set(
+                ObjectType("java/lang/IndexOutOfBoundsException"),
+                ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
+                ObjectType("java/lang/StringIndexOutOfBoundsException")
+            )
+        )
     }
 
     // -----------------------------------------------------------------------------------
@@ -714,15 +785,15 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
 
         clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
             method.name == "draw" &&
-                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
-        ) should be('defined)
+                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid) should be('defined)
 
         classHierarchy.lookupImplementingMethods(
             window,
             "draw",
             MethodDescriptor.NoArgsAndReturnVoid,
             clusteringProject,
-            (cf) ⇒ true) should be('nonEmpty)
+            (cf) ⇒ true
+        ) should be('nonEmpty)
     }
 
     // -----------------------------------------------------------------------------------
@@ -804,7 +875,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
             ObjectType("NOT/DEFINED"),
             "NOT_DEFINED",
             IntegerType,
-            fieldsProject) should be(None)
+            fieldsProject
+        ) should be(None)
     }
 
     // -----------------------------------------------------------------------------------
@@ -832,7 +904,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
                 "someMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
                 methodsProject,
-                (cf) ⇒ true)
+                (cf) ⇒ true
+            )
 
         implementingMethods.size should be(0)
     }
@@ -845,7 +918,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
                 "publicMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
                 methodsProject,
-                (cf) ⇒ true)
+                (cf) ⇒ true
+            )
 
         implementingMethods.size should be(1)
         implementingMethods.head should have(

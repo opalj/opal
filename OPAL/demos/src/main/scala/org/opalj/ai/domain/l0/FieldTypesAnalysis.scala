@@ -53,16 +53,18 @@ object FieldTypesAnalysis extends DefaultOneStepAnalysis {
         "Identifies fields of a class where we can – statically – derive more precise type/value information."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         val refinedFieldValues =
             org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(
                 theProject,
                 (project: SomeProject, classFile: ClassFile) ⇒
                     new BaseFieldValuesAnalysisDomain(project, classFile),
-                isInterrupted)
+                isInterrupted
+            )
 
         BasicReport(
             refinedFieldValues.seq.map { info ⇒

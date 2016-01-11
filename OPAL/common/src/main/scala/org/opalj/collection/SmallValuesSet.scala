@@ -32,8 +32,7 @@ package collection
 /**
  * A memory-efficient, sorted set of small values that
  * is highly tailored for small(er) sets of small
- * values, where the set will always
- * just grow but stays small. Removing elements is not possible.
+ * values.
  *
  * @author Michael Eichberg
  */
@@ -134,10 +133,11 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * @param offset A value that is added to all values when the string is created.
      */
     protected[collection] def mkString(
-        start: String,
-        sep: String,
-        end: String,
-        offset: Int): String
+        start:  String,
+        sep:    String,
+        end:    String,
+        offset: Int
+    ): String
 
     def mkString(start: String, sep: String, end: String): String
 

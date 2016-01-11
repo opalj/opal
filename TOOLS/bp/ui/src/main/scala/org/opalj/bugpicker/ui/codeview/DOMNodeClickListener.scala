@@ -44,12 +44,13 @@ import scalafx.Includes._
 import scalafx.scene.web.WebView
 
 class DOMNodeClickListener(
-        project: Project[URL],
-        sources: Seq[File],
-        node: Node,
+        project:         Project[URL],
+        sources:         Seq[File],
+        node:            Node,
         bytecodeWebview: WebView,
-        sourceWebview: WebView,
-        focus: WebView ⇒ Unit) extends EventListener {
+        sourceWebview:   WebView,
+        focus:           WebView ⇒ Unit
+) extends EventListener {
 
     private val nodeAttributes = node.getAttributes
 
@@ -60,8 +61,9 @@ class DOMNodeClickListener(
             None
 
     def findSourceFile(
-        theType: ObjectType,
-        lineOption: Option[String]): Option[SourceFileWrapper] = {
+        theType:    ObjectType,
+        lineOption: Option[String]
+    ): Option[SourceFileWrapper] = {
 
         val classFile = project.classFile(theType)
         if (!classFile.isDefined) return None
@@ -73,14 +75,12 @@ class DOMNodeClickListener(
         val sourceFile: Option[File] =
             if (cf.sourceFile.isDefined) {
                 sources.toStream.map(dir ⇒
-                    new File(dir, sourcePackagePath+"/"+cf.sourceFile.get)).find(_.exists()
-                )
+                    new File(dir, sourcePackagePath+"/"+cf.sourceFile.get)).find(_.exists())
             } else {
                 val name = theType.simpleName
                 val packageDir =
                     sources.toStream.map(dir ⇒
-                        new File(dir, sourcePackagePath)).find(_.exists()
-                    )
+                        new File(dir, sourcePackagePath)).find(_.exists())
                 packageDir.map(_.listFiles(new FilenameFilter {
                     override def accept(file: File, filename: String): Boolean =
                         filename.matches("^"+name+"\\.\\w+$")
@@ -129,19 +129,21 @@ class DOMNodeClickListener(
             new JumpToProblemListener(
                 webview = sourceWebview,
                 methodOption = methodOption,
-                pcOption = None, lineOption = lineOption)
+                pcOption = None, lineOption = lineOption
+            )
             focus(sourceWebview)
         }
 
         val classFile = decompileClassFile(project, sourceType)
         if (classFile.isDefined)
-            bytecodeWebview.engine.loadContent(classFile.get.toXHTML.toString)
+            bytecodeWebview.engine.loadContent(classFile.get.toXHTML().toString)
         else
             bytecodeWebview.engine.loadContent(Messages.NO_BYTECODE_FOUND)
         new JumpToProblemListener(
             webview = bytecodeWebview,
             methodOption = methodOption,
-            pcOption = pcOption, lineOption = None)
+            pcOption = pcOption, lineOption = None
+        )
         if (noSourceFound || showBytecode && !showSource) focus(bytecodeWebview)
     }
 }

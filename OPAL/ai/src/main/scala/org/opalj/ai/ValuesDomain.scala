@@ -251,8 +251,7 @@ trait ValuesDomain {
             val result = this.join(Int.MinValue /*Irrelevant*/ , other)
             result.isNoUpdate ||
                 (result.isMetaInformationUpdate &&
-                    (result ne MetaInformationUpdateIllegalValue)
-                )
+                    (result ne MetaInformationUpdateIllegalValue))
         }
 
         /**
@@ -482,7 +481,8 @@ trait ValuesDomain {
      *      as these additional methods will never be called by OPAL-AI.
      */
     class ReturnAddressValue(
-        val address: PC)
+        val address: PC
+    )
             extends Value { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
@@ -630,6 +630,7 @@ trait ValuesDomain {
      * this method and should return a textual representation of the property.
      */
     def properties(
-        pc: PC,
-        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = None
+        pc:               PC,
+        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString
+    ): Option[String] = None
 }

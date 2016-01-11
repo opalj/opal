@@ -171,7 +171,8 @@ object StringPassedToClassForName extends DataFlowProblemFactory with DataFlowPr
 
     override def create[Source](
         theProject: Project[Source],
-        theP: P): DataFlowProblem[Source, P] = {
+        theP:       P
+    ): DataFlowProblem[Source, P] = {
         object StringPassedToClassForNameWithSimpleSolver extends {
             // early definition block
             final val project = theProject

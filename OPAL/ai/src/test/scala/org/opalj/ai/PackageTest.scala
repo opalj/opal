@@ -29,7 +29,6 @@
 package org.opalj
 package ai
 
-import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -49,7 +48,7 @@ import org.opalj.ai.domain.PredefinedClassHierarchy
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PackageTest extends FlatSpec with Matchers with ParallelTestExecution {
+class PackageTest extends FlatSpec with Matchers {
 
     behavior of "the mapOperands method"
 

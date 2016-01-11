@@ -42,7 +42,8 @@ trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Para
     type DomainValue = theDomain.DomainValue
 
     protected[this] class TaintedValue(
-        override val domainValue: DomainValue)
+        override val domainValue: DomainValue
+    )
             extends super.TaintedValue
             with TaintInformation {
 

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,7 +35,7 @@ package analyses
  * (immutable) information with a project that should be computed on demand.
  * For example, imagine that you write an analysis that requires – as a foundation –
  * the project's call graph. In this case, to get the call graph it is sufficient
- * to pass the respective key to the project object. If the call graph was already
+ * to pass the respective key to the [[Project]] object. If the call graph was already
  * computed that one will be returned, otherwise the computation will be performed and
  * the result will be cached for future usage before it is returned.
  *
@@ -70,6 +70,8 @@ package analyses
  * [[Project]] takes care of the caching of the result of the computation of the
  * information.
  *
+ * @param T The type of the information object that is derived.
+ *
  * @author Michael Eichberg
  */
 trait ProjectInformationKey[T <: AnyRef] {
@@ -80,14 +82,12 @@ trait ProjectInformationKey[T <: AnyRef] {
      */
     final val uniqueId: Int = ProjectInformationKey.nextId
 
-    // Only (intended to be) used by ProjectLike. 
-    // "Solves" the issue that Scala has no "package protected" visibility; 
+    // Only (intended to be) used by ProjectLike.
+    // "Solves" the issue that Scala has no "package protected" visibility;
     // We wanted to make sure that the method "requirements" is (at least by default)
     // only visible in the subclasses as it is not intended to be called by objects
     // other than instances of `ProjectLike`.
-    final private[analyses] def getRequirements: Seq[ProjectInformationKey[_ <: AnyRef]] = {
-        requirements
-    }
+    final private[analyses] def getRequirements: ProjectInformationKeys = requirements
 
     /**
      * Returns the information which other project information need to be available
@@ -95,19 +95,20 @@ trait ProjectInformationKey[T <: AnyRef] {
      *
      * If the analysis has no special requirements `Nil` can be returned.
      *
+     * @note '''All requirements must be listed; failing to specify a requirement can
+     * 		end up in a deadlock.'''
+     *
      * @note Classes/Objects that implement this trait should not make the method `public`
      *      to avoid that this method is called accidentally by regular user code.
      */
-    /*ABSTRACT*/ protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]]
+    /*ABSTRACT*/ protected def requirements: ProjectInformationKeys
 
-    // Only (intended to be) used by Project. 
-    // "Solves" the issue that Scala has no "package protected" visibility; 
+    // Only (intended to be) used by Project.
+    // "Solves" the issue that Scala has no "package protected" visibility;
     // We wanted to make sure that the method "compute" is (at least by default)
     // only visible in the subclasses as it is not intended to be called by objects
     // other than instances of `Project`.
-    final private[analyses] def doCompute(project: SomeProject): T = {
-        compute(project)
-    }
+    final private[analyses] def doCompute(project: SomeProject): T = compute(project)
 
     /**
      * Computes the information for the given project.
@@ -121,7 +122,8 @@ trait ProjectInformationKey[T <: AnyRef] {
 }
 
 /**
- * Companion object of ProjectInformationKey
+ * Private companion object of ProjectInformationKey that is required to associate
+ * project information objects with unique ids.
  *
  * @author Michael Eichberg
  */

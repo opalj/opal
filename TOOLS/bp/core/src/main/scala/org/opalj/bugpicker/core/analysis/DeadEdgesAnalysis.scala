@@ -42,9 +42,9 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project, SomeProject}
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.MethodWithBody
 import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
@@ -97,7 +97,6 @@ import org.opalj.br.instructions.ReturnInstructions
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
-import org.opalj.br.cfg.ControlFlowGraph
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.domain.Origin
 import org.opalj.br.ExceptionHandler
@@ -113,7 +112,8 @@ object DeadEdgesAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }): Seq[StandardIssue] = {
+        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }
+    ): Seq[StandardIssue] = {
         if (method.isSynthetic)
             return Seq.empty;
 
@@ -224,7 +224,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true).iterator
+            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).iterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
@@ -332,13 +332,14 @@ object DeadEdgesAnalysis {
                             result.strictfp,
                             result.code,
                             result.joinInstructions,
-                            zDomain)(
-                                /*initialWorkList =*/ List(nextPC),
-                                /*alreadyEvaluated =*/ List(),
-                                zOperandsArray,
-                                zLocalsArray,
-                                List.empty
-                            )
+                            zDomain
+                        )(
+                            /*initialWorkList =*/ List(nextPC),
+                            /*alreadyEvaluated =*/ List(),
+                            zOperandsArray,
+                            zLocalsArray,
+                            List.empty, null, null // we don't care about the state of subroutines
+                        )
                         val exceptionValue = zOperandsArray(athrowPC).head
                         val throwsError =
                             (
@@ -373,7 +374,7 @@ object DeadEdgesAnalysis {
                         (pc, s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← $instr")
 
                     case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
-                        val nextPC = instr.indexOfNextInstruction(pc, body)
+                        val nextPC = instr.indexOfNextInstruction(pc)
                         val operands = operandsArray(nextPC)
                         operands != null &&
                             operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
@@ -381,7 +382,7 @@ object DeadEdgesAnalysis {
                         val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                         (
                             pc,
-                            s"${operandsArray(instr.indexOfNextInstruction(pc, body)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                            s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
                         )
                 }
 
@@ -391,7 +392,8 @@ object DeadEdgesAnalysis {
                     isNonExistingDefaultBranchOfSwitch ||
                     isRelatedToCompilationOfFinally
             issues ::= StandardIssue(
-                theProject, classFile, Some(method), Some(pc),
+                "DeadEdgesAnalysis",
+                theProject, classFile, None, Some(method), Some(pc),
                 Some(operands), Some(result.localsArray(pc)),
                 if (isJustDeadPath)
                     s"[dead path] the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
@@ -407,8 +409,9 @@ object DeadEdgesAnalysis {
                             "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
                         else
                             ""
-                    )),
-                Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                    )
+                ),
+                Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                 Set(IssueKind.DeadPath),
                 hints,
                 if (isTechnicalArtifact)

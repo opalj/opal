@@ -47,39 +47,78 @@ import scala.collection.generic.FilterMonadic
  * @author Michael Eichberg
  */
 class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
-        private var data: Array[T]) {
+        private var data: Array[T]
+) {
 
     /**
-     * Returns the value stored at the given index or `null` instead.
+     * Returns the value stored for the given key or `null` instead.
      *
-     * @note If the index is not valid the result is not defined.
+     * @note If the key is not valid the result is not defined.
      */
-    @throws[IndexOutOfBoundsException]("if the index is negative")
-    def apply(index: Int): T = {
-        if (index < data.length)
-            data(index)
+    @throws[IndexOutOfBoundsException]("if the key is negative")
+    def apply(key: Int): T = {
+        if (key < data.length)
+            data(key)
         else
             null
     }
 
+    @throws[IndexOutOfBoundsException]("if the key is negative")
+    def get(key: Int): Option[T] = {
+        if (key < data.length) {
+            val entry = data(key)
+            if (entry ne null)
+                Some(entry)
+            else
+                None
+        } else
+            None
+    }
+
+    @throws[IndexOutOfBoundsException]("if the key is negative")
+    def getOrElse(key: Int, f: ⇒ T): T = {
+        if (key < data.length) {
+            val entry = data(key)
+            if (entry ne null)
+                entry
+            else
+                f
+        } else
+            f
+    }
+
+    @throws[IndexOutOfBoundsException]("if the key is negative")
+    def getOrElseUpdate(key: Int, f: ⇒ T): T = {
+        if (key < data.length) {
+            val entry = data(key)
+            if (entry ne null)
+                return entry;
+        }
+
+        // orElseUpdate
+        val v: T = f
+        update(key, v)
+        v
+    }
+
     /**
-     * Sets the value at the given index to the given value. If the index is larger than
+     * Sets the value for the given key to the given value. If the key cannot be stored  in
      * the currently used array, the underlying array is immediately resized to make
      * it possible to store the new value.
      */
-    @throws[IndexOutOfBoundsException]("if the index is negative")
-    final def update(index: Int, value: T): Unit = {
+    @throws[IndexOutOfBoundsException]("if the key is negative")
+    final def update(key: Int, value: T): Unit = {
         assert(value ne null, "ArrayMap only supports non-null values")
 
         val max = data.length
-        if (index < max)
-            data(index) = value
-        else if (index == max) {
+        if (key < max)
+            data(key) = value
+        else if (key == max) {
             data = data :+ value
         } else {
-            val newData = new Array[T](index + 1)
+            val newData = new Array[T](key + 1)
             System.arraycopy(data, 0, newData, 0, max)
-            newData(index) = value
+            newData(key) = value
             data = newData
         }
     }

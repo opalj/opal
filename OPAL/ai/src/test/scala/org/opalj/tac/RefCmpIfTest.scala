@@ -117,46 +117,50 @@ class RefCmpIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(IfACMPEQMethod, None)
+                val statements = AsQuadruples(method = IfACMPEQMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryResultAST(
-                    If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8;"))
             }
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(IfACMPNEMethod, None)
+                val statements = AsQuadruples(method = IfACMPNEMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryResultAST(
-                    If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)))
+                    If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8;"))
             }
 
             it("should correctly reflect the non-null case") {
-                val statements = AsQuadruples(IfNonNullMethod, None)
+                val statements = AsQuadruples(method = IfNonNullMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
-                    If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 != null) goto 6;"))
             }
 
             it("should correctly reflect the is-null case") {
-                val statements = AsQuadruples(IfNullMethod, None)
+                val statements = AsQuadruples(method = IfNullMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(unaryResultAST(
-                    If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)))
+                    If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)
+                ))
                 javaLikeCode.shouldEqual(unaryJLC("3: if(op_0 == null) goto 6;"))
             }
         }
@@ -214,7 +218,7 @@ class RefCmpIfTest extends FunSpec with Matchers {
             it("should correctly reflect the equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfACMPEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfACMPEQMethod, domain)
-                val statements = AsQuadruples(IfACMPEQMethod, Some(aiResult))
+                val statements = AsQuadruples(method = IfACMPEQMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -222,14 +226,15 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryResultAST(
                     If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8),
                     DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 == op_1) goto 8;"))
             }
 
             it("should correctly reflect the not-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfACMPNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfACMPNEMethod, domain)
-                val statements = AsQuadruples(IfACMPNEMethod, Some(aiResult))
+                val statements = AsQuadruples(method = IfACMPNEMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -237,14 +242,15 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryResultAST(
                     If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8),
                     DomainValueBasedVar(0, domain.ReferenceValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.ReferenceValue(-3, ObjectType.Object).asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: if(op_0 != op_1) goto 8;"))
             }
 
             it("should correctly reflect the non-null case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNonNullMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNonNullMethod, domain)
-                val statements = AsQuadruples(IfNonNullMethod, Some(aiResult))
+                val statements = AsQuadruples(method = IfNonNullMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -252,16 +258,18 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6),
                     DomainValueBasedVar(0, domain.NullValue(-2).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 != null) goto 6;",
-                    "5: return op_0 /*null[@-2;t=102]*/;"))
+                    "5: return op_0 /*null[@-2;t=102]*/;"
+                ))
             }
 
             it("should correctly reflect the is-null case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNullMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNullMethod, domain)
-                val statements = AsQuadruples(IfNullMethod, Some(aiResult))
+                val statements = AsQuadruples(method = IfNullMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -269,10 +277,12 @@ class RefCmpIfTest extends FunSpec with Matchers {
                 statements.shouldEqual(unaryResultAST(
                     If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6),
                     DomainValueBasedVar(0, domain.NonNullObjectValue(-2, ObjectType.Object).asInstanceOf[domain.DomainValue]),
-                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])))
+                    DomainValueBasedVar(0, domain.NullValue(6).asInstanceOf[domain.DomainValue])
+                ))
                 javaLikeCode.shouldEqual(unaryJLC(
                     "3: if(op_0 == null) goto 6;",
-                    "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"))
+                    "5: return op_0 /*_ <: java.lang.Object[@-2;t=102]*/;"
+                ))
             }
         }
     }

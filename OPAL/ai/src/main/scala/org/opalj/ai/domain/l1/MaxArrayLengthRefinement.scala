@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.br.{ComputationalType, ComputationalTypeInt}
 
 /**
  *
@@ -41,8 +41,9 @@ trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
     domain: IntegerRangeValues with Configuration with ClassHierarchy ⇒
 
     abstract override def arraylength(
-        pc: PC,
-        arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
+        pc:       PC,
+        arrayref: DomainValue
+    ): Computation[DomainValue, ExceptionValue] = {
 
         val length = super.arraylength(pc, arrayref)
         if (length.hasResult) {

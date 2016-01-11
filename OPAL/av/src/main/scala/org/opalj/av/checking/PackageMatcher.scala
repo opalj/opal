@@ -40,7 +40,8 @@ import org.opalj.br.analyses.SomeProject
  */
 case class PackageMatcher(
     namePredicate: NamePredicate,
-    classMatcher: ClassMatcher)
+    classMatcher:  ClassMatcher
+)
         extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -53,7 +54,8 @@ case class PackageMatcher(
         VirtualSourceElement.asVirtualSourceElements(
             project.allClassFiles filter { doesMatch(_) },
             classMatcher.matchMethods,
-            classMatcher.matchFields)
+            classMatcher.matchFields
+        )
     }
 }
 
@@ -82,9 +84,10 @@ object PackageMatcher {
      *
      */
     def apply(
-        packageName: String,
-        classMatcher: ClassMatcher = AllClasses,
-        matchSubpackages: Boolean = false): PackageMatcher = {
+        packageName:      String,
+        classMatcher:     ClassMatcher = AllClasses,
+        matchSubpackages: Boolean      = false
+    ): PackageMatcher = {
         val binaryPackageName = packageName.replace('.', '/')
         val namePredicate =
             if (matchSubpackages)
@@ -96,8 +99,9 @@ object PackageMatcher {
     }
 
     def apply(
-        packageName: String,
-        matchSubpackages: Boolean): PackageMatcher = {
+        packageName:      String,
+        matchSubpackages: Boolean
+    ): PackageMatcher = {
         apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
     }
 

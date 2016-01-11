@@ -30,7 +30,8 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.fp.PropertyStore
+import net.ceedubs.ficus.Ficus._
+import org.opalj.fpcf.PropertyStore
 
 /**
  * The ''key'' object to get access to the properties store.
@@ -38,6 +39,8 @@ import org.opalj.fp.PropertyStore
  * @author Michael Eichberg
  */
 object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
+
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.SourceElementsPropertyStore."
 
     /**
      * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
@@ -51,6 +54,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      */
     override protected def compute(project: SomeProject): PropertyStore = {
         val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
-        PropertyStore(project.allSourceElements, isInterrupted)(project.logContext)
+        val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
+        PropertyStore(project.allSourceElements, isInterrupted, debug)(project.logContext)
     }
 }

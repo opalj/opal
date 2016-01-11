@@ -33,15 +33,7 @@ package ui
 import java.io.File
 import java.net.URL
 
-import scala.xml.{ Node ⇒ xmlNode }
-
-import org.opalj.br.analyses.Project
-import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.analysis.Issue
-import org.opalj.bugpicker.ui.codeview.AddClickListenersOnLoadListener
-import org.opalj.bugpicker.ui.dialogs.DialogStage
-import org.opalj.bugpicker.ui.dialogs.ProgressManagementDialog
+import scala.xml.{Node ⇒ xmlNode}
 
 import scalafx.Includes.jfxWorkerStateEvent2sfxWorkerStateEvent
 import scalafx.beans.property.BooleanProperty
@@ -53,6 +45,14 @@ import scalafx.scene.control.TabPane
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 
+import org.opalj.br.analyses.Project
+import org.opalj.bugpicker.core.analysis.AnalysisParameters
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.Issue
+import org.opalj.bugpicker.ui.codeview.AddClickListenersOnLoadListener
+import org.opalj.bugpicker.ui.dialogs.DialogStage
+import org.opalj.bugpicker.ui.dialogs.ProgressManagementDialog
+
 /**
  * @author Arne Lottmann
  * @author Michael Eichberg
@@ -61,10 +61,10 @@ import scalafx.stage.Stage
 object AnalysisRunner extends BugPickerAnalysis {
 
     def runAnalysis(
-        stage: Stage,
-        project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
-        issues: ObjectProperty[Iterable[Issue]],
-        sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane): Unit = {
+        stage:   Stage,
+        project: Project[URL], sources: Seq[File], issues: ObjectProperty[Iterable[Issue]],
+        sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane
+    ): Unit = {
 
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project first!", stage)
@@ -84,17 +84,19 @@ object AnalysisRunner extends BugPickerAnalysis {
         val progStage =
             new ProgressManagementDialog(
                 stage,
-                reportView, progressListView, theProgress, stepCount, interrupted)
+                reportView, progressListView, theProgress, stepCount, interrupted
+            )
 
         val initProgressManagement =
             new InitProgressManagement(
                 interrupted, theProgress,
                 progressListView, progressListItems,
-                stepCount.toDouble, progStage)
+                stepCount.toDouble, progStage
+            )
 
         val doc = new ObjectProperty[xmlNode]
 
-        val worker = new AnalysisWorker(doc, project, parameters, issues, initProgressManagement)
+        val worker = new AnalysisWorker(doc, project, issues, initProgressManagement)
         worker.handleEvent(WorkerStateEvent.ANY)(
             new WorkerFinishedListener(project, sources, doc, reportView, sourceView, byteView, tabPane)
         )
@@ -105,13 +107,14 @@ object AnalysisRunner extends BugPickerAnalysis {
     }
 
     private class WorkerFinishedListener(
-            project: Project[URL],
-            sources: Seq[File],
-            doc: ObjectProperty[xmlNode],
+            project:    Project[URL],
+            sources:    Seq[File],
+            doc:        ObjectProperty[xmlNode],
             reportView: WebView,
             sourceView: WebView,
-            byteView: WebView,
-            tabPane: TabPane) extends Function1[WorkerStateEvent, Unit] {
+            byteView:   WebView,
+            tabPane:    TabPane
+    ) extends Function1[WorkerStateEvent, Unit] {
 
         override def apply(event: WorkerStateEvent): Unit = {
             event.eventType match {

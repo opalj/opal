@@ -40,7 +40,7 @@ import org.opalj.av.checking._
 
 /**
  * Tests that the implemented architecture of the dependency extraction
- * library is consistent with its specifiation/with the intended
+ * library is consistent with its specification/with the intended
  * architecture.
  *
  * @author Michael Eichberg

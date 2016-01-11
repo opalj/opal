@@ -33,9 +33,9 @@ import scala.language.existentials
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ DefaultOneStepAnalysis, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project, SomeProject}
 import org.opalj.br.Method
-import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
+import org.opalj.br.{ReferenceType, ObjectType, IntegerType}
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 
@@ -49,7 +49,8 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
-        val method: Method)
+        val method:           Method
+    )
             extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -78,9 +79,10 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
         "Identifies calls of native methods with bounded integer parameters."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         println("Calculating CallGraph")
         val ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
             theProject.get(VTACallGraphKey)
@@ -100,7 +102,8 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             }).flatten
         println(
             calledNativeMethods.map(_.toJava).toList.sorted.
-                mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", ""))
+                mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", "")
+        )
 
         val mutex = new Object
         var results: List[NativeCallWithBoundedMethodParameter] = Nil
@@ -143,7 +146,9 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
                                 caller,
                                 pc,
                                 lb,
-                                ub))
+                                ub
+                            )
+                        )
                     case _ ⇒
                         unboundedCalls.incrementAndGet()
                 }
@@ -189,13 +194,14 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
 }
 
 case class NativeCallWithBoundedMethodParameter(
-        project: SomeProject,
-        nativeMethod: Method,
+        project:        SomeProject,
+        nativeMethod:   Method,
         parameterIndex: Int,
-        caller: Method,
-        callSite: PC,
-        lowerBound: Int,
-        upperBound: Int) {
+        caller:         Method,
+        callSite:       PC,
+        lowerBound:     Int,
+        upperBound:     Int
+) {
 
     override def toString = {
         import Console._

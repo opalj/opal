@@ -36,10 +36,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-    declaringClass: ReferenceType, // an interface, class or array type to be precise
-    name: String,
-    methodDescriptor: MethodDescriptor)
-        extends VirtualMethodInvocationInstruction {
+        declaringClass:   ReferenceType, // an interface, class or array type to be precise
+        name:             String,
+        methodDescriptor: MethodDescriptor
+) extends VirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKEVIRTUAL.opcode
 
@@ -51,6 +51,7 @@ case class INVOKEVIRTUAL(
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+
 }
 object INVOKEVIRTUAL {
 

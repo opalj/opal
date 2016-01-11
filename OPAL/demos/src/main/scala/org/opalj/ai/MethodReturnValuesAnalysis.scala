@@ -41,7 +41,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodSignature
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
+import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis}
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.BaseMethodReturnValuesAnalysisDomain
 import org.opalj.ai.analyses.FPMethodReturnValuesAnalysisDomain
@@ -62,9 +62,10 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
     override def description: String = TheMethodReturValuesAnalysis.description
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
         var fieldValueInformation = theProject.get(FieldValuesKey)
 
@@ -123,20 +124,24 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
                 RefinedReturnType[Domain](
                     theProject,
                     theProject.classFile(method),
-                    method, value)
+                    method, value
+                )
             }
 
         BasicReport(
             results.map(_.toString()).toSeq.sorted.mkString(
-                "Methods with refined return types ("+results.size+"): \n", "\n", "\n"))
+                "Methods with refined return types ("+results.size+"): \n", "\n", "\n"
+            )
+        )
     }
 }
 
 case class RefinedReturnType[D <: Domain](
-        project: SomeProject,
-        classFile: ClassFile,
-        method: Method,
-        refinedType: Option[D#DomainValue]) {
+        project:     SomeProject,
+        classFile:   ClassFile,
+        method:      Method,
+        refinedType: Option[D#DomainValue]
+) {
 
     override def toString = {
 

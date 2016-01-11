@@ -36,7 +36,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class CONSTANT_MethodType_info(
-        descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        descriptor_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodType
 

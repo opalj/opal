@@ -68,13 +68,14 @@ object Locking {
      * the function `f`. Afterwards, the lock is released.
      */
     @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        val lock = rwLock.writeLock()
         var isLocked = false
         try {
-            rwLock.writeLock().lock()
+            lock.lock()
             isLocked = true
             f
         } finally {
-            if (isLocked) rwLock.writeLock().unlock()
+            if (isLocked) lock.unlock()
         }
     }
 
@@ -83,11 +84,12 @@ object Locking {
      * the function `f`. Afterwards, the lock is released.
      */
     @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        val lock = rwLock.readLock()
         try {
-            rwLock.readLock().lock()
+            lock.lock()
             f
         } finally {
-            rwLock.readLock().unlock()
+            lock.unlock()
         }
     }
 
@@ -121,4 +123,3 @@ object Locking {
         }
     }
 }
-

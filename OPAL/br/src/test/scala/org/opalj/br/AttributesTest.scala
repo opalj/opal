@@ -30,14 +30,14 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
+
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AttributesTest extends FunSuite with ParallelTestExecution {
+class AttributesTest extends FunSuite {
 
     val attributesJARFile = locateTestResources("classfiles/Attributes.jar", "bi")
 
@@ -49,7 +49,7 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
         assert(
             cf1.runtimeVisibleAnnotations.exists {
                 case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true
-                case _ ⇒ false
+                case _                                                 ⇒ false
             }
         )
 

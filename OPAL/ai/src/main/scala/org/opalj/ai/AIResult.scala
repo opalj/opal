@@ -31,7 +31,7 @@ package ai
 
 import scala.collection.BitSet
 import scala.collection.mutable
-
+import org.opalj.collection.UShortSet
 import org.opalj.br.Code
 
 /**
@@ -127,6 +127,22 @@ sealed abstract class AIResult {
     val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
 
     /**
+     * Contains the memory layout related to the method's subroutines (if any).
+     *
+     * @note '''This value is `null`''' if the method does not have subroutines (Java 6 and newer
+     * 		class files never contain subroutines) or if no subroutine was analyzed so far.
+     */
+    val subroutinesOperandsArray: domain.OperandsArray
+
+    /**
+     * Contains the memory layout related to the method's subroutines (if any).
+     *
+     * @note '''This value is `null`''' if the method does not have subroutines (Java 6 and newer
+     * 		class files never contain subroutines) or if no subroutine was analyzed so far.
+     */
+    val subroutinesLocalsArray: domain.LocalsArray
+
+    /**
      * Returns `true` if the abstract interpretation was aborted.
      */
     def wasAborted: Boolean
@@ -171,7 +187,9 @@ sealed abstract class AIAborted extends AIResult {
 
 object AICompleted {
 
-    def unapply(result: AICompleted): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
+    def unapply(
+        result: AICompleted
+    ): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
         Some((result.domain, result.operandsArray, result.localsArray))
 
 }
@@ -207,15 +225,19 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
-        theStrictfp: Boolean,
-        theCode: Code,
+        theStrictfp:         Boolean,
+        theCode:             Code,
         theJoinInstructions: BitSet,
-        theDomain: Domain)(
-            theWorklist: List[PC],
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
+        theDomain:           Domain
+    )(
+        theWorklist:                         List[PC],
+        theEvaluated:                        List[PC],
+        theOperandsArray:                    theDomain.OperandsArray,
+        theLocalsArray:                      theDomain.LocalsArray,
+        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theSubroutinesOperandsArray:         theDomain.OperandsArray,
+        theSubroutinesLocalsArray:           theDomain.LocalsArray
+    ): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val strictfp: Boolean = theStrictfp
@@ -227,12 +249,17 @@ object AIResultBuilder {
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
+            val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
-            def continueInterpretation(
-                ai: AI[_ >: domain.type]): AIResult =
+            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain)(
-                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+                    strictfp, code, joinInstructions, domain
+                )(
+                    worklist, evaluated,
+                    operandsArray, localsArray,
+                    memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
+                )
 
         }
     }
@@ -243,13 +270,15 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
-        theStrictfp: Boolean,
-        theCode: Code,
+        theStrictfp:         Boolean,
+        theCode:             Code,
         theJoinInstructions: BitSet,
-        theDomain: Domain)(
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
+        theDomain:           Domain
+    )(
+        theEvaluated:     List[PC],
+        theOperandsArray: theDomain.OperandsArray,
+        theLocalsArray:   theDomain.LocalsArray
+    ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val strictfp: Boolean = theStrictfp
@@ -260,13 +289,52 @@ object AIResultBuilder {
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
+            val subroutinesOperandsArray: theDomain.OperandsArray = null
+            val subroutinesLocalsArray: theDomain.LocalsArray = null
 
-            def restartInterpretation(
-                ai: AI[_ >: theDomain.type]): AIResult =
+            def restartInterpretation(ai: AI[_ >: theDomain.type]): AIResult = {
+
+                // We have to extract the information about the subroutines... if we have any...
+                var subroutinePCs = UShortSet.empty
+                var subroutineCount = 0
+                var evaluated = theEvaluated
+                while (evaluated.nonEmpty) {
+                    evaluated.head match {
+                        case SUBROUTINE_START ⇒ subroutineCount += 1
+                        case SUBROUTINE_END   ⇒ subroutineCount -= 1
+                        case pc ⇒
+                            if (subroutineCount > 0) subroutinePCs = pc +≈: subroutinePCs
+                    }
+                    evaluated = evaluated.tail
+                }
+
+                // make sure that we don't change "this result"
+                val operandsArray = this.operandsArray.clone()
+                val localsArray = this.localsArray.clone()
+                var subroutinesOperandsArray: domain.OperandsArray = null
+                var subroutinesLocalsArray: domain.LocalsArray = null
+
+                if (subroutinePCs.nonEmpty) {
+                    val codeSize = code.instructions.size
+                    subroutinesOperandsArray = new Array(codeSize)
+                    subroutinesLocalsArray = new Array(codeSize)
+                    subroutinePCs.foreach { pc ⇒
+                        subroutinesOperandsArray(pc) = operandsArray(pc)
+                        operandsArray(pc) = null
+                        subroutinesLocalsArray(pc) = localsArray(pc)
+                        localsArray(pc) = null
+                    }
+                }
+
                 ai.continueInterpretation(
-                    strictfp, code, joinInstructions, domain)(
-                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+                    strictfp, code, joinInstructions, domain
+                )(
+                    List(0), evaluated,
+                    operandsArray, localsArray,
+                    Nil, subroutinesOperandsArray, subroutinesLocalsArray
+                )
 
+            }
         }
     }
 }

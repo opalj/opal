@@ -39,8 +39,9 @@ import scala.xml.Node
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameters: IndexedSeq[MethodParameter]) extends Attribute {
+        attribute_length:     Int,
+        parameters:           IndexedSeq[MethodParameter]
+) extends Attribute {
 
     def attribute_name = MethodParameters_attribute.name
 
@@ -59,8 +60,9 @@ object MethodParameters_attribute {
 }
 
 case class MethodParameter(
-        name_index: Constant_Pool_Index,
-        access_flags: Int) {
+        name_index:   Constant_Pool_Index,
+        access_flags: Int
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>

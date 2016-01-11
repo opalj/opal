@@ -41,30 +41,35 @@ abstract class SimpleConditionalBranchInstruction
         extends ConditionalBranchInstruction
         with ConstantLengthInstruction {
 
-    def branchoffset: Int
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-        (this eq other) || (this == other)
-    }
-
     /**
      * The comparison operator (incl. the constant) underlying the if instruction.
      * E.g., `<`, `< 0` or `!= null`.
      */
     def operator: String
 
+    def branchoffset: Int
+
     final def length: Int = 3
 
-    final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
+    }
 
-    override def toString(currentPC: Int) =
+    final def nextInstructions(
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC), currentPC + branchoffset)
+    }
+
+    override def toString(currentPC: Int) = {
         getClass.getSimpleName+
             "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
             ", false=↓)"
+    }
 }
 

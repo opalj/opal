@@ -32,12 +32,23 @@ package log
 /**
  * The console logger is a very basic logger that ignores the context.
  *
- * @author Michael
+ * @author Michael Eichberg
  */
-class ConsoleOPALLogger(val ansiColored: Boolean = true) extends AbstractOPALLogger {
+class ConsoleOPALLogger(
+        val ansiColored: Boolean,
+        val minLogLevel: Int
+) extends AbstractOPALLogger {
+
+    def this(ansiColored: Boolean = true, minLogLevel: Level = Info) {
+        this(ansiColored, minLogLevel.value)
+    }
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val stream = if (message.level == Error) Console.err else Console.out
+        val messageLevel = message.level
+        if (messageLevel.value < minLogLevel)
+            return ;
+
+        val stream = if (messageLevel == Error) Console.err else Console.out
         stream.println(message.toConsoleOutput(ansiColored))
     }
 

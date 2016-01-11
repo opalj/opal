@@ -87,7 +87,8 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
                             }
                         )
                     },
-                    new Label("Version: "+version))
+                    new Label("Version: "+version)
+                )
             }
 
             bottom = new HBox {

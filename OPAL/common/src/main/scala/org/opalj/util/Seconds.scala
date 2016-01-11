@@ -36,7 +36,15 @@ package util
  */
 class Seconds(val timeSpan: Double) extends AnyVal {
 
-    override def toString: String = f"$timeSpan%.4f s"
+    def toString(withUnit: Boolean): String = {
+        val time = f"$timeSpan%.4f"
+        if (withUnit)
+            time+" s"
+        else
+            time
+    }
+
+    override def toString: String = toString(withUnit = true)
 
 }
 /**

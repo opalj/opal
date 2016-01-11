@@ -58,9 +58,10 @@ class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
      * @return An `Iterable` of reports that can be empty.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[SourceLocationBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[SourceLocationBasedReport[Source]] = {
 
         /*
          * Heuristic to check whether a type is an Adapter.
@@ -85,8 +86,7 @@ class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
         def overridesTheAdapter(method: Method, superclass: ClassFile): Boolean = {
             superclass.methods.exists(supermethod ⇒
                 supermethod.name == method.name &&
-                    supermethod.descriptor == method.descriptor
-            )
+                    supermethod.descriptor == method.descriptor)
         }
 
         // For every class implementing an Adapter...

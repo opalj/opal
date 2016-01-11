@@ -39,18 +39,21 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class IntegerDivideInstruction extends DivideInstruction {
 
-    final def jvmExceptions: List[ObjectType] =
-        ArithmeticInstruction.jvmExceptions
+    final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = {
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.ArithmeticException)
+                this, currentPC, ObjectType.ArithmeticException
+            )
     }
 
 }

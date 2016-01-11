@@ -55,4 +55,3 @@ class DefaultDomainTest extends DomainTestInfrastructure("la.DefaultDomain") {
 
 }
 
-

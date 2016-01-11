@@ -29,23 +29,19 @@
 package org
 package opalj
 
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.ThreadFactory
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.{ Future ⇒ JFuture }
+import java.util.concurrent.{Future ⇒ JFuture}
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.util.Failure
+import scala.util.control.ControlThrowable
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when performing
@@ -87,7 +83,8 @@ package object concurrent {
         } else {
             OPALLogger.warn(
                 "OPAL",
-                "the property org.opalj.threads.CPUBoundTasks is unspecified")
+                "the property org.opalj.threads.CPUBoundTasks is unspecified"
+            )
             Runtime.getRuntime.availableProcessors()
         }
     }
@@ -95,7 +92,8 @@ package object concurrent {
         "OPAL",
         s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
-            "the number should be equal to the number of physical – not hyperthreaded – cores)")
+            "the number should be equal to the number of physical – not hyperthreaded – cores)"
+    )
 
     //
     // STEP 2
@@ -119,7 +117,8 @@ package object concurrent {
         } else {
             OPALLogger.warn(
                 "OPAL",
-                "the property org.opalj.threads.IOBoundTasks is unspecified")
+                "the property org.opalj.threads.IOBoundTasks is unspecified"
+            )
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
@@ -127,7 +126,8 @@ package object concurrent {
         "OPAL",
         s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
             "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
-            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
+            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
+    )
 
     //
     // STEP 3
@@ -188,31 +188,43 @@ package object concurrent {
      * @note The OPALExecutionContext is used for getting the necessary threads.
      */
     def parForeachArrayElement[T, U](
-        data: Array[T],
-        parallelizationLevel: Int = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
-            f: Function[T, U]): Unit = {
+        data:                 Array[T],
+        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
+        isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: Function[T, U]
+    ): List[Throwable] = {
 
         if (parallelizationLevel == 1) {
-            data.foreach(f)
-            return ;
+            try {
+                data.foreach(f)
+                return Nil;
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ return List(t);
+            }
         }
 
         val max = data.length
         val index = new AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
+        val exceptions = new ConcurrentLinkedQueue[Throwable]()
 
         // Start parallel execution
         {
             var t = 0
             while (t < parallelizationLevel) {
-                futures(t) =
-                    Future[Unit] {
-                        var i: Int = -1
-                        while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                futures(t) = Future[Unit] {
+                    var i: Int = -1
+                    while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                        try {
                             f(data(i))
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct;
+                            case t: Throwable         ⇒ exceptions.add(t)
                         }
                     }
+                }
                 t += 1
             }
         }
@@ -224,6 +236,77 @@ package object concurrent {
                 t += 1
             }
         }
+        exceptions.asScala.toList
+    }
+
+    /**
+     * Executes a given function f for each element in the given workqueue. `f` is – of course –
+     * also allowed to add elements to the workqueue; however `f` must do so concurrently. Given
+     * that `f` may be executed in parallel, `f` has to be thread-safe. The exceptions that occur
+     * while executing `f` are collected and returned at the end.
+     *
+     * @example
+     * {{{
+     * val workQueue = new ConcurrentLinkedQueue[T]()
+     * workQueue.add(<T>)
+     * val exceptions =
+     * 		whileNonEmpty(workQueue) { t ⇒
+     * 			// do something with t
+     * 			if (<some condition>) { workQueue.add(nextT) }
+     * 		}
+     * }}}
+     */
+    def whileNonEmpty[T >: Null <: AnyRef, U](
+        // the workQueue may be filled as a side effect of executing f
+        workQueue:     ConcurrentLinkedQueue[T],
+        isInterrupted: () ⇒ Boolean             = () ⇒ Thread.currentThread().isInterrupted()
+    )(
+        f: T ⇒ U
+    )(
+        implicit
+        executionContext: ExecutionContext
+    ): List[Throwable] = {
+
+        val exceptionsMutex = new Object
+        var exceptions: List[Throwable] = Nil
+
+        val futuresCountMutex = new Object
+        var futuresCount = 0
+
+        def schedule(): Unit = {
+            while (!workQueue.isEmpty()) {
+                val next = workQueue.poll()
+                // schedule is executed concurrently, hence some other thread
+                // may have grapped the (last remaining) value in between. 
+                if (next != null) {
+                    futuresCountMutex.synchronized { futuresCount += 1 }
+                    val future = Future[Unit] { f(next) }(executionContext)
+                    future.onComplete { result ⇒
+                        // the workQueue may contain one to many new entries to work on
+                        result match {
+                            case Failure(t) ⇒
+                                exceptionsMutex.synchronized { exceptions = t :: exceptions }
+                            case _ ⇒
+                            /* nothing special to do */
+                        }
+                        schedule();
+                        futuresCountMutex.synchronized {
+                            futuresCount -= 1
+                            futuresCountMutex.notify()
+                        }
+                    }(executionContext)
+                }
+            }
+        }
+
+        schedule();
+
+        // let's wait until the workqueue is empty
+        futuresCountMutex.synchronized {
+            while (futuresCount > 0) futuresCountMutex.wait();
+        }
+
+        exceptionsMutex.synchronized { exceptions }
     }
 }
 

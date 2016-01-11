@@ -107,29 +107,33 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
         Unknown
 
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer =
+        upperBound: Int
+    ): Answer =
         Unknown
 
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer =
+        upperBound: Int
+    ): Answer =
         Unknown
 
     override def intIsLessThan(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): Answer =
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): Answer =
         Unknown
 
     override def intIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): Answer =
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): Answer =
         Unknown
 
     // -----------------------------------------------------------------------------------
@@ -155,9 +159,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
         IntegerValue(pc)
 
     override def idiv(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): IntegerValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
         else
@@ -171,9 +176,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
         IntegerValue(pc)
 
     override def irem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): IntegerValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
         else

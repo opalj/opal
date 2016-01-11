@@ -59,28 +59,27 @@ package object bytecode {
      * res: Option[String] = None
      * }}}
      *
-     * @param packageSeperatorChar If the given fully qualified type names are using
+     * @param pkgSeparatorChar If the given fully qualified type names are using
      *      Java notation (i.e., packages are separated using '.') then the
      *      parameter should be `'.'`, which is the default, otherwise the parameter
      *      should be `'/'`.
      */
-    def commonPackage(
-        fqnA: String, fqnB: String,
-        packageSeperatorChar: Int = '.'): Option[String] = {
-        val packageSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
-        if (packageSeperatorIndex <= 0)
+    def commonPackage(fqnA: String, fqnB: String, pkgSeparatorChar: Int = '.'): Option[String] = {
+        val pkgSeparatorIndex = fqnA.indexOf(pkgSeparatorChar) + 1
+        if (pkgSeparatorIndex <= 0)
             return None;
 
-        val rootPackage = fqnA.substring(0, packageSeperatorIndex)
-        if (packageSeperatorIndex == fqnB.indexOf(packageSeperatorChar) + 1 &&
-            rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
-            commonPackage(
-                fqnA.substring(packageSeperatorIndex, fqnA.length()),
-                fqnB.substring(packageSeperatorIndex, fqnB.length())
-            ) match {
-                    case Some(childPackage) ⇒ Some(rootPackage + childPackage)
-                    case None               ⇒ Some(rootPackage)
-                }
+        val rootPkg = fqnA.substring(0, pkgSeparatorIndex)
+        if (pkgSeparatorIndex == fqnB.indexOf(pkgSeparatorChar) + 1 &&
+            rootPkg == fqnB.substring(0, pkgSeparatorIndex)) {
+            val commonPkg = commonPackage(
+                fqnA.substring(pkgSeparatorIndex, fqnA.length()),
+                fqnB.substring(pkgSeparatorIndex, fqnB.length())
+            )
+            commonPkg match {
+                case Some(childPackage) ⇒ Some(rootPkg + childPackage)
+                case None               ⇒ Some(rootPkg)
+            }
         } else {
             None
         }
@@ -102,26 +101,27 @@ package object bytecode {
      * res: String = …c.T.X
      * }}}
      *
-     * @param packageSeperatorChar If the given fully qualified type names are using
+     * @param pkgSeparatorChar If the given fully qualified type names are using
      *      Java notation (i.e., packages are separated using '.') then the
      *      parameter should be `'.'`, which is the default, otherwise the parameter
      *      should be `'/'`.
      */
     def abbreviateFQN(
-        definingTypeFQN: String,
-        memberTypeFQN: String,
-        packageSeperatorChar: Int = '.'): String = {
+        definingTypeFQN:  String,
+        memberTypeFQN:    String,
+        pkgSeparatorChar: Int    = '.'
+    ): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
 
-            case Some(commonPkg) if commonPkg.indexOf(packageSeperatorChar) < commonPkg.length - 1 ⇒
+            case Some(commonPkg) if commonPkg.indexOf(pkgSeparatorChar) < commonPkg.length - 1 ⇒
                 // we have more than one common package...
-                val beforeLastCommonPackageIndex = commonPkg.dropRight(1).lastIndexOf(packageSeperatorChar)
+                val beforeLastCommonPkgIndex = commonPkg.dropRight(1).lastIndexOf(pkgSeparatorChar)
                 val length = memberTypeFQN.length
-                val packagesCount = commonPkg.count(_ == packageSeperatorChar) - 1
+                val packagesCount = commonPkg.count(_ == pkgSeparatorChar) - 1
                 val packageAbbreviation = "." * packagesCount
                 packageAbbreviation +
-                    memberTypeFQN.substring(beforeLastCommonPackageIndex + 1, length)
+                    memberTypeFQN.substring(beforeLastCommonPkgIndex + 1, length)
 
             case _ ⇒
                 memberTypeFQN
@@ -129,7 +129,7 @@ package object bytecode {
     }
 
     /**
-     * Tries to locate the JRE's library folder. (I.e., the
+     * Returns the most likely position of the JRE's library folder. (I.e., the
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found). If the rt.jar cannot be found an
      * exception is raised.
@@ -153,7 +153,7 @@ package object bytecode {
     }
 
     /**
-     * Tries to locate the JRE's library folder. (I.e., the
+     * Returns the most likely position of the JRE's library folder. (I.e., the
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found).
      */

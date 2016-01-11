@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import scala.collection.{ Map, Set }
+import scala.collection.{Map, Set}
 
 import br.analyses.SomeProject
 import br.Method

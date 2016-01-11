@@ -44,7 +44,9 @@ object AnalysisModes extends Enumeration {
      * programming errors.
      */
     final val LibraryWithClosedPackagesAssumption =
-        Value("Library with closed packages assumption")
+        Value("library with closed packages assumption")
+
+    final val CPA = LibraryWithClosedPackagesAssumption
 
     /**
      * This mode is to be used if a library is analyzed and the assumption is made
@@ -55,7 +57,35 @@ object AnalysisModes extends Enumeration {
      * issues.
      */
     final val LibraryWithOpenPackagesAssumption =
-        Value("Library with open packages assumption")
+        Value("library with open packages assumption")
 
-    final val Application = Value("Application")
+    final val OPA = LibraryWithOpenPackagesAssumption
+
+    /**
+     * This mode is to be used if a standard Java application is analyzed which is started by
+     * the JVM by calling the application's main method.
+     */
+    final val DesktopApplication = Value("desktop application")
+
+    /**
+     * This mode is to be used if a web application is analyzed which is developed using JavaEE 6.
+     */
+    final val JEE6WebApplication = Value("JEE6 web application")
+
+    final def isLibraryLike(mode: AnalysisMode): Boolean = {
+        (mode eq CPA) || (mode eq OPA)
+    }
+
+    final def isApplicationLike(mode: AnalysisMode): Boolean = {
+        (mode eq DesktopApplication) || (mode eq JEE6WebApplication)
+    }
+}
+
+/**
+ * Common constants related to the analysis mode.
+ *
+ * @note The package defines the type `AnalysisMode`.
+ */
+object AnalysisMode {
+    final val ConfigKey = "org.opalj.analysisMode"
 }

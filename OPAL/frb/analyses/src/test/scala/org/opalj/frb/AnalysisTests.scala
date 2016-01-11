@@ -43,7 +43,7 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Florian Brandherm
  * @author Daniel Klauer
  */
-trait AnalysisTest extends FlatSpec with Matchers with ParallelTestExecution {
+trait AnalysisTest extends FlatSpec with Matchers {
 
     protected def println(m: String): Unit = { info(m) }
 
@@ -77,8 +77,7 @@ object AnalysisTest {
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
                 locateTestResources("classfiles/analyses/"+filename, "frb/analyses")
-            )
-        ).flatten
+            )).flatten
 
         println("creating project: "+filenames.mkString(", "))
         Project(classFiles, Traversable.empty)

@@ -38,9 +38,9 @@ package mutable
  *          is added again before the value is returned.
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
-    final val offset: Int,
-    private val set: SmallValuesSet)
-        extends SmallValuesSet {
+        final val offset: Int,
+        private val set:  SmallValuesSet
+) extends SmallValuesSet {
 
     override def min = set.min + offset
 
@@ -89,20 +89,30 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v + offset))
 
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
+        var newSet = this.set
+        set.foreach { v ⇒ if (!f(v + offset)) newSet = newSet - v }
+        new SmallValuesSetBackedByOPALSet(offset, newSet)
+    }
+
     override protected[collection] def mkString(
         start: String, sep: String, end: String,
-        offset: Int): String =
+        offset: Int
+    ): String = {
         set.mkString(start, sep, end, offset)
+    }
 
-    override def mkString(start: String, sep: String, end: String): String =
+    override def mkString(start: String, sep: String, end: String): String = {
         mkString(start, sep, end, offset)
+    }
 
     override def toString(): String = {
         mkString(
             s"SmallValuesSetBackedByOpalSet(offset=$offset;values={",
             ", ",
             "})",
-            offset)
+            offset
+        )
     }
 }
 

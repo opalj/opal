@@ -40,15 +40,15 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction {
 
-    final def jvmExceptions: List[ObjectType] =
-        ReturnInstruction.jvmExceptions
+    final def jvmExceptions: List[ObjectType] = ReturnInstruction.jvmExceptions
 
     final def length: Int = 1
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this eq code.instructions(otherPC)
+    }
 
     final def readsLocal: Boolean = false
 
@@ -59,9 +59,16 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = UShortSet.empty
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet.empty
+    }
+
+    final def expressionResult: ExpressionResult = NoExpression
 
 }
 
@@ -122,7 +129,7 @@ object ReturnInstructions {
             val instruction = instructions(pc)
             if (ReturnInstruction.isReturnInstruction(instruction))
                 returnPCs = pc +≈: returnPCs
-            pc = instruction.indexOfNextInstruction(pc, code)
+            pc = instruction.indexOfNextInstruction(pc)(code)
         }
         Some(returnPCs)
     }

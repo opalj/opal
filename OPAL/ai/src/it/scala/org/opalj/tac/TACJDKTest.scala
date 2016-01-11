@@ -57,28 +57,28 @@ class TACJDKTest extends FunSpec with Matchers {
             val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
             val mutex = new Object
             for {
-                file ← (jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()).par
+                file ← (jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles())
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
             } {
-                reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
+                reader.Java8Framework.ClassFiles(file).par foreach { cs ⇒
                     val (cf, _) = cs
                     cf.methods.filter(_.body.isDefined) foreach { m ⇒
                         try {
-                            ToJavaLike(AsQuadruples(m, None))
+                            ToJavaLike(AsQuadruples(method = m, aiResult = None))
                             successfullyCompleted.incrementAndGet()
                         } catch {
                             case e: Throwable ⇒ this.synchronized {
-                                val method = m.toJava(cf)
+                                val methodSignature = m.toJava(cf)
                                 mutex.synchronized {
-                                    println(method)
+                                    println(methodSignature)
                                     e.printStackTrace()
                                     if (e.getCause != null) {
                                         println("\tcause:")
                                         e.getCause.printStackTrace()
                                     }
                                     println("\n")
+                                    errors ::= ((methodSignature, e))
                                 }
-                                errors ::= ((method, e))
                             }
                         }
                     }
@@ -92,7 +92,8 @@ class TACJDKTest extends FunSpec with Matchers {
                             "Errors thrown:\n",
                             "\n",
                             "Number of Successfully completed:"+successfullyCompleted.get+
-                                "; Number of Errors: "+errors.size+"\n")
+                                "; Number of Errors: "+errors.size+"\n"
+                        )
                 fail(message)
             }
         }

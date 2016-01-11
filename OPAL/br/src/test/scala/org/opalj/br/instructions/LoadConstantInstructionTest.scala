@@ -60,17 +60,20 @@ class LoadConstantInstructionTest extends FunSpec with Matchers {
                 -1,
                 6,
                 Byte.MaxValue.toInt / 2,
-                Byte.MaxValue.toInt) foreach { i ⇒
+                Byte.MaxValue.toInt
+            ) foreach { i ⇒
                     LoadConstantInstruction(i) should be(BIPUSH(i))
                 }
         }
 
         it("short values that are larger/smaller than byte values shoud use sipush") {
-            Seq(Short.MinValue.toInt,
+            Seq(
+                Short.MinValue.toInt,
                 Byte.MinValue.toInt - 1,
                 Byte.MaxValue.toInt + 1,
                 Short.MaxValue.toInt / 2,
-                Short.MaxValue.toInt) foreach { i ⇒
+                Short.MaxValue.toInt
+            ) foreach { i ⇒
                     LoadConstantInstruction(i) should be(SIPUSH(i))
                 }
         }
@@ -79,7 +82,8 @@ class LoadConstantInstructionTest extends FunSpec with Matchers {
             Seq(
                 Short.MaxValue.toInt + 1,
                 Int.MaxValue.toInt / 2,
-                Int.MaxValue.toInt) foreach { i ⇒
+                Int.MaxValue.toInt
+            ) foreach { i ⇒
                     LoadConstantInstruction(i) should be(LoadInt(i))
                 }
         }

@@ -38,7 +38,6 @@ import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.FloatType
 import org.opalj.br.DoubleType
-import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
 import org.opalj.br.VoidType
 

@@ -132,7 +132,8 @@ trait DefaultTypeLevelReferenceValues
                         elementValueType,
                         elementValue.isPrecise,
                         this.theUpperTypeBound,
-                        this.isPrecise)
+                        this.isPrecise
+                    )
 
                 case elementValue @ IsAReferenceValue(otherUpperTypeBound) ⇒
                     val elementValueIsPrecise = elementValue.isPrecise
@@ -144,32 +145,35 @@ trait DefaultTypeLevelReferenceValues
                             elementValueType,
                             elementValueIsPrecise,
                             thisArrayType,
-                            thisIsPrecise) match {
-                                case Yes ⇒
-                                    return Yes;
+                            thisIsPrecise
+                        ) match {
+                            case Yes ⇒
+                                return Yes;
 
-                                case intermediateAnswer ⇒
-                                    finalAnswer = finalAnswer & intermediateAnswer
-                                    false
-                            }
+                            case intermediateAnswer ⇒
+                                finalAnswer = finalAnswer join intermediateAnswer
+                                false
+                        }
                     }
                     finalAnswer
             }
         }
 
         override protected def doLoad(
-            pc: PC,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayLoadResult = {
+            pc:                  PC,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayLoadResult = {
             val value = TypedValue(pc, theUpperTypeBound.componentType)
             ComputedValueOrException(value, potentialExceptions)
         }
 
         override protected def doStore(
-            pc: PC,
-            value: DomainValue,
-            index: DomainValue,
-            thrownExceptions: ExceptionValues): ArrayStoreResult =
+            pc:               PC,
+            value:            DomainValue,
+            index:            DomainValue,
+            thrownExceptions: ExceptionValues
+        ): ArrayStoreResult =
             ComputationWithSideEffectOrException(thrownExceptions)
 
         // WIDENING OPERATION
@@ -239,8 +243,9 @@ trait DefaultTypeLevelReferenceValues
     protected trait ObjectValue extends super.ObjectValue { this: DomainObjectValue ⇒
 
         protected def asStructuralUpdate(
-            pc: PC,
-            newUpperTypeBound: UIDSet[ObjectType]): Update[DomainValue] = {
+            pc:                PC,
+            newUpperTypeBound: UIDSet[ObjectType]
+        ): Update[DomainValue] = {
             if (newUpperTypeBound.size == 1)
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound.first))
             else
@@ -258,7 +263,8 @@ trait DefaultTypeLevelReferenceValues
     }
 
     protected class SObjectValue(
-        override val theUpperTypeBound: ObjectType)
+        override val theUpperTypeBound: ObjectType
+    )
             extends ObjectValue
             with SReferenceValue[ObjectType] {
         this: DomainObjectValue ⇒
@@ -380,7 +386,8 @@ trait DefaultTypeLevelReferenceValues
      *      the same time.
      */
     protected class MObjectValue(
-        override val upperTypeBound: UIDSet[ObjectType])
+        override val upperTypeBound: UIDSet[ObjectType]
+    )
             extends ObjectValue {
         value: DomainObjectValue ⇒
 

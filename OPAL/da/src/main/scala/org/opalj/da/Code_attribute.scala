@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -39,21 +39,23 @@ import scala.xml.Node
  */
 case class Code_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        max_stack: Int,
-        max_locals: Int,
-        code: Code,
-        exceptionTable: IndexedSeq[ExceptionTableEntry],
-        attributes: Attributes) extends Attribute {
+        attribute_length:     Int,
+        max_stack:            Int,
+        max_locals:           Int,
+        code:                 Code,
+        exceptionTable:       IndexedSeq[ExceptionTableEntry],
+        attributes:           Attributes
+) extends Attribute {
 
     /**
-     * @ see `toXHTML(Int)(implicit Constant_Pool)
+     * @see `toXHTML(Int)(implicit Constant_Pool)`
      */
     @throws[UnsupportedOperationException]("always")
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(
             "the code attribute needs the method's id; "+
-                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method")
+                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
+        )
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
@@ -66,7 +68,8 @@ case class Code_attribute(
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt }))
+                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt })
+                )
             }
             { exception_handlersAsXHTML }
             { attributesAsXHTML }
@@ -92,4 +95,3 @@ case class Code_attribute(
             <div></div>
     }
 }
-

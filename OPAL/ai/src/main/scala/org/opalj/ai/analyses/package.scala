@@ -42,5 +42,4 @@ package object analyses {
 
     type MethodReturnValueInformation = Map[Method, Option[Domain#DomainValue]]
 
-    type MutabilityRating = MutabilityRating.Value
 }

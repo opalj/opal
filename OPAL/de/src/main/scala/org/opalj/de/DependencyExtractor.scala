@@ -66,7 +66,8 @@ import org.opalj.br.instructions._
  * @author Michael Eichberg
  */
 class DependencyExtractor(
-        protected[this] val dependencyProcessor: DependencyProcessor) {
+        protected[this] val dependencyProcessor: DependencyProcessor
+) {
 
     import DependencyTypes._
 
@@ -115,12 +116,14 @@ class DependencyExtractor(
                         dependencyProcessor.processDependency(
                             vc,
                             dependencyProcessor.asVirtualMethod(enclosingClass, name.get, descriptor.get),
-                            ENCLOSED)
+                            ENCLOSED
+                        )
                     else
                         processDependency(
                             vc,
                             enclosingClass,
-                            ENCLOSED)
+                            ENCLOSED
+                        )
                 }
 
                 case InnerClassTable.KindId ⇒ {
@@ -137,11 +140,13 @@ class DependencyExtractor(
                         processDependency(
                             vc,
                             innerClassesEntry.innerClassType,
-                            OUTER_CLASS)
+                            OUTER_CLASS
+                        )
                         processDependency(
                             innerClassesEntry.innerClassType,
                             vc,
-                            INNER_CLASS)
+                            INNER_CLASS
+                        )
                     }
                 }
 
@@ -189,7 +194,8 @@ class DependencyExtractor(
         dependencyProcessor.processDependency(
             vf,
             declaringClass,
-            if (field.isStatic) CLASS_MEMBER else INSTANCE_MEMBER)
+            if (field.isStatic) CLASS_MEMBER else INSTANCE_MEMBER
+        )
 
         processDependency(vf, field.fieldType, FIELD_TYPE)
 
@@ -250,7 +256,8 @@ class DependencyExtractor(
         val vm = dependencyProcessor.asVirtualMethod(
             declaringClass.thisType,
             method.name,
-            method.descriptor)
+            method.descriptor
+        )
 
         val parameterTypes = method.parameterTypes
         val returnType = method.returnType
@@ -258,7 +265,8 @@ class DependencyExtractor(
         dependencyProcessor.processDependency(
             vm,
             declaringClass,
-            if (method.isStatic) CLASS_MEMBER else INSTANCE_MEMBER)
+            if (method.isStatic) CLASS_MEMBER else INSTANCE_MEMBER
+        )
 
         processDependency(vm, returnType, RETURN_TYPE)
         parameterTypes foreach { processDependency(vm, _, PARAMETER_TYPE) }
@@ -371,7 +379,8 @@ class DependencyExtractor(
                     processElementValue(
                         vm,
                         attribute.asInstanceOf[ElementValue],
-                        ANNOTATION_DEFAULT_VALUE_TYPE)
+                        ANNOTATION_DEFAULT_VALUE_TYPE
+                    )
 
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId  ⇒ /*do nothing*/
@@ -397,9 +406,10 @@ class DependencyExtractor(
      *      is already a part of a type parameter.
      */
     protected def processSignature(
-        declaringElement: VirtualSourceElement,
-        signature: SignatureElement,
-        isInTypeParameters: Boolean = false): Unit = {
+        declaringElement:   VirtualSourceElement,
+        signature:          SignatureElement,
+        isInTypeParameters: Boolean              = false
+    ): Unit = {
 
         /*
          * Processes the given formal type parameter list.
@@ -412,7 +422,8 @@ class DependencyExtractor(
          * parameter is set to `true`.
          */
         def processFormalTypeParameters(
-            formalTypeParameters: List[FormalTypeParameter]): Unit = {
+            formalTypeParameters: List[FormalTypeParameter]
+        ): Unit = {
             for (ftp ← formalTypeParameters) {
                 val classBound = ftp.classBound
                 if (classBound.isDefined)
@@ -430,7 +441,8 @@ class DependencyExtractor(
          * method.
          */
         def processSimpleClassTypeSignature(
-            simpleClassTypeSignatures: SimpleClassTypeSignature): Unit = {
+            simpleClassTypeSignatures: SimpleClassTypeSignature
+        ): Unit = {
 
             processTypeArguments(simpleClassTypeSignatures.typeArguments)
         }
@@ -502,8 +514,9 @@ class DependencyExtractor(
      */
     private def processElementValue(
         declaringElement: VirtualSourceElement,
-        elementValue: ElementValue,
-        dType: DependencyType): Unit = {
+        elementValue:     ElementValue,
+        dType:            DependencyType
+    ): Unit = {
 
         //        case BooleanValue.KindId ⇒
         //                    processDependency(vm, BooleanType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
@@ -541,7 +554,8 @@ class DependencyExtractor(
                 dependencyProcessor.processDependency(
                     declaringElement,
                     dependencyProcessor.asVirtualField(enumType, constName, enumType),
-                    USES_ENUM_VALUE)
+                    USES_ENUM_VALUE
+                )
 
             case ClassValue(classType) ⇒
                 processDependency(declaringElement, classType, dType)
@@ -568,10 +582,11 @@ class DependencyExtractor(
      * @param dependencyType The type of the dependency.
      */
     private def process(
-        declaringElement: VirtualSourceElement,
-        annotation: Annotation,
+        declaringElement:         VirtualSourceElement,
+        annotation:               Annotation,
         annotationDependencyType: DependencyType,
-        elementDependencyType: DependencyType): Unit = {
+        elementDependencyType:    DependencyType
+    ): Unit = {
 
         processDependency(declaringElement, annotation.annotationType, annotationDependencyType)
 
@@ -582,8 +597,9 @@ class DependencyExtractor(
 
     private def process(
         declaringElement: VirtualSourceElement,
-        typeAnnotation: TypeAnnotation,
-        dependencyType: DependencyType): Unit = {
+        typeAnnotation:   TypeAnnotation,
+        dependencyType:   DependencyType
+    ): Unit = {
 
         processDependency(declaringElement, typeAnnotation.annotationType, dependencyType)
 
@@ -600,7 +616,8 @@ class DependencyExtractor(
      */
     private def process(
         declaringMethod: VirtualMethod,
-        code: Code): Unit = {
+        code:            Code
+    ): Unit = {
 
         def as[TargetType <: Instruction](instruction: Instruction) =
             instruction.asInstanceOf[TargetType]
@@ -620,7 +637,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualField(declaringClass, fieldName, fieldType),
-                        READS_FIELD)
+                        READS_FIELD
+                    )
 
                 case 179 ⇒
                     val putstatic = as[PUTSTATIC](instruction)
@@ -632,7 +650,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualField(declaringClass, fieldName, fieldType),
-                        WRITES_FIELD)
+                        WRITES_FIELD
+                    )
 
                 case 180 ⇒
                     val getfield = as[GETFIELD](instruction)
@@ -644,7 +663,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualField(declaringClass, fieldName, fieldType),
-                        READS_FIELD)
+                        READS_FIELD
+                    )
 
                 case 181 ⇒
                     val putfield = as[PUTFIELD](instruction)
@@ -656,7 +676,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualField(declaringClass, fieldName, fieldType),
-                        WRITES_FIELD)
+                        WRITES_FIELD
+                    )
 
                 case 182 ⇒
                     val invokeInstruction = as[INVOKEVIRTUAL](instruction)
@@ -671,7 +692,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualMethod(declaringClass, name, descriptor),
-                        CALLS_METHOD)
+                        CALLS_METHOD
+                    )
 
                 case 183 ⇒
                     val invokeInstruction = as[INVOKESPECIAL](instruction)
@@ -686,7 +708,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualMethod(declaringClass, name, descriptor),
-                        CALLS_METHOD)
+                        CALLS_METHOD
+                    )
 
                 case 184 ⇒
                     val invokeInstruction = as[INVOKESTATIC](instruction)
@@ -701,7 +724,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualMethod(declaringClass, name, descriptor),
-                        CALLS_METHOD)
+                        CALLS_METHOD
+                    )
 
                 case 185 ⇒
                     val invokeInstruction = as[INVOKEINTERFACE](instruction)
@@ -716,7 +740,8 @@ class DependencyExtractor(
                     dependencyProcessor.processDependency(
                         declaringMethod,
                         dependencyProcessor.asVirtualMethod(declaringClass, name, descriptor),
-                        CALLS_METHOD)
+                        CALLS_METHOD
+                    )
 
                 case 186 ⇒
                     processInvokedynamic(declaringMethod, as[INVOKEDYNAMIC](instruction))
@@ -728,29 +753,33 @@ class DependencyExtractor(
                     processDependency(
                         declaringMethod,
                         as[ANEWARRAY](instruction).componentType,
-                        CREATES_ARRAY)
+                        CREATES_ARRAY
+                    )
 
                 case 197 ⇒
                     processDependency(
                         declaringMethod,
                         as[MULTIANEWARRAY](instruction).componentType,
-                        CREATES_ARRAY)
+                        CREATES_ARRAY
+                    )
 
                 case 192 ⇒
                     processDependency(
                         declaringMethod,
                         as[CHECKCAST](instruction).referenceType,
-                        TYPECAST)
+                        TYPECAST
+                    )
 
                 case 193 ⇒
                     processDependency(
                         declaringMethod,
                         as[INSTANCEOF](instruction).referenceType,
-                        TYPECHECK)
+                        TYPECHECK
+                    )
 
                 case _ ⇒
             }
-            i = instruction.indexOfNextInstruction(i, code)
+            i = instruction.indexOfNextInstruction(i)(code)
         }
     }
 
@@ -769,10 +798,9 @@ class DependencyExtractor(
      */
     protected[this] def processInvokedynamic(
         declaringMethod: VirtualMethod,
-        instruction: INVOKEDYNAMIC): Unit = {
-
+        instruction:     INVOKEDYNAMIC
+    ): Unit = {
         DependencyExtractor.warnAboutIncompleteHandlingOfInvokedynamic()
-
         processInvokedynamicRuntimeDependencies(declaringMethod, instruction)
     }
 
@@ -787,7 +815,8 @@ class DependencyExtractor(
      */
     protected[this] def processInvokedynamicRuntimeDependencies(
         declaringMethod: VirtualMethod,
-        instruction: INVOKEDYNAMIC): Unit = {
+        instruction:     INVOKEDYNAMIC
+    ): Unit = {
 
         val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/ , methodDescriptor) = instruction
 
@@ -805,7 +834,8 @@ class DependencyExtractor(
                 processDependency(
                     declaringMethod,
                     handle.receiverType,
-                    DECLARING_CLASS_OF_CALLED_METHOD)
+                    DECLARING_CLASS_OF_CALLED_METHOD
+                )
                 // the type of method call
                 val callType = handle match {
                     case _: InvokeInterfaceMethodHandle ⇒ CALLS_METHOD
@@ -816,8 +846,10 @@ class DependencyExtractor(
                     dependencyProcessor.asVirtualMethod(
                         handle.receiverType,
                         handle.name,
-                        handle.methodDescriptor),
-                    callType)
+                        handle.methodDescriptor
+                    ),
+                    callType
+                )
             }
 
             case handle: FieldAccessMethodHandle ⇒ {
@@ -830,16 +862,20 @@ class DependencyExtractor(
                             dependencyProcessor.asVirtualField(
                                 handle.declaringClassType,
                                 handle.name,
-                                handle.fieldType),
-                            READS_FIELD)
+                                handle.fieldType
+                            ),
+                            READS_FIELD
+                        )
                         processDependency(
                             declaringMethod,
                             handle.fieldType,
-                            TYPE_OF_ACCESSED_FIELD)
+                            TYPE_OF_ACCESSED_FIELD
+                        )
                         processDependency(
                             declaringMethod,
                             handle.declaringClassType,
-                            DECLARING_CLASS_OF_ACCESSED_FIELD)
+                            DECLARING_CLASS_OF_ACCESSED_FIELD
+                        )
 
                     case _: FieldWriteAccessMethodHandle ⇒
                         dependencyProcessor.processDependency(
@@ -847,16 +883,20 @@ class DependencyExtractor(
                             dependencyProcessor.asVirtualField(
                                 handle.declaringClassType,
                                 handle.name,
-                                handle.fieldType),
-                            WRITES_FIELD)
+                                handle.fieldType
+                            ),
+                            WRITES_FIELD
+                        )
                         processDependency(
                             declaringMethod,
                             handle.fieldType,
-                            TYPE_OF_ACCESSED_FIELD)
+                            TYPE_OF_ACCESSED_FIELD
+                        )
                         processDependency(
                             declaringMethod,
                             handle.declaringClassType,
-                            DECLARING_CLASS_OF_ACCESSED_FIELD)
+                            DECLARING_CLASS_OF_ACCESSED_FIELD
+                        )
                 }
             }
         }
@@ -865,61 +905,72 @@ class DependencyExtractor(
     protected[this] def processDependency(
         source: ObjectType,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(
             dependencyProcessor.asVirtualClass(source),
             target,
-            dType)
+            dType
+        )
     }
 
     protected[this] def processDependency(
         source: ClassFile,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(
             dependencyProcessor.asVirtualClass(source.thisType),
             target,
-            dType)
+            dType
+        )
     }
 
     @inline protected[this] def processDependency(
         source: ClassFile,
         target: ObjectType,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(
             dependencyProcessor.asVirtualClass(source.thisType),
             dependencyProcessor.asVirtualClass(target),
-            dType)
+            dType
+        )
     }
 
     @inline protected[this] def processDependency(
         source: VirtualSourceElement,
         target: ObjectType,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(
             source,
             dependencyProcessor.asVirtualClass(target),
-            dType)
+            dType
+        )
     }
 
     @inline protected[this] def processDependency(
         source: VirtualSourceElement,
         target: BaseType,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(source, target, dType)
     }
 
     @inline protected[this] def processDependency(
         source: VirtualSourceElement,
         target: ArrayType,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyProcessor.processDependency(source, target, dType)
     }
 
     protected[this] def processDependency(
         source: VirtualSourceElement,
         target: Type,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
 
         if (target eq VoidType)
             return ;

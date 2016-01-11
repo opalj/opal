@@ -38,9 +38,7 @@ import scala.xml.Node
 /**
  * @author Michael Eichberg
  */
-case class CONSTANT_Utf8_info(
-    value: String)
-        extends Constant_Pool_Entry {
+case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 

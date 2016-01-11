@@ -54,10 +54,12 @@ class AnonymousInnerClassShouldBeStaticTest extends AnalysisTest {
             ObjectType("AnonymousInnerClassShouldBeStatic/AnonymousInnerClass$1")
 
         results should contain(
-            ClassBasedReport(project.source(classToReport),
+            ClassBasedReport(
+                project.source(classToReport),
                 Severity.Info,
                 classToReport,
-                "This inner class should be made Static")
+                "This inner class should be made Static"
+            )
         )
     }
 

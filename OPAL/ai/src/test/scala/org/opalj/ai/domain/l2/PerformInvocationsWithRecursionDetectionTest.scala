@@ -35,7 +35,7 @@ import scala.language.reflectiveCalls
 
 import org.junit.runner.RunWith
 import org.junit.Ignore
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -52,10 +52,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsWithRecursionDetectionTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matchers {
 
     import PerformInvocationsWithRecursionDetectionTestFixture._
 
@@ -145,9 +142,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     abstract class SharedInvocationDomain(
-        project: Project[java.net.URL],
-        val method: Method)
-            extends BaseDomain(project) with Domain
+        project:    Project[java.net.URL],
+        val method: Method
+    ) extends BaseDomain(project) with Domain
             with TheMethod
             with l0.TypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -167,19 +164,19 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class InvocationDomain(
-        project: Project[java.net.URL],
-        method: Method,
-        val frequentEvaluationWarningLevel: Int = 10)
-            extends SharedInvocationDomain(project, method) {
+            project:                            Project[java.net.URL],
+            method:                             Method,
+            val frequentEvaluationWarningLevel: Int                   = 10
+    ) extends SharedInvocationDomain(project, method) {
         callingDomain ⇒
 
         lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
             val operands =
                 mapOperands(
                     localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
-                        if (n ne null) n :: l else l
-                    ),
-                    coordinatingDomain)
+                        if (n ne null) n :: l else l),
+                    coordinatingDomain
+                )
 
             new CalledMethodsStore {
                 implicit val logContext = project.logContext
@@ -191,8 +188,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
                 override def frequentEvalution(
                     definingClass: ClassFile,
-                    method: Method,
-                    operandsSet: List[Array[domain.DomainValue]]): Unit = {
+                    method:        Method,
+                    operandsSet:   List[Array[domain.DomainValue]]
+                ): Unit = {
                     //super.frequentEvalution(definingClass, method, operandsSet)
                     warningIssued = true
                 }
@@ -207,10 +205,10 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class ChildInvocationDomain(
-        project: Project[java.net.URL],
-        method: Method,
-        val callerDomain: SharedInvocationDomain)
-            extends SharedInvocationDomain(project, method)
+        project:          Project[java.net.URL],
+        method:           Method,
+        val callerDomain: SharedInvocationDomain
+    ) extends SharedInvocationDomain(project, method)
             with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI

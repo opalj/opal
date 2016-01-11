@@ -37,10 +37,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESPECIAL(
-    declaringClass: ObjectType, // an interface or class type to be precise
-    name: String, // an interface or class type to be precise
-    methodDescriptor: MethodDescriptor)
-        extends NonVirtualMethodInvocationInstruction {
+        declaringClass:   ObjectType, // an interface or class type to be precise
+        name:             String, // an interface or class type to be precise
+        methodDescriptor: MethodDescriptor
+) extends NonVirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKESPECIAL.opcode
 

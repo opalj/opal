@@ -60,21 +60,25 @@ case object ATHROW extends Instruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code) =
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code) = {
         indexOfNextInstruction(currentPC, false)
+    }
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
-        currentPC + 1
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + 1
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
             UShortSet.empty
         else
             code.handlerInstructionsFor(currentPC)
+    }
+
+    final def expressionResult: ExpressionResult = NoExpression
 
 }

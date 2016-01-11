@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
@@ -52,10 +52,7 @@ import l0._
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithBranchesTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class MethodsWithBranchesTest extends FlatSpec with Matchers {
 
     import MethodsWithBranchesTest._
 
@@ -93,7 +90,8 @@ class MethodsWithBranchesTest
             Some(classFile),
             Some(method),
             method.body.get,
-            result) { f(domain) }
+            result
+        ) { f(domain) }
     }
 
     behavior of "the abstract interpreter"
@@ -110,7 +108,8 @@ class MethodsWithBranchesTest
             //    7  ireturn 
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
+                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+            )
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
@@ -138,7 +137,8 @@ class MethodsWithBranchesTest
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
+                Map((5 → AnIntegerValue), (7 → AnIntegerValue))
+            )
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
@@ -173,9 +173,9 @@ class MethodsWithBranchesTest
             //    18  ireturn
             import domain._
             allReturnedValues should be(Map(
-                (14 -> AnIntegerValue),
-                (16 -> AnIntegerValue),
-                (18 -> AnIntegerValue)
+                (14 → AnIntegerValue),
+                (16 → AnIntegerValue),
+                (18 → AnIntegerValue)
             ))
         }
     }

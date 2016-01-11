@@ -49,21 +49,23 @@ object TestSupport {
      * @return List of class files ready to be passed to a `IndexBasedProject`.
      */
     def readJREClassFiles(
-        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    ): Seq[(ClassFile, java.net.URL)] = {
         val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
-            sys.error(s"loading the JRE (${JRELibraryFolder}) failed")
+            sys.error(s"loading the JRE ($JRELibraryFolder) failed")
 
         classFiles.toSeq
     }
 
     def readRTJarClassFiles(
-        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+    ): Seq[(ClassFile, java.net.URL)] = {
         val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(RTJar)
         if (classFiles.isEmpty)
-            sys.error(s"loading the JRE (${JRELibraryFolder}) failed")
+            sys.error(s"loading the JRE ($JRELibraryFolder) failed")
 
         classFiles.toSeq
     }

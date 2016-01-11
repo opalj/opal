@@ -121,7 +121,8 @@ object DialogStage {
                                     choice = true
                                     theStage.close()
                                 }
-                            })
+                            }
+                        )
                         alignment = Pos.Center
                     }
                 }

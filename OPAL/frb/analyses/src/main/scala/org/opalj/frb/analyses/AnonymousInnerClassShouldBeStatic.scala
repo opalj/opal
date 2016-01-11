@@ -175,9 +175,10 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[ClassBasedReport[Source]] = {
         for {
             classFile ← project.allClassFiles
             if !project.isLibraryType(classFile)
@@ -189,7 +190,8 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
                 project.source(classFile.thisType),
                 Severity.Info,
                 classFile.thisType,
-                "This inner class should be made Static")
+                "This inner class should be made Static"
+            )
         }
     }
 }

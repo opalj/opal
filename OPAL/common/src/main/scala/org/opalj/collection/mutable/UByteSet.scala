@@ -30,20 +30,26 @@ package org.opalj
 package collection
 package mutable
 
-import org.opalj.UByte.{ MinValue, MaxValue }
+import org.opalj.UByte.{MinValue, MaxValue}
 
 /**
  * A set that efficiently stores small sets of unsigned byte values.
  *
  * @author Michael Eichberg
  */
-trait UByteSet extends SmallValuesSet {
+sealed trait UByteSet extends SmallValuesSet {
 
     override def mutableCopy: UByteSet /* The return type is refined! */
 
     override def +≈:(value: Int): UByteSet /* The return type is refined! */
 
     override def -(value: Int): UByteSet /* The return type is refined! */
+
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
+        var newSet: UByteSet = EmptyUByteSet
+        this.foreach { v ⇒ if (f(v)) newSet = v +≈: newSet }
+        newSet
+    }
 
     /**
      * Converts the values to a string using the given separator and adding offset
@@ -55,11 +61,12 @@ trait UByteSet extends SmallValuesSet {
 
     final protected[collection] def mkString(
         start: String, sep: String, end: String,
-        offset: Int): String =
+        offset: Int
+    ): String = {
         start + valuesToString(sep, offset) + end
+    }
 
-    def mkString(start: String, sep: String, end: String): String =
-        mkString(start, sep, end, 0)
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     private[mutable] def isLeafNode: Boolean
     private[mutable] def asTreeNode: UByteSetNode
@@ -107,6 +114,7 @@ private[mutable] object EmptyUByteSet extends UByteSet {
     def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def foreach[U](f: UShort ⇒ U): Unit = {}
     def forall(f: Int ⇒ Boolean): Boolean = true
+    override def filter(f: Int ⇒ Boolean): SmallValuesSet = this
 
     def valuesToString(sep: String, offset: Int): String = ""
 
@@ -374,7 +382,8 @@ private object UByteSet4 {
 
 private class UByteSetNode(
         private val set1: UByteSet,
-        private val set2: UByteSet) extends UByteSet {
+        private val set2: UByteSet
+) extends UByteSet {
 
     private[this] var currentMax = set2.max
     def max = currentMax
@@ -433,7 +442,8 @@ private class UByteSetNode(
     def +≈:(uByteValue: UByte): UByteSet = {
         assert(
             uByteValue >= MinValue && uByteValue <= MaxValue,
-            s"no ubyte value: $uByteValue")
+            s"no ubyte value: $uByteValue"
+        )
 
         val set1 = this.set1
         val set1Max = set1.max

@@ -35,11 +35,11 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
-import org.opalj.br.{ ObjectType, ArrayType }
-import org.opalj.br.{ IntegerType, ByteType, ShortType }
-import org.opalj.br.{ LongType, FloatType, DoubleType }
-import org.opalj.br.{ BooleanType, CharType }
+
+import org.opalj.br.{ObjectType, ArrayType}
+import org.opalj.br.{IntegerType, ByteType, ShortType}
+import org.opalj.br.{LongType, FloatType, DoubleType}
+import org.opalj.br.{BooleanType, CharType}
 import org.opalj.bi.TestSupport.locateTestResources
 import br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
@@ -53,7 +53,7 @@ import org.opalj.br.ComputationalType
  * @author Christos Votskos
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultArraysTest extends FunSpec with Matchers {
 
     import DefaultArraysTest._
 
@@ -61,15 +61,10 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
         val domain = new DefaultArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
+        val code = method.body.get
         val result = BaseAI(classFile, method, domain)
 
-        dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result) {
-                f(domain)
-            }
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 
     describe("array initializations") {
@@ -289,7 +284,8 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
                 isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
                 arraylength(
-                    returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
+                    returnIndex, varray
+                ) should be(ComputedValue(IntegerRange(4)))
 
             })
         }
@@ -309,59 +305,82 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(5)))
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(10, 0),
-                        varray).result, ObjectType.Integer) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(10, 0),
+                    varray
+                ).result, ObjectType.Integer
+                ) should be(Yes)
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(17, 1),
-                        varray).result, ObjectType.Float) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(17, 1),
+                    varray
+                ).result, ObjectType.Float
+                ) should be(Yes)
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(26, 2),
-                        varray).result, ObjectType.Double) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(26, 2),
+                    varray
+                ).result, ObjectType.Double
+                ) should be(Yes)
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(33, 3),
-                        varray).result, ObjectType.Boolean) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(33, 3),
+                    varray
+                ).result, ObjectType.Boolean
+                ) should be(Yes)
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(41, 4),
-                        varray).result, ObjectType.Character) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(41, 4),
+                    varray
+                ).result, ObjectType.Character
+                ) should be(Yes)
 
                 isValueSubtypeOf(
-                    arrayload(returnIndex,
-                        IntegerValue(41, 4),
-                        varray).result, ObjectType.Character) should be(Yes)
+                    arrayload(
+                    returnIndex,
+                    IntegerValue(41, 4),
+                    varray
+                ).result, ObjectType.Character
+                ) should be(Yes)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(20, 2),
-                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+                    varray
+                ).result.computationalType.computationalTypeCategory.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(13, 1),
-                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+                    varray
+                ).result.computationalType.computationalTypeCategory.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(6, 0),
-                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+                    varray
+                ).result.computationalType.computationalTypeCategory.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(29, 3),
-                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+                    varray
+                ).result.computationalType.computationalTypeCategory.id should be(1)
 
                 arrayload(
                     returnIndex,
                     IntegerValue(36, 4),
-                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+                    varray
+                ).result.computationalType.computationalTypeCategory.id should be(1)
 
             })
         }
@@ -375,7 +394,8 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 
                 // we are just testing the dimensions of the array property
                 operandsArray(8).head should be(
-                    InitializedArrayValue(4, fourDimIntArray, List(2, 3)))
+                    InitializedArrayValue(4, fourDimIntArray, List(2, 3))
+                )
             })
         }
 
@@ -386,13 +406,16 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
                 val operandsArray = domain.operandsArray
 
                 operandsArray(18).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2)))
+                    InitializedArrayValue(2, twoDimIntArray, List(2))
+                )
 
                 operandsArray(31).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2, 2)))
+                    InitializedArrayValue(2, twoDimIntArray, List(2, 2))
+                )
 
                 operandsArray(35).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, List(2)))
+                    InitializedArrayValue(2, twoDimIntArray, List(2))
+                )
 
             })
         }
@@ -404,13 +427,16 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                )
 
                 operandsArray(36).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                )
 
                 operandsArray(40).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                )
 
             })
         }
@@ -422,22 +448,28 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                )
 
                 operandsArray(28).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                )
 
                 operandsArray(32).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2))
+                )
 
                 operandsArray(48).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+                    InitializedArrayValue(3, threeDimIntArray, List(2))
+                )
 
                 operandsArray(64).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2, 2)))
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2, 2))
+                )
 
                 operandsArray(68).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2)))
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2))
+                )
             })
         }
     }
@@ -560,7 +592,8 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 }
 
 class DefaultArraysTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+)
         extends CorrelationalDomain
         with GlobalLogContextProvider
         with DefaultDomainValueBinding

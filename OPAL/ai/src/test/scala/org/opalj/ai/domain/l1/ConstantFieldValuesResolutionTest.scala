@@ -35,7 +35,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -46,10 +45,7 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstantFieldValuesResolutionTest
-        extends FunSpec
-        with Matchers
-        with ParallelTestExecution {
+class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
 
     class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
         extends CorrelationalDomain

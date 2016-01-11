@@ -36,10 +36,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-    declaringClass: ObjectType, // a class type to be precise
-    name: String,
-    methodDescriptor: MethodDescriptor)
-        extends NonVirtualMethodInvocationInstruction {
+        declaringClass:   ObjectType, // a class type to be precise
+        name:             String,
+        methodDescriptor: MethodDescriptor
+) extends NonVirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKESTATIC.opcode
 
@@ -54,6 +54,7 @@ case class INVOKESTATIC(
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+
 }
 object INVOKESTATIC {
 

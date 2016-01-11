@@ -29,11 +29,6 @@
 package org.opalj
 package tac
 
-import scala.collection.mutable.BitSet
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.mutable.Locals
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.Domain
 import org.opalj.br._
 
@@ -62,14 +57,13 @@ case class Checkcast(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
 }
 
 case class Compare(
-    pc: PC,
-    left: Expr,
-    condition: RelationalOperator,
-    right: Expr)
-        extends Expr {
+        pc:        PC,
+        left:      Expr,
+        condition: RelationalOperator,
+        right:     Expr
+) extends Expr {
 
-    final def cTpe: ComputationalType = ComputationalTypeInt
-
+    final def cTpe = ComputationalTypeInt
 }
 
 sealed trait Const extends Expr
@@ -122,40 +116,43 @@ case class NullExpr(pc: PC) extends Expr {
  * @param cTpe The computational type of the result of the binary expression.
  */
 case class BinaryExpr(
-    pc: PC,
+    pc:   PC,
     cTpe: ComputationalType,
-    op: BinaryArithmeticOperator,
-    left: Expr, right: Expr) extends Expr
+    op:   BinaryArithmeticOperator,
+    left: Expr, right: Expr
+) extends Expr
 
 /**
  * @param cTpe The computational type of the result of the prefix expression.
  */
 case class PrefixExpr(
-    pc: PC,
-    cTpe: ComputationalType,
-    op: UnaryArithmeticOperator,
-    operand: Expr) extends Expr
+    pc:      PC,
+    cTpe:    ComputationalType,
+    op:      UnaryArithmeticOperator,
+    operand: Expr
+) extends Expr
 
 case class PrimitiveTypecastExpr(
-    pc: PC,
-    targetTpe: BaseType,
-    operand: Expr)
-        extends Expr {
+        pc:        PC,
+        targetTpe: BaseType,
+        operand:   Expr
+) extends Expr {
     final def cTpe = targetTpe.computationalType
 }
 
 case class New(
-    pc: PC,
-    tpe: ObjectType)
-        extends Expr {
+        pc:  PC,
+        tpe: ObjectType
+) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
 case class NewArray(
-    pc: PC,
-    counts: List[Expr],
-    tpe: ArrayType)
-        extends Expr {
+        pc:     PC,
+        counts: List[Expr],
+        tpe:    ArrayType
+) extends Expr {
+
     final def cTpe = ComputationalTypeReference
 }
 
@@ -168,15 +165,59 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
 }
 
 case class GetField(
-    pc: PC,
-    declaringClass: ObjectType, name: String, objRef: Expr)
-        extends Expr {
+        pc:             PC,
+        declaringClass: ObjectType, name: String, objRef: Expr
+) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
 case class GetStatic(pc: PC, declaringClass: ObjectType, name: String) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
+
+case class Invokedynamic(
+        pc:              PC,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      MethodDescriptor,
+        params:          List[Expr]
+) extends Expr {
+    final def cTpe = descriptor.returnType.computationalType
+}
+
+sealed trait FunctionCall extends Call with Expr {
+    final def cTpe = descriptor.returnType.computationalType
+}
+
+sealed trait InstanceFunctionCall extends FunctionCall {
+    def receiver: Expr
+}
+
+case class NonVirtualFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceFunctionCall
+
+case class VirtualFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr,
+    params:         List[Expr]
+) extends InstanceFunctionCall
+
+case class StaticFunctionCall(
+    pc:             PC,
+    declaringClass: ReferenceType,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    params:         List[Expr]
+) extends FunctionCall
 
 trait Var extends Expr {
 
@@ -255,4 +296,3 @@ object OperandVar {
 
     final val HandledException = OperandVar.bottom(ComputationalTypeReference)
 }
-

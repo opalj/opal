@@ -39,8 +39,9 @@ import scala.xml.Node
  */
 case class RuntimeVisibleAnnotations_attribute(
         attribute_name_index: Int,
-        attribute_length: Int,
-        annotations: IndexedSeq[Annotation]) extends Annotations_attribute {
+        attribute_length:     Int,
+        annotations:          IndexedSeq[Annotation]
+) extends Annotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotations runtime_visible tooltip">

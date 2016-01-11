@@ -61,9 +61,9 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
-        val ai: InterruptableAI[_],
-        val method: Method)
-            extends CorrelationalDomain
+        val ai:               InterruptableAI[_],
+        val method:           Method
+    ) extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultTypeLevelIntegerValues
@@ -107,17 +107,16 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         }
     }
 
-    override def title: String =
-        "Derives Information About Returned Values"
+    override def title: String = "Derives Information About Returned Values"
 
     override def description: String =
         "Identifies methods where we can – statically – derive more precise return type/value information."
 
     override def doAnalyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
-
+        theProject:    Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         val methodsWithRefinedReturnTypes = time {
             for {
                 classFile ← theProject.allClassFiles.par
@@ -138,17 +137,20 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(
-                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"))
+                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"
+            )
+        )
     }
 
 }
 
 case class RefinedReturnType(
-        classFile: ClassFile,
-        method: Method,
-        refinedType: Option[Domain#DomainValue]) {
+        classFile:   ClassFile,
+        method:      Method,
+        refinedType: Option[Domain#DomainValue]
+) {
 
-    override def toString = {
+    override def toString(): String = {
         import Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 

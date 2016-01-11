@@ -44,9 +44,7 @@ import org.opalj.log.GlobalLogContext
  * @author Tobias Becker
  */
 @RunWith(classOf[JUnitRunner])
-class JoinUpperBoundsTest
-        extends FunSpec
-        with Matchers {
+class JoinUpperBoundsTest extends FunSpec with Matchers {
 
     val classhierachy =
         ClassHierarchy(
@@ -59,10 +57,11 @@ class JoinUpperBoundsTest
     implicit def setToUIDSet(s: Set[String]) = UIDSet(s.map(ObjectType.apply))
 
     def testJoinUpperTypeBounds(
-        param1: UIDSet[ObjectType],
-        param2: UIDSet[ObjectType],
+        param1:    UIDSet[ObjectType],
+        param2:    UIDSet[ObjectType],
         reflexive: Boolean,
-        expected: UIDSet[ObjectType]) = {
+        expected:  UIDSet[ObjectType]
+    ) = {
         // should always be the same value if parameters are swapped
         def mkString(param: UIDSet[ObjectType]) = {
             param.toSeq.map(_.toJava).mkString("{", ",", "}")
@@ -72,7 +71,8 @@ class JoinUpperBoundsTest
             fail(
                 s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""}"+
                     s" ${mkString(param2)} is ${mkString(result1_2)};"+
-                    s" expected ${mkString(expected)}")
+                    s" expected ${mkString(expected)}"
+            )
         }
 
         val result2_1 = classhierachy.joinUpperTypeBounds(param2, param1, reflexive)

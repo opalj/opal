@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 
 import org.opalj.br._
@@ -49,18 +49,15 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPerInstructionPostProcessingTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
 
     import domain.l1
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
     class DefaultRecordingDomain(
-        val id: String)
-            extends CorrelationalDomain
+        val id: String
+    ) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy
@@ -98,7 +95,7 @@ class DefaultPerInstructionPostProcessingTest
         evaluateMethod("alwaysThrows") { domain ⇒
             import domain._
             allThrownExceptions should be(
-                Map((8 -> Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
+                Map((8 → Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
             )
         }
     }
@@ -114,8 +111,10 @@ class DefaultPerInstructionPostProcessingTest
         evaluateMethod("throwsThisOrThatException") { domain ⇒
             import domain._
             allThrownExceptions should be(
-                Map((19 -> Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
-                    (11 -> Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))) // <= if t is null
+                Map(
+                    (19 → Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
+                    (11 → Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))
+                ) // <= if t is null
             )
         }
     }
@@ -144,10 +143,12 @@ class DefaultPerInstructionPostProcessingTest
         evaluateMethod("withFinallyAndThrows") { domain ⇒
             import domain._
             allThrownExceptions should be(
-                Map((19, Set(ObjectValue(VMLevelValuesOriginOffset - 19, No, true, ObjectType.NullPointerException))),
+                Map(
+                    (19, Set(ObjectValue(VMLevelValuesOriginOffset - 19, No, true, ObjectType.NullPointerException))),
                     (23, Set(
                         ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(VMLevelValuesOriginOffset - 11, No, true, ObjectType.NullPointerException))),
+                        ObjectValue(VMLevelValuesOriginOffset - 11, No, true, ObjectType.NullPointerException)
+                    )),
                     (25, Set(ObjectValue(VMLevelValuesOriginOffset - 25, No, true, ObjectType.NullPointerException)))
                 )
             )

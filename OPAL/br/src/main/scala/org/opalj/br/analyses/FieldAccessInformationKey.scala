@@ -33,9 +33,7 @@ package analyses
 /**
  * The ''key'' object to get global field access information.
  *
- * @example
- *      To get the index use the [[Project]]'s `get` method and pass in
- *      `this` object.
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
  * @author Michael Eichberg
  */

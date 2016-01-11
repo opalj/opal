@@ -30,9 +30,9 @@ package org.opalj
 package ai
 
 import org.opalj.br.UpperTypeBound
-import org.opalj.br.{ BaseType, ReferenceType }
-import org.opalj.br.{ BooleanType, ByteType, CharType, ShortType, IntegerType, LongType }
-import org.opalj.br.{ FloatType, DoubleType }
+import org.opalj.br.{BaseType, ReferenceType}
+import org.opalj.br.{BooleanType, ByteType, CharType, ShortType, IntegerType, LongType}
+import org.opalj.br.{FloatType, DoubleType}
 
 /**
  * Encapsulates the available type information about a `DomainValue`.

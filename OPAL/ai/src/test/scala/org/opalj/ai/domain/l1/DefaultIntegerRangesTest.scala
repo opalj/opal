@@ -35,9 +35,10 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.ParallelTestExecution
-import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
+
+import org.opalj.br.{ObjectType, ArrayType, IntegerType}
 import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
+
 /**
  * Tests the IntegerRanges Domain.
  *
@@ -46,7 +47,7 @@ import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfInteger
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
+class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000
@@ -1385,7 +1386,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1404,7 +1405,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1416,7 +1417,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1428,7 +1429,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1460,7 +1461,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1472,7 +1473,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1484,7 +1485,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1496,7 +1497,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1508,7 +1509,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1520,7 +1521,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result should be(IntegerRange(-21, 21))
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1568,7 +1569,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result should be(IntegerRange(-3, 3))
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -3611,7 +3612,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 }
 
 class DefaultIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -3630,7 +3632,8 @@ class DefaultIntegerRangesTestDomain(
         with RecordLastReturnedValues
 
 class JoinResultsIntegerRangesTestDomain(
-    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

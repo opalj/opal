@@ -94,31 +94,33 @@ class FloatArithmeticTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect addition") {
-                val statements = AsQuadruples(FloatAddMethod, None)
+                val statements = AsQuadruples(method = FloatAddMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
-                        BinaryExpr(2, ComputationalTypeFloat, Add, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))))
+                        BinaryExpr(2, ComputationalTypeFloat, Add, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
             }
 
             it("should correctly reflect division") {
-                val statements = AsQuadruples(FloatDivMethod, None)
+                val statements = AsQuadruples(method = FloatDivMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
-                        BinaryExpr(2, ComputationalTypeFloat, Divide, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))))
+                        BinaryExpr(2, ComputationalTypeFloat, Divide, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
             }
 
             it("should correctly reflect negation") {
-                val statements = AsQuadruples(FloatNegMethod, None)
+                val statements = AsQuadruples(method = FloatNegMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -129,53 +131,60 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeFloat), SimpleVar(-2, ComputationalTypeFloat)),
                     Assignment(1, SimpleVar(0, ComputationalTypeFloat),
                         PrefixExpr(1, ComputationalTypeFloat, Negate, SimpleVar(0, ComputationalTypeFloat))),
-                    ReturnValue(2, SimpleVar(0, ComputationalTypeFloat))))
+                    ReturnValue(2, SimpleVar(0, ComputationalTypeFloat))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0;"))
+                        "4: return op_0;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
-                val statements = AsQuadruples(FloatMulMethod, None)
+                val statements = AsQuadruples(method = FloatMulMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
-                        BinaryExpr(2, ComputationalTypeFloat, Multiply, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))))
+                        BinaryExpr(2, ComputationalTypeFloat, Multiply, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
             }
 
             it("should correctly reflect modulo") {
-                val statements = AsQuadruples(FloatRemMethod, None)
+                val statements = AsQuadruples(method = FloatRemMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
-                        BinaryExpr(2, ComputationalTypeFloat, Modulo, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))))
+                        BinaryExpr(2, ComputationalTypeFloat, Modulo, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
             }
 
             it("should correctly reflect subtraction") {
-                val statements = AsQuadruples(FloatSubMethod, None)
+                val statements = AsQuadruples(method = FloatSubMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
-                        BinaryExpr(2, ComputationalTypeFloat, Subtract, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))))
+                        BinaryExpr(2, ComputationalTypeFloat, Subtract, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat)))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 
             it("should correctly reflect comparison (using no AI results)") {
-                val statements = AsQuadruples(FloatCmpMethod, None)
+                val statements = AsQuadruples(method = FloatCmpMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -191,7 +200,8 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     Assignment(6, SimpleVar(0, ComputationalTypeInt), IntConst(6, 1)),
                     Goto(7, 10),
                     Assignment(10, SimpleVar(0, ComputationalTypeInt), IntConst(10, 0)),
-                    ReturnValue(11, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(11, SimpleVar(0, ComputationalTypeInt))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -232,7 +242,7 @@ class FloatArithmeticTest extends FunSpec with Matchers {
             it("should correctly reflect addition") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatAddMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatAddMethod, domain)
-                val statements = AsQuadruples(FloatAddMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatAddMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -240,14 +250,15 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
                         BinaryExpr(2, ComputationalTypeFloat, Add, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 + op_1;"))
             }
 
             it("should correctly reflect division") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatDivMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatDivMethod, domain)
-                val statements = AsQuadruples(FloatDivMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatDivMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -255,14 +266,15 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
                         BinaryExpr(2, ComputationalTypeFloat, Divide, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 / op_1;"))
             }
 
             it("should correctly reflect negation") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatNegMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatNegMethod, domain)
-                val statements = AsQuadruples(FloatNegMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatNegMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -273,19 +285,23 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                     Assignment(0, SimpleVar(0, ComputationalTypeFloat), SimpleVar(-2, ComputationalTypeFloat)),
                     Assignment(1, SimpleVar(0, ComputationalTypeFloat),
                         PrefixExpr(1, ComputationalTypeFloat, Negate, SimpleVar(0, ComputationalTypeFloat))),
-                    ReturnValue(2, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(2, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(
-                    Array("0: r_0 = this;",
+                    Array(
+                        "0: r_0 = this;",
                         "1: r_1 = p_1;",
                         "2: op_0 = r_1;",
                         "3: op_0 = - op_0;",
-                        "4: return op_0 /*AFloatValue*/;"))
+                        "4: return op_0 /*AFloatValue*/;"
+                    )
+                )
             }
 
             it("should correctly reflect multiplication") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatMulMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatMulMethod, domain)
-                val statements = AsQuadruples(FloatMulMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatMulMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -293,14 +309,15 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
                         BinaryExpr(2, ComputationalTypeFloat, Multiply, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 * op_1;"))
             }
 
             it("should correctly reflect modulo") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatRemMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatRemMethod, domain)
-                val statements = AsQuadruples(FloatRemMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatRemMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -308,14 +325,15 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
                         BinaryExpr(2, ComputationalTypeFloat, Modulo, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 % op_1;"))
             }
 
             it("should correctly reflect subtraction") {
                 val domain = new DefaultDomain(project, ArithmeticExpressionsClassFile, FloatSubMethod)
                 val aiResult = BaseAI(ArithmeticExpressionsClassFile, FloatSubMethod, domain)
-                val statements = AsQuadruples(FloatSubMethod, Some(aiResult))
+                val statements = AsQuadruples(method = FloatSubMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -323,7 +341,8 @@ class FloatArithmeticTest extends FunSpec with Matchers {
                 statements.shouldEqual(binaryAST(
                     Assignment(2, SimpleVar(0, ComputationalTypeFloat),
                         BinaryExpr(2, ComputationalTypeFloat, Subtract, SimpleVar(0, ComputationalTypeFloat), SimpleVar(1, ComputationalTypeFloat))),
-                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))))
+                    ReturnValue(3, DomainValueBasedVar(0, domain.AFloatValue.asInstanceOf[domain.DomainValue]))
+                ))
                 javaLikeCode.shouldEqual(binaryJLC("5: op_0 = op_0 - op_1;"))
             }
 

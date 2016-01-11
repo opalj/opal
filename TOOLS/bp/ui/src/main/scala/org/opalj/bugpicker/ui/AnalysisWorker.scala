@@ -31,22 +31,22 @@ package bugpicker
 package ui
 
 import java.net.URL
+import javafx.concurrent.{Service ⇒ jService}
+import javafx.concurrent.{Task ⇒ jTask}
 import scala.io.Source
-import scala.xml.{ Node ⇒ xmlNode }
+import scala.xml.{Node ⇒ xmlNode}
+import scalafx.beans.property.ObjectProperty
+import scalafx.concurrent.Service
 import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
+import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.Issue
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import javafx.concurrent.{ Service ⇒ jService }
-import javafx.concurrent.{ Task ⇒ jTask }
-import scalafx.beans.property.ObjectProperty
-import scalafx.concurrent.Service
-import org.opalj.log.OPALLogger
+import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import scala.util.control.ControlThrowable
 
 /**
  * @author Arne Lottmann
@@ -54,29 +54,56 @@ import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
  * @author David Becker
  */
 class AnalysisWorker(
-    doc: ObjectProperty[xmlNode],
-    project: Project[URL],
-    parameters: AnalysisParameters,
-    issuez: ObjectProperty[Iterable[Issue]],
-    initProgressManagement: Int ⇒ ProgressManagement) extends Service[Unit](new jService[Unit]() {
+    doc:                    ObjectProperty[xmlNode],
+    project:                Project[URL],
+    issuez:                 ObjectProperty[Iterable[Issue]],
+    initProgressManagement: Int ⇒ ProgressManagement
+) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
-            val parametersAsString = parameters.toStringParameters
-            val (analysisTime, issues, _) =
-                AnalysisRunner.analyze(project, parametersAsString, initProgressManagement)
-            issuez() = issues
-            doc() = createHTMLReport(analysisTime, parametersAsString, issues)
+            val configIterator = project.config.withOnlyPath("org.opalj").entrySet.iterator
+
+            var configParams: Seq[String] = Seq.empty
+            while (configIterator.hasNext) {
+                val entry = configIterator.next()
+                val param = entry.getKey+" = "+entry.getValue.render()
+                configParams = configParams :+ param
+            }
+
+            configParams.sorted
+
+            try {
+                val (analysisTime, issues, exceptions) =
+                    AnalysisRunner.analyze(project, Seq.empty, initProgressManagement)
+                issuez() = issues
+                doc() = createHTMLReport(analysisTime, configParams, issues)
+                exceptions.foreach { exception: Exception ⇒
+                    OPALLogger.error(
+                        "internal error",
+                        "executing an analysis failed",
+                        exception
+                    )(GlobalLogContext)
+                }
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable ⇒
+                    val msg = "severe non-recoverable internal failure"
+                    OPALLogger.error("internal error", msg, t)(GlobalLogContext)
+                    doc() = <h1>Internal Failure</h1>
+            }
         }
 
         def createHTMLReport(
             analysisTime: Nanoseconds,
-            parametersAsString: Seq[String],
-            issues: Iterable[Issue]): scala.xml.Node = {
+            configString: Seq[String],
+            issues:       Iterable[Issue]
+        ): scala.xml.Node = {
             val report =
                 resultsAsXHTML(
-                    parametersAsString, issues, showSearch = true,
-                    analysisTime)
+                    configString, issues, showSearch = true,
+                    analysisTime
+                )
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString
@@ -92,10 +119,12 @@ class AnalysisWorker(
                     report.attributes,
                     report.scope,
                     false,
-                    (newHead ++ (report \ "body"): _*))
+                    (newHead ++ (report \ "body"): _*)
+                )
 
             OPALLogger.info(
-                "analysis progress", "assembled the final report")(project.logContext)
+                "analysis progress", "assembled the final report"
+            )(project.logContext)
 
             assembledReport
         }

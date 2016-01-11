@@ -33,24 +33,26 @@ package instructions
 import org.opalj.collection.mutable.UShortSet
 
 /**
- * An instruction that directly manipulates the operand stack by popping, swaping or
+ * An instruction that directly manipulates the operand stack by popping, swapping or
  * duplicating values.
  *
  * @author Michael Eichberg
  */
-abstract class StackManagementInstruction
-        extends Instruction
-        with ConstantLengthInstruction {
+abstract class StackManagementInstruction extends Instruction with ConstantLengthInstruction {
 
     def jvmExceptions: List[ObjectType] = Nil
 
     final def length: Int = 1
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -64,6 +66,8 @@ abstract class StackManagementInstruction
     final def writesLocal: Boolean = false
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+    final def expressionResult: ExpressionResult = NoExpression
 
 }
 

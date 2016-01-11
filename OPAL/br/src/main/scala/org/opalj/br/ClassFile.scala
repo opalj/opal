@@ -38,6 +38,7 @@ import bi.ACC_FINAL
 import bi.ACC_PUBLIC
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import bi.AccessFlagsMatcher
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
@@ -85,15 +86,15 @@ import org.opalj.collection.immutable.UShortPair
  * @author Michael Eichberg
  */
 final class ClassFile private (
-    val version: UShortPair,
-    val accessFlags: Int,
-    val thisType: ObjectType,
-    val superclassType: Option[ObjectType],
-    val interfaceTypes: Seq[ObjectType],
-    val fields: Fields,
-    val methods: Methods,
-    val attributes: Attributes)
-        extends ConcreteSourceElement {
+        val version:        UShortPair,
+        val accessFlags:    Int,
+        val thisType:       ObjectType,
+        val superclassType: Option[ObjectType],
+        val interfaceTypes: Seq[ObjectType],
+        val fields:         Fields,
+        val methods:        Methods,
+        val attributes:     Attributes
+) extends ConcreteSourceElement {
 
     import ClassFile._
 
@@ -121,7 +122,26 @@ final class ClassFile private (
 
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
+    /**
+     * Returns `true` if the class is final or if it only defines private constructors.
+     */
+    def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
+
+    /**
+     * `true` if the class file has public visibility. If `false` the method `isPackageVisible`
+     * will return `true`.
+     *
+     * @note There is no private or protected visibility.
+     */
     def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
+
+    /**
+     * `true` if the class file has package visibility. If `false` the method `isPublic`
+     * will return `true`.
+     *
+     * @note There is no private or protected visibility.
+     */
+    def isPackageVisible: Boolean = !isPublic
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 
@@ -167,17 +187,21 @@ final class ClassFile private (
      * This method relies on the inner classes attribute to identify anonymous inner
      * classes.
      */
-    def isAnonymousInnerClass: Boolean = isClassDeclaration &&
-        innerClasses.map(_.exists { i ⇒
-            i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
-        }).getOrElse(false)
+    def isAnonymousInnerClass: Boolean = {
+        isClassDeclaration &&
+            innerClasses.map { ics ⇒
+                ics.exists { i ⇒
+                    i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
+                }
+            }.getOrElse(false)
+    }
 
     /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
      * nested classes that are not defined in the scope of a nested class of this
      * class.
      */
-    def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
+    def nestedClasses(implicit classFileRepository: ClassFileRepository): Seq[ObjectType] = {
 
         import classFileRepository.logContext
 
@@ -210,8 +234,7 @@ final class ClassFile private (
                     (
                         innerClass.outerClassType.isEmpty ||
                         (innerClass.outerClassType.get eq thisType)
-                    )
-            ).map(_.innerClassType)
+                    )).map(_.innerClassType)
         }.getOrElse {
             Nil
         }
@@ -228,7 +251,8 @@ final class ClassFile private (
                     "processing bytecode",
                     "the inner class "+thisType.toJava+
                         " does not use the standard naming schema"+
-                        "; the inner classes information may be incomplete")
+                        "; the inner classes information may be incomplete"
+                )
 
                 return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
@@ -246,7 +270,8 @@ final class ClassFile private (
                                     OPALLogger.warn(
                                         "project information",
                                         "cannot get informaton about "+objectType.toJava+
-                                            "; the inner classes information may be incomplete")
+                                            "; the inner classes information may be incomplete"
+                                    )
                             }
                         }
                         nestedTypes
@@ -275,7 +300,8 @@ final class ClassFile private (
                     OPALLogger.warn(
                         "project information",
                         "cannot identify outer type of "+thisType.toJava+
-                            "; the inner classes information may be incomplete")
+                            "; the inner classes information may be incomplete"
+                    )
 
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
@@ -295,12 +321,15 @@ final class ClassFile private (
      * }}}
      */
     def foreachNestedClass(
-        classFileRepository: ClassFileRepository,
-        f: (ClassFile) ⇒ Unit): Unit = {
+        f: (ClassFile) ⇒ Unit
+    )(
+        implicit
+        classFileRepository: ClassFileRepository
+    ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType ⇒
             classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
                 f(nestedClassFile)
-                nestedClassFile.foreachNestedClass(classFileRepository, f)
+                nestedClassFile.foreachNestedClass(f)
             }
         }
     }
@@ -313,26 +342,27 @@ final class ClassFile private (
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
      */
-    def outerType: Option[(ObjectType, Int)] =
+    def outerType: Option[(ObjectType, Int)] = {
         innerClasses flatMap { innerClasses ⇒
             innerClasses collectFirst {
                 case InnerClass(`thisType`, Some(outerType), _, accessFlags) ⇒
                     (outerType, accessFlags)
             }
         }
+    }
 
     /**
      * Each class file optionally defines a class signature.
      */
-    def classSignature: Option[ClassSignature] =
+    def classSignature: Option[ClassSignature] = {
         attributes collectFirst { case s: ClassSignature ⇒ s }
+    }
 
     /**
      * The SourceFile attribute is an optional attribute [...]. There can be
      * at most one `SourceFile` attribute.
      */
-    def sourceFile: Option[String] =
-        attributes collectFirst { case SourceFile(s) ⇒ s }
+    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
 
     /**
      * The SourceDebugExtension attribute is an optional attribute [...]. There can be
@@ -342,8 +372,9 @@ final class ClassFile private (
      *
      * The returned Array must not be mutated.
      */
-    def sourceDebugExtension: Option[Array[Byte]] =
+    def sourceDebugExtension: Option[Array[Byte]] = {
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+    }
 
     /**
      * All constructors/instance initialization methods (`<init>`) defined by this class.
@@ -379,14 +410,17 @@ final class ClassFile private (
         }
     }
 
+    def hasDefaultConstructor: Boolean = constructors exists { _.parametersCount == 0 }
+
     /**
      * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
      */
-    def instanceMethods: Iterable[Method] =
+    def instanceMethods: Iterable[Method] = {
         methods.view filterNot { method ⇒
             method.isStatic || method.isConstructor || method.isStaticInitializer
         }
+    }
 
     /**
      * The static initializer of this class.
@@ -422,7 +456,7 @@ final class ClassFile private (
     /**
      * Returns the field with the given name, if any.
      *
-     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findField(name: String): Option[Field] = {
         @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
@@ -449,7 +483,7 @@ final class ClassFile private (
      *
      * @note Though the methods are sorted, no guarantee is given which method is
      *      returned if multiple methods are defined with the same name.
-     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     * @note The complexity is O(log2 n); this algorithm uses binary search.
      */
     def findMethod(name: String): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
@@ -504,6 +538,18 @@ final class ClassFile private (
         findMethod(0, methods.size - 1)
     }
 
+    def findMethod(
+        name:       String,
+        descriptor: MethodDescriptor,
+        matcher:    AccessFlagsMatcher
+    ): Option[Method] = {
+        val candidateMethod = findMethod(name, descriptor)
+        if (candidateMethod exists { m ⇒ matcher.unapply(m.accessFlags) })
+            candidateMethod
+        else
+            None
+    }
+
     /**
      * This class file's `hasCode`. The `hashCode` is (by purpose) identical to
      * the id of the `ObjectType` it implements.
@@ -529,9 +575,9 @@ final class ClassFile private (
                 thisType.toJava+"\n"+
                 superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
                 superIntefaces +
-                annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
-                annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
-                "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+                annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
+                annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
+                "\t[version="+majorVersion+"."+minorVersion+"]\n)"
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: Exception ⇒
@@ -561,22 +607,24 @@ object ClassFile {
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
     def apply(
-        minorVersion: Int,
-        majorVersion: Int,
-        accessFlags: Int,
-        thisType: ObjectType,
+        minorVersion:   Int,
+        majorVersion:   Int,
+        accessFlags:    Int,
+        thisType:       ObjectType,
         superclassType: Option[ObjectType],
         interfaceTypes: Seq[ObjectType],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes): ClassFile = {
+        fields:         Fields,
+        methods:        Methods,
+        attributes:     Attributes
+    ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
             thisType, superclassType, interfaceTypes,
             fields sortWith { (f1, f2) ⇒ f1 < f2 },
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
-            attributes)
+            attributes
+        )
     }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {

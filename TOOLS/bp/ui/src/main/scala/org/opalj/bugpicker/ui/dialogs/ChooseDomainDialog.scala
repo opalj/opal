@@ -120,7 +120,8 @@ class ChooseDomainDialog extends Stage {
                         onAction = { e: ActionEvent ⇒
                             self.close()
                         }
-                    })
+                    }
+                )
             }
         }
 

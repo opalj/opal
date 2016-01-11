@@ -32,47 +32,36 @@ package ai
 import scala.language.existentials
 
 import java.net.URL
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.CYAN
-import scala.Console.RED
-import scala.Console.RESET
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
-import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.ai.analyses.cg.CallGraphDifferenceReport
 import org.opalj.ai.analyses.cg.CallGraphComparison
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
  * Calculates and compares the results of two call graphs.
  *
  * @author Michael Eichberg
  */
-object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object CallGraphDiff extends DefaultOneStepAnalysis {
 
     override def title: String = "identifies differences between two call graphs"
 
     override def description: String = "Identifies methods that do not have the same call graph information."
 
     override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
         val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
         if (unexpected.nonEmpty || additional.nonEmpty) {
             var r = "Found the following difference(s):\n"
@@ -88,9 +77,10 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
     }
 
     def callGraphDiff(
-        project: Project[_],
-        println: String ⇒ Unit,
-        isInterrupted: () ⇒ Boolean): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
+        project:       Project[_],
+        println:       String ⇒ Unit,
+        isInterrupted: () ⇒ Boolean
+    ): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
         // TODO Add support for interrupting the calculation of the control-flow graph
         import CallGraphFactory.defaultEntryPointsForLibraries
         val entryPoints = () ⇒ defaultEntryPointsForLibraries(project)
@@ -112,13 +102,15 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
                 new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                     override def Domain[Source](
                         classFile: ClassFile,
-                        method: Method) =
+                        method:    Method
+                    ) =
                         new DefaultVTACallGraphDomain(
                             project, fieldValueInformation, methodReturnValueInformation,
                             cache,
                             classFile, method //, 4
                         )
-                })
+                }
+            )
         } { ns ⇒ println("creating the more precise call graph took "+ns.toSeconds) }
 
         if (isInterrupted())

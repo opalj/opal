@@ -37,27 +37,31 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class CreateNewArrayInstruction
-        extends Instruction
-        with ConstantLengthInstruction {
+abstract class CreateNewArrayInstruction extends Instruction with ConstantLengthInstruction {
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
 
-    final def jvmExceptions: List[ObjectType] =
-        CreateNewArrayInstruction.jvmExceptions
+    final def jvmExceptions: List[ObjectType] = CreateNewArrayInstruction.jvmExceptionsAndErrors
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandlers(
-                this, currentPC, code, CreateNewArrayInstruction.jvmExceptionsAndErrors)
+                this, currentPC, CreateNewArrayInstruction.jvmExceptionsAndErrors
+            )
+    }
+
+    final def expressionResult: ExpressionResult = Stack
 
 }
 

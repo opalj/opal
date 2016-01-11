@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.junit.JUnitRunner
 
 import br._
@@ -47,7 +47,7 @@ import br._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
+class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
     private[this] val IrrelevantPC = Int.MinValue
 
@@ -172,7 +172,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(
             /*p2=*/ IntegerValue(IrrelevantPC, 3),
             /*p1=*/ IntegerValue(IrrelevantPC, 1),
-            receiver)
+            receiver
+        )
 
         //String <String>.substring(int int)
         /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
@@ -268,7 +269,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(
             /*p2=*/ IntegerValue(IrrelevantPC, 1),
             /*p1=*/ IntegerValue(IrrelevantPC, 3),
-            receiver)
+            receiver
+        )
 
         //String <String>.substring(int /*lower*/, int/*upper*/)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)

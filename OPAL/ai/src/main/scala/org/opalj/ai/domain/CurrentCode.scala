@@ -52,9 +52,10 @@ trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDoma
     final def code: Code = theCode
 
     abstract override def initProperties(
-        code: Code,
+        code:             Code,
         joinInstructions: BitSet,
-        initialLocals: Locals): Unit = {
+        initialLocals:    Locals
+    ): Unit = {
 
         this.theCode = code
 

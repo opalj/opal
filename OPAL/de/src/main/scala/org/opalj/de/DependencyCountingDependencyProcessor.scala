@@ -48,25 +48,28 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
+        dType:  DependencyType
+    ): Unit = {
         dependencyCount.incrementAndGet()
     }
     def currentDependencyCount = dependencyCount.get
 
     protected[this] val dependencyOnArraysCount = new AtomicInteger(0)
     override def processDependency(
-        source: VirtualSourceElement,
+        source:    VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit = {
+        dType:     DependencyType
+    ): Unit = {
         dependencyOnArraysCount.incrementAndGet()
     }
     def currentDependencyOnArraysCount = dependencyOnArraysCount.get
 
     protected[this] val dependencyOnPrimitivesCount = new AtomicInteger(0)
     override def processDependency(
-        source: VirtualSourceElement,
+        source:   VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit = {
+        dType:    DependencyType
+    ): Unit = {
         dependencyOnPrimitivesCount.incrementAndGet()
     }
     def currentDependencyOnPrimitivesCount = dependencyOnPrimitivesCount.get
@@ -84,8 +87,9 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
 
     override def asVirtualField(
         declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length => arraylength
-        name: String,
-        fieldType: FieldType): VirtualField = {
+        name:               String,
+        fieldType:          FieldType
+    ): VirtualField = {
         DummyVirtualField
     }
 
@@ -93,12 +97,14 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
         VirtualMethod(
             DummyClassType,
             "<-DUMMY_METHOD->",
-            MethodDescriptor.NoArgsAndReturnVoid)
+            MethodDescriptor.NoArgsAndReturnVoid
+        )
 
     override def asVirtualMethod(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
-        name: String,
-        descriptor: MethodDescriptor): VirtualMethod = {
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): VirtualMethod = {
         DummyVirtualMethod
     }
 

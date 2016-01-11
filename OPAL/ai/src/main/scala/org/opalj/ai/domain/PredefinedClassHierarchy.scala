@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.Code
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
+import org.opalj.br.{ClassHierarchy ⇒ TheClassHierarchy}
 
 /**
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)

@@ -31,51 +31,23 @@ package bugpicker
 package core
 package analysis
 
-import java.net.URL
-import scala.xml.Node
-import scala.xml.UnprefixedAttribute
-import scala.xml.Unparsed
-import scala.Console.BLUE
-import scala.Console.RED
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import scala.collection.SortedMap
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
-import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.MethodWithBody
-import org.opalj.ai.common.XHTML
-import org.opalj.ai.BaseAI
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.ai.Domain
-import org.opalj.br.Code
 import org.opalj.br.PC
 import org.opalj.ai.collectPCWithOperands
-import org.opalj.ai.BoundedInterruptableAI
-import org.opalj.ai.domain
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.ai.InterpretationFailedException
-import org.opalj.br.instructions.ArithmeticInstruction
 import org.opalj.br.instructions.BinaryArithmeticInstruction
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
-import org.opalj.br.instructions.UnaryArithmeticInstruction
 import org.opalj.br.instructions.LNEG
 import org.opalj.br.instructions.INEG
 import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
-import org.opalj.br.instructions.ISTORE
-import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.domain.l1.ReferenceValues
-import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.instructions.IFNULL
 
 /**
  * Identifies computations that are useless (i.e., computations that could be done
@@ -89,7 +61,8 @@ object UselessComputationsAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UselessComputationsAnalysisDomain }): Seq[StandardIssue] = {
+        result: AIResult { val domain: UselessComputationsAnalysisDomain }
+    ): Seq[StandardIssue] = {
 
         val defaultRelevance = Relevance.DefaultRelevance
         val defaultIIncRelevance = Relevance(5)
@@ -98,7 +71,8 @@ object UselessComputationsAnalysis {
 
         def Issue(pc: PC, message: String, relevance: Relevance): StandardIssue =
             StandardIssue(
-                theProject, classFile, Some(method),
+                "UselessComputationsAnalysis",
+                theProject, classFile, None, Some(method),
                 Some(pc),
                 Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
                 "the expression always evaluates to the same value",
@@ -194,13 +168,15 @@ object UselessComputationsAnalysis {
                 INSTANCEOF(referenceType),
                 Seq(rv: domain.ReferenceValue, _*)
                 ) if domain.intValueOption(
-                operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
+                operandsArray(pc + INSTANCEOF.length).head
+            ).isDefined ⇒
                 Issue(
                     pc,
                     rv.upperTypeBound.map(_.toJava).mkString(
                         "useless type test:",
                         " with ",
-                        " instanceof "+referenceType.toJava),
+                        " instanceof "+referenceType.toJava
+                    ),
                     defaultRelevance
                 )
 

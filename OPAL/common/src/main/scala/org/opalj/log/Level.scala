@@ -39,6 +39,8 @@ sealed trait Level {
     def ansiColorEscape: String
 
     def id: String
+
+    def value: Int
 }
 
 /**
@@ -57,6 +59,8 @@ case object Info extends Level {
     def ansiColorEscape: String = ""
 
     def id: String = "info"
+
+    def value: Int = 0
 }
 /**
  * Factory for warn level log messages.
@@ -74,6 +78,8 @@ case object Warn extends Level {
     def ansiColorEscape: String = Console.BLUE
 
     def id: String = "warn"
+
+    def value: Int = 1000
 }
 
 /**
@@ -95,4 +101,6 @@ case object Error extends Level {
     def ansiColorEscape: String = Console.RED
 
     def id: String = "error"
+
+    def value: Int = Int.MaxValue
 }

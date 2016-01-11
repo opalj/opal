@@ -115,7 +115,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ protected[this] def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals[X]
+        f:          (Int, T) ⇒ X
+    ): Locals[X]
 
     /**
      * Transforms the values of this locals array. If all values are the same as
@@ -245,8 +246,10 @@ sealed trait Locals[T >: Null <: AnyRef] {
     }
 
     def corresponds[U >: Null <: AnyRef](
-        other: Locals[U])(
-            compare: (T, U) ⇒ Boolean): Boolean = {
+        other: Locals[U]
+    )(
+        compare: (T, U) ⇒ Boolean
+    ): Boolean = {
         this.size == other.size && {
             var i = 0
             while (i < this.size) {
@@ -332,7 +335,8 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, Null) ⇒ X): Locals[X] = {
+        f:          (Int, Null) ⇒ X
+    ): Locals[X] = {
         this.asInstanceOf[Locals[X]]
     }
 
@@ -368,7 +372,8 @@ private[mutable] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Loca
 }
 
 private[mutable] final class Locals1[T >: Null <: AnyRef](
-        private var v: T = null) extends LocalsX[T] {
+        private var v: T = null
+) extends LocalsX[T] {
 
     final override def size = 1
 
@@ -421,7 +426,8 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals[X] = {
         new Locals1[X](f(startIndex + 0, v))
     }
 
@@ -438,7 +444,8 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
 
 private[mutable] final class Locals2[T >: Null <: AnyRef](
         private var v0: T = null,
-        private var v1: T = null) extends LocalsX[T] {
+        private var v1: T = null
+) extends LocalsX[T] {
 
     final override def size = 2
 
@@ -515,7 +522,8 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals2[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals2[X] = {
         new Locals2[X](f(startIndex + 0, v0), f(startIndex + 1, v1))
     }
 
@@ -538,7 +546,8 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
 private[mutable] final class Locals3[T >: Null <: AnyRef](
         private var v0: T = null,
         private var v1: T = null,
-        private var v2: T = null) extends LocalsX[T] {
+        private var v2: T = null
+) extends LocalsX[T] {
 
     final override def size = 3
 
@@ -640,7 +649,8 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals3[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals3[X] = {
         new Locals3[X](f(startIndex + 0, v0), f(startIndex + 1, v1), f(startIndex + 2, v2))
     }
 
@@ -666,7 +676,8 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         private var v0: T = null,
         private var v1: T = null,
         private var v2: T = null,
-        private var v3: T = null) extends LocalsX[T] {
+        private var v3: T = null
+) extends LocalsX[T] {
 
     final override def size = 4
 
@@ -785,12 +796,14 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals4[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals4[X] = {
         new Locals4[X](
             f(startIndex + 0, v0),
             f(startIndex + 1, v1),
             f(startIndex + 2, v2),
-            f(startIndex + 3, v3))
+            f(startIndex + 3, v3)
+        )
     }
 
     override def mapConserve(f: T ⇒ T): Locals4[T] = {
@@ -815,7 +828,8 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
 
 private[mutable] final class Locals5[T >: Null <: AnyRef](
         final val vs1: Locals2[T] = new Locals2[T],
-        final val vs2: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
+        final val vs2: Locals3[T] = new Locals3[T]
+) extends LocalsX[T] {
 
     final def size = 5
 
@@ -884,7 +898,8 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals5[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals5[X] = {
         new Locals5[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 2, f))
     }
 
@@ -909,7 +924,8 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
 
 private[mutable] final class Locals6[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
+        final val vs2: Locals3[T] = new Locals3[T]
+) extends LocalsX[T] {
 
     final def size = 6
 
@@ -985,7 +1001,8 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals6[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals6[X] = {
         new Locals6[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 3, f))
     }
 
@@ -1003,7 +1020,8 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
 
 private[mutable] final class Locals7[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals4[T] = new Locals4[T]) extends LocalsX[T] {
+        final val vs2: Locals4[T] = new Locals4[T]
+) extends LocalsX[T] {
 
     final def size = 7
 
@@ -1079,7 +1097,8 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals7[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals7[X] = {
         new Locals7[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 3, f))
     }
 
@@ -1098,7 +1117,8 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
 private[mutable] final class Locals8[T >: Null <: AnyRef](
         final val vs1: Locals2[T] = new Locals2[T],
         final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
+        final val vs3: Locals3[T] = new Locals3[T]
+) extends LocalsX[T] {
 
     final def size = 8
 
@@ -1207,11 +1227,13 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals8[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals8[X] = {
         new Locals8[X](
             vs1.mapKV(startIndex, f),
             vs2.mapKV(startIndex + 2, f),
-            vs3.mapKV(startIndex + 5, f))
+            vs3.mapKV(startIndex + 5, f)
+        )
     }
 
     override def mapConserve(f: T ⇒ T): Locals8[T] = {
@@ -1231,7 +1253,8 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
 private[mutable] final class Locals9[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
         final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
+        final val vs3: Locals3[T] = new Locals3[T]
+) extends LocalsX[T] {
 
     final def size = 9
 
@@ -1340,11 +1363,13 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals9[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals9[X] = {
         new Locals9[X](
             vs1.mapKV(startIndex, f),
             vs2.mapKV(startIndex + 3, f),
-            vs3.mapKV(startIndex + 6, f))
+            vs3.mapKV(startIndex + 6, f)
+        )
     }
 
     override def mapConserve(f: T ⇒ T): Locals9[T] = {
@@ -1364,7 +1389,8 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
 private[mutable] final class Locals10[T >: Null <: AnyRef](
         final val vs1: Locals4[T] = new Locals4[T],
         final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
+        final val vs3: Locals3[T] = new Locals3[T]
+) extends LocalsX[T] {
 
     final def size = 10
 
@@ -1474,7 +1500,8 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals10[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals10[X] = {
         new Locals10[X](vs1.mapKV(startIndex, f), vs2.mapKV(startIndex + 4, f), vs3.mapKV(startIndex + 7, f))
     }
 
@@ -1495,7 +1522,8 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
 private[mutable] final class Locals11[T >: Null <: AnyRef](
         final val vs1: Locals4[T] = new Locals4[T],
         final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals4[T] = new Locals4[T]) extends LocalsX[T] {
+        final val vs3: Locals4[T] = new Locals4[T]
+) extends LocalsX[T] {
 
     final def size = 11
 
@@ -1604,11 +1632,13 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals11[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals11[X] = {
         new Locals11[X](
             vs1.mapKV(startIndex, f),
             vs2.mapKV(startIndex + 4, f),
-            vs3.mapKV(startIndex + 7, f))
+            vs3.mapKV(startIndex + 7, f)
+        )
     }
 
     override def mapConserve(f: T ⇒ T): Locals11[T] = {
@@ -1626,13 +1656,15 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
-        final val vs11: Locals11[T],
-        final val vs12_N: Array[T]) extends LocalsX[T] {
+        final val vs11:   Locals11[T],
+        final val vs12_N: Array[T]
+) extends LocalsX[T] {
 
     def this(size: Int) {
         this(
             new Locals11[T],
-            new Array[T](size - 11))
+            new Array[T](size - 11)
+        )
     }
 
     final def size = vs12_N.length + 11
@@ -1751,7 +1783,8 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
 
     override def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
-        f: (Int, T) ⇒ X): Locals12_N[X] = {
+        f:          (Int, T) ⇒ X
+    ): Locals12_N[X] = {
         def fs(ti: (T, Int)): X = { val (t, i) = ti; f(startIndex + 11 + i, t) }
 
         new Locals12_N[X](vs11.mapKV(startIndex, f), vs12_N.zipWithIndex.map(fs))
@@ -1789,15 +1822,18 @@ object Locals {
             case 5 ⇒
                 new Locals5(
                     new Locals2(data(0), data(1)),
-                    new Locals3(data(2), data(3), data(4)))
+                    new Locals3(data(2), data(3), data(4))
+                )
             case 6 ⇒
                 new Locals6(
                     new Locals3(data(0), data(1), data(2)),
-                    new Locals3(data(3), data(4), data(5)))
+                    new Locals3(data(3), data(4), data(5))
+                )
             case 7 ⇒
                 new Locals7(
                     new Locals3(data(0), data(1), data(2)),
-                    new Locals4(data(3), data(4), data(5), data(6)))
+                    new Locals4(data(3), data(4), data(5), data(6))
+                )
             //                new Locals7(
             //                    new Locals2(data(0), data(1)),
             //                    new Locals2(data(2), data(3)),
@@ -1806,28 +1842,33 @@ object Locals {
                 new Locals8(
                     new Locals2(data(0), data(1)),
                     new Locals3(data(2), data(3), data(4)),
-                    new Locals3(data(5), data(6), data(7)))
+                    new Locals3(data(5), data(6), data(7))
+                )
             case 9 ⇒
                 new Locals9(
                     new Locals3(data(0), data(1), data(2)),
                     new Locals3(data(3), data(4), data(5)),
-                    new Locals3(data(6), data(7), data(8)))
+                    new Locals3(data(6), data(7), data(8))
+                )
             case 10 ⇒
                 new Locals10(
                     new Locals4(data(0), data(1), data(2), data(3)),
                     new Locals3(data(4), data(5), data(6)),
-                    new Locals3(data(7), data(8), data(9)))
+                    new Locals3(data(7), data(8), data(9))
+                )
             case 11 ⇒
                 new Locals11(
                     new Locals4(data(0), data(1), data(2), data(3)),
                     new Locals3(data(4), data(5), data(6)),
-                    new Locals4(data(7), data(8), data(9), data(10)))
+                    new Locals4(data(7), data(8), data(9), data(10))
+                )
             case x ⇒
                 new Locals12_N[T](
                     new Locals11(
                         new Locals4(data(0), data(1), data(2), data(3)),
                         new Locals3(data(4), data(5), data(6)),
-                        new Locals4(data(7), data(8), data(9), data(10))),
+                        new Locals4(data(7), data(8), data(9), data(10))
+                    ),
                     data.drop(11).toArray
                 )
         }

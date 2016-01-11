@@ -43,7 +43,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def mnemonic: String = "new"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
 
     final def length: Int = 3
 
@@ -51,8 +51,9 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
+    }
 
     final def readsLocal: Boolean = false
 
@@ -63,14 +64,21 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.OutOfMemoryError)
+                this, currentPC, ObjectType.OutOfMemoryError
+            )
+    }
+
+    final def expressionResult: ExpressionResult = Stack
 
     override def toString: String = "NEW "+objectType.toJava
 
@@ -79,5 +87,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
 object NEW {
 
     final val opcode = 187
+
+    final val jvmExceptions = List(ObjectType.OutOfMemoryError)
 
 }

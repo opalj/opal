@@ -169,7 +169,8 @@ package object ai {
         val origin = VMLevelValuesOriginOffset - pc
         assert(
             origin <= VMLevelValuesOriginOffset,
-            s"[pc:$pc] origin($origin) > VMLevelValuesOriginOffset($VMLevelValuesOriginOffset)")
+            s"[pc:$pc] origin($origin) > VMLevelValuesOriginOffset($VMLevelValuesOriginOffset)"
+        )
         assert(origin > SpecialValuesOriginOffset)
         origin
     }
@@ -241,9 +242,11 @@ package object ai {
      * Creates a human-readable textual representation of the current memory layout.
      */
     def memoryLayoutToText(
-        domain: Domain)(
-            operandsArray: domain.OperandsArray,
-            localsArray: domain.LocalsArray): String = {
+        domain: Domain
+    )(
+        operandsArray: domain.OperandsArray,
+        localsArray:   domain.LocalsArray
+    ): String = {
         (
             for {
                 ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
@@ -272,8 +275,9 @@ package object ai {
      */
     def parameterToValueIndex(
         isStaticMethod: Boolean,
-        descriptor: MethodDescriptor,
-        parameterIndex: Int): Int = {
+        descriptor:     MethodDescriptor,
+        parameterIndex: Int
+    ): Int = {
 
         def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
@@ -317,9 +321,10 @@ package object ai {
      *      interpretation.
      */
     def mapOperandsToParameters[D <: ValuesDomain](
-        operands: Operands[D#DomainValue],
+        operands:     Operands[D#DomainValue],
         calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
+        targetDomain: ValuesDomain with ValuesFactory
+    ): Locals[targetDomain.DomainValue] = {
 
         assert(operands.size == calledMethod.parametersCount)
 
@@ -361,8 +366,9 @@ package object ai {
      * are identical are identical afterwards.
      */
     def mapOperands(
-        theOperands: Operands[_ <: ValuesDomain#DomainValue],
-        targetDomain: ValuesDomain with ValuesFactory): Array[targetDomain.DomainValue] = {
+        theOperands:  Operands[_ <: ValuesDomain#DomainValue],
+        targetDomain: ValuesDomain with ValuesFactory
+    ): Array[targetDomain.DomainValue] = {
 
         import org.opalj.collection.mutable.Locals
         implicit val domainValue = targetDomain.DomainValue
@@ -402,9 +408,12 @@ package object ai {
      * operands.
      */
     def collectPCWithOperands[B](
-        domain: ValuesDomain)(
-            code: Code, operandsArray: domain.OperandsArray)(
-                f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
+        domain: ValuesDomain
+    )(
+        code: Code, operandsArray: domain.OperandsArray
+    )(
+        f: PartialFunction[(PC, Instruction, domain.Operands), B]
+    ): Seq[B] = {
         val instructions = code.instructions
         val max_pc = instructions.size
         var pc = 0
@@ -418,15 +427,18 @@ package object ai {
                     result = f(params) :: result
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc, code)
+            pc = instruction.indexOfNextInstruction(pc)(code)
         }
         result.reverse
     }
 
     def foreachPCWithOperands[U](
-        domain: ValuesDomain)(
-            code: Code, operandsArray: domain.OperandsArray)(
-                f: Function[(PC, Instruction, domain.Operands), U]): Unit = {
+        domain: ValuesDomain
+    )(
+        code: Code, operandsArray: domain.OperandsArray
+    )(
+        f: Function3[PC, Instruction, domain.Operands, U]
+    ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size
         var pc = 0
@@ -434,10 +446,9 @@ package object ai {
             val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
-                val params = (pc, instruction, operands)
-                f(params)
+                f(pc, instruction, operands)
             }
-            pc = instruction.indexOfNextInstruction(pc, code)
+            pc = instruction.indexOfNextInstruction(pc)(code)
         }
     }
 

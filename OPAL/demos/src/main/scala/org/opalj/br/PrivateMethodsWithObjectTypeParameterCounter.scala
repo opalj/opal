@@ -29,9 +29,11 @@
 package org.opalj
 package br
 
-import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
 import java.net.URL
-import org.opalj.br.analyses.ClassHierarchy
 
 /**
  * Counts the number of private methods that have at least one parameter with
@@ -75,7 +77,8 @@ object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor wit
             methods.mkString(
                 "Methods:\n\t",
                 "\n\t",
-                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n")
+                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n"
+            )
         )
     }
 }

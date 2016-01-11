@@ -54,16 +54,19 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     private[this] var onRegularControlFlow: List[DomainValueUpdater] = Nil
 
     abstract override def flow(
-        currentPC: PC,
-        successorPC: PC,
-        isSuccessorScheduled: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorScheduled:             Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = {
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
             val oldOperands = operandsArray(successorPC)
@@ -99,13 +102,15 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         }
 
         super.flow(
-            currentPC, successorPC,
+            currentPC, currentOperands, currentLocals,
+            successorPC,
             isSuccessorScheduled,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
-            tracer)
+            tracer
+        )
     }
 
     def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
@@ -126,12 +131,13 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     }
 
     override def evaluationCompleted(
-        pc: PC,
-        worklist: List[PC],
-        evaluated: List[PC],
+        pc:            PC,
+        worklist:      List[PC],
+        evaluated:     List[PC],
         operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): Unit = {
+        localsArray:   LocalsArray,
+        tracer:        Option[AITracer]
+    ): Unit = {
         val l = Nil
         onExceptionalControlFlow = l
         onRegularControlFlow = l
@@ -139,6 +145,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         super.evaluationCompleted(
             pc, worklist, evaluated,
             operandsArray, localsArray,
-            tracer)
+            tracer
+        )
     }
 }

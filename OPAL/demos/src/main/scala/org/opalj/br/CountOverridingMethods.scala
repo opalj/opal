@@ -58,22 +58,24 @@ object CountOverridingMethods extends AnalysisExecutor {
             "Counts the number of methods that override a method."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
             import project.classHierarchy
 
             var methodsCount = 0
             var methodsThatOverrideAnotherMethodCount = 0
 
             def classFileHasImplementedMethod(
-                methodName: String,
-                methodDescriptor: MethodDescriptor)(
-                    classFile: ClassFile): Boolean = {
+                methodName:       String,
+                methodDescriptor: MethodDescriptor
+            )(
+                classFile: ClassFile
+            ): Boolean = {
 
                 classFile.findMethod(methodName, methodDescriptor).map(method ⇒
-                    !method.isAbstract && !method.isPrivate
-                ).getOrElse(false)
+                    !method.isAbstract && !method.isPrivate).getOrElse(false)
             }
 
             var results = List[String]()

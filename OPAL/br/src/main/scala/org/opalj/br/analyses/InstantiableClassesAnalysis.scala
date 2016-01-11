@@ -30,27 +30,19 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Set
 import scala.collection.mutable.HashSet
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.immutable.IdentityPair
-import org.opalj.br.instructions.FieldReadAccess
-import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.PUTSTATIC
+import scala.collection.JavaConverters._
 import org.opalj.br.instructions.INVOKESPECIAL
 
 /**
- * This analysis determines which classes can never be instantiated (e.g.,
+ * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
  * `java.lang.Math`).
  *
- * A class is not instantiable if:
+ * A class is not (potentially) instantiable if:
  *  - it only defines private constructors and these constructors are not called
- *    by any static method.
+ *    by any static method and the class is also not Serializable.
  *
  * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
@@ -60,7 +52,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *      was not analyzed, the result will be that the class is considered to be
  *      instantiable.
  *
- * This information is relevant in various contexts, e.g., to determine
+ * This information is relevant in various contexts, e.g., to determine a
  * precise call graph. For example, instance methods of those objects that cannot be
  * created are always dead.
  *
@@ -72,16 +64,14 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *
  * @note The analysis does not take reflective instantiations into account!
  *
+ * @note A more precise analysis is available that uses the fixpoint computations framework.
+ *
  * @author Michael Eichberg
  */
 object InstantiableClassesAnalysis {
 
-    // IMPROVE Add support for close-packages assumptions.
-    // IMPROVE Use the fcf to react on results related to constructor calls from factory methods.
-
-    def doAnalyze(
-        project: SomeProject,
-        isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+        import project.classHierarchy.isSubtypeOf
 
         val notInstantiable = new ConcurrentLinkedQueue[ObjectType]()
 
@@ -97,6 +87,9 @@ object InstantiableClassesAnalysis {
                 return ;
 
             val thisClassType = cf.thisType
+
+            if (isSubtypeOf(thisClassType, ObjectType.Serializable).isYesOrUnknown)
+                return ;
 
             for {
                 method ← cf.methods
@@ -128,28 +121,7 @@ object InstantiableClassesAnalysis {
 
         project.parForeachProjectClassFile(isInterrupted)(analyzeClassFile)
 
-        import scala.collection.JavaConverters._
         new InstantiableClasses(project, HashSet.empty ++ notInstantiable.asScala)
     }
-}
-
-/**
- * Stores the information about those classes that are not instantiable (which is
- * usually only a small fraction of all classes and hence, more
- * efficient to store/access).
- *
- * @author Michael Eichberg
- */
-class InstantiableClasses(
-        val project: SomeProject,
-        val notInstantiable: Set[ObjectType]) {
-
-    def isInstantiable(classType: ObjectType): Boolean =
-        !notInstantiable.contains(classType)
-
-    def statistics: Map[String, Int] = Map(
-        "# of not instantiable classes in the project" -> notInstantiable.size
-    )
-
 }
 

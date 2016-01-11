@@ -55,13 +55,14 @@ import scala.collection.mutable.Queue
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack: Int,
-    val maxLocals: Int,
-    val instructions: Array[Instruction],
-    val exceptionHandlers: ExceptionHandlers,
-    val attributes: Attributes)
-        extends Attribute
-        with CommonAttributes {
+        val maxStack:          Int,
+        val maxLocals:         Int,
+        val instructions:      Array[Instruction],
+        val exceptionHandlers: ExceptionHandlers,
+        val attributes:        Attributes
+) extends Attribute with CommonAttributes with InstructionsContainer {
+
+    override def instructionsOption: Option[Array[Instruction]] = Some(instructions)
 
     /**
      * Returns a iterator to iterate over the program counters of the instructions
@@ -105,6 +106,10 @@ final class Code private (
      * Calculates for each instruction to which subroutine the respective instruction
      * belongs to – if any. This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
+     *
+     * @note Calling this method only makes sense for Java bytecode that actually contains
+     * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
+     * 		instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
      *      subroutine.
@@ -177,9 +182,10 @@ final class Code private (
             // belonging to this subroutine belong to this subroutine (unless the handler
             // is already associated with a previous subroutine!)
             @inline def belongsToCurrentSubroutine(
-                startPC: PC,
-                endPC: PC,
-                handlerPC: PC): Boolean = {
+                startPC:   PC,
+                endPC:     PC,
+                handlerPC: PC
+            ): Boolean = {
                 var currentPC = startPC
                 while (currentPC < endPC) {
                     if (subroutineIds(currentPC) != -1) {
@@ -209,6 +215,17 @@ final class Code private (
     /**
      * Returns the set of all program counters where two or more control flow
      * paths joins.
+     *
+     * ==Example==
+     * {{{
+     * 	0: iload_1
+     * 	1: ifgt	6
+     * 	2: iconst_1
+     * 	5: goto 10
+     * 	6: ...
+     * 	9: iload_1
+     *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
+     * }}}
      *
      * In case of exceptions handlers the sound over approximation is made that
      * all exception handlers may be reached on multiple paths.
@@ -313,72 +330,81 @@ final class Code private (
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
      * one is the one that will be used by the JVM at runtime.
+     * In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC): Iterable[ExceptionHandler] = {
-
+    def handlersFor(pc: PC, justExceptions: Boolean = false): List[ExceptionHandler] = {
         var handledExceptions = Set.empty[ObjectType]
-        def isNotYetHandled(exception: ObjectType): Boolean = {
-            if (handledExceptions.contains(exception))
-                false
-            else {
-                handledExceptions += exception
+        var ehs = List.empty[ExceptionHandler]
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    if (!handledExceptions.contains(catchType)) {
+                        handledExceptions += catchType
+                        ehs = eh :: ehs
+                    }
+                    true
+                } else {
+                    if (!justExceptions) {
+                        ehs = eh :: ehs
+                    }
+                    false
+                }
+
+            } else {
+                // the handler is not relevant
                 true
             }
         }
-
-        var finallyHandlerAlreadyFound = false
-        def isFirstFinallyHandler(): Boolean = {
-            if (finallyHandlerAlreadyFound)
-                false
-            else {
-                finallyHandlerAlreadyFound = true
-                true
-            }
-        }
-
-        exceptionHandlers.view.filter { handler ⇒
-            handler.startPC <= pc && handler.endPC > pc &&
-                handler.catchType.map(isNotYetHandled(_)).getOrElse(isFirstFinallyHandler())
-        }
+        ehs.reverse
     }
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
      * instruction with the given program counter (`pc`). `Finally` handlers
-     * (`catchType == None`) are ignored.
+     * (`catchType == None`) are not returned but will stop the evaluation (as all further
+     * exception handlers have no further meaning w.r.t. the runtime)!
+     * In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): Iterator[ExceptionHandler] = {
-        var handledExceptions = Set.empty[ObjectType]
-        def isNotYetHandled(exception: ObjectType): Boolean = {
-            if (handledExceptions.contains(exception))
-                false
-            else {
-                handledExceptions += exception
-                true
-            }
-        }
-
-        exceptionHandlers.iterator.filter { handler ⇒
-            val catchType = handler.catchType
-            catchType.isDefined &&
-                handler.startPC <= pc && handler.endPC > pc &&
-                isNotYetHandled(catchType.get)
-        }
-    }
+    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = handlersFor(pc, justExceptions = true)
 
     /**
-     * The set of pc of those instructions that may handle an exception if the evaluation
+     * The set of pcs of those instructions that may handle an exception if the evaluation
      * of the instruction with the given `pc` throws an exception.
+     *
+     * In case of multiple finally handlers only the first one will be returned and no further
+     * exception handlers will be returned. In case of identical caught exceptions only the
+     * first of them will be returned. No further checks (w.r.t. the typehierarchy) are done.
      */
     def handlerInstructionsFor(pc: PC): PCs = {
+        var handledExceptions = Set.empty[ObjectType]
+
         var pcs = org.opalj.collection.mutable.UShortSet.empty
-        exceptionHandlers foreach { handler ⇒
-            if (handler.startPC <= pc && handler.endPC > pc)
-                pcs = handler.handlerPC +≈: pcs
+        exceptionHandlers forall { eh ⇒
+            if (eh.startPC <= pc && eh.endPC > pc) {
+                val catchTypeOption = eh.catchType
+                if (catchTypeOption.isDefined) {
+                    val catchType = catchTypeOption.get
+                    if (!handledExceptions.contains(catchType)) {
+                        handledExceptions += catchType
+                        pcs = eh.handlerPC +≈: pcs
+                    }
+                    true
+                } else {
+                    pcs = eh.handlerPC +≈: pcs
+                    false // we effectively abort after the first finally handler
+                }
+            } else {
+                // the handler is not relevant
+                true
+            }
         }
         pcs
     }
@@ -393,7 +419,7 @@ final class Code private (
      *      array.
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-        instructions(currentPC).indexOfNextInstruction(currentPC, this)
+        instructions(currentPC).indexOfNextInstruction(currentPC)(this)
         // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
         //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         //        val max_pc = instructions.size
@@ -410,12 +436,10 @@ final class Code private (
      * `currentPC` must be the program counter of an instruction.
      *
      * This function is only defined if currentPC is larger than 0; i.e., if there
-     * is a previous instruction! If currentPC is larger than instructions.size the
+     * is a previous instruction! If currentPC is larger than `instructions.size` the
      * behavior is undefined.
      */
     @inline final def pcOfPreviousInstruction(currentPC: PC): PC = {
-        if (currentPC <= 0)
-            throw new IllegalArgumentException(s"currentPC ($currentPC) needs to > 0")
         var previousPC = currentPC - 1
         val instructions = this.instructions
         while (previousPC > 0 && !instructions(previousPC).isInstanceOf[Instruction]) {
@@ -512,7 +536,6 @@ final class Code private (
      */
     def localVariable(pc: PC, index: Int): Option[LocalVariable] = {
         localVariableTable.flatMap { lvs ⇒
-
             lvs.find { lv ⇒
                 val result = lv.index == index &&
                     lv.startPC <= pc &&
@@ -596,6 +619,25 @@ final class Code private (
             pc = pcOfNextInstruction(pc)
         }
         result.reverse
+    }
+
+    /**
+     * Collects all instructions for which the given function is defined. The order in
+     * which the instructions are collected is reversed when compared to the order in the
+     * instructions array.
+     */
+    def collectInstructions[B](f: PartialFunction[Instruction, B]): Seq[B] = {
+        val max_pc = instructions.size
+        var result: List[B] = List.empty
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if (f.isDefinedAt(instruction)) {
+                result = f(instruction) :: result
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        result
     }
 
     /**
@@ -700,8 +742,10 @@ final class Code private (
      * @return The list of results of applying the function f for each matching sequence.
      */
     def slidingCollect[B](
-        windowSize: Int)(
-            f: PartialFunction[(PC, Seq[Instruction]), B]): Seq[B] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[(PC, Seq[Instruction]), B]
+    ): Seq[B] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -751,8 +795,10 @@ final class Code private (
      *      of the partial function.
      */
     def findSequence[B](
-        windowSize: Int)(
-            f: PartialFunction[Seq[Instruction], B]): List[(PC, B)] = {
+        windowSize: Int
+    )(
+        f: PartialFunction[Seq[Instruction], B]
+    ): List[(PC, B)] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -805,7 +851,8 @@ final class Code private (
      * }}}
      */
     def collectPair[B](
-        f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
+        f: PartialFunction[(Instruction, Instruction), B]
+    ): List[(PC, B)] = {
         val max_pc = instructions.size
 
         var first_pc = 0
@@ -880,8 +927,9 @@ final class Code private (
      *      passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int = Int.MaxValue,
-        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchMaxTriples: Int                                               = Int.MaxValue,
+        f:               (Instruction, Instruction, Instruction) ⇒ Boolean
+    ): List[PC] = {
         val max_pc = instructions.size
         var matchedTriplesCount = 0
         var pc1 = 0
@@ -922,11 +970,11 @@ final class Code private (
 
     /**
      * Tests if the sequence of instructions that starts with the given `pc` always ends
-     * with an
-     * [[instructions.ATHROW]] instruction or a method call that always throws an
+     * with an `ATHROW` instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
      * Here, complex means
-     * that evaluating the instruction may result in multiple control flows.
+     * that evaluating the instruction may result in multiple control flows. If the
+     * sequence contains complex logic, `false` will be returned.
      *
      * One use case of this method is to, e.g., check if the code
      * of the default case of a switch
@@ -940,6 +988,9 @@ final class Code private (
      * }}}
      * This is a typical idiom used in Java programs and which may be relevant for
      * certain analyses to detect.
+     *
+     * @note If complex control flows should also be considered it is possible to compute
+     * 		a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
      * @param pc The program counter of an instruction that strictly dominates all
      *      succeeding instructions up until the next join instruction (as determined
@@ -957,12 +1008,18 @@ final class Code private (
      *      `ATHROW` instruction then this function is called (callback) to let the
      *      caller decide if the "expected" exception is thrown. This analysis will
      *      return with the result of this call.
+     *
+     * @return `true` if the bytecode sequence starting with the instruction with the
+     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
+     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow`
+     * 		instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
-        pc: PC,
+        pc:               PC,
         joinInstructions: BitSet,
-        anInvocation: (PC) ⇒ Boolean,
-        aThrow: (PC) ⇒ Boolean): Boolean = {
+        anInvocation:     (PC) ⇒ Boolean,
+        aThrow:           (PC) ⇒ Boolean
+    ): Boolean = {
 
         var currentPC = pc
         while (!joinInstructions.contains(currentPC)) {
@@ -1014,35 +1071,6 @@ final class Code private (
      */
     override def kindId: Int = Code.KindId
 
-    //    /**
-    //     * Returns the map of isomorphic instructions.
-    //     *
-    //     * @note
-    //     */
-    //    def isomorphicInstructions(
-    //        startPC1: PC,
-    //        startPC2: PC)(
-    //            implicit map: Array[PC] = { val a = new Array[PC](instructions.length); Arrays.fill(a, -1); a },
-    //            subroutineCallChainLength: Int = 0): Array[PC] = {
-    //
-    //        import scala.language.implicitConversions
-    //        implicit def pcToInstr(pc: PC): Instruction = this.instructions(pc)
-    //        implicit val code = this
-    //
-    //        // assert(startPC1.as)
-    //
-    //        var pc1 = startPC1
-    //        var pc2 = startPC2
-    //        var pc1Instr = pcToInstr(pc1)
-    //        if (pc1Instr.isIsomorphic(pc1, pc2)) {
-    //            map(startPC1) = startPC2
-    //            pc1Instr.nextInstructions(pc1)
-    //
-    //        }
-    //
-    //        map
-    //    }
-
     /**
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
@@ -1067,11 +1095,12 @@ final class Code private (
 object Code {
 
     def apply(
-        maxStack: Int,
-        maxLocals: Int,
-        instructions: Array[Instruction],
+        maxStack:          Int,
+        maxLocals:         Int,
+        instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        attributes: Attributes): Code = {
+        attributes:        Attributes
+    ): Code = {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0
@@ -1134,6 +1163,5 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    val preDefinedClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
+    val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 }

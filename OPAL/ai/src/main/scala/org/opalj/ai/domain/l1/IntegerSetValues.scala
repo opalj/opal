@@ -34,6 +34,7 @@ package l1
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br._
+import org.opalj.collection.SingletonSet
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
@@ -106,8 +107,9 @@ trait IntegerSetValues
      * exceed maxCardinalityOfIntegerSets.
      */
     def IntegerRange(
-        origin: ValueOrigin,
-        lowerBound: Int, upperBound: Int): DomainValue = {
+        origin:     ValueOrigin,
+        lowerBound: Int, upperBound: Int
+    ): DomainValue = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
@@ -134,9 +136,12 @@ trait IntegerSetValues
     //
 
     @inline final override def intValue[T](
-        value: DomainValue)(
-            f: Int ⇒ T)(
-                orElse: ⇒ T): T =
+        value: DomainValue
+    )(
+        f: Int ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T =
         value match {
             case IntegerSet(values) if values.size == 1 ⇒ f(values.head)
             case _                                      ⇒ orElse
@@ -149,9 +154,12 @@ trait IntegerSetValues
         }
 
     @inline protected final def intValues[T](
-        value1: DomainValue, value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(
-                orElse: ⇒ T): T = {
+        value1: DomainValue, value2: DomainValue
+    )(
+        f: (Int, Int) ⇒ T
+    )(
+        orElse: ⇒ T
+    ): T = {
         intValue(value1) {
             v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
         } {
@@ -181,10 +189,11 @@ trait IntegerSetValues
     }
 
     override def intIsSomeValueInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             Yes
         else value match {
@@ -196,10 +205,11 @@ trait IntegerSetValues
     }
 
     override def intIsSomeValueNotInRange(
-        pc: PC,
-        value: DomainValue,
+        pc:         PC,
+        value:      DomainValue,
         lowerBound: Int,
-        upperBound: Int): Answer = {
+        upperBound: Int
+    ): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             No
         else value match {
@@ -228,7 +238,8 @@ trait IntegerSetValues
                         else if (leftValues.firstKey >= rightValues.lastKey ||
                             ( /*"for point sets":*/
                                 leftValues.size == 1 && rightValues.size == 1 &&
-                                leftValues.head == rightValues.head))
+                                leftValues.head == rightValues.head
+                            ))
                             No
                         else
                             Unknown
@@ -241,9 +252,10 @@ trait IntegerSetValues
     }
 
     override def intIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): Answer = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -284,11 +296,12 @@ trait IntegerSetValues
     // -----------------------------------------------------------------------------------
 
     override def intEstablishValue(
-        pc: PC,
+        pc:       PC,
         theValue: Int,
-        value: DomainValue,
+        value:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         value match {
             case IntegerSet(values) if values.size == 1 && values.head == theValue ⇒
                 (operands, locals)
@@ -298,11 +311,12 @@ trait IntegerSetValues
     }
 
     override def intEstablishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         if (value1 eq value2)
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
@@ -326,17 +340,19 @@ trait IntegerSetValues
     }
 
     override def intEstablishAreNotEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
+        pc:       PC,
+        value1:   DomainValue,
+        value2:   DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
         intValue(value1) { v1 ⇒
             value2 match {
                 case IntegerSet(values) ⇒
                     updateMemoryLayout(
                         value2, IntegerSet(values - v1),
-                        operands, locals)
+                        operands, locals
+                    )
                 case _ ⇒
                     (operands, locals)
             }
@@ -346,7 +362,8 @@ trait IntegerSetValues
                     case IntegerSet(values) ⇒
                         updateMemoryLayout(
                             value1, IntegerSet(values - v2),
-                            operands, locals)
+                            operands, locals
+                        )
                     case _ ⇒ (operands, locals)
                 }
             } {
@@ -356,11 +373,12 @@ trait IntegerSetValues
     }
 
     override def intEstablishIsLessThan(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue,
+        pc:       PC,
+        left:     DomainValue,
+        right:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         (left, right) match {
             case (IntegerSet(ls), IntegerSet(rs)) ⇒
@@ -372,7 +390,8 @@ trait IntegerSetValues
                             println(left+"  .... "+right)
                         updateMemoryLayout(
                             left, IntegerSet(newLs),
-                            operands, locals)
+                            operands, locals
+                        )
                     } else {
                         (operands, locals)
                     }
@@ -383,7 +402,8 @@ trait IntegerSetValues
                     if (newRs.size != rs.size) {
                         updateMemoryLayout(
                             right, IntegerSet(newRs),
-                            operands1, locals1)
+                            operands1, locals1
+                        )
                     } else {
                         (operands1, locals1)
                     }
@@ -395,11 +415,12 @@ trait IntegerSetValues
     }
 
     override def intEstablishIsLessThanOrEqualTo(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue,
+        pc:       PC,
+        left:     DomainValue,
+        right:    DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         (left, right) match {
             case (IntegerSet(ls), IntegerSet(rs)) ⇒
@@ -409,7 +430,8 @@ trait IntegerSetValues
                     if (newLs.size != ls.size) {
                         updateMemoryLayout(
                             left, IntegerSet(newLs),
-                            operands, locals)
+                            operands, locals
+                        )
                     } else {
                         (operands, locals)
                     }
@@ -420,7 +442,8 @@ trait IntegerSetValues
                     if (newRs.size != rs.size) {
                         updateMemoryLayout(
                             right, IntegerSet(newRs),
-                            operands1, locals1)
+                            operands1, locals1
+                        )
                     } else {
                         (operands1, locals1)
                     }
@@ -442,8 +465,9 @@ trait IntegerSetValues
     //
     /*override*/ def ineg(pc: PC, value: DomainValue) =
         value match {
-            case IntegerSet(values) ⇒ IntegerSet(values.map(-_))
-            case _                  ⇒ IntegerValue(origin = pc)
+            case IntegerSet(SingletonSet(Int.MinValue)) ⇒ value
+            case IntegerSet(values)                     ⇒ IntegerSet(values.map(-_))
+            case _                                      ⇒ IntegerValue(origin = pc)
         }
 
     //
@@ -526,9 +550,10 @@ trait IntegerSetValues
     }
 
     protected[this] def createIntegerValueOrArithmeticException(
-        pc: PC,
+        pc:        PC,
         exception: Boolean,
-        results: SortedSet[Int]): IntegerValueOrArithmeticException = {
+        results:   SortedSet[Int]
+    ): IntegerValueOrArithmeticException = {
 
         assert(exception || results.nonEmpty)
 
@@ -537,14 +562,16 @@ trait IntegerSetValues
                 if (exception)
                     ComputedValueOrException(
                         IntegerSet(results),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerSet(results))
             } else {
                 if (exception)
                     ComputedValueOrException(
                         IntegerValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerValue(origin = pc))
             }
@@ -554,9 +581,10 @@ trait IntegerSetValues
     }
 
     /*override*/ def idiv(
-        pc: PC,
-        numerator: DomainValue,
-        denominator: DomainValue): IntegerValueOrArithmeticException = {
+        pc:          PC,
+        numerator:   DomainValue,
+        denominator: DomainValue
+    ): IntegerValueOrArithmeticException = {
         (numerator, denominator) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 var results: SortedSet[Int] = SortedSet.empty
@@ -576,7 +604,8 @@ trait IntegerSetValues
                     else
                         ComputedValueOrException(
                             IntegerValue(origin = pc),
-                            VMArithmeticException(pc))
+                            VMArithmeticException(pc)
+                        )
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
@@ -584,16 +613,18 @@ trait IntegerSetValues
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         IntegerValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
     }
 
     /*override*/ def irem(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): IntegerValueOrArithmeticException = {
+        pc:    PC,
+        left:  DomainValue,
+        right: DomainValue
+    ): IntegerValueOrArithmeticException = {
 
         (left, right) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
@@ -614,7 +645,8 @@ trait IntegerSetValues
                     else
                         ComputedValueOrException(
                             IntegerValue(origin = pc),
-                            VMArithmeticException(pc))
+                            VMArithmeticException(pc)
+                        )
                 } else
                     ComputedValue(IntegerValue(origin = pc))
 
@@ -622,7 +654,8 @@ trait IntegerSetValues
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         IntegerValue(origin = pc),
-                        VMArithmeticException(pc))
+                        VMArithmeticException(pc)
+                    )
                 else
                     ComputedValue(IntegerValue(origin = pc))
         }
@@ -787,4 +820,3 @@ trait IntegerSetValues
         }
 
 }
-

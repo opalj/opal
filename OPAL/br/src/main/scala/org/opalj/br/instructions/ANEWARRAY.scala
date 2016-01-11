@@ -36,8 +36,8 @@ package instructions
  * @author Michael Eichberg
  */
 case class ANEWARRAY(
-    componentType: ReferenceType)
-        extends CreateNewOneDimensionalArrayInstruction {
+        componentType: ReferenceType
+) extends CreateNewOneDimensionalArrayInstruction {
 
     final def opcode: Opcode = ANEWARRAY.opcode
 

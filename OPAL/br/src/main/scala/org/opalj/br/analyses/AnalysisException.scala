@@ -31,9 +31,11 @@ package br
 package analyses
 
 /**
- * Exception raised while the anaylsis is executed.
+ * Exception raised while the analysis is executed.
  *
  * @author Michael Eichberg
  */
-case class AnalysisException(message: String, cause: Throwable = null)
-    extends RuntimeException(message, cause)
+case class AnalysisException(
+    message: String,
+    cause:   Throwable = null
+) extends RuntimeException(message, cause)

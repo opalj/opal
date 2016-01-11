@@ -32,7 +32,7 @@ package project
 
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.{ Project, ReportableAnalysisResult }
+import org.opalj.br.analyses.{Project, ReportableAnalysisResult}
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.
@@ -98,8 +98,9 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *      this method using `super.analyze(...)`.
      */
     def analyze(
-        project: Project[Source],
-        parameters: Seq[String]): ReportableAnalysisResult = {
+        project:    Project[Source],
+        parameters: Seq[String]
+    ): ReportableAnalysisResult = {
 
         val analyze: ((ClassFile, Method)) ⇒ Option[String] = { cf_m: (ClassFile, Method) ⇒
             val (classFile: ClassFile, method: Method) = cf_m
@@ -116,7 +117,8 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
 
         val theReports = reports.filter(_.isDefined).map(_.get)
         br.analyses.BasicReport(
-            "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
+            "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n")
+        )
     }
 }
 

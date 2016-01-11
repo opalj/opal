@@ -73,6 +73,8 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
     def -(value: Int): MutableSmallValuesSet /* Redefines the return type. */
 
     def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
+
+    def filter(f: Int ⇒ Boolean): SmallValuesSet
 }
 
 /**

@@ -35,7 +35,7 @@ import scala.util.control.ControlThrowable
 /**
  * Enables the management of the progress of a long running computation.
  * Typically a long running progress such as an analysis is expected to report
- * progress every 250 to 2000 milliseconds. It should .- however -- check every ~100
+ * progress every 250 to 2000 milliseconds. It should -- however -- check every ~100
  * milliseconds the interrupted status to enable a timely termination.
  *
  * This trait defines a call-back interface that is implemented by some class that
@@ -84,9 +84,11 @@ trait ProgressManagement {
         progress(step, ProgressEvents.End, message)
 
     final def step[T](
-        step: Int,
-        startMessage: String)(
-            f: ⇒ (T, Option[String])): T = {
+        step:         Int,
+        startMessage: String
+    )(
+        f: ⇒ (T, Option[String])
+    ): T = {
         start(step, startMessage)
 
         try {

@@ -132,7 +132,8 @@ object LDC {
             case md: MethodDescriptor ⇒ LoadMethodType(md)
             case _ ⇒
                 throw new BytecodeProcessingFailedException(
-                    "unsupported constant value: "+constantValue)
+                    "unsupported constant value: "+constantValue
+                )
         }
     }
 

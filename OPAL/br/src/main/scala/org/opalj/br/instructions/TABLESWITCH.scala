@@ -36,11 +36,11 @@ package instructions
  * @author Michael Eichberg
  */
 case class TABLESWITCH(
-    defaultOffset: Int,
-    low: Int,
-    high: Int,
-    jumpOffsets: IndexedSeq[Int])
-        extends CompoundConditionalBranchInstruction {
+        defaultOffset: Int,
+        low:           Int,
+        high:          Int,
+        jumpOffsets:   IndexedSeq[Int]
+) extends CompoundConditionalBranchInstruction {
 
     final def opcode: Opcode = TABLESWITCH.opcode
 
@@ -60,16 +60,19 @@ case class TABLESWITCH(
     def caseValues: Seq[Int] =
         (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs = {
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })
         pcs

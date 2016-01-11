@@ -1,0 +1,6 @@
+bin
+.cache-*
+/target/
+deps
+!.project
+!.classpath

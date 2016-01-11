@@ -32,18 +32,26 @@ package core
 package analysis
 
 import java.net.URL
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConversions
-import scala.collection.SortedMap
-import scala.util.control.ControlThrowable
-import scala.xml.Node
-import scala.xml.Unparsed
-import scala.io.Source
 import java.lang.Double.parseDouble
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConversions
+import scala.collection.SortedMap
+import scala.util.control.ControlThrowable
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Unparsed
+import scala.io.Source
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -69,14 +77,23 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
-import scala.xml.NodeSeq
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesRegistry
+import org.opalj.fpcf.analysis.FPCFAnalysisRunner
+import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
+import org.opalj.br.analyses.StringConstantsInformationKey
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.util.Milliseconds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
  * various issues in the source code of projects.
  *
  * ==Precision==
- * The analyses are designed such that they do not report false positives to facilitate
+ * The analyses are designed such that they try to avoid to report false positives to facilitate
  * usage of the BugPicker. However, given
  * that we analyze Java bytecode, some findings may be the result of the compilation
  * scheme employed by the compiler and, hence, cannot be resolved at the
@@ -93,7 +110,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
     override def title: String = "BugPicker"
 
-    override def description: String = "Finds bugs in Java (byte) code."
+    override def description: String = "Finds code smells in Java (byte) code."
 
     /**
      * Executes the analysis of the project's concrete methods.
@@ -108,9 +125,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
      *
      */
     override def analyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): BugPickerResults = {
+        theProject:             Project[URL],
+        parameters:             Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ): BugPickerResults = {
+
+        import theProject.config
 
         implicit val logContext = theProject.logContext
 
@@ -120,43 +140,31 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val progressManagement = initProgressManagement(PreAnalysesCount + classFilesCount)
         import progressManagement.step
 
-        val maxEvalFactor: Double =
-            parameters.
-                collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
-                getOrElse(DefaultMaxEvalFactor)
+        val analysisParameters = theProject.config.as[Config]("org.opalj.bugpicker.analysisParameter")
 
-        val maxEvalTime: Milliseconds =
-            parameters.
-                collectFirst { case MaxEvalTimePattern(l) ⇒ new Milliseconds(parseLong(l).toLong) }.
-                getOrElse(DefaultMaxEvalTime)
-
-        val maxCardinalityOfIntegerRanges: Long =
-            parameters.
-                collectFirst { case MaxCardinalityOfIntegerRangesPattern(i) ⇒ parseLong(i) }.
-                getOrElse(DefaultMaxCardinalityOfIntegerRanges)
-
-        val maxCardinalityOfLongSets: Int =
-            parameters.
-                collectFirst { case MaxCardinalityOfLongSetsPattern(i) ⇒ parseInt(i) }.
-                getOrElse(DefaultMaxCardinalityOfLongSets)
-
-        val maxCallChainLength: Int =
-            parameters.
-                collectFirst { case MaxCallChainLengthPattern(i) ⇒ parseInt(i) }.
-                getOrElse(DefaultMaxCallChainLength)
+        val maxEvalFactor = analysisParameters.as[Double]("maxEvalFactor")
+        val maxEvalTime = new Milliseconds(analysisParameters.as[Long]("maxEvalTime"))
+        val maxCardinalityOfIntegerRanges = analysisParameters.as[Long]("maxCardinalityOfLongSets")
+        val maxCardinalityOfLongSets = analysisParameters.as[Int]("maxCardinalityOfLongSets")
+        val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
+        val fpcfAnalyses = configuredAnalyses.map { a ⇒ FPCFAnalysesRegistry.factory(a) }
+        val maxCallChainLength = theProject.config.as[Int](
+            "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
+        )
 
         val debug = parameters.contains("-debug")
         if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
-            OPALLogger.info("configuration",
+            val renderingOptions = ConfigRenderOptions.defaults().setOriginComments(false).setComments(true).setJson(false);
+            val bugpickerConf = theProject.config.withOnlyPath("org.opalj")
+            val settings = bugpickerConf.root().render(renderingOptions)
+            OPALLogger.info(
+                "configuration",
                 cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n")+"\n"+
                     "Settings:"+"\n"+
-                    s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
-                    s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
-                    s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
-                    s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
-                    s"\tmaxCallChainLength=$maxCallChainLength")
+                    settings
+            )
         }
 
         //
@@ -169,18 +177,45 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             (theProject.get(InstantiableClassesKey), None)
         }
 
-        step(2, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
+        val fieldAccessInformation = step(2, "[Pre-Analysis] Analyzing field accesses") {
+            (theProject.get(FieldAccessInformationKey), None)
+        }
+
+        val stringConstantsInformation = step(3, "[Pre-Analysis] Analyzing the usage of string constants") {
+            (theProject.get(StringConstantsInformationKey), None)
+        }
+
+        step(4, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
             (theProject.get(FieldValuesKey), None)
         }
 
-        step(3, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
+        step(5, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
             (theProject.get(MethodReturnValuesKey), None)
         }
 
-        val callGraph = step(4, "[Pre-Analysis] Creating the call graph") {
+        val computedCallGraph = step(6, "[Pre-Analysis] Creating the call graph") {
             (theProject.get(VTACallGraphKey), None)
         }
-        val callGraphEntryPoints = callGraph.entryPoints().toSet
+        val callGraph = computedCallGraph.callGraph
+        val callGraphEntryPoints = computedCallGraph.entryPoints().toSet
+
+        //
+        //
+        // Compute Fixpoint properties
+        //
+        //
+
+        val analysesManager = theProject.get(FPCFAnalysesManagerKey)
+        val propertyStore = theProject.get(SourceElementsPropertyStoreKey)
+        step(7, "[FPCF-Analysis] executing fixpoint analyses") {
+            (
+                {
+                    fpcfAnalyses.foreach(analysesManager.runWithRecommended(_)(false))
+                    propertyStore.waitOnPropertyComputationCompletion(true)
+                },
+                None
+            )
+        }
 
         //
         //
@@ -190,9 +225,27 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new ConcurrentLinkedQueue[StandardIssue]()
+        val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
+        val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
+        OPALLogger.debug(
+            "project configuration",
+            s"only issues in packages matching $issuesPackageFilterString are shown"
+        )
+        val issuesPackageFilter = issuesPackageFilterString.r
+        def addResults(issues: Iterable[StandardIssue]): Unit = {
+            if (issues.nonEmpty) {
+                val filteredIssues = issues.filter { issue ⇒
+                    val packageName = issue.definingPackageName
+                    val allMatches = issuesPackageFilter.findFirstIn(packageName)
+                    allMatches.isDefined && packageName == allMatches.get
+                }
+                filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
+            }
+        }
+
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
+
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
@@ -206,9 +259,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             //
             // CHECK IF THE METHOD IS USED
             //
-            UnusedMethodsAnalysis.analyze(
-                theProject, callGraph, callGraphEntryPoints,
-                classFile, method) foreach { issue ⇒ results.add(issue) }
+            addResults(
+                UnusedMethodsAnalysis.analyze(
+                    theProject, computedCallGraph, callGraphEntryPoints, classFile, method
+                )
+            )
 
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
@@ -223,13 +278,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     maxCardinalityOfIntegerRanges,
                     maxCardinalityOfLongSets, maxCallChainLength,
                     classFile, method,
-                    debug)
+                    debug
+                )
             val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
-                    doInterrupt)
+                    doInterrupt
+                )
             val result = {
                 val result0 = ai0(classFile, method, analysisDomain)
                 if (result0.wasAborted && maxCallChainLength > 0) {
@@ -245,14 +302,16 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             fieldValueInformation, methodReturnValueInformation,
                             cache,
                             maxCardinalityOfIntegerRanges, maxCardinalityOfLongSets,
-                            method)
+                            method
+                        )
 
                     val ai1 =
                         new BoundedInterruptableAI[fallbackAnalysisDomain.type](
                             body,
                             maxEvalFactor,
                             maxEvalTime,
-                            doInterrupt)
+                            doInterrupt
+                        )
 
                     val result1 = ai1(classFile, method, fallbackAnalysisDomain)
 
@@ -260,7 +319,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         OPALLogger.warn(
                             "configuration",
                             logMessage+
-                                ": retry without performing invocations also failed")
+                                ": retry without performing invocations also failed"
+                        )
                     else
                         OPALLogger.info("configuration", logMessage)
 
@@ -273,17 +333,21 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             if (!result.wasAborted) {
 
                 if (debug) {
-                    org.opalj.io.writeAndOpen(org.opalj.ai.common.XHTML.dump(
-                        Some(classFile),
-                        Some(method),
-                        method.body.get,
-                        Some(
-                            "Created: "+(new java.util.Date).toString+"<br>"+
-                                "Domain: "+result.domain.getClass.getName+"<br>"+
-                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
-                        result.domain)(
-                            result.operandsArray,
-                            result.localsArray),
+                    org.opalj.io.writeAndOpen(
+                        org.opalj.ai.common.XHTML.dump(
+                            Some(classFile),
+                            Some(method),
+                            method.body.get,
+                            Some(
+                                "Created: "+(new java.util.Date).toString+"<br>"+
+                                    "Domain: "+result.domain.getClass.getName+"<br>"+
+                                    XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                            ),
+                            result.domain
+                        )(
+                                result.operandsArray,
+                                result.localsArray
+                            ),
                         "AIResult",
                         ".html"
                     )
@@ -292,37 +356,40 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND DEAD CODE
                 //
-                results.addAll(
-                    JavaConversions.asJavaCollection(
-                        DeadEdgesAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                addResults(DeadEdgesAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND SUSPICIOUS CODE
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                addResults(
+                    GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
+
                 )
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                addResults(ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                addResults(
+                    UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
+                )
+
+                //
+                // FIND UNUSED LOCAL VARIABLES
+                //
+                addResults(
+                    UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
+                )
+
+                //
+                // FIND STRANGE USES OF THE COLLECTIONS API
+                //
+                addResults(
+                    CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
                 //
@@ -358,12 +425,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
-                                    theProject, classFile, Some(method), Some(pc),
+                                    "UselessReevaluation",
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                                     Set(IssueKind.ConstantComputation),
                                     Seq.empty,
                                     new Relevance(20)
@@ -380,28 +448,29 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 val lv = code.localVariable(pc, index).get
 
                                 StandardIssue(
-                                    theProject, classFile, Some(method), Some(pc),
+                                    "UselessReevaluation",
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
                                     Set(IssueKind.ConstantComputation),
                                     Seq.empty,
                                     new Relevance(20)
                                 )
                         }
 
-                    results.addAll(
-                        scala.collection.JavaConversions.asJavaCollection(methodsWithValueReassignment)
-                    )
+                    addResults(methodsWithValueReassignment)
                 }
 
             } else if (!doInterrupt()) {
-                OPALLogger.error("internal error",
+                OPALLogger.error(
+                    "internal error",
                     s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
                         s"after ${ai0.currentEvaluationCount} steps "+
-                        s"(code size: ${method.body.get.instructions.length})")
+                        s"(code size: ${method.body.get.instructions.length})"
+                )
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
@@ -414,6 +483,24 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 val stepId = stepIds.getAndIncrement()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
+
+                    // ---------------------------------------------------------------------------
+                    // Class based analyses
+                    // ---------------------------------------------------------------------------
+
+                    //
+                    // FIND UNUSED FIELDS
+                    //
+                    addResults(
+                        UnusedFields(
+                            theProject, fieldAccessInformation, stringConstantsInformation, classFile
+                        )
+                    )
+
+                    // ---------------------------------------------------------------------------
+                    // Analyses of the methods
+                    // ---------------------------------------------------------------------------
+
                     for (method @ MethodWithBody(body) ← classFile.methods) {
                         try {
                             analyzeMethod(classFile, method, body)
@@ -435,20 +522,23 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 } catch {
                     case t: Throwable ⇒
                         OPALLogger.error(
-                            "internal error", s"evaluation step $stepId failed", t)
+                            "internal error", s"evaluation step $stepId failed", t
+                        )
                         throw t
                 } finally {
                     progressManagement.end(stepId)
                 }
             }
-            val rawIssues = JavaConversions.collectionAsScalaIterable(results).toSeq
+            val rawIssues = JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
             OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
             StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
 
-        OPALLogger.info("analysis progress",
+        OPALLogger.info(
+            "analysis progress",
             s"the analysis took ${analysisTime.toSeconds} "+
-                s"and found ${identifiedIssues.size} unique issues")
+                s"and found ${identifiedIssues.size} unique issues"
+        )
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
@@ -462,10 +552,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 object BugPickerAnalysis {
 
     // 1: InstantiableClasses analysis
-    // 2: FieldValues analysis
-    // 3: MethodReturnValues analysis
-    // 4: Callgraph
-    final val PreAnalysesCount = 4
+    // 2: FieldAccessInformation
+    // 3: StringConstantsInformation
+    // 4: FieldValues analysis
+    // 5: MethodReturnValues analysis
+    // 6: Callgraph
+    // 7: FPCF properties
+    final val PreAnalysesCount = 7
 
     // We want to match expressions such as:
     // -maxEvalFactor=1
@@ -490,11 +583,15 @@ object BugPickerAnalysis {
         """-maxCardinalityOfLongSets=(\d+)""".r
     final val DefaultMaxCardinalityOfLongSets = 2
 
+    final val FixpointAnalysesPattern = """-fixpointAnalyses=(.+)""".r
+    final val DefaultFixpointAnalyses = Seq.empty[String]
+
     def resultsAsXHTML(
-        parameters: Seq[String],
+        config:            Seq[String],
         methodsWithIssues: Iterable[Issue],
-        showSearch: Boolean,
-        analysisTime: Nanoseconds): Node = {
+        showSearch:        Boolean,
+        analysisTime:      Nanoseconds
+    ): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 
@@ -530,7 +627,6 @@ object BugPickerAnalysis {
             } else {
                 (NodeSeq.Empty, NodeSeq.Empty)
             }
-
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
@@ -571,10 +667,7 @@ object BugPickerAnalysis {
                         <summary>Parameters</summary>
                         <ul>
                             {
-                                parameters.filterNot(p ⇒
-                                    p.startsWith("-debug") ||
-                                        p.startsWith("-html") || p.startsWith("-eclipse")
-                                ).map(p ⇒ <li>{ p }</li>)
+                                config.filterNot(_.contains("debug")).map(p ⇒ <li>{ p }</li>)
                             }
                         </ul>
                     </details>
@@ -585,5 +678,5 @@ object BugPickerAnalysis {
             </body>
         </html>
     }
+    //<div id="debug"><span id="debug_info"></span></div> <-- add if you want to debug
 }
-

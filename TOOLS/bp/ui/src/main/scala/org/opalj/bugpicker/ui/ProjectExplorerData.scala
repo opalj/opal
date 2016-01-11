@@ -41,7 +41,8 @@ import scalafx.beans.property.StringProperty
  * @author David Becker
  */
 class ProjectExplorerData(
-        val name: StringProperty) {
+        val name: StringProperty
+) {
 
     override def toString: String = {
         name.value
@@ -51,9 +52,11 @@ class ProjectExplorerData(
 object ProjectExplorerData {
 
     def apply(
-        name: String): ProjectExplorerData = {
+        name: String
+    ): ProjectExplorerData = {
         new ProjectExplorerData(
-            new StringProperty(this, "name", name))
+            new StringProperty(this, "name", name)
+        )
     }
 }
 
@@ -63,15 +66,18 @@ object ProjectExplorerData {
  * @author David Becker
  */
 class ProjectExplorerPackageData(
-        name: StringProperty) extends ProjectExplorerData(name) {
+        name: StringProperty
+) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerPackageData {
 
     def apply(
-        name: String): ProjectExplorerPackageData = {
+        name: String
+    ): ProjectExplorerPackageData = {
         new ProjectExplorerPackageData(
-            new StringProperty(this, "name", name))
+            new StringProperty(this, "name", name)
+        )
     }
 }
 
@@ -81,18 +87,21 @@ object ProjectExplorerPackageData {
  * @author David Becker
  */
 class ProjectExplorerClassData(
-        name: StringProperty,
-        val classFile: ClassFile) extends ProjectExplorerData(name) {
+        name:          StringProperty,
+        val classFile: ClassFile
+) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerClassData {
 
     def apply(
-        name: String,
-        classFile: ClassFile): ProjectExplorerClassData = {
+        name:      String,
+        classFile: ClassFile
+    ): ProjectExplorerClassData = {
         new ProjectExplorerClassData(
             new StringProperty(this, "name", name),
-            classFile)
+            classFile
+        )
     }
 }
 
@@ -102,27 +111,30 @@ object ProjectExplorerClassData {
  * @author David Becker
  */
 class ProjectExplorerMethodData(
-        name: StringProperty,
-        val classFile: ClassFile,
-        val method: Method,
-        val isStatic: BooleanProperty,
-        val isAbstract: BooleanProperty) extends ProjectExplorerData(name) {
+        name:           StringProperty,
+        val classFile:  ClassFile,
+        val method:     Method,
+        val isStatic:   BooleanProperty,
+        val isAbstract: BooleanProperty
+) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerMethodData {
 
     def apply(
-        name: String,
-        classFile: ClassFile,
-        method: Method,
-        isStatic: Boolean,
-        isAbstract: Boolean): ProjectExplorerMethodData = {
+        name:       String,
+        classFile:  ClassFile,
+        method:     Method,
+        isStatic:   Boolean,
+        isAbstract: Boolean
+    ): ProjectExplorerMethodData = {
         new ProjectExplorerMethodData(
             new StringProperty(this, "name", name),
             classFile,
             method,
             new BooleanProperty(this, "isStatic", isStatic),
-            new BooleanProperty(this, "isAbstract", isAbstract))
+            new BooleanProperty(this, "isAbstract", isAbstract)
+        )
     }
 }
 
@@ -132,17 +144,20 @@ object ProjectExplorerMethodData {
  * @author David Becker
  */
 class ProjectExplorerFieldData(
-        name: StringProperty,
-        val isStatic: BooleanProperty) extends ProjectExplorerData(name) {
+        name:         StringProperty,
+        val isStatic: BooleanProperty
+) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerFieldData {
 
     def apply(
-        name: String,
-        isStatic: Boolean): ProjectExplorerFieldData = {
+        name:     String,
+        isStatic: Boolean
+    ): ProjectExplorerFieldData = {
         new ProjectExplorerFieldData(
             new StringProperty(this, "name", name),
-            new BooleanProperty(this, "isStatic", isStatic))
+            new BooleanProperty(this, "isStatic", isStatic)
+        )
     }
 }

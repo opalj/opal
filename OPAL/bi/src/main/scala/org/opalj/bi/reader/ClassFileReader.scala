@@ -37,7 +37,7 @@ import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.util.zip.{ ZipFile, ZipEntry }
+import java.util.zip.{ZipFile, ZipEntry}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
@@ -72,7 +72,7 @@ import scala.util.control.ControlThrowable
  */
 trait ClassFileReader extends Constant_PoolAbstractions {
 
-    import ClassFileReader.{ ExceptionHandler, defaultExceptionHandler }
+    import ClassFileReader.{ExceptionHandler, defaultExceptionHandler}
 
     //
     // ABSTRACT DEFINITIONS
@@ -152,7 +152,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     protected def Attributes(
         ap: AttributeParent,
         cp: Constant_Pool,
-        in: DataInputStream): Attributes
+        in: DataInputStream
+    ): Attributes
 
     /**
      * Factory method to create the `ClassFile` object that represents the class
@@ -165,16 +166,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * be the result's first element.
      */
     protected def ClassFile(
-        cp: Constant_Pool,
+        cp:            Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags: Int,
-        this_class: Constant_Pool_Index,
-        super_class: Constant_Pool_Index,
-        interfaces: IndexedSeq[Constant_Pool_Index],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes): ClassFile
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    IndexedSeq[Constant_Pool_Index],
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
+    ): ClassFile
 
     //
     // IMPLEMENTATION
@@ -242,10 +244,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         if (!(
             major_version >= 45 && // at least JDK 1.1
             (major_version < 52 /* Java 7 = 51.0 */ ||
-                (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))))
+                (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))
+        ))
             throw BytecodeProcessingFailedException(
                 s"unsupported class file version: $major_version.$minor_version"+
-                    " (Supported: 45(Java 1.1) <= version <= 52(Java 8))")
+                    " (Supported: 45(Java 1.1) <= version <= 52(Java 8))"
+            )
 
         val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort
@@ -352,8 +356,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @return The loaded class files.
      */
     def ClassFiles(
-        jarFile: ZipFile,
-        exceptionHandler: ExceptionHandler): Seq[(ClassFile, URL)] = {
+        jarFile:          ZipFile,
+        exceptionHandler: ExceptionHandler
+    ): Seq[(ClassFile, URL)] = {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
@@ -380,19 +385,21 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *      of a class file fails. '''This function has to be thread safe'''.
      */
     def ClassFiles(
-        jarFile: ZipFile,
+        jarFile:          ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: ExceptionHandler): Unit = {
+        exceptionHandler: ExceptionHandler
+    ): Unit = {
         val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
         val jarFileName = "jar:"+jarFileURL+"!/"
         ClassFiles(jarFileName, jarFile, classFileHandler, exceptionHandler)
     }
 
     private def ClassFiles(
-        jarFileURL: String, // the complete path to the given jar file.
-        jarFile: ZipFile,
+        jarFileURL:       String, // the complete path to the given jar file.
+        jarFile:          ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: ExceptionHandler): Unit = {
+        exceptionHandler: ExceptionHandler
+    ): Unit = {
 
         import scala.collection.JavaConversions._
 
@@ -455,10 +462,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * the class files from it as done with any other jar file.
      */
     private def ClassFiles(
-        jarFileURL: String,
-        jarData: Array[Byte],
+        jarFileURL:       String,
+        jarData:          Array[Byte],
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: ExceptionHandler): Unit = {
+        exceptionHandler: ExceptionHandler
+    ): Unit = {
         val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 3)
         val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1)
         try {
@@ -487,8 +495,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * resulting `Seq`.
      */
     def ClassFiles(
-        file: File,
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+        file:             File,
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
+    ): Seq[(ClassFile, URL)] = {
 
         def processJar(file: File): Seq[(ClassFile, URL)] = {
             try {
@@ -570,8 +579,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     def AllClassFiles(
-        files: Traversable[File],
-        exceptionHandler: ExceptionHandler = defaultExceptionHandler): Traversable[(ClassFile, URL)] = {
+        files:            Traversable[File],
+        exceptionHandler: ExceptionHandler  = defaultExceptionHandler
+    ): Traversable[(ClassFile, URL)] = {
 
         files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten
     }
@@ -589,6 +599,7 @@ object ClassFileReader {
         OPALLogger.error(
             "reading class files",
             s"processing $source failed",
-            t)(GlobalLogContext)
+            t
+        )(GlobalLogContext)
     }
 }

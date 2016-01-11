@@ -50,15 +50,17 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
         "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
 
     def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
         if (project.classHierarchy.rootTypes.tail.nonEmpty) {
             Console.err.println(
                 "Warning: Class Hierarchy Not Complete: "+
                     project.classHierarchy.rootTypes.
                     filter(_ != ObjectType.Object).
-                    map(_.toJava).mkString(", "))
+                    map(_.toJava).mkString(", ")
+            )
         }
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
@@ -129,8 +131,8 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
                                                 project.classFile(observerInterface).get,
                                                 method.name,
                                                 method.descriptor,
-                                                project).isDefined
-                                    )
+                                                project
+                                            ).isDefined)
                             }
                         )
                     } else
@@ -201,7 +203,7 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
         // -------------------------------------------------------------------------------
         // OUTPUT
         // -------------------------------------------------------------------------------
-        import Console.{ BOLD, RESET }
+        import Console.{BOLD, RESET}
         BasicReport(
             (BOLD+"Observer types in project ("+allObserverTypes.size+"): "+RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
                 (BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", ")) +

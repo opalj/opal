@@ -41,7 +41,7 @@ import br.reader.Java8Framework.ClassFiles
  */
 object DependencyMatrix {
 
-    import util.PerformanceEvaluation.{ time, ns2ms }
+    import util.PerformanceEvaluation.{time, ns2ms}
 
     private def printUsage(): Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")
@@ -80,10 +80,11 @@ object DependencyMatrix {
                     override def processDependency(
                         source: VirtualSourceElement,
                         target: VirtualSourceElement,
-                        dType: DependencyType): Unit = {
+                        dType:  DependencyType
+                    ): Unit = {
                         dependencyMatrix.get(source) match {
                             case Some(s) ⇒ s += ((target, dType))
-                            case None    ⇒ dependencyMatrix += (source -> Set((target, dType)))
+                            case None    ⇒ dependencyMatrix += (source → Set((target, dType)))
                         }
                         // [Scala 2.9.X Compiler crashes on:] dependencyMatrix.getOrElseUpdate(sourceID, emptySet)  + ((targetID, dType))
                     }
@@ -103,7 +104,8 @@ object DependencyMatrix {
         } { t ⇒
             println(
                 s"\nReading all $count class files and building the dependency matrix took "+
-                    t.toSeconds)
+                    t.toSeconds
+            )
         }
     }
 }

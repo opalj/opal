@@ -121,8 +121,10 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
 
     def withLongValuesOrElse[T](
         value1: DomainValue,
-        value2: DomainValue)(
-            f: (Long, Long) ⇒ T)(orElse: ⇒ T): T =
+        value2: DomainValue
+    )(
+        f: (Long, Long) ⇒ T
+    )(orElse: ⇒ T): T =
         longValue(value1) { v1 ⇒
             longValue(value2) { v2 ⇒
                 f(v1, v2)
@@ -134,9 +136,10 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         }
 
     def longIsSomeValueInRange(
-        value: DomainValue,
+        value:      DomainValue,
         lowerBound: Long,
-        upperBound: Long): Boolean =
+        upperBound: Long
+    ): Boolean =
         longValue(value) {
             v ⇒ lowerBound <= v && v <= upperBound
         } {
@@ -144,9 +147,10 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         }
 
     def longIsSomeValueNotInRange(
-        value: DomainValue,
+        value:      DomainValue,
         lowerBound: Long,
-        upperBound: Long): Boolean =
+        upperBound: Long
+    ): Boolean =
         longValue(value) { v ⇒
             v < lowerBound || v > upperBound
         } {
@@ -155,7 +159,8 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
 
     def longIsLessThan(
         smallerValue: DomainValue,
-        largerValue: DomainValue): Answer =
+        largerValue:  DomainValue
+    ): Answer =
         withLongValuesOrElse(smallerValue, largerValue) { (v1, v2) ⇒
             Answer(v1 < v2)
         } {
@@ -164,7 +169,8 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
 
     def longIsLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
-        equalOrLargerValue: DomainValue): Answer =
+        equalOrLargerValue:  DomainValue
+    ): Answer =
         withLongValuesOrElse(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
             Answer(v1 <= v2)
         } {
@@ -176,7 +182,8 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
+        locals:   Locals
+    ): (Operands, Locals) =
         (
             operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
             locals.map { local ⇒ if (local eq oldValue) newValue else local }
@@ -227,34 +234,35 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (DefiniteLongValue(l), DefiniteLongValue(r)) ⇒ LongValue(pc, l + r)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
             case (DefiniteLongValue(l), DefiniteLongValue(r)) ⇒ LongValue(pc, l - r)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, DefiniteLongValue(0)) ⇒ value2
-            case (_, DefiniteLongValue(1)) ⇒ value1
-            case (DefiniteLongValue(0), _) ⇒ value1
-            case (DefiniteLongValue(1), _) ⇒ value2
+            case (_, DefiniteLongValue(0))                    ⇒ value2
+            case (_, DefiniteLongValue(1))                    ⇒ value1
+            case (DefiniteLongValue(0), _)                    ⇒ value1
+            case (DefiniteLongValue(1), _)                    ⇒ value2
 
             case (DefiniteLongValue(l), DefiniteLongValue(r)) ⇒ LongValue(pc, l * r)
 
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def ldiv(
-        pc: PC,
+        pc:     PC,
         value1: DomainValue,
-        value2: DomainValue): LongValueOrArithmeticException = {
+        value2: DomainValue
+    ): LongValueOrArithmeticException = {
         longValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(VMArithmeticException(pc))
@@ -274,9 +282,10 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     override def lrem(
-        pc: PC,
+        pc:     PC,
         value1: DomainValue,
-        value2: DomainValue): LongValueOrArithmeticException =
+        value2: DomainValue
+    ): LongValueOrArithmeticException =
         longValue(value2) { v2 ⇒
             if (v2 == 0l)
                 ThrowsException(VMArithmeticException(pc))
@@ -325,28 +334,28 @@ trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (DefiniteLongValue(l), DefiniteLongValue(s)) ⇒ LongValue(pc, l << s)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (DefiniteLongValue(l), DefiniteLongValue(s)) ⇒ LongValue(pc, l >> s)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (DefiniteLongValue(l), DefiniteLongValue(s)) ⇒ LongValue(pc, l >>> s)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 
     override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (DefiniteLongValue(l), DefiniteLongValue(r)) ⇒ LongValue(pc, l ^ r)
-            case _ ⇒ LongValue(origin = pc)
+            case _                                            ⇒ LongValue(origin = pc)
         }
     }
 }

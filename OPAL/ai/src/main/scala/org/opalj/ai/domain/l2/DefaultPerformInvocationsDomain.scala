@@ -31,7 +31,7 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
@@ -39,9 +39,10 @@ import org.opalj.ai.domain.DefaultRecordMethodCallResults
  * Performs a simple invocation of the immediately called methods.
  */
 class DefaultPerformInvocationsDomain[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
+    method:    Method
+)
         extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocations {
 
@@ -54,16 +55,18 @@ class DefaultPerformInvocationsDomain[Source](
         new SharedDefaultDomain(
             project,
             project.classFile(method),
-            method) with DefaultRecordMethodCallResults
+            method
+        ) with DefaultRecordMethodCallResults
 
     def calledMethodAI = BaseAI
 
 }
 
 class DefaultPerformInvocationsDomainWithCFG[Source](
-    project: Project[Source],
+    project:   Project[Source],
     classFile: ClassFile,
-    method: Method)
+    method:    Method
+)
         extends DefaultPerformInvocationsDomain[Source](project, classFile, method)
         with RecordCFG
 

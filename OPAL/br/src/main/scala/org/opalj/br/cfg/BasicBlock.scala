@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -28,136 +28,105 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.immutable.HashSet
-import scala.collection.immutable.TreeSet
+import scala.collection.mutable
 import org.opalj.br.PC
 import org.opalj.br.Code
 
 /**
+ * Represents a basic block of a method's control flow graph (CFG). The basic block
+ * is identified by referring to the first and last instruction belonging to the
+ * basic block.
+ *
+ * @param startPC The pc of the first instruction belonging to the `BasicBlock`.
+ *
  * @author Erich Wittenbeck
+ * @author Michael Eichberg
  */
-class BasicBlock(val startPC: PC) extends CFGBlock {
+class BasicBlock(val startPC: PC) extends CFGNode {
 
-    private[cfg] var catchBlockSuccessors: List[CatchBlock] = Nil
+    final def isBasicBlock: Boolean = true
+    final def isCatchNode: Boolean = false
+    final def isExitNode: Boolean = false
 
-    private[cfg] var endPC: PC = startPC
-
-    private[cfg] def addPC(pc: PC): Unit = endPC = pc // TODO Rename: setEndPC
-
-    private[cfg] override def addSucc(block: CFGBlock): Unit = block match {
-        case cb: CatchBlock ⇒ { catchBlockSuccessors = catchBlockSuccessors :+ cb }
-        case _              ⇒ super.addSucc(block)
+    private[this] var _endPC: PC = 0 // will be initialized at construction time
+    private[cfg] def endPC_=(pc: PC): Unit = {
+        assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
+        _endPC = pc
     }
+    /**
+     * The pc of the last instruction belonging to this basic block.
+     */
+    def endPC: PC = _endPC
 
-    def programCounters(code: Code): Seq[PC] = { // TODO Return an iterator (this give the caller more opportunities!)
-        var res: List[PC] = Nil
-        var pc: PC = startPC
+    /**
+     * Returns the index of an instruction – identified by its program counter (pc) –
+     * in a basic block.
+     *
+     * ==Example==
+     * Given a basic block which has five instructions which have the following
+     * program counters: {0,1,3,5,6}. In this case the index of the instruction with
+     * program counter 3 will be 2 and in case of the instruction with pc 6 the index
+     * will be 4.
+     *
+     * @param pc The program counter of the instruction for which the index is needed.
+     * 	`pc` has to satisfy: `startPC <= pc <= endPC`.
+     * @param code The code to which this basic block belongs.
+     */
+    def index(pc: PC)(implicit code: Code): Int = {
+        assert(pc >= startPC && pc <= endPC)
 
-        while (pc <= endPC) {
-            res = res :+ pc // this is expensive (as said: return an iterator)
-            pc = code.pcOfNextInstruction(pc)
-        }
-
-        res
-    }
-
-    // TODO add documentation
-    def indexOfPC(pc: PC, code: Code): Int = {
-        var res = 0 // TODO rename: index
+        var index = 0
         var currentPC = startPC
-
         while (currentPC < pc) {
             currentPC = code.pcOfNextInstruction(currentPC)
-            res += 1
+            index += 1
         }
-
-        res
+        index
     }
 
-    private[cfg] def split(
-        block: BasicBlock,
-        newBlockStartPC: PC,
-        oldBlockEndPC: PC): BasicBlock = {
+    /**
+     * Calls the function `f` for all instructions - identified by their respective
+     * pcs - of a basic block.
+     *
+     * @param f The function that will be called.
+     * @param code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     * 		belongs.
+     */
+    def foreach[U](f: PC ⇒ U)(implicit code: Code): Unit = {
+        val instructions = code.instructions
 
-        val newBlock = new BasicBlock(newBlockStartPC)
-        newBlock.endPC = endPC
-        newBlock.successors = successors
-        newBlock.catchBlockSuccessors = catchBlockSuccessors
-        newBlock.addPred(this)
-
-        for (successor ← newBlock.successors) {
-            val oldBlock = this
-            successor.predecessors =
-                successor.predecessors.map {
-                    case `oldBlock` ⇒ newBlock
-                    case aBlock     ⇒ aBlock
-                }
-        }
-
-        successors = List(newBlock)
-        endPC = oldBlockEndPC
-
-        newBlock
-    }
-
-    def foreach[U](f: (PC) ⇒ U)(implicit code: Code): Unit = {
         var pc = this.startPC
-
+        val endPC = this.endPC
         while (pc <= endPC) {
             f(pc)
-            pc = code.instructions(pc).indexOfNextInstruction(pc, code)
+            pc = instructions(pc).indexOfNextInstruction(pc)
         }
     }
 
-    override def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
+    //
+    // FOR DEBUGGING/VISUALIZATION PURPOSES
+    //
 
-        var res = visited + this
-        val worklist = (successors ++ catchBlockSuccessors)
-        for (block ← worklist if !visited.contains(block))
-            res = res ++ block.returnAllBlocks(res)
-        res
-    }
+    override def toString: String = s"BasicBlock(startPC=$startPC, endPC=$endPC)"
 
-    override def equals(any: Any): Boolean = {
-        any match {
-            case that: BasicBlock ⇒ this.startPC == that.startPC // TODO This is questionable (how about the id field!)
-            case _                ⇒ false
-        }
-    }
+    override def nodeId: Long = startPC.toLong
 
-    override def hashCode(): Int = startPC * 171; // TODO This is questionable (how about the id field!)
+    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]")
 
-    def toDot(code: Code): String = {
+    override def visualProperties: Map[String, String] = {
+        var visualProperties = Map("shape" → "box", "labelloc" → "l")
 
-        var blockLabel: String = ID+"\n"+"_____________________"+"\n"
-
-        if (startPC == endPC) { // Sonderfall : 1 Instruktion
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"
-        } else {
-            val padding: String = if (code.instructions(startPC).indexOfNextInstruction(startPC, code) == endPC) { "" } else { "\t***\n" } // Sonderfall: 2 Instructions
-
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"+
-                padding + endPC+":\t"+code.instructions(endPC).toString(endPC).replaceAll("\"", "")+"\n"
+        if (startPC == 0) {
+            visualProperties += "fillcolor" → "green"
+            visualProperties += "style" → "filled"
         }
 
-        var res = ID+" [shape=box, label=\""+blockLabel+"\"];\n"
-
-        val worklist = (successors ++ catchBlockSuccessors)
-
-        for (succ ← worklist) {
-            succ match {
-                case cb: CatchBlock ⇒ {
-                    res = res + ID+" -> "+succ.ID+"[color=red];\n"
-                }
-                case _ ⇒ {
-                    res = res + ID+" -> "+succ.ID+";\n"
-                }
-            }
+        if (!hasSuccessors) { // in this case something is very broken (internally)...
+            visualProperties += "shape" → "octagon"
+            visualProperties += "fillcolor" → "gray"
+            visualProperties += "style" → "filled"
         }
-        res
-    }
 
-    override def toString: String = {
-        "bb@"+startPC+"to"+endPC
+        visualProperties
     }
 }

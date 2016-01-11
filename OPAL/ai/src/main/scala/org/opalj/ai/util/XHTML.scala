@@ -76,7 +76,8 @@ object XHTML {
 
     def createXHTML(
         htmlTitle: Option[String] = None,
-        body: NodeSeq): Node = {
+        body:      NodeSeq
+    ): Node = {
         val theTitle = htmlTitle.map(t ⇒ Seq(<title>{ t }</title>)).getOrElse(Seq.empty[Node])
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">

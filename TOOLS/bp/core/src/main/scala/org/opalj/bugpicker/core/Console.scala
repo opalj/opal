@@ -31,24 +31,24 @@ package bugpicker
 package core
 
 import java.net.URL
-import scala.collection.SortedMap
-import scala.xml.Node
-import org.opalj.io.writeAndOpen
-import org.opalj.io.process
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.analyses.ProgressManagement
-import org.opalj.ai.util.XHTML
-import org.opalj.bugpicker.core.analysis.IssueKind
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
-import org.opalj.log.OPALLogger
 import java.lang.Integer.parseInt
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+import scala.collection.SortedMap
+import scala.xml.Node
+import org.opalj.io.writeAndOpen
+import org.opalj.io.process
+import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.ai.util.XHTML
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import com.typesafe.config.ConfigRenderOptions
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -57,6 +57,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
+
     val analysis = this
 
     final val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
@@ -67,6 +68,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     final val MinRelevance = 0
 
     final val IssueKindsPattern = """-kinds=([\w, ]+)""".r
+
+    override def main(unparsedArgs: Array[String]): Unit = {
+        try {
+            super.main(unparsedArgs)
+        } catch {
+            case t: Throwable ⇒ t.printStackTrace()
+        }
+    }
 
     final override val analysisSpecificParametersDescription: String =
         """[-maxEvalFactor=<DoubleValue {[0.1,100),Infinity}=1.75> determines the maximum effort that
@@ -100,11 +109,12 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
             |               may happen that many analyses are aborted because the evaluation time
             |               is exhausted and – overall – the analysis reports less issues!]
-            |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.
+            |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.]
             |[-kinds=<Issue Kinds="constant computation,dead path,throws exception,
             |                unguarded use,unused">] a comma seperated list of issue kinds
-            |                that should be reported
-            |[-eclipse      creates an eclipse console compatible output).]
+            |                that should be reported.]
+            |[-eclipse      creates an eclipse console compatible output.]
+            |[-bdl          creates a bdl report.]
             |[-html[=<FileName>] generates an HTML report which is written to the optionally
             |               specified location.]
             |[-debug[=<FileName>] turns on the debug mode (more information are logged and
@@ -117,10 +127,23 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
     override def description: String = bugPickerAnalysis.description
 
+    private[this] var cpFiles: Iterable[File] = null
+    private[this] var libcpFiles: Iterable[File] = null
+
+    override def setupProject(
+        cpFiles:    Iterable[File],
+        libcpFiles: Iterable[File]
+    ): Project[URL] = {
+        this.cpFiles = cpFiles
+        this.libcpFiles = libcpFiles
+        super.setupProject(cpFiles, libcpFiles)
+    }
+
     override def analyze(
-        theProject: Project[URL],
-        parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement) = {
+        theProject:             Project[URL],
+        parameters:             Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement
+    ) = {
 
         import theProject.logContext
 
@@ -144,7 +167,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         val issues = parameters.collectFirst { case IssueKindsPattern(ks) ⇒ ks } match {
             case Some(ks) ⇒
                 val relevantKinds = ks.split(',').toSet
-                issues1.filter(issue ⇒ (issue.kind intersect (relevantKinds)).nonEmpty)
+                issues1.filter(issue ⇒ (issue.kinds intersect (relevantKinds)).nonEmpty)
             case None ⇒
                 issues1
         }
@@ -156,8 +179,20 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             println(formattedIssues.toSeq.sorted.mkString("\n"))
         }
 
+        // Generate a report using the bug description language
+        //
+        if (parameters.contains("-bdl")) {
+            val formattedIssues = issues.map { issue ⇒ issue.asBDL }
+            println(s"Analysis of "+cpFiles.mkString(", "))
+            println("Parameters")
+            println(parameters.mkString("\n"))
+            println("Issues")
+            println(formattedIssues.toSeq.sorted.mkString("\n"))
+        }
+
         // Generate the HTML report
         //
+
         lazy val htmlReport = resultsAsXHTML(parameters, issues, showSearch = false, analysisTime).toString
         parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
             case Some(fileName) ⇒
@@ -177,10 +212,12 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         if (exceptions.nonEmpty) {
             OPALLogger.error(
                 "internal error",
-                s"the analysis threw ${exceptions.size} exceptions")
+                s"the analysis threw ${exceptions.size} exceptions"
+            )
             exceptions.foreach { e ⇒
                 OPALLogger.error(
-                    "internal error", "the analysis failed", e)
+                    "internal error", "the analysis failed", e
+                )
             }
 
             var exceptionsReport: Node = null
@@ -222,11 +259,15 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             groupedAndCountedIssues.mkString(
                 s"Issues (∑${issues.size}):\n\t",
                 "\n\t",
-                s"\nIdentified in: ${analysisTime.toSeconds}.\n")
+                s"\nIdentified in: ${analysisTime.toSeconds}.\n"
+            )
         )
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
+
+        OPALLogger.info("analysis progress", "checking parameters")(GlobalLogContext)
+
         var outputFormatGiven = false
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
@@ -280,6 +321,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     outputFormatGiven = true; true
                 case "-eclipse" ⇒
                     outputFormatGiven = true; true
+                case "-bdl" ⇒
+                    outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
                 case _                             ⇒ false
@@ -291,4 +334,3 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         issues.map("unknown or illegal parameter: "+_)
     }
 }
-

@@ -30,7 +30,7 @@ package org.opalj
 package br
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
@@ -42,7 +42,7 @@ import org.scalatest.time.Span
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
+class ClassFileTest extends FunSuite with Matchers {
 
     import reader.Java8Framework.ClassFile
 
@@ -54,56 +54,55 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     test("test that it can find the first constructor") {
         assert(
             immutableList.findMethod(
-                "<init>",
-                MethodDescriptor(ObjectType.Object, VoidType)
-            ).isDefined
+            "<init>",
+            MethodDescriptor(ObjectType.Object, VoidType)
+        ).isDefined
         )
     }
 
     test("test that it can find the second constructor") {
         assert(
             immutableList.findMethod(
-                "<init>",
-                MethodDescriptor(
-                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
-                    VoidType)
-            ).isDefined
+            "<init>",
+            MethodDescriptor(
+                IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
+                VoidType
+            )
+        ).isDefined
         )
     }
 
     test("test that all constructors are returned") {
-        assert(
-            immutableList.constructors.size.toInt == 2
-        )
+        assert(immutableList.constructors.size.toInt == 2)
     }
 
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-                "getNext",
-                MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
-            ).isDefined
+            "getNext",
+            MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "prepend",
-                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
-            ).isDefined
+            "prepend",
+            MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "getIterator",
-                MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
-            ).isDefined
+            "getIterator",
+            MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+        ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "get",
-                MethodDescriptor(IndexedSeq(), ObjectType.Object)
-            ).isDefined
+            "get",
+            MethodDescriptor(IndexedSeq(), ObjectType.Object)
+        ).isDefined
         )
 
         assert(immutableList.instanceMethods.size.toInt == 4)
@@ -178,7 +177,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         )
 
         var foundNestedTypes: Set[ObjectType] = Set.empty
-        outerClass.foreachNestedClass(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
+        outerClass.foreachNestedClass({ nc ⇒ foundNestedTypes += nc.thisType })(innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
@@ -193,10 +192,10 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
                 var nestedClasses: List[Type] = Nil
-                classFile.foreachNestedClass(project, { c ⇒
+                classFile.foreachNestedClass({ c ⇒
                     nestedClasses = c.thisType :: nestedClasses
                     innerClassesCount += 1
-                })
+                })(project)
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
             } catch {

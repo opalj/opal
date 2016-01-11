@@ -40,7 +40,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.ParallelTestExecution
+
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**
@@ -51,10 +51,7 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesInParallelUsingCachingTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class LoadClassFilesInParallelUsingCachingTest        extends FlatSpec        with Matchers {
 
     private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
         classFile.thisType.fqn should not be null

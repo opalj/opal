@@ -37,8 +37,9 @@ import scala.collection.Set
  * @author Michael Eichberg
  */
 case class TypeDeclaration(
-    objectType: ObjectType,
-    isInterfaceType: Boolean,
-    theSuperclassType: Option[ObjectType],
-    theSuperinterfaceTypes: Set[ObjectType])
+    objectType:             ObjectType,
+    isInterfaceType:        Boolean,
+    theSuperclassType:      Option[ObjectType],
+    theSuperinterfaceTypes: Set[ObjectType]
+)
 

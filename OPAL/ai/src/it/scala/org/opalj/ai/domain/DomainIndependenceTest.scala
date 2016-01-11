@@ -141,8 +141,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                                 return Some(Console.RED_B+"the operand stack value "+lVD+" and "+rVD+" do not correspond ")
                             else
                                 true
-                        }
-                    )
+                        })
             }
 
             r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
@@ -165,8 +164,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                                         true
                                 }
                             )
-                        }
-                    )
+                        })
             }
 
             None
@@ -248,6 +246,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         }
         info(
             s"successfully compared (${comparisonCount.get} comparisons) the results of "+
-                s" ${aiCount.get} abstract interpretations")
+                s" ${aiCount.get} abstract interpretations"
+        )
     }
 }

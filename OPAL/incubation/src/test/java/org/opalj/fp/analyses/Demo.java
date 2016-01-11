@@ -42,6 +42,10 @@ class Demo {
     private Demo() {/* empty */
     }
 
+    public Demo identity() {
+        return this;
+    }
+
     public static int pureThoughItUsesField(int i, int j) {
         return i % j * myValue;
     }
@@ -77,7 +81,7 @@ class Demo {
     }
 
     static int barFoo(int i) {
-        return foo(i) + bar(i); // not observerd
+        return foo(i) + bar(i); // not observed
     }
 
     // The following two methods are mutually dependent and use an impure method.
@@ -170,7 +174,7 @@ class Demo {
         return m1(k);
     }
 
-    // Two cycles connected by a "weak link"
+    // Two cycles connected by a "weak link" (fooBar)
     //
 
     static int cm1(int i) {

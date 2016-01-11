@@ -31,7 +31,7 @@ package br
 package reader
 
 import org.scalatest.FunSuite
-import org.scalatest.ParallelTestExecution
+
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**
@@ -41,7 +41,7 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Andre Pacak
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class SignaturesTest extends FunSuite with ParallelTestExecution {
+class SignaturesTest extends FunSuite {
 
     import SignatureParser.parseClassSignature
 
@@ -64,7 +64,9 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
                 ObjectType("de/Collection"),
                 ObjectType("de/Type"),
                 ObjectType("AnotherDefault"),
-                ObjectType("de/MyObject")))
+                ObjectType("de/MyObject")
+            )
+        )
     }
 
     import Java8Framework.ClassFile
@@ -94,8 +96,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
                     assert(signature ne null)
                 }
                 case _ ⇒ ;
-            }
-        )
+            })
     }
 
     //

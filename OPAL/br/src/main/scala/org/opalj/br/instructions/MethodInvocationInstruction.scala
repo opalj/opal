@@ -42,18 +42,19 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     def declaringClass: ReferenceType
 
-    def asVirtualMethod: VirtualMethod =
-        VirtualMethod(declaringClass, name, methodDescriptor)
+    def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 
     /**
-     * Returns `true` if the called method is an instance method/if the called method
-     * is not static.
+     * Returns `true` if the called method is an instance method and virtual method
+     * call resolution has to take place. I.e., if the underlying instruction is an
+     * invokevirtual or an invokeinterface instruction.
      */
     def isVirtualMethodCall: Boolean
 
-    override def toString: String =
+    override def toString: String = {
         this.getClass.getSimpleName+"\n"+
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
+    }
 
 }
 
@@ -72,7 +73,8 @@ object MethodInvocationInstruction {
                 Some((
                     invocationInstruction.declaringClass,
                     invocationInstruction.name,
-                    invocationInstruction.methodDescriptor))
+                    invocationInstruction.methodDescriptor
+                ))
             case _ ⇒ None
         }
     }
@@ -81,6 +83,9 @@ object MethodInvocationInstruction {
 
 }
 
+/**
+ * Common superclass of all Invoke instructions that require virtual method resolution.
+ */
 abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
 
     def isVirtualMethodCall: Boolean = true
@@ -92,7 +97,9 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
 
 object VirtualMethodInvocationInstruction {
 
-    def unapply(instruction: VirtualMethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
+    def unapply(
+        instruction: VirtualMethodInvocationInstruction
+    ): Option[(ReferenceType, String, MethodDescriptor)] = {
         Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
     }
 

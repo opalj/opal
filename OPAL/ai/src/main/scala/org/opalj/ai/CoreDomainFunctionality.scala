@@ -58,7 +58,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
+        locals:   Locals
+    ): (Operands, Locals) = {
 
         (
             operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
@@ -84,14 +85,15 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * refined) operands and locals to the `super` method (`stackable traits`).
      */
     def afterEvaluation(
-        pc: PC,
-        instruction: Instruction,
-        oldOperands: Operands,
-        oldLocals: Locals,
-        targetPC: PC,
+        pc:                       PC,
+        instruction:              Instruction,
+        oldOperands:              Operands,
+        oldLocals:                Locals,
+        targetPC:                 PC,
         isExceptionalControlFlow: Boolean,
-        newOperands: Operands,
-        newLocals: Locals): (Operands, Locals) = (newOperands, newLocals)
+        newOperands:              Operands,
+        newLocals:                Locals
+    ): (Operands, Locals) = (newOperands, newLocals)
 
     /**
      * Joins the given operand stacks and local variables.
@@ -122,11 +124,12 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      which identifies the value is dead.
      */
     def join(
-        pc: PC,
-        thisOperands: Operands,
-        thisLocals: Locals,
+        pc:            PC,
+        thisOperands:  Operands,
+        thisLocals:    Locals,
         otherOperands: Operands,
-        otherLocals: Locals): Update[(Operands, Locals)] = {
+        otherLocals:   Locals
+    ): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
         var operandsUpdated: UpdateType = NoUpdateType
@@ -171,27 +174,46 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                val newLocals =
-                    thisLocals.merge(
-                        otherLocals,
-                        (thisLocal, otherLocal) ⇒ {
-                            if ((thisLocal eq null) || (otherLocal eq null)) {
-                                localsUpdated = localsUpdated &: MetaInformationUpdateType
-                                TheIllegalValue
-                            } else {
-                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
-                                if (updatedLocal eq NoUpdate) {
-                                    thisLocal
-                                } else {
-                                    localsUpdated = localsUpdated &: updatedLocal
-                                    val value = updatedLocal.value
-                                    if (value ne TheIllegalValue)
-                                        localsUpdateIsRelevant = true
-                                    value
-                                }
-                            }
+                def mergeLocals(thisLocal: DomainValue, otherLocal: DomainValue) = {
+                    if ((thisLocal eq null) || (otherLocal eq null)) {
+                        localsUpdated = localsUpdated &: MetaInformationUpdateType
+                        TheIllegalValue
+                    } else {
+                        val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                        if (updatedLocal eq NoUpdate) {
+                            thisLocal
+                        } else {
+                            localsUpdated = localsUpdated &: updatedLocal
+                            val value = updatedLocal.value
+                            if (value ne TheIllegalValue)
+                                localsUpdateIsRelevant = true
+                            value
                         }
-                    )
+                    }
+
+                }
+                val newLocals = thisLocals.merge(otherLocals, mergeLocals)
+                //                val newLocals =
+                //                    thisLocals.merge(
+                //                        otherLocals,
+                //                        (thisLocal, otherLocal) ⇒ {
+                //                            if ((thisLocal eq null) || (otherLocal eq null)) {
+                //                                localsUpdated = localsUpdated &: MetaInformationUpdateType
+                //                                TheIllegalValue
+                //                            } else {
+                //                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                //                                if (updatedLocal eq NoUpdate) {
+                //                                    thisLocal
+                //                                } else {
+                //                                    localsUpdated = localsUpdated &: updatedLocal
+                //                                    val value = updatedLocal.value
+                //                                    if (value ne TheIllegalValue)
+                //                                        localsUpdateIsRelevant = true
+                //                                    value
+                //                                }
+                //                            }
+                //                        }
+                //                    )
                 if (localsUpdated.noUpdate)
                     thisLocals
                 else
@@ -218,8 +240,9 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
     protected[this] def beforeBaseJoin(pc: PC): Unit = { /*empty*/ }
 
     protected[this] def joinValues(
-        pc: PC,
-        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        pc:   PC,
+        left: DomainValue, right: DomainValue
+    ): Update[DomainValue] = {
         left.join(pc, right)
     }
 
@@ -243,17 +266,19 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * @param newLocals The new locals; may be updated.
      */
     protected[this] def joinPostProcessing(
-        updateType: UpdateType,
-        pc: PC,
+        updateType:  UpdateType,
+        pc:          PC,
         oldOperands: Operands,
-        oldLocals: Locals,
+        oldLocals:   Locals,
         newOperands: Operands,
-        newLocals: Locals): Update[(Operands, Locals)] = {
+        newLocals:   Locals
+    ): Update[(Operands, Locals)] = {
         updateType((newOperands, newLocals))
     }
 
     /**
-     * ''Called by the framework after performing a computation''. That is, after
+     * Called by the framework after performing a computation to inform the domain
+     * about the result. That is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and (if necessary) joining the updated stack and registers with the stack
      * and registers associated with the instruction `successorPC`. (Hence, this method
@@ -284,6 +309,12 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *
      * @param currentPC The program counter of the instruction that is currently evaluated
      *      by the abstract interpreter.
+     *
+     * @param currentOperands The current operands. I.e., the operand stack before the
+     *  	instruction is evaluated.
+     *
+     * @param currentLocals The current locals. I.e., the locals before the instruction is
+     * 		evaluated.
      *
      * @param successorPC The program counter of an instruction that is a potential
      *      successor of the instruction with `currentPC`. In general the AI framework
@@ -321,6 +352,11 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      evaluated in the past; the other elements are `null`. Furthermore,
      *      it identifies the `operandsArray` of the subroutine that will executed the
      *      instruction with `successorPC`.
+     *      '''The operandsArray may be `null` for the ''current'' instruction (not the successor
+     *      instruction) if the execution of the current instruction leads to the termination
+     *      of the current subroutine. In this case the information about the operands
+     *      and locals associated with all instructions belonging to the subroutine is
+     *      reset.'''
      *
      * @param localsArray The array that associates every instruction with its current
      *      register values. Note, that only those elements of the
@@ -328,6 +364,11 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      the past. The other elements are `null`. Furthermore,
      *      it identifies the `localsArray` of the subroutine that will executed the
      *      instruction with `successorPC`.
+     *      '''The localsArray may be `null` for the ''current'' instruction (not the successor
+     *      instruction) if the execution of the current instruction leads to the termination
+     *      of the current subroutine. In this case the information about the operands
+     *      and locals associated with all instructions belonging to the subroutine is
+     *      reset.'''
      *
      * @param worklist The current list of instructions that will be evaluated next.
      *      ==If subroutines are not used (i.e., Java >= 6)==
@@ -369,16 +410,19 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
-        currentPC: PC,
-        successorPC: PC,
-        isSuccessorScheduled: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorScheduled:             Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = worklist
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = worklist
 
     /**
      * Called by the framework after evaluating the instruction with the given pc. I.e.,
@@ -388,12 +432,13 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * By default this method does nothing.
      */
     def evaluationCompleted(
-        pc: PC,
-        worklist: List[PC],
-        evaluated: List[PC],
+        pc:            PC,
+        worklist:      List[PC],
+        evaluated:     List[PC],
         operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): Unit = { /*Nothing*/ }
+        localsArray:   LocalsArray,
+        tracer:        Option[AITracer]
+    ): Unit = { /*Nothing*/ }
 
     /**
      * Called by the abstract interpreter when the abstract interpretation of a method
@@ -401,9 +446,13 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * is reached or the interpretation was aborted.
      *
      * By default this method does nothing.
+     *
+     * Domains that override this method are expected to do so by means of an abstract override
+     * where they '''always''' also call `super.abstractInterpretationEnded(aiResult)`.
      */
     def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: coreDomain.type }): Unit = {
+        aiResult: AIResult { val domain: coreDomain.type }
+    ): Unit = {
         /* Nothing */
     }
 
@@ -414,9 +463,10 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * is scheduled in the correct context.
      */
     protected[this] def schedule(
-        successorPC: PC,
+        successorPC:                      PC,
         abruptSubroutineTerminationCount: Int,
-        worklist: List[PC]): List[PC] = {
+        worklist:                         List[PC]
+    ): List[PC] = {
         if (abruptSubroutineTerminationCount > 0) {
             var header: List[PC] = Nil
             val relevantWorklist = {

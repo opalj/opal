@@ -39,10 +39,11 @@ import javafx.concurrent.Worker.State
 import scalafx.scene.web.WebView
 
 class JumpToProblemListener(
-        webview: WebView,
+        webview:      WebView,
         methodOption: Option[String],
-        pcOption: Option[String],
-        lineOption: Option[String]) extends ChangeListener[State] {
+        pcOption:     Option[String],
+        lineOption:   Option[String]
+) extends ChangeListener[State] {
 
     val worker = webview.engine.delegate.getLoadWorker
 
@@ -60,8 +61,9 @@ class JumpToProblemListener(
 
     override def changed(
         observable: ObservableValue[_ <: State],
-        oldValue: State,
-        newValue: State): Unit = {
+        oldValue:   State,
+        newValue:   State
+    ): Unit = {
 
         if (newValue != State.SUCCEEDED) return
 

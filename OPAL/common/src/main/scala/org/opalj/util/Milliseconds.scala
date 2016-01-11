@@ -49,7 +49,15 @@ class Milliseconds(val timeSpan: Long) extends AnyVal {
 
     final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000l)
 
-    override def toString: String = timeSpan+" ms"
+    def toString(withUnit: Boolean): String = {
+        if (withUnit)
+            timeSpan+" ms"
+        else
+            timeSpan.toString
+    }
+
+    override def toString: String = toString(withUnit = true)
+
 }
 /**
  * Defines factory methods and constants related to time spans in [[Milliseconds]].
@@ -65,7 +73,8 @@ object Milliseconds {
      */
     final def TimeSpan(
         startTimeInMilliseconds: Long,
-        endTimeInMilliseconds: Long): Milliseconds =
+        endTimeInMilliseconds:   Long
+    ): Milliseconds =
         new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
 
 }

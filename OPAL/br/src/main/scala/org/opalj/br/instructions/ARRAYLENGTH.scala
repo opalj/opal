@@ -51,8 +51,9 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this eq code.instructions(otherPC)
+    }
 
     final val readsLocal = false
 
@@ -63,13 +64,20 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
         if (regularSuccessorsOnly)
-            UShortSet(indexOfNextInstruction(currentPC, code))
+            UShortSet(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.NullPointerException)
+                this, currentPC, ObjectType.NullPointerException
+            )
+    }
+
+    final def expressionResult: ExpressionResult = Stack
 
 }

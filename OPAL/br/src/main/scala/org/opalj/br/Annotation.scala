@@ -32,20 +32,21 @@ package br
 /**
  * An annotation of a class, field, method or method parameter.
  *
- * Annotations are associated with a class, field, or method using a
- * [[org.opalj.br.RuntimeInvisibleAnnotationTable]] or a
- * [[org.opalj.br.RuntimeVisibleAnnotationTable]] attribute.
+ * Annotations are associated with a class, field, or method using the attribute
+ * [[org.opalj.br.RuntimeInvisibleAnnotationTable]] or
+ * [[org.opalj.br.RuntimeVisibleAnnotationTable]].
  *
- * Annotations are associated with a method parameter using a
+ * Annotations are associated with a method parameter using the attribute
  * [[org.opalj.br.RuntimeInvisibleParameterAnnotationTable]] or
- * a [[org.opalj.br.RuntimeVisibleParameterAnnotationTable]] attribute.
+ * a [[org.opalj.br.RuntimeVisibleParameterAnnotationTable]].
  *
  * @author Michael Eichberg
  * @author Arne Lottmann
  */
 case class Annotation(
-        annotationType: FieldType,
-        elementValuePairs: ElementValuePairs = IndexedSeq.empty) {
+        annotationType:    FieldType,
+        elementValuePairs: ElementValuePairs = IndexedSeq.empty
+) {
 
     def toJava: String = {
         val name = annotationType.toJava
@@ -63,20 +64,24 @@ case class Annotation(
 object Annotation {
 
     def apply(
-        annotationType: FieldType,
-        elementValuePairs: (String, ElementValue)*): Annotation = {
+        annotationType:    FieldType,
+        elementValuePairs: (String, ElementValue)*
+    ): Annotation = {
         new Annotation(
             annotationType,
-            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq)
+            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq
+        )
     }
 
     def apply(
-        annotationType: FieldType,
-        elementValuePair: ElementValuePair,
-        elementValuePairs: ElementValuePair*): Annotation = {
+        annotationType:    FieldType,
+        elementValuePair:  ElementValuePair,
+        elementValuePairs: ElementValuePair*
+    ): Annotation = {
         new Annotation(
             annotationType,
-            (elementValuePair +: elementValuePairs).toIndexedSeq)
+            (elementValuePair +: elementValuePairs).toIndexedSeq
+        )
     }
 
 }

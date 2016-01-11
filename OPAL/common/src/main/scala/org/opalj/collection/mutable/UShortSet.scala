@@ -30,7 +30,7 @@ package org.opalj
 package collection
 package mutable
 
-import org.opalj.UShort.{ MinValue, MaxValue }
+import org.opalj.UShort.{MinValue, MaxValue}
 import org.opalj.graphs.DefaultMutableNode
 
 /**
@@ -40,7 +40,7 @@ import org.opalj.graphs.DefaultMutableNode
  *
  * @author Michael Eichberg
  */
-trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
+sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.
@@ -54,8 +54,7 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     def -(value: UByte): UShortSet
 
-    override def filter(f: UShort ⇒ Boolean): UShortSet =
-        super[UShortSet].filter(f)
+    override def filter(f: UShort ⇒ Boolean): UShortSet = super[UShortSet].filter(f)
 
     def ++(values: UShortSet): UShortSet = {
         var newSet = this.mutableCopy
@@ -69,12 +68,12 @@ trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
     protected[collection] def mkString(
         pre: String, sep: String, pos: String,
-        offset: Int): String = {
+        offset: Int
+    ): String = {
         mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
-    def mkString(start: String, sep: String, end: String): String =
-        mkString(start, sep, end, 0)
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
@@ -276,7 +275,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     def +≈:(uShortValue: UShort): UShortSet = {
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
-            s"no ushort value: $uShortValue")
+            s"no ushort value: $uShortValue"
+        )
 
         val newValue: Long = uShortValue.toLong
         val value1 = this.value1
@@ -463,7 +463,8 @@ private object UShortSet4 {
 
 private class UShortSetNode(
         private val set1: UShortSet,
-        private val set2: UShortSet) extends UShortSet {
+        private val set2: UShortSet
+) extends UShortSet {
 
     private[this] var currentMax = (set2: SmallValuesSet).max
     def max = currentMax
@@ -534,7 +535,8 @@ private class UShortSetNode(
     def +≈:(uShortValue: UShort): UShortSet = {
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
-            s"no ushort value: $uShortValue")
+            s"no ushort value: $uShortValue"
+        )
 
         val set1Max = (set1: SmallValuesSet).max
         if (set1Max > uShortValue ||
@@ -544,9 +546,10 @@ private class UShortSetNode(
             val newSet1 = uShortValue +≈: set1
             if (newSet1 eq set1)
                 this
-            else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
+            //else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
+            else if ((set2.getClass eq classOf[UShortSet2]) && (newSet1.getClass eq classOf[UShortSetNode])) {
                 val tempNode = newSet1.asInstanceOf[UShortSetNode]
-                val v = tempNode.set2.asInstanceOf[UShortSet2].min
+                val v = tempNode.set2. /*asInstanceOf[UShortSet2].*/ min
                 new UShortSetNode(tempNode.set1, v +≈: set2)
             } else
                 new UShortSetNode(newSet1, set2)
@@ -596,7 +599,8 @@ private class UShortSetNode(
             System.identityHashCode(this),
             { i: Int ⇒ "UShortSetNode" },
             Map.empty,
-            List(set1.asGraph, set2.asGraph))
+            List(set1.asGraph, set2.asGraph)
+        )
 }
 
 private object EmptyUShortSet extends UShortSet {
@@ -621,7 +625,8 @@ private object EmptyUShortSet extends UShortSet {
     private[mutable] def asGraph: DefaultMutableNode[Int] =
         new DefaultMutableNode[Int](
             System.identityHashCode(this),
-            { i: Int ⇒ "EmptyUShortSet" })
+            { i: Int ⇒ "EmptyUShortSet" }
+        )
 }
 /**
  * Factory to create sets of unsigned short values.

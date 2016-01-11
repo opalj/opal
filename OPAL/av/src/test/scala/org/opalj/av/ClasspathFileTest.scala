@@ -74,7 +74,8 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         val listOfJARs = List[Regex](
             """.*(scalatest_2.11-.*.jar)""".r,
             """.*(scala-library-.*.jar)""".r,
-            """.*(scala-xml_2.11-.*.jar)""".r)
+            """.*(scala-xml_2.11-.*.jar)""".r
+        )
         val listOfPaths: Iterable[String] = PathToJARs(validClassPath, listOfJARs)
 
         val expectedListOfPaths = List[String](
@@ -91,7 +92,8 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             val listOfJARs = List[Regex](
                 """.*(scalatest_2.11-.*.jar)""".r,
                 """.*(scala-library-.*.jar)""".r,
-                """.*(scala.jar)""".r)
+                """.*(scala.jar)""".r
+            )
             PathToJARs(validClassPath, listOfJARs)
         }
 
@@ -99,7 +101,8 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             val listOfJARs = List[Regex](
                 """.*(scalatest_2.11-3.*.jar)""".r,
                 """.*(scala-library-.*.jar)""".r,
-                """.*(scala-xml_2.11-.*.jar)""".r)
+                """.*(scala-xml_2.11-.*.jar)""".r
+            )
             PathToJARs(invalidClassPath, listOfJARs)
         }
     }

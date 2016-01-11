@@ -35,12 +35,13 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
 import scala.collection.SortedSet
-import org.opalj.br._
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
 import org.opalj.collection.commonPrefix
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -67,7 +68,10 @@ import scala.reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing with PostEvaluationMemoryManagement {
+trait ArrayValues
+        extends l1.ReferenceValues
+        with PerInstructionPostProcessing
+        with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
 
     /**
@@ -144,18 +148,20 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION ABOUT N-DIMENSIONAL ARRAYS WHERE N IS
     // LARGER THAN 2 DUE TO THE LACK OF THE MODELING OF THE HEAP
     protected class InitializedArrayValue(
-        origin: ValueOrigin,
-        theType: ArrayType,
+        origin:      ValueOrigin,
+        theType:     ArrayType,
         val lengths: List[Int],
-        t: Timestamp)
+        t:           Timestamp
+    )
             extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
         this: DomainInitializedArrayValue ⇒
 
         def this(
-            origin: ValueOrigin,
+            origin:  ValueOrigin,
             theType: ArrayType,
-            length: Int,
-            t: Timestamp) = {
+            length:  Int,
+            t:       Timestamp
+        ) = {
             this(origin, theType, lengths = List(length), t)
         }
 
@@ -163,7 +169,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
         assert(
             lengths.size <= 2,
             s"tracking the concrete size of the ${lengths.size}th Dimension of arrays"+
-                "is not supported (we are not modeling the heap)")
+                "is not supported (we are not modeling the heap)"
+        )
 
         /**
          * The length of the first dimension of this multi-dimensional array.
@@ -171,8 +178,9 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
         override def length: Some[Int] = Some(lengths.head)
 
         override def updateT(
-            t: Timestamp,
-            origin: ValueOrigin, isNull: Answer): DomainArrayValue = {
+            t:      Timestamp,
+            origin: ValueOrigin, isNull: Answer
+        ): DomainArrayValue = {
             InitializedArrayValue(origin, theUpperTypeBound, lengths, t)
         }
 
@@ -187,16 +195,18 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
          *      timestamp of this array.)
          */
         override def doLoad(
-            pc: PC,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayLoadResult = {
+            pc:                  PC,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayLoadResult = {
             if (lengths.size > 1) {
                 val value =
                     InitializedArrayValue(
                         origin,
                         theType.componentType.asArrayType,
                         lengths.tail,
-                        nextT())
+                        nextT()
+                    )
                 ComputedValueOrException(value, potentialExceptions)
             } else {
                 super.doLoad(pc, index, potentialExceptions)
@@ -204,10 +214,11 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
         }
 
         override def doStore(
-            pc: PC,
-            value: DomainValue,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayStoreResult = {
+            pc:                  PC,
+            value:               DomainValue,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayStoreResult = {
 
             //println(s"$pc - $value - $index - $potentialExceptions")
 
@@ -239,7 +250,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
-            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+            other:  DomainSingleOriginReferenceValue
+        ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
                 case DomainInitializedArrayValue(that) if (this.theUpperTypeBound eq that.theUpperTypeBound) ⇒
@@ -355,26 +367,29 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
     // In that case it may be possible to load a value from the array and manipulate
     // it which could lead to a new domain value which is not referred to by the array!
     protected class ConcreteArrayValue(
-        origin: ValueOrigin,
-        theType: ArrayType,
+        origin:     ValueOrigin,
+        theType:    ArrayType,
         val values: Array[DomainValue],
-        t: Timestamp)
+        t:          Timestamp
+    )
             extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
         this: DomainConcreteArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
 
         override def doLoad(
-            loadPC: PC,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayLoadResult = {
+            loadPC:              PC,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayLoadResult = {
             if (potentialExceptions.nonEmpty) {
                 // - a "NullPointerException" is not possible
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
                 //   do not have enough information about the index...
                 return ComputedValueOrException(
                     TypedValue(loadPC, theUpperTypeBound.componentType),
-                    potentialExceptions)
+                    potentialExceptions
+                )
             }
 
             intValue[ArrayLoadResult](index) { index ⇒
@@ -387,10 +402,11 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
         }
 
         override def doStore(
-            storePC: PC,
-            value: DomainValue,
-            index: DomainValue,
-            potentialExceptions: ExceptionValues): ArrayStoreResult = {
+            storePC:             PC,
+            value:               DomainValue,
+            index:               DomainValue,
+            potentialExceptions: ExceptionValues
+        ): ArrayStoreResult = {
             // Here, a "NullPointerException" is not possible
 
             if (potentialExceptions.nonEmpty) {
@@ -431,7 +447,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
-            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+            other:  DomainSingleOriginReferenceValue
+        ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
                 case DomainConcreteArrayValue(that) if this.values.size == that.values.size && this.t == that.t ⇒
@@ -489,7 +506,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
                     val adaptedValues =
                         values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
                     thatDomain.ArrayValue(
-                        vo, theUpperTypeBound, adaptedValues).
+                        vo, theUpperTypeBound, adaptedValues
+                    ).
                         asInstanceOf[target.DomainValue]
 
                 case thatDomain: l1.ReferenceValues ⇒
@@ -530,9 +548,10 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
     }
 
     override def NewArray(
-        pc: PC,
-        count: DomainValue,
-        arrayType: ArrayType): DomainArrayValue = {
+        pc:        PC,
+        count:     DomainValue,
+        arrayType: ArrayType
+    ): DomainArrayValue = {
 
         val sizeOption = this.intValueOption(count)
         if (sizeOption.isEmpty)
@@ -548,7 +567,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
                     "analysis configuration",
                     s"tracking very large arrays (${arrayType.toJava}) "+
                         "usually incurrs significant overhead without increasing "+
-                        "the precision of the analysis.")
+                        "the precision of the analysis."
+                )
             )
         val virtualOrigin = 0xFFFF + pc * 1024
 
@@ -564,9 +584,10 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
     }
 
     override def NewArray(
-        origin: ValueOrigin,
-        counts: List[DomainValue],
-        arrayType: ArrayType): DomainArrayValue = {
+        origin:    ValueOrigin,
+        counts:    List[DomainValue],
+        arrayType: ArrayType
+    ): DomainArrayValue = {
         var intCounts: List[Int] = Nil
         counts.takeWhile { c ⇒
             intValue(c) { intCount ⇒ intCounts ::= intCount; true } { false }
@@ -583,20 +604,23 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing w
     //
 
     protected def ArrayValue( // for ArrayValue
-        origin: ValueOrigin,
+        origin:            ValueOrigin,
         theUpperTypeBound: ArrayType,
-        values: Array[DomainValue]): DomainArrayValue
+        values:            Array[DomainValue]
+    ): DomainArrayValue
 
     protected def ArrayValue( // for ArrayValue
-        origin: ValueOrigin,
+        origin:            ValueOrigin,
         theUpperTypeBound: ArrayType,
-        values: Array[DomainValue],
-        t: Timestamp): DomainArrayValue
+        values:            Array[DomainValue],
+        t:                 Timestamp
+    ): DomainArrayValue
 
     def InitializedArrayValue(
-        origin: ValueOrigin,
+        origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts: List[Int],
-        t: Timestamp): DomainArrayValue
+        counts:    List[Int],
+        t:         Timestamp
+    ): DomainArrayValue
 
 }

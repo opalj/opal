@@ -58,7 +58,8 @@ class TestFieldShouldBePackageProtected extends AnalysisTest {
             declaringClass,
             Some(ArrayType(IntegerType)),
             "array2",
-            "Should be package protected"))
+            "Should be package protected"
+        ))
     }
 
     it should "detect a public static final HashTable field" in {
@@ -68,7 +69,8 @@ class TestFieldShouldBePackageProtected extends AnalysisTest {
             declaringClass,
             Some(ObjectType("java/util/Hashtable")),
             "hashtb2",
-            "Should be package protected"))
+            "Should be package protected"
+        ))
     }
 
     it should "find 2 issues in total" in {

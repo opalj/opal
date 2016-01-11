@@ -67,15 +67,80 @@ trait RecordCFG
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
 
     abstract override def initProperties(
-        code: Code,
+        code:             Code,
         joinInstructions: BitSet,
-        initialLocals: Locals): Unit = {
+        initialLocals:    Locals
+    ): Unit = {
 
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
         exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
 
+        regularPredecessors = null;
+        exceptionHandlerPredecessors = null;
+
+        exitPCs = null;
+
         super.initProperties(code, joinInstructions, initialLocals)
+    }
+
+    private[this] var regularPredecessors: Array[UShortSet] = _
+    private[this] def getRegularPredecessors(): Array[UShortSet] = {
+        if (regularPredecessors == null) {
+            regularPredecessors = new Array[UShortSet](regularSuccessors.length)
+
+            for (pc ← code.programCounters if regularSuccessors(pc) != null) {
+                for (suc ← regularSuccessors(pc)) {
+                    if (regularPredecessors(suc) == null) {
+                        regularPredecessors(suc) = UShortSet.empty
+                    }
+                    regularPredecessors(suc) = pc +≈: regularPredecessors(suc)
+                }
+            }
+        }
+        regularPredecessors
+    }
+
+    private[this] var exceptionHandlerPredecessors: Array[UShortSet] = _
+    private[this] def getExceptionHandlerPredecessors(): Array[UShortSet] = {
+        if (exceptionHandlerPredecessors == null) {
+            exceptionHandlerPredecessors = new Array[UShortSet](exceptionHandlerSuccessors.length)
+
+            for (pc ← code.programCounters if exceptionHandlerSuccessors(pc) != null) {
+                for (suc ← exceptionHandlerSuccessors(pc)) {
+                    if (exceptionHandlerPredecessors(suc) == null) {
+                        exceptionHandlerPredecessors(suc) = UShortSet.empty
+                    }
+                    exceptionHandlerPredecessors(suc) = pc +≈: exceptionHandlerPredecessors(suc)
+                }
+            }
+        }
+        exceptionHandlerPredecessors
+    }
+
+    /**
+     * Returns all PCs that do not have a successor.
+     */
+    private[this] var exitPCs: PCs = _
+    def getExitPCs(): PCs = {
+        if (exitPCs == null) {
+            exitPCs = UShortSet.empty
+            for (pc ← code.programCounters if regularSuccessors(pc) == null && exceptionHandlerSuccessors(pc) == null) {
+                exitPCs = pc +≈: exitPCs.asInstanceOf[UShortSet]
+            }
+        }
+        exitPCs
+    }
+
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
+     * the evaluation of the previous instruction may succeed without raising an exception.
+     *
+     * @param a valid PC
+     */
+    def regularPredecessorsOf(pc: PC): PCs = {
+        val s = getRegularPredecessors()(pc)
+        if (s != null) s else NoPCs
     }
 
     /**
@@ -91,6 +156,17 @@ trait RecordCFG
      */
     def regularSuccessorsOf(pc: PC): PCs = {
         val s = regularSuccessors(pc)
+        if (s != null) s else NoPCs
+    }
+
+    /**
+     * Returns the program counter(s) of the instruction(s) that is(are) executed just prior if
+     * the evaluation of the previous instruction may raise an exception
+     *
+     * @param a valid PC
+     */
+    def exceptionHandlerPredecessorsOf(pc: PC): PCs = {
+        val s = getExceptionHandlerPredecessors()(pc)
         if (s != null) s else NoPCs
     }
 
@@ -129,6 +205,19 @@ trait RecordCFG
                 }
         }
         false
+    }
+
+    /**
+     * Returns the set of all instructions executed just prior to the instruction of the given pc.
+     */
+    def allPredecessorsOf(pc: PC): PCs = {
+        var reg = getRegularPredecessors()(pc)
+        if (reg == null) reg = UShortSet.empty
+
+        var exc = getExceptionHandlerPredecessors()(pc)
+        if (exc == null) exc = UShortSet.empty
+
+        reg ++ exc
     }
 
     /**
@@ -201,16 +290,19 @@ trait RecordCFG
      * @note This method is called by the abstract interpretation framework.
      */
     abstract override def flow(
-        currentPC: PC,
-        successorPC: PC,
-        isSuccessorSchedulued: Answer,
-        isExceptionalControlFlow: Boolean,
+        currentPC:                        PC,
+        currentOperands:                  Operands,
+        currentLocals:                    Locals,
+        successorPC:                      PC,
+        isSuccessorSchedulued:            Answer,
+        isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
-        wasJoinPerformed: Boolean,
-        worklist: List[PC],
-        operandsArray: OperandsArray,
-        localsArray: LocalsArray,
-        tracer: Option[AITracer]): List[PC] = {
+        wasJoinPerformed:                 Boolean,
+        worklist:                         List[PC],
+        operandsArray:                    OperandsArray,
+        localsArray:                      LocalsArray,
+        tracer:                           Option[AITracer]
+    ): List[PC] = {
 
         val successors =
             if (isExceptionalControlFlow)
@@ -228,13 +320,14 @@ trait RecordCFG
         }
 
         super.flow(
-            currentPC, successorPC,
-            isSuccessorSchedulued,
+            currentPC, currentOperands, currentLocals,
+            successorPC, isSuccessorSchedulued,
             isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
-            tracer)
+            tracer
+        )
     }
 
     /**
@@ -248,26 +341,26 @@ trait RecordCFG
         // 1. create nodes
         for (pc ← code.programCounters) {
             nodes(pc) = {
-                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
+                var visualProperties = Map("shape" → "box", "labelloc" → "l")
 
                 if (instructions(pc).isInstanceOf[ReturnInstruction]) {
-                    visualProperties += "fillcolor" -> "green"
-                    visualProperties += "style" -> "filled"
+                    visualProperties += "fillcolor" → "green"
+                    visualProperties += "style" → "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
-                    visualProperties += "fillcolor" -> "yellow"
-                    visualProperties += "style" -> "filled"
+                    visualProperties += "fillcolor" → "yellow"
+                    visualProperties += "style" → "filled"
                 } else if (allSuccessorsOf(pc).isEmpty) {
-                    visualProperties += "fillcolor" -> "red"
-                    visualProperties += "style" -> "filled"
-                    visualProperties += "shape" -> "octagon"
+                    visualProperties += "fillcolor" → "red"
+                    visualProperties += "style" → "filled"
+                    visualProperties += "shape" → "octagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
-                    visualProperties += "color" -> "orange"
+                    visualProperties += "color" → "orange"
                 }
 
                 if (code.exceptionHandlers.exists { eh ⇒ eh.handlerPC == pc }) {
-                    visualProperties += "peripheries" -> "2"
+                    visualProperties += "peripheries" → "2"
                 }
 
                 def pcsToString(pcs: List[PC]): String = {
@@ -282,7 +375,8 @@ trait RecordCFG
                     List(pc),
                     pcsToString,
                     visualProperties,
-                    List.empty[DefaultMutableNode[List[PC]]])
+                    List.empty[DefaultMutableNode[List[PC]]]
+                )
             }
         }
         // 2. create edges
@@ -293,7 +387,7 @@ trait RecordCFG
 
         // 3. fold nodes
         // Nodes that have only one successor and where the successor has only one
-        // predecessors are merged into one node; basically, we recreate the
+        // predecessor are merged into one node; basically, we recreate the
         // _effective_ basic blocks; an _effective_ basic block is a block where we do
         // _not observe_ any jumps in and out unless we are at the beginning or end of
         // the block

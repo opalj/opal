@@ -33,14 +33,16 @@ package l2
 
 import org.junit.runner.RunWith
 import org.junit.Ignore
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestSupport.locateTestResources
 
-import org.opalj.br._
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
@@ -50,7 +52,7 @@ import org.opalj.ai.domain.DefaultRecordMethodCallResults
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExecution {
+class PerformInvocationsTest extends FlatSpec with Matchers {
 
     import PerformInvocationsTestFixture._
 
@@ -243,8 +245,8 @@ object PerformInvocationsTestFixture {
 
     abstract class InvocationDomain(
         val project: Project[java.net.URL],
-        val method: Method)
-            extends Domain
+        val method:  Method
+    ) extends Domain
             with l0.TypeLevelInvokeInstructions
             with PerformInvocations
             with DefaultHandlingOfMethodResults
@@ -253,34 +255,44 @@ object PerformInvocationsTestFixture {
 
         def isRecursive(
             definingClass: ClassFile,
-            method: Method,
-            operands: Operands): Boolean = false
+            method:        Method,
+            operands:      Operands
+        ): Boolean = false
 
         def shouldInvocationBePerformed(
             definingClass: ClassFile,
-            method: Method): Boolean = true
+            method:        Method
+        ): Boolean = true
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain
+            method:  Method
+        ): InvocationDomain
 
         override val useExceptionsThrownByCalledMethod = true
 
         type CalledMethodDomain = Domain with MethodCallResults
 
-        def calledMethodDomain(classFiel: ClassFile, method: Method): Domain with MethodCallResults =
+        def calledMethodDomain(
+            classFiel: ClassFile,
+            method:    Method
+        ): Domain with MethodCallResults =
             createInvocationDomain(project, method)
 
         def calledMethodAI = BaseAI
 
     }
 
-    class LiInvocationDomain(project: Project[java.net.URL], method: Method)
+    class LiInvocationDomain(
+        project: Project[java.net.URL],
+        method:  Method
+    )
             extends InvocationDomain(project, method) with LiDomain {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain = new LiInvocationDomain(project, method)
+            method:  Method
+        ): InvocationDomain = new LiInvocationDomain(project, method)
     }
 
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
@@ -288,7 +300,8 @@ object PerformInvocationsTestFixture {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
-            method: Method): InvocationDomain = new L1InvocationDomain(project, method)
+            method:  Method
+        ): InvocationDomain = new L1InvocationDomain(project, method)
     }
 
     val testClassFileName = "classfiles/performInvocations.jar"

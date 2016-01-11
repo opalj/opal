@@ -31,7 +31,7 @@ package ai
 package dataflow
 package spec
 
-import scala.collection.{ Map, Set }
+import scala.collection.{Map, Set}
 
 import bi.AccessFlagsMatcher
 
@@ -59,8 +59,9 @@ trait SourcesAndSinks {
     def sourceValues: Map[Method, Set[ValueOrigin]] = theSourceValues
 
     def sources(
-        filter: Function[ClassFile, Boolean],
-        matcher: PartialFunction[Method, Set[ValueOrigin]]): Unit = {
+        filter:  Function[ClassFile, Boolean],
+        matcher: PartialFunction[Method, Set[ValueOrigin]]
+    ): Unit = {
 
         sourceMatchers =
             new AValueLocationMatcher {

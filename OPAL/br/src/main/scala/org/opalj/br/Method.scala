@@ -39,6 +39,7 @@ import bi.AccessFlagsContexts
 import bi.AccessFlags
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.VisibilityModifier
+import org.opalj.br.instructions.Instruction
 
 /**
  * Represents a single method.
@@ -66,12 +67,14 @@ import org.opalj.bi.VisibilityModifier
  * @author Marco Torsello
  */
 final class Method private (
-    val accessFlags: Int,
-    val name: String,
-    val descriptor: MethodDescriptor,
-    val body: Option[Code],
-    val attributes: Attributes)
-        extends ClassMember with scala.math.Ordered[Method] {
+        val accessFlags: Int,
+        val name:        String,
+        val descriptor:  MethodDescriptor,
+        val body:        Option[Code],
+        val attributes:  Attributes
+) extends ClassMember with scala.math.Ordered[Method] with InstructionsContainer {
+
+    final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     final override def isMethod = true
 
@@ -105,9 +108,10 @@ final class Method private (
      *      dispatch.
      */
     def hasSameSignature(
-        name: String,
-        descriptor: MethodDescriptor,
-        ignoreReturnType: Boolean): Boolean = {
+        name:             String,
+        descriptor:       MethodDescriptor,
+        ignoreReturnType: Boolean
+    ): Boolean = {
         this.name == name && {
             if (ignoreReturnType)
                 this.descriptor.equalParameters(descriptor)
@@ -166,6 +170,8 @@ final class Method private (
     final def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
+
+    final def isNotAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) == 0
 
     final def isConstructor: Boolean = name == "<init>"
 
@@ -226,7 +232,7 @@ final class Method private (
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
         val method =
             if (jAccessFlags.nonEmpty)
-                " "+descriptor.toJava(name)
+                jAccessFlags+" "+descriptor.toJava(name)
             else
                 descriptor.toJava(name)
 
@@ -251,17 +257,60 @@ object Method {
     final val writeObjectDescriptor =
         MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
 
-    def isObjectSerializationRelated(method: Method): Boolean = {
+    final val readObjectInputDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
+
+    final val writeObjectOutputDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
+
+    /**
+     * Returns `true` if the method is object serialization related.
+     * That is, if the declaring class is `Externalizable` then the methods readObject and
+     * writeObject are unused.
+     * If the declaring class is '''only''' `Seralizable` then the write and read
+     * external methods are not serialization related unless a subclass exists that inherits
+     * these two methods and implements the interface `Externalizable`.
+     *
+     * @note Calling this method only makes sense if the given class or a subclass thereof
+     *       is at least `Serializable`.
+     *
+     * @param method A method defined by a class that inherits from Serializable or which has
+     * 			at least one sublcass that is Serializable and that inherits the given method.
+     * @param isInheritedBySerializableOnlyClass This parameter should be `Yes` iff this method is
+     *      defined in a `Serializable` class or is inherited by at least one class that is
+     *      (just) `Serializable`, but which is not `Externalizable`.
+     * @param isInheritedByExternalizableClass This parameter should be `Yes` iff the method's
+     *      defining class is `Externalizable` or if this method is inherited by at least one class
+     *      that is `Externalizable`.
+     */
+    def isObjectSerializationRelated(
+        method:                             Method,
+        isInheritedBySerializableOnlyClass: ⇒ Answer,
+        isInheritedByExternalizableClass:   ⇒ Answer
+    ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
 
         /*The default constructor is used by the deserialization process*/
         (method.name == "<init>" && method.descriptor == NoArgsAndReturnVoid) ||
             (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
-            (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
-            (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
             (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
-            (method.name == "writeReplace" && method.descriptor == JustReturnsObject)
+            (method.name == "writeReplace" && method.descriptor == JustReturnsObject) ||
+            (
+
+                (
+                    (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
+                    (method.name == "writeObject" && method.descriptor == writeObjectDescriptor)
+                ) && isInheritedBySerializableOnlyClass.isYesOrUnknown
+            ) ||
+                    (
+                        method.isPublic /*we are implementing an interface...*/ &&
+                        (
+                            (method.name == "readExternal" && method.descriptor == readObjectInputDescriptor) ||
+                            (method.name == "writeExternal" && method.descriptor == writeObjectOutputDescriptor)
+                        ) &&
+                            isInheritedByExternalizableClass.isYesOrUnknown
+                    )
     }
 
     final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
@@ -276,9 +325,10 @@ object Method {
      */
     def apply(
         accessFlags: Int,
-        name: String,
-        descriptor: MethodDescriptor,
-        attributes: Attributes): Method = {
+        name:        String,
+        descriptor:  MethodDescriptor,
+        attributes:  Attributes
+    ): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody =
@@ -291,7 +341,8 @@ object Method {
             name.intern(),
             descriptor,
             theBody,
-            remainingAttributes)
+            remainingAttributes
+        )
     }
 
     /**
@@ -304,11 +355,12 @@ object Method {
      * }}}
      */
     def apply(
-        accessFlags: Int = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
-        name: String,
+        accessFlags:    Int                   = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
+        name:           String,
         parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty,
-        returnType: Type = VoidType,
-        attributes: Attributes = Seq.empty[Attribute]): Method = {
+        returnType:     Type                  = VoidType,
+        attributes:     Attributes            = Seq.empty[Attribute]
+    ): Method = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 

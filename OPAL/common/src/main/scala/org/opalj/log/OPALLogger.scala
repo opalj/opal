@@ -85,8 +85,8 @@ trait OPALLogger {
  * }}}
  *
  * ==Initialization==
- * If the [[GlobalLogContext]] should not use the [[ConsoleOPALLogger]] then __the
- * logger has to be changed '''before the first usage of the [[GlobalLogContext]]'''__.
+ * If the [[GlobalLogContext]] should not use the default [[ConsoleOPALLogger]] then the
+ * logger can be changed using `updateLogger`.
  *
  * ==Thread Safety==
  * Thread safe.
@@ -95,20 +95,13 @@ trait OPALLogger {
  */
 object OPALLogger extends OPALLogger {
 
-    private[log] final val globalContextMutex = new Object
-
     @volatile private[this] var loggers: Array[OPALLogger] = new Array(32);
 
-    private[log] var globalContextCreated: Boolean = false
-
-    @volatile private[log] var globalContextLogger: OPALLogger =
-        new ConsoleOPALLogger(ansiColored = true)
-
-    def initGlobalContextLogger(logger: OPALLogger) = globalContextMutex.synchronized {
-        if (globalContextCreated)
-            throw new RuntimeException(
-                "the global context is already created; the logger can no longer be changed")
-        globalContextLogger = logger
+    def updateLogger(ctx: LogContext, logger: OPALLogger): Unit = this.synchronized {
+        val id = ctx.id
+        assert(id != -1, "context is not yet registered")
+        assert(id != -2, "context is already unregistered")
+        loggers(id) = logger
     }
 
     /**
@@ -116,36 +109,40 @@ object OPALLogger extends OPALLogger {
      * specified logger with the context.
      */
     def register(
-        ctx: LogContext,
-        logger: OPALLogger = new ConsoleOPALLogger(true)): Unit =
-        this.synchronized {
-            if (ctx.id == -1) {
-                val id = nextId
-                if (nextId == loggers.length) {
-                    val newLoggers: Array[OPALLogger] = new Array(loggers.length * 2 + 1)
-                    System.arraycopy(loggers, 0, newLoggers, 0, loggers.length)
-                    loggers = newLoggers
-                }
-                loggers(id) = logger
-                ctx.id = id
-                nextId += 1
-            } else if (ctx.id >= 0) {
-                throw new RuntimeException("reregistration of a log context is not supported")
-            } else
-                throw new RuntimeException("reregistration of an unregistered log context is not supported")
+        ctx:    LogContext,
+        logger: OPALLogger = new ConsoleOPALLogger(true)
+    ): Unit = this.synchronized {
+        if (ctx.id == -1) {
+            val id = nextId
+            if (nextId == loggers.length) {
+                val newLoggers: Array[OPALLogger] = new Array(loggers.length * 2 + 1)
+                System.arraycopy(loggers, 0, newLoggers, 0, loggers.length)
+                loggers = newLoggers
+            }
+            loggers(id) = logger
+            ctx.id = id
+            nextId += 1
+        } else if (ctx.id >= 0) {
+            throw new RuntimeException("reregistration of a log context is not supported")
+        } else
+            throw new RuntimeException("reregistration of an unregistered log context is not supported")
+    }
+
+    def unregister(ctx: LogContext): Unit = this.synchronized {
+        if (ctx == GlobalLogContext) {
+            val message = "unregistering the core global log context is not supported"
+            throw new IllegalArgumentException(message)
         }
 
-    def unregister(ctx: LogContext): Unit =
-        this.synchronized {
-            val ctxId = ctx.id
-            if (ctxId + 1 == nextId) nextId = ctxId
-            loggers(ctxId) = null
-            ctx.id = -2
-        }
+        val ctxId = ctx.id
+        if (ctxId + 1 == nextId) nextId = ctxId
+        loggers(ctxId) = null
+        ctx.id = -2
+    }
 
     def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
 
-    def globalLogger(): OPALLogger = this.synchronized(loggers(GlobalLogContext.id))
+    def globalLogger(): OPALLogger = this.synchronized { loggers(GlobalLogContext.id) }
 
     // stores the next context id - access must be explicitly synchronized!
     private[log] var nextId: Int = 0
@@ -153,20 +150,36 @@ object OPALLogger extends OPALLogger {
     // IMPLEMENTATION OF THE LOGGING FACILITIES
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        loggers(ctx.id).log(message)
+        logger(ctx).log(message)
     }
 
     def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        loggers(ctx.id).logOnce(message)
+        logger(ctx).logOnce(message)
     }
 
     /**
-     * Debug message are only included in the code if assertions are turned. If
+     * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
      */
     @elidable(ASSERTION)
     final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = {
         log(Info(category, message))
+    }
+
+    /**
+     * Debug message are only included in the code if assertions are turned on and the predicate `p`
+     * evaluates to `true`. If
+     * debug message are logged, then they are logged as Info-level messages.
+     */
+    @elidable(ASSERTION)
+    final def debug(
+        p:        ⇒ Boolean,
+        category: String,
+        message:  ⇒ String
+    )(implicit ctx: LogContext): Unit = {
+        if (p) {
+            log(Info(category, message))
+        }
     }
 
     /**
@@ -228,8 +241,9 @@ object OPALLogger extends OPALLogger {
      */
     final def error(
         category: String,
-        message: String,
-        t: Throwable)(implicit ctx: LogContext): Unit = {
+        message:  String,
+        t:        Throwable
+    )(implicit ctx: LogContext): Unit = {
         log(Error(category, message, t))
     }
 }

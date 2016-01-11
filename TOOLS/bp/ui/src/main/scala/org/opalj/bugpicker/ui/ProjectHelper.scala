@@ -32,10 +32,8 @@ package ui
 
 import java.io.File
 import java.net.URL
-
 import scala.collection.JavaConversions
 import scala.language.implicitConversions
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -44,7 +42,6 @@ import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.log.OPALLogger
-
 import scalafx.application.Platform
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
@@ -59,28 +56,34 @@ import scalafx.scene.layout.HBox
 import scalafx.scene.Scene
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 object ProjectHelper {
 
     private[this] implicit val logContext = org.opalj.log.GlobalLogContext
 
     def setupProject(
-        loadedFiles: LoadedFiles,
-        parentStage: Stage,
-        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): (Project[URL], Seq[File]) = {
+        loadedFiles:        LoadedFiles,
+        parentStage:        Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]
+    ): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage, projectLogMessages)
+        val config = loadedFiles.config
+        val project = setupProject(files, libs, config, parentStage, projectLogMessages)
         (project, sources)
     }
 
     def setupProject(
-        cpFiles: Iterable[File],
-        libcpFiles: Iterable[File],
-        parentStage: Stage,
-        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): Project[URL] = {
+        cpFiles:            Iterable[File],
+        libcpFiles:         Iterable[File],
+        config:             Option[Config],
+        parentStage:        Stage,
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]
+    ): Project[URL] = {
         OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
@@ -92,7 +95,9 @@ object ProjectHelper {
                 Java8ClassFileReader.ClassFiles,
                 (file) ⇒ OPALLogger.info(
                     "creating project",
-                    "project class path member: "+file.toString))
+                    "project class path member: "+file.toString
+                )
+            )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
@@ -102,7 +107,9 @@ object ProjectHelper {
                     Java8LibraryClassFileReader.ClassFiles,
                     (file) ⇒ OPALLogger.info(
                         "creating project",
-                        "library class path member: "+file.toString))
+                        "library class path member: "+file.toString
+                    )
+                )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -114,13 +121,22 @@ object ProjectHelper {
                 OPALLogger.error(
                     "creating project",
                     "an exception occured while creating project; the responsible class file is ignored",
-                    exception)
+                    exception
+                )
             }
         }
 
+        val defaultConfig = ConfigFactory.load()
+        val projectConfig = config match {
+            case Some(config) ⇒ config.withFallback(defaultConfig)
+            case None         ⇒ defaultConfig
+        }
         Project(
-            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
-                projectLogger = new BugPickerOPALLogger(projectLogMessages))
+            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty
+        )(
+            config = projectConfig,
+            projectLogger = new BugPickerOPALLogger(projectLogMessages)
+        )
     }
 }
 

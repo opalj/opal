@@ -44,8 +44,8 @@ import org.opalj.ai.domain.l1.DefaultDomain
 /**
  * Tests the conversion of parsed methods to a quadruple representation
  *
- * @author Michael Eichberg
  * @author Roberts Kolosovs
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class StackAndSynchronizationTest extends FunSpec with Matchers {
@@ -69,27 +69,48 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
 
         describe("using no AI results") {
             it("should correctly reflect pop") {
-                val statements = AsQuadruples(PopMethod, None)
+                val statements = AsQuadruples(PopMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length > 0)
                 statements.shouldEqual(Array(
-                    Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                    Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnInt", MethodDescriptor(IndexedSeq[FieldType](), IntegerType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeInt))),
-                    EmptyStmt(4),
-                    Return(5)))
+                    Assignment(
+                        -1,
+                        SimpleVar(-1, ComputationalTypeReference),
+                        Param(ComputationalTypeReference, "this")
+                    ),
+                    Assignment(
+                        0,
+                        SimpleVar(0, ComputationalTypeReference),
+                        SimpleVar(-1, ComputationalTypeReference)
+                    ),
+                    Assignment(
+                        1,
+                        SimpleVar(0, ComputationalTypeInt),
+                        VirtualFunctionCall(
+                            1,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "returnInt",
+                            MethodDescriptor(IndexedSeq[FieldType](), IntegerType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List()
+                        )
+                    ),
+                    Nop(4),
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect pop2 mode 2") {
-                val statements = AsQuadruples(Pop2Case2Method, None)
+                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -97,19 +118,32 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnDouble", MethodDescriptor(IndexedSeq[FieldType](), DoubleType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeDouble))),
-                    EmptyStmt(4),
-                    Return(5)))
+                    Assignment(
+                        1,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        VirtualFunctionCall(
+                            1,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "returnDouble",
+                            MethodDescriptor(IndexedSeq[FieldType](), DoubleType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List()
+                        )
+                    ),
+                    Nop(4),
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect dup") {
-                val statements = AsQuadruples(DupMethod, None)
+                val statements = AsQuadruples(method = DupMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -117,21 +151,23 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
-                    EmptyStmt(3),
-                    MethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
+                    Nop(3),
+                    NonVirtualMethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(8)))
+                    Return(8)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
-                    "3: op_0/*java.lang.Object*/.<init>();",
+                    "3: op_0/* (Non-Virtual) java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect monitorenter and -exit") {
-                val statements = AsQuadruples(MonitorEnterAndExitMethod, None)
+                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -139,7 +175,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    EmptyStmt(1),
+                    Nop(1),
                     Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -150,7 +186,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
                     Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)))
+                    Return(14)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
@@ -165,11 +202,12 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "10: monitorexit op_0;",
                     "11: op_0 = r_2;",
                     "12: throw op_0;",
-                    "13: return;"))
+                    "13: return;"
+                ))
             }
 
             it("should correctly reflect invokestatic") {
-                val statements = AsQuadruples(InvokeStaticMethod, None)
+                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -178,20 +216,32 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 1)),
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
-                    MethodCall(2, ObjectType("tactest/StackManipulationAndSynchronization"), "staticMethod", MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType), None, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), Some(SimpleVar(0, ComputationalTypeInt))),
+                    Assignment(
+                        2,
+                        SimpleVar(0, ComputationalTypeInt),
+                        StaticFunctionCall(
+                            2,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "staticMethod",
+                            MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType),
+                            List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt))
+                        )
+                    ),
                     Assignment(5, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_0, op_1);",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect invokeinterface") {
-                val statements = AsQuadruples(InvokeInterfaceMethod, None)
+                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -199,29 +249,42 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
-                    EmptyStmt(3),
-                    MethodCall(4, ObjectType("java/util/ArrayList"), "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
+                    Nop(3),
+                    NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
-                    EmptyStmt(12),
-                    MethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(1, ComputationalTypeReference)), List(), None),
-                    MethodCall(16, ObjectType("java/util/List"), "add", MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType), Some(SimpleVar(0, ComputationalTypeReference)), List(SimpleVar(1, ComputationalTypeReference)), Some(SimpleVar(0, ComputationalTypeInt))),
-                    EmptyStmt(21),
-                    Return(22)))
+                    Nop(12),
+                    NonVirtualMethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(1, ComputationalTypeReference), List()),
+                    Assignment(
+                        16,
+                        SimpleVar(0, ComputationalTypeInt),
+                        VirtualFunctionCall(
+                            16,
+                            ObjectType("java/util/List"),
+                            "add",
+                            MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List(SimpleVar(1, ComputationalTypeReference))
+                        )
+                    ),
+                    Nop(21),
+                    Return(22)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
                     "2: ;",
-                    "3: op_0/*java.util.ArrayList*/.<init>();",
+                    "3: op_0/* (Non-Virtual) java.util.ArrayList*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: op_0 = r_1;",
                     "6: op_1 = new Object;",
                     "7: ;",
-                    "8: op_1/*java.lang.Object*/.<init>();",
+                    "8: op_1/* (Non-Virtual) java.lang.Object*/.<init>();",
                     "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
-                    "11: return;"))
+                    "11: return;"
+                ))
             }
         }
 
@@ -229,7 +292,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect pop") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, PopMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, PopMethod, domain)
-                val statements = AsQuadruples(PopMethod, Some(aiResult))
+                val statements = AsQuadruples(method = PopMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -237,21 +300,34 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnInt", MethodDescriptor(IndexedSeq[FieldType](), IntegerType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeInt))),
-                    EmptyStmt(4),
-                    Return(5)))
+                    Assignment(
+                        1,
+                        SimpleVar(0, ComputationalTypeInt),
+                        VirtualFunctionCall(
+                            1,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "returnInt",
+                            MethodDescriptor(IndexedSeq[FieldType](), IntegerType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List()
+                        )
+                    ),
+                    Nop(4),
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnInt();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect pop2 mode 2") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, Pop2Case2Method)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, Pop2Case2Method, domain)
-                val statements = AsQuadruples(Pop2Case2Method, Some(aiResult))
+                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -259,21 +335,34 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    MethodCall(1, ObjectType("tactest/StackManipulationAndSynchronization"), "returnDouble", MethodDescriptor(IndexedSeq[FieldType](), DoubleType), Some(SimpleVar(0, ComputationalTypeReference)), List(), Some(SimpleVar(0, ComputationalTypeDouble))),
-                    EmptyStmt(4),
-                    Return(5)))
+                    Assignment(
+                        1,
+                        SimpleVar(0, ComputationalTypeDouble),
+                        VirtualFunctionCall(
+                            1,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "returnDouble",
+                            MethodDescriptor(IndexedSeq[FieldType](), DoubleType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List()
+                        )
+                    ),
+                    Nop(4),
+                    Return(5)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
                     "2: op_0 = op_0/*tactest.StackManipulationAndSynchronization*/.returnDouble();",
                     "3: ;",
-                    "4: return;"))
+                    "4: return;"
+                ))
             }
 
             it("should correctly reflect dup") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, DupMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, DupMethod, domain)
-                val statements = AsQuadruples(DupMethod, Some(aiResult))
+                val statements = AsQuadruples(method = DupMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -281,23 +370,25 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
-                    EmptyStmt(3),
-                    MethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
+                    Nop(3),
+                    NonVirtualMethodCall(4, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
-                    Return(8)))
+                    Return(8)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new Object;",
                     "2: ;",
-                    "3: op_0/*java.lang.Object*/.<init>();",
+                    "3: op_0/* (Non-Virtual) java.lang.Object*/.<init>();",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect monitorenter and -exit") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, MonitorEnterAndExitMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, MonitorEnterAndExitMethod, domain)
-                val statements = AsQuadruples(MonitorEnterAndExitMethod, Some(aiResult))
+                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -305,7 +396,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
-                    EmptyStmt(1),
+                    Nop(1),
                     Assignment(2, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     MonitorEnter(3, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
@@ -316,7 +407,8 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     MonitorExit(11, SimpleVar(0, ComputationalTypeReference)),
                     Assignment(12, SimpleVar(0, ComputationalTypeReference), SimpleVar(-3, ComputationalTypeReference)),
                     Throw(13, SimpleVar(0, ComputationalTypeReference)),
-                    Return(14)))
+                    Return(14)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = r_0;",
@@ -331,13 +423,14 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     "10: monitorexit op_0;",
                     "11: op_0 = r_2;",
                     "12: throw op_0;",
-                    "13: return;"))
+                    "13: return;"
+                ))
             }
 
             it("should correctly reflect invokestatic") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeStaticMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeStaticMethod, domain)
-                val statements = AsQuadruples(InvokeStaticMethod, Some(aiResult))
+                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -346,22 +439,34 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 1)),
                     Assignment(1, SimpleVar(1, ComputationalTypeInt), IntConst(1, 2)),
-                    MethodCall(2, ObjectType("tactest/StackManipulationAndSynchronization"), "staticMethod", MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType), None, List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)), Some(SimpleVar(0, ComputationalTypeInt))),
+                    Assignment(
+                        2,
+                        SimpleVar(0, ComputationalTypeInt),
+                        StaticFunctionCall(
+                            2,
+                            ObjectType("tactest/StackManipulationAndSynchronization"),
+                            "staticMethod",
+                            MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType),
+                            List(SimpleVar(1, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt))
+                        )
+                    ),
                     Assignment(5, SimpleVar(-2, ComputationalTypeInt), SimpleVar(0, ComputationalTypeInt)),
-                    Return(6)))
+                    Return(6)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = 1;",
                     "2: op_1 = 2;",
-                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_1, op_0);",
+                    "3: op_0 = tactest.StackManipulationAndSynchronization.staticMethod(op_0, op_1);",
                     "4: r_1 = op_0;",
-                    "5: return;"))
+                    "5: return;"
+                ))
             }
 
             it("should correctly reflect invokeinterface") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeInterfaceMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeInterfaceMethod, domain)
-                val statements = AsQuadruples(InvokeInterfaceMethod, Some(aiResult))
+                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -369,29 +474,56 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
                 statements.shouldEqual(Array(
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
-                    EmptyStmt(3),
-                    MethodCall(4, ObjectType("java/util/ArrayList"), "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(0, ComputationalTypeReference)), List(), None),
+                    Nop(3),
+                    NonVirtualMethodCall(
+                        4,
+                        ObjectType("java/util/ArrayList"),
+                        "<init>",
+                        MethodDescriptor(IndexedSeq[FieldType](), VoidType),
+                        SimpleVar(0, ComputationalTypeReference),
+                        List()
+                    ),
                     Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                     Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                     Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
-                    EmptyStmt(12),
-                    MethodCall(13, ObjectType.Object, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), Some(SimpleVar(1, ComputationalTypeReference)), List(), None),
-                    MethodCall(16, ObjectType("java/util/List"), "add", MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType), Some(SimpleVar(0, ComputationalTypeReference)), List(SimpleVar(1, ComputationalTypeReference)), Some(SimpleVar(0, ComputationalTypeInt))),
-                    EmptyStmt(21),
-                    Return(22)))
+                    Nop(12),
+                    NonVirtualMethodCall(
+                        13,
+                        ObjectType.Object,
+                        "<init>",
+                        MethodDescriptor(IndexedSeq[FieldType](), VoidType),
+                        SimpleVar(1, ComputationalTypeReference),
+                        List()
+                    ),
+                    Assignment(
+                        16,
+                        SimpleVar(0, ComputationalTypeInt),
+                        VirtualFunctionCall(
+                            16,
+                            ObjectType("java/util/List"),
+                            "add",
+                            MethodDescriptor(IndexedSeq(ObjectType.Object), BooleanType),
+                            SimpleVar(0, ComputationalTypeReference),
+                            List(SimpleVar(1, ComputationalTypeReference))
+                        )
+                    ),
+                    Nop(21),
+                    Return(22)
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: op_0 = new ArrayList;",
                     "2: ;",
-                    "3: op_0/*java.util.ArrayList*/.<init>();",
+                    "3: op_0/* (Non-Virtual) java.util.ArrayList*/.<init>();",
                     "4: r_1 = op_0;",
                     "5: op_0 = r_1;",
                     "6: op_1 = new Object;",
                     "7: ;",
-                    "8: op_1/*java.lang.Object*/.<init>();",
+                    "8: op_1/* (Non-Virtual) java.lang.Object*/.<init>();",
                     "9: op_0 = op_0/*java.util.List*/.add(op_1);",
                     "10: ;",
-                    "11: return;"))
+                    "11: return;"
+                ))
             }
         }
     }

@@ -103,17 +103,20 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
+        project:       Project[Source],
+        parameters:    Seq[String]     = List.empty,
+        isInterrupted: () ⇒ Boolean
+    ): Iterable[FieldBasedReport[Source]] = {
 
         // TODO: Currently doesn't detect cases where Serializable is implemented
         //indirectly, e.g. through java.io.File which implements Serializable but is
         //typically not analyzed by OPAL. Thus, in general, if some super types are
         //unknown, this analysis should generate reports with lower severity, or perhaps
         //none at all, about serialVersionUID.
-        val serializables = project.classHierarchy.allSubtypes(ObjectType.Serializable,
-            false)
+        val serializables = project.classHierarchy.allSubtypes(
+            ObjectType.Serializable,
+            false
+        )
 
         /*
          * Check whether a field is the special `serialVersionUID` field of a
@@ -147,7 +150,7 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
                 field ← classFile.fields
                 if field.isPrivate && !isSerialVersionUID(declaringClass, field)
             } {
-                privateFields += field.name -> field
+                privateFields += field.name → field
                 if (field.isFinal && field.constantFieldValue.isDefined) {
                     unusedConstants += field.constantFieldValue.get
                 }
@@ -156,9 +159,9 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
             // Since we're looking for `private` fields we only have to analyze their
             // class'es methods - and the methods of any inner classes.
             val classFiles = scala.collection.mutable.Set[ClassFile]() + classFile
-            classFile.foreachNestedClass(project, { nestedClass ⇒
+            classFile.foreachNestedClass({ nestedClass ⇒
                 classFiles += nestedClass
-            })
+            })(project)
 
             val methods = classFiles.map(_.methods).flatten
             val constructors = classFiles.map(_.constructors).flatten
@@ -184,7 +187,7 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
             // will cause all these fields to be treated as used.
             if (unusedConstants.nonEmpty) {
                 val occurrences = scala.collection.mutable.Map[ConstantValue[_], Int]() ++
-                    unusedConstants.map(value ⇒ value -> 0)
+                    unusedConstants.map(value ⇒ value → 0)
 
                 for (MethodWithBody(body) ← constructors) {
                     foreachConstantLoad(body, { value ⇒
@@ -227,7 +230,8 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
                     Severity.Info,
                     declaringClass,
                     field,
-                    "Is private and unused") :: reports
+                    "Is private and unused"
+                ) :: reports
             }
         }
 

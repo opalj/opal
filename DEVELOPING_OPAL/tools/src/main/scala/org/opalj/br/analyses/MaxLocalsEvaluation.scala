@@ -29,59 +29,56 @@
 package org.opalj
 package br
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 
 /**
  * Evaluates the number of locals (Local Variables/Registers) required to evaluate a method.
  *
  * @author Michael Eichberg
  */
-object MaxLocalsEvaluation extends AnalysisExecutor {
+object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def description: String =
+        "Collects information about the maxium number of registers required per method."
 
-        override def description: String =
-            "Collects information about the maxium number of registers required per method."
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+        import scala.collection.immutable.TreeMap // <= Sorted...
+        var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
+        var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
 
-            import scala.collection.immutable.TreeMap // <= Sorted...
-            var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
-            var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
+        for {
+            classFile ← project.allProjectClassFiles
+            method @ MethodWithBody(body) ← classFile.methods
+        } {
+            val parametersCount =
+                method.descriptor.parametersCount +
+                    (if (method.isStatic) 0 else 1)
 
-            for {
-                classFile ← project.allProjectClassFiles
-                method @ MethodWithBody(body) ← classFile.methods
-            } {
-                val parametersCount =
-                    method.descriptor.parametersCount +
-                        (if (method.isStatic) 0 else 1)
+            methodParametersDistribution =
+                methodParametersDistribution.updated(
+                    parametersCount,
+                    methodParametersDistribution.getOrElse(parametersCount, 0) + 1
+                )
 
-                methodParametersDistribution =
-                    methodParametersDistribution.updated(
-                        parametersCount,
-                        methodParametersDistribution.getOrElse(parametersCount, 0) + 1
-                    )
-
-                maxLocalsDistrbution =
-                    maxLocalsDistrbution.updated(
-                        body.maxLocals,
-                        maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
-                    )
-            }
-
-            BasicReport("Results\n\n"+
-                "Method Parameters Distribution:\n"+
-                "#Parameters\tFrequency:\n"+
-                methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+
-                "MaxLocals Distribution:\n"+
-                "#Locals\t\tFrequency:\n"+
-                maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")
-            )
+            maxLocalsDistrbution =
+                maxLocalsDistrbution.updated(
+                    body.maxLocals,
+                    maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
+                )
         }
+
+        BasicReport("Results\n\n"+
+            "Method Parameters Distribution:\n"+
+            "#Parameters\tFrequency:\n"+
+            methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+
+            "MaxLocals Distribution:\n"+
+            "#Locals\t\tFrequency:\n"+
+            maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n"))
     }
 }

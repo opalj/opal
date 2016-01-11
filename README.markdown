@@ -6,15 +6,15 @@ OPAL was designed from the ground up with *extensibility*, *adaptability* and *s
 # Project Structure
 OPAL consists of several projects which are found in the folder OPAL:
 
-* **Common**(OPAL/common): Contains common helper classes.
+* **Common**(OPAL/common): Contains common helper classes such as generic data structures and graph algorithms.
 
 * **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java bytecode.  
 
-* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that creates a beautiful HTML file of Java class files.
+* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that creates a beautiful HTML representatoin of Java class files. An Eclipse plug-in is found in (OPAL/TOOLS/ep).
 
-* **Bytecode Representation**(OPAL/br): OPAL's primary representation of Java bytecode. Implements all functionality for creating a representation of Java class files.  
+* **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.  
 
-* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 
+* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at very different levels of precision. 
 
 * **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
 
@@ -29,10 +29,10 @@ OPAL consists of several projects which are found in the folder OPAL:
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 7 or 8, Scala 2.11.6 and SBT 0.13.8 installed and running. Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8, Scala 2.11.7 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder. 
 
-* Call `sbt clean clean-files cleanCache cleanCacheFiles eclipse copyResources it:compile test:compile unidoc publishLocal`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
+* Call `sbt clean clean-files clean-cache clean-local eclipse copyResources it:compile test:compile unidoc publishLocal copyToEclipsePlugin`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * Go to the `TOOLS/bp` folder and call `sbt compile`to compile the BugPicker. You can run the BugPicker using `sbt run`.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
 -Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5")
@@ -43,7 +43,7 @@ Go to OPAL's root folder.
 You are ready to go.
 
 # Using OPAL #
-To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to Articles and Tutorials. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
+To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
 # Example Usage #
 
@@ -63,7 +63,7 @@ Additionally, the pull request has to meet the following conditions:
 * all existing unit and integration tests succeed
 * the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis)
 * the code is reasonably documented
-* the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 90 chars** (unless Scalariform always reformats the code such that the line has more than 90 chars which is, e.g., often the case for type declarations))
+* the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations))
 * sufficient tests are included (use Scalatest for the development and use scoverage for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
 
 A recommended read (to spead up the process of getting your Pull Request pulled):

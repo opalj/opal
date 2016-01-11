@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.opalj.bdl.sdk_0.0.0.jar" id="org.opalj.bdl.sdk" version="0.0.0">
+      <category name="org.opalj.bdl"/>
+   </feature>
+   <category-def name="org.opalj.bdl" label="BDL"/>
+</site>

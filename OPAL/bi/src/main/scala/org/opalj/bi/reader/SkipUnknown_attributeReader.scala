@@ -49,10 +49,11 @@ trait SkipUnknown_attributeReader
     //
 
     def Unknown_attribute(
-        ap: AttributeParent,
-        cp: Constant_Pool,
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream): Null = {
+        in:                   DataInputStream
+    ): Null = {
         val size: Long = in.readInt.toLong
         var skipped: Long = 0
         while (skipped < size) {

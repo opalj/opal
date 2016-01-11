@@ -41,40 +41,44 @@ import org.opalj.collection.UID
  * @author Michael Eichberg
  */
 class DefaultMutableNode[I](
-    theIdentifier: I,
-    identifierToString: I ⇒ String,
+    theIdentifier:       I,
+    identifierToString:  I ⇒ String,
     theVisualProperties: Map[String, String],
-    theChildren: List[DefaultMutableNode[I]])
-        extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+    theChildren:         List[DefaultMutableNode[I]]
+) extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
         with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(identifier: I) {
-        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
+        this(identifier, id ⇒ id.toString, Map("shape" → "box"), List.empty)
     }
 
     def this(
-        identifier: I,
-        identifierToString: I ⇒ String) {
-        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
+        identifier:         I,
+        identifierToString: I ⇒ String
+    ) {
+        this(identifier, identifierToString, Map("shape" → "box"), List.empty)
     }
 
     def this(
-        identifier: I,
-        identifierToString: I ⇒ String = (_: Any).toString,
-        fillcolor: Option[String]) {
+        identifier:         I,
+        identifierToString: I ⇒ String     = (_: Any).toString,
+        fillcolor:          Option[String]
+    ) {
         this(
             identifier,
             identifierToString,
-            fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c)).
+            fillcolor.map(c ⇒ DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" → c)).
                 getOrElse(DefaultMutableMode.BaseVirtualPropertiers),
-            List.empty)
+            List.empty
+        )
     }
 
 }
 object DefaultMutableMode {
 
     val BaseVirtualPropertiers = Map(
-        "shape" -> "box",
-        "style" -> "filled", "fillcolor" -> "white")
+        "shape" → "box",
+        "style" → "filled", "fillcolor" → "white"
+    )
 
 }

@@ -44,10 +44,14 @@ abstract class BitwiseInstruction
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     final def isShiftInstruction: Boolean = false
 

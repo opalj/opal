@@ -39,14 +39,17 @@ import scala.collection.Map
  *
  * Basically an index of the source elements (methods and fields) of a project.
  *
+ * This index can be used, e.g., to resolve method calls based on the methods names.
+ *
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
  *
  * @author Michael Eichberg
  */
 class ProjectIndex private (
-        val fields: Map[String, Map[FieldType, Iterable[Field]]],
-        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]) {
+        val fields:  Map[String, Map[FieldType, Iterable[Field]]],
+        val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
+) {
 
     def findFields(name: String, fieldType: FieldType): Iterable[Field] =
         fields.get(name).flatMap(_.get(fieldType)).getOrElse(Iterable.empty)
@@ -85,21 +88,21 @@ class ProjectIndex private (
         val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
-            "number of field names that are used more than once" ->
+            "number of field names that are used more than once" →
                 fieldsWithSharedName.size,
-            "number of fields that share the same name and type" ->
+            "number of fields that share the same name and type" →
                 fieldsWithSharedName.filter(_._2.size > 2).size,
-            "number of usages of the most often used field name" ->
+            "number of usages of the most often used field name" →
                 mostOftenUsedFieldName._1,
-            "the most often used field name" ->
+            "the most often used field name" →
                 mostOftenUsedFieldName._2.mkString(", "),
-            "number of method names that are used more than once (constructors are filtered)" ->
+            "number of method names that are used more than once (constructors are filtered)" →
                 methodsWithSharedName.size,
-            "number of methods that share the same signature (constructors are filtered)" ->
+            "number of methods that share the same signature (constructors are filtered)" →
                 methodsWithSharedName.filter(_._2.size > 2).size,
-            "number of usages of the most often used method name (constructors are filtered)" ->
+            "number of usages of the most often used method name (constructors are filtered)" →
                 mostOftenUsedMethodName._1,
-            "the most often used method name (initializers are filtered)" ->
+            "the most often used method name (initializers are filtered)" →
                 mostOftenUsedMethodName._2.mkString(", ")
         )
     }
@@ -116,7 +119,7 @@ object ProjectIndex {
 
         import scala.collection.mutable.AnyRefMap
 
-        import scala.concurrent.{ Future, Await, ExecutionContext }
+        import scala.concurrent.{Future, Await, ExecutionContext}
         import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 

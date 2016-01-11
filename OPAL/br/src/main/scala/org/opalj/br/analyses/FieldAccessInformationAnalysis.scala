@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Map
 import scala.collection.mutable.AnyRefMap
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.immutable.IdentityPair
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.br.instructions.GETFIELD
@@ -53,7 +52,7 @@ import org.opalj.br.instructions.PUTSTATIC
  * }}}
  *
  * @note The analysis does not take reflective field accesses into account.
- * @note The analysis is parallelized and should not be run with other analyses in
+ * @note The analysis is internally parallelized and should not be run with other analyses in
  *      parallel.
  *
  * @author Michael Eichberg
@@ -61,8 +60,9 @@ import org.opalj.br.instructions.PUTSTATIC
 object FieldAccessInformationAnalysis {
 
     def doAnalyze(
-        project: SomeProject,
-        isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
+        project:       SomeProject,
+        isInterrupted: () ⇒ Boolean
+    ): FieldAccessInformation = {
 
         val classHierarchy = project.classHierarchy
 
@@ -80,8 +80,8 @@ object FieldAccessInformationAnalysis {
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode ⇒
-                        val FieldReadAccess(declaringClassType, fieldName, fieldType) = instruction
-                        classHierarchy.resolveFieldReference(declaringClassType, fieldName, fieldType, project) match {
+                        val fieldReadAccess = instruction.asInstanceOf[FieldReadAccess]
+                        classHierarchy.resolveFieldReference(fieldReadAccess, project) match {
                             case Some(field) ⇒
                                 val key = field
                                 readAccesses.update(
@@ -93,8 +93,8 @@ object FieldAccessInformationAnalysis {
                         }
 
                     case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
-                        val FieldWriteAccess(declaringClassType, fieldName, fieldType) = instruction
-                        classHierarchy.resolveFieldReference(declaringClassType, fieldName, fieldType, project) match {
+                        val fieldWriteAccess = instruction.asInstanceOf[FieldWriteAccess]
+                        classHierarchy.resolveFieldReference(fieldWriteAccess, project) match {
                             case Some(field) ⇒
                                 val key = field
                                 writeAccesses.update(
@@ -123,7 +123,7 @@ object FieldAccessInformationAnalysis {
             writeAccesses.foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
-                    val currentAccesses = allReadAccesses.get(key)
+                    val currentAccesses = allWriteAccesses.get(key)
                     if (currentAccesses == null)
                         allWriteAccesses.put(key, (method, pcs) :: Nil)
                     else
@@ -140,47 +140,5 @@ object FieldAccessInformationAnalysis {
         wa.repack()
         new FieldAccessInformation(project, ra, wa, allUnresolved.asScala.toIndexedSeq)
     }
-}
-
-class FieldAccessInformation(
-        val project: SomeProject,
-        val allReadAccesses: Map[Field, Seq[(Method, PCs)]],
-        val allWriteAccesses: Map[Field, Seq[(Method, PCs)]],
-        val unresolved: IndexedSeq[(Method, PCs)]) {
-
-    private[this] def accesses(
-        accessInformation: Map[Field, Seq[(Method, PCs)]],
-        declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
-        for {
-            (field, wa) ← accessInformation
-            if project.classFile(field).thisType eq declaringClassType
-            if field.name == fieldName
-        } {
-            return wa;
-        }
-
-        Seq.empty
-    }
-
-    def writeAccesses(
-        declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
-        accesses(allWriteAccesses, declaringClassType, fieldName)
-    }
-
-    def readAccesses(
-        declaringClassType: ObjectType,
-        fieldName: String): Seq[(Method, PCs)] = {
-        accesses(allReadAccesses, declaringClassType, fieldName)
-    }
-
-    def statistics: Map[String, Int] =
-        Map(
-            "field reads" -> allReadAccesses.values.map(_.map(_._2.size).sum).sum,
-            "field writes" -> allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
-            "unresolved field accesses" -> unresolved.map(_._2.size).sum
-        )
-
 }
 

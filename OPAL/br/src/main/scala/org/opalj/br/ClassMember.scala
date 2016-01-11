@@ -56,15 +56,17 @@ trait ClassMember extends ConcreteSourceElement {
 
     final def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
 
+    final def isNotStatic: Boolean = (ACC_STATIC.mask & accessFlags) == 0
+
     final def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
+
+    final def isNotFinal: Boolean = !isFinal
 
     /**
      * `True` if the `Synthetic` access flag or attribute is used.
      */
     final override def isSynthetic: Boolean =
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
-
-    final def isNonFinal: Boolean = !isFinal
 
     /**
      * The simple name of this class member (method or field).

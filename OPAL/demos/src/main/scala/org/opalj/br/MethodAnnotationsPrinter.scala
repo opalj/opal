@@ -54,9 +54,10 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
         override def description: String = "Prints out the annotations of methods."
 
         def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
+            project:       Project[URL],
+            parameters:    Seq[String],
+            isInterrupted: () ⇒ Boolean
+        ) = {
             val annotations =
                 (
                     for {
@@ -73,7 +74,8 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
 
             BasicReport(
                 annotations.size+" annotations found: "+
-                    annotations.mkString("\n", "\n", "\n"))
+                    annotations.mkString("\n", "\n", "\n")
+            )
         }
     }
 }

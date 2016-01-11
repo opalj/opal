@@ -30,9 +30,9 @@ package org.opalj
 package br
 
 import java.net.URL
-
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
  * Counts the number of `Class.forName` calls.
@@ -40,48 +40,47 @@ import org.opalj.br.instructions.INVOKESTATIC
  * @author Michael Eichberg
  */
 // Demonstrates how to do pattern matching of instructions and how to use the `AnalysisExecutor`.
-object CountClassForNameCalls extends AnalysisExecutor {
+object CountClassForNameCalls extends DefaultOneStepAnalysis {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def description: String =
+        "Counts the number of times Class.forName is called."
 
-        override def description: String =
-            "Counts the number of times Class.forName is called."
+    def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
+        var classForNameCount = 0
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            var classForNameCount = 0
+        import ObjectType.{String, Class}
+        // Next, we create a descriptor of a method that takes a single parameter of
+        // type "String" and that returns a value of type Class.
+        val descriptor = MethodDescriptor(String, Class)
+        val invokes =
+            // The following collects all calls of the method "forName" on
+            // an object of type "java.lang.Class".
+            for {
+                // Let's traverse all methods of all class files that have a
+                // concrete (non-native) implementation.
+                classFile ← project.allProjectClassFiles.par
+                method @ MethodWithBody(code) ← classFile.methods
+                // Associate each instruction with its index to make it possible
+                // to distinguish multiple invocations of "Class.forName" within
+                // the same method.
+                instructions = code.associateWithIndex
+                // Match all invocations of the method:
+                // Class.forName(String) : Class<?>
+                (pc, INVOKESTATIC(Class, "forName", `descriptor`)) ← instructions
+            } yield {
+                classForNameCount += 1
+                classFile.fqn+" { "+method.toJava+"{ pc="+pc+" } }"
+            }
+        val uniqueInvokes = invokes.seq.toSet
 
-            import ObjectType.{ String, Class }
-            // Next, we create a descriptor of a method that takes a single parameter of
-            // type "String" and that returns a value of type Class.
-            val descriptor = MethodDescriptor(String, Class)
-            val invokes =
-                // The following collects all calls of the method "forName" on
-                // an object of type "java.lang.Class".
-                for {
-                    // Let's traverse all methods of all class files that have a
-                    // concrete (non-native) implementation.
-                    classFile ← project.allProjectClassFiles.par
-                    method @ MethodWithBody(code) ← classFile.methods
-                    // Associate each instruction with its index to make it possible
-                    // to distinguish multiple invocations of "Class.forName" within
-                    // the same method.
-                    instructions = code.associateWithIndex
-                    // Match all invocations of the method:
-                    // Class.forName(String) : Class<?>
-                    (pc, INVOKESTATIC(Class, "forName", `descriptor`)) ← instructions
-                } yield {
-                    classForNameCount += 1
-                    classFile.fqn+" { "+method.toJava+"{ pc="+pc+" } }"
-                }
-            val uniqueInvokes = invokes.seq.toSet
-
-            BasicReport(
-                "Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
-                    uniqueInvokes.mkString("\n\t")
-            )
-        }
+        BasicReport(
+            "Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
+                uniqueInvokes.mkString("\n\t")
+        )
     }
+
 }

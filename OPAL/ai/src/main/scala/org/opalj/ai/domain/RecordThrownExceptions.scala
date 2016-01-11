@@ -68,8 +68,9 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def recordThrownException(
-        pc: PC,
-        value: ExceptionValue): ThrownException
+        pc:    PC,
+        value: ExceptionValue
+    ): ThrownException
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both
@@ -82,17 +83,19 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def joinThrownExceptions(
-        pc: PC,
+        pc:                        PC,
         previouslyThrownException: ThrownException,
-        value: ExceptionValue): ThrownException
+        value:                     ExceptionValue
+    ): ThrownException
 
     @volatile private[this] var thrownExceptions: Map[PC, ThrownException] = Map.empty
 
     def allThrownExceptions: Map[PC, ThrownException] = thrownExceptions
 
     abstract override def abruptMethodExecution(
-        pc: PC,
-        exception: ExceptionValue): Unit = {
+        pc:        PC,
+        exception: ExceptionValue
+    ): Unit = {
         thrownExceptions =
             thrownExceptions.updated(
                 pc,

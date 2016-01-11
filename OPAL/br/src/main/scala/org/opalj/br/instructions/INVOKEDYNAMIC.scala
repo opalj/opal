@@ -43,15 +43,10 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
 
-    private def error: Nothing =
-        throw new BytecodeProcessingFailedException(
-            "this invokedynamic instruction was not resolved")
-
-    final def bootstrapMethod: BootstrapMethod = error
-
-    final def name: String = error
-
-    final def methodDescriptor: MethodDescriptor = error
+    private def error: Nothing = {
+        val message = "this invokedynamic instruction was not resolved"
+        throw new BytecodeProcessingFailedException(message)
+    }
 
     final val opcode = INVOKEDYNAMIC.opcode
 
@@ -59,8 +54,13 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
 
     final def length: Int = 5
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
-        error
+    final def bootstrapMethod: BootstrapMethod = error
+
+    final def name: String = error
+
+    final def methodDescriptor: MethodDescriptor = error
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = error
 
     final def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
 
@@ -106,11 +106,12 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
                 ObjectType.LambdaMetafactory,
                 "metafactory",
                 INVOKEDYNAMIC.lambdaMetafactoryDescriptor
-                ) | InvokeStaticMethodHandle(
-                ObjectType.LambdaMetafactory,
-                "altMetafactory",
-                INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
-                ) if bootstrapMethod.bootstrapArguments.size >= 2 ⇒ {
+                ) |
+                InvokeStaticMethodHandle(
+                    ObjectType.LambdaMetafactory,
+                    "altMetafactory",
+                    INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
+                    ) if bootstrapMethod.bootstrapArguments.size >= 2 ⇒ {
                 bootstrapMethod.bootstrapArguments(1) match {
                     // Oracle's JDK 8 doesn't make use of invokedynamic
                     // instructions in combination with arraytypes.
@@ -136,10 +137,10 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
  * @author Arne Lottmann
  */
 case class UNRESOLVED_INVOKEDYNAMIC(
-    bootstrapMethod: BootstrapMethod,
-    name: String,
-    methodDescriptor: MethodDescriptor)
-        extends INVOKEDYNAMIC
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
+    methodDescriptor: MethodDescriptor
+) extends INVOKEDYNAMIC
 
 /**
  * Represents an `invokedynamic` instruction that is a product of Oracle's JDK8 compiler.
@@ -151,11 +152,11 @@ case class UNRESOLVED_INVOKEDYNAMIC(
  * @author Arne Lottmann
  */
 case class JDK8_LAMBDA_INVOKEDYNAMIC(
-    bootstrapMethod: BootstrapMethod,
-    name: String,
+    bootstrapMethod:  BootstrapMethod,
+    name:             String,
     methodDescriptor: MethodDescriptor,
-    invocationResult: ObjectType)
-        extends INVOKEDYNAMIC
+    invocationResult: ObjectType
+) extends INVOKEDYNAMIC
 
 /**
  * Helper methods needed for the resolution of `invokedynamic` instructions.
@@ -174,7 +175,8 @@ object INVOKEDYNAMIC {
 
     val lambdaMetafactoryDescriptor =
         MethodDescriptor(
-            IndexedSeq(ObjectType.MethodHandles$Lookup,
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
                 ObjectType.MethodType,

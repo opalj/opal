@@ -48,13 +48,14 @@ case class ClassFile(
         constant_pool: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags: Int,
-        this_class: Constant_Pool_Index,
-        super_class: Constant_Pool_Index,
-        interfaces: IndexedSeq[Constant_Pool_Index],
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes) {
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    IndexedSeq[Constant_Pool_Index],
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
+) {
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
@@ -112,12 +113,14 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML: Seq[Node] =
+    def fieldsToXHTML: Seq[Node] = {
         <table class="fields">{ for (field ← fields) yield field.toXHTML(fqn) }</table>
+    }
 
-    def methodsToXHTML: Seq[Node] =
+    def methodsToXHTML: Seq[Node] = {
         for ((method, index) ← methods.zipWithIndex)
             yield method.toXHTML( /*fqn,*/ index)
+    }
 
     protected def accessFlags: Node = {
         <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
@@ -153,12 +156,12 @@ case class ClassFile(
         </details>
     }
 
-    def toXHTML: Node =
+    def toXHTML(css: String = ClassFile.TheCSS): Node =
         <html>
             <head>
                 <title>Java Bytecode of { fqn }</title>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
-                <style type="text/css">{ scala.xml.Unparsed(ClassFile.TheCSS) }</style>
+                <style type="text/css">{ scala.xml.Unparsed(css) }</style>
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
             </head>
             <body>

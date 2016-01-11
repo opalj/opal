@@ -64,7 +64,7 @@ class SwitchTest extends TACTest {
     describe("The quadruples representation of switch instructions") {
         describe("using no AI results") {
             it("should correctly reflect tableswitch case") {
-                val statements = AsQuadruples(TableSwitchMethod, None)
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -74,7 +74,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 10, IndexedSeq((1, 4), (2, 6), (3, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -98,11 +98,12 @@ class SwitchTest extends TACTest {
                     "8: op_0 = 3;",
                     "9: return op_0;",
                     "10: op_0 = 0;",
-                    "11: return op_0;"))
+                    "11: return op_0;"
+                ))
             }
 
             it("should correctly reflect lookupswitch case") {
-                val statements = AsQuadruples(LookupSwitchMethod, None)
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = None)
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -111,13 +112,14 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 8, IndexedSeq((1, 4), (10, 6))),
+                    Switch(1, 8, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (10, 6))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                     ReturnValue(30, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
                     ReturnValue(34, SimpleVar(0, ComputationalTypeInt)),
                     Assignment(35, SimpleVar(0, ComputationalTypeInt), IntConst(35, 0)),
-                    ReturnValue(36, SimpleVar(0, ComputationalTypeInt))))
+                    ReturnValue(36, SimpleVar(0, ComputationalTypeInt))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -128,7 +130,8 @@ class SwitchTest extends TACTest {
                     "6: op_0 = 200;",
                     "7: return op_0;",
                     "8: op_0 = 0;",
-                    "9: return op_0;"))
+                    "9: return op_0;"
+                ))
             }
         }
 
@@ -136,7 +139,7 @@ class SwitchTest extends TACTest {
             it("should correctly reflect tableswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, TableSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, TableSwitchMethod, domain)
-                val statements = AsQuadruples(TableSwitchMethod, Some(aiResult))
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -145,7 +148,7 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 10, IndexedSeq((1, 4), (2, 6), (3, 8))),
+                    Switch(1, 10, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (2, 6), (3, 8))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                     ReturnValue(29, DomainValueBasedVar(0, domain.IntegerRange(1) /*int=1*/ )),
                     Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -153,7 +156,8 @@ class SwitchTest extends TACTest {
                     Assignment(32, SimpleVar(0, ComputationalTypeInt), IntConst(32, 3)),
                     ReturnValue(33, DomainValueBasedVar(0, domain.IntegerRange(3) /*int=3*/ )),
                     Assignment(34, SimpleVar(0, ComputationalTypeInt), IntConst(34, 0)),
-                    ReturnValue(35, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))))
+                    ReturnValue(35, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -166,13 +170,14 @@ class SwitchTest extends TACTest {
                     "8: op_0 = 3;",
                     "9: return op_0 /*int = 3*/;",
                     "10: op_0 = 0;",
-                    "11: return op_0 /*int = 0*/;"))
+                    "11: return op_0 /*int = 0*/;"
+                ))
             }
 
             it("should correctly reflect lookupswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, LookupSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, LookupSwitchMethod, domain)
-                val statements = AsQuadruples(LookupSwitchMethod, Some(aiResult))
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = Some(aiResult))
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -181,13 +186,14 @@ class SwitchTest extends TACTest {
                     Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                     Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
                     Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                    Switch(1, SimpleVar(0, ComputationalTypeInt), 8, IndexedSeq((1, 4), (10, 6))),
+                    Switch(1, 8, SimpleVar(0, ComputationalTypeInt), IndexedSeq((1, 4), (10, 6))),
                     Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                     ReturnValue(30, DomainValueBasedVar(0, domain.IntegerRange(10) /*int=10*/ )),
                     Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
                     ReturnValue(34, DomainValueBasedVar(0, domain.IntegerRange(200) /*int=200*/ )),
                     Assignment(35, SimpleVar(0, ComputationalTypeInt), IntConst(35, 0)),
-                    ReturnValue(36, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))))
+                    ReturnValue(36, DomainValueBasedVar(0, domain.IntegerRange(0) /*int=0*/ ))
+                ))
                 javaLikeCode.shouldEqual(Array(
                     "0: r_0 = this;",
                     "1: r_1 = p_1;",
@@ -198,7 +204,8 @@ class SwitchTest extends TACTest {
                     "6: op_0 = 200;",
                     "7: return op_0 /*int = 200*/;",
                     "8: op_0 = 0;",
-                    "9: return op_0 /*int = 0*/;"))
+                    "9: return op_0 /*int = 0*/;"
+                ))
             }
         }
     }

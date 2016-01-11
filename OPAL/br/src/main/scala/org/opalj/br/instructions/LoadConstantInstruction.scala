@@ -37,9 +37,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class LoadConstantInstruction[T]
-        extends Instruction
-        with ConstantLengthInstruction {
+abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengthInstruction {
 
     /**
      * The value that is put onto the stack.
@@ -54,10 +52,14 @@ abstract class LoadConstantInstruction[T]
     final def jvmExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(
-        currentPC: PC,
-        code: Code,
-        regularSuccessorsOnly: Boolean): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
+    )(
+        implicit
+        code: Code
+    ): PCs = {
+        UShortSet(indexOfNextInstruction(currentPC))
+    }
 
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
@@ -73,6 +75,7 @@ abstract class LoadConstantInstruction[T]
     @throws[UnsupportedOperationException]("always")
     def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
+    final def expressionResult: ExpressionResult = Stack
 }
 /**
  * Defines factory methods for `LoadConstantInstruction`s.
@@ -88,16 +91,18 @@ object LoadConstantInstruction {
      */
     def apply(i: Int): LoadConstantInstruction[Int] =
         (i: @scala.annotation.switch) match {
-            case 0 ⇒ ICONST_0
-            case 1 ⇒ ICONST_1
-            case 2 ⇒ ICONST_2
-            case 3 ⇒ ICONST_3
-            case 4 ⇒ ICONST_4
-            case 5 ⇒ ICONST_5
-            case _ if i >= Byte.MinValue && i <= Byte.MaxValue ⇒ BIPUSH(i)
+            case 0                                               ⇒ ICONST_0
+            case 1                                               ⇒ ICONST_1
+            case 2                                               ⇒ ICONST_2
+            case 3                                               ⇒ ICONST_3
+            case 4                                               ⇒ ICONST_4
+            case 5                                               ⇒ ICONST_5
+            case _ if i >= Byte.MinValue && i <= Byte.MaxValue   ⇒ BIPUSH(i)
             case _ if i >= Short.MinValue && i <= Short.MaxValue ⇒ SIPUSH(i)
-            case _ ⇒ LoadInt(i)
+            case _                                               ⇒ LoadInt(i)
         }
+
+    def unapply[T](ldc: LoadConstantInstruction[T]): Some[T] = Some(ldc.value)
 
     /**
      * Returns the instruction that puts the constant value on top of the stack

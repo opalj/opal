@@ -33,7 +33,7 @@ package l1
 
 import scala.collection.SortedSet
 import org.junit.runner.RunWith
-import org.scalatest.ParallelTestExecution
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
@@ -46,7 +46,7 @@ import org.opalj.collection.immutable.UIDSet
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
+class StringValuesTest extends FlatSpec with Matchers {
 
     object AnalysisDomain
         extends CorrelationalDomain
