@@ -59,6 +59,11 @@ import org.opalj.br.instructions.IINC
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions.NEW
+import org.opalj.issues.Issue
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.Relevance
 
 /**
  * Identifies unused local variables
@@ -74,7 +79,7 @@ object CollectionsUsage {
         classFile:     ClassFile,
         method:        Method,
         result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
-    ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
 
         if (method.isSynthetic)
             return Nil;
@@ -83,7 +88,7 @@ object CollectionsUsage {
         // IDENTIFYING RAW ISSUES
         //
         //
-        var issues = List.empty[StandardIssue]
+        var issues = List.empty[Issue]
         val domain = result.domain
         val code = domain.code
         val instructions = code.instructions
@@ -101,17 +106,23 @@ object CollectionsUsage {
 
                                 // TODO Support the matching of other constructors... (e.g., which take a size hint)
                                 case INVOKESPECIAL(_, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
-                                    issues ::= StandardIssue(
+                                    issues ::= Issue(
                                         "CollectionsUsage",
-                                        theProject, classFile, None, Some(method), Some(pc),
-                                        None,
-                                        None,
-                                        "directly use Collections.emptyList/Collections.emptySet",
-                                        None,
+                                        Relevance.DefaultRelevance,
+                                        "useless creation of standard collection class",
                                         Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
-                                        Set(IssueKind.JavaCollectionAPIUsage),
-                                        Seq((origins.head, "useless creation of collection")),
-                                        Relevance.DefaultRelevance
+                                        Set(IssueKind.JavaCollectionAPIMisusage),
+                                        List(
+                                                new InstructionLocation(
+                                                Some("directly use Collections.emptyList/Collections.emptySet"),
+                                                theProject,classFile,method,pc
+                                                ),
+                                                new InstructionLocation(
+                                                Some("useless"),
+                                                theProject,classFile,method,origins.head
+                                                )
+                                        
+                                        )
                                     )
 
                                 case _ ⇒ // other constructors are ignored
@@ -140,17 +151,25 @@ object CollectionsUsage {
                                 }
                             }
                             if (foundAddCall && foundConstructorCall) {
-                                issues ::= StandardIssue(
+                                issues ::= Issue(
                                     "CollectionsUsage",
-                                    theProject, classFile, None, Some(method), Some(pc),
-                                    None,
-                                    None,
-                                    "directly use Collections.singletonList/Collections.singletonSet",
-                                    None,
+                                    Relevance.DefaultRelevance,
+                                    "useless creation of standard collection class",
                                     Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
-                                    Set(IssueKind.JavaCollectionAPIUsage),
-                                    Seq((origins.head, "useless creation of collection")),
-                                    Relevance.DefaultRelevance
+                                    Set(IssueKind.JavaCollectionAPIMisusage),
+                                     List(
+                                                new InstructionLocation(
+                                                Some("directly use Collections.singletonList/Collections.singletonSet"),
+                                                theProject,classFile,method,pc
+                                                ),
+                                                new InstructionLocation(
+                                                Some("useless"),
+                                                theProject,classFile,method,origins.head
+                                                )
+                                        
+                                        )
+                                    
+                                    
                                 )
                             }
                         }

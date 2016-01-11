@@ -30,8 +30,8 @@ package org.opalj
 package frb
 package analyses
 
-import AnalysesHelpers._
 import br._
+import org.opalj.br.MethodDescriptor.JustReturnsObject
 import br.analyses._
 import br.instructions._
 
@@ -98,10 +98,10 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
             classFile ← project.allProjectClassFiles
             if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
             superClass ← classFile.superclassType.toSeq
-            method @ Method(_, "clone", NoArgsAndReturnObject) ← classFile.methods
+            method @ Method(_, "clone", JustReturnsObject) ← classFile.methods
             if method.body.isDefined
             if !method.body.get.instructions.exists {
-                case INVOKESPECIAL(`superClass`, "clone", NoArgsAndReturnObject) ⇒ true
+                case INVOKESPECIAL(`superClass`, "clone", JustReturnsObject) ⇒ true
                 case _ ⇒ false
             }
         } yield {

@@ -31,6 +31,11 @@ package br
 package analyses
 
 import java.net.URL
+import org.opalj.issues.Relevance
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.ClassLocation
 
 /**
  * Finds classes that define only a co-variant `equals` method (an equals method
@@ -43,15 +48,13 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-class CovariantEqualsMethodDefined[Source]
-        extends OneStepAnalysis[Source, Iterable[ClassBasedReport[Source]]] {
+class CovariantEqualsMethodDefined[Source] extends OneStepAnalysis[Source, Iterable[Issue]] {
 
     //
     // Meta-data
     //
 
-    override def description: String =
-        "Finds classes that define a co-variant equals method."
+    override def description: String = "Finds classes that just define a co-variant equals method."
 
     //
     // Implementation
@@ -61,10 +64,10 @@ class CovariantEqualsMethodDefined[Source]
         project:       Project[Source],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ): Iterable[ClassBasedReport[Source]] = {
+    ): Iterable[Issue] = {
 
         val mutex = new Object
-        var reports = List[ClassBasedReport[Source]]()
+        var reports = List[Issue]()
 
         project.parForeachClassFile(isInterrupted) { classFile ⇒
             var definesEqualsMethod = false
@@ -77,11 +80,13 @@ class CovariantEqualsMethodDefined[Source]
 
             if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                 mutex.synchronized {
-                    reports = ClassBasedReport(
-                        project.source(classFile.thisType),
-                        Severity.Warning,
-                        classFile.thisType,
-                        "Defines a covariant equals method, but does not also define the standard equals method."
+                    reports = Issue(
+                        "CovariantEqualsMethodDefined",
+                        Relevance.Moderate,
+                        summary = "defines a covariant equals method, but does not also define the standard equals method",
+                        categories = Set(IssueCategory.Correctness),
+                        kinds = Set(IssueKind.MethodMissing),
+                        locations = List(new ClassLocation(None, project, classFile))
                     ) :: reports
                 }
             }
@@ -94,7 +99,6 @@ class CovariantEqualsMethodDefined[Source]
  * Enables the stand alone execution of this analysis.
  */
 object CovariantEqualsMethodDefinedAnalysis extends AnalysisExecutor {
-    val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
-        new CovariantEqualsMethodDefined[URL]
-    )
+
+    val analysis = ReportableAnalysisAdapter[URL](new CovariantEqualsMethodDefined)
 }

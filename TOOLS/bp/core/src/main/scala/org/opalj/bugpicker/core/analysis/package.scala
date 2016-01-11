@@ -36,6 +36,7 @@ import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.BooleanType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.IntegerType
+import org.opalj.issues.Issue
 
 /**
  * Common constants and helper methods used by the BugPicker's analyses.

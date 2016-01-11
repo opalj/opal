@@ -102,6 +102,9 @@ import org.opalj.ai.domain.Origin
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.POP
 import org.opalj.br.instructions.PopInstruction
+import org.opalj.issues.Issue
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.IssueOrdering
 
 /**
  * Identifies dead edges in code.
@@ -113,7 +116,7 @@ object DeadEdgesAnalysis {
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }
-    ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
         if (method.isSynthetic)
             return Seq.empty;
 
@@ -208,7 +211,7 @@ object DeadEdgesAnalysis {
                 candidateHandlers
         }
 
-        var issues = List.empty[StandardIssue]
+        var issues = List.empty[Issue]
         for {
             pc ← body.programCounters
             if evaluatedInstructions.contains(pc)
@@ -362,44 +365,33 @@ object DeadEdgesAnalysis {
             val operands = allOperands.take(poppedOperandsCount)
 
             val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
-
-            val hints =
-                body.collectWithIndex {
-                    case (pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
-                        val nextPC = instr.indexOfNextInstruction(pc)
-                        val operands = operandsArray(nextPC)
-                        operands != null &&
-                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
-                    } ⇒
-                        (pc, s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← $instr")
-
-                    case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
-                        val nextPC = instr.indexOfNextInstruction(pc)
-                        val operands = operandsArray(nextPC)
-                        operands != null &&
-                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                    } ⇒
-                        val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
-                        (
-                            pc,
-                            s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
-                        )
-                }
-
+           
             val isJustDeadPath = evaluatedInstructions.contains(nextPC)
             val isTechnicalArtifact =
                 isLikelyFalsePositive ||
                     isNonExistingDefaultBranchOfSwitch ||
                     isRelatedToCompilationOfFinally
-            issues ::= StandardIssue(
+val localVariables = result.localsArray(pc)                    
+            issues ::= Issue(
                 "DeadEdgesAnalysis",
-                theProject, classFile, None, Some(method), Some(pc),
-                Some(operands), Some(result.localsArray(pc)),
-                if (isJustDeadPath)
-                    s"[dead path] the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
+                {
+                          if (isTechnicalArtifact)
+                    Relevance.TechnicalArtifact
+                else if (isProvenAssertion)
+                    Relevance.ProvenAssertion
+                else if (isLikelyIntendedDeadDefaultBranch)
+                    Relevance.CommonIdiom
+                else if (isJustDeadPath)
+                    Relevance.UselessDefensiveProgramming
                 else
-                    s"[dead code] the successor instruction is dead: pc=$nextPC$line",
-                Some(
+                    Relevance.OfUtmostRelevance
+                },
+                if (isJustDeadPath)
+                	s"dead path found; the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
+                	else
+                		s"dead code found; the successor instruction is dead: pc=$nextPC$line",
+                List(new InstructionLocation(
+                        Some(
                     "The evaluation of the instruction never leads to the evaluation of the specified instruction."+(
                         if (isTechnicalArtifact)
                             "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is nothing to fix.)"
@@ -411,22 +403,20 @@ object DeadEdgesAnalysis {
                             ""
                     )
                 ),
-                Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
-                Set(IssueKind.DeadPath),
-                hints,
-                if (isTechnicalArtifact)
-                    Relevance.TechnicalArtifact
-                else if (isProvenAssertion)
-                    Relevance.ProvenAssertion
-                else if (isLikelyIntendedDeadDefaultBranch)
-                    Relevance.CommonIdiom
-                else if (isJustDeadPath)
-                    Relevance.UselessDefensiveProgramming
-                else
-                    Relevance.OfUtmostRelevance
+                theProject,
+                classFile,
+                method,
+                pc,
+                List( 
+                        Operands(code,pc,operands,localVariables),
+                        FieldValue(),
+                        MethodReturnValues(),
+                        LocalVariables(code,pc,localVariables))                      
+                        )
+                )
             )
         }
-        issues.sortBy { _.line }
+        issues.sorted(IssueOrdering)
     }
 
 }

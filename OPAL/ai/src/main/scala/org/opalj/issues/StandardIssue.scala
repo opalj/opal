@@ -27,9 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
-
+package issues
+/*
 import scala.language.existentials
 import scala.Console.{GREEN, RESET}
 import scala.xml.Node
@@ -223,6 +222,7 @@ case class StandardIssue(
         // BUILDING THE FINAL DOCUMENT
         //
 
+
         var infoNodes: List[Node] =
             List(
                 <dt class="analysis">analysis</dt>,
@@ -322,7 +322,7 @@ case class StandardIssue(
             categories.map(_.replace(' ', '_')).mkString(" ")
 
         val node =
-            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
+            <div class="an_issue" style={ s"color:${relevance.toHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
                 <dl>
                     { infoNodes }
                     { summaryNode }
@@ -394,3 +394,4 @@ object StandardIssue {
         foldedIssues
     }
 }
+*/ 

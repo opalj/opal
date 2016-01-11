@@ -37,7 +37,6 @@ import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.JavaConversions
 import scala.collection.SortedMap
@@ -46,12 +45,10 @@ import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
 import scala.io.Source
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -87,6 +84,10 @@ import org.opalj.util.Milliseconds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
+import org.opalj.issues.Issue
+import org.opalj.issues.PackageLocation
+import org.opalj.issues.ProjectLocation
+import org.opalj.issues.IssueOrdering
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -225,19 +226,25 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
+        val filteredResults = new ConcurrentLinkedQueue[Issue]()
         val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
         OPALLogger.debug(
             "project configuration",
             s"only issues in packages matching $issuesPackageFilterString are shown"
         )
         val issuesPackageFilter = issuesPackageFilterString.r
-        def addResults(issues: Iterable[StandardIssue]): Unit = {
+        def addResults(issues: Iterable[Issue]): Unit = {
             if (issues.nonEmpty) {
                 val filteredIssues = issues.filter { issue ⇒
-                    val packageName = issue.definingPackageName
+                    issue.locations.head match {
+                    case l : PackageLocation =>
+                    val packageName = l.thePackage
                     val allMatches = issuesPackageFilter.findFirstIn(packageName)
                     allMatches.isDefined && packageName == allMatches.get
+                    case _ =>
+                        // the issue is a project level issue and hence kept
+                        true
+                    }
                 }
                 filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
             }
@@ -344,7 +351,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                     XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                             ),
                             result.domain
-                        )(result.operandsArray,result.localsArray),
+                        )(result.operandsArray, result.localsArray),
                         "AIResult",
                         ".html"
                     )
@@ -389,7 +396,6 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
-              
             } else if (!doInterrupt()) {
                 OPALLogger.error(
                     "internal error",
@@ -414,6 +420,10 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // Class based analyses
                     // ---------------------------------------------------------------------------
 
+                    addResults(  AnonymousInnerClassShouldBeStatic(theProject,  classFile ))
+                    addResults(  ManualGarbageCollection( theProject,  classFile))
+                    addResults(  CovariantEquals( theProject,  classFile))
+                    
                     //
                     // FIND UNUSED FIELDS
                     //
@@ -455,9 +465,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     progressManagement.end(stepId)
                 }
             }
-            val rawIssues = JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
-            OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
-            StandardIssue.fold(rawIssues)
+            JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
         } { t ⇒ analysisTime = t }
 
         OPALLogger.info(
@@ -514,30 +522,35 @@ object BugPickerAnalysis {
 
     def resultsAsXHTML(
         config:            Seq[String],
-        methodsWithIssues: Iterable[Issue],
+        issues: Iterable[Issue],
         showSearch:        Boolean,
         analysisTime:      Nanoseconds
     ): Node = {
-        val methodsWithIssuesCount = methodsWithIssues.size
-        val basicInfoOnly = methodsWithIssuesCount > 10000
+        val issuesCount = issues.size
+        val basicInfoOnly = issuesCount > 10000
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
                 SortedMap.empty[String, List[Issue]] ++
-                    methodsWithIssues.groupBy(dc ⇒ dc.classFile.thisType.packageName)
+                    issues.groupBy{                            i ⇒
+                        i.locations.head match{
+                        case thePackage : PackageLocation => thePackage.thePackage
+                        case _ : ProjectLocation => "<project>"         
+                    }
+                }
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
                     <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
-                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML(basicInfoOnly)) }
+                        { mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML(basicInfoOnly)) }
                     </details>
                 })
             result.seq
         }
 
         val totalIssues = {
-            val is = s"(Total issues: $methodsWithIssuesCount)"
+            val is = s"(Total issues: $issuesCount)"
             if (basicInfoOnly)
                 is+"(Due to the number of issues an abbreviated report is shown.)"
             else
@@ -565,7 +578,7 @@ object BugPickerAnalysis {
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
+                        <span>Number of issues currently displayed:<span id="issues_displayed"> { issuesCount } </span>{ totalIssues }</span>
                         { searchBox }
                     </div>
                     <div>

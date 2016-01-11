@@ -35,7 +35,7 @@ package analyses
  *
  * @author Michael Eichberg
  */
-case class BasicReport(consoleReport: String) extends ReportableAnalysisResult
+case class BasicReport(toConsoleString: String) extends ReportableAnalysisResult
 
 /**
  * Defines factory methods for BasicReports.

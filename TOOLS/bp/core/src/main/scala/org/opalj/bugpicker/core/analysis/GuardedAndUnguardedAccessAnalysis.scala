@@ -41,14 +41,10 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project, SomeProject}
+import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.common.XHTML
-import org.opalj.ai.BaseAI
-import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.ai.collectPCWithOperands
@@ -71,13 +67,7 @@ import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.ISTORE
 import org.opalj.br.instructions.IStoreInstruction
-import org.opalj.ai.AIResult
-import org.opalj.ai.domain.ConcreteIntegerValues
-import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.br.instructions.ATHROW
-import org.opalj.ai.domain.RecordCFG
-import org.opalj.ai.domain.l1.RecordAllThrownExceptions
-import org.opalj.ai.domain.l1.ReferenceValues
 import org.opalj.br.instructions.IFXNullInstruction
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.PUTFIELD
@@ -91,6 +81,23 @@ import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.IFNULL
+import org.opalj.ai.AIResult
+import org.opalj.ai.domain.ConcreteIntegerValues
+import org.opalj.ai.common.XHTML
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.l1.RecordAllThrownExceptions
+import org.opalj.ai.domain.l1.ReferenceValues
+import org.opalj.ai.domain.ConcreteLongValues
+import org.opalj.issues.Relevance
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueLocation
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.IssueKind
 
 /**
  * Identifies accesses to local
@@ -108,22 +115,21 @@ object GuardedAndUnguardedAccessAnalysis {
 
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
-    ): List[StandardIssue] = {
+        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }): List[Issue] = {
 
         import result.domain
         val operandsArray = result.operandsArray
-        val body = result.code
+        val code = result.code
 
         var origins = Map.empty[ValueOrigin, PC]
         var timestamps = Map.empty[domain.Timestamp, PC]
 
         // TODO We should also log those that are assertions related!
 
-        body foreach { (pc, instr) ⇒
+        code foreach { (pc, instr) ⇒
             if ((operandsArray(pc) ne null) && instr.isInstanceOf[IFXNullInstruction]) {
-                import body.instructions
-                import body.pcOfNextInstruction
+                import code.instructions
+                import code.pcOfNextInstruction
                 // let's check if the guard is related to an assert statement
                 val isAssertionRelated: Boolean =
                     (instr match {
@@ -152,7 +158,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccesses =
             for {
-                (pc, receiver: domain.ReferenceValue) ← body collectWithIndex {
+                (pc, receiver: domain.ReferenceValue) ← code collectWithIndex {
                     case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null ⇒
                         (pc, operandsArray(pc).head)
 
@@ -199,23 +205,27 @@ object GuardedAndUnguardedAccessAnalysis {
         val unguardedAccessesIssues =
             for ((guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f ⇒ f._1 /*by guard*/ )) yield {
                 val relevance = unguardedAccesses.map(_._2.value).max
-                val category =
-                    if (relevance >= Relevance.VeryHigh.value)
-                        IssueCategory.Bug
-                    else
-                        IssueCategory.Smell
-                val issues = unguardedAccesses.map(ua ⇒ (ua._3, "unguarded access"))
-                StandardIssue(
+
+                val unguardedLocations: List[IssueLocation] =
+                    unguardedAccesses.map { ua ⇒
+                        val unguardedAccessPC = ua._3
+                        new InstructionLocation(
+                            Some("unguarded access"), theProject, classFile, method, unguardedAccessPC
+                        )
+                    }
+
+                val locations =
+                    new InstructionLocation(
+                        Some("guard"), theProject, classFile, method, guardPC
+                    ) :: unguardedLocations
+
+                Issue(
                     "GuardedAndUnguardedAccessAnalysis",
-                    theProject, classFile, field = None, Some(method), Some(guardPC),
-                    Some(operandsArray(guardPC)),
-                    None,
-                    "guard",
-                    Some(s"Unguarded local variable access (${operandsArray(guardPC).head}) though explicit test is done elsewhere."),
-                    Set(category),
+                    Relevance(relevance),
+                    "a local variable is accessed in a guarded (using an explicit check) and also in an unguarded context",
+                    Set(IssueCategory.Correctness),
                     Set(IssueKind.UnguardedUse),
-                    issues,
-                    Relevance(relevance)
+                    locations
                 )
             }
 

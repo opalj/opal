@@ -32,7 +32,7 @@ package core
 package analysis
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.{ ClassFile, Method }
 import org.opalj.ai.Domain
 import org.opalj.br.PC
 import org.opalj.ai.collectPCWithOperands
@@ -48,6 +48,14 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.domain.l1.ReferenceValues
+import org.opalj.issues.Relevance
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Operands
+import org.opalj.br.instructions.IAND
+import org.opalj.br.instructions.IOR
 
 /**
  * Identifies computations that are useless (i.e., computations that could be done
@@ -61,34 +69,35 @@ object UselessComputationsAnalysis {
 
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UselessComputationsAnalysisDomain }
-    ): Seq[StandardIssue] = {
+        result: AIResult { val domain: UselessComputationsAnalysisDomain }): Seq[Issue] = {
 
         val defaultRelevance = Relevance.DefaultRelevance
         val defaultIIncRelevance = Relevance(5)
 
-        val body = result.code
+        val code = result.code
 
-        def Issue(pc: PC, message: String, relevance: Relevance): StandardIssue =
-            StandardIssue(
+        def createIssue(pc: PC, message: String, relevance: Relevance): Issue = {
+            val operands = result.operandsArray(pc)
+            val localVariables = result.localsArray(pc)
+            Issue(
                 "UselessComputationsAnalysis",
-                theProject, classFile, None, Some(method),
-                Some(pc),
-                Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
-                "the expression always evaluates to the same value",
-                Some(message),
+                relevance,
+                s"the expression ($message) always evaluates to the same value",
                 Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                 Set(IssueKind.ConstantComputation),
-                Seq.empty,
-                relevance
+                List(new InstructionLocation(
+                    None, theProject, classFile, method, pc,
+                    List(new Operands(code, pc, operands, localVariables))
+                ))
             )
+        }
 
         import result.domain
         import result.operandsArray
         import domain.ConcreteIntegerValue
         import domain.ConcreteLongValue
 
-        collectPCWithOperands(domain)(body, operandsArray) {
+        collectPCWithOperands(domain)(code, operandsArray) {
 
             // HANDLING INT VALUES
             //
@@ -101,25 +110,50 @@ object UselessComputationsAnalysis {
                 // instead, compilers generate an "ixor" with "-1" as the
                 // second value.
                 if (instr.operator == "^" && a == -1)
-                    Issue(
+                    createIssue(
                         pc,
                         s"constant computation: ~$b (<=> $b ${instr.operator} $a).",
                         defaultRelevance
 
                     )
                 else
-                    Issue(
-                        pc,
-                        s"constant computation: $b ${instr.operator} $a.",
-                        defaultRelevance
+                    createIssue(
+                        pc, s"constant computation: $b ${instr.operator} $a.", defaultRelevance
                     )
 
-            case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
-                Issue(
-                    pc,
-                    s"constant computation: -${a}",
-                    defaultRelevance
+            case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) ⇒
+                createIssue(
+                    pc, "0 | x: bit or operation with 0 left operand is useless", Relevance.High
                 )
+
+                        case (pc,IOR, Seq(_,ConcreteIntegerValue(0), _*)) ⇒                
+                            createIssue(
+                    pc,("x | 0: bit or operation with 0 right operand is useless"),Relevance.High
+                    )
+            //                
+            //            case (IOR, IntValue(-1), _) ⇒
+            //                Some("-1 | x: bit or operation with -1 left operand always returns -1")
+            //            case (IOR, _, IntValue(-1)) ⇒
+            //                Some("x | -1: bit or operation with -1 right operand always returns -1")
+                
+            //            case (IAND, IntValue(0), _) ⇒
+            //                Some("0 & x: bit and operation with 0 left operand always returns 0")
+            //            case (IAND, IntValue(-1), _) ⇒
+            //                Some("-1 & x: bit and operation with -1 left operand is useless")
+            //            case (IAND, _, IntValue(0)) ⇒
+            //                Some("x & 0: bit and operation with 0 right operand always returns 0")
+            //            case (IAND, _, IntValue(-1)) ⇒
+            //                Some("x & -1: bit and operation with -1 right operand is useless")
+            //            
+            case (pc, IAND, Seq(_, ConcreteIntegerValue(-1), _*)) ⇒
+                createIssue(
+                    pc,
+                    s"x & -1: bit and operation with -1 right operand is useless",
+                    Relevance.High
+                )
+
+            case (pc, instr @ INEG, Seq(ConcreteIntegerValue(a), _*)) ⇒
+                createIssue(pc, s"constant computation: -${a}", defaultRelevance)
 
             case (
                 pc,
@@ -132,7 +166,7 @@ object UselessComputationsAnalysis {
                         defaultIIncRelevance
                     else
                         defaultRelevance
-                Issue(pc, s"constant computation (inc): ${v} + $increment", relevance)
+                createIssue(pc, s"constant computation (inc): ${v} + $increment", relevance)
 
             // HANDLING LONG VALUES
             //
@@ -141,24 +175,20 @@ object UselessComputationsAnalysis {
                 instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                 ) ⇒
-                Issue(
-                    pc,
-                    s"constant computation: ${b}l ${instr.operator} ${a}l.",
-                    defaultRelevance
+                createIssue(
+                    pc, s"constant computation: ${b}l ${instr.operator} ${a}l.", defaultRelevance
                 )
             case (
                 pc,
                 instr @ ShiftInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
                 ) ⇒
-                Issue(
-                    pc,
-                    s"constant computation: ${b}l ${instr.operator} ${a}l.",
-                    defaultRelevance
+                createIssue(
+                    pc, s"constant computation: ${b}l ${instr.operator} ${a}l.", defaultRelevance
                 )
 
             case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) ⇒
-                Issue(pc, s"constant computation: -${a}l", defaultRelevance)
+                createIssue(pc, s"constant computation: -${a}l", defaultRelevance)
 
             // HANDLING REFERENCE VALUES
             //
@@ -170,7 +200,7 @@ object UselessComputationsAnalysis {
                 ) if domain.intValueOption(
                 operandsArray(pc + INSTANCEOF.length).head
             ).isDefined ⇒
-                Issue(
+                createIssue(
                     pc,
                     rv.upperTypeBound.map(_.toJava).mkString(
                         "useless type test:",

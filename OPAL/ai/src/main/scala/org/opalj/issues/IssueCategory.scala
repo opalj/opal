@@ -27,12 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
+package issues
 
 /**
  * Collection of predefined issue categories where each category describes
- * '''the quality property of the software that is affected''' 
+ * '''the quality property of the software that is affected'''
  * by the issue.
  *
  * @author Michael Eichberg
@@ -40,39 +39,24 @@ package core
 object IssueCategory {
 
     final val AllCategories = {
-        Set(Bug, Smell, Performance, Comprehensibility)
+        Set(Correctness, Performance, Comprehensibility)
     }
 
     /**
-     * We identify something as a "Bug" if and only if we are certain that
-     * the runtime execution is most likely not what the developer intended.
-     *
-     * @note Affected software quality attribute: Correctness
+     * Code that may be incorrect.
      */
-    final val Bug = "bug"
-
-    /**
-     * We identify something as a "Smell" if we believe that
-     * the runtime execution is probably not what the developer intended.
-     *
-     * @note Affected software quality attribute: Correctness
-     */
-    final val Smell = "smell"
+    final val Correctness = "correctness"
 
     /**
      * Performance issues are generally related to code that does things that
      * are superfluous; i.e., which - except from using time and memory - have
      * no meaningful sideeffect compared to a simpler solution.
-     *
-     * @note Affected software quality attribute: Efficiency
      */
     final val Performance = "performance"
 
     /**
      * Code that most likely does what the developer wanted it to do, but
      * which is too clumsy and can be shortened.
-     *
-     * @note Affected software quality attribute: Efficiency
      */
     final val Comprehensibility = "comprehensibility"
 

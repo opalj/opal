@@ -27,13 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package frb
-package analyses
+package bugpicker
+package core
+package analysis
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import br._
 import br.analyses._
 import br.instructions._
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.ClassLocation
+import org.opalj.issues.Relevance
 
 /**
  * This analysis reports anonymous inner classes that do not use their reference to the
@@ -46,8 +52,9 @@ import br.instructions._
  * @author Daniel Klauer
  * @author Peter Spieler
  * @author Florian Brandherm
+ * @author Michael Eichberg
  */
-class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Source] {
+object AnonymousInnerClassShouldBeStatic {
 
     override def description: String =
         "Identifies anonymous inner classes that should be made static."
@@ -174,24 +181,26 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def doAnalyze(
-        project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ): Iterable[ClassBasedReport[Source]] = {
-        for {
-            classFile ← project.allClassFiles
-            if !project.isLibraryType(classFile)
-            if isAnonymousInnerClass(classFile) &&
-                !isWithinAnonymousInnerClass(classFile) &&
-                isOuterClassReferenceUsed(classFile).isNo
-        } yield {
-            ClassBasedReport(
-                project.source(classFile.thisType),
-                Severity.Info,
-                classFile.thisType,
-                "This inner class should be made Static"
+    def apply(
+        project: SomeProject,
+        classFile: ClassFile
+        ): Iterable[Issue] = {
+        if (project.isLibraryType(classFile)) return None;
+
+        if (!(isAnonymousInnerClass(classFile) &&
+            !isWithinAnonymousInnerClass(classFile) &&
+            isOuterClassReferenceUsed(classFile).isNo))
+            return None;
+
+        Some(
+            Issue(
+                "AnonymousInnerClassShouldBeStatic",
+                Relevance.Low,
+                "this inner class should be made static",
+                Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
+                Set(IssueKind.MissingStaticModifier),
+                List(new ClassLocation(None, project, classFile))
             )
-        }
+        )
     }
 }

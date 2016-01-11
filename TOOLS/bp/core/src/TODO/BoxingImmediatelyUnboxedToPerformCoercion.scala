@@ -49,9 +49,9 @@ import br.instructions._
  *
  * @author Ralf Mitschke
  * @author Daniel Klauer
+ * @author Michael Eichberg
  */
-class BoxingImmediatelyUnboxedToPerformCoercion[Source]
-        extends FindRealBugsAnalysis[Source] {
+object BoxingImmediatelyUnboxedToPerformCoercion{
 
     override def description: String =
         "Reports sections of code that box a value but then immediately unbox it."
@@ -64,7 +64,7 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
      * @return A list of reports, or an empty list.
      */
     def doAnalyze(
-        project:       Project[Source],
+        project:       SomeProject,
         parameters:    Seq[String]     = List.empty,
         isInterrupted: () ⇒ Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {

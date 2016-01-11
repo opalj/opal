@@ -32,9 +32,8 @@ package core
 package analysis
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.ai.Domain
-import org.opalj.br.PC
 import org.opalj.ai.collectPCWithOperands
 import org.opalj.br.instructions.BinaryArithmeticInstruction
 import org.opalj.br.ComputationalTypeInt
@@ -52,6 +51,13 @@ import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.ValuesDomain
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Operands
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.InstructionLocation
 
 /**
  * Identifies computations that lead to the same result as the previous computation.
@@ -63,7 +69,7 @@ object UselessReComputationsAnalysis {
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: TheCode with ConcreteIntegerValues with ConcreteLongValues with ValuesDomain }
-        ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
 
         import result.domain.ConcreteIntegerValue
         import result.domain.ConcreteLongValue
@@ -95,18 +101,21 @@ object UselessReComputationsAnalysis {
 
                     val lv = code.localVariable(pc, index).get
 
-                    StandardIssue(
+                    Issue(
                         "UselessReevaluation",
-                        theProject, classFile, None, Some(method), Some(pc),
-                        Some(operandsArray(pc)),
-                        Some(localsArray(pc)),
-                        "useless (re-)assignment",
-                        Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                        Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
+                        Relevance.VeryLow,
+                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
+                        Set( IssueCategory.Comprehensibility),
                         Set(IssueKind.ConstantComputation),
-                        Seq.empty,
-                        new Relevance(20)
-                    )
+                        List(new InstructionLocation(
+                                Some("useless (re-)assignment"),
+                                theProject,
+                                classFile,
+                                 method,
+                                pc,
+                                List(new Operands(code,pc,operandsArray(pc),localsArray(pc)))
+                        ))
+                        )
 
                 case (
                     pc,
@@ -118,17 +127,20 @@ object UselessReComputationsAnalysis {
 
                     val lv = code.localVariable(pc, index).get
 
-                    StandardIssue(
+                    Issue(
                         "UselessReevaluation",
-                        theProject, classFile, None, Some(method), Some(pc),
-                        Some(operandsArray(pc)),
-                        Some(localsArray(pc)),
-                        "useless (re-)assignment",
-                        Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
-                        Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
+                        Relevance.VeryLow,
+                        "(re-)assigned the same value ("+a+") to the same variable ("+lv.name+")",
+                       Set( IssueCategory.Comprehensibility),
                         Set(IssueKind.ConstantComputation),
-                        Seq.empty,
-                        new Relevance(20)
+                        List(new InstructionLocation(
+                                Some("useless (re-)assignment"),
+                                theProject,
+                                classFile,
+                                 method,
+                                pc,
+                                List(new Operands(code,pc,operandsArray(pc),localsArray(pc)))
+                        ))
                     )
             }
 

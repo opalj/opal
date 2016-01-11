@@ -37,6 +37,11 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.ConstantString
 import org.opalj.br.analyses.StringConstantsInformation
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueKind
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.FieldLocation
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.
@@ -50,7 +55,7 @@ object UnusedFields {
         fieldAccessInformation:     FieldAccessInformation,
         stringConstantsInformation: StringConstantsInformation,
         classFile:                  ClassFile
-    ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
 
         val candidateFields = classFile.fields.filterNot { field ⇒
             // These fields are inlined by compilers; hence, even if the field is not accessed 
@@ -78,12 +83,12 @@ object UnusedFields {
         }
 
         val unusedAndNoReflectiveAccessFields = unusedFields.filterNot { field ⇒
-            // Let's if we can find:
+            // Let's test if we can find:
             //  - the field's name,
             //  - or the simpleName followed by the field's name
             //  - or the fully qualified name followed by the field's name
             // in the code; if so we assume that the field is reflectively accessed
-            // ignore it
+            // and we ignore it
             val fieldName = field.name
             stringConstantsInformation.get(fieldName).isDefined || {
                 val thisSimpleTypeName = classFile.thisType.simpleName.replace('$', '.')
@@ -100,21 +105,13 @@ object UnusedFields {
         // TODO!!!!
 
         for (unusedField ← unusedAndUnusableFields) yield {
-            StandardIssue(
+            Issue(
                 "UnusedField",
-                theProject,
-                classFile,
-                None,
-                None,
-                None,
-                None,
-                None,
+                Relevance.DefaultRelevance,
                 s"the field ${unusedField.toJava} is unused",
-                None,
-                Set(IssueCategory.Smell, IssueCategory.Comprehensibility),
-                Set(IssueKind.Unused),
-                Nil,
-                Relevance.DefaultRelevance
+                Set(IssueCategory.Correctness, IssueCategory.Comprehensibility),
+                Set(IssueKind.UnusedField),
+                List(new FieldLocation(None,theProject,classFile,unusedField))
             )
         }
     }

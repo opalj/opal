@@ -46,7 +46,7 @@ import br.analyses._
  * @author Michael Eichberg
  * @author Daniel Klauer
  */
-class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
+object SyncSetUnsyncGet  {
 
     override def description: String =
         "Reports getters that are unsynchronized while the setter is synchronized."
@@ -58,8 +58,8 @@ class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def doAnalyze(
-        project:       Project[Source],
+    def apply(
+        project:       SomeProject,
         parameters:    Seq[String]     = List.empty,
         isInterrupted: () ⇒ Boolean
     ): Iterable[MethodBasedReport[Source]] = {

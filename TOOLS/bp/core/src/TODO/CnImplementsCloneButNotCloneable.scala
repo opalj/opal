@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,27 +30,22 @@ package org.opalj
 package frb
 package analyses
 
-import AnalysesHelpers._
 import br._
+import org.opalj.br.MethodDescriptor.JustReturnsObject
 import br.analyses._
 
 /**
- * This analysis reports classes which implement `java.lang.Cloneable` but do not
- * implement the `clone()` method. If `Cloneable` was implemented explicitly, then it was
- * probably the programmer's intention to implement a `clone()` too.
+ * This analysis reports classes that have a `clone()` method but do not implement
+ * `java.lang.Cloneable`. This violates the `Object.clone()` contract.
  *
  * @author Ralf Mitschke
- * @author Peter Spieler
+ * @author Roberts Kolosovs
  */
-class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source] {
+class CnImplementsCloneButNotCloneable[Source] extends FindRealBugsAnalysis[Source] {
 
-    /**
-     * Returns a description text for this analysis.
-     * @return analysis description
-     */
-    override def description: String =
-        "Reports classes that implement the interface cloneable, "+
-            "but not the clone() method."
+    override def description: String = "Reports classes implementing clone() but not Cloneable."
+
+    private val Cloneable = ObjectType("java/lang/Cloneable")
 
     /**
      * Runs this analysis on the given project.
@@ -65,25 +60,18 @@ class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source
         isInterrupted: () ⇒ Boolean
     ): Iterable[ClassBasedReport[Source]] = {
 
-        // If it's unknown, it's neither possible nor necessary to check the subtypes
-        if (project.classHierarchy.isUnknown(ObjectType.Cloneable)) {
-            return Iterable.empty
-        }
-
         for {
-            cloneable ← project.classHierarchy.allSubtypes(ObjectType.Cloneable, false)
-            classFile ← project.classFile(cloneable)
-            if !project.isLibraryType(classFile)
-            if !classFile.methods.exists {
-                case Method(_, "clone", NoArgsAndReturnObject) ⇒ true
-                case _                                         ⇒ false
-            }
+            classFile ← project.allProjectClassFiles
+            if classFile.superclassType.isDefined // classFile != java.lang.Object
+            if !classFile.isAnnotationDeclaration
+            Method(_, "clone", JustReturnsObject) ← classFile.methods
+            if project.classHierarchy.isSubtypeOf(classFile.thisType, Cloneable).isNo
         } yield {
             ClassBasedReport(
                 project.source(classFile.thisType),
                 Severity.Error,
                 classFile.thisType,
-                "Implements java.lang.Cloneable but not clone()"
+                "implements clone(), but not Cloneable"
             )
         }
     }

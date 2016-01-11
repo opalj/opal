@@ -59,7 +59,7 @@ import org.opalj.ai.domain.l2.CalledMethodsStore
 /**
  * The base domain that is shared by all domains that are used to perform abstract
  * interpretations of methods.
- * 
+ *
  * @author Michael Eichberg
  */
 trait BaseBugPickerAnalysisDomain

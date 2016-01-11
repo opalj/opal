@@ -250,7 +250,7 @@ trait AnalysisExecutor {
         println("[info] executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        println(result.consoleReport)
+        println(result.toConsoleString)
     }
 
     protected def handleParsingExceptions(

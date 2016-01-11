@@ -30,7 +30,6 @@ package org.opalj
 package frb
 package analyses
 
-import AnalysesHelpers._
 import br._
 import br.analyses._
 import br.instructions._
@@ -44,6 +43,8 @@ import br.instructions._
  * @author Roberts Kolosovs
  */
 class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
+
+	val Runtime = ObjectType("java/lang/Runtime")
 
     /**
      * Returns a description text for this analysis.
@@ -73,9 +74,9 @@ class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
             classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
             instruction ← body.instructions.filter {
-                case INVOKESTATIC(SystemType, "runFinalizersOnExit",
+                case INVOKESTATIC(ObjectType.System, "runFinalizersOnExit",
                     `runFinalizersOnExitMethodDescriptor`) ⇒ true
-                case INVOKESTATIC(RuntimeType, "runFinalizersOnExit",
+                case INVOKESTATIC(Runtime, "runFinalizersOnExit",
                     `runFinalizersOnExitMethodDescriptor`) ⇒ true
                 case _ ⇒ false
             }

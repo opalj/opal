@@ -27,8 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
+package issues
 
 import scala.Console.{RED, YELLOW, RESET}
 
@@ -49,11 +48,15 @@ final case class Relevance(value: Int) extends AnyVal {
 
     def merge(other: Relevance): Relevance = new Relevance(Math.max(this.value, other.value))
 
+    def name: String = Relevance.toCategoryName(this)
+
+    def toEclipseConsoleString: String = s"[$name]"
+
     /**
      * The lower the value, the "whiter" the color. If the value is 100
      * then the color will be black.
      */
-    def asHTMLColor = {
+    def toHTMLColor = {
         if (value >= 80)
             "rgb(135, 4, 10)"
         else if (value >= 40)
@@ -64,20 +67,15 @@ final case class Relevance(value: Int) extends AnyVal {
         }
     }
 
-    def asAnsiColoredString: String = {
+    def toAnsiColoredString: String = {
         if (value > 65)
-            RED+"[error]"+RESET
+            RED + name + RESET
         else if (value > 32)
-            YELLOW+"[warn]"+RESET
+            YELLOW + name + RESET
         else
-            "[info]"
+            Relevance.toCategoryName(this)
     }
 
-    def asEclipseConsoleString: String = {
-        s"[relevance=$value]"
-    }
-
-    def asName: String = Relevance.toCategoryName(this)
 }
 
 object Relevance {
@@ -86,7 +84,7 @@ object Relevance {
 
     final val VeryHigh = Relevance(80)
 
-    final val High = Relevance(70)
+    final val High = Relevance(75)
 
     final val Moderate = Relevance(50)
     final val DefaultRelevance = Moderate
@@ -122,16 +120,15 @@ object Relevance {
 
     def toCategoryName(relevance: Relevance): String = {
         val r = relevance.value
-        if (r >= OfUtmostRelevance.value) "of utmost relevance"
+        if (r >= OfUtmostRelevance.value) "extreme"
         else if (r >= VeryHigh.value) "very high"
         else if (r >= High.value) "high"
         else if (r >= Moderate.value) "moderate"
-        else if (r >= UselessDefensiveProgramming.value) "useless defensive programming"
         else if (r >= Low.value) "low"
         else if (r >= VeryLow.value) "very low"
-        else if (r >= CommonIdiom.value) "common programming idiom"
-        else if (r >= ProvenAssertion.value) "proven assertion"
-        else if (r >= OfNoRelevance.value) "irrelevant (technical artifact)"
+        else if (r >= CommonIdiom.value) "irrelevant [common programming idiom]"
+        else if (r >= ProvenAssertion.value) "irrelevant [proven assertion]"
+        else if (r >= OfNoRelevance.value) "irrelevant [technical/compile time artifact]"
         else "undetermined"
 
     }

@@ -27,11 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package frb
-package analyses
+package bugpicker
+package core
+package analysis
 
-import br._
-import br.analyses._
+import org.opalj.issues.Issue
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.BooleanType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ObjectType
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.ClassLocation
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not
@@ -39,8 +50,9 @@ import br.analyses._
  * without an `equals(Object)` method, `Object.equals(Object)` is not properly overridden.
  *
  * @author Daniel Klauer
+ * @author Michael Eichberg
  */
-class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
+object CovariantEquals {
 
     override def description: String =
         "Reports classes with one (or more) equals() methods but without equals(Object)."
@@ -67,21 +79,21 @@ class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def doAnalyze(
-        project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
-    ): Iterable[ClassBasedReport[Source]] = {
+    def apply(
+        project: SomeProject,
+        classFile: ClassFile): Iterable[Issue] = {
 
-        for (
-            classFile ← project.allProjectClassFiles.filter(hasEqualsButNotEqualsObject(_))
-        ) yield {
-            ClassBasedReport(
-                project.source(classFile.thisType),
-                Severity.Warning,
-                classFile.thisType,
-                "Missing equals(Object) to override Object.equals(Object)"
-            )
-        }
+        if (hasEqualsButNotEqualsObject(classFile))
+            Iterable(Issue(
+                "CovariantEquals",
+                Relevance.Moderate,
+                "missing equals(Object) to override Object.equals(Object)",
+                    Set (IssueCategory.Correctness),
+                Set(IssueKind.DubiousMethodDefinition),
+                List(new ClassLocation(None, project, classFile))
+            ))
+        else
+            Nil
+
     }
 }

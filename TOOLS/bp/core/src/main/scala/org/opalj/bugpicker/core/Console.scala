@@ -36,8 +36,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+
 import scala.collection.SortedMap
 import scala.xml.Node
+
+import com.typesafe.config.ConfigRenderOptions
+
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
@@ -48,7 +52,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
-import com.typesafe.config.ConfigRenderOptions
+import org.opalj.issues.IssueKind
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -114,7 +118,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |                unguarded use,unused">] a comma seperated list of issue kinds
             |                that should be reported.]
             |[-eclipse      creates an eclipse console compatible output.]
-            |[-bdl          creates a bdl report.]
+            |[-idl          creates an idl report.]
             |[-html[=<FileName>] generates an HTML report which is written to the optionally
             |               specified location.]
             |[-debug[=<FileName>] turns on the debug mode (more information are logged and
@@ -175,14 +179,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         // Generate the report well suited for the eclipse console
         //
         if (parameters.contains("-eclipse")) {
-            val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
+            val formattedIssues = issues.map { issue ⇒ issue.toEclipseConsoleString }
             println(formattedIssues.toSeq.sorted.mkString("\n"))
         }
 
         // Generate a report using the bug description language
         //
-        if (parameters.contains("-bdl")) {
-            val formattedIssues = issues.map { issue ⇒ issue.asBDL }
+        if (parameters.contains("-idl")) {
+            val formattedIssues = issues.map { issue ⇒ issue.toIDL }
             println(s"Analysis of "+cpFiles.mkString(", "))
             println("Parameters")
             println(parameters.mkString("\n"))
@@ -321,7 +325,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     outputFormatGiven = true; true
                 case "-eclipse" ⇒
                     outputFormatGiven = true; true
-                case "-bdl" ⇒
+                case "-idl" ⇒
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true

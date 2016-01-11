@@ -27,8 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
+package issues
 
 /**
  * An issue kind describes how '''an issue manifests itself in the source code'''.
@@ -40,14 +39,21 @@ object IssueKind {
 
     final val AllKinds = {
         Set(
+            MethodMissing,
             ConstantComputation,
             DeadPath,
             ThrowsException,
             UnguardedUse,
-            Unused,
+            UnusedField,
+            UnusedMethod,
             Useless
         )
     }
+
+    /**
+     * A method that should be implemented is missing.
+     */
+    final val MethodMissing = "method missing"
 
     /**
      * A computation that always returns the same value.
@@ -83,10 +89,14 @@ object IssueKind {
     final val UnguardedUse = "unguarded use"
 
     /**
-     * Something is currently not used, but may be used in the future if additional code
-     * is written. I.e., new methods/classes may use the respective method/field/class.
+     * The field is not used and cannot be used by 3rd part extensions.
      */
-    final val Unused = "unused element"
+    final val UnusedField = "unused field"
+
+    /**
+     * The method is not used and cannot be used by 3rd part extensions.
+     */
+    final val UnusedMethod = "unused method"
 
     /**
      * Something is currently unused and cannot be used in the future.
@@ -99,4 +109,15 @@ object IssueKind {
      * The Java Collection API is not used in the correct way/as intended.
      */
     final val JavaCollectionAPIMisusage = "Java collection API Misusage"
+
+    final val MissingStaticModifier = "the static modifier is missing"
+
+    /**
+     * "a method is called that may have unexpected/unwanted behavior in the given context"
+     */
+    final val DubiousMethodCall = "dubious method call"
+
+    final val DubiousMethodDefinition = "dubious method definition"
+
+    final val InconsistentSynchronization = "inconsistent synchronization"
 }

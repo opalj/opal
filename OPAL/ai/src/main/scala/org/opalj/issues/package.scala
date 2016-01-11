@@ -27,10 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
 
-import org.opalj.collection.PartialCollection
+import scala.language.implicitConversions
+
+import java.io.File
+import java.net.URL
 import scala.collection.Map
+import org.opalj.collection.PartialCollection
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.br.analyses.ReportableAnalysisAdapter
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -38,31 +44,44 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-package object analyses {
+package object issues {
 
     /**
-     * Type alias for Project's with an arbitrary sources.
+     * Shortens an absolute path to one relative to the current working directory.
      */
-    type SomeProject = Project[_]
-
-    type ProgressEvent = ProgressEvents.Value
-
-    type DeclaredMethods = Map[ObjectType, PartialCollection[Set[Method]]]
-
-    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
-
-    type StringConstantsInformation = Map[String, List[(Method, PC)]]
+    def absoluteToRelative(path: String): String = {
+        path.stripPrefix(System.getProperty("user.dir") + System.getProperty("file.separator"))
+    }
 
     /**
-     * An analysis that may produce a result.
+     * Turns the jar URL format into a string better suited for the console reports.
      */
-    type SingleOptionalResultAnalysis[Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
+    def prettifyJarUrl(jarurl: String): String = {
+        // Extract the paths of jar and class files.
+        // jar URL format: jar:file:<jar path>!/<inner class file path>
+        val split = jarurl.stripPrefix("jar:file:").split("!/")
+
+        val jar = absoluteToRelative(split.head)
+        val file = split.last
+
+        jar+"!/"+Console.BOLD + file + Console.RESET
+    }
 
     /**
-     * An analysis that may produce multiple results. E.g., an analysis that looks for
-     * instances of bug patterns.
+     * Converts a URL into a string, intended to be displayed as part of console reports.
+     *
+     * Absolute file names are shortened to be relative to the current directory,
+     * to avoid using up too much screen space in the console.
      */
-    type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
+    def urlToLocationIdentifier(url: URL): String = {
+        url.getProtocol() match {
+            case "file" ⇒ absoluteToRelative(url.getPath())
+            case "jar"  ⇒ prettifyJarUrl(url.toExternalForm())
+            case _      ⇒ url.toExternalForm()
+        }
+    }
+
+    def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
 
 }
 

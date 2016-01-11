@@ -27,72 +27,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package core
+package issues
 
 /**
  * Defines a partial order for issues. The issues are sorted
- * first by the analysis, then by their class, then by the method(signature) then
- * by the line in which the issue occurs (alternatively by
- * the pc) and at last by the summary.
+ * first by the relevance, then by their locations, then by the categories then
+ * by the kinds then by the analyses ids and at last by the summary.
  *
  * @author Michael Eichberg
  */
 object IssueOrdering extends scala.math.Ordering[Issue] {
 
+    def compare(x: Set[String], y: Set[String]): Int = {
+        if (x.size != y.size) {
+            x.size - y.size
+        } else {
+            val xUniques = (x -- y)
+            if (xUniques.isEmpty) {
+                0
+            } else {
+                val xUniqueHead = xUniques.toSeq.sorted.head
+                val yUniqueHead = (y -- x).toSeq.sorted.head
+                xUniqueHead compare yUniqueHead
+            }
+        }
+    }
+
     def compare(x: Issue, y: Issue): Int = {
-        if (x.analysis < y.analysis) {
-            return -1;
-        }
-        if (x.analysis > y.analysis) {
-            return 1;
-        }
-        if (x.classFile.fqn < y.classFile.fqn) {
-            return -1;
-        }
-        if (x.classFile.fqn > y.classFile.fqn)
-            return 1;
+        if (x.relevance.value < y.relevance.value) return -1;
+        if (x.relevance.value > y.relevance.value) return 1;
 
-        if (x.method.isDefined && y.method.isEmpty)
-            return 1;
-
-        if (x.method.isEmpty && y.method.isDefined)
-            return -1;
-
-        if (x.method.isEmpty && y.method.isEmpty) {
-            // if we have no method information,
-            // we can just compare the summaries
-            return x.summary compare (y.summary);
+        if (x.locations.size != y.locations.size) return x.locations.size - y.locations.size;
+        else {
+            x.locations.zip(y.locations).collectFirst {
+                case (l1, l2) if (l1 compare l2) != 0 ⇒ l1 compare l2
+            } match {
+                case Some(result) ⇒ result
+                case _            ⇒ // let's continue the comparison
+            }
         }
 
-        // both methods are defined...
-        val methodComparison = x.method.compare(y.method)
-        if (methodComparison != 0)
-            return methodComparison;
+        val categoriesComparison = compare(x.categories, y.categories)
+        if (categoriesComparison != 0) return categoriesComparison;
 
-        (x.line, y.line) match {
-            case (Some(xl), None) ⇒
-                return -1
-            case (None, Some(yl)) ⇒
-                return 1
-            case (Some(xl), Some(yl)) if xl != yl ⇒
-                return xl - yl
-            case _ ⇒ /*go on*/
+        val kindsComparison = compare(x.kinds, y.kinds)
+        if (kindsComparison != 0) return kindsComparison;
 
-        }
+        if (x.analysis < y.analysis) return -1;
+        if (x.analysis > y.analysis) return 1;
 
-        (x.pc, y.pc) match {
-            case (Some(_), None) ⇒
-                return -1
-            case (None, Some(_)) ⇒
-                return 1
-            case (Some(xpc), Some(ypc)) if xpc != ypc ⇒
-                return xpc - ypc
-            case _ ⇒ /*go on*/
-
-        }
-
-        return x.summary compare (y.summary);
+        // last resort...
+        x.summary compare (y.summary)
     }
 
 }

@@ -76,6 +76,13 @@ import org.opalj.br.instructions.ATHROW
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.LocalVariables
+import org.opalj.issues.Operands
+import org.opalj.issues.InstructionLocation
 
 /**
  * This analysis identifies those instructions
@@ -88,15 +95,18 @@ object ThrowsExceptionAnalysis {
     type ThrowsExceptionAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def apply(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
+        theProject: SomeProject, 
+        classFile: ClassFile, 
+        method: Method,
         result: AIResult { val domain: ThrowsExceptionAnalysisDomain }
-    ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
+        val code = result.code
 
         val exceptionThrowingInstructions =
-            result.code collectWithIndex {
+            code collectWithIndex {
                 case (pc, i: Instruction) if operandsArray(pc) != null &&
                     i != ATHROW && domain.regularSuccessorsOf(pc).isEmpty &&
                     (
@@ -106,7 +116,7 @@ object ThrowsExceptionAnalysis {
                     (pc, i)
             }
 
-        val exceptionIssues: Seq[StandardIssue] = {
+        val exceptionIssues: Seq[Issue] = {
 
             for { (pc, instruction) ← exceptionThrowingInstructions } yield {
                 val operands = operandsArray(pc)
@@ -140,17 +150,28 @@ object ThrowsExceptionAnalysis {
                     else
                         Relevance.VeryHigh
                 }
-                StandardIssue(
+                Issue(
                     "ThrowsExceptionAnalysis",
-                    theProject, classFile, field = None, Some(method), Some(pc),
-                    Some(operands),
-                    Some(result.localsArray(pc)),
-                    "causes exception",
-                    Some(s"The evaluation of the instruction always throws the exception(s): $exceptions."),
-                    Set(IssueCategory.Bug),
+                    relevance,
+                    "evaluation will always lead to an exception",
+                    Set(IssueCategory.Correctness),
                     Set(IssueKind.ThrowsException),
-                    Seq.empty,
-                    relevance
+                    List(new InstructionLocation(
+                          Some(  s"the evaluation of the instruction always throws the exception(s): $exceptions"),
+                        theProject,
+                        classFile,
+                        method,
+                        pc,
+                        List(
+                           new Operands(
+                                    code,
+                                    pc,
+                                    operands.take(instruction.numberOfPoppedOperands { x => ??? }),
+                                    result.localsArray(pc)
+                                    ),
+                            new LocalVariables(code,pc,result.localsArray(pc))        
+                        )
+                    ))
                 )
             }
         }

@@ -54,3 +54,18 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
         new BasicReport(converter(analysis.analyze(project, parameters, initProgressManagement)))
     }
 }
+
+object ReportableAnalysisAdapter {
+
+    def apply[Source](
+        analysis: Analysis[Source, Iterable[ReportableAnalysisResult]]
+    ): Analysis[Source, ReportableAnalysisResult] = {
+
+        ReportableAnalysisAdapter(
+            analysis,
+            (results: Iterable[ReportableAnalysisResult]) ⇒
+                results.map(_.toConsoleString).mkString("\n")
+        )
+
+    }
+}

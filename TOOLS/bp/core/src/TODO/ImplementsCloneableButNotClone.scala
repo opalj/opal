@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,25 +30,27 @@ package org.opalj
 package frb
 package analyses
 
-import AnalysesHelpers._
 import br._
+import org.opalj.br.MethodDescriptor.JustReturnsObject
 import br.analyses._
-import br.instructions._
 
 /**
- * This analysis reports calls to `java.lang.System/Runtime.gc()` that seem to be made
- * manually in code outside the JRE.
- *
- * Manual invocations of garbage collection are usually unnecessary and can lead to
- * performance problems. This heuristic tries to detect such cases.
+ * This analysis reports classes which implement `java.lang.Cloneable` but do not
+ * implement the `clone()` method. If `Cloneable` was implemented explicitly, then it was
+ * probably the programmer's intention to implement a `clone()` too.
  *
  * @author Ralf Mitschke
  * @author Peter Spieler
  */
-class ManualGarbageCollection[Source] extends FindRealBugsAnalysis[Source] {
+object ImplementsCloneableButNotClone {
 
+    /**
+     * Returns a description text for this analysis.
+     * @return analysis description
+     */
     override def description: String =
-        "Reports methods outside of java.lang that explicitly invoke the garbage collector."
+        "Reports classes that implement the interface cloneable, "+
+            "but not the clone() method."
 
     /**
      * Runs this analysis on the given project.
@@ -57,32 +59,32 @@ class ManualGarbageCollection[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def doAnalyze(
-        project:       Project[Source],
+    def apply(
+        project:       SomeProject,
         parameters:    Seq[String]     = List.empty,
         isInterrupted: () ⇒ Boolean
-    ): Iterable[MethodBasedReport[Source]] = {
+    ): Iterable[ClassBasedReport[Source]] = {
 
-        import MethodDescriptor.NoArgsAndReturnVoid
+        // If it's unknown, it's neither possible nor necessary to check the subtypes
+        if (project.classHierarchy.isUnknown(ObjectType.Cloneable)) {
+            return Iterable.empty
+        }
 
-        // For all methods outside java.lang with "gc" in their name calling gc()...
         for {
-            classFile ← project.allProjectClassFiles
-            if !classFile.thisType.fqn.startsWith("java/lang")
-            method @ MethodWithBody(body) ← classFile.methods
-            if !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined
-            instruction ← body.instructions
-            if (instruction match {
-                case INVOKESTATIC(SystemType, "gc", NoArgsAndReturnVoid) ⇒ true
-                case INVOKEVIRTUAL(RuntimeType, "gc", NoArgsAndReturnVoid) ⇒ true
-                case _ ⇒ false
-            })
-        } yield MethodBasedReport(
-            project.source(classFile.thisType),
-            Severity.Info,
-            classFile.thisType,
-            method,
-            "Contains unnecessary call to gc()"
-        )
+            cloneable ← project.classHierarchy.allSubtypes(ObjectType.Cloneable, false)
+            classFile ← project.classFile(cloneable)
+            if !project.isLibraryType(classFile)
+            if !classFile.methods.exists {
+                case Method(_, "clone", JustReturnsObject) ⇒ true
+                case _                                         ⇒ false
+            }
+        } yield {
+            ClassBasedReport(
+                project.source(classFile.thisType),
+                Severity.Error,
+                classFile.thisType,
+                "Implements java.lang.Cloneable but not clone()"
+            )
+        }
     }
 }
