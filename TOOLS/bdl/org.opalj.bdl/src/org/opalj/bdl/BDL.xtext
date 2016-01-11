@@ -68,7 +68,7 @@ IssueElement: 													// structure of one issue
 		kinds=IssueKindElement
 		relevance=IssueRelevanceElement
 		package=IssuePackageElement
-		class=IssueClassElement
+		class=IssueClassElement?
 		method=IssueMethodElement?
 	 '}'
 ;
@@ -80,7 +80,7 @@ IssueKindElement:		name='Kinds:' 		elements += IssueKinds      (',' elements += 
 IssueRelevanceElement:	name='Relevance:'	relevance=INT;
 IssuePackageElement: 	name='Package:'		package=SlashPath;
 IssueClassElement:		name='Class:'		class=IssueClass;
-IssueMethodElement:		name='Method:'		method=IssueMethodDefinition;
+IssueMethodElement:		name='Method:'		definition=IssueMethodDefinition;
 
 IssueTypes:														// hard coded list of types
 	'DeadEdgesAnalysis'|
@@ -89,10 +89,10 @@ IssueTypes:														// hard coded list of types
 	'UnusedMethodsAnalysis'|
 	'UselessComputationsAnalysis';
 IssueCategories:												// hard coded list of categories, maybe remove variable assignment -> no quick proposal then but easier access to the value ...
-	bug					= 'bug'|
-	smell				= 'smell'|
-	performance			= 'performance'|
-	comprehensibility	= 'comprehensibility';
+	'bug'|
+	'smell'|
+	'performance'|
+	'comprehensibility';
 IssueKinds: 		'constant computation'|'dead path'|'throws exception'|'unguarded use'|'unused'|'useless';
 IssueClass: 		ID ('$' ID)* ('$' INT)*;
 IssueMethodDefinition: (accessFlags+=AccessFlags)+ returnType=MethodTypes name=ID ('()'|'(' parameter+=MethodTypes (',' parameter+=MethodTypes)*')');
@@ -104,4 +104,4 @@ AnyValues: INT | ID | INT ID | INT '.' INT;
 SlashPath: ID ('/' ID)*;
 QualifiedName:	ID ('.' ID)* ('$' ID)?;
 AccessFlags: 'public'|'private'|'protected'|'static'|'SUPER'|'abstract'|'final'|'synchronized'|'SYNTHETIC';
-MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes '[]'+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];
+MethodTypes: void='void'|baseType=ID|array='array{' subType=MethodTypes (dimensions+='[]')+ '}'|object='object' ref=[jvmTypes::JvmType|QualifiedName];

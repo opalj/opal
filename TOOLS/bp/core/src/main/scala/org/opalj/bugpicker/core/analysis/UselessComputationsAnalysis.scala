@@ -72,7 +72,7 @@ object UselessComputationsAnalysis {
         def Issue(pc: PC, message: String, relevance: Relevance): StandardIssue =
             StandardIssue(
                 "UselessComputationsAnalysis",
-                theProject, classFile, Some(method),
+                theProject, classFile, None, Some(method),
                 Some(pc),
                 Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
                 "the expression always evaluates to the same value",

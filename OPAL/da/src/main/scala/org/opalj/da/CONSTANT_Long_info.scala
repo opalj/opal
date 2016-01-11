@@ -32,12 +32,9 @@ package da
 import scala.xml.Node
 
 /**
- *
  * @author Michael Eichberg
  */
-case class CONSTANT_Long_info(
-        value: Long
-) extends Constant_Pool_Entry {
+case class CONSTANT_Long_info(value: Long) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Long
 

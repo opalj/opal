@@ -393,7 +393,7 @@ object DeadEdgesAnalysis {
                     isRelatedToCompilationOfFinally
             issues ::= StandardIssue(
                 "DeadEdgesAnalysis",
-                theProject, classFile, Some(method), Some(pc),
+                theProject, classFile, None, Some(method), Some(pc),
                 Some(operands), Some(result.localsArray(pc)),
                 if (isJustDeadPath)
                     s"[dead path] the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"

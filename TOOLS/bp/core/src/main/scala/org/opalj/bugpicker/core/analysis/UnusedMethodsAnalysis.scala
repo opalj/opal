@@ -160,7 +160,7 @@ object UnusedMethodsAnalysis {
 
                 val issue = StandardIssue(
                     "UnusedMethodsAnalysis",
-                    theProject, classFile, Some(method), None,
+                    theProject, classFile, None, Some(method), None,
                     None,
                     None,
                     "unused method",

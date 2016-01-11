@@ -29,6 +29,11 @@
 package org.opalj
 package fpcf
 package analysis
+package methods
+
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * Common supertrait of all purity properties.
@@ -61,7 +66,7 @@ object Purity extends PropertyMetaInformation {
             // hence, we can leverage the "pureness" 
             Pure
         // NOTE
-        // We DON NOT increase the pureness of all methods as this will happen automatically
+        // We DO NOT increase the pureness of all methods as this will happen automatically
         // as a sideeffect of setting the pureness of one method!
         // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
         )

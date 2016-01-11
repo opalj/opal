@@ -50,8 +50,6 @@ import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analysis.Purity
-import org.opalj.fpcf.analysis.Pure
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.ai.analyses.cg.CallGraph
@@ -105,7 +103,7 @@ object CollectionsUsage {
                                 case INVOKESPECIAL(_, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                     issues ::= StandardIssue(
                                         "CollectionsUsage",
-                                        theProject, classFile, Some(method), Some(pc),
+                                        theProject, classFile, None, Some(method), Some(pc),
                                         None,
                                         None,
                                         "directly use Collections.emptyList/Collections.emptySet",
@@ -144,7 +142,7 @@ object CollectionsUsage {
                             if (foundAddCall && foundConstructorCall) {
                                 issues ::= StandardIssue(
                                     "CollectionsUsage",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     None,
                                     None,
                                     "directly use Collections.singletonList/Collections.singletonSet",

@@ -54,8 +54,10 @@ public class BDLHighlightingConfiguration implements IHighlightingConfiguration 
     
 	@Override
 	public void configure(IHighlightingConfigurationAcceptor acceptor) {
-		// TODO Auto-generated method stub
-		acceptor.acceptDefaultHighlighting(DEFAULT_ID, "Default", defaultTextStyle());
+		// defines the different style
+		// ID -> name -> style
+		acceptor.acceptDefaultHighlighting(DEFAULT_ID, "Default", 
+				createTextStyle(10, 0, new RGB(1, 1, 1) ));
 		acceptor.acceptDefaultHighlighting(Style_Analysis_ID, "Analysis", 
 				createTextStyle(20, SWT.BOLD, new RGB(128, 0, 70) ));
 		acceptor.acceptDefaultHighlighting(Style_Parameters_ID, "Parameters", 
@@ -78,16 +80,8 @@ public class BDLHighlightingConfiguration implements IHighlightingConfiguration 
 				createTextStyle(10, SWT.ITALIC, new RGB(175, 75, 125) ));
 		
 	}
-
-    protected TextStyle defaultTextStyle() {
-        TextStyle textStyle = new TextStyle();
-        textStyle.setColor(new RGB(1, 1, 1));
-        
-        textStyle.setFontData(getDefaultFont(10));
-        
-        return textStyle;
-    }
     
+    // finds the default font
     private FontData[] getDefaultFont(int adjustSize){
     	FontData[] fd = JFaceResources.getDefaultFont().getFontData();
 
@@ -99,6 +93,8 @@ public class BDLHighlightingConfiguration implements IHighlightingConfiguration 
         return fd;
     }
     
+    // create a style with the given parameters
+    // the parameter "style" uses the SWT types for font styles like SWT.BOLD or SWT.ITALIC
     protected TextStyle createTextStyle(int size, int style,RGB color){
     	TextStyle ret  = new TextStyle();
     	ret.setFontData(getDefaultFont(size));

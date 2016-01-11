@@ -207,7 +207,7 @@ object GuardedAndUnguardedAccessAnalysis {
                 val issues = unguardedAccesses.map(ua ⇒ (ua._3, "unguarded access"))
                 StandardIssue(
                     "GuardedAndUnguardedAccessAnalysis",
-                    theProject, classFile, Some(method), Some(guardPC),
+                    theProject, classFile, field = None, Some(method), Some(guardPC),
                     Some(operandsArray(guardPC)),
                     None,
                     "guard",

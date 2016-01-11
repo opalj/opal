@@ -75,12 +75,13 @@ class CallGraph private[opalj] (
     /**
      * Returns the methods that are potentially invoked by the invoke instruction
      * identified by the (`method`,`pc`) pair.
+     *
+     * If the project is incomplete the iterable may be empty!
      */
     def calls(method: Method, pc: PC): Iterable[Method] = {
-        callsMap.get(method) match {
-            case Some(callees) ⇒ callees.get(pc).get
-            case None          ⇒ Iterable.empty
-        }
+        callsMap.get(method).map { callees ⇒
+            callees.get(pc).getOrElse(Iterable.empty)
+        }.getOrElse(Iterable.empty)
     }
 
     /**

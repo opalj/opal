@@ -30,7 +30,12 @@
 
 package org.opalj.bdl.ui;
 
+import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.xtext.common.types.JvmGenericType;
+import org.eclipse.xtext.common.types.JvmMember;
+import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmType;
+import org.eclipse.xtext.common.types.JvmVisibility;
 import org.eclipse.xtext.common.types.access.IJvmTypeProvider;
 import org.eclipse.xtext.common.types.xtext.ui.TypeAwareHyperlinkHelper;
 import org.eclipse.xtext.nodemodel.INode;
@@ -39,6 +44,8 @@ import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.hyperlinking.IHyperlinkAcceptor;
 import org.opalj.bdl.bDL.IssueClassElement;
 import org.opalj.bdl.bDL.IssueElement;
+import org.opalj.bdl.bDL.IssueMethodDefinition;
+import org.opalj.bdl.bDL.IssueMethodElement;
 import org.opalj.bdl.bDL.IssuePackageElement;
 
 import com.google.inject.Inject;
@@ -46,7 +53,10 @@ import com.google.inject.Inject;
 @SuppressWarnings("restriction")
 public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 	@Inject
-    private IJvmTypeProvider.Factory      jvmTypeProviderFactory;
+    private		IJvmTypeProvider.Factory	jvmTypeProviderFactory;
+	
+	@Inject
+	protected 	ILabelProvider 				labelProvider;
 	
 	@Override
     public void createHyperlinksByOffset(XtextResource resource, int offset, IHyperlinkAcceptor acceptor) {
@@ -57,7 +67,9 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 				(node.getSemanticElement() != null) &&
 				(
 						(node.getSemanticElement() instanceof IssuePackageElement)||
-						(node.getSemanticElement() instanceof IssueClassElement)
+						(node.getSemanticElement() instanceof IssueClassElement) ||
+						(node.getSemanticElement() instanceof IssueMethodElement) ||
+						(node.getSemanticElement() instanceof IssueMethodDefinition)
 				)
 		   )
 		{
@@ -67,7 +79,7 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 			
 			if (parent != null){
 				IssueElement issue = (IssueElement)parent.getSemanticElement();
-			
+
 				IssuePackageElement pPackage 	= issue.getPackage();
 				IssueClassElement   pClass  	= issue.getClass_();
 
@@ -75,10 +87,18 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 					
 					String fullName = pPackage.getPackage().replace("/", ".") +"."+ pClass.getClass_();
 					IJvmTypeProvider typeProvider = jvmTypeProviderFactory.findOrCreateTypeProvider(resource.getResourceSet());
-					JvmType pType = typeProvider.findTypeByName(fullName);
-					if (pType != null)
-						createHyperlinksTo(resource, node.getParent(), pType, acceptor);
-					
+					JvmType pType = typeProvider.findTypeByName( fullName );
+					if (pType != null){
+						JvmOperation op = null;
+						if ( (issue.getMethod() != null) && (issue.getMethod().getDefinition() != null) )
+							op = findOperation(pType, issue.getMethod().getDefinition());
+						if (op != null){
+							createHyperlinksTo(resource, node.getParent(), op, acceptor);
+						}else{
+							createHyperlinksTo(resource, node.getParent(), pType, acceptor);
+						}
+					}
+
 					return;
 				}
 			}
@@ -86,5 +106,67 @@ public class BDLHyperLinkHelper extends TypeAwareHyperlinkHelper {
 		
 		
 		super.createHyperlinksByOffset(resource, offset, acceptor);
+	}
+	
+	// returns the best matching operation of the type compared to the definition
+	// TODO: maybe tune it a bit more?
+	private JvmOperation findOperation( JvmType pType, IssueMethodDefinition definition){
+		if (!(pType instanceof JvmGenericType)) return null;
+		
+		JvmGenericType generic = (JvmGenericType) pType;
+		JvmOperation pBest = null;
+		int			 iBest = 0;
+
+		for (JvmMember member: generic.getMembers()){
+			if (member instanceof JvmOperation){
+				JvmOperation pOP = (JvmOperation) member;
+				int iValue = 0;
+				
+				// check name
+				if (definition.getName().equals( member.getSimpleName() ))
+					iValue += 10;
+			
+				// check return type
+				if (pOP.getReturnType().getSimpleName().equals( 
+						labelProvider.getText(definition.getReturnType()) )
+					)
+					iValue +=3;
+				// check parameters count
+				if (pOP.getParameters().size() == definition.getParameter().size()){
+					iValue +=1;
+					// check each parameter
+					for (int i = 0; i < pOP.getParameters().size(); i++){
+						if (pOP.getParameters().get(i).getParameterType().getSimpleName().equals( 
+								labelProvider.getText(definition.getParameter().get(i))
+							)
+						)
+							iValue +=2;
+					}
+				}
+				// check access flags, missing: 'SUPER'|'final'|'SYNTHETIC';
+				for (String flag : definition.getAccessFlags()){
+					flag = flag.toLowerCase();
+					if (flag.equals("static") 		&& pOP.isStatic()) 
+						iValue +=1;
+					if (flag.equals("abstract") 	&& pOP.isAbstract()) 
+						iValue +=1;
+					if (flag.equals("synchronized") && pOP.isSynchronized()) 
+						iValue +=1;
+					if (flag.equals("public")		 && (pOP.getVisibility() == JvmVisibility.PUBLIC) )
+						iValue+=1;
+					if (flag.equals("protected")	 && (pOP.getVisibility() == JvmVisibility.PROTECTED) )
+						iValue+=1;
+					if (flag.equals("private")		 && (pOP.getVisibility() == JvmVisibility.PRIVATE) )
+						iValue+=1;
+				}
+
+				if (iValue > iBest){
+					iBest = iValue;
+					pBest = pOP;
+				}
+			}
+		}
+
+		return pBest;
 	}
 }

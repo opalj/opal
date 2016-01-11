@@ -622,6 +622,25 @@ final class Code private (
     }
 
     /**
+     * Collects all instructions for which the given function is defined. The order in
+     * which the instructions are collected is reversed when compared to the order in the
+     * instructions array.
+     */
+    def collectInstructions[B](f: PartialFunction[Instruction, B]): Seq[B] = {
+        val max_pc = instructions.size
+        var result: List[B] = List.empty
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if (f.isDefinedAt(instruction)) {
+                result = f(instruction) :: result
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        result
+    }
+
+    /**
      * Applies the given function `f` to all instruction objects for which the function is
      * defined. The function is passed a tuple consisting of the current program
      * counter/index in the code array and the corresponding instruction.

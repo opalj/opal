@@ -37,6 +37,11 @@ import org.eclipse.xtext.validation.Check
 import org.opalj.bdl.bDL.ParameterContainer
 import org.opalj.bdl.bDL.ParameterElement
 import org.opalj.bdl.bDL.IssueMethodDefinition
+import org.opalj.bdl.bDL.IssueCategoryElement
+import org.opalj.bdl.bDL.IssueKindElement
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 
 /**
  * This class contains custom validation rules. 
@@ -78,12 +83,41 @@ class BDLValidator extends AbstractBDLValidator {
 		}
 	}
 	
+	// checks uniqueness of categories
+	@Check
+	def check(IssueCategoryElement element){
+		checkStringList(element.elements,
+			element,
+			BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS,
+			"Every category can only occur once!"
+		);
+	}
+	
+	// check uniqueness of kind elements
+	@Check
+	def check(IssueKindElement element){
+		checkStringList(element.elements,
+			element,
+			BDLPackage.Literals.ISSUE_KIND_ELEMENT__ELEMENTS,
+			"Every kind can only occur once!"
+		);
+	}
+	// check uniqueness of access flags
 	@Check
 	def check(IssueMethodDefinition method){
-		for (var int first = 0; first < method.accessFlags.length; first++){
-			for (var second = first +1; second < method.accessFlags.length; second++)
-				if (method.accessFlags.get(first).equals(method.accessFlags.get(second)))
-					error("Every access flag can only occur once!", method, BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS, INVALID_NAME);
+		checkStringList(method.accessFlags,
+			method,
+			BDLPackage.Literals.ISSUE_METHOD_DEFINITION__ACCESS_FLAGS,
+			"Every access flag can only occur once!"
+		);
+	}
+	
+	// checks if a item in a list of strings occurs more than once
+	def checkStringList( EList<String> list, EObject src, EStructuralFeature feature, String message){
+		for (var int first = 0; first < list.length; first++){
+			for (var second = first +1; second < list.length; second++)
+				if (list.get(first).equals(list.get(second)))
+					error(message + ' ("'+ list.get(first) +'")', src, feature, INVALID_NAME);
 		}
 	}
 }

@@ -70,7 +70,6 @@ object OPALBuild extends Build {
 		Validate,
 		demos,
 		findRealBugsAnalyses,
-		findRealBugsCLI,
 		incubation)
 
 	/*****************************************************************************
@@ -175,19 +174,6 @@ object OPALBuild extends Build {
 		base = file("OPAL/frb/analyses"),
 		settings = buildSettings
 	).dependsOn(fpcfa % "test->test;compile->compile;it->it")
-	 .configs(IntegrationTest)
-
-	lazy val findRealBugsCLI = Project(
-		id = "FindRealBugsCLI",
-		base = file("OPAL/frb/cli"),
-		settings =
-			buildSettings ++
-			Seq (
-				test in assembly := {},
-				assemblyJarName in assembly := "FindREALBugs-" + version.value+".jar",
-				mainClass in assembly := Some("org.opalj.frb.cli.FindRealBugsCLI")
-			)
-	).dependsOn(findRealBugsAnalyses % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	lazy val incubation = Project(

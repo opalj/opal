@@ -29,14 +29,10 @@
 package org.opalj
 package fpcf
 package analysis
-package mutation
-
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
+package fields
 
 /**
- * Describes the behavior of the program w.r.t. mutating the fields of a class.
+ * Specifies how often a field is potentially updated.
  *
  * A field is considered as ''effectively'' final if the field is:
  *  - actually final or
@@ -48,17 +44,20 @@ import org.opalj.fpcf.PropertyMetaInformation
  *
  * @author Michael Eichberg
  */
-sealed trait Mutated extends Property {
-    final def key: PropertyKey = Mutated.key // All instances have to share the SAME key!
+sealed trait FieldUpdates extends Property {
+    final def key: PropertyKey = FieldUpdates.key // All instances have to share the SAME key!
 }
 
-object Mutated extends PropertyMetaInformation {
+object FieldUpdates extends PropertyMetaInformation {
 
     final val key: PropertyKey = PropertyKey.create("Mutability", NonFinalByLackOfInformation)
 
 }
 
-sealed trait Final extends Mutated {
+/**
+ * The field is only set once to a non-default value and only the updated value is used.
+ */
+sealed trait Final extends FieldUpdates {
     final val isRefineable: Boolean = false
     val byDefinition: Boolean
 }
@@ -67,7 +66,10 @@ case object EffectivelyFinal extends Final { final val byDefinition = false }
 
 case object DeclaredFinal extends Final { final val byDefinition = true }
 
-sealed trait NonFinal extends Mutated {
+/**
+ * The field is potentially updated multiple times.
+ */
+sealed trait NonFinal extends FieldUpdates {
     final val isRefineable: Boolean = false
     val byReason: String
 }

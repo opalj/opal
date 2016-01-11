@@ -32,18 +32,26 @@ package core
 package analysis
 
 import java.net.URL
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConversions
-import scala.collection.SortedMap
-import scala.util.control.ControlThrowable
-import scala.xml.Node
-import scala.xml.Unparsed
-import scala.io.Source
 import java.lang.Double.parseDouble
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConversions
+import scala.collection.SortedMap
+import scala.util.control.ControlThrowable
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Unparsed
+import scala.io.Source
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -69,22 +77,16 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.util.XHTML
 import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
-import scala.xml.NodeSeq
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysisRegistry
+import org.opalj.fpcf.FPCFAnalysesRegistry
 import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.util.Milliseconds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
-import com.typesafe.config.ConfigRenderOptions
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -108,7 +110,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
     override def title: String = "BugPicker"
 
-    override def description: String = "Finds bugs in Java (byte) code."
+    override def description: String = "Finds code smells in Java (byte) code."
 
     /**
      * Executes the analysis of the project's concrete methods.
@@ -128,6 +130,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         initProgressManagement: (Int) ⇒ ProgressManagement
     ): BugPickerResults = {
 
+        import theProject.config
+
         implicit val logContext = theProject.logContext
 
         // related to managing the analysis progress
@@ -143,9 +147,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         val maxCardinalityOfIntegerRanges = analysisParameters.as[Long]("maxCardinalityOfLongSets")
         val maxCardinalityOfLongSets = analysisParameters.as[Int]("maxCardinalityOfLongSets")
         val configuredAnalyses = analysisParameters.as[List[String]]("fpcfAnalyses")
-        val fpcfAnalyses = configuredAnalyses.map { description ⇒
-            FPCFAnalysisRegistry.getFixpointAnalysisFactory(description)
-        }
+        val fpcfAnalyses = configuredAnalyses.map { a ⇒ FPCFAnalysesRegistry.factory(a) }
         val maxCallChainLength = theProject.config.as[Int](
             "org.opalj.bugpicker.analysis.RootBugPickerAnalysisDomain.maxCallChainLength"
         )
@@ -223,7 +225,23 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new ConcurrentLinkedQueue[StandardIssue]()
+        val filteredResults = new ConcurrentLinkedQueue[StandardIssue]()
+        val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
+        OPALLogger.debug(
+            "project configuration",
+            s"only issues in packages matching $issuesPackageFilterString are shown"
+        )
+        val issuesPackageFilter = issuesPackageFilterString.r
+        def addResults(issues: Iterable[StandardIssue]): Unit = {
+            if (issues.nonEmpty) {
+                val filteredIssues = issues.filter { issue ⇒
+                    val packageName = issue.definingPackageName
+                    val allMatches = issuesPackageFilter.findFirstIn(packageName)
+                    allMatches.isDefined && packageName == allMatches.get
+                }
+                filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
+            }
+        }
 
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
@@ -241,9 +259,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             //
             // CHECK IF THE METHOD IS USED
             //
-            UnusedMethodsAnalysis.analyze(
-                theProject, computedCallGraph, callGraphEntryPoints, classFile, method
-            ) foreach { issue ⇒ results.add(issue) }
+            addResults(
+                UnusedMethodsAnalysis.analyze(
+                    theProject, computedCallGraph, callGraphEntryPoints, classFile, method
+                )
+            )
 
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
@@ -336,55 +356,40 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 // FIND DEAD CODE
                 //
-                results.addAll(
-                    JavaConversions.asJavaCollection(
-                        DeadEdgesAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                addResults(DeadEdgesAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND SUSPICIOUS CODE
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                addResults(
+                    GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
+
                 )
 
                 //
                 // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                addResults(ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result))
 
                 //
                 // FIND USELESS COMPUTATIONS
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
-                    )
+                addResults(
+                    UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
                 )
 
                 //
                 // FIND UNUSED LOCAL VARIABLES
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
-                    )
+                addResults(
+                    UnusedLocalVariables(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
                 //
                 // FIND STRANGE USES OF THE COLLECTIONS API
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
-                    )
+                addResults(
+                    CollectionsUsage(theProject, propertyStore, callGraph, classFile, method, result)
                 )
 
                 //
@@ -421,7 +426,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                                 StandardIssue(
                                     "UselessReevaluation",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
@@ -444,7 +449,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                                 StandardIssue(
                                     "UselessReevaluation",
-                                    theProject, classFile, Some(method), Some(pc),
+                                    theProject, classFile, None, Some(method), Some(pc),
                                     Some(operandsArray(pc)),
                                     Some(localsArray(pc)),
                                     "useless (re-)assignment",
@@ -456,9 +461,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                 )
                         }
 
-                    results.addAll(
-                        scala.collection.JavaConversions.asJavaCollection(methodsWithValueReassignment)
-                    )
+                    addResults(methodsWithValueReassignment)
                 }
 
             } else if (!doInterrupt()) {
@@ -488,11 +491,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     //
                     // FIND UNUSED FIELDS
                     //
-                    results.addAll(
-                        scala.collection.JavaConversions.asJavaCollection(
-                            UnusedFields(
-                                theProject, fieldAccessInformation, stringConstantsInformation, classFile
-                            )
+                    addResults(
+                        UnusedFields(
+                            theProject, fieldAccessInformation, stringConstantsInformation, classFile
                         )
                     )
 
@@ -528,7 +529,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     progressManagement.end(stepId)
                 }
             }
-            val rawIssues = JavaConversions.collectionAsScalaIterable(results).toSeq
+            val rawIssues = JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
             OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
             StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }

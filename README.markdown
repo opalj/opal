@@ -6,13 +6,13 @@ OPAL was designed from the ground up with *extensibility*, *adaptability* and *s
 # Project Structure
 OPAL consists of several projects which are found in the folder OPAL:
 
-* **Common**(OPAL/common): Contains common helper classes.
+* **Common**(OPAL/common): Contains common helper classes such as generic data structures and graph algorithms.
 
 * **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java bytecode.  
 
-* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that creates a beautiful HTML file of Java class files.
+* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that creates a beautiful HTML representatoin of Java class files. An Eclipse plug-in is found in (OPAL/TOOLS/ep).
 
-* **Bytecode Representation**(OPAL/br): OPAL's primary representation of Java bytecode. Implements all functionality for creating a representation of Java class files.  
+* **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.  
 
 * **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at very different levels of precision. 
 
@@ -29,7 +29,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 7 or 8, Scala 2.11.7 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8, Scala 2.11.7 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder. 
 
 * Call `sbt clean clean-files clean-cache clean-local eclipse copyResources it:compile test:compile unidoc publishLocal copyToEclipsePlugin`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.

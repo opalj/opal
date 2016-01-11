@@ -108,6 +108,7 @@ object UnusedFields {
                 None,
                 None,
                 None,
+                None,
                 s"the field ${unusedField.toJava} is unused",
                 None,
                 Set(IssueCategory.Smell, IssueCategory.Comprehensibility),

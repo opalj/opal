@@ -74,6 +74,23 @@ package object fpcf {
     type Entity = AnyRef
 
     /**
+     * A function that takes an entity and returns a result along with the set of entities
+     * that should be processed next.
+     *
+     * @see [[org.opalj.fpcf#PropertyComputation]] for further details regarding the result.
+     */
+    type IncrementalPropertyComputation = (Entity) ⇒ IncrementalPropertyComputationResult
+
+    /**
+     * A function that is given an entity and a property (which the stores was asked for) and
+     * which returns an incremental property computations result.
+     *
+     * In general an `IncrementalStep` function is called back by the property store when
+     * the analysis required some information.
+     */
+    type IncrementalStep = (Entity, Property) ⇒ IncrementalPropertyComputationResult
+
+    /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
      *  - a function that will continue computing the result once the information
@@ -81,16 +98,6 @@ package object fpcf {
      *  - an intermediate result.
      */
     type PropertyComputation = (Entity) ⇒ PropertyComputationResult
-
-    type IncrementalPropertyComputationResult[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]] = (PropertyComputationResult, Traversable[(F, ProcessedEntity)])
-
-    /**
-     * A function that takes an entity and returns a result along with the set of entities
-     * that should be processed next.
-     *
-     * @see [[org.opalj.fpcf#PropertyComputation]] for further details regarding the result.
-     */
-    type IncrementalPropertyComputation[ProcessedEntity <: Entity, F <: IncrementalPropertyComputation[ProcessedEntity, F]] = (ProcessedEntity) ⇒ IncrementalPropertyComputationResult[ProcessedEntity, F]
 
     /**
      * A function that continues the computation of a property. It takes

@@ -69,8 +69,6 @@ import java.io.BufferedWriter
  */
 object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
-    val fw = new BufferedWriter(new FileWriter("D:/opallog.txt"))
-
     override protected def requirements =
         Seq(
             InjectedClassesInformationKey,

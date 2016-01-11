@@ -55,7 +55,7 @@ trait ClassHierarchy {
     /**
      * @see [[Domain.isSubtypeOf]]
      *
-     * @see Delegates to [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
+     * @see Delegates to [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method.
      */
     /*override*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)

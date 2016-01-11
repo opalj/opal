@@ -102,6 +102,8 @@ object LoadConstantInstruction {
             case _                                               ⇒ LoadInt(i)
         }
 
+    def unapply[T](ldc: LoadConstantInstruction[T]): Some[T] = Some(ldc.value)
+
     /**
      * Returns the instruction that puts the constant value on top of the stack
      * that represents the default value that is used to initialize fields

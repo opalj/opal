@@ -40,7 +40,7 @@ import org.opalj.fpcf.PropertyStore
  */
 object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.source_elements_property_store."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.SourceElementsPropertyStore."
 
     /**
      * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.

@@ -156,7 +156,7 @@ private[fpcf] object FallbackResult { private[fpcf] final val id = 6 }
  * @param dependeePK The property kind of the given entity about which some knowledge
  *      is required.
  */
-private[fpcf] abstract class Suspended(
+private[fpcf] abstract class SuspendedPC(
         val e:          Entity,
         val pk:         PropertyKey,
         val dependeeE:  Entity,
@@ -169,17 +169,54 @@ private[fpcf] abstract class Suspended(
      */
     def continue(dependeeP: Property): PropertyComputationResult
 
-    private[fpcf] final def id = Suspended.id
+    private[fpcf] final def id = SuspendedPC.id
 }
 
 /**
  * Factory for creating [[Suspended]] computations.
  */
-private[fpcf] object Suspended {
+private[fpcf] object SuspendedPC {
 
     private[fpcf] final val id = 7
 
-    def unapply(c: Suspended): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
+    def unapply(c: SuspendedPC): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }
+
+/**
+ * Represents a suspended '''incremental''' computation.
+ *
+ * @param dependeeE The entity about which some knowledge is required by this
+ *      computation before the computation can be continued.
+ * @param dependeePK The property kind of the given entity about which some knowledge
+ *      is required.
+ */
+private[fpcf] abstract class SuspendedIPC(
+        val e:          Entity,
+        val pk:         PropertyKey,
+        val dependeeE:  Entity,
+        val dependeePK: PropertyKey
+) extends PropertyComputationResult {
+
+    /**
+     * Called by the framework when the property of the element `dependeeE` on which
+     * this computation is depending on was computed.
+     */
+    def continue(dependeeP: Property): IncrementalPropertyComputationResult
+
+    private[fpcf] final def id = SuspendedIPC.id
+}
+
+/**
+ * Factory for creating [[Suspended]] computations.
+ */
+private[fpcf] object SuspendedIPC {
+
+    private[fpcf] final val id = 8
+
+    def unapply(c: SuspendedIPC): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
+        Some((c.e, c.pk, c.dependeeE, c.dependeePK))
+
+}
+

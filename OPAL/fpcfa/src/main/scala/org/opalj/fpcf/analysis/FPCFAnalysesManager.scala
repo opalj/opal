@@ -90,7 +90,7 @@ class FPCFAnalysesManager private[analysis] (val project: SomeProject) {
                 )(project.logContext)
 
             registerProperties(analysisRunner)
-            analysisRunner.start(project,propertyStore)
+            analysisRunner.start(project, propertyStore)
             if (waitOnCompletion) {
                 propertyStore.waitOnPropertyComputationCompletion(
                     useDefaultForIncomputableProperties = true
