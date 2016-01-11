@@ -34,9 +34,19 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
-
 case object IsExtensible extends SetProperty[ClassFile]
 
+/**
+ *
+ * Computes a set property that holds information if a class is extensible w.r.t. the applied analysis mode.
+ *
+ * While application classes are always closed, libraries are made for future usage which includes the extension
+ * library types.
+ *
+ * @note Since the computed property is a set property, dependee analyses have to wait till the property is computed.
+ *
+ * @author Michael Reif
+ */
 class ClassExtensibilityAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
