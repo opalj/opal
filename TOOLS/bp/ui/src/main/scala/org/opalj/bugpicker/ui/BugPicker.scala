@@ -527,8 +527,6 @@ class BugPicker extends Application {
                 recentProjects = updateRecentProjects(results.get)
                 BugPicker.storeRecentProjectsToPreferences(recentProjects)
                 recentProjectsMenu.items = createRecentProjectsMenu()
-                recentProjectsMenu.disable = false
-                preferencesMenuItem.disable = false
                 sourceView.engine.loadContent("")
                 byteView.engine.loadContent("")
                 bugpickerLogMessages.clear()
@@ -553,6 +551,9 @@ class BugPicker extends Application {
                                 projectExplorerTreeView.visible = true
                                 bugPickerPane.items.add(0, projectExplorerShown)
                             }
+
+                            recentProjectsMenu.disable = false
+                            preferencesMenuItem.disable = false
                         }
                     }
                 }.start
