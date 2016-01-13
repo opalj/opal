@@ -385,7 +385,7 @@ trait RecordCFG
         val exitNode = new DefaultMutableNode[List[PC]](
             Nil,
             (n) ⇒ "Exit",
-            Map("shape" → "box", "labelloc" → "l"),
+            Map("shape" → "box", "shape" → "doubleoctagon", "fillcolor" → "black", "color" → "white", "labelloc" → "l"),
             List.empty[DefaultMutableNode[List[PC]]]
         )
         for (pc ← code.programCounters) {
@@ -454,15 +454,17 @@ trait RecordCFG
             val currentNode = nodes(pc)
             if (currentNode.hasOneChild) {
                 val successorNode = currentNode.firstChild
-                val successorNodePC = successorNode.identifier.head
-                if (nodePredecessorsCount(successorNodePC) == 1) {
-                    currentNode.updateIdentifier(
-                        currentNode.identifier ++ currentNode.firstChild.identifier
-                    )
-                    currentNode.mergeVisualProperties(successorNode.visualProperties)
-                    currentNode.removeLastAddedChild() // the only child...
-                    currentNode.addChildren(successorNode.children)
-                    nodes(successorNodePC) = currentNode
+                if (successorNode ne exitNode) {
+                    val successorNodePC = successorNode.identifier.head
+                    if (nodePredecessorsCount(successorNodePC) == 1) {
+                        currentNode.updateIdentifier(
+                            currentNode.identifier ++ currentNode.firstChild.identifier
+                        )
+                        currentNode.mergeVisualProperties(successorNode.visualProperties)
+                        currentNode.removeLastAddedChild() // the only child...
+                        currentNode.addChildren(successorNode.children)
+                        nodes(successorNodePC) = currentNode
+                    }
                 }
             }
         }

@@ -36,7 +36,7 @@ import scala.collection.immutable.Vector
 import scala.collection.generic.FilterMonadic
 
 /**
- * Conceptually, a map where the keys are positive `Int` values and the values are 
+ * Conceptually, a map where the keys are positive `Int` values and the values are
  * non-null.
  * The key values always have to
  * be larger than or equal to 0 and are ideally continues (0,1,2,3,...).
