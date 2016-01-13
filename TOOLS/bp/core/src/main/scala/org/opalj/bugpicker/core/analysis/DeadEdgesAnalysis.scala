@@ -136,7 +136,7 @@ object DeadEdgesAnalysis {
         import result.joinInstructions
         import result.domain.regularSuccessorsOf
         import result.domain.exceptionHandlerSuccessorsOf
-        import result.domain.hasMultipleRegularPredecessors
+        import result.domain.hasMultiplePredecessors
         import result.domain.isRegularPredecessorOf
 
         /*
@@ -303,7 +303,7 @@ object DeadEdgesAnalysis {
                     nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
 
             lazy val isNonExistingDefaultBranchOfSwitch = isDefaultBranchOfSwitch &&
-                hasMultipleRegularPredecessors(pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset)
+                hasMultiplePredecessors(pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset)
 
             lazy val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
                 // this is the default branch of a switch instruction that is dead
