@@ -39,6 +39,11 @@ import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.VoidType
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueKind
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.MethodLocation
 
 /**
  * Identifies unused methods and constructors using the given call graph.
@@ -69,7 +74,7 @@ object UnusedMethodsAnalysis {
         callgraphEntryPoints: Set[Method],
         classFile:            ClassFile,
         method:               Method
-    ): Option[StandardIssue] = {
+    ): Option[Issue] = {
 
         if (method.isSynthetic)
             return None;
@@ -158,19 +163,14 @@ object UnusedMethodsAnalysis {
             val relevance: Relevance = rateMethod()
             if (relevance != Relevance.Undetermined) {
 
-                val issue = StandardIssue(
+                return Some(Issue(
                     "UnusedMethodsAnalysis",
-                    theProject, classFile, None, Some(method), None,
-                    None,
-                    None,
-                    "unused method",
-                    Some(methodOrConstructor(method)),
+                    relevance,
+                    methodOrConstructor(method),
                     Set(IssueCategory.Comprehensibility),
-                    Set(IssueKind.Unused),
-                    Seq(),
-                    relevance
-                )
-                return Some(issue);
+                    Set(IssueKind.UnusedMethod),
+                    List(new MethodLocation(None, theProject, classFile, method))
+                ));
             }
         }
 

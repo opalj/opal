@@ -237,13 +237,13 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             if (issues.nonEmpty) {
                 val filteredIssues = issues.filter { issue ⇒
                     issue.locations.head match {
-                    case l : PackageLocation =>
-                    val packageName = l.thePackage
-                    val allMatches = issuesPackageFilter.findFirstIn(packageName)
-                    allMatches.isDefined && packageName == allMatches.get
-                    case _ =>
-                        // the issue is a project level issue and hence kept
-                        true
+                        case l: PackageLocation ⇒
+                            val packageName = l.thePackage
+                            val allMatches = issuesPackageFilter.findFirstIn(packageName)
+                            allMatches.isDefined && packageName == allMatches.get
+                        case _ ⇒
+                            // the issue is a project level issue and hence kept
+                            true
                     }
                 }
                 filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
@@ -420,10 +420,10 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // Class based analyses
                     // ---------------------------------------------------------------------------
 
-                    addResults(  AnonymousInnerClassShouldBeStatic(theProject,  classFile ))
-                    addResults(  ManualGarbageCollection( theProject,  classFile))
-                    addResults(  CovariantEquals( theProject,  classFile))
-                    
+                    addResults(AnonymousInnerClassShouldBeStatic(theProject, classFile))
+                    addResults(ManualGarbageCollection(theProject, classFile))
+                    addResults(CovariantEquals(theProject, classFile))
+
                     //
                     // FIND UNUSED FIELDS
                     //
@@ -521,24 +521,25 @@ object BugPickerAnalysis {
     final val DefaultFixpointAnalyses = Seq.empty[String]
 
     def resultsAsXHTML(
-        config:            Seq[String],
-        issues: Iterable[Issue],
-        showSearch:        Boolean,
-        analysisTime:      Nanoseconds
+        config:       Seq[String],
+        issues:       Iterable[Issue],
+        showSearch:   Boolean,
+        analysisTime: Nanoseconds
     ): Node = {
         val issuesCount = issues.size
-        val basicInfoOnly = issuesCount > 10000
+        // TODO Make this a configurable property!!!
+        val basicInfoOnly = issuesCount > 15000
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
                 SortedMap.empty[String, List[Issue]] ++
-                    issues.groupBy{                            i ⇒
-                        i.locations.head match{
-                        case thePackage : PackageLocation => thePackage.thePackage
-                        case _ : ProjectLocation => "<project>"         
+                    issues.groupBy { i ⇒
+                        i.locations.head match {
+                            case thePackage: PackageLocation ⇒ thePackage.thePackage
+                            case _: ProjectLocation          ⇒ "<project>"
+                        }
                     }
-                }
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
                     <details class="package_summary">

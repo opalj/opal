@@ -175,12 +175,12 @@ package object br {
     type UpperTypeBound = UIDSet[ReferenceType]
 
     /**
-     * Creates an (X)HTML5 representation of the given type that Java type declarations.
+     * Creates an (X)HTML5 representation of the given Java type declaration.
      */
-    def typeToXHTML(t: Type, abbreviateTypes: Boolean = true): Node = {
+    def typeToXHTML(t: Type, abbreviateType: Boolean = true): Node = {
         t match {
             case ot: ObjectType ⇒
-                if (abbreviateTypes)
+                if (abbreviateType)
                     <abbr class="type object_type" title={ ot.toJava }>
                         { ot.simpleName }
                     </abbr>
@@ -188,7 +188,7 @@ package object br {
                     <span class="type object_type">{ ot.toJava }</span>
             case at: ArrayType ⇒
                 <span class="type array_type">
-                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                    { typeToXHTML(at.elementType, abbreviateType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
                 </span>
             case bt: BaseType ⇒
                 <span class="type base_type">{ bt.toJava }</span>
@@ -197,12 +197,16 @@ package object br {
         }
     }
 
+    def classAccessFlagsToXHTML(accessFlags: Int): Node = {
+        <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
+    }
+
     def typeToXHTML(accessFlags: Int, t: Type, abbreviateTypes: Boolean): Node = {
 
         val signature = typeToXHTML(t, abbreviateTypes)
 
         <span class="type_signature_with_access_flags">
-            <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
+            { classAccessFlagsToXHTML(accessFlags) }
             { signature }
         </span>
     }

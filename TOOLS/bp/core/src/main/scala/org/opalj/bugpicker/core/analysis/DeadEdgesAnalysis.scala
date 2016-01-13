@@ -105,6 +105,13 @@ import org.opalj.br.instructions.PopInstruction
 import org.opalj.issues.Issue
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.IssueOrdering
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.Operands
+import org.opalj.issues.LocalVariables
+import org.opalj.issues.Relevance
+import org.opalj.issues.MethodReturnValues
+import org.opalj.issues.FieldValues
 
 /**
  * Identifies dead edges in code.
@@ -365,17 +372,15 @@ object DeadEdgesAnalysis {
             val operands = allOperands.take(poppedOperandsCount)
 
             val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
-           
+
             val isJustDeadPath = evaluatedInstructions.contains(nextPC)
             val isTechnicalArtifact =
                 isLikelyFalsePositive ||
                     isNonExistingDefaultBranchOfSwitch ||
                     isRelatedToCompilationOfFinally
-val localVariables = result.localsArray(pc)                    
-            issues ::= Issue(
-                "DeadEdgesAnalysis",
-                {
-                          if (isTechnicalArtifact)
+            val localVariables = result.localsArray(pc)
+            val relevance =
+                if (isTechnicalArtifact)
                     Relevance.TechnicalArtifact
                 else if (isProvenAssertion)
                     Relevance.ProvenAssertion
@@ -385,34 +390,43 @@ val localVariables = result.localsArray(pc)
                     Relevance.UselessDefensiveProgramming
                 else
                     Relevance.OfUtmostRelevance
-                },
+
+            val summary =
                 if (isJustDeadPath)
-                	s"dead path found; the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
-                	else
-                		s"dead code found; the successor instruction is dead: pc=$nextPC$line",
+                    s"dead path found; the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
+                else
+                    s"dead code found; the successor instruction is dead: pc=$nextPC$line"
+            issues ::= Issue(
+                "DeadEdgesAnalysis",
+                relevance,
+                summary,
+                Set(IssueCategory.Correctness),
+                Set(IssueKind.DeadPath),
                 List(new InstructionLocation(
-                        Some(
-                    "The evaluation of the instruction never leads to the evaluation of the specified instruction."+(
-                        if (isTechnicalArtifact)
-                            "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is nothing to fix.)"
-                        else if (isProvenAssertion)
-                            "\n(We seem to have proven that an assertion always holds (unless an exeption is throw).)"
-                        else if (isLikelyIntendedDeadDefaultBranch)
-                            "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
-                        else
-                            ""
-                    )
-                ),
-                theProject,
-                classFile,
-                method,
-                pc,
-                List( 
-                        Operands(code,pc,operands,localVariables),
-                        FieldValue(),
-                        MethodReturnValues(),
-                        LocalVariables(code,pc,localVariables))                      
+                    Some(
+                        "The evaluation of the instruction never leads to the evaluation of the specified instruction."+(
+                            if (isTechnicalArtifact)
+                                "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is nothing to fix.)"
+                            else if (isProvenAssertion)
+                                "\n(We seem to have proven that an assertion always holds (unless an exeption is throw).)"
+                            else if (isLikelyIntendedDeadDefaultBranch)
+                                "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
+                            else
+                                ""
                         )
+                    ),
+                    theProject,
+                    classFile,
+                    method,
+                    pc,
+                    List(
+                        new Operands(body, pc, operands, localVariables),
+                        new LocalVariables(body, pc, localVariables)
+                    )
+                )),
+                List(
+                    new FieldValues(classFile, method, result),
+                    new MethodReturnValues(classFile, method, result)
                 )
             )
         }

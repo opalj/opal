@@ -32,9 +32,7 @@ package ui
 
 import java.io.File
 import java.net.URL
-
 import scala.xml.{Node ⇒ xmlNode}
-
 import scalafx.Includes.jfxWorkerStateEvent2sfxWorkerStateEvent
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.property.DoubleProperty
@@ -44,14 +42,13 @@ import scalafx.scene.control.ListView
 import scalafx.scene.control.TabPane
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
-
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.ui.codeview.AddClickListenersOnLoadListener
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.ProgressManagementDialog
+import org.opalj.issues.Issue
 
 /**
  * @author Arne Lottmann

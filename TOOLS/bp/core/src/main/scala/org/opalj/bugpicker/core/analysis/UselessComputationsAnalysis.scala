@@ -32,7 +32,7 @@ package core
 package analysis
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.ai.Domain
 import org.opalj.br.PC
 import org.opalj.ai.collectPCWithOperands
@@ -69,7 +69,8 @@ object UselessComputationsAnalysis {
 
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UselessComputationsAnalysisDomain }): Seq[Issue] = {
+        result: AIResult { val domain: UselessComputationsAnalysisDomain }
+    ): Seq[Issue] = {
 
         val defaultRelevance = Relevance.DefaultRelevance
         val defaultIIncRelevance = Relevance(5)
@@ -122,35 +123,22 @@ object UselessComputationsAnalysis {
                     )
 
             case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) ⇒
-                createIssue(
-                    pc, "0 | x: bit or operation with 0 left operand is useless", Relevance.High
-                )
+                createIssue(pc, "0 | x will always evaluate to x", Relevance.High)
+            case (pc, IOR, Seq(_, ConcreteIntegerValue(0), _*)) ⇒
+                createIssue(pc, "x | 0 will always evaluate to x", Relevance.High)
+            case (pc, IOR, Seq(ConcreteIntegerValue(-1), _*)) ⇒
+                createIssue(pc, "-1 | x will always evaluate to -1", Relevance.High)
+            case (pc, IOR, Seq(_, ConcreteIntegerValue(-1))) ⇒
+                createIssue(pc, "x | -1 will always evaluate to -1", Relevance.High)
 
-                        case (pc,IOR, Seq(_,ConcreteIntegerValue(0), _*)) ⇒                
-                            createIssue(
-                    pc,("x | 0: bit or operation with 0 right operand is useless"),Relevance.High
-                    )
-            //                
-            //            case (IOR, IntValue(-1), _) ⇒
-            //                Some("-1 | x: bit or operation with -1 left operand always returns -1")
-            //            case (IOR, _, IntValue(-1)) ⇒
-            //                Some("x | -1: bit or operation with -1 right operand always returns -1")
-                
-            //            case (IAND, IntValue(0), _) ⇒
-            //                Some("0 & x: bit and operation with 0 left operand always returns 0")
-            //            case (IAND, IntValue(-1), _) ⇒
-            //                Some("-1 & x: bit and operation with -1 left operand is useless")
-            //            case (IAND, _, IntValue(0)) ⇒
-            //                Some("x & 0: bit and operation with 0 right operand always returns 0")
-            //            case (IAND, _, IntValue(-1)) ⇒
-            //                Some("x & -1: bit and operation with -1 right operand is useless")
-            //            
+            case (pc, IAND, Seq(ConcreteIntegerValue(0), _*)) ⇒
+                createIssue(pc, "0 & x will always evaluate to 0", Relevance.High)
+            case (pc, IAND, Seq(ConcreteIntegerValue(-1), _*)) ⇒
+                createIssue(pc, "-1 & x will always evaluate to -1", Relevance.High)
+            case (pc, IAND, Seq(_, ConcreteIntegerValue(0), _*)) ⇒
+                createIssue(pc, "x & 0 will always evaluate to 0", Relevance.High)
             case (pc, IAND, Seq(_, ConcreteIntegerValue(-1), _*)) ⇒
-                createIssue(
-                    pc,
-                    s"x & -1: bit and operation with -1 right operand is useless",
-                    Relevance.High
-                )
+                createIssue(pc, s"x & -1 will always evaluate to x", Relevance.High)
 
             case (pc, instr @ INEG, Seq(ConcreteIntegerValue(a), _*)) ⇒
                 createIssue(pc, s"constant computation: -${a}", defaultRelevance)

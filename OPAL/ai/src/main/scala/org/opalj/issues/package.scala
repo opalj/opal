@@ -32,11 +32,6 @@ import scala.language.implicitConversions
 
 import java.io.File
 import java.net.URL
-import scala.collection.Map
-import org.opalj.collection.PartialCollection
-import org.opalj.br.analyses.Analysis
-import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.br.analyses.ReportableAnalysisAdapter
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate

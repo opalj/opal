@@ -54,7 +54,7 @@ import org.opalj.issues.ClassLocation
  */
 object CovariantEquals {
 
-    override def description: String =
+    def description: String =
         "Reports classes with one (or more) equals() methods but without equals(Object)."
 
     /**
@@ -80,15 +80,16 @@ object CovariantEquals {
      * @return A list of reports, or an empty list.
      */
     def apply(
-        project: SomeProject,
-        classFile: ClassFile): Iterable[Issue] = {
+        project:   SomeProject,
+        classFile: ClassFile
+    ): Iterable[Issue] = {
 
         if (hasEqualsButNotEqualsObject(classFile))
             Iterable(Issue(
                 "CovariantEquals",
                 Relevance.Moderate,
                 "missing equals(Object) to override Object.equals(Object)",
-                    Set (IssueCategory.Correctness),
+                Set(IssueCategory.Correctness),
                 Set(IssueKind.DubiousMethodDefinition),
                 List(new ClassLocation(None, project, classFile))
             ))

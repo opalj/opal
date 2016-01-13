@@ -111,7 +111,7 @@ object UnusedFields {
                 s"the field ${unusedField.toJava} is unused",
                 Set(IssueCategory.Correctness, IssueCategory.Comprehensibility),
                 Set(IssueKind.UnusedField),
-                List(new FieldLocation(None,theProject,classFile,unusedField))
+                List(new FieldLocation(None, theProject, classFile, unusedField))
             )
         }
     }

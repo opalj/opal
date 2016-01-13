@@ -105,17 +105,17 @@ object UselessReComputationsAnalysis {
                         "UselessReevaluation",
                         Relevance.VeryLow,
                         s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
-                        Set( IssueCategory.Comprehensibility),
+                        Set(IssueCategory.Comprehensibility),
                         Set(IssueKind.ConstantComputation),
                         List(new InstructionLocation(
-                                Some("useless (re-)assignment"),
-                                theProject,
-                                classFile,
-                                 method,
-                                pc,
-                                List(new Operands(code,pc,operandsArray(pc),localsArray(pc)))
+                            Some("useless (re-)assignment"),
+                            theProject,
+                            classFile,
+                            method,
+                            pc,
+                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
                         ))
-                        )
+                    )
 
                 case (
                     pc,
@@ -131,15 +131,15 @@ object UselessReComputationsAnalysis {
                         "UselessReevaluation",
                         Relevance.VeryLow,
                         "(re-)assigned the same value ("+a+") to the same variable ("+lv.name+")",
-                       Set( IssueCategory.Comprehensibility),
+                        Set(IssueCategory.Comprehensibility),
                         Set(IssueKind.ConstantComputation),
                         List(new InstructionLocation(
-                                Some("useless (re-)assignment"),
-                                theProject,
-                                classFile,
-                                 method,
-                                pc,
-                                List(new Operands(code,pc,operandsArray(pc),localsArray(pc)))
+                            Some("useless (re-)assignment"),
+                            theProject,
+                            classFile,
+                            method,
+                            pc,
+                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
                         ))
                     )
             }

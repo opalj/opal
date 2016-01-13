@@ -56,7 +56,7 @@ import org.opalj.issues.Relevance
  */
 object AnonymousInnerClassShouldBeStatic {
 
-    override def description: String =
+    def description: String =
         "Identifies anonymous inner classes that should be made static."
 
     private val withinAnonymousClass = "[$][0-9].*[$]".r
@@ -182,9 +182,9 @@ object AnonymousInnerClassShouldBeStatic {
      * @return A list of reports, or an empty list.
      */
     def apply(
-        project: SomeProject,
+        project:   SomeProject,
         classFile: ClassFile
-        ): Iterable[Issue] = {
+    ): Iterable[Issue] = {
         if (project.isLibraryType(classFile)) return None;
 
         if (!(isAnonymousInnerClass(classFile) &&

@@ -31,35 +31,41 @@ package issues
 
 import scala.xml.Node
 import scala.xml.Text
-import org.opalj.collection.mutable.Locals
+import scala.xml.Group
+import scala.xml.UnprefixedAttribute
 import org.opalj.br.PC
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.Code
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
-import org.opalj.ai.domain.l1.IntegerRangeValues
-import scala.xml.Group
+import org.opalj.br.methodToXHTML
+import org.opalj.br.typeToXHTML
+import org.opalj.br.classAccessFlagsToXHTML
 
-sealed trait IssueLocation extends IssueRepresentations {
+/**
+ * The location of an issue.
+ *
+ * @author Michael Eichberg
+ */
+sealed trait IssueLocation extends IssueRepresentations with java.lang.Comparable[IssueLocation] {
 
     /**
-     * The description of the issue w.r.t. the location.
+     * The description of the issue with respect to the given location.
      */
     def description: Option[String]
 
-    def compare(other: IssueLocation): Int
+    def compareTo(other: IssueLocation): Int
 
 }
 
-class ProjectLocation(
+abstract class ProjectLocation(
         val description: Option[String],
         val theProject:  SomeProject,
         val details:     Seq[IssueDetails] = List.empty
 ) extends IssueLocation {
 
-    def compare(other: IssueLocation): Int = {
+    def compareTo(other: IssueLocation): Int = {
         other match {
             case that: InstructionLocation ⇒ 1
             case that: MethodLocation      ⇒ 1
@@ -81,13 +87,6 @@ class ProjectLocation(
         }
     }
 
-    override def toXHTML(basicInfoOnly: Boolean): Node = {
-        Group(List(
-            <dt>project</dt>,
-            <dd>{ description }</dd>
-        ))
-    }
-
     override def toAnsiColoredString: String = {
         description.map(_.replace('\n', ';')).getOrElse("")
     }
@@ -97,8 +96,8 @@ class ProjectLocation(
     }
 
     override def toIDL: String = {
-        description.map { description ⇒
-            "\tproject:\n\t\t"+description.replace("\n", "\n\t\t")+"\n"
+        description.map { d ⇒
+            "\tproject:\n\t\t"+d.replace("\n", "\n\t\t")+"\n"
         }.getOrElse("")
     }
 }
@@ -110,6 +109,32 @@ class PackageLocation(
         details:        Seq[IssueDetails] = List.empty
 ) extends ProjectLocation(description, theProject, details) {
 
+    def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
+        List(<span class="package">{ thePackage.replace('/', '.') }</span>)
+    }
+
+    def descriptionAsXHTML: List[Node] = {
+        if (description.isDefined)
+            List(<br/>, Text(description.get))
+        else
+            List.empty[Node]
+    }
+
+    def detailsAsXHTML(basicInfoOnly: Boolean): List[Node] = {
+        details.map(d ⇒ <div>{ d.toXHTML(basicInfoOnly) }</div>).toList
+    }
+
+    final override def toXHTML(basicInfoOnly: Boolean): Node = {
+        Group(List(
+            <dt>location</dt>,
+            <dd>
+                { locationAsInlineXHTML(basicInfoOnly) }
+                { descriptionAsXHTML }
+                { detailsAsXHTML(basicInfoOnly) }
+            </dd>
+        ))
+    }
+
 }
 
 class ClassLocation(
@@ -117,7 +142,21 @@ class ClassLocation(
         theProject:    SomeProject,
         val classFile: ClassFile,
         details:       Seq[IssueDetails] = List.empty
-) extends PackageLocation(description, theProject, classFile.thisType.packageName, details) {
+) extends PackageLocation(description, theProject, classFile.thisType.packageName, details) with ClassComprehension {
+
+    override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
+        val locationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly) ++
+            List(
+                Text("."),
+                <span class="declaring_class" data-class={ classFile.fqn }>
+                    { typeToXHTML(classFile.thisType, true) }
+                </span>
+            )
+        if (basicInfoOnly || classFile.accessFlags == 0)
+            locationAsInlineXHTML
+        else
+            classAccessFlagsToXHTML(classFile.accessFlags) :: Text(" ") :: locationAsInlineXHTML
+    }
 
     override def toAnsiColoredString: String = {
         theProject.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"
@@ -131,12 +170,35 @@ class ClassLocation(
 }
 
 class MethodLocation(
-        description: Option[String],
-        theProject:  SomeProject,
-        classFile:   ClassFile,
-        val method:  Method,
-        details:     Seq[IssueDetails] = List.empty
-) extends ClassLocation(description, theProject, classFile, details) {
+    description: Option[String],
+    theProject:  SomeProject,
+    classFile:   ClassFile,
+    val method:  Method,
+    details:     Seq[IssueDetails] = List.empty
+) extends ClassLocation(description, theProject, classFile, details)
+        with MethodComprehension {
+
+    val firstLineOfMethod: Option[String] =
+        method.body.flatMap(_.firstLineNumber.map(ln ⇒ (if (ln > 2) (ln - 2) else 0).toString))
+
+    override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
+        var methodNode =
+            <span class="method" data-method={ methodJVMSignature }>
+                {
+                    if (basicInfoOnly)
+                        methodToXHTML(method.name, method.descriptor, true)
+                    else
+                        methodToXHTML(method.accessFlags, method.name, method.descriptor, true)
+
+                }
+            </span>
+        if (firstLineOfMethod.isDefined) {
+            val firstLine = firstLineOfMethod.get.toString
+            methodNode = methodNode % (new UnprefixedAttribute("data-line", firstLine, scala.xml.Null))
+        }
+
+        super.locationAsInlineXHTML(basicInfoOnly) ++ List(Text("{ "), methodNode, Text(" }"))
+    }
 
 }
 
@@ -148,11 +210,17 @@ class InstructionLocation(
     val pc:      PC,
     details:     Seq[IssueDetails] = List.empty
 ) extends MethodLocation(description, theProject, classFile, method, details)
-        with PCLineConversions {
+        with PCLineComprehension {
 
     assert(method.body.isDefined)
 
     def code: Code = method.body.get
+
+    override def locationAsInlineXHTML(basicInfoOnly: Boolean): List[Node] = {
+        val superLocationAsInlineXHTML = super.locationAsInlineXHTML(basicInfoOnly)
+        superLocationAsInlineXHTML.init ++
+            List(Text("["), pcNode, lineNode, Text("]"), superLocationAsInlineXHTML.last)
+    }
 
     override def toEclipseConsoleString: String = {
         val source = classFile.thisType.toJava.split('$').head

@@ -41,9 +41,9 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project, SomeProject}
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.MethodWithBody
 import org.opalj.br.PC
 import org.opalj.br.Code
@@ -115,7 +115,8 @@ object GuardedAndUnguardedAccessAnalysis {
 
     def apply(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }): List[Issue] = {
+        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
+    ): List[Issue] = {
 
         import result.domain
         val operandsArray = result.operandsArray
@@ -206,7 +207,7 @@ object GuardedAndUnguardedAccessAnalysis {
             for ((guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f ⇒ f._1 /*by guard*/ )) yield {
                 val relevance = unguardedAccesses.map(_._2.value).max
 
-                val unguardedLocations: List[IssueLocation] =
+                val unguardedLocations: Seq[IssueLocation] =
                     unguardedAccesses.map { ua ⇒
                         val unguardedAccessPC = ua._3
                         new InstructionLocation(
@@ -215,9 +216,10 @@ object GuardedAndUnguardedAccessAnalysis {
                     }
 
                 val locations =
-                    new InstructionLocation(
-                        Some("guard"), theProject, classFile, method, guardPC
-                    ) :: unguardedLocations
+                    unguardedLocations :+
+                        new InstructionLocation(
+                            Some("guard"), theProject, classFile, method, guardPC
+                        )
 
                 Issue(
                     "GuardedAndUnguardedAccessAnalysis",

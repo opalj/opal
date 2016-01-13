@@ -60,7 +60,7 @@ object IssueOrdering extends scala.math.Ordering[Issue] {
         if (x.locations.size != y.locations.size) return x.locations.size - y.locations.size;
         else {
             x.locations.zip(y.locations).collectFirst {
-                case (l1, l2) if (l1 compare l2) != 0 ⇒ l1 compare l2
+                case (l1, l2) if (l1 compareTo l2) != 0 ⇒ l1 compareTo l2
             } match {
                 case Some(result) ⇒ result
                 case _            ⇒ // let's continue the comparison

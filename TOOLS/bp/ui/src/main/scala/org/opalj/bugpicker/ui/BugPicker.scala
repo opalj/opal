@@ -44,7 +44,6 @@ import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.DiffView
@@ -122,6 +121,7 @@ import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import scala.collection.parallel.BucketCombiner
 import com.typesafe.config.Config
 import scala.util.control.ControlThrowable
+import org.opalj.issues.Issue
 
 /**
  * @author Arne Lottmann
@@ -624,7 +624,7 @@ class BugPicker extends Application {
                                         storeCurrentAnalysis.disable = true
                                         val issues = ObjectProperty(Iterable.empty[Issue])
                                         issues.onChange((o, p, q) ⇒ {
-                                            currentAnalysis = issues().map(_.asXHTML(false))
+                                            currentAnalysis = issues().map(_.toXHTML(false))
                                             if (currentAnalysis != null) {
                                                 storeCurrentAnalysis.disable = false
                                                 loadAnalysisToDiff.disable = false

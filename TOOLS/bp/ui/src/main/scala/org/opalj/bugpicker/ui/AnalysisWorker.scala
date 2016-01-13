@@ -41,12 +41,12 @@ import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
-import org.opalj.bugpicker.core.Issue
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 import scala.util.control.ControlThrowable
+import org.opalj.issues.Issue
 
 /**
  * @author Arne Lottmann
@@ -56,7 +56,7 @@ import scala.util.control.ControlThrowable
 class AnalysisWorker(
     doc:                    ObjectProperty[xmlNode],
     project:                Project[URL],
-    issuez:                 ObjectProperty[Iterable[Issue]],
+    theIssues:              ObjectProperty[Iterable[Issue]],
     initProgressManagement: Int ⇒ ProgressManagement
 ) extends Service[Unit](new jService[Unit]() {
 
@@ -76,7 +76,7 @@ class AnalysisWorker(
             try {
                 val (analysisTime, issues, exceptions) =
                     AnalysisRunner.analyze(project, Seq.empty, initProgressManagement)
-                issuez() = issues
+                theIssues() = issues
                 doc() = createHTMLReport(analysisTime, configParams, issues)
                 exceptions.foreach { exception: Exception ⇒
                     OPALLogger.error(

@@ -113,15 +113,15 @@ object CollectionsUsage {
                                         Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                                         Set(IssueKind.JavaCollectionAPIMisusage),
                                         List(
-                                                new InstructionLocation(
+                                            new InstructionLocation(
                                                 Some("directly use Collections.emptyList/Collections.emptySet"),
-                                                theProject,classFile,method,pc
-                                                ),
-                                                new InstructionLocation(
+                                                theProject, classFile, method, pc
+                                            ),
+                                            new InstructionLocation(
                                                 Some("useless"),
-                                                theProject,classFile,method,origins.head
-                                                )
-                                        
+                                                theProject, classFile, method, origins.head
+                                            )
+
                                         )
                                     )
 
@@ -157,19 +157,18 @@ object CollectionsUsage {
                                     "useless creation of standard collection class",
                                     Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                                     Set(IssueKind.JavaCollectionAPIMisusage),
-                                     List(
-                                                new InstructionLocation(
-                                                Some("directly use Collections.singletonList/Collections.singletonSet"),
-                                                theProject,classFile,method,pc
-                                                ),
-                                                new InstructionLocation(
-                                                Some("useless"),
-                                                theProject,classFile,method,origins.head
-                                                )
-                                        
+                                    List(
+                                        new InstructionLocation(
+                                            Some("directly use Collections.singletonList/Collections.singletonSet"),
+                                            theProject, classFile, method, pc
+                                        ),
+                                        new InstructionLocation(
+                                            Some("useless"),
+                                            theProject, classFile, method, origins.head
                                         )
-                                    
-                                    
+
+                                    )
+
                                 )
                             }
                         }

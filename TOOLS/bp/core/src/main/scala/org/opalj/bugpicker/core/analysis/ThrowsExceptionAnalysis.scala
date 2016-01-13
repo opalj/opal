@@ -95,10 +95,10 @@ object ThrowsExceptionAnalysis {
     type ThrowsExceptionAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def apply(
-        theProject: SomeProject, 
-        classFile: ClassFile, 
-        method: Method,
-        result: AIResult { val domain: ThrowsExceptionAnalysisDomain }
+        theProject: SomeProject,
+        classFile:  ClassFile,
+        method:     Method,
+        result:     AIResult { val domain: ThrowsExceptionAnalysisDomain }
     ): Seq[Issue] = {
 
         val operandsArray = result.operandsArray
@@ -157,19 +157,19 @@ object ThrowsExceptionAnalysis {
                     Set(IssueCategory.Correctness),
                     Set(IssueKind.ThrowsException),
                     List(new InstructionLocation(
-                          Some(  s"the evaluation of the instruction always throws the exception(s): $exceptions"),
+                        Some(s"the evaluation of the instruction always throws the exception(s): $exceptions"),
                         theProject,
                         classFile,
                         method,
                         pc,
                         List(
-                           new Operands(
-                                    code,
-                                    pc,
-                                    operands.take(instruction.numberOfPoppedOperands { x => ??? }),
-                                    result.localsArray(pc)
-                                    ),
-                            new LocalVariables(code,pc,result.localsArray(pc))        
+                            new Operands(
+                                code,
+                                pc,
+                                operands.take(instruction.numberOfPoppedOperands { x ⇒ ??? }),
+                                result.localsArray(pc)
+                            ),
+                            new LocalVariables(code, pc, result.localsArray(pc))
                         )
                     ))
                 )

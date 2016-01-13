@@ -32,12 +32,8 @@ package issues
 import scala.xml.Node
 import scala.xml.Text
 import org.opalj.collection.mutable.Locals
-import org.opalj.br.PC
+import org.opalj.br.{ClassFile, Method, PC, Code}
 import org.opalj.br.instructions.Instruction
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.Code
-import org.opalj.br.Field
 import org.opalj.ai.domain.l1.IntegerRangeValues
 import scala.xml.Comment
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -50,38 +46,79 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
 
-trait PCLineConversions {
+trait ClassComprehension {
+
+    def classFile: ClassFile
+
+    def classFileFQN: String = classFile.fqn
+
+}
+
+trait MethodComprehension extends ClassComprehension {
+
+    def method: Method
+
+    def methodJVMSignature: String = method.name + method.descriptor.toJVMDescriptor
+
+}
+
+trait CodeComprehension {
 
     implicit def code: Code
 
     def pc: PC
 
-    final def line(pc: PC): Option[Int] = PCLineConversions.line(pc)
-
-    final def line: Option[Int] = line(pc)
-
-    final def pcLineToString = PCLineConversions.pcLineToString(pc)
-
     final def opcode: Int = code.instructions(pc).opcode
 
     final def instruction: Instruction = code.instructions(pc)
+}
+
+trait PCLineComprehension extends MethodComprehension with CodeComprehension {
+
+    final def line(pc: PC): Option[Int] = PCLineComprehension.line(pc)
+
+    final def line: Option[Int] = line(pc)
+
+    final def pcLineToString = PCLineComprehension.pcLineToString(pc)
+
+    def pcNode: Node = PCLineComprehension.pcNode(classFileFQN, methodJVMSignature, pc)
+
+    def lineNode: Node = PCLineComprehension.lineNode(classFileFQN, methodJVMSignature, pc, line)
 
 }
-object PCLineConversions {
+object PCLineComprehension {
 
     final def line(pc: PC)(implicit code: Code): Option[Int] = code.lineNumber(pc)
 
-    final def pcLineToString(pc: PC)(implicit code: Code) = "pc="+pc + line(pc).map(" line="+_).getOrElse("")
+    final def pcLineToString(
+        pc: PC
+    )(
+        implicit
+        code: Code
+    ) = "pc="+pc + line(pc).map(" line="+_).getOrElse("")
+
+    def pcNode(classFileFQN: String, methodJVMSignature: String, pc: PC): Node = {
+        <span class="program_counter" data-class={ classFileFQN } data-method={ methodJVMSignature } data-pc={ pc.toString } data-show="bytecode">
+            pc={ pc.toString }
+        </span>
+    }
+
+    def lineNode(classFileFQN: String, methodJVMSignature: String, pc: PC, line: Option[Int]): Node = {
+        line.map { line ⇒
+            <span class="line_number" data-class={ classFileFQN } data-method={ methodJVMSignature } data-line={ line.toString } data-pc={ pc.toString } data-show="sourcecode">
+                line={ line.toString }
+            </span>
+        }.getOrElse(Group(Nil))
+    }
+
 }
 
 /**
- * Information that facilitates the comprehension of the reported issue.
+ * Information that facilitates the comprehension of a reported issue.
  */
 trait IssueDetails extends IssueRepresentations {
 
 }
-
-trait InstructionBasedIssueDetails extends IssueDetails with PCLineConversions
 
 /**
  * @param localVariables The register values at the given location.
@@ -90,7 +127,7 @@ class LocalVariables(
         val code:           Code,
         val pc:             PC,
         val localVariables: Locals[_ <: AnyRef]
-) extends InstructionBasedIssueDetails {
+) extends IssueDetails {
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val localVariableDefinitions = code.localVariablesAt(pc)
@@ -128,7 +165,7 @@ class LocalVariables(
             }
 
         <details class="locals">
-            <summary>Local Variable State [{ pcLineToString }]</summary>
+            <summary>Local Variable State</summary>
             <table>
                 <tr><th>Index</th><th>Name</th><th>Value</th></tr>
                 { lvsAsXHTML }
@@ -149,7 +186,7 @@ class Operands(
         val pc:             PC,
         val operands:       List[_ <: AnyRef],
         val localVariables: Locals[_ <: AnyRef]
-) extends InstructionBasedIssueDetails {
+) extends IssueDetails with CodeComprehension {
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val detailsNodes = instruction match {
@@ -219,7 +256,11 @@ class Operands(
 
 }
 
-class FieldValues(val result: AIResult) extends IssueDetails {
+class FieldValues(
+        val classFile: ClassFile,
+        val method:    Method,
+        val result:    AIResult
+) extends IssueDetails with MethodComprehension {
 
     private[this] implicit def code = result.code
 
@@ -238,20 +279,25 @@ class FieldValues(val result: AIResult) extends IssueDetails {
     }
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
-        <details class="field_values">
-            <summary>Read Field Value Information</summary>
-            <ul>
-                {
-                    collectReadFieldValues.map { fieldData ⇒
-                        val (pc, details) = fieldData
-                        <li>
-                            <span class="line">{ PCLineConversions.pcLineToString(pc) }</span>
-                            <span class="value">{ details }</span>
-                        </li>
-                    }
-                }
-            </ul>
-        </details>
+        import PCLineComprehension.{pcNode, lineNode, line}
+        val readFieldValues =
+            collectReadFieldValues.map { fieldData ⇒
+                val (pc, details) = fieldData
+                <li>
+                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+                    &nbsp;
+                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
+                    <span class="value">{ details }</span>
+                </li>
+            }
+
+        if (readFieldValues.nonEmpty)
+            <details class="field_values">
+                <summary>Read Field Value Information</summary>
+                <ul>{ readFieldValues }</ul>
+            </details>
+        else
+            Group(Nil)
     }
 
     def toAnsiColoredString: String = "" // TODO Support a better representation
@@ -262,13 +308,18 @@ class FieldValues(val result: AIResult) extends IssueDetails {
 
 }
 
-class MethodReturnValues(val result: AIResult) extends IssueDetails {
+class MethodReturnValues(
+        val classFile: ClassFile,
+        val method:    Method,
+        val result:    AIResult
+) extends IssueDetails with MethodComprehension {
 
     private[this] implicit def code = result.code
 
     private[this] def operandsArray = result.operandsArray
 
     def collectMethodReturnValues: Seq[(PC, String)] = {
+
         code.collectWithIndex {
             case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
                 val nextPC = instr.indexOfNextInstruction(pc)
@@ -285,20 +336,25 @@ class MethodReturnValues(val result: AIResult) extends IssueDetails {
     }
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
-        <details class="method_return_values">
-            <summary>Method Return Values</summary>
-            <ul>
-                {
-                    collectMethodReturnValues.map { methodData ⇒
-                        val (pc, details) = methodData
-                        <li>
-                            <span class="line">{ PCLineConversions.pcLineToString(pc) }</span>
-                            <span class="value">{ details }</span>
-                        </li>
-                    }
-                }
-            </ul>
-        </details>
+        import PCLineComprehension.{pcNode, lineNode, line}
+        val methodReturnValues =
+            collectMethodReturnValues.map { methodData ⇒
+                val (pc, details) = methodData
+                <li>
+                    { pcNode(classFileFQN, methodJVMSignature, pc) }
+                    &nbsp;
+                    { lineNode(classFileFQN, methodJVMSignature, pc, line(pc)) }
+                    <span class="value">{ details }</span>
+                </li>
+            }
+
+        if (methodReturnValues.nonEmpty)
+            <details class="method_return_values">
+                <summary>Method Return Values</summary>
+                <ul>{ methodReturnValues }</ul>
+            </details>
+        else
+            Group(Nil)
     }
 
     def toAnsiColoredString: String = "" // TODO Support a better representation

@@ -30,9 +30,7 @@ package org.opalj
 package issues
 
 import scala.xml.Node
-import org.opalj.br.methodToXHTML
-import org.opalj.br.typeToXHTML
-import org.opalj.br.analyses.ReportableAnalysisResult
+import scala.xml.Group
 import scala.xml.Unparsed
 
 /**
@@ -62,7 +60,8 @@ case class Issue(
         summary:    String,
         categories: Set[String],
         kinds:      Set[String],
-        locations:  Seq[IssueLocation]
+        locations:  Seq[IssueLocation],
+        details:    Seq[IssueDetails]  = Nil
 ) extends IssueRepresentations {
 
     assert(!summary.contains('\n'), "the summary must not contain new lines")
@@ -78,21 +77,32 @@ case class Issue(
 
         <div class="an_issue" style={ s"color:${relevance.toHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKinds } data-category={ dataCategories }>
             <dl>
-                <dt class="analysis"> </dt>
+                <dt class="analysis">analysis</dt>
                 <dd>
                     <span class="analysis_id">{ analysis }</span>
                     |
-                    <span class="relevance">relevance={ relevance.value.toString + relevance.name }</span>
+                    <span class="relevance">relevance={ relevance.value.toString+" ("+relevance.name+")" }</span>
                     |
-                    <span class="data_kinds">kind={ dataKinds }</span>
+                    <span class="data_kinds">kind={ kinds.mkString(", ") }</span>
                     |
-                    <span class="data_categories">category={ dataCategories }</span>
+                    <span class="data_categories">category={ categories.mkString(", ") }</span>
                 </dd>
                 <dt>summary</dt>
                 <dd>
                     <span class="issue_summary">{ Unparsed(summary.replace("\n", "<br>")) }</span>
                 </dd>
                 { locations.map(_.toXHTML(basicInfoOnly)) }
+                {
+                    if (!basicInfoOnly && details.nonEmpty)
+                        List(
+                            <dt>facts</dt>,
+                            <dd>
+                                { details.map(_.toXHTML(false)) }
+                            </dd>
+                        )
+                    else
+                        Group(Nil)
+                }
             </dl>
         </div>
     }

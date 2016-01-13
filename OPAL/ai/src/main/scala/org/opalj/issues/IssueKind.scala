@@ -46,7 +46,11 @@ object IssueKind {
             UnguardedUse,
             UnusedField,
             UnusedMethod,
-            Useless
+            UselessComputation,
+            DubiousMethodCall,
+            DubiousMethodDefinition,
+            InconsistentSynchronization
+
         )
     }
 
@@ -98,19 +102,21 @@ object IssueKind {
      */
     final val UnusedMethod = "unused method"
 
+    final val UnusedLocalVariable = "unused local variable"
+
     /**
      * Something is currently unused and cannot be used in the future.
      *
      * Useless is in particular related to the implementation of methods.
      */
-    final val Useless = "useless"
+    final val UselessComputation = "useless computation"
 
     /**
      * The Java Collection API is not used in the correct way/as intended.
      */
     final val JavaCollectionAPIMisusage = "Java collection API Misusage"
 
-    final val MissingStaticModifier = "the static modifier is missing"
+    final val MissingStaticModifier = "static modifier missing"
 
     /**
      * "a method is called that may have unexpected/unwanted behavior in the given context"

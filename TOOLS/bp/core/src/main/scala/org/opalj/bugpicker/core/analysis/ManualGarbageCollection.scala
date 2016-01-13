@@ -59,7 +59,7 @@ object ManualGarbageCollection {
 
     final val Runtime = ObjectType("java/lang/Runtime")
 
-    override def description: String =
+    def description: String =
         "Reports methods outside of java.lang that explicitly invoke the garbage collector."
 
     /**
@@ -69,9 +69,7 @@ object ManualGarbageCollection {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def apply(
-        theProject: SomeProject,
-        classFile: ClassFile): Iterable[Issue] = {
+    def apply(theProject: SomeProject, classFile: ClassFile): Iterable[Issue] = {
 
         import MethodDescriptor.NoArgsAndReturnVoid
 
@@ -80,11 +78,11 @@ object ManualGarbageCollection {
 
         for {
             method @ MethodWithBody(body) ← classFile.methods
-            (pc,gcCall) ← body.collectWithIndex{
-                case (pc,INVOKESTATIC(ObjectType.System, "gc", NoArgsAndReturnVoid)) ⇒ 
-                    (pc,"System.gc()")
-                case (pc,INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) ⇒ 
-                    (pc,"Runtime.gc()")
+            (pc, gcCall) ← body.collectWithIndex {
+                case (pc, INVOKESTATIC(ObjectType.System, "gc", NoArgsAndReturnVoid)) ⇒
+                    (pc, "System.gc()")
+                case (pc, INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) ⇒
+                    (pc, "Runtime.gc()")
             }
         } yield Issue(
             "ManualGarbageCollection",
@@ -92,13 +90,7 @@ object ManualGarbageCollection {
             s"contains dubious call to $gcCall",
             Set(IssueCategory.Performance),
             Set(IssueKind.DubiousMethodCall),
-            List(new InstructionLocation(
-                    None,
-                    theProject,
-                    classFile,
-                    method,
-                    pc
-                    ))
+            List(new InstructionLocation(None, theProject, classFile, method, pc))
         )
     }
 }

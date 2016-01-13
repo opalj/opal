@@ -74,6 +74,13 @@ import org.opalj.br.instructions.LDC2_W
 import org.opalj.br.instructions.ICONST_2
 import org.opalj.br.instructions.FCONST_2
 import org.opalj.br.instructions.LoadConstantInstruction
+import org.opalj.issues.Issue
+import org.opalj.issues.Relevance
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.IssueLocation
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.MethodLocation
 
 /**
  * Identifies unused local variables in non-synthetic methods.
@@ -89,7 +96,7 @@ object UnusedLocalVariables {
         classFile:     ClassFile,
         method:        Method,
         result:        AIResult { val domain: Domain with TheCode with RecordDefUse }
-    ): Seq[StandardIssue] = {
+    ): Seq[Issue] = {
 
         if (method.isSynthetic)
             return Nil;
@@ -121,7 +128,7 @@ object UnusedLocalVariables {
         val instructions = code.instructions
         val implicitParameterOffset = if (!method.isStatic) 1 else 0
 
-        var issues = List.empty[StandardIssue]
+        var issues = List.empty[Issue]
 
         // It may happen that a user defines a final local constant
         // which is then used by the compiler whenever we 
@@ -255,21 +262,18 @@ object UnusedLocalVariables {
             }
 
             if (issue ne null) {
-                issues ::= StandardIssue(
+                issues ::= Issue(
                     "UnusedLocalVariables",
-                    theProject,
-                    classFile,
-                    None,
-                    Some(method),
-                    if (vo >= 0) Some(vo) else None,
-                    None,
-                    None,
+                    relevance,
                     issue,
-                    None,
-                    Set(IssueCategory.Smell, IssueCategory.Performance),
-                    Set(IssueKind.Useless),
-                    Nil,
-                    relevance
+                    Set(IssueCategory.Comprehensibility, IssueCategory.Correctness),
+                    Set(IssueKind.UnusedLocalVariable),
+                    List(
+                        if (vo >= 0)
+                            new InstructionLocation(None, theProject, classFile, method, vo)
+                        else
+                            new MethodLocation(None, theProject, classFile, method)
+                    )
                 )
             }
         }
