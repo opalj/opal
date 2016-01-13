@@ -382,6 +382,12 @@ trait RecordCFG
         val nodes = new Array[DefaultMutableNode[List[PC]]](codeSize)
         val nodePredecessorsCount = new Array[Int](codeSize)
         // 1. create nodes
+        val exitNode = new DefaultMutableNode[List[PC]](
+            Nil,
+            (n) ⇒ "Exit",
+            Map("shape" → "box", "labelloc" → "l"),
+            List.empty[DefaultMutableNode[List[PC]]]
+        )
         for (pc ← code.programCounters) {
             nodes(pc) = {
                 var visualProperties = Map("shape" → "box", "labelloc" → "l")
@@ -389,17 +395,18 @@ trait RecordCFG
                 if (instructions(pc).isInstanceOf[ReturnInstruction]) {
                     visualProperties += "fillcolor" → "green"
                     visualProperties += "style" → "filled"
-                } else if (instructions(pc).isInstanceOf[ATHROW.type] && allExitPCs.contains(pc)) {
-                    visualProperties += "fillcolor" → "yellow"
-                    visualProperties += "style" → "filled"
-                } else if( allExitPCs.contains(pc)){
-                    visualProperties += "fillcolor" → "yellow"
-                    visualProperties += "style" → "filled"
-                    visualProperties += "shape" → "octagon"
-                } else if (allSuccessorsOf(pc).isEmpty) {
+                } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
+                    if (allExitPCs.contains(pc)) {
+                        visualProperties += "fillcolor" → "red"
+                        visualProperties += "style" → "filled"
+                    } else {
+                        visualProperties += "fillcolor" → "yellow"
+                        visualProperties += "style" → "filled"
+                    }
+                } else if (allSuccessorsOf(pc).isEmpty && !allExitPCs.contains(pc)) {
                     visualProperties += "fillcolor" → "red"
                     visualProperties += "style" → "filled"
-                    visualProperties += "shape" → "doubleoctagon"
+                    visualProperties += "shape" → "octagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
@@ -427,9 +434,14 @@ trait RecordCFG
             }
         }
         // 2. create edges
-        for (pc ← code.programCounters; succPC ← allSuccessorsOf(pc)) {
-            nodes(pc).addChild(nodes(succPC))
-            nodePredecessorsCount(succPC) += 1
+        for (pc ← code.programCounters) {
+            for (succPC ← allSuccessorsOf(pc)) {
+                nodes(pc).addChild(nodes(succPC))
+                nodePredecessorsCount(succPC) += 1
+            }
+            if (allExitPCs.contains(pc)) {
+                nodes(pc).addChild(exitNode)
+            }
         }
 
         // 3. fold nodes
