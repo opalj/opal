@@ -30,10 +30,11 @@ package org.opalj
 package bugpicker
 package ui
 
-import java.io.File
+import java.io.{FileWriter, BufferedWriter, File}
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
+import javafx.scene.input
 import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
@@ -73,31 +74,14 @@ import scalafx.geometry.Orientation
 import scalafx.geometry.Pos
 import scalafx.geometry.Rectangle2D
 import scalafx.scene.Scene
-import scalafx.scene.control.Button
-import scalafx.scene.control.Label
-import scalafx.scene.control.Menu
-import scalafx.scene.control.MenuBar
-import scalafx.scene.control.MenuItem
-import scalafx.scene.control.SeparatorMenuItem
-import scalafx.scene.control.SplitPane
-import scalafx.scene.control.Tab
-import scalafx.scene.control.TabPane
+import scalafx.scene.control._
 import scalafx.scene.control.TabPane.sfxTabPane2jfx
-import scalafx.scene.control.TableCell
 import scalafx.scene.control.TableCell.sfxTableCell2jfx
-import scalafx.scene.control.TableColumn
 import scalafx.scene.control.TableColumn.sfxTableColumn2jfx
-import scalafx.scene.control.TableView
 import scalafx.scene.control.TableView.sfxTableView2jfx
-import scalafx.scene.control.TextArea
-import scalafx.scene.control.Tooltip
-import scalafx.scene.control.TreeView
 import scalafx.scene.image.ImageView
-import scalafx.scene.input.KeyCode
+import scalafx.scene.input._
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
-import scalafx.scene.input.KeyCodeCombination
-import scalafx.scene.input.KeyCombination
-import scalafx.scene.input.MouseEvent
 import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
@@ -112,7 +96,6 @@ import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
-import scalafx.scene.input.MouseButton
 import org.opalj.log.GlobalLogContext
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigFactory
@@ -146,7 +129,44 @@ class BugPicker extends Application {
         val byteView: WebView = new WebView {
             contextMenuEnabled = false
         }
+
         val reportView: WebView = new WebView {
+            val saveHTMLItem = new MenuItem("save as HTML") {
+                onAction = { e: ActionEvent ⇒
+                    Platform.runLater {
+                        val name = recentProjects.head.projectName+"_report"
+                        val fileExt = "*.html"
+                        val fsd = new FileChooser {
+                            title = "Save Report As HTML"
+                            extensionFilters ++= Seq(
+                                new FileChooser.ExtensionFilter("Bugpicker HTMLReport", fileExt),
+                                new FileChooser.ExtensionFilter("All Files", "*.*")
+                            )
+                            initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                            initialFileName = name + fileExt
+                        }
+                        val file = fsd.showSaveDialog(stage)
+                        if (file != null) {
+                            val html = engine.executeScript("document.documentElement.outerHTML").toString
+                            val writer = new BufferedWriter(new FileWriter(file))
+                            writer.write(html)
+                            writer.flush()
+                            writer.close()
+                        }
+                    }
+                }
+            }
+
+            val contextMenu = new ContextMenu(saveHTMLItem)
+            onMouseClicked = { e: MouseEvent ⇒
+                if ((e.getButton eq MouseButton.sfxEnum2jfx(MouseButton.SECONDARY))
+                    && (currentAnalysis ne null)) {
+                    contextMenu.show(this, e.getScreenX(), e.getScreenY())
+                } else {
+                    contextMenu.hide()
+                }
+            }
+
             contextMenuEnabled = false
             engine.loadContent(Messages.APP_STARTED)
         }
@@ -451,7 +471,6 @@ class BugPicker extends Application {
                         recentAnalysisToDiffMenu.disable = false
                     }
                 }
-
             }
         }
 
@@ -560,6 +579,7 @@ class BugPicker extends Application {
                             reportView.engine.loadContent(Messages.LOADING_FINISHED)
                             projectExplorer.buildProjectExplorer(project, sources, results.get.projectName)
                             if (!projectExplorerTreeView.isVisible()) {
+                                projectExplorerTreeView.visible = true
                                 projectExplorerTreeView.visible = true
                                 bugPickerPane.items.add(0, projectExplorerShown)
                             }
