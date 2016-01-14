@@ -135,7 +135,7 @@ class BugPicker extends Application {
                 onAction = { e: ActionEvent ⇒
                     Platform.runLater {
                         val name = recentProjects.head.projectName+"_report"
-                        val fileExt = "*.html"
+                        val fileExt = ".html"
                         val fsd = new FileChooser {
                             title = "Save Report As HTML"
                             extensionFilters ++= Seq(
