@@ -158,10 +158,25 @@ class CallBySignatureTargetAnalysis private (
         project:       SomeProject
     ): Answer = {
         val classHierarchy = project.classHierarchy
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
+        /*val methodName = method.name
+        val methodDescriptor = method.descriptor*/
 
-        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
+        val itr = classHierarchy.allSubclasses(classType, false)
+
+        while (itr.hasNext) {
+            val subtype = itr.next
+            project.classFile(subtype) match {
+                case Some(subclassFile) ⇒
+                    if (!subclassFile.isInterfaceDeclaration) {
+                        if (classHierarchy.isSubtypeOf(subtype, interfaceType).isYes)
+                            return Yes;
+                    }
+                case None ⇒
+                    return Unknown;
+            }
+        }
+
+        /*val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
             val subtype = subtypes.head
             project.classFile(subtype) match {
@@ -179,7 +194,7 @@ class CallBySignatureTargetAnalysis private (
                 case _ ⇒ /* do nothing */
             }
             subtypes -= subtype
-        }
+        }*/
 
         No
     }
@@ -190,7 +205,7 @@ object CallBySignatureTargetAnalysis
 
     override def derivedProperties: Set[PropertyKind] = Set(IsExtensible)
 
-    def compute(
+    def cbsTargets(
         methodName:       String,
         methodDescriptor: MethodDescriptor,
         declInterface:    ObjectType,
