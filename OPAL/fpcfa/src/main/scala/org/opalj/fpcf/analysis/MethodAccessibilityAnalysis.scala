@@ -39,9 +39,7 @@ import scala.collection.mutable.ListBuffer
  *
  * @author Michael Reif
  */
-class MethodAccessibilityAnalysis private[analysis] (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def determineProperty(method: Method): PropertyComputationResult = {
         if (method.isPrivate)

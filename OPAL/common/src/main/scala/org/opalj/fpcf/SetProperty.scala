@@ -33,7 +33,7 @@ import org.opalj.collection.mutable.ArrayMap
 
 /**
  * A set property is a property that is shared by a set of entities. A set property is
- * generally not refineable and not revokable.
+ * generally cannot be refined and cannot be revoked.
  *
  * A [[SetProperty]] is compared with other properties using reference comparison. Hence, in
  * general a new [[SetProperty]] is created by creating an object that inherits from
@@ -52,7 +52,7 @@ trait SetProperty[E <: AnyRef] extends PropertyKind {
     // the id is used to efficiently get the respective (identity) set
     final val id = { SetProperty.nextId(this.getClass().getSimpleName) }
 
-    final val index: Int = -id - 1
+    private[fpcf] final val index: Int = -id - 1
 
     private[fpcf] final val mutex = new Object
 }

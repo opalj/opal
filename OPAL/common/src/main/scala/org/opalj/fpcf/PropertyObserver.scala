@@ -47,7 +47,7 @@ private[fpcf] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
      * The entity and property key for which the property of the observed element
      * is necessary.
      */
-    def depender: EPK
+    def depender: SomeEPK
 
     /**
      * If `true` this observer is immediately deregistered when it is called (for the

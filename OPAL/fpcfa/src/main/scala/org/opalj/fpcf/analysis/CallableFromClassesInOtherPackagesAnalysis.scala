@@ -41,28 +41,35 @@ import org.opalj.br.VoidType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
 import scala.collection.mutable.ListBuffer
-import org.opalj.fpcf.PropertyKind
+
+sealed trait CallableFromClassesInOtherPackagesPropertyMetaInformation
+        extends PropertyMetaInformation {
+    final type Self = CallableFromClassesInOtherPackages
+}
 
 /**
  * This property expresses the leakage of methods to the client such that
  * the method can be called by a client. A method does only leak if it gets accessible
  * though inheritance where a immediate non-abstract subclass inherits the target method.
  */
-sealed trait CallableFromClassesInOtherPackages extends Property {
-
-    final def key: org.opalj.fpcf.PropertyKey = CallableFromClassesInOtherPackages.key
-
+sealed trait CallableFromClassesInOtherPackages
+        extends Property
+        with CallableFromClassesInOtherPackagesPropertyMetaInformation {
+    final def key = CallableFromClassesInOtherPackages.key
 }
 
-object CallableFromClassesInOtherPackages extends PropertyMetaInformation {
-
-    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
-
+object CallableFromClassesInOtherPackages
+        extends CallableFromClassesInOtherPackagesPropertyMetaInformation {
+    final val key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
 }
 
-case object Callable extends CallableFromClassesInOtherPackages { final val isRefineable: Boolean = false }
+case object Callable extends CallableFromClassesInOtherPackages {
+    final val isRefineable: Boolean = false
+}
 
-case object NotCallable extends CallableFromClassesInOtherPackages { final val isRefineable: Boolean = false }
+case object NotCallable extends CallableFromClassesInOtherPackages {
+    final val isRefineable: Boolean = false
+}
 
 /**
  * This Analysis determines the ´LibraryLeakage´ property of a method. A method is considered as leaked
