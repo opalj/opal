@@ -31,6 +31,12 @@ package fpcf
 package analysis
 package immutability
 
+sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
+
+    final type Self = ObjectImmutability
+
+}
+
 /**
  * Specifies the mutability of instances of a class type. The
  * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
@@ -84,7 +90,7 @@ package immutability
  * @author Andre Pacak
  * @author Michael Eichberg
  */
-sealed trait ObjectImmutability extends Property {
+sealed trait ObjectImmutability extends Property with ObjectImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `ObjectImmutability` properties.
@@ -95,13 +101,13 @@ sealed trait ObjectImmutability extends Property {
 /**
  * Common constants use by all [[ObjectImmutability]] properties associated with methods.
  */
-object ObjectImmutability extends PropertyMetaInformation {
+object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
 
     /**
      * The key associated with every [[ObjectImmutability]] property.
      */
     final val key =
-        PropertyKey.create(
+        PropertyKey.create[ObjectImmutability](
             "ObjectImmutability",
             // The default property that will be used if no analysis is able
             // to (directly) compute the respective property.

@@ -36,11 +36,14 @@ package escape
  * it to methods or assigning it to fields.
  */
 sealed trait SelfReferenceLeakage extends Property {
+
+    final type Self = SelfReferenceLeakage
+
     final def key = SelfReferenceLeakage.Key
 }
 
 object SelfReferenceLeakage {
-    final val Key = PropertyKey.create("SelfReferenceLeakage", LeaksSelfReference)
+    final val Key = PropertyKey.create[SelfReferenceLeakage]("SelfReferenceLeakage", LeaksSelfReference)
 }
 
 case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefineable = false }

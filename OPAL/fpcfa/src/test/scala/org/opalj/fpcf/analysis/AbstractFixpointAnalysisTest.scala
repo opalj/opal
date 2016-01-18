@@ -79,7 +79,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         executer.run(analysisRunner, true)
     }
 
-    def propertyKey: PropertyKey
+    def propertyKey: PropertyKey[Property]
 
     def propertyAnnotation: ObjectType
 

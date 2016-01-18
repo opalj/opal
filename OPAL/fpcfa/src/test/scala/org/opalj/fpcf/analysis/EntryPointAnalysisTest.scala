@@ -19,7 +19,7 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def analysisRunner = LibraryEntryPointsAnalysis
 
-    override def propertyKey: PropertyKey = EntryPoint.key
+    override def propertyKey: PropertyKey[EntryPoint] = EntryPoint.key
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/EntryPointProperty")

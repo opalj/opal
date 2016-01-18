@@ -31,6 +31,10 @@ package fpcf
 package analysis
 package fields
 
+sealed trait FieldUpdatesPropertyMetaInformation extends PropertyMetaInformation {
+    type Self = FieldUpdates
+}
+
 /**
  * Specifies how often a field is potentially updated.
  *
@@ -44,13 +48,13 @@ package fields
  *
  * @author Michael Eichberg
  */
-sealed trait FieldUpdates extends Property {
-    final def key: PropertyKey = FieldUpdates.key // All instances have to share the SAME key!
+sealed trait FieldUpdates extends Property with FieldUpdatesPropertyMetaInformation {
+    final def key = FieldUpdates.key // All instances have to share the SAME key!
 }
 
-object FieldUpdates extends PropertyMetaInformation {
+object FieldUpdates extends FieldUpdatesPropertyMetaInformation {
 
-    final val key: PropertyKey = PropertyKey.create("Mutability", NonFinalByLackOfInformation)
+    final val key = PropertyKey.create("Mutability", NonFinalByLackOfInformation)
 
 }
 

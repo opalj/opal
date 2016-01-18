@@ -30,12 +30,17 @@ package org.opalj
 package fpcf
 package analysis
 
+sealed trait FactoryMethodPropertyMetaInformation extends PropertyMetaInformation {
+
+    final type Self = FactoryMethod
+}
+
 /**
  * Common super trait of all factory method properties.
  */
-sealed trait FactoryMethod extends Property {
+sealed trait FactoryMethod extends Property with FactoryMethodPropertyMetaInformation {
 
-    final def key: org.opalj.fpcf.PropertyKey = FactoryMethod.key
+    final def key = FactoryMethod.key
 
 }
 /**
@@ -43,7 +48,7 @@ sealed trait FactoryMethod extends Property {
  * all properties derived from the ProjectAccessibility property, as well as it defines defines
  * the (sound) fall back if the property is not computed but requested by another analysis.
  */
-object FactoryMethod extends PropertyMetaInformation {
+object FactoryMethod extends FactoryMethodPropertyMetaInformation {
 
     /**
      * The key associated with every FactoryMethod property.
@@ -52,7 +57,7 @@ object FactoryMethod extends PropertyMetaInformation {
      * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
      * all depended analyses.
      */
-    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("FactoryMethod", IsFactoryMethod)
+    final val key: PropertyKey[FactoryMethod] = PropertyKey.create("FactoryMethod", IsFactoryMethod)
 }
 
 /**

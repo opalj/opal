@@ -42,11 +42,15 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
+sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInformation {
+    final type Self = MethodComplexity
+}
+
 /**
  *
  * @param value The estimated complexity of a specific method.
  */
-case class MethodComplexity(value: Int) extends Property {
+case class MethodComplexity(value: Int) extends Property with MethodComplexityPropertyMetaInformation {
 
     assert(value >= 0)
 
@@ -56,11 +60,11 @@ case class MethodComplexity(value: Int) extends Property {
 
 }
 
-object MethodComplexity extends PropertyMetaInformation {
+object MethodComplexity extends MethodComplexityPropertyMetaInformation {
 
     final val TooComplex = MethodComplexity(Int.MaxValue)
 
-    final val key = PropertyKey.create("MethodComplexity", TooComplex)
+    final val key = PropertyKey.create[MethodComplexity]("MethodComplexity", TooComplex)
 
 }
 

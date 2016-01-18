@@ -30,36 +30,26 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.test.annotations.CallabilityKeys
+package object methods {
 
-/**
- * @author Michael Reif
- */
-abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
-
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
-
-    override def testFileName = "classfiles/callableFromClassesInOtherPackagesTest.jar"
-
-    override def testFilePath = "fpcfa"
-
-    override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
-
-    override def propertyKey: PropertyKey[CallableFromClassesInOtherPackages] = CallableFromClassesInOtherPackages.key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = CallabilityKeys.Callable.toString
+    /**
+     * The key associated with every purity property.
+     */
+    final val PurityKey = {
+        PropertyKey.create[Purity](
+            // The unique name of the property.
+            "Purity",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            MaybePure,
+            // When we have a cycle all properties are necessarily conditionally pure
+            // hence, we can leverage the "pureness" 
+            Pure
+        // NOTE
+        // We DO NOT increase the pureness of all methods as this will happen automatically
+        // as a sideeffect of setting the pureness of one method!
+        // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
+        )
+    }
 }
 
-class CallableFromClassesInOtherPackagesAnalysisCPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class CallableFromClassesInOtherPackagesAnalysisOPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
-}

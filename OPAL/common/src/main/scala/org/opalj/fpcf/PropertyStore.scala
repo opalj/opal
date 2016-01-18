@@ -268,7 +268,8 @@ class PropertyStore private (
     /**
      * The set of all entities which have the given [[SetProperty]].
      *
-     * This is a blocking operation; the returned set is a copy of the original set.
+     * This is a blocking operation w.r.t. the set property; the returned set is a copy of the
+     * original set.
      */
     def entities[E <: AnyRef](sp: SetProperty[E]): JSet[E] = {
         sp.mutex.synchronized {
@@ -295,7 +296,7 @@ class PropertyStore private (
     //     be notified and removed from this map afterwards.
     //  1. A computation of a property generates an [[IntermediatResult]], but the
     //     the observer is one-time observer. (Such observers are only used internally.)
-    private[this] final val observers = new JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
+    private[this] final val observers = new JCHMap[SomeEPK, Buffer[(SomeEPK, PropertyObserver)]]()
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -318,7 +319,7 @@ class PropertyStore private (
      * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
      */
-    def apply(e: Entity, pk: PropertyKey): Option[Property] = {
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): Option[P] = {
         val pos = accessEntity {
             val lps = data.get(e)
             assert(lps ne null, s"the entity $e is unknown to the property store")
@@ -326,7 +327,7 @@ class PropertyStore private (
             withReadLock(lock) { properties(pk.id) }
         }
         if (pos ne null)
-            Option(pos._1 /*property*/ )
+            Option(pos._1.asInstanceOf[P] /*property*/ )
         else
             None
     }
@@ -375,11 +376,11 @@ class PropertyStore private (
      * @param dependeeE The entity about which some information is required to compute the
      * 		property `dependerPK`.
      */
-    def require(
+    def require[DependeeP <: Property](
         dependerE:  Entity,
-        dependerPK: PropertyKey,
+        dependerPK: SomePropertyKey,
         dependeeE:  Entity,
-        dependeePK: PropertyKey
+        dependeePK: PropertyKey[DependeeP]
     )(
         c: Continuation
     ): PropertyComputationResult = {
@@ -390,8 +391,8 @@ class PropertyStore private (
                 assert(dependeeP.key == dependeePK)
                 c(dependeeE, dependeeP)
             case _ /*None*/ ⇒
-                new SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) {
-                    override def continue(dependeeP: Property) = {
+                new SuspendedPC[DependeeP](dependerE, dependerPK, dependeeE, dependeePK) {
+                    override def continue(dependeeP: DependeeP) = {
                         assert(dependeeP.key == dependeePK)
                         c(dependeeE, dependeeP)
                     }
@@ -402,11 +403,11 @@ class PropertyStore private (
     /**
      * Returns the property associated with the required entity.
      */
-    def requireNext(
+    def requireNext[DependeeP <: Property](
         dependerE:  Entity,
-        dependerPK: PropertyKey,
+        dependerPK: SomePropertyKey,
         dependeeE:  Entity,
-        dependeePK: PropertyKey
+        dependeePK: PropertyKey[DependeeP]
     )(
         c: IncrementalStep
     ): IncrementalPropertyComputationResult = {
@@ -418,8 +419,8 @@ class PropertyStore private (
                 c(dependeeE, dependeeP)
             case _ /*None*/ ⇒
                 IncrementalPropertyComputationResult(
-                    new SuspendedIPC(dependerE, dependerPK, dependeeE, dependeePK) {
-                        override def continue(dependeeP: Property) = {
+                    new SuspendedIPC[DependeeP](dependerE, dependerPK, dependeeE, dependeePK) {
+                        override def continue(dependeeP: DependeeP) = {
                             assert(dependeeP.key == dependeePK)
                             c(dependeeE, dependeeP)
                         }
@@ -432,11 +433,11 @@ class PropertyStore private (
     /**
      * Tests if all entities have the given property. If the respective property is
      * not yet available, the computation will be suspended until the property of
-     * the respective kind is available. Hence, it only makes sense to use this
+     * the respective kind is available. '''Hence, it only makes sense to use this
      * function if the respective property is computed by an independent analysis or
      * if it is an inherent property of the analysis/analyses that the information about the
      * dependees is guaranteed to become available without requiring information
-     * about the depender.
+     * about the depender.'''
      *
      * This function eagerly tries to determine if the answer is false and only
      * suspends the computation if the (negative) answer cannot directly be computed.
@@ -446,7 +447,7 @@ class PropertyStore private (
      * 		further refinement of the respective properties can happen.
      */
     def allHaveProperty(
-        dependerE: Entity, dependerPK: PropertyKey,
+        dependerE: Entity, dependerPK: SomePropertyKey,
         dependees: Traversable[Entity], expectedP: Property
     )(
         c: (Boolean) ⇒ PropertyComputationResult
@@ -469,9 +470,11 @@ class PropertyStore private (
      * This function eagerly tries to determine if the answer is false and only
      * suspends the computation if the (negative) answer cannot directly be computed.
      */
-    def allHaveProperty(
-        dependerE: Entity, dependerPK: PropertyKey,
-        dependees: Traversable[Entity], dependeePK: PropertyKey, expectedP: Property ⇒ Boolean
+    def allHaveProperty[DependeeP <: Property](
+        dependerE: Entity, dependerPK: SomePropertyKey,
+        dependees:  Traversable[Entity],
+        dependeePK: PropertyKey[DependeeP],
+        expectedP:  DependeeP ⇒ Boolean
     )(
         c: (Boolean) ⇒ PropertyComputationResult
     ): PropertyComputationResult = {
@@ -499,8 +502,8 @@ class PropertyStore private (
         // possible, by using haveProperty again... i.e., we try to minimize the
         // number of suspended computations that we need to create.
         val deependeeE = unavailableEs.head
-        new SuspendedPC(dependerE, dependerPK, deependeeE, dependeePK) {
-            override def continue(dependeeP: Property): PropertyComputationResult = {
+        new SuspendedPC[DependeeP](dependerE, dependerPK, deependeeE, dependeePK) {
+            override def continue(dependeeP: DependeeP): PropertyComputationResult = {
                 if (expectedP(dependeeP))
                     return c(false);
 
@@ -541,7 +544,7 @@ class PropertyStore private (
      * Stores the properties of the respective entities in the store if the respective property
      * is not yet associated with a property of the same kind.
      */
-    def set(ps: Traversable[EP]): Unit = {
+    def set(ps: Traversable[SomeEP]): Unit = {
         ps.foreach { ep ⇒
             val EP(e, p) = ep
             accessEntity {
@@ -571,6 +574,8 @@ class PropertyStore private (
     /**
      * Updates the property associated with the given entity.
      *
+     * @note Updating a property is only supported if the current property is not final.
+     *
      * @param u The function that updates the current property associated with the given entity.
      * 		The parameter passed to `u` is `None` if the given entity is not associated with a
      * 		property of the given kind and `Some(Property)` otherwise. `u` is expected to return
@@ -580,7 +585,10 @@ class PropertyStore private (
      *
      */
     // UNTESTED!!!
-    def update(e: Entity, pk: PropertyKey, u: Option[Property] ⇒ Option[Property]): Unit = {
+    def update[P <: Property](
+        e: Entity, pk: PropertyKey[P],
+        u: Option[P] ⇒ Option[P]
+    ): Unit = {
         accessEntity {
             val lps = data.get(e)
             assert(lps ne null, s"the entity $e is unknown to the property store")
@@ -593,7 +601,7 @@ class PropertyStore private (
                         (null, _) /* <= we have observers, but not property so far*/ ⇒
                         u(None)
                     case (p /*non-null*/ , _) ⇒
-                        u(Some(p))
+                        u(Some(p.asInstanceOf[P]))
                 }
                 newP match {
                     case Some(newP) ⇒
@@ -621,7 +629,7 @@ class PropertyStore private (
      *
      * While the view is computed all other computations are blocked.
      */
-    def apply(pk: PropertyKey): Traversable[(Entity, Property)] = {
+    def apply[P <: Property](pk: PropertyKey[P]): Traversable[(Entity, P)] = {
         accessStore {
             val valuesWithProperty =
                 data.entrySet().asScala filter { v ⇒
@@ -631,23 +639,29 @@ class PropertyStore private (
                         case _                ⇒ true
                     }
                 }
-            valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(pk.id)._1) }
+            valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(pk.id)._1.asInstanceOf[P]) }
         }
     }
 
     /**
      * Registers the function `f` that is called whenever an element `e` is associated with
      * a property of the respective kind (`pk`). For those elements that are already associated
-     * with a respective final property `p`,  `f` will immediately be scheduled
+     * with a respective property `p`,  `f` will immediately be scheduled
      * (i.e., `f` will not be executed immediately.)
      */
-    def onPropertyChange(pk: PropertyKey)(f: (Entity, Property) ⇒ Unit): Unit = {
+    def onPropertyChange[P <: Property](pk: PropertyKey[P])(f: (Entity, P) ⇒ Unit): Unit = {
         val pkId = pk.id
         accessStore {
             // We need exclusive access to make sure that `f` is called exactly once for
             // each entity/property pair.
 
-            theOnPropertyComputations(pkId) = f :: theOnPropertyComputations.getOrElse(pkId, Nil)
+            theOnPropertyComputations(pkId) =
+                // AWFULL (BUT UNAVOIDABLE) HACK:
+                // The following cast would always fail if the JVM would consider generic types
+                // (which it does not). However, it needs to be done to store functions that take 
+                // different properties as their parameters in a generic store
+                f.asInstanceOf[Function2[Entity, Property, Unit]] ::
+                    theOnPropertyComputations.getOrElse(pkId, Nil)
 
             // call `f` for all entities with a respective property
             this(pk) foreach { ep ⇒
@@ -669,7 +683,7 @@ class PropertyStore private (
     }
 
     /**
-     * Executes `f` for each group of entities which is grouped by the function `groupBy`.
+     * Executes `f` in parallel for each group of entities which is grouped by the function `groupBy`.
      *
      * @param groupBy A function that associates every entity E that is selected by the given
      *                entitySelector function with a specific group. If all entities
@@ -683,7 +697,7 @@ class PropertyStore private (
         entitySelector: PartialFunction[Entity, E],
         groupBy:        Function[E, K]
     )(
-        f: (K, Seq[E]) ⇒ Traversable[EP]
+        f: (K, Seq[E]) ⇒ Traversable[SomeEP]
     ): Unit = {
         for {
             (key, entities) ← keysList.view.collect(entitySelector).groupBy(groupBy)
@@ -716,7 +730,7 @@ class PropertyStore private (
     def execute[E <: Entity](
         entitySelector: PartialFunction[Entity, E]
     )(
-        f: (E) ⇒ Traversable[EP]
+        f: (E) ⇒ Traversable[SomeEP]
     ): Unit = {
         val mutex = new Object
         // we use the remaining entities as a worklist
@@ -1143,15 +1157,15 @@ class PropertyStore private (
 
             val observers = store.observers
 
-            val indirectlyIncomputableEPKs = HSet.empty[EPK]
+            val indirectlyIncomputableEPKs = HSet.empty[SomeEPK]
 
             // All those EPKs that require some information that do not depend (directly
             // or indirectly) on an incomputableEPK. However, this set also includes
             // those EPKs that may depend on another strongly connected component which
             // is a knot (which has no outgoing dependency).
-            val cyclicComputableEPKCandidates = HSet.empty[EPK]
+            val cyclicComputableEPKCandidates = HSet.empty[SomeEPK]
 
-            val directlyIncomputableEPKs = HSet.empty[EPK]
+            val directlyIncomputableEPKs = HSet.empty[SomeEPK]
 
             /*
              * @param epks The set of EPKs which have a dependency on dependerEPK.
@@ -1159,15 +1173,15 @@ class PropertyStore private (
              * 		the returned list and the given set epks contain the same elements.
              */
             def determineDependentIncomputableEPKs(
-                dependerEPK: EPK,
-                epks:        HSet[EPK]
-            ): List[EPK] = {
-                var newDependentEPKs = List.empty[EPK]
+                dependerEPK: SomeEPK,
+                epks:        HSet[SomeEPK]
+            ): List[SomeEPK] = {
+                var newDependentEPKs = List.empty[SomeEPK]
                 if (epks.add(dependerEPK)) {
                     // make sure that the start epk is in the list...
                     newDependentEPKs = dependerEPK :: newDependentEPKs
                 }
-                var worklist = List(dependerEPK)
+                var worklist: List[SomeEPK] = List(dependerEPK)
                 while (worklist.nonEmpty) {
                     val dependerEPK = worklist.head
                     worklist = worklist.tail
@@ -1189,7 +1203,7 @@ class PropertyStore private (
             // Let's determine all EPKs that have a dependency on an incomputableEPK
             // (They may be in a strongly connected component, but we don't care about
             // these, because they may still be subject to some refinement.)
-            def determineIncomputableEPKs(dependerEPK: EPK): Unit = {
+            def determineIncomputableEPKs(dependerEPK: SomeEPK): Unit = {
                 cyclicComputableEPKCandidates --=
                     determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
             }
@@ -1222,9 +1236,9 @@ class PropertyStore private (
                 }
             }
 
-            val cSCCs: List[Iterable[EPK]] = org.opalj.graphs.closedSCCs[EPK](
+            val cSCCs: List[Iterable[SomeEPK]] = org.opalj.graphs.closedSCCs[SomeEPK](
                 cyclicComputableEPKCandidates,
-                (epk: EPK) ⇒ observers.get(epk).view.map(_._1)
+                (epk: SomeEPK) ⇒ observers.get(epk).view.map(_._1)
             )
             if (debug && cSCCs.nonEmpty) OPALLogger.debug(
                 "analysis progress",
@@ -1365,7 +1379,7 @@ class PropertyStore private (
     /**
      * @return `true` if some observers were removed.
      */
-    private[this] def clearDependeeObservers(e: Entity, pk: PropertyKey): Boolean = {
+    private[this] def clearDependeeObservers(e: Entity, pk: SomePropertyKey): Boolean = {
         // observers : JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
         val epk = EPK(e, pk)
         val observers = store.observers
@@ -1560,8 +1574,8 @@ class PropertyStore private (
     }
 
     private[this] def registerObserverWithItsDepender(
-        dependerEPK: EPK,
-        dependeeEPK: EPK,
+        dependerEPK: SomeEPK,
+        dependeeEPK: SomeEPK,
         o:           PropertyObserver
     ): Unit = {
         val (dependerLock, _) = data.get(dependerEPK.e)
@@ -1603,7 +1617,7 @@ class PropertyStore private (
                     update(e, p, FallbackUpdate)
 
                 case IntermediateResult.id ⇒
-                    val IntermediateResult(e, p, dependees: Traversable[EOptionP], c) = r
+                    val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
                     val dependerEPK = EPK(e, p.key)
                     dependees foreach { eOptionP ⇒
 
@@ -1661,7 +1675,8 @@ class PropertyStore private (
 
                             def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                                 propagationCount.incrementAndGet()
-                                val pc = (e: AnyRef) ⇒ suspended.continue(dependeeP)
+                                val pc = (e: AnyRef) ⇒
+                                    suspended.asInstanceOf[SuspendedPC[Property]].continue(dependeeP)
                                 scheduleComputation(dependerE, pc)
                             }
                         }
@@ -1693,7 +1708,8 @@ class PropertyStore private (
                                             s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
                                     )
                                     // (e: AnyRef) ⇒ suspended.continue(dependeeP)
-                                    /*prepare for immediate exec*/ () ⇒ suspended.continue(dependeeP)
+                                    /*prepare for immediate exec*/ () ⇒
+                                        suspended.asInstanceOf[SuspendedPC[Property]].continue(dependeeP)
                                 }
                         }
                     }
@@ -1715,7 +1731,8 @@ class PropertyStore private (
 
                             def apply(dependeeE: Entity, dependeeP: Property): Unit = {
                                 propagationCount.incrementAndGet()
-                                val ipc = (e: AnyRef) ⇒ suspended.continue(dependeeP)
+                                val ipc = (e: AnyRef) ⇒
+                                    suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
                                 scheduleIncrementalComputation(ipc, dependerE)
                             }
                         }
@@ -1741,7 +1758,8 @@ class PropertyStore private (
                                         "immediately continued the suspended incremental computation of "+
                                             s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
                                     )
-                                    /*prepare for immediate exec*/ () ⇒ suspended.continue(dependeeP)
+                                    /*prepare for immediate exec*/ () ⇒
+                                        suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
                                 }
                         }
                     }

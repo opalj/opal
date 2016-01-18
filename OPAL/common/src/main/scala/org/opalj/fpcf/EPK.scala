@@ -36,24 +36,24 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-final class EPK(val e: Entity, val pk: PropertyKey)
-        extends EOptionP
-        with Product2[Entity, PropertyKey] {
+final class EPK[P <: Property](val e: Entity, val pk: PropertyKey[P])
+        extends EOptionP[P]
+        with Product2[Entity, PropertyKey[P]] {
 
     def hasProperty: Boolean = false
-    def p: Property = throw new UnsupportedOperationException()
+    def p: Nothing = throw new UnsupportedOperationException()
 
     def _1 = e
     def _2 = pk
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
-            case _         ⇒ false
+            case that: EPK[_] ⇒ (that.e eq this.e) && this.pk.id == that.pk.id
+            case _            ⇒ false
         }
     }
 
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK]
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK[_]]
 
     override val hashCode: Int = e.hashCode() * 511 + pk.id
 
@@ -67,9 +67,9 @@ final class EPK(val e: Entity, val pk: PropertyKey)
  */
 object EPK {
 
-    def apply(e: Entity, pk: PropertyKey): EPK = new EPK(e, pk)
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): EPK[P] = new EPK(e, pk)
 
-    def unapply(that: EPK): Option[(Entity, PropertyKey)] = {
+    def unapply[P <: Property](that: EPK[P]): Option[(Entity, PropertyKey[P])] = {
         that match {
             case null ⇒ None
             case epk  ⇒ Some((epk.e, epk.pk))
