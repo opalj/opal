@@ -67,15 +67,10 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.fpcf.analysis.fields.EffectivelyFinal
 import org.opalj.fpcf.analysis.immutability.ImmutableType
 import org.opalj.fpcf.analysis.immutability.TypeImmutability
 import org.opalj.fpcf.analysis.fields.FieldUpdates
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.fields.EffectivelyFinal
 
 /**
  * This analysis determines whether a method is pure. I.e., whether the method
@@ -123,7 +118,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     private[this] def determinePurityCont(
         method:    Method,
         pc:        PC,
-        dependees: Set[EOptionP]
+        dependees: Set[EOptionP[Purity]]
     ): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
@@ -305,7 +300,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒
             if (areImmutable) {
-                val purity = determinePurityCont(method, 0, Set.empty)
+                val purity = determinePurityCont(method, 0, Set.empty[EOptionP[Purity]])
                 purity
             } else {
                 return ImmediateResult(method, Impure);

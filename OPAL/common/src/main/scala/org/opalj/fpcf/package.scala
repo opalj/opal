@@ -111,6 +111,14 @@ package object fpcf {
      */
     type ComputationResults = Traversable[(Entity, Property)]
 
+    type SomePropertyKey = PropertyKey[_ <: Property]
+
+    type SomeEOptionP = EOptionP[_ <: Property]
+
+    type SomeEPK = EPK[_ <: Property]
+
+    type SomeEP = EP[_ <: Property]
+
     /**
      * A computation of a property that was restarted (under different properties)
      * yielded the same result.

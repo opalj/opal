@@ -30,12 +30,15 @@ package org.opalj
 package fpcf
 package analysis
 
+sealed trait InstantiabilityPropertyMetaInformation extends PropertyMetaInformation {
+    type Self = Instantiability
+}
+
 /**
  * This is a common trait for all Instantiability properties which can be emitted to the
  * PropertyStore. It describes the instantibility of a class entity.
  */
-sealed trait Instantiability extends Property {
-
+sealed trait Instantiability extends Property with InstantiabilityPropertyMetaInformation {
     final def key = Instantiability.key // All instances have to share the SAME key!
 }
 
@@ -44,13 +47,12 @@ sealed trait Instantiability extends Property {
  * all properties derived from the Instantiability property, as well as it defines defines
  * the (sound) fall back if the property is not computed but requested by another analysis.
  */
-object Instantiability extends PropertyMetaInformation {
-
-    final val key = PropertyKey.create("Instantiability", Instantiable)
+object Instantiability extends InstantiabilityPropertyMetaInformation {
+    final val key = PropertyKey.create[Instantiability]("Instantiability", Instantiable)
 }
 
 /**
- * NotInstantiable should be used for not instantible classes.
+ * NotInstantiable should be used for not instantiable classes.
  *
  * @example
  * {{{

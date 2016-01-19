@@ -31,13 +31,18 @@ package fpcf
 package analysis
 package immutability
 
+sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
+
+    final type Self = TypeImmutability
+}
+
 /**
  * Specified if all instances of a respective type (this includes the instances of the
  * type's subtypes) are (conditionally) immutable.
  *
  * @author Michael Eichberg
  */
-sealed trait TypeImmutability extends Property {
+sealed trait TypeImmutability extends Property with TypeImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `TypeImmutability` properties.
@@ -48,22 +53,20 @@ sealed trait TypeImmutability extends Property {
 /**
  * Common constants use by all [[TypeImmutability]] properties associated with methods.
  */
-object TypeImmutability extends PropertyMetaInformation {
+object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
 
     /**
      * The key associated with every [[TypeImmutability]] property.
      */
-    final val key =
-        PropertyKey.create(
-            "TypeImmutability",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MutableTypeDueToNoAnalysis,
-            // When we have a cycle all properties are necessarily at least conditionally immutable
-            // hence, we can leverage the "immutability" 
-            ImmutableType
-
-        )
+    final val key = PropertyKey.create(
+        "TypeImmutability",
+        // The default property that will be used if no analysis is able
+        // to (directly) compute the respective property.
+        MutableTypeDueToNoAnalysis,
+        // When we have a cycle all properties are necessarily at least conditionally immutable
+        // hence, we can leverage the "immutability" 
+        ImmutableType
+    )
 }
 
 /**

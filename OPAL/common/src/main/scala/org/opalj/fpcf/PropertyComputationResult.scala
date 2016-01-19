@@ -125,7 +125,7 @@ object Result {
 case class IntermediateResult(
         e:          Entity,
         p:          Property,
-        dependeeEs: Traversable[EOptionP],
+        dependeeEs: Traversable[SomeEOptionP],
         c:          Continuation
 ) extends PropertyComputationResult {
     private[fpcf] final def id = IntermediateResult.id
@@ -156,18 +156,18 @@ private[fpcf] object FallbackResult { private[fpcf] final val id = 6 }
  * @param dependeePK The property kind of the given entity about which some knowledge
  *      is required.
  */
-private[fpcf] abstract class SuspendedPC(
+private[fpcf] abstract class SuspendedPC[DependeeP <: Property](
         val e:          Entity,
-        val pk:         PropertyKey,
+        val pk:         SomePropertyKey,
         val dependeeE:  Entity,
-        val dependeePK: PropertyKey
+        val dependeePK: PropertyKey[DependeeP]
 ) extends PropertyComputationResult {
 
     /**
      * Called by the framework when the property of the element `dependeeE` on which
      * this computation is depending on was computed.
      */
-    def continue(dependeeP: Property): PropertyComputationResult
+    def continue(dependeeP: DependeeP): PropertyComputationResult
 
     private[fpcf] final def id = SuspendedPC.id
 }
@@ -179,7 +179,9 @@ private[fpcf] object SuspendedPC {
 
     private[fpcf] final val id = 7
 
-    def unapply(c: SuspendedPC): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
+    def unapply[DependeeP <: Property](
+        c: SuspendedPC[DependeeP]
+    ): Some[(Entity, SomePropertyKey, Entity, PropertyKey[DependeeP])] =
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }
@@ -192,18 +194,18 @@ private[fpcf] object SuspendedPC {
  * @param dependeePK The property kind of the given entity about which some knowledge
  *      is required.
  */
-private[fpcf] abstract class SuspendedIPC(
+private[fpcf] abstract class SuspendedIPC[DependeeP <: Property](
         val e:          Entity,
-        val pk:         PropertyKey,
+        val pk:         SomePropertyKey,
         val dependeeE:  Entity,
-        val dependeePK: PropertyKey
+        val dependeePK: PropertyKey[DependeeP]
 ) extends PropertyComputationResult {
 
     /**
      * Called by the framework when the property of the element `dependeeE` on which
      * this computation is depending on was computed.
      */
-    def continue(dependeeP: Property): IncrementalPropertyComputationResult
+    def continue(dependeeP: DependeeP): IncrementalPropertyComputationResult
 
     private[fpcf] final def id = SuspendedIPC.id
 }
@@ -215,7 +217,9 @@ private[fpcf] object SuspendedIPC {
 
     private[fpcf] final val id = 8
 
-    def unapply(c: SuspendedIPC): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
+    def unapply[DependeeP <: Property](
+        c: SuspendedIPC[DependeeP]
+    ): Some[(Entity, SomePropertyKey, Entity, PropertyKey[DependeeP])] =
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }

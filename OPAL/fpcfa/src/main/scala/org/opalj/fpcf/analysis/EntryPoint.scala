@@ -31,10 +31,14 @@ package org.opalj
 package fpcf
 package analysis
 
+sealed trait EntryPointPropertyMetaInformation extends PropertyMetaInformation {
+    final type Self = EntryPoint
+}
+
 /**
  * The common super trait of all entry point properties.
  */
-sealed trait EntryPoint extends Property {
+sealed trait EntryPoint extends Property with EntryPointPropertyMetaInformation {
 
     final def key = EntryPoint.key // All instances have to share the SAME key!
 }
@@ -44,7 +48,7 @@ sealed trait EntryPoint extends Property {
  * all properties derived from the EntryPoint property, as well as it defines defines
  * the (sound) fall back if the property is not computed but requested by another analysis.
  */
-object EntryPoint extends PropertyMetaInformation {
+object EntryPoint extends EntryPointPropertyMetaInformation {
 
     final val key = PropertyKey.create("EntryPoint", IsEntryPoint)
 }

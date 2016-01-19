@@ -75,15 +75,13 @@ import org.opalj.log.OPALLogger
  *
  * @note The analysis does not take reflective instantiations into account!
  */
-class SimpleInstantiabilityAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     import project.classHierarchy.allSubtypes
 
-    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP] = {
+    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP[Instantiability]] = {
 
-        var instantiatedClasses = Set.empty[EP]
+        var instantiatedClasses = Set.empty[EP[Instantiability]]
 
         for {
             cf ← classFiles
@@ -107,7 +105,7 @@ class SimpleInstantiabilityAnalysis private (
                 } else
                     instantiatedClasses += EP(cf, Instantiable)
             } else if (method.isNative && method.isStatic) {
-                var instantiatedClasses = Set.empty[EP]
+                var instantiatedClasses = Set.empty[EP[Instantiability]]
                 classFiles.foreach { classFile ⇒
                     if (classFile.isAbstract &&
                         (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible)))
@@ -154,7 +152,7 @@ class SimpleInstantiabilityAnalysis private (
         instantiatedClasses
     }
 
-    def determineClassInstantiability(classFile: ClassFile): EP = {
+    def determineClassInstantiability(classFile: ClassFile): EP[Instantiability] = {
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration) {

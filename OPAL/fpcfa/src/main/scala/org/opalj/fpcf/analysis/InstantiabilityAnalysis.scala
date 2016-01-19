@@ -80,14 +80,14 @@ class InstantiabilityAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    val propertyKey = Instantiability.key
+    val propertyKey: PropertyKey[Instantiability] = Instantiability.key
 
     private def instantiableThroughFactoryOrSubclass(
         classFile: ClassFile
     ): PropertyComputationResult = {
 
         val methods = classFile.methods.filter(m ⇒ m.isStatic && !m.isStaticInitializer)
-        var dependees = Set.empty[EOptionP]
+        var dependees = Set.empty[EOptionP[Property]] // dependendees are potential factory methods and potentially immutable classes
 
         var i = 0
         while (i < methods.length) {

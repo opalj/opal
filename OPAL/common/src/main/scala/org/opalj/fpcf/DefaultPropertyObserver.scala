@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 private[fpcf] abstract class DefaultPropertyObserver(
-        final val depender:                EPK,
+        final val depender:                SomeEPK,
         final val removeAfterNotification: Boolean
 ) extends PropertyObserver {
 

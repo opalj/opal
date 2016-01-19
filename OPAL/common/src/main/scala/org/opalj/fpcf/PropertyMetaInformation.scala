@@ -34,6 +34,8 @@ package org.opalj.fpcf
  */
 trait PropertyMetaInformation extends PropertyKind {
 
+    type Self <: Property
+
     /**
      * The key uniquely identifies this property's category. All property objects
      * of the same kind have to use the same key.
@@ -41,7 +43,7 @@ trait PropertyMetaInformation extends PropertyKind {
      * In general each `Property` kind is expected to have a companion object that
      * stores the unique `PropertyKey`.
      */
-    def key: PropertyKey
+    def key: PropertyKey[Self]
 
     final def id = key.id
 }
