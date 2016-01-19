@@ -41,12 +41,7 @@ class CallBySignatureTargetAnalysis private (
 
         val interfaceClassFile = cf.get
         val interfaceType = interfaceClassFile.thisType
-
         val classHierarchy = project.classHierarchy
-
-        val potentialTargets = projectIndex.findMethods(methodName, methodDescriptor).view.filter {
-            _.isPublic
-        }
 
         val cbsTargets = ListBuffer.empty[Method]
 
@@ -81,6 +76,10 @@ class CallBySignatureTargetAnalysis private (
                 return ;
 
             cbsTargets += m
+        }
+
+        val potentialTargets = projectIndex.findMethods(methodName, methodDescriptor).view.filter {
+            _.isPublic
         }
 
         potentialTargets foreach analyzeMethod
@@ -127,28 +126,26 @@ class CallBySignatureTargetAnalysis private (
         val methodName = method.name
         val methodDescriptor = method.descriptor
 
-        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
-        while (subtypes.nonEmpty) {
-            val subtype = subtypes.head
-            project.classFile(subtype) match {
-                case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
-                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
-                        if (subclass.isPublic) {
-                            // the original method is now visible (and not shadowed)
-                            return Yes;
-                        } else
-                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
-                // we need to continue our search for a class that makes the method visible
+        var isUnknown = false
+
+        val subClassIterator = classHierarchy.allSubclasses(classType, reflexive = false)
+        while (subClassIterator.hasNext) {
+            val subclass = subClassIterator.next
+            project.classFile(subclass) match {
+                case Some(subclassCf) ⇒
+                    if (subclassCf.isPublic
+                        && subclassCf.findMethod(methodName, methodDescriptor).isEmpty)
+                        return Yes;
                 case None ⇒
-                    // The type hierarchy is obviously not downwards closed; i.e.,
-                    // the project configuration is rather strange!
-                    return Unknown;
-                case _ ⇒
+                    // do not return here, we can still find a valid subclass
+                    isUnknown = true
             }
-            subtypes -= subtype
         }
 
-        No
+        if (isUnknown)
+            Unknown
+        else
+            No
     }
 
     private[this] def hasSubclassInheritingTheInterface(
@@ -158,45 +155,28 @@ class CallBySignatureTargetAnalysis private (
         project:       SomeProject
     ): Answer = {
         val classHierarchy = project.classHierarchy
-        /*val methodName = method.name
-        val methodDescriptor = method.descriptor*/
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
 
-        val itr = classHierarchy.allSubclasses(classType, false)
+        val itr = classHierarchy.allSubclasses(classType, reflexive = false)
+        var isUnknown = false
 
         while (itr.hasNext) {
             val subtype = itr.next
             project.classFile(subtype) match {
                 case Some(subclassFile) ⇒
-                    if (!subclassFile.isInterfaceDeclaration) {
-                        if (classHierarchy.isSubtypeOf(subtype, interfaceType).isYes)
-                            return Yes;
-                    }
+                    if (subclassFile.findMethod(methodName, methodDescriptor).isEmpty
+                        && classHierarchy.isSubtypeOf(subtype, interfaceType).isYes)
+                        return Yes;
                 case None ⇒
-                    return Unknown;
+                    isUnknown = false
             }
         }
 
-        /*val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
-        while (subtypes.nonEmpty) {
-            val subtype = subtypes.head
-            project.classFile(subtype) match {
-                case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
-                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
-                        if (classHierarchy.isSubtypeOf(subtype, interfaceType).isYes) {
-                            // the original method is now visible and the interface is implemented
-                            return Yes;
-                        } else
-                            // we need to continue our search for a class that makes the method visible
-                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
-
-                case None ⇒
-                    return Unknown;
-                case _ ⇒ /* do nothing */
-            }
-            subtypes -= subtype
-        }*/
-
-        No
+        if (isUnknown)
+            Unknown
+        else
+            No
     }
 }
 
@@ -224,15 +204,13 @@ object CallBySignatureTargetAnalysis
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
-    ): FPCFAnalysis =
-        {
-            val analysis = new CallBySignatureTargetAnalysis(project)
-            propertyStore <||< (entitySelector, analysis.determineCallBySignatureTargets2)
-            analysis
-        }
+    ): FPCFAnalysis = {
+        val analysis = new CallBySignatureTargetAnalysis(project)
+        propertyStore <||< (entitySelector, analysis.determineCallBySignatureTargets2)
+        analysis
+    }
 
-    final def entitySelector: PartialFunction[Entity, Method] =
-        {
-            case m: Method if !m.isAbstract ⇒ m
-        }
+    final def entitySelector: PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract ⇒ m
+    }
 }
