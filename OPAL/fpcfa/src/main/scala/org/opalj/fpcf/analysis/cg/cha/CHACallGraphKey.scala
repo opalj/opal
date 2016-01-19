@@ -33,7 +33,7 @@ package cg
 package cha
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{CallBySignatureResolutionKey, ProjectInformationKey, SomeProject, _}
+import org.opalj.br.analyses.{ProjectInformationKey, SomeProject, _}
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 
 /**

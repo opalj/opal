@@ -33,14 +33,15 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.br.Method
+import org.opalj.ai.analyses.cg.{CallGraph, ComputedCallGraph}
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.util.PerformanceEvaluation
 
 object CHADemo extends DefaultOneStepAnalysis {
 
@@ -71,12 +72,23 @@ object CHADemo extends DefaultOneStepAnalysis {
         val methodsCount: Double = project.projectMethodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
+        var traditionalCG: CallGraph = null
+
         // CALL GRAPH STUFF
+        PerformanceEvaluation.time {
+            traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
+        } { t ⇒ println("naive CHA computation time: "+t.toSeconds) }
 
-        val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
+        var opaCCG: ComputedCallGraph = null
 
-        val cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
-        val opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        PerformanceEvaluation.time {
+            opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        } { t ⇒ println("OPA-CHA computation time: "+t.toSeconds) }
+
+        var cpaCCG: ComputedCallGraph = null
+        PerformanceEvaluation.time {
+            cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        } { t ⇒ println("CPA-CHA computation time: "+t.toSeconds) }
 
         val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)
