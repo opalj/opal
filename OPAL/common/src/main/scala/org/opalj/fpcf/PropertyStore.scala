@@ -184,15 +184,22 @@ class PropertyStore private (
     def isKnown(e: Entity): Boolean = keys.contains(e)
 
     def clean(): Unit = {
+
         try {
             Tasks.interrupt()
             Tasks.waitOnCompletion(useFallbackForIncomputableProperties = false)
             threadPool.purge()
         } catch { case t: Throwable ⇒ /*there is nothing to do*/ }
-        threadPool.shutdownNow() // we don't care about remaining tasks        
+
+        threadPool.shutdownNow() // we don't care about remaining tasks
+
+        data.clear()
+        keys.clear()
+
+        OPALLogger.info("setup", "the property store is finalized")
     }
 
-    override protected def finalize(): Unit = { clean() }
+    override protected def finalize(): Unit = { super.finalize(); clean() }
 
     // =============================================================================================
     //

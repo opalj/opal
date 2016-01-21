@@ -34,6 +34,7 @@ import scala.annotation.tailrec
 import scala.reflect.ClassTag
 import scala.collection.immutable.Vector
 import scala.collection.generic.FilterMonadic
+import java.util.Arrays
 
 /**
  * Conceptually, a map where the keys are positive `Int` values and the values are
@@ -49,6 +50,8 @@ import scala.collection.generic.FilterMonadic
 class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         private var data: Array[T]
 ) {
+
+    def clear(): Unit = { Arrays.fill(data.asInstanceOf[Array[Object]], null) }
 
     /**
      * Returns the value stored for the given key or `null` instead.
