@@ -115,7 +115,7 @@ import org.opalj.log.LogContext
  *      that each computation is thread-safe.
  *  1.  The store as a whole is associated with a lock to enable selected methods
  *      to get a consistent view.
- *  1.  All set properties related operation are sycnchronized using the set property's mutex.
+ *  1.  All set properties related operation are synchronized using the set property's mutex.
  */
 // COMMON ABBREVIATONS USED IN THE FOLLOWING:
 // ==========================================
@@ -1248,7 +1248,7 @@ class PropertyStore private (
             )
             for {
                 cSCC ← cSCCs
-                r ← PropertyKey.resolveCycle(cSCC)
+                r ← PropertyKey.resolveCycle(store, cSCC)
             } {
                 handleResult(r)
             }
@@ -1264,7 +1264,7 @@ class PropertyStore private (
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
-                    val defaultP = PropertyKey.fallbackProperty(e, pk)
+                    val defaultP = PropertyKey.fallbackProperty(store, e, pk)
                     scheduleHandleFallbackResult(e, defaultP)
                 }
                 if (debug) OPALLogger.debug(
