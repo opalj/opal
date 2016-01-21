@@ -127,9 +127,10 @@ package object graphs {
     }
 
     /**
-     * A closed strongly connected component (cSCC) is a (necessarily minimal) set of nodes of
+     * A closed strongly connected component (cSCC) is a set of nodes of
      * a graph where each node belonging to the cSCC can be reached from another node and no node
-     * contains an edge to another node that does not belong to the cSCC.
+     * contains an edge to another node that does not belong to the cSCC. Every such set is
+     * necessarily minimal/maximal.
      */
     def closedSCCs[N >: Null <: AnyRef](
         ns:        Traversable[N],
@@ -141,7 +142,7 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
-        // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candiate starts!
+        // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candidate starts!
 
         // The algorithm used to compute the scc is loosely inspired by:
         // Information Processing Letters 74 (2000) 107–114
