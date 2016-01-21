@@ -193,8 +193,8 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
-            
-            ps.clean()            
+
+            ps.clean()
         }
 
         it("deriving the same property multiple times should have no effect") {
