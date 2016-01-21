@@ -29,24 +29,39 @@
 package org.opalj
 package fpcf
 package analysis
+package methods
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import scala.collection.mutable.ListBuffer
 
-sealed trait Inheritable extends Property {
+sealed trait ClientCallable extends Property {
 
-    final def key = Inheritable.key // All instances have to share the SAME key!
+    final type Self = ClientCallable
+    /**
+     * Returns the key used by all `Purity` properties.
+     */
+    // All instances have to share the SAME key!
+    final def key = ClientCallableKey
+
+    /**
+     * Non of the derived ´ClientCallable´ properties are refineable.
+     */
+    def isRefineable = false
 }
 
-object Inheritable extends PropertyMetaInformation {
+object ClientCallable extends PropertyMetaInformation {
 
-    final val key = PropertyKey.create("Inheritable", IsInheritable)
+    /**
+     * Returns the key used by all `Purity` properties.
+     */
+    // All instances have to share the SAME key!
+    final def key = ClientCallable.key
 }
 
-case object NotInheritable extends Inheritable { final val isRefineable: Boolean = false }
+case object IsClientCallable extends ClientCallable
 
-case object IsInheritable extends Inheritable { final val isRefineable: Boolean = false }
+case object NotClientCallable extends ClientCallable
 
 /**
  * This analysis determines whether a method can directly called by a client. This is in particular
@@ -56,8 +71,8 @@ case object IsInheritable extends Inheritable { final val isRefineable: Boolean 
  * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
  * the analysis afterwards as follows:
  * {{{
- *  val analysisManager = project.get(FPCFAnalysisManagerKey)
- *  analysisManager.run(InheritableMethodAnalysis)
+ * val analysisManager = project.get(FPCFAnalysisManagerKey)
+ * analysisManager.run(InheritableMethodAnalysis)
  * }}}
  * For detailed information see the documentation of the analysis manager.
  *
@@ -82,7 +97,6 @@ class InheritableMethodAnalysis private (
 ) extends FPCFAnalysis {
 
     /**
-     *
      * This determines for a method whether it could be inherited by a library client.
      * It should not be called if the current analysis mode is application-related.
      *
@@ -90,18 +104,18 @@ class InheritableMethodAnalysis private (
     def determineInheritability(method: Method): PropertyComputationResult = {
 
         if (method.isPrivate)
-            return ImmediateResult(method, NotInheritable);
+            return ImmediateResult(method, NotClientCallable);
 
         val classFile = project.classFile(method)
 
         if (classFile.isEffectivelyFinal)
-            return ImmediateResult(method, NotInheritable);
+            return ImmediateResult(method, NotClientCallable);
 
         if (isClosedLibrary && method.isPackagePrivate)
-            return ImmediateResult(method, NotInheritable);
+            return ImmediateResult(method, NotClientCallable);
 
         if (classFile.isPublic || isOpenLibrary)
-            return ImmediateResult(method, IsInheritable);
+            return ImmediateResult(method, IsClientCallable);
 
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
@@ -116,14 +130,14 @@ class InheritableMethodAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
                         if (subclass.isPublic) {
                             // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, IsInheritable);
+                            return ImmediateResult(method, IsClientCallable);
                         } else
                             subtypes ++= classHierarchy.directSubtypesOf(subtype)
                 // we need to continue our search for a class that makes the method visible
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange!
-                    return ImmediateResult(method, IsInheritable);
+                    return ImmediateResult(method, IsClientCallable);
                 case _ ⇒
             }
             subtypes -= subtype
@@ -134,7 +148,7 @@ class InheritableMethodAnalysis private (
             println(element)
         }
 
-        ImmediateResult(method, NotInheritable)
+        ImmediateResult(method, NotClientCallable)
     }
 }
 
