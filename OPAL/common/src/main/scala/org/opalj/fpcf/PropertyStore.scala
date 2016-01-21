@@ -195,6 +195,8 @@ class PropertyStore private (
 
         data.clear()
         keys.clear()
+        theSetPropertyObservers.clear()
+        theSetProperties.clear()
 
         OPALLogger.info("setup", "the property store is finalized")
     }
@@ -1163,6 +1165,30 @@ class PropertyStore private (
         //     property that was not computed (final lack of knowledge) and for
         //     which no computation exits.
         private[this] def handleUnsatisfiedDependencies(): Unit = {
+
+            // type Observers = mutable.ListBuffer[PropertyObserver]
+            // type Properties = OArrayMap[(Property, Observers)]
+            // type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
+            //private[this] val data:  JIDMap[Entity, PropertyStoreValue],
+            def validateStore(): Unit = {
+                store.data.values.iterator().asScala.foreach {
+                    _._2.foreach { pos ⇒
+                        if (pos != null) {
+                            val (p, os) = pos
+                            if (p.isFinal && os != null) {
+                                OPALLogger.error(
+                                    "internal error",
+                                    s"the final property $p has ${os.size} observers"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            if (debug) {
+                validateStore()
+            }
+
             /*
       		 * Returns the list of observers related to the given entity and property kind.
        		 * I.e., the list of observers on those elements that are needed to compute the
@@ -1476,6 +1502,7 @@ class PropertyStore private (
                             properties(pkId) = (p, null)
 
                         case IntermediateUpdate ⇒
+                            assert(p.isRefineable, s"$e: intermediate update of a final property $p")
                             val os = Buffer.empty[PropertyObserver]
                             properties(pkId) = (p, os)
 
@@ -1520,6 +1547,7 @@ class PropertyStore private (
                             properties(pkId) = (p, null /*The incoming observers are no longer required!*/ )
 
                         case IntermediateUpdate ⇒
+                            assert(p.isRefineable, s"$e: intermediate update of a final property $p")
                             // We still continue observing all other entities;
                             // hence, we only need to clear our one-time observers.
                             var oneTimeObservers = List.empty[PropertyObserver]
@@ -1644,6 +1672,10 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
+                    assert(
+                        p.isRefineable,
+                        s"$e: an intermedidate result was used for the final property $p"
+                    )
                     val dependerEPK = EPK(e, p.key)
                     dependees foreach { eOptionP ⇒
 

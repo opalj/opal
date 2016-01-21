@@ -64,7 +64,7 @@ case class Issue(
         details:    Seq[IssueDetails]  = Nil
 ) extends IssueRepresentations {
 
-    assert(!summary.contains('\n'), "the summary must not contain new lines")
+    assert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")
     assert(locations.nonEmpty, "at least one location must be specified")
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
