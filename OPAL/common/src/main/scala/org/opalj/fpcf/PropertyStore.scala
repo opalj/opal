@@ -183,6 +183,17 @@ class PropertyStore private (
 
     def isKnown(e: Entity): Boolean = keys.contains(e)
 
+    def clean(): Unit = {
+        try {
+            Tasks.interrupt()
+            Tasks.waitOnCompletion(useFallbackForIncomputableProperties = false)
+            threadPool.purge()
+        } catch { case t: Throwable ⇒ /*there is nothing to do*/ }
+        threadPool.shutdownNow() // we don't care about remaining tasks        
+    }
+
+    override protected def finalize(): Unit = { clean() }
+
     // =============================================================================================
     //
     // SET PROPERTIES
@@ -229,11 +240,9 @@ class PropertyStore private (
             val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
             theSetPropertyObservers(spIndex) = f.asInstanceOf[AnyRef ⇒ Unit] :: oldObservers
             spMutex.synchronized {
-                accessEntity { // <= we don't need an overall consistent view
-                    import scala.collection.JavaConversions._
-                    val spSet = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
-                    spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
-                }
+                import scala.collection.JavaConversions._
+                val spSet = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
+                spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
             }
         }
     }
@@ -250,17 +259,16 @@ class PropertyStore private (
         val spMutex = sp.mutex
         withReadLock(theSetPropertyObserversLock) {
             spMutex.synchronized {
-                accessEntity {
-                    val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
-                    if (!currentEs.contains(e)) {
-                        currentEs.add(e)
-                        theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
-                            propagationCount.incrementAndGet()
-                            scheduleFforE(e, f)
-                        }
+                val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
+                if (!currentEs.contains(e)) {
+                    currentEs.add(e)
+                    // ATTENTION: We must not hold the lock on the store/a store entity, because
+                    // scheduleFforE requires the write lock!
+                    theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
+                        propagationCount.incrementAndGet()
+                        scheduleFforE(e, f)
                     }
                 }
-
             }
         }
     }
@@ -586,7 +594,8 @@ class PropertyStore private (
      */
     // UNTESTED!!!
     def update[P <: Property](
-        e: Entity, pk: PropertyKey[P],
+        e: Entity, pk: PropertyKey[P]
+    )(
         u: Option[P] ⇒ Option[P]
     ): Unit = {
         accessEntity {
@@ -1003,11 +1012,13 @@ class PropertyStore private (
         // ALL ACCESSES TO "executed" and "scheduled" ARE SYNCHRONIZED
         private[this] var executed = 0
 
+        private[this] var cleanUpRequired = false
+
         /**
          * The number of scheduled tasks. I.e., the number of tasks that are running or
          * that will run in the future.
          */
-        private[this] var scheduled = 0
+        @volatile private[this] var scheduled = 0
 
         private[PropertyStore] def executedComputations: Int = synchronized { executed }
 
@@ -1065,6 +1076,7 @@ class PropertyStore private (
 
         def taskStarted() = this.synchronized {
             scheduled += 1
+            cleanUpRequired = true
         }
 
         def tasksStarted(tasksCount: Int) = this.synchronized {
@@ -1075,7 +1087,8 @@ class PropertyStore private (
             scheduled -= tasksCount
         }
 
-        def taskCompleted() = this.synchronized {
+        def taskCompleted() = {
+            assert(scheduled > 0)
 
             def registeredObservers: Int = {
                 val ps = data.values().asScala.view.map(_._2)
@@ -1083,49 +1096,55 @@ class PropertyStore private (
                 poss.map(pos ⇒ if (pos._2 eq null) 0 else pos._2.count(_ ne null)).sum
             }
 
-            assert(scheduled > 0)
-            scheduled -= 1
-            executed += 1
+            this.synchronized {
+                scheduled -= 1
+                executed += 1
+            }
 
             // When all scheduled tasks are completed, we check if there are
             // pending computations that now can be activated.
-            if (scheduled == 0) {
-                // Let's check if we have some potentially refineable intermediate results.
-                if (debug) OPALLogger.debug(
-                    "analysis progress", s"all $executed previously scheduled tasks have finished"
-                )
-
-                try {
-                    if (!isInterrupted) {
+            // The following is 
+            if (scheduled == 0) accessStore {
+                this.synchronized {
+                    if (scheduled == 0 && cleanUpRequired) {
+                        cleanUpRequired = false
+                        // Let's check if we have some potentially refineable intermediate results.
                         if (debug) OPALLogger.debug(
-                            "analysis progress", s"handling unsatisfied dependencies"
+                            "analysis progress", s"all $executed previously scheduled tasks have finished"
                         )
-                        accessStore {
-                            handleUnsatisfiedDependencies()
+
+                        try {
+                            if (!isInterrupted) {
+                                if (debug) OPALLogger.debug(
+                                    "analysis progress", s"handling unsatisfied dependencies"
+                                )
+
+                                handleUnsatisfiedDependencies()
+                            }
+                        } catch {
+                            case t: Throwable ⇒
+                                OPALLogger.error(
+                                    "analysis progress",
+                                    "handling suspended computations failed; aborting analyses",
+                                    t
+                                )
+                                interrupt()
+                                notifyAll()
+                        }
+
+                        if (scheduled == 0 /*scheduled is still === 0*/ ) {
+                            if (debug) OPALLogger.debug(
+                                "analysis progress",
+                                "computation of all properties finished"+
+                                    s" (remaining computations: $registeredObservers)"
+                            )
+                            notifyAll()
+                        } else {
+                            if (debug) OPALLogger.debug(
+                                "analysis progress", s"(re)scheduled $scheduled property computations"
+                            )
                         }
                     }
-                } catch {
-                    case t: Throwable ⇒
-                        OPALLogger.error(
-                            "analysis progress",
-                            "handling suspended computations failed; aborting analyses",
-                            t
-                        )
-                        interrupt()
-                        notifyAll()
-                }
-
-                if (scheduled == 0 /*scheduled is still === 0*/ ) {
-                    if (debug) OPALLogger.debug(
-                        "analysis progress",
-                        "computation of all properties finished"+
-                            s" (remaining computations: $registeredObservers)"
-                    )
-                    notifyAll()
-                } else {
-                    if (debug) OPALLogger.debug(
-                        "analysis progress", s"(re)scheduled $scheduled property computations"
-                    )
                 }
             }
         }

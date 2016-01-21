@@ -160,6 +160,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
 
+            ps.clean()
         }
 
         it("an onPropertyDerivation function should be called for all entities that already have a respective property when the function is registered") {
@@ -176,6 +177,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
 
+            ps.clean()
         }
 
         it("an onPropertyDerivation function should be called for all entities that already have a respective property and also for those that are associated with it afterwards") {
@@ -191,6 +193,8 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
+            
+            ps.clean()            
         }
 
         it("deriving the same property multiple times should have no effect") {
@@ -208,6 +212,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
 
+            ps.clean()
         }
 
         it("should be possible to model on-demand properties using set properties") {
@@ -234,6 +239,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
                     "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
 
+            ps.clean()
         }
     }
 
@@ -268,6 +274,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
                 )
                 results(Palindrome) should be(expectedResult)
 
+                ps.clean()
             }
 
             it("should be triggered for every entity that is associated with the respective property after registering the onPropertyChange function") {
@@ -295,6 +302,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
                 )
                 results(Palindrome) should be(expectedResult)
 
+                ps.clean()
             }
             /*
             //                     it("should be triggered whenever the property is updated") {
@@ -345,6 +353,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
 
                 stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
 
+                ps.clean()
             }
         }
 
