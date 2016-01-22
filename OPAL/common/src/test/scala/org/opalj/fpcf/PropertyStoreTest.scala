@@ -152,7 +152,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     //// TESTS
 
     describe("the property store") {
-        
+
         it("should be in the deault state after calling reset") {
             val ps = psStrings
 
