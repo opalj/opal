@@ -242,9 +242,7 @@ object UnusedLocalVariables {
                         if (constantValues.contains(value)) {
                             // => the value is only found once in the source code and
                             // the value is not used!
-                            issue = "the constant value "+
-                                instruction.toString(vo)+
-                                " is not used"
+                            issue = "the constant "+instruction.toString(vo)+" is not used"
                             relevance = Relevance.TechnicalArtifact
                         }
 
@@ -253,9 +251,7 @@ object UnusedLocalVariables {
                         relevance = Relevance.DefaultRelevance
 
                     case _ ⇒
-                        issue = "the value of the expression "+
-                            instruction.toString(vo)+
-                            " is not used"
+                        issue = "the value of "+instruction.toString(vo)+" is not used"
                         relevance = Relevance.VeryHigh
                 }
 

@@ -215,8 +215,11 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.clean()
         }
 
-        it("should be possible to model on-demand properties using set properties") {
+        it("should be possible to implement properties that are calculated when the base information becomes available") {
             val ps = psStrings()
+
+            // In this scenario we only associate the palindrome property with elements
+            // that contain at least two chars
 
             ps.onPropertyDerivation(StringsWithAtLeastTwoChars) { (s: String) ⇒
                 ps.update(s, PalindromeKey) { (p: Option[PalindromeProperty]) ⇒
@@ -237,6 +240,37 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.entities { p ⇒ p == Palindrome } should be(
                 Set("aa", "bb", "cc", "aaa", "aea", "aabbcbbaa",
                     "aaaffffffaaa", "aaaffffffffffffffffaaa")
+            )
+
+            ps.clean()
+        }
+
+        it("should be possible to chain property computations") {
+            val ps = psStrings()
+
+            // In this scenario we only associate the palindrome property with elements
+            // that contain at least two chars
+            ps.onPropertyDerivation(StringsWithAtLeastTwoChars) { (s: String) ⇒
+                if (s.size % 2 == 0) ps.add(EvenNumberOfChars)(s)
+            }
+            ps.onPropertyDerivation(EvenNumberOfChars) { (s: String) ⇒
+                ps.update(s, PalindromeKey) { (p: Option[PalindromeProperty]) ⇒
+                    assert(p == None)
+                    if (s.reverse == s)
+                        Some(Palindrome)
+                    else
+                        Some(NoPalindrome)
+                }
+            }
+
+            // "run the initial analysis"
+            for (e ← stringEntities if (e.size > 1)) { ps.add(StringsWithAtLeastTwoChars)(e) }
+
+            ps.waitOnPropertyComputationCompletion(true)
+
+            ps.entities { p ⇒ p == NoPalindrome } should be(Set("ab", "bc", "cd"))
+            ps.entities { p ⇒ p == Palindrome } should be(
+                Set("aa", "bb", "cc", "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
 
             ps.clean()
