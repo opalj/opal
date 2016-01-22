@@ -124,9 +124,9 @@ class FPCFAnalysesManager private[analysis] (val project: SomeProject) {
 
     def isDerived(pKinds: Set[PropertyKind]): Boolean = pKinds exists (pKind ⇒ isDerived(pKind))
 
-    final def clean(): Unit = {
+    final def reset(): Unit = {
         derivedProperties.clear()
-        propertyStore.clean()
+        propertyStore.reset()
     }
 }
 
