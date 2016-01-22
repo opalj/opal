@@ -42,16 +42,13 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
-import com.typesafe.config.ConfigFactory
 
 /**
- *
  * Tests a fix-point analysis implementation using the classes in the configured
  * class file.
  *
  * @note This test supports only property tests where only one annotation field
- *       is used. It's not possible to check multiple values.
- *
+ * is used. It's not possible to check multiple values.
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
@@ -74,9 +71,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def analysisRunner: FPCFAnalysisRunner
 
     def runAnalysis(project: Project[URL]): Unit = {
-        val executer = project.get(FPCFAnalysesManagerKey)
-        executer.runAll(analysisRunner.recommendations)(false)
-        executer.run(analysisRunner, true)
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.runWithRecommended(analysisRunner)(waitOnCompletion = true)
     }
 
     def propertyKey: PropertyKey[Property]
@@ -99,6 +95,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     def loadProject: Project[URL] = org.opalj.br.analyses.Project(file)
 
     val project = loadProject
+    val propertyStore = project.get(SourceElementsPropertyStoreKey)
 
     /*
      * RUN ANALYSIS AND OBTAIN PROPERTY STORE
@@ -106,9 +103,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     runAnalysis(project)
 
-    val propertyStore = project.get(SourceElementsPropertyStoreKey)
-    propertyStore.waitOnPropertyComputationCompletion()
-
+    testAnnotations()
+  
     /*
      * PROPERTY VALIDATION
      */
@@ -124,9 +120,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * mechanism can only be used if a single value has to be extracted.
      */
     def propertyExtraction(annotation: Annotation): Option[String] = {
-        annotation.elementValuePairs collectFirst (
+        annotation.elementValuePairs collectFirst
             { case ElementValuePair("value", EnumValue(_, property)) ⇒ property }
-        )
     }
 
     /**
@@ -134,11 +129,11 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * It takes an annotated class and compares the annotated class property with the
      * computed property of the property store.
      */
-    def validateProperty(classFile: ClassFile, annotation: Annotation): Unit = {
+    def validatePropertyByClassFile(classFile: ClassFile, annotation: Annotation): Unit = {
 
-        val annotatedOProperty = propertyExtraction(annotation)
+        val propertyAsOption = propertyExtraction(annotation)
 
-        val annotatedProperty = annotatedOProperty getOrElse (defaultValue)
+        val annotatedProperty = propertyAsOption getOrElse (defaultValue)
 
         val computedOProperty = propertyStore(classFile, propertyKey)
 
@@ -146,7 +141,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val className = classFile.fqn
             val message =
                 "Class not found in PropertyStore:\n\t"+
-                    s" { $className }\n\t\t has no property mapped to the respecting key: ${propertyKey};"+
+                    s" { $className }\n\t\t has no property mapped to the respecting key: $propertyKey;"+
                     s"\n\tclass name:      $className"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
@@ -171,11 +166,13 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * It takes an annotated method and compares the annotated method property with the
      * computed property of the property store.
      */
-    def validateProperty(method: Method, annotation: Annotation): Unit = {
+    def validatePropertyByMethod(method: Method, annotation: Annotation): Unit = {
 
         val annotatedOProperty = propertyExtraction(annotation)
 
-        val annotatedProperty = annotatedOProperty getOrElse (defaultValue)
+        val annotatedProperty = annotatedOProperty getOrElse defaultValue
+
+        assert(method ne null, "method is empty")
 
         val computedOProperty = propertyStore(method, propertyKey)
 
@@ -184,9 +181,9 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val message =
                 "Method not found in PropertyStore:\n\t"+
                     className +
-                    s" { ${method.toJava} }\n\t\t has no property mapped to the respecting key: ${propertyKey};"+
+                    s" { ${method.toJava()} }\n\t\t has no property mapped to the respecting key: $propertyKey;"+
                     s"\n\tclass name:      $className"+
-                    s"\n\tmethod:          ${method.toJava}"+
+                    s"\n\tmethod:          ${method.toJava()}"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
@@ -200,7 +197,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
                     className +
                     s" { $method } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;"+
                     s"\n\tclass name:        $className"+
-                    s"\n\tmethod:            ${method.toJava}"+
+                    s"\n\tmethod:            ${method.toJava()}"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)
@@ -211,27 +208,27 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * TESTS - test every method with the corresponding annotation
      */
 
-    for {
-        classFile ← project.allClassFiles
-        annotation ← classFile.runtimeVisibleAnnotations
-        if annotation.annotationType == propertyAnnotation
-    } {
-        analysisName should ("correctly calculate the property of the class "+classFile.fqn) in {
-
-            validateProperty(classFile, annotation)
-        }
-    }
-
-    for {
-        classFile ← project.allClassFiles
-        method ← classFile.methods
-        annotation ← method.runtimeVisibleAnnotations
-        if annotation.annotationType == propertyAnnotation
-    } {
-        analysisName should ("correctly calculate the property of the method "+
-            method.toJava+" in class "+classFile.fqn) in {
-
-                validateProperty(method, annotation)
+    def testAnnotations(): Unit = {
+        for {
+            classFile ← project.allClassFiles
+            annotation ← classFile.runtimeVisibleAnnotations
+            if annotation.annotationType == propertyAnnotation
+        } {
+            analysisName should ("correctly calculate the property of the class "+classFile.fqn) in {
+                validatePropertyByClassFile(classFile, annotation)
             }
+        }
+
+        for {
+            classFile ← project.allClassFiles
+            method ← classFile.methods
+            annotation ← method.runtimeVisibleAnnotations
+            if annotation.annotationType == propertyAnnotation
+        } {
+            analysisName should ("correctly calculate the property of the method "+
+                method.toJava+" in class "+classFile.fqn) in {
+                    validatePropertyByMethod(method, annotation)
+                }
+        }
     }
 }
