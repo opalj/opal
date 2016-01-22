@@ -55,7 +55,7 @@ sealed trait CallBySignature extends Property {
 
 object CallBySignature extends PropertyMetaInformation {
 
-    final val key = CallBySignature.key
+    final def key = CallBySignature.key
 }
 
 case class CbsTargets(cbsTargets: Set[Method]) extends CallBySignature

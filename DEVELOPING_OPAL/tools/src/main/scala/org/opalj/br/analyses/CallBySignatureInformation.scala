@@ -31,6 +31,8 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.fpcf.analysis.cg.CallBySignatureResolutionKey
+
 /**
  * Prints information about those methods for which we need to do call by signature resolution
  * when we analyze a library.
