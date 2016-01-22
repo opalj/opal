@@ -36,6 +36,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.opalj.log.GlobalLogContext
+import org.scalatest.BeforeAndAfterEach
 
 /**
  * Tests the property store.
@@ -43,7 +44,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyStoreTest extends FunSpec with Matchers {
+class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     //// TEST FIXTURE
 
@@ -56,7 +57,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
         "aabbcbbaa",
         "aaaffffffaaa", "aaaffffffffffffffffaaa"
     )
-    def psStrings(): PropertyStore = {
+    val psStrings: PropertyStore = {
         PropertyStore(stringEntities, () ⇒ false, debug = false)(GlobalLogContext)
     }
 
@@ -113,7 +114,7 @@ class PropertyStoreTest extends FunSpec with Matchers {
     nodeD.targets += nodeR //           d -> r
     nodeR.targets += nodeB //       ↖︎-----< r
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeR)
-    def psNodes(): PropertyStore = {
+    val psNodes: PropertyStore = {
         PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
     }
 
@@ -143,12 +144,47 @@ class PropertyStoreTest extends FunSpec with Matchers {
     //    }
     //    object NoReachableNodes extends ReachableNodes(Set.empty)
 
+    override def afterEach(): Unit = {
+        psStrings.reset()
+        psNodes.reset()
+    }
+
     //// TESTS
+
+    describe("the property store") {
+        
+        it("should be in the deault state after calling reset") {
+            val ps = psStrings
+
+            // let's fill the property store with:
+            //  - an entity based property and 
+            //  - a set property
+            //  - an on property derivation function
+            ps.onPropertyChange(PalindromeKey) { (e, p) ⇒
+                if (p == Palindrome && e.toString().size % 2 == 0)
+                    ps.add(EvenNumberOfChars)(e.toString())
+            }
+            ps << { e: Entity ⇒
+                val property = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
+                ImmediateResult(e, property)
+            }
+            ps.onPropertyDerivation(EvenNumberOfChars)((e) ⇒ {})
+            ps.waitOnPropertyComputationCompletion(true)
+
+            // let's test the reset method
+            ps.entities(EvenNumberOfChars) should not be ('isEmpty)
+            ps.entities { x ⇒ true } should not be ('isEmpty)
+            ps.reset()
+            ps.entities(EvenNumberOfChars) should be('isEmpty)
+            ps.entities { x ⇒ true } should be('isEmpty)
+
+        }
+    }
 
     describe("set properties") {
 
         it("an onPropertyDerivation function should be called if entities are associated with the property after the registration of the function") {
-            val ps = psStrings()
+            val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
             ps.onPropertyDerivation(EvenNumberOfChars)(results.add(_))
@@ -159,12 +195,10 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
-
-            ps.clean()
         }
 
         it("an onPropertyDerivation function should be called for all entities that already have a respective property when the function is registered") {
-            val ps = psStrings()
+            val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
             for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
@@ -176,12 +210,10 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
-
-            ps.clean()
         }
 
         it("an onPropertyDerivation function should be called for all entities that already have a respective property and also for those that are associated with it afterwards") {
-            val ps = psStrings()
+            val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
             for (e ← stringEntities if e.size == 1) { ps.add(EvenNumberOfChars)(e) }
@@ -193,12 +225,10 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
-
-            ps.clean()
         }
 
         it("deriving the same property multiple times should have no effect") {
-            val ps = psStrings()
+            val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
             for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
@@ -211,12 +241,10 @@ class PropertyStoreTest extends FunSpec with Matchers {
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
             ps.entities(EvenNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
-
-            ps.clean()
         }
 
         it("should be possible to implement properties that are calculated when the base information becomes available") {
-            val ps = psStrings()
+            val ps = psStrings
 
             // In this scenario we only associate the palindrome property with elements
             // that contain at least two chars
@@ -241,12 +269,10 @@ class PropertyStoreTest extends FunSpec with Matchers {
                 Set("aa", "bb", "cc", "aaa", "aea", "aabbcbbaa",
                     "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
-
-            ps.clean()
         }
 
         it("should be possible to chain property computations") {
-            val ps = psStrings()
+            val ps = psStrings
 
             // In this scenario we only associate the palindrome property with elements
             // that contain at least two chars
@@ -272,18 +298,45 @@ class PropertyStoreTest extends FunSpec with Matchers {
             ps.entities { p ⇒ p == Palindrome } should be(
                 Set("aa", "bb", "cc", "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
-
-            ps.clean()
         }
     }
 
     describe("per entity properties") {
 
+        describe("properties") {
+
+            it("every element can have an individual property instance") {
+                val ps = psStrings
+
+                ps << { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
+            }
+        }
+
+        describe("computations depending on a group of entities") {
+            it("should be executed for each group in parallel") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+
+                ps.execute({ case s: String ⇒ s }, { (s: String) ⇒ s.length }) { (k, es) ⇒
+                    es.map(e ⇒ EP(e, StringLength(k)))
+                }
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
+            }
+        }
+
         describe("computations depending on a specific property") {
 
             it("should be triggered for every entity that already has the respective property") {
                 import scala.collection.mutable
-                val ps = psStrings()
+                val ps = psStrings
                 val results = mutable.Map.empty[Property, mutable.Set[String]]
 
                 ps << { e: Entity ⇒
@@ -307,13 +360,11 @@ class PropertyStoreTest extends FunSpec with Matchers {
                     "cc", "a", "bb", "b"
                 )
                 results(Palindrome) should be(expectedResult)
-
-                ps.clean()
             }
 
             it("should be triggered for every entity that is associated with the respective property after registering the onPropertyChange function") {
                 import scala.collection.mutable
-                val ps = psStrings()
+                val ps = psStrings
                 val results = mutable.Map.empty[Property, mutable.Set[String]]
 
                 ps.onPropertyChange(PalindromeKey)((e, p) ⇒ results.synchronized {
@@ -335,9 +386,33 @@ class PropertyStoreTest extends FunSpec with Matchers {
                     "aaaffffffffffffffffaaa", "cc", "a", "bb", "b"
                 )
                 results(Palindrome) should be(expectedResult)
-
-                ps.clean()
             }
+
+            it("should be triggered for externally computed and then added properties") {
+                import scala.collection.mutable
+                val ps = psStrings
+                val results = mutable.Map.empty[Property, mutable.Set[String]]
+
+                ps.onPropertyChange(PalindromeKey)((e, p) ⇒ results.synchronized {
+                    results.getOrElseUpdate(p, mutable.Set.empty).add(e.toString())
+                })
+
+                val palindromeProperties = stringEntities.map { e ⇒
+                    EP(e, if (e == e.reverse) Palindrome else NoPalindrome)
+                }
+                ps.set(palindromeProperties) // <= externally computed
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                val expectedPalindromes = Set(
+                    "aabbcbbaa", "aa", "c", "aea",
+                    "aaa", "aaaffffffaaa",
+                    "aaaffffffffffffffffaaa", "cc", "a", "bb", "b"
+                )
+                results(Palindrome) should be(expectedPalindromes)
+                results(NoPalindrome) should be(Set("ab", "bc", "cd"))
+            }
+
             /*
             //                     it("should be triggered whenever the property is updated") {
             //                        import scala.collection.mutable
@@ -371,24 +446,8 @@ class PropertyStoreTest extends FunSpec with Matchers {
             //            
             //                        ps.waitOnPropertyComputationCompletion(true)
             //                    }
-
              */
 
-        }
-
-        describe("properties") {
-
-            it("every element can have an individual property instance") {
-                val ps = psStrings()
-
-                ps << { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
-
-                ps.waitOnPropertyComputationCompletion(true)
-
-                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
-
-                ps.clean()
-            }
         }
 
     }

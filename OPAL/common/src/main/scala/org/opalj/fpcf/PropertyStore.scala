@@ -116,6 +116,13 @@ import org.opalj.log.LogContext
  *  1.  The store as a whole is associated with a lock to enable selected methods
  *      to get a consistent view.
  *  1.  All set properties related operation are synchronized using the set property's mutex.
+ *  
+ *  THE LOCK ORDER IS:
+ *  [1.] the SET PROPERTY OBSERVERS related Lock
+ *  [2.] the SET PROPERTY related lock
+ *  [3.] the STORE (exclusive access/access) lock (accessEntity/accessStore)
+ *  [4.] the ENTITY (read/write) related lock (the entity lock must only be acquired when the store lock is held
+ *  [5.] the TASKS related lock (<Tasks>.synchronized)
  */
 // COMMON ABBREVIATONS USED IN THE FOLLOWING:
 // ==========================================
@@ -183,25 +190,47 @@ class PropertyStore private (
 
     def isKnown(e: Entity): Boolean = keys.contains(e)
 
-    def clean(): Unit = {
+    /**
+     * Tries to shutdown the property store as well as all computations that are currently
+     * executed on behalf of the property store. When this method is called, the property
+     * store is no longer useable.
+     */
+    def shutdown(): Unit = {
 
         try {
             Tasks.interrupt()
             Tasks.waitOnCompletion(useFallbackForIncomputableProperties = false)
             threadPool.purge()
-        } catch { case t: Throwable ⇒ /*there is nothing to do*/ }
+        } catch { case t: Throwable ⇒ OPALLogger.error("progress", "exception at shutdown", t) }
 
         threadPool.shutdownNow() // we don't care about remaining tasks
 
-        data.clear()
-        keys.clear()
-        theSetPropertyObservers.clear()
-        theSetProperties.clear()
+        reset()
 
         OPALLogger.info("setup", "the property store is finalized")
     }
 
-    override protected def finalize(): Unit = { super.finalize(); clean() }
+    def reset(): Unit = {
+        withWriteLock(theSetPropertyObserversLock) {
+            accessStore {
+                // reset statistics
+                propagationCount.set(0l)
+                effectiveDefaultPropertiesCount.set(0l)
+                candidateDefaultPropertiesCount.set(0l)
+
+                // reset set property related information
+                theSetPropertyObservers.clear()
+                theSetProperties.clear();
+
+                // reset entity related information
+                theOnPropertyComputations.clear()
+                observers.clear()
+                data.values.asScala.foreach { psv ⇒ psv._2.clear /*delete properties*/ }
+            }
+        }
+    }
+
+    override protected def finalize(): Unit = { super.finalize(); shutdown() }
 
     // =============================================================================================
     //
@@ -218,6 +247,7 @@ class PropertyStore private (
         Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
     }
 
+    // requires: TASKS lock
     private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
         val runnable = new Runnable {
             override def run(): Unit = {
@@ -242,6 +272,7 @@ class PropertyStore private (
      * have the respective property we will immediately schedule respective
      * computations to take place.
      */
+    // Locks: Set Property Observers, Set Property
     def onPropertyDerivation[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
@@ -263,20 +294,24 @@ class PropertyStore private (
      * if not, we will immediately schedule the execution of all functions that
      * are interested in this property.
      */
+    // Locks: Set Property Observers, Set Property    
     def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
         withReadLock(theSetPropertyObserversLock) {
-            spMutex.synchronized {
+            val isAdded = spMutex.synchronized {
                 val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
-                if (!currentEs.contains(e)) {
-                    currentEs.add(e)
-                    // ATTENTION: We must not hold the lock on the store/a store entity, because
-                    // scheduleFforE requires the write lock!
-                    theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
-                        propagationCount.incrementAndGet()
-                        scheduleFforE(e, f)
-                    }
+                if (!currentEs.contains(e))
+                    currentEs.add(e) // => will be true
+                else
+                    false
+            }
+            if (isAdded) {
+                // ATTENTION: We must not hold the lock on the store/a store entity, because
+                // scheduleFforE requires the write lock!
+                theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
+                    propagationCount.incrementAndGet()
+                    scheduleFforE(e, f)
                 }
             }
         }
@@ -288,6 +323,7 @@ class PropertyStore private (
      * This is a blocking operation w.r.t. the set property; the returned set is a copy of the
      * original set.
      */
+    // Locks: Set Property    
     def entities[E <: AnyRef](sp: SetProperty[E]): JSet[E] = {
         sp.mutex.synchronized {
             val entitiesSet = theSetProperties.getOrElse(sp.index, new JHSet[AnyRef]())
@@ -336,6 +372,7 @@ class PropertyStore private (
      * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
      */
+    // Locks: Store, Entity
     def apply[P <: Property](e: Entity, pk: PropertyKey[P]): Option[P] = {
         val pos = accessEntity {
             val lps = data.get(e)
@@ -360,6 +397,7 @@ class PropertyStore private (
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]` independently if properties are stored or not.
      */
+    // Locks: Store, Entity
     def apply(e: Entity): List[Property] = {
         accessEntity {
             val (lock, properties) = data.get(e)
@@ -393,6 +431,7 @@ class PropertyStore private (
      * @param dependeeE The entity about which some information is required to compute the
      * 		property `dependerPK`.
      */
+    // Locks of this.apply(...): Store, Entity 
     def require[DependeeP <: Property](
         dependerE:  Entity,
         dependerPK: SomePropertyKey,
@@ -420,6 +459,7 @@ class PropertyStore private (
     /**
      * Returns the property associated with the required entity.
      */
+    // Locks of this.apply(...): Store, Entity 
     def requireNext[DependeeP <: Property](
         dependerE:  Entity,
         dependerPK: SomePropertyKey,
@@ -487,6 +527,7 @@ class PropertyStore private (
      * This function eagerly tries to determine if the answer is false and only
      * suspends the computation if the (negative) answer cannot directly be computed.
      */
+    // Locks of this.apply(...): Store, Entity 
     def allHaveProperty[DependeeP <: Property](
         dependerE: Entity, dependerPK: SomePropertyKey,
         dependees:  Traversable[Entity],
@@ -550,6 +591,7 @@ class PropertyStore private (
      * executing the analysis, but wants to store some results in the store (and to use the
      * store's propagation mechanism.)
      */
+    // Locks: Store and this.update(...): Entity 
     def set(e: Entity, p: Property): Unit = {
         accessEntity {
             assert(this(e, p.key).isEmpty, "(re)setting a property is not supported")
@@ -559,8 +601,10 @@ class PropertyStore private (
 
     /**
      * Stores the properties of the respective entities in the store if the respective property
-     * is not yet associated with a property of the same kind.
+     * is not yet associated with a property of the same kind. The properties are stored as
+     * final values.
      */
+    // Locks: Store and this.update(...): Entity
     def set(ps: Traversable[SomeEP]): Unit = {
         ps.foreach { ep ⇒
             val EP(e, p) = ep
@@ -599,11 +643,11 @@ class PropertyStore private (
      * 		`None` whenever the associated property already abstracts over the new property. I.e.,
      * 		only if the updated property is not equal to the given property, `u` is allowed to
      * 		return `Some(Property)`.
-     *
      */
-    // UNTESTED!!!
+    // Locks: Store, e@Entity (WriteLock) and this.update(...): e(WriteLock)
     def update[P <: Property](
-        e: Entity, pk: PropertyKey[P]
+        e:  Entity,
+        pk: PropertyKey[P]
     )(
         u: Option[P] ⇒ Option[P]
     ): Unit = {
@@ -647,6 +691,7 @@ class PropertyStore private (
      *
      * While the view is computed all other computations are blocked.
      */
+    // Locks: Store (Exclusive)
     def apply[P <: Property](pk: PropertyKey[P]): Traversable[(Entity, P)] = {
         accessStore {
             val valuesWithProperty =
@@ -667,6 +712,7 @@ class PropertyStore private (
      * with a respective property `p`,  `f` will immediately be scheduled
      * (i.e., `f` will not be executed immediately.)
      */
+    // Locks: Store (Exclusive) and scheduleTask
     def onPropertyChange[P <: Property](pk: PropertyKey[P])(f: (Entity, P) ⇒ Unit): Unit = {
         val pkId = pk.id
         accessStore {
@@ -1096,6 +1142,8 @@ class PropertyStore private (
             scheduled -= tasksCount
         }
 
+        // Locks: Tasks
+        //        Store(exclusive access), Tasks, handleUnsatisfiedDependencies: Store (access), Entity and scheduleContinuation: Tasks
         def taskCompleted() = {
             assert(scheduled > 0)
 
@@ -1112,7 +1160,6 @@ class PropertyStore private (
 
             // When all scheduled tasks are completed, we check if there are
             // pending computations that now can be activated.
-            // The following is 
             if (scheduled == 0) accessStore {
                 this.synchronized {
                     if (scheduled == 0 && cleanUpRequired) {
@@ -1164,6 +1211,7 @@ class PropertyStore private (
         //  1. computations that depend on knowledge related to a specific kind of
         //     property that was not computed (final lack of knowledge) and for
         //     which no computation exits.
+        //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
         private[this] def handleUnsatisfiedDependencies(): Unit = {
 
             // type Observers = mutable.ListBuffer[PropertyObserver]
@@ -1325,6 +1373,7 @@ class PropertyStore private (
             }
         }
 
+        // Locks: Tasks
         def waitOnCompletion(useFallbackForIncomputableProperties: Boolean): Unit = this.synchronized {
             this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
             //noinspection LoopVariableNotUpdated
@@ -1341,6 +1390,7 @@ class PropertyStore private (
     /**
      * Schedules the handling of the result of a property computation.
      */
+    // Locks of scheduleRunnable: Tasks
     private[this] def scheduleHandleFallbackResult(e: Entity, p: Property): Unit = {
         scheduleRunnable {
             candidateDefaultPropertiesCount.incrementAndGet()
@@ -1351,6 +1401,7 @@ class PropertyStore private (
     /**
      * Schedules the continuation w.r.t. the entity `e`.
      */
+    // Locks of scheduleRunnable: Tasks
     private[this] def scheduleContinuation(
         dependeeE: Entity,
         dependeeP: Property,
@@ -1364,6 +1415,7 @@ class PropertyStore private (
     /**
      * Schedules the computation of a property w.r.t. the list of entities `es`.
      */
+    // Locks of scheduleComputation: Tasks    
     private[this] def bulkScheduleComputations(
         es: List[_ <: Entity],
         pc: PropertyComputation
@@ -1379,12 +1431,14 @@ class PropertyStore private (
     /**
      * Schedules the computation of a property w.r.t. the entity `e`.
      */
+    // Locks of scheduleRunnable: Tasks
     private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
         scheduleRunnable {
             handleResult(pc(e))
         }
     }
 
+    // Locks of scheduleTask: Tasks
     private[this] def scheduleRunnable(f: ⇒ Unit): Unit = {
         scheduleTask(new Runnable {
             override def run(): Unit = {
@@ -1402,6 +1456,7 @@ class PropertyStore private (
     /**
      * The core method that actually submits runnables to the thread pool.
      */
+    // Locks: Tasks
     private[this] def scheduleTask(r: Runnable): Unit = {
         if (isInterrupted()) {
             Tasks.interrupt()
@@ -1431,6 +1486,7 @@ class PropertyStore private (
     /**
      * @return `true` if some observers were removed.
      */
+    // Locks: Entity (write)
     private[this] def clearDependeeObservers(e: Entity, pk: SomePropertyKey): Boolean = {
         // observers : JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
         val epk = EPK(e, pk)
@@ -1469,6 +1525,7 @@ class PropertyStore private (
     //
     // All calls to update have to acquire either entity access (using "accessEntity")
     // or store wide access (using "accessStore")
+    // Locks: Entity (write) (=> clearDependeeObservers)
     private[this] def update(e: Entity, p: Property, updateType: UpdateType): Unit = {
         val pk = p.key
         val pkId = pk.id
@@ -1627,6 +1684,7 @@ class PropertyStore private (
         os foreach { o ⇒ o(e, p) }
     }
 
+    // Locks: Entity 
     private[this] def registerObserverWithItsDepender(
         dependerEPK: SomeEPK,
         dependeeEPK: SomeEPK,
@@ -1644,6 +1702,7 @@ class PropertyStore private (
         }
     }
 
+    // Locks: Store (access), Entity and scheduleContinuation: Tasks
     private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
         accessEntity {
             (r.id: @annotation.switch) match {
