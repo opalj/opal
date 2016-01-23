@@ -77,6 +77,24 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case object Palindrome extends PalindromeProperty
     case object NoPalindrome extends PalindromeProperty
 
+    // HERE: we consider a palindrome to be a super palindrome if the lead is itself a 
+    //         a palindrom. E.g. aa => Lead: a => Palindrome => aa => SuperPalindrome
+    final val SuperPalindromeKey = {
+        PropertyKey.create[SuperPalindromeProperty](
+            "SuperPalindrome",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    sealed trait SuperPalindromeProperty extends Property {
+        type Self = SuperPalindromeProperty
+        def key = SuperPalindromeKey
+        def isRefineable = false
+    }
+    // Multiple properties can share the same property instance
+    case object SuperPalindrome extends SuperPalindromeProperty
+    case object NoSuperPalindrome extends SuperPalindromeProperty
+
     final val StringLengthKey: PropertyKey[StringLength] = {
         PropertyKey.create(
             "StringLength",
@@ -152,7 +170,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     //// TESTS
 
     describe("the property store") {
-        
+
         it("should be in the deault state after calling reset") {
             val ps = psStrings
 
@@ -317,6 +335,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         }
 
         describe("computations depending on a group of entities") {
+
             it("should be executed for each group in parallel") {
                 import scala.collection.mutable
 
@@ -328,8 +347,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps.waitOnPropertyComputationCompletion(true)
 
-                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
+                stringEntities.foreach { e ⇒
+                    ps(e, StringLengthKey).get.length should be(e.length())
+                }
             }
+
         }
 
         describe("computations depending on a specific property") {
@@ -387,6 +409,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 )
                 results(Palindrome) should be(expectedResult)
             }
+        }
+
+        describe("computations waiting on a specific property") {
 
             it("should be triggered for externally computed and then added properties") {
                 import scala.collection.mutable
@@ -447,6 +472,59 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             //                        ps.waitOnPropertyComputationCompletion(true)
             //                    }
              */
+
+        }
+
+        describe("lazy computations of an entity's property") {
+
+            it("should be executed when the property is requested") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                @volatile var stringLengthTriggered = false
+                val stringLengthPC: PropertyComputation = (e: Entity) ⇒ {
+                    if (stringLengthTriggered) fail("computation is already triggered")
+                    stringLengthTriggered = true
+                    ImmediateResult(e, StringLength(e.toString.size))
+                }
+                ps <<? (StringLengthKey, stringLengthPC)
+
+                val palindromePC: PropertyComputation = (e: Entity) ⇒ {
+                    val s = e.toString
+                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
+                }
+                ps <<? (PalindromeKey, palindromePC)
+
+                stringLengthTriggered should be(false)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                ps.entities { x ⇒ true } should be('empty) // calling entities should not trigger the computation
+                ps.waitOnPropertyComputationCompletion(true)
+                ps.entities { x ⇒ true } should be('empty) // calling entities does not trigger the computation
+
+                ps("a") should be(Nil)
+
+                ps("a", StringLengthKey) should be(None) // this should trigger the computation
+                ps("a", StringLengthKey) // but hopefully only once (tested using "triggered")
+
+                @volatile var superPalindromeCompleted = false
+                val pcr =
+                    ps.allHaveProperty(
+                        "aa", SuperPalindromeKey,
+                        List("a"), Palindrome // the computation of "PalindromeProperty" is triggered
+                    ) { aIsPalindrome ⇒
+                            superPalindromeCompleted = true
+                            Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
+                        }
+                pcr shouldBe a[SuspendedPC[_]]
+                ps.handleResult(pcr)
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                ps("a", PalindromeKey) should be(Some(Palindrome))
+                superPalindromeCompleted should be(true)
+            }
 
         }
 
