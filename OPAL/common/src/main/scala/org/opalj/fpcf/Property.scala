@@ -28,6 +28,8 @@
  */
 package org.opalj.fpcf
 
+import java.util.concurrent.CountDownLatch
+
 /**
  * An information associated with an entity. Each property belongs to exactly one
  * property kind identified by a [[PropertyKey]]. Furthermore, each property
@@ -51,5 +53,20 @@ trait Property extends PropertyMetaInformation {
      */
     def isFinal = !isRefineable
 
+    // only used in combination with direct property computations
+    private[fpcf] def isBeingComputed: Boolean = false
+}
+
+/**
+ * A generic property that is used to state that the property is currently computed.
+ * This property is used to synchronize access to the property if the property
+ * is computed using a direct property computation.
+ */
+private[fpcf] final class PropertyIsBeingComputed extends CountDownLatch(1) with Property {
+    type Self = PropertyIsBeingComputed
+    def key = throw new UnsupportedOperationException
+    override def isRefineable = throw new UnsupportedOperationException
+    override def isFinal = throw new UnsupportedOperationException
+    override private[fpcf] def isBeingComputed: Boolean = true
 }
 
