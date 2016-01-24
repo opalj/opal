@@ -1360,7 +1360,7 @@ class PropertyStore private (
                     _._2.foreach { pos ⇒
                         if (pos != null) {
                             val (p, os) = pos
-                            if (p.isFinal && os != null) {
+                            if ((p ne null) && p.isFinal && os != null) {
                                 OPALLogger.error(
                                     "internal error",
                                     s"the final property $p has ${os.size} observers"
