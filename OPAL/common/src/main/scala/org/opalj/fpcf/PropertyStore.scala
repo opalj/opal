@@ -226,7 +226,7 @@ class PropertyStore private (
                 theSetProperties.clear();
 
                 // reset entity related information
-                theOnDemandPropertyComputations.clear()
+                theDirectPropertyComputations.clear()
                 theLazyPropertyComputations.clear()
                 theOnPropertyComputations.clear()
                 observers.clear()
@@ -347,7 +347,7 @@ class PropertyStore private (
     //
 
     // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
-    private[this] final val theOnDemandPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
+    private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
 
     // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
     private[this] final val theLazyPropertyComputations = ArrayMap[PropertyComputation](5)
@@ -380,6 +380,11 @@ class PropertyStore private (
      * @note The returned value may change over time but only such that it
      *      is strictly more precise.
      *
+     * @note Calling apply may trigger the computation of the property if the underlying
+     * 		function is either a lazy or a direct property computation function. In general
+     * 		It is preferred that clients always assume that the property is "just computed"
+     * 		when calling this function!
+     *
      * @param e An entity stored in the property store.
      * @param pk The kind of property.
      * @return `None` if no information about the respective property is (yet) available.
@@ -393,29 +398,59 @@ class PropertyStore private (
             val lps = data.get(e)
             assert(lps ne null, s"the entity $e is unknown to the property store")
             val (lock, properties) = lps
-            val pos = withReadLock(lock) { properties(pkId) }
+            var pos = withReadLock(lock) { properties(pkId) }
 
-            //handle lazy computations
             if (pos eq null) {
+                // Let's check if we have a registered lazy and direct property computation function
                 val lpc = theLazyPropertyComputations(pkId)
-                if (lpc ne null) {
-                    withWriteLock(lock) {
-                        // We have to ensure that the computation is not triggered multiple times;
-                        // to do so, we check if an (empty) observer list is already registered.
-                        // If not, then the computation is not yet scheduled. 
-                        // Note that an analysis is not allowed to declare a dependency on an
-                        // entity which it didn't query (directly or indirectly) using apply. 
-                        if (properties(pkId) eq null) {
-                            properties(pkId) = (null, new Buffer)
-                            scheduleComputation(e, lpc)
+                if (lpc ne null) withWriteLock(lock) {
+                    // We have to ensure that the computation is not triggered multiple times;
+                    // to do so, we check if an (empty) observer list is already registered.
+                    // If not, then the computation is not yet scheduled. 
+                    // Note that an analysis is not allowed to declare a dependency on an
+                    // entity which it didn't query (directly or indirectly) using apply.
+                    pos = properties(pkId)
+                    if (pos eq null) {
+                        properties(pkId) = (null, new Buffer)
+                        scheduleComputation(e, lpc)
+                        // conceptually: return None;
+                    }
+                }
+                else {
+                    val dpc = theDirectPropertyComputations(pkId)
+                    if (dpc ne null) {
+                        var isBeingComputed: PropertyIsBeingComputed = null
+                        withWriteLock(lock) {
+                            pos = properties(pkId)
+                            if (pos eq null) {
+                                // => no other thread is currently computing this property
+                                isBeingComputed = new PropertyIsBeingComputed
+                                properties(pkId) = (isBeingComputed, null)
+                            }
+                        }
+                        if (isBeingComputed ne null) {
+                            val property = dpc(e)
+                            handleResult(ImmediateResult(e, property))
+                            isBeingComputed.countDown()
+                            pos = properties(pkId)
+                            // conceptually: return Some(property.asInstanceOf[P]);
                         }
                     }
                 }
+                // conceptually: return None;
             }
             pos
         }
         if (pos ne null)
-            Option(pos._1.asInstanceOf[P] /*property*/ /*the value may be null*/ )
+            pos._1 /*the property*/ match {
+                case p: PropertyIsBeingComputed ⇒
+                    p.await() // this establishes the happen before relation to make the next line correct                
+                    val theProperty = data.get(e)._2(pkId)._1.asInstanceOf[P]
+                    Some(theProperty)
+                case p ⇒
+                    // the value is null if the computation has not yet finished
+                    Option(p.asInstanceOf[P])
+            }
         else
             None
     }
@@ -437,7 +472,9 @@ class PropertyStore private (
         accessEntity {
             val (lock, properties) = data.get(e)
             withReadLock(lock) {
-                val it = properties.values collect { case (p, _) if p ne null ⇒ p }
+                val it = properties.values collect {
+                    case (p, _) if (p ne null) && (!p.isBeingComputed) ⇒ p
+                }
                 it.toList
             }
         }
@@ -861,26 +898,27 @@ class PropertyStore private (
         }
     }
 
-    /*
-    /** 
-     *  Registers an on-demand property computation that is executed in the caller's thread when
-     *  the property is requested for the first time. After that the computed value is cached
-     *  and returned the next time the property is requested. 
+    /**
+     *  Registers a direct property computation (dpc) function that is executed in the caller's
+     *  thread when the property is requested for the first time. After that the computed value
+     *  is cached and returned the next time the property is requested.
      *
-     * 
-    * - an on-demand property computation (ODPC) may depend on other properties that are computed 
-    *   on demand if and only if the other properties belong to a different property kind and
-    *   the computation 
-    * - an on-demand property computation may use all properties that are fully computed before
-    *   the computation is registered
-    * - an on-demand property computation must query other on-demand property computations sequentially
-    * - the computed property must not have created any dependencies (i.e., an ImmediateResult)
-    * - cycles related to on-demand property computations are 
-    * - on demand computations are executed in the caller's thread to make it possible to
-    *    determine whether the computation is called as part of the
-     *     
+     *  I.e., compared to a lazy computation the caller will always immediately get the final
+     *  result and the dpc function just computes a `Property`. However, an dpc has to satisfy
+     *  the following constraints:
+     *
+     *
+     *  - a dpc may depend on other properties that are computed
+     *   using dpcs if and only if the other properties are guaranteed to never have a direct or
+     *   indirect dependency on the computed property. (This in particular excludes cyclic
+     *   property dependencies. However, hierarchical property dependencies are supported. For
+     *   example, if the computation of property for a specific class is done using a dpc that
+     *   requires only information about the subclasses (or the superclasses, but not both at the
+     *   same time) then it is possible to use a dpc.
+     *   (A dpc may use all properties that are fully computed before the computation is registered.)
+     *  -  the computation must not create dependencies (i.e., an ImmediateResult)
      */
-    def <<![P <: Property](pk : PropertyKey[P], odpc : (Entity) => Property) : Unit = {
+    def <<![P <: Property](pk: PropertyKey[P], odpc: (Entity) ⇒ Property): Unit = {
         /* The framework has to handle:
          *  1. the situation that the same odpc is triggered by multiple other analyses concurrently
          *  
@@ -896,11 +934,11 @@ class PropertyStore private (
          *      	 but if now o4 requires the property computed by o2 it also needs to wait.
          *      	 Hence, we have a deadlock.
          */
-        theOnDemandPropertyComputations.synchronized{
-            theOnDemandPropertyComputations(pk.id) = odpc    
+        theDirectPropertyComputations.synchronized {
+            theDirectPropertyComputations(pk.id) = odpc
         }
     }
-*/
+
     /**
      * Registers a function that lazily computes a property for an element
      * of the store if the property of the respective kind is requested.
@@ -1047,10 +1085,10 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is independent of the store.
      *
-     * @note This method will not trigger lazy property computations.
+     * @note This method will not trigger lazy/direct property computations.
      */
     def entities(propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[Entity] = {
-        accessStore {
+        accessStore { // => all lazy and direct property computations have completed
             for {
                 entry ← data.entrySet().asScala
                 if entry.getValue._2.values.exists(pOs ⇒ pOs._1 != null && propertyFilter(pOs._1))
@@ -1074,6 +1112,7 @@ class PropertyStore private (
                 e = entry.getKey
                 pos = entry.getValue._2
                 (p, _ /*os*/ ) ← pos.values
+                if !p.isBeingComputed
                 ep: (Entity, Property) = (e, p)
                 if collect.isDefinedAt(ep)
             } yield {
@@ -1671,11 +1710,11 @@ class PropertyStore private (
 
                 case (oldP, os) ⇒
                     assert(
-                        (oldP eq null) || oldP.isRefineable || updateType == FallbackUpdate,
+                        (oldP eq null) || oldP.isBeingComputed || oldP.isRefineable || updateType == FallbackUpdate,
                         s"the old property $oldP is already a final property and refinement to $p is not supported"
                     )
                     assert(
-                        (os ne null) || updateType == FallbackUpdate,
+                        (os ne null) || oldP.isBeingComputed || updateType == FallbackUpdate,
                         s"$e: the list of observers is null; the old property was ($oldP) and the new property is $p"
                     )
                     assert(
@@ -1693,6 +1732,9 @@ class PropertyStore private (
                             )
                             obsoleteOs = os
                             properties(pkId) = (p, null /*The list of observers is no longer required!*/ )
+                            if ((oldP ne null) && oldP.isBeingComputed)
+                                // there are/there cannot be any observers
+                                return ;
 
                         case FinalUpdate ⇒
                             // We may still observe other entities... we have to clear
@@ -1761,7 +1803,7 @@ class PropertyStore private (
                     os
             }
         }
-        // ... non-exclusive access (just clear the observers)
+        // ... non-exclusive access to the observers/entities (just clear the observers)
         if (obsoleteOs.nonEmpty) {
             val dependeeEPK = EPK(e, pk)
             val data = store.data

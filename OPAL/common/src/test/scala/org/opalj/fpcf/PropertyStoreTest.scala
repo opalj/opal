@@ -498,9 +498,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 stringLengthTriggered should be(false)
                 ps.waitOnPropertyComputationCompletion(true)
 
-                ps.entities { x ⇒ true } should be('empty) // calling entities should not trigger the computation
+                ps.entities { x ⇒ true } should be('empty) // (prerequisite) calling entities should not trigger the computation
                 ps.waitOnPropertyComputationCompletion(true)
-                ps.entities { x ⇒ true } should be('empty) // calling entities does not trigger the computation
+                ps.entities { x ⇒ true } should be('empty) // (test) calling entities does not trigger the computation
 
                 ps("a") should be(Nil)
 
@@ -517,6 +517,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
                         }
                 pcr shouldBe a[SuspendedPC[_]]
+
+                // We can explicitly add results those this is generally not required in a well
+                // written analysis.
                 ps.handleResult(pcr)
 
                 ps.waitOnPropertyComputationCompletion(true)
@@ -528,6 +531,94 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
         }
 
+        describe("direct computations of an entity's property") {
+
+            it("should not be executed if they are not explicitly queried") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                ps.entities { p ⇒ true } should be('empty)
+                ps.waitOnPropertyComputationCompletion(true)
+                ps.entities { p ⇒ true } should be('empty)
+            }
+
+            it("should return the cached value") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                val first = ps("a", StringLengthKey).get
+                val second = ps("a", StringLengthKey).get
+                first should be theSameInstanceAs (second)
+            }
+
+            it("should be immediately executed and returned when the property is requested") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                ps("aea", StringLengthKey) should be(Some(StringLength(3)))
+                // test that the other computations are not immediately executed
+                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+            }
+
+            it("can depend on other direct property computations") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                val palindromePC = (e: Entity) ⇒ {
+                    // here we assume that a palindrome must have more than one char
+                    if (ps(e, StringLengthKey).get.length > 1 &&
+                        e.toString == e.toString().reverse)
+                        Palindrome
+                    else
+                        NoPalindrome
+                }
+                ps <<! (PalindromeKey, palindromePC)
+
+                ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                ps("a", PalindromeKey) should be(Some(NoPalindrome))
+                ps("aea", StringLengthKey) should be(Some(StringLength(3)))
+                ps("aea", PalindromeKey) should be(Some(Palindrome))
+                // test that the other computations are not immediately executed
+                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+            }
+
+            it("block other computations that request the property until the computation is complete") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ {
+                    Thread.sleep(250) // to make it "take long"
+                    StringLength(e.toString.size)
+                }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                @volatile var executed = false
+                val t = new Thread(new Runnable {
+                    def run: Unit = {
+                        Thread.sleep(100)
+                        ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                        executed = true
+                    }
+                })
+                t.start()
+                ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                t.join()
+                executed should be(true)
+            }
+        }
     }
 
 }
