@@ -35,8 +35,8 @@ package object methods {
     /**
      * The key associated with every purity property.
      */
-    final val PurityKey = {
-        PropertyKey.create[Purity](
+    final val PurityKey: PropertyKey[Purity] = {
+        PropertyKey.create(
             // The unique name of the property.
             "Purity",
             // The default property that will be used if no analysis is able
