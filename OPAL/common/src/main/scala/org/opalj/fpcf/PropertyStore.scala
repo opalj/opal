@@ -54,8 +54,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 
 /**
- * The central store which manages the execution of all
- * computations that require and provide information about the entities of the store.
+ * The property store manages the execution of computations of properties related to specific
+ * entities (for example, of a program). These computations may require and provide information
+ * about the entities of the store.
  *
  * The store supports two kinds of properties: '''set properties''' and '''per entity properties'''.
  * In general, if the concrete instance of a property may be shared by all entities it is
