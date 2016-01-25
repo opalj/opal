@@ -31,13 +31,12 @@ package bugpicker
 package core
 package analysis
 
+import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.AIResult
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheCode
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -49,12 +48,6 @@ import org.opalj.br.instructions.DCONST_0
 import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analysis.methods.Purity
-import org.opalj.fpcf.analysis.methods.Pure
-import scala.util.control.ControlThrowable
-import org.opalj.log.OPALLogger
-import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.br.LocalVariable
 import org.opalj.br.instructions.ICONST_M1
 import org.opalj.br.instructions.IINC
@@ -82,6 +75,15 @@ import org.opalj.issues.IssueLocation
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.MethodLocation
 
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.PurityKey
+import org.opalj.fpcf.analysis.methods.Pure
 /**
  * Identifies unused local variables in non-synthetic methods.
  *
@@ -181,7 +183,7 @@ object UnusedLocalVariables {
                         try {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
                             // TODO Use a more precise method to determine if a method has a side effect "pureness" is actually too strong
-                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, PurityKey) == Pure)) {
                                 issue = "the return value of the call of "+invoke.declaringClass.toJava+
                                     "{ "+
                                     invoke.methodDescriptor.toJava(invoke.name)+
