@@ -33,7 +33,7 @@ package cg
 package cha
 
 import org.opalj.br.{ClassFile, Method, MethodDescriptor, MethodSignature, ObjectType, PC}
-import org.opalj.br.analyses.{CallBySignatureResolution, CallBySignatureResolutionKey, SomeProject}
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL}
 import scala.collection.Set
 import scala.collection.mutable.HashSet

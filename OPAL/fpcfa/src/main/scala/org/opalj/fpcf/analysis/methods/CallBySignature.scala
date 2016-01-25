@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,36 +22,42 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package fpcf
+package analysis
+package methods
+
+import org.opalj.br.Method
 
 /**
- * The ''key'' object to get the interface methods for which call by signature resolution
- * needs to be done.
- *
- * @note To get call by signature information use the [[Project]]'s `get` method and pass in
- * 		`this` object.
- * @see [[CallBySignatureResolution]] for further information.
- *
- * @author Michael Reif
+ * This is the common super trait for the call-by-signature information which is necessary
+ * to build library call graphs.
  */
-object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatureResolution] {
+sealed trait CallBySignature extends Property {
+
+    final type Self = CallBySignature
 
     /**
-     * The computation of [[CallBySignatureResolution]] information needs the [[ProjectIndex]].
+     * None of the the derived properties is refineable if it calculated once.
      */
-    protected def requirements = List(ProjectIndexKey)
+    def isRefineable = false
 
     /**
-     * Computes the [[CallBySignatureResolution]] for the given project.
+     * Returns the key used by all `CallBySignatureTargets` properties.
      */
-    override protected def compute(project: SomeProject): CallBySignatureResolution = {
-        CallBySignatureResolution(project, () ⇒ Thread.currentThread().isInterrupted())
-    }
+    // All instances have to share the SAME key!
+    final def key = CallBySignatureKey
 }
 
+object CallBySignature extends PropertyMetaInformation {
+
+    final def key = CallBySignature.key
+}
+
+case class CbsTargets(cbsTargets: Set[Method]) extends CallBySignature
+
+case object NoResolution extends CallBySignature

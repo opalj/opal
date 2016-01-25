@@ -1,4 +1,4 @@
-/* BSD 2Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,42 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
-package analyses
+package org.opalj.fpcf.analysis.cg
 
-import java.net.URL
-
-import org.opalj.fpcf.analysis.cg.CallBySignatureResolutionKey
+import org.opalj.br.analyses._
 
 /**
- * Prints information about those methods for which we need to do call by signature resolution
- * when we analyze a library.
+ * The ''key'' object to get the interface methods for which call by signature resolution
+ * needs to be done.
  *
+ * @note To get call by signature information use the [[Project]]'s `get` method and pass in
+ * 		`this` object.
+ * @see [[CallBySignatureResolution]] for further information.
  * @author Michael Reif
  */
-object CallBySignatureInformation extends DefaultOneStepAnalysis {
+object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatureResolution] {
 
-    override def title: String =
-        "computes potential target methods for interface based method calls"
+    /**
+     * The computation of [[CallBySignatureResolution]] information needs the [[ProjectIndex]].
+     */
+    protected def requirements = List(ProjectIndexKey)
 
-    override def description: String =
-        """|Determines for every interface method if there are methods 
-           |with matching signatures in classes that are not final and 
-           |which do not implement the respective interface. In such cases, and if we 
-           |analyze a library, the respective target methods need to be taken into account.""".
-            stripMargin('|')
-
-    override def doAnalyze(
-        project:       org.opalj.br.analyses.Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-
-        val cbs = project.get(CallBySignatureResolutionKey)
-
-        val methodReferenceStatistics = cbs.methodReferenceStatistics.mkString("\n", "\n", "\n")
-        val generalStatistics = cbs.statistics.map(e ⇒ e._1+": "+e._2).mkString("Statistics{\n\t", "\n\t", "\n}")
-        BasicReport(methodReferenceStatistics + generalStatistics)
+    /**
+     * Computes the [[CallBySignatureResolution]] for the given project.
+     */
+    override protected def compute(project: SomeProject): CallBySignatureResolution = {
+        CallBySignatureResolution(project, () ⇒ Thread.currentThread().isInterrupted())
     }
-
 }
+

@@ -44,11 +44,36 @@ package object methods {
             MaybePure,
             // When we have a cycle all properties are necessarily conditionally pure
             // hence, we can leverage the "pureness" 
-            Pure
-        // NOTE
+            Pure // NOTE
         // We DO NOT increase the pureness of all methods as this will happen automatically
         // as a sideeffect of setting the pureness of one method!
         // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
+        )
+    }
+
+    /**
+     * The key associated with every call-by-signature property.
+     */
+    final val CallBySignatureKey = {
+        PropertyKey.create[CallBySignature](
+            // The unique name of the property.
+            "CallBySignatureTargets",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            NoResolution
+        )
+    }
+
+    /**
+     * The key associated with every ´ClientCallable´ property.
+     */
+    final val ClientCallableKey = {
+        PropertyKey.create[ClientCallable](
+            // The unique name of the property.
+            "ClientCallable",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            IsClientCallable
         )
     }
 }

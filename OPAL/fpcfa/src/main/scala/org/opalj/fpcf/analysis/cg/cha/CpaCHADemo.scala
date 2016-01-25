@@ -33,13 +33,8 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.fpcf.Property
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.br.analyses.AnalysisModeConfigFactory
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.Warn
 
 object CpaCHADemo extends DefaultOneStepAnalysis {
 
@@ -61,14 +56,11 @@ object CpaCHADemo extends DefaultOneStepAnalysis {
         def getPercentage(value: Double): String = "%1.2f" format (value / methodsCount * 100d)
 
         val ccg = cpaProject.get(CHACallGraphKey)
-        val execpetions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
-        println(execpetions)
+        val exceptions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        println(exceptions)
         val newCpaCG = ccg.callGraph
 
         val cpaEP = cpaStore.entities { (p: Property) ⇒ p == IsEntryPoint }
-
-        val cbs = cpaProject.get(CallBySignatureResolutionKey)
-        println(cbs.statistics)
 
         BasicReport(
             s"#entry points    : ${cpaEP.size}\n"+

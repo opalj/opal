@@ -410,7 +410,6 @@ class ClassHierarchy private (
     def allSubclasses(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
         assert(!isInterface(objectType))
         val id = objectType.id
-        println(objectType)
         val initialIterator = {
             if (reflexive)
                 Iterator(objectType)
