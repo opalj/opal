@@ -640,15 +640,26 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             it("should be possible to register a dpc that only handles some entities") {
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ {
+                    Thread.sleep(100)
                     if (e.toString().size < 10) None else Some(StringLength(e.toString.size))
                 }
                 ps <<! (StringLengthKey, stringLengthPC)
+
+                // simulate concurrent access
+                val ts = (1 to 5).map(i ⇒ new Thread(new Runnable {
+                    def run(): Unit = {
+                        ps("a", StringLengthKey) should be(None)
+                    }
+                }))
+                ts.foreach(_.start)
 
                 ps("a", StringLengthKey) should be(None)
                 ps("aea", StringLengthKey) should be(None)
 
                 ps("aaaffffffaaa", StringLengthKey) should be(Some(StringLength(12)))
                 ps("aaaffffffffffffffffaaa", StringLengthKey) should be('defined)
+
+                ts.foreach(_.join)
             }
         }
     }

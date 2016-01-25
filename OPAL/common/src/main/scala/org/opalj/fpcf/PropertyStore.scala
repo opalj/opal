@@ -492,8 +492,11 @@ class PropertyStore private (
             pos._1 /*the property*/ match {
                 case p: PropertyIsBeingComputed ⇒
                     p.await() // this establishes the happen before relation to make the next line correct                
-                    val theProperty = data.get(e)._2(pkId)._1.asInstanceOf[P]
-                    Some(theProperty)
+                    val pos = data.get(e)._2(pkId)
+                    if (pos ne null)
+                        Some(pos._1.asInstanceOf[P])
+                    else
+                        None // if the dpc is not able to handle the property
                 case p ⇒
                     // the value is null if the computation has not yet finished
                     Option(p.asInstanceOf[P])
