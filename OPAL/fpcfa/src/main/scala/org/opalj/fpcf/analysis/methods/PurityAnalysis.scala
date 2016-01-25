@@ -105,9 +105,7 @@ import org.opalj.fpcf.analysis.fields.EffectivelyFinal
  */
 class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    final val Purity = org.opalj.fpcf.analysis.methods.Purity.key
-
-    final val Mutability = org.opalj.fpcf.analysis.fields.FieldUpdates.key
+    final val MutabilityKey = org.opalj.fpcf.analysis.fields.FieldUpdates.key
 
     /*
      * Determines the purity of the method starting with the instruction with the given
@@ -157,7 +155,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                             // as the analysis is only continued when property becomes
                             // available.
                             import propertyStore.require
-                            return require(method, Purity, field, Mutability)(c);
+                            return require(method, PurityKey, field, MutabilityKey)(c);
 
                         case _ ⇒
                             // We know nothing about the target field (it is not
@@ -189,7 +187,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                             case Some(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
-                                val purity = propertyStore(callee, Purity)
+                                val purity = propertyStore(callee, PurityKey)
 
                                 purity match {
                                     case Some(Pure)   ⇒ /* Nothing to do...*/
@@ -200,7 +198,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                                         currentDependees += EP(callee, ConditionallyPure)
 
                                     case None ⇒
-                                        currentDependees += EPK(callee, Purity)
+                                        currentDependees += EPK(callee, PurityKey)
 
                                     case _ ⇒
                                         val message = s"unknown purity $purity"
@@ -296,7 +294,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             return ImmediateResult(method, Impure);
 
         propertyStore.allHaveProperty(
-            method, Purity,
+            method, PurityKey,
             referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒
             if (areImmutable) {
@@ -320,7 +318,7 @@ object PurityAnalysis extends FPCFAnalysisRunner {
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
-    override def derivedProperties: Set[PropertyKind] = Set(Purity)
+    override def derivedProperties: Set[PropertyKind] = Set(PurityKey)
 
     override def usedProperties: Set[PropertyKind] = Set(TypeImmutability)
 

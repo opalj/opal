@@ -41,7 +41,7 @@ import org.opalj.br.Field
 import org.opalj.fpcf.analysis.fields.FieldUpdates
 import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
-import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.PurityKey
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -81,7 +81,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
         val pureEntities: Traversable[(AnyRef, Property)] =
-            projectStore(Purity.key)
+            projectStore(PurityKey)
         //            projectStore(Purity.Key).filter { ep ⇒
         //                val purity = ep._2
         //                (purity == Pure || purity == ConditionallyPure)
