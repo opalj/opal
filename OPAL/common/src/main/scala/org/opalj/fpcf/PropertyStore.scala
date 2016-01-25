@@ -1844,6 +1844,7 @@ class PropertyStore private (
 
     // Locks: Store (access), Entity and scheduleContinuation: Tasks
     def handleResult(r: PropertyComputationResult): Unit = {
+        if (debug) OPALLogger.info("analysis progress", "analysis result: "+r)
         accessEntity {
             (r.id: @annotation.switch) match {
 
