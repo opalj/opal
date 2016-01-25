@@ -477,7 +477,23 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
         describe("lazy computations of an entity's property") {
 
-            it("should be executed when the property is requested") {
+            it("should not be executed immediately") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+                @volatile var stringLengthTriggered = false
+                val stringLengthPC: PropertyComputation = (e: Entity) ⇒ {
+                    stringLengthTriggered = true
+                    ImmediateResult(e, StringLength(e.toString.size))
+                }
+                ps <<? (StringLengthKey, stringLengthPC)
+
+                if (stringLengthTriggered) fail("computation is already triggered")
+                ps.waitOnPropertyComputationCompletion(true)
+                if (stringLengthTriggered) fail("computation is already triggered")
+            }
+
+            it("should be executed (at most once) when the property is requested") {
                 import scala.collection.mutable
 
                 val ps = psStrings
@@ -497,10 +513,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 stringLengthTriggered should be(false)
                 ps.waitOnPropertyComputationCompletion(true)
-
-                ps.entities { x ⇒ true } should be('empty) // (prerequisite) calling entities should not trigger the computation
-                ps.waitOnPropertyComputationCompletion(true)
-                ps.entities { x ⇒ true } should be('empty) // (test) calling entities does not trigger the computation
 
                 ps("a") should be(Nil)
 
@@ -566,11 +578,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps("a", StringLengthKey) should be(Some(StringLength(1)))
                 ps("aea", StringLengthKey) should be(Some(StringLength(3)))
-                // test that the other computations are not immediately executed
+
+                // test that the other computations are not immediately executed were executed
                 ps.entities { p ⇒ true } should be(Set("a", "aea"))
             }
 
-            it("can depend on other direct property computations") {
+            it("can depend on other direct property computations (chaining of direct property computations)") {
                 import scala.collection.mutable
 
                 val ps = psStrings
@@ -591,7 +604,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("a", PalindromeKey) should be(Some(NoPalindrome))
                 ps("aea", StringLengthKey) should be(Some(StringLength(3)))
                 ps("aea", PalindromeKey) should be(Some(Palindrome))
-                // test that the other computations are not immediately executed
+
+                // test that the other computations are not immediately executed/were executed
                 ps.entities { p ⇒ true } should be(Set("a", "aea"))
             }
 
@@ -608,13 +622,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 @volatile var executed = false
                 val t = new Thread(new Runnable {
                     def run: Unit = {
-                        Thread.sleep(100)
+                        Thread.sleep(75)
                         ps("a", StringLengthKey) should be(Some(StringLength(1)))
                         executed = true
                     }
                 })
                 t.start()
-                ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                // calling ".get" is safe because the property is computed using a direct
+                // property computation
+                ps("a", StringLengthKey).get should be(StringLength(1))
                 t.join()
                 executed should be(true)
             }
