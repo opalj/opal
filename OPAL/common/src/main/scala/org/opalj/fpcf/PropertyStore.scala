@@ -1962,7 +1962,7 @@ class PropertyStore private (
                                     if (debug) OPALLogger.debug(
                                         "analysis progress",
                                         "immediately continued the suspended computation of "+
-                                            s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
+                                            s"$dependerE($dependerPK) using $dependeeE($dependeeP)"
                                     )
                                     // (e: AnyRef) ⇒ suspended.continue(dependeeP)
                                     /*prepare for immediate exec*/ () ⇒
