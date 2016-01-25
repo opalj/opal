@@ -137,6 +137,19 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         }
     }
 
+    def forall(f: T ⇒ Boolean): Boolean = {
+        var i = 0
+        val max = data.length
+        while (i < max) {
+            val e = data(i)
+            // Recall that all values have to be non-null...
+            if (e != null && !f(e))
+                return false;
+            i += 1
+        }
+        true
+    }
+
     def values: Iterator[T] = data.iterator.filter(_ ne null)
 
     def entries: Iterator[(Int, T)] = {
