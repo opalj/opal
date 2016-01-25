@@ -104,7 +104,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     runAnalysis(project)
 
     testAnnotations()
-  
+
     /*
      * PROPERTY VALIDATION
      */
