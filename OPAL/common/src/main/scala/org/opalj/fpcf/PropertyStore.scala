@@ -57,14 +57,18 @@ import org.opalj.log.LogContext
  * The central store which manages the execution of all
  * computations that require and provide information about the entities of the store.
  *
+ * The store supports two kinds of properties: '''set properties''' and '''per entity properties'''.
+ * In general, if the concrete instance of a property may be shared by all entities it is
+ * probably advantageous to model it as a set property. However, the general mechanism are
+ * per entity properties.
+ *
  * ==Usage==
  * The general strategy when using the PropertyStore is to always
  * continue computing the property
  * of an entity and to collect the dependencies on those elements that are relevant.
  * I.e., if some information is not or just not completely available, the analysis should
- * still continue using
- * the provided information and (internally) records the dependency. Later on, when
- * the analysis has computed its result it reports the same and informs the framework
+ * still continue using the provided information and (internally) records the dependency.
+ * Later on, when the analysis has computed its result it reports the same and informs the framework
  * about its dependencies.
  *
  * ===Core Requirements on Property Computation Functions===
@@ -87,9 +91,8 @@ import org.opalj.log.LogContext
  *
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses cannot make any progress, because
- * they are mutually dependent. In this case
- * the computation of a property `p` of an entity `e1` depends
- * on the property `p` of an entity `e2` that requires the property `p` of the entity `e1`.
+ * they are mutually dependent. In this case the computation of a property `p` of an entity `e1`
+ * depends on the property `p` of an entity `e2` that requires the property `p` of the entity `e1`.
  * In this case the [[PropertyKey]]'s strategy is used to resolve such a cyclic dependency.
  *
  * ==Thread Safety==
@@ -105,7 +108,7 @@ import org.opalj.log.LogContext
  * The ProperStore prevents deadlocks by ensuring that updates of the store are always
  * atomic and by ensuring that each computation acquires all necessary locks (write and/or
  * read) locks in the same order!
- * The locking strategy is as follows:
+ * The locking strategy (w.r.t. the shared locks) is as follows:
  *  1.  Every entity is directly associated with a ReentrantReadWriteLock that
  *      is always used if a property for the respective entity is read or written.
  *      (Independent of the kind of property that is accessed.)
@@ -156,6 +159,23 @@ class PropertyStore private (
         val logContext: LogContext
 ) { store ⇒
 
+    private[this] def createIdentityHashSet(): JSet[AnyRef] = {
+        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
+    }
+
+    /**
+     * The final set of all stored elements.
+     */
+    // This set is not mutated.
+    private[this] final val keys: JSet[Entity] = data.keySet()
+    // An (immutable) list view of all keys.
+    private[this] final val keysList: List[Entity] = {
+        import scala.collection.JavaConverters._
+        keys.asScala.toList
+    }
+
+    def isKnown(e: Entity): Boolean = keys.contains(e)
+
     import UpdateTypes.FinalUpdate
     import UpdateTypes.OneStepFinalUpdate
     import UpdateTypes.IntermediateUpdate
@@ -171,6 +191,9 @@ class PropertyStore private (
      * Counts how often a default property was effectively assigned to an entity.
      */
     private[this] val effectiveDefaultPropertiesCount = new AtomicLong(0)
+    /**
+     * Counts how often a default property was was considered to be assigned to an entity.
+     */
     private[this] val candidateDefaultPropertiesCount = new AtomicLong(0)
 
     // We want to be able to make sure that methods that access the store as
@@ -179,40 +202,14 @@ class PropertyStore private (
     @inline final private[this] def accessEntity[B](f: ⇒ B) = withReadLock(StoreLock)(f)
     @inline final private[this] def accessStore[B](f: ⇒ B) = withWriteLock(StoreLock)(f)
 
-    /**
-     * The final set of all stored elements.
-     */
-    // This set is not mutated.
-    private[this] final val keys: JSet[Entity] = data.keySet()
-    // An (immutable) list view of all keys.
-    private[this] final val keysList: List[Entity] = {
-        import scala.collection.JavaConverters._
-        keys.asScala.toList
-    }
-
-    def isKnown(e: Entity): Boolean = keys.contains(e)
+    // =============================================================================================
+    // STORE MANAGEMENT
+    //
+    //    
 
     /**
-     * Tries to shutdown the property store as well as all computations that are currently
-     * executed on behalf of the property store. When this method is called, the property
-     * store is no longer useable.
+     * Clears all properties and property computation functions.
      */
-    def shutdown(): Unit = {
-
-        try {
-            Tasks.interrupt()
-            Tasks.waitOnCompletion(useFallbackForIncomputableProperties = false)
-            threadPool.purge()
-        } catch { case t: Throwable ⇒ OPALLogger.error("progress", "exception at shutdown", t) }
-
-        threadPool.shutdownNow() // we don't care about remaining tasks
-
-        reset()
-        data.clear() // => makes the store fail very fast if it is still used afterwards
-
-        OPALLogger.info("setup", "the property store is shutdown")
-    }
-
     def reset(): Unit = {
         writeSetPropertyObservers {
             accessStore {
@@ -235,10 +232,69 @@ class PropertyStore private (
         }
     }
 
-    override protected def finalize(): Unit = { super.finalize(); shutdown() }
+    /**
+     * Returns a string representation of the stored properties.
+     */
+    def toString(printProperties: Boolean): String = {
+        accessStore {
+            val entitiesPerSetPropertyCount = theSetProperties map { (index, entities) ⇒
+                (SetProperty.propertyName(index), entities.size)
+            }
+            val overallSetPropertyCount = entitiesPerSetPropertyCount.map(_._2).sum
+            val setPropertiesStatistics =
+                s"∑$overallSetPropertyCount: "+
+                    entitiesPerSetPropertyCount.map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
+
+            val perPropertyKeyEntities = new Array[Int](PropertyKey.maxId + 1)
+            var perEntityPropertiesCount = 0
+            var unsatisfiedPropertyDependencies = 0
+            var registeredObservers = 0
+            val properties = new StringBuilder
+            for { entry ← data.entrySet().asScala } {
+                val ps = entry.getValue._2.map { (pk, pos) ⇒
+                    val (p, os) = pos
+                    val osCount = if (os eq null) 0 else os.size
+                    registeredObservers += osCount
+                    (
+                        if (p eq null) {
+                            unsatisfiedPropertyDependencies += 1
+                            s"<Unsatisfied: ${PropertyKey.name(pk)}>"
+                        } else {
+                            perEntityPropertiesCount += 1
+                            perPropertyKeyEntities(pk) = perPropertyKeyEntities(pk) + 1
+                            p.toString
+                        }
+                    )+"[obs="+osCount+"]"
+                }
+                if (printProperties && ps.nonEmpty) {
+                    val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
+                    properties.append(s)
+                }
+            }
+
+            val perEntityPropertiesStatistics = s"∑$perEntityPropertiesCount: "+
+                (perPropertyKeyEntities.zipWithIndex.filter(_._1 > 0) map { e ⇒
+                    val (sum, pk) = e
+                    (PropertyKey.name(pk), sum)
+                }).map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
+
+            "PropertyStore(\n"+
+                s"\tentitiesCount=${data.size()},\n"+
+                s"\texecutedComputations=${Tasks.executedComputations}\n"+
+                s"\tpropagations=${propagationCount.get}\n"+
+                s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
+                s"\tregisteredObservers=$registeredObservers\n"+
+                s"\tcandidateDefaultPropertiesCount=$candidateDefaultPropertiesCount\n"+
+                s"\teffectiveDefaultPropertiesCount=$effectiveDefaultPropertiesCount\n"+
+                s"\tperEntityProperties[$perEntityPropertiesStatistics]\n"+
+                (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "") +
+                (if (printProperties) s"=$properties)" else ")")
+        }
+    }
+
+    override def toString: String = toString(false)
 
     // =============================================================================================
-    //
     // SET PROPERTIES
     //
     //
@@ -247,27 +303,13 @@ class PropertyStore private (
     // access to this field needs to be synchronized!
     private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
     private[this] final val theSetProperties = ArrayMap[JSet[AnyRef]](5)
-    private[this] def writeSetPropertyObservers[U](f: ⇒ U): U = withWriteLock(theSetPropertyObserversLock)(f)
-    private[this] def accessSetPropertyObservers[U](f: ⇒ U): U = withReadLock(theSetPropertyObserversLock)(f)
 
-    private[this] def createIdentityHashSet(): JSet[AnyRef] = {
-        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
+    private[this] def writeSetPropertyObservers[U](f: ⇒ U): U = {
+        withWriteLock(theSetPropertyObserversLock)(f)
     }
 
-    // requires: TASKS lock
-    private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
-        val runnable = new Runnable {
-            override def run(): Unit = {
-                try {
-                    f(e)
-                } catch {
-                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
-                } finally {
-                    Tasks.taskCompleted()
-                }
-            }
-        }
-        scheduleTask(runnable)
+    private[this] def querySetPropertyObservers[U](f: ⇒ U): U = {
+        withReadLock(theSetPropertyObserversLock)(f)
     }
 
     /**
@@ -305,7 +347,7 @@ class PropertyStore private (
     def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
-        accessSetPropertyObservers {
+        querySetPropertyObservers {
             val isAdded = spMutex.synchronized {
                 val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
                 if (!currentEs.contains(e))
@@ -377,17 +419,17 @@ class PropertyStore private (
      * case it may be beneficial to only store the strictly necessary information and to rerun
      * the entire computation on demand.
      *
-     * @note The returned value may change over time but only such that it
+     * @note In general, the returned value may change over time but only such that it
      *      is strictly more precise.
      *
-     * @note Calling apply may trigger the computation of the property if the underlying
+     * @note Querying a property may trigger the computation of the property if the underlying
      * 		function is either a lazy or a direct property computation function. In general
-     * 		It is preferred that clients always assume that the property is "just computed"
+     * 		It is preferred that clients always assume that the property is lazily computed
      * 		when calling this function!
      *
      * @param e An entity stored in the property store.
      * @param pk The kind of property.
-     * @return `None` if no information about the respective property is (yet) available.
+     * @return `None` if information about the respective property is not (yet) available.
      *      `Some(Property)` otherwise.
      */
     // Locks: Store, Entity (read)
@@ -666,8 +708,26 @@ class PropertyStore private (
     // Locks: Store and this.update(...): Entity 
     def set(e: Entity, p: Property): Unit = {
         accessEntity {
-            assert(this(e, p.key).isEmpty, "(re)setting a property is not supported")
-            update(e, p, OneStepFinalUpdate)
+            val lps = data.get(e)
+            assert(lps ne null, s"the entity $e is unknown")
+
+            val (lock, properties) = lps
+            withWriteLock(lock) {
+                val pkId = p.key.id
+                val pos = properties(pkId)
+                if ((pos eq null) ||
+                    // there is no property and no property is currently computed
+                    ((pos._1 eq null) && (theLazyPropertyComputations(pkId) eq null)))
+                    // we do not have a property...
+                    update(e, p, OneStepFinalUpdate)
+                else {
+                    if (debug) OPALLogger.debug(
+                        "analysis progress",
+                        s"ignored the new property ${p} computed for $e, "+
+                            s"because the entity already has the property ${pos._1}}"
+                    )
+                }
+            }
         }
     }
 
@@ -676,31 +736,11 @@ class PropertyStore private (
      * is not yet associated with a property of the same kind. The properties are stored as
      * final values.
      */
-    // Locks: Store and this.update(...): Entity
+    // Locks: Store, Entity(write), this.update(...): Entity(write)
     def set(ps: Traversable[SomeEP]): Unit = {
         ps.foreach { ep ⇒
             val EP(e, p) = ep
-            accessEntity {
-                val lps = data.get(e)
-                assert(
-                    lps ne null,
-                    s"the entity $e returned by the given function f is unknown"
-                )
-                val (lock, properties) = lps
-                withWriteLock(lock) {
-                    val pos = properties(p.key.id)
-                    if ((pos eq null) || (pos._1 eq null))
-                        // we do not have a property...
-                        update(e, p, OneStepFinalUpdate)
-                    else {
-                        if (debug) OPALLogger.debug(
-                            "analysis progress",
-                            s"ignored the new property ${p} computed for $e, "+
-                                s"because the entity already has the property ${pos._1}}"
-                        )
-                    }
-                }
-            }
+            set(e, p)
         }
     }
 
@@ -848,27 +888,28 @@ class PropertyStore private (
 
     /**
      * Executes the given function `f` in parallel for all entities in the store.
-     * `f` is allowed to derive any
-     * properties related to any other entity found in the store. However, if `f` derives
-     * a property pNew of property kind pk and the respective entity e already has a property pOld
-     * of property kind pk, then the new property will be ignored.
+     * `f` is allowed to derive any properties related to any other entity found in the store.
+     * However, if `f` derives a property `pNew` of property kind `pk` and the respective entity
+     * `e` already has a property `pOld` of property kind pk, then the new property will be ignored.
      *
-     * The function may also access the store to query '''other properties'''; however, this should in
-     * general only be done after all previously scheduled computations - that
-     * compute any properties of interest - have finished (cf. [[waitOnPropertyComputationCompletion]]).
+     * The function may also access the store to query '''other properties'''; however, this should
+     * in general only be done after all previously scheduled computations - that
+     * compute any properties of interest - have finished
+     * (cf. [[waitOnPropertyComputationCompletion]]) or are guaranteed to be computed using
+     * direct property computations.
      *
      * This function cannot be used to register a function that (bi-directionally) interacts with
      * other analyses.
      *
-     * @param entitySelector An entity selector (cf. [[PropertyStore#entitySelector]])
-     * @param f The function the computes the respective property.
+     * @param entitySelector A partial function that selects the entities of interest.
+     * @param f The function that computes the respective property.
      */
-    def execute[E <: Entity](
+    def execute[E >: Null <: Entity](
         entitySelector: PartialFunction[Entity, E]
     )(
         f: (E) ⇒ Traversable[SomeEP]
     ): Unit = {
-        val mutex = new Object
+        val remainingEntitiesMutex = new Object
         // we use the remaining entities as a worklist
         @volatile var remainingEntities = keysList
         var i = 0
@@ -878,16 +919,16 @@ class PropertyStore private (
             i += 1
             scheduleRunnable {
                 while (!Tasks.isInterrupted && remainingEntities.nonEmpty) {
-                    val nextEntity: E = mutex.synchronized {
+                    val nextEntity: E = remainingEntitiesMutex.synchronized {
                         if (remainingEntities.nonEmpty) {
                             val nextEntity = remainingEntities.head
                             remainingEntities = remainingEntities.tail
                             if (entitySelector.isDefinedAt(nextEntity))
                                 entitySelector(nextEntity)
                             else
-                                null.asInstanceOf[E]
+                                null
                         } else
-                            null.asInstanceOf[E]
+                            null
                     }
                     if (nextEntity ne null) {
                         val results = f(nextEntity)
@@ -899,33 +940,41 @@ class PropertyStore private (
     }
 
     /**
-     *  Registers a direct property computation (dpc) function that is executed in the caller's
-     *  thread when the property is requested for the first time. After that the computed value
-     *  is cached and returned the next time the property is requested.
+     * Registers a direct property computation (dpc) function that is executed in the caller's
+     * thread when the property is requested for the first time. After that the computed value
+     * is cached and returned the next time the property is requested.
      *
-     *  I.e., compared to a lazy computation the caller will always immediately get the final
-     *  result and the dpc function just computes a `Property`. However, an dpc has to satisfy
-     *  the following constraints:
-     *
-     *
+     * I.e., compared to a lazy computation the caller can always immediately get the final
+     * result and the dpc function just computes a `Property`. However, an dpc has to satisfy
+     * the following constraints:
      *  - a dpc may depend on other properties that are computed
-     *   using dpcs if and only if the other properties are guaranteed to never have a direct or
-     *   indirect dependency on the computed property. (This in particular excludes cyclic
-     *   property dependencies. However, hierarchical property dependencies are supported. For
-     *   example, if the computation of property for a specific class is done using a dpc that
-     *   requires only information about the subclasses (or the superclasses, but not both at the
-     *   same time) then it is possible to use a dpc.
-     *   (A dpc may use all properties that are fully computed before the computation is registered.)
-     *  -  the computation must not create dependencies (i.e., an ImmediateResult)
+     *    using dpcs if and only if the other properties are guaranteed to never have a direct or
+     *    indirect dependency on the computed property. (This in particular excludes cyclic
+     *    property dependencies. However, hierarchical property dependencies are supported. For
+     *    example, if the computation of property for a specific class is done using a dpc that
+     *    requires only information about the subclasses (or the superclasses, but not both at the
+     *    same time) then it is possible to use a dpc.
+     *    (A dpc may use all properties that are fully computed before the computation is registered.)
+     *  - the computation must not create dependencies (i.e., an ImmediateResult)
+     *
+     * @note In general, using dpcs is most useful for analyses that have no notion of more/less
+     * 		precise/sound. In this case client's of properties computed using dpcs can query the
+     * 		store and will get the answer; i.e., a client that wants to know the property `P`
+     * 		of an entitiy `e` with property key `pk` computed using a dpc can write:
+     * 		{{{
+     *  	val ps : PropertyStore = ...
+     *  	ps(e,pk).get
+     * 		}}}
      */
-    def <<![P <: Property](pk: PropertyKey[P], odpc: (Entity) ⇒ Property): Unit = {
+    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = {
         /* The framework has to handle:
-         *  1. the situation that the same odpc is triggered by multiple other analyses concurrently
+         *  1. the situation that the same dpc is potentially triggered by multiple other analyses 
+         *     concurrently
          *  
-         * The framework does not have to handle the following two situations because on-demand
-         * properties may not depend on on-demand properties of the same kind. 
-         *  1. an odpc may require the calculation of an odpc that leads to a cycle
-         *  2. two or more odpc may depend on each other:
+         * The framework does not have to handle the following two situations because direct
+         * property computations may not depend on properties of the same kind. 
+         *  1. a dpc may require the calculation of a dpc that leads to a cycle
+         *  2. two or more dpcs may depend on each other:
          *  	t1:	o → o1 → o2
          *                 ↙︎ ↑
          *      t2:	o → o3 → o4
@@ -935,7 +984,7 @@ class PropertyStore private (
          *      	 Hence, we have a deadlock.
          */
         theDirectPropertyComputations.synchronized {
-            theDirectPropertyComputations(pk.id) = odpc
+            theDirectPropertyComputations(pk.id) = dpc
         }
     }
 
@@ -1121,68 +1170,6 @@ class PropertyStore private (
         }
     }
 
-    /**
-     * Returns a string representation of the stored properties.
-     */
-    def toString(printProperties: Boolean): String = {
-        accessStore {
-            val entitiesPerSetPropertyCount = theSetProperties map { (index, entities) ⇒
-                (SetProperty.propertyName(index), entities.size)
-            }
-            val overallSetPropertyCount = entitiesPerSetPropertyCount.map(_._2).sum
-            val setPropertiesStatistics =
-                s"∑$overallSetPropertyCount: "+
-                    entitiesPerSetPropertyCount.map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
-
-            val perPropertyKeyEntities = new Array[Int](PropertyKey.maxId + 1)
-            var perEntityPropertiesCount = 0
-            var unsatisfiedPropertyDependencies = 0
-            var registeredObservers = 0
-            val properties = new StringBuilder
-            for { entry ← data.entrySet().asScala } {
-                val ps = entry.getValue._2.map { (pk, pos) ⇒
-                    val (p, os) = pos
-                    val osCount = if (os eq null) 0 else os.size
-                    registeredObservers += osCount
-                    (
-                        if (p eq null) {
-                            unsatisfiedPropertyDependencies += 1
-                            s"<Unsatisfied: ${PropertyKey.name(pk)}>"
-                        } else {
-                            perEntityPropertiesCount += 1
-                            perPropertyKeyEntities(pk) = perPropertyKeyEntities(pk) + 1
-                            p.toString
-                        }
-                    )+"[obs="+osCount+"]"
-                }
-                if (printProperties && ps.nonEmpty) {
-                    val s = ps.mkString("\t\t"+entry.getKey.toString+" => {", ", ", "}\n")
-                    properties.append(s)
-                }
-            }
-
-            val perEntityPropertiesStatistics = s"∑$perEntityPropertiesCount: "+
-                (perPropertyKeyEntities.zipWithIndex.filter(_._1 > 0) map { e ⇒
-                    val (sum, pk) = e
-                    (PropertyKey.name(pk), sum)
-                }).map(e ⇒ e._1+":"+e._2).mkString("(", ", ", ")")
-
-            "PropertyStore(\n"+
-                s"\tentitiesCount=${data.size()},\n"+
-                s"\texecutedComputations=${Tasks.executedComputations}\n"+
-                s"\tpropagations=${propagationCount.get}\n"+
-                s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
-                s"\tregisteredObservers=$registeredObservers\n"+
-                s"\tcandidateDefaultPropertiesCount=$candidateDefaultPropertiesCount\n"+
-                s"\teffectiveDefaultPropertiesCount=$effectiveDefaultPropertiesCount\n"+
-                s"\tperEntityProperties[$perEntityPropertiesStatistics]\n"+
-                (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "") +
-                (if (printProperties) s"=$properties)" else ")")
-        }
-    }
-
-    override def toString: String = toString(false)
-
     // =============================================================================================
     //
     // INTERNAL IMPLEMENTATION
@@ -1351,27 +1338,26 @@ class PropertyStore private (
         //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
         private[this] def handleUnsatisfiedDependencies(): Unit = {
 
-            // type Observers = mutable.ListBuffer[PropertyObserver]
-            // type Properties = OArrayMap[(Property, Observers)]
-            // type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
-            //private[this] val data:  JIDMap[Entity, PropertyStoreValue],
-            def validateStore(): Unit = {
-                store.data.values.iterator().asScala.foreach {
-                    _._2.foreach { pos ⇒
-                        if (pos != null) {
+            def validateStore(): Boolean = {
+                store.data.values.iterator().asScala.forall {
+                    _._2.forall { pos ⇒
+                        if (pos ne null) {
                             val (p, os) = pos
                             if ((p ne null) && p.isFinal && os != null) {
                                 OPALLogger.error(
                                     "internal error",
                                     s"the final property $p has ${os.size} observers"
                                 )
+                                return false;
                             }
                         }
+                        true
                     }
                 }
             }
-            if (debug) {
-                validateStore()
+            if (debug && !validateStore()) {
+                val storeState = store.toString(true)
+                throw new UnknownError(s"the property store is inconsistent:\n$storeState")
             }
 
             /*
@@ -1501,6 +1487,7 @@ class PropertyStore private (
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
+                    assert(data.get(e)._2(pk.id)._1 eq null, s"the entity $e already has a property $pk")
                     val defaultP = PropertyKey.fallbackProperty(store, e, pk)
                     scheduleHandleFallbackResult(e, defaultP)
                 }
@@ -1544,9 +1531,7 @@ class PropertyStore private (
         dependeeP: Property,
         c:         Continuation
     ): Unit = {
-        scheduleRunnable {
-            handleResult(c(dependeeE, dependeeP))
-        }
+        scheduleRunnable { handleResult(c(dependeeE, dependeeP)) }
     }
 
     /**
@@ -1565,14 +1550,28 @@ class PropertyStore private (
         }
     }
 
+    // requires: TASKS lock
+    private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
+        val runnable = new Runnable {
+            override def run(): Unit = {
+                try {
+                    f(e)
+                } catch {
+                    case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
+                } finally {
+                    Tasks.taskCompleted()
+                }
+            }
+        }
+        scheduleTask(runnable)
+    }
+
     /**
      * Schedules the computation of a property w.r.t. the entity `e`.
      */
     // Locks of scheduleRunnable: Tasks
     private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
-        scheduleRunnable {
-            handleResult(pc(e))
-        }
+        scheduleRunnable { handleResult(pc(e)) }
     }
 
     // Locks of scheduleTask: Tasks
@@ -1667,9 +1666,9 @@ class PropertyStore private (
         val pk = p.key
         val pkId = pk.id
 
-        val (lock, properties) = data.get(e)
+        val (entityLock, properties) = data.get(e)
         var obsoleteOs: Iterable[PropertyObserver] = Nil
-        val os = withWriteLock(lock) {
+        val os = withWriteLock(entityLock) {
 
             // 1. inform all onPropertyComputations about the value
             val onPropertyComputations = theOnPropertyComputations.getOrElse(pkId, Nil)
