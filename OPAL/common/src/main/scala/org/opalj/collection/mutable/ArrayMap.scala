@@ -79,6 +79,13 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
     }
 
     @throws[IndexOutOfBoundsException]("if the key is negative")
+    def remove(key: Int): Unit = {
+        if (key < data.length) {
+            data(key) = null
+        }
+    }
+
+    @throws[IndexOutOfBoundsException]("if the key is negative")
     def getOrElse(key: Int, f: ⇒ T): T = {
         if (key < data.length) {
             val entry = data(key)
