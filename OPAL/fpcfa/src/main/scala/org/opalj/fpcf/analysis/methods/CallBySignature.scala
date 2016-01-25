@@ -31,33 +31,28 @@ package fpcf
 package analysis
 package methods
 
+import scala.collection.Set
 import org.opalj.br.Method
 
 /**
- * This is the common super trait for the call-by-signature information which is necessary
- * to build library call graphs.
+ * Determines for each interface based call site those methods that are potentially called by
+ * call-by-signature means '''only'''.
+ *
+ * @note This property is computed by a direct property computation.
  */
 sealed trait CallBySignature extends Property {
 
     final type Self = CallBySignature
 
-    /**
-     * None of the the derived properties is refineable if it calculated once.
-     */
-    def isRefineable = false
+    final def isRefineable = false
 
     /**
-     * Returns the key used by all `CallBySignatureTargets` properties.
+     * Returns the key used by all `CallBySignature` properties.
      */
-    // All instances have to share the SAME key!
     final def key = CallBySignatureKey
 }
 
-object CallBySignature extends PropertyMetaInformation {
+case class CBSTargets(cbsTargets: Set[Method]) extends CallBySignature
 
-    final def key = CallBySignature.key
-}
+case object NoCBSTargets extends CallBySignature
 
-case class CbsTargets(cbsTargets: Set[Method]) extends CallBySignature
-
-case object NoResolution extends CallBySignature

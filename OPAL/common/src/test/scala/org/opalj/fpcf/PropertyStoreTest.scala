@@ -549,7 +549,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 import scala.collection.mutable
 
                 val ps = psStrings
-                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                val stringLengthPC = (e: Entity) ⇒ { Some(StringLength(e.toString.size)) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
                 ps.entities { p ⇒ true } should be('empty)
@@ -561,7 +561,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 import scala.collection.mutable
 
                 val ps = psStrings
-                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                val stringLengthPC = (e: Entity) ⇒ { Some(StringLength(e.toString.size)) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
                 val first = ps("a", StringLengthKey).get
@@ -573,7 +573,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 import scala.collection.mutable
 
                 val ps = psStrings
-                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                val stringLengthPC = (e: Entity) ⇒ { Some(StringLength(e.toString.size)) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
                 ps("a", StringLengthKey) should be(Some(StringLength(1)))
@@ -587,16 +587,18 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 import scala.collection.mutable
 
                 val ps = psStrings
-                val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
+                val stringLengthPC = (e: Entity) ⇒ { Some(StringLength(e.toString.size)) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
                 val palindromePC = (e: Entity) ⇒ {
                     // here we assume that a palindrome must have more than one char
-                    if (ps(e, StringLengthKey).get.length > 1 &&
-                        e.toString == e.toString().reverse)
-                        Palindrome
-                    else
-                        NoPalindrome
+                    Some(
+                        if (ps(e, StringLengthKey).get.length > 1 &&
+                            e.toString == e.toString().reverse)
+                            Palindrome
+                        else
+                            NoPalindrome
+                    )
                 }
                 ps <<! (PalindromeKey, palindromePC)
 
@@ -615,7 +617,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ {
                     Thread.sleep(250) // to make it "take long"
-                    StringLength(e.toString.size)
+                    Some(StringLength(e.toString.size))
                 }
                 ps <<! (StringLengthKey, stringLengthPC)
 
@@ -633,6 +635,20 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("a", StringLengthKey).get should be(StringLength(1))
                 t.join()
                 executed should be(true)
+            }
+
+            it("should be possible to register a dpc that only handles some entities") {
+                val ps = psStrings
+                val stringLengthPC = (e: Entity) ⇒ {
+                    if (e.toString().size < 10) None else Some(StringLength(e.toString.size))
+                }
+                ps <<! (StringLengthKey, stringLengthPC)
+
+                ps("a", StringLengthKey) should be(None)
+                ps("aea", StringLengthKey) should be(None)
+
+                ps("aaaffffffaaa", StringLengthKey) should be(Some(StringLength(12)))
+                ps("aaaffffffffffffffffaaa", StringLengthKey) should be('defined)
             }
         }
     }

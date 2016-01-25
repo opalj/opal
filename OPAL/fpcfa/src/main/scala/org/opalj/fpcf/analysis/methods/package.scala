@@ -60,7 +60,8 @@ package object methods {
             "CallBySignatureTargets",
             // The default property that will be used if no analysis is able
             // to (directly) compute the respective property.
-            NoResolution
+            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError("internal error"),
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ throw new UnknownError("internal error")
         )
     }
 

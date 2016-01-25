@@ -390,7 +390,7 @@ class PropertyStore private (
     //
 
     // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
-    private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
+    private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Option[Property]](5)
 
     // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
     private[this] final val theLazyPropertyComputations = ArrayMap[PropertyComputation](5)
@@ -473,10 +473,14 @@ class PropertyStore private (
                         }
                         if (isBeingComputed ne null) {
                             val property = dpc(e)
-                            handleResult(ImmediateResult(e, property))
+                            if (property.isDefined) {
+                                handleResult(ImmediateResult(e, property.get))
+                                pos = properties(pkId)
+                            } else {
+                                properties.remove(pkId)
+                                // pos is still null
+                            }
                             isBeingComputed.countDown()
-                            pos = properties(pkId)
-                            // conceptually: return Some(property.asInstanceOf[P]);
                         }
                     }
                 }
@@ -967,7 +971,7 @@ class PropertyStore private (
      *  	ps(e,pk).get
      * 		}}}
      */
-    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = {
+    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Option[Property]): Unit = {
         /* The framework has to handle:
          *  1. the situation that the same dpc is potentially triggered by multiple other analyses 
          *     concurrently

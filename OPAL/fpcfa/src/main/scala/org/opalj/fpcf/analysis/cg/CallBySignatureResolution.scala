@@ -31,10 +31,10 @@ package fpcf
 package analysis
 package cg
 
+import scala.collection.Set
 import org.opalj.br.analyses._
 import org.opalj.br.{Method, MethodDescriptor, ObjectType}
-import org.opalj.fpcf.analysis.methods.{NoResolution, CbsTargets, CallBySignatureTargetAnalysis}
-import scala.collection.immutable.Set
+import org.opalj.fpcf.analysis.methods.{NoCBSTargets, CBSTargets, CallBySignatureTargetAnalysis}
 
 /**
  * An index that enables the efficient lookup of potential
@@ -82,10 +82,11 @@ class CallBySignatureResolution private (
                 else m.get
         }
 
-        val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey).get
+        val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey)
         result match {
-            case CbsTargets(targetMethods) ⇒ targetMethods
-            case NoResolution              ⇒ Set.empty
+            case Some(CBSTargets(targetMethods)) ⇒ targetMethods
+            case Some(NoCBSTargets)              ⇒ Set.empty
+            case None                            ⇒ throw new AnalysisException("unsupported entity", null)
         }
     }
 }
