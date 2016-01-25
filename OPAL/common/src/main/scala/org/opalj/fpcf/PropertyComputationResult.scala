@@ -170,6 +170,10 @@ private[fpcf] abstract class SuspendedPC[DependeeP <: Property](
     def continue(dependeeP: DependeeP): PropertyComputationResult
 
     private[fpcf] final def id = SuspendedPC.id
+
+    override def toString: String = {
+        s"SuspendedPropertyComputation(DependerEPK($e,$pk),DependeeEPK($dependeeE,$dependeePK))"
+    }
 }
 
 /**
