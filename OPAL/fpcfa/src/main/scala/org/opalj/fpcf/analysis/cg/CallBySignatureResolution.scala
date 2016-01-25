@@ -73,6 +73,9 @@ class CallBySignatureResolution private (
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
+        // we need the method object, since the property computation framework
+        // handles entities. Library code which is not on the classpath can't be
+        // call-by-signature targets.
         val method = project.classFile(declClass) match {
             case None ⇒ return Set.empty;
             case Some(cf) ⇒
@@ -80,7 +83,6 @@ class CallBySignatureResolution private (
                 if (m.isEmpty)
                     return Set.empty
                 else m.get
-
         }
 
         val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey).get
@@ -88,27 +90,6 @@ class CallBySignatureResolution private (
             case CbsTargets(targetMethods) ⇒ targetMethods
             case NoResolution              ⇒ Set.empty
         }
-    }
-
-    def statistics(): Map[String, Any] = {
-        Map(
-            "number of different method interfaceType/name/descriptor pairs" →
-                1 //methods.size,
-        /*"number of class methods with method signatures matching non-implemented interface methods" →
-        methods.view.foldLeft(Set.empty[Method]) {
-          (theMethods, targets: ((ObjectType, String, MethodDescriptor), Iterable[Method])) ⇒
-            theMethods.++(targets._2)
-        }.size*/ )
-    }
-
-    def methodReferenceStatistics(): Iterable[String] = {
-        /*for {
-          ((interfaceType, name, descriptor), theMethods) ← methods
-        } yield {
-          val methodInfo = theMethods.map(project.classFile(_).thisType.toJava).mkString("classes={", ",", "}")
-          s"${descriptor.toJava(name)} => $methodInfo"*/
-        Iterable.empty
-        //}
     }
 }
 

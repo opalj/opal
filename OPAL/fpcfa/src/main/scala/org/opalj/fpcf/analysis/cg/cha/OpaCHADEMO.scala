@@ -61,17 +61,14 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
 
         // CALL GRAPH STUFF
         val ccg = opaProject.get(CHACallGraphKey)
-        val execpetions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
-        println(execpetions)
+        val exceptions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        println(exceptions)
         val newOpaCG = ccg.callGraph
         // CALL GRAPH STUFF
 
         val opaEP = opaStore.entities { (p: Property) ⇒
             p == IsEntryPoint
         }
-
-        val cbs = opaProject.get(CallBySignatureResolutionKey)
-        println(cbs.statistics)
 
         BasicReport(
             s"#methods:  ${methodsCount}\n"+

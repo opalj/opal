@@ -146,12 +146,6 @@ object CHADemo extends DefaultOneStepAnalysis {
             println((cpaNon -- opaNon).mkString("\n"))
         }
 
-        val callBySignaturePossibilities = true
-        if (callBySignaturePossibilities) {
-            println("OPA STATISTICS\n\n"+opaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
-            println("CPA STATISTICS\n\n"+cpaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
-        }
-
         val callSiteInfo = true
         if (callSiteInfo) {
             // 0 = virtual, 1 = interface, 2 = special, 3 = static
