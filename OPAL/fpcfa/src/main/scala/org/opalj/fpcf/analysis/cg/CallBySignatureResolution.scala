@@ -73,9 +73,6 @@ class CallBySignatureResolution private (
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
-        // we need the method object, since the property computation framework
-        // handles entities. Library code which is not on the classpath can't be
-        // call-by-signature targets.
         val method = project.classFile(declClass) match {
             case None ⇒ return Set.empty;
             case Some(cf) ⇒
