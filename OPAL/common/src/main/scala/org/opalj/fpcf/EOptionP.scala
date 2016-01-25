@@ -57,5 +57,15 @@ trait EOptionP[P <: Property] {
     @throws[UnsupportedOperationException]("if no property is available")
     def p: P
 
+    override def toString: String = s"EOptionP($e,$p)"
 }
 
+object EOptionP {
+    
+    def apply[P <: Property](e : Entity, pk : PropertyKey[P], pOption : Option[P]) : EOptionP[P] = {
+        pOption match{
+            case Some(p) => EP(e,p)
+            case None => EPK(e,pk)
+        }
+    }
+}
