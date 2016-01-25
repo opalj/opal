@@ -131,6 +131,8 @@ import org.opalj.log.LogContext
 // ps = Properties
 // pk = PropertyKey
 // pc = (Property)Computation
+// lpc = lazy (Property)Computation
+// odpc = On-demand Property Computation
 // c = Continuation (The rest of a computation if a specific, dependent property was computed.)
 // o = (Property)Observer
 // os = (Property)Observers
@@ -206,12 +208,13 @@ class PropertyStore private (
         threadPool.shutdownNow() // we don't care about remaining tasks
 
         reset()
+        data.clear() // => makes the store fail very fast if it is still used afterwards
 
-        OPALLogger.info("setup", "the property store is finalized")
+        OPALLogger.info("setup", "the property store is shutdown")
     }
 
     def reset(): Unit = {
-        withWriteLock(theSetPropertyObserversLock) {
+        writeSetPropertyObservers {
             accessStore {
                 // reset statistics
                 propagationCount.set(0l)
@@ -223,6 +226,8 @@ class PropertyStore private (
                 theSetProperties.clear();
 
                 // reset entity related information
+                theOnDemandPropertyComputations.clear()
+                theLazyPropertyComputations.clear()
                 theOnPropertyComputations.clear()
                 observers.clear()
                 data.values.asScala.foreach { psv ⇒ psv._2.clear /*delete properties*/ }
@@ -242,6 +247,8 @@ class PropertyStore private (
     // access to this field needs to be synchronized!
     private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
     private[this] final val theSetProperties = ArrayMap[JSet[AnyRef]](5)
+    private[this] def writeSetPropertyObservers[U](f: ⇒ U): U = withWriteLock(theSetPropertyObserversLock)(f)
+    private[this] def accessSetPropertyObservers[U](f: ⇒ U): U = withReadLock(theSetPropertyObserversLock)(f)
 
     private[this] def createIdentityHashSet(): JSet[AnyRef] = {
         Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
@@ -276,7 +283,7 @@ class PropertyStore private (
     def onPropertyDerivation[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
-        withWriteLock(theSetPropertyObserversLock) {
+        writeSetPropertyObservers {
             val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
             theSetPropertyObservers(spIndex) = f.asInstanceOf[AnyRef ⇒ Unit] :: oldObservers
             spMutex.synchronized {
@@ -298,7 +305,7 @@ class PropertyStore private (
     def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
-        withReadLock(theSetPropertyObserversLock) {
+        accessSetPropertyObservers {
             val isAdded = spMutex.synchronized {
                 val currentEs = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
                 if (!currentEs.contains(e))
@@ -339,7 +346,13 @@ class PropertyStore private (
     //
     //
 
-    // access to this field needs to be synchronized using the store's (global) lock
+    // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
+    private[this] final val theOnDemandPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
+
+    // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
+    private[this] final val theLazyPropertyComputations = ArrayMap[PropertyComputation](5)
+
+    // access to this field is synchronized using the store's lock; the key is a PropertyKey's id
     private[this] final val theOnPropertyComputations = ArrayMap[List[(Entity, Property) ⇒ Unit]](5)
 
     // The list of observers used by the entity e to compute the property of kind k (EPK).
@@ -372,16 +385,37 @@ class PropertyStore private (
      * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
      */
-    // Locks: Store, Entity
+    // Locks: Store, Entity (read)
+    //               Entity (write)
     def apply[P <: Property](e: Entity, pk: PropertyKey[P]): Option[P] = {
+        val pkId = pk.id
         val pos = accessEntity {
             val lps = data.get(e)
             assert(lps ne null, s"the entity $e is unknown to the property store")
             val (lock, properties) = lps
-            withReadLock(lock) { properties(pk.id) }
+            val pos = withReadLock(lock) { properties(pkId) }
+
+            //handle lazy computations
+            if (pos eq null) {
+                val lpc = theLazyPropertyComputations(pkId)
+                if (lpc ne null) {
+                    withWriteLock(lock) {
+                        // We have to ensure that the computation is not triggered multiple times;
+                        // to do so, we check if an (empty) observer list is already registered.
+                        // If not, then the computation is not yet scheduled. 
+                        // Note that an analysis is not allowed to declare a dependency on an
+                        // entity which it didn't query (directly or indirectly) using apply. 
+                        if (properties(pkId) eq null) {
+                            properties(pkId) = (null, new Buffer)
+                            scheduleComputation(e, lpc)
+                        }
+                    }
+                }
+            }
+            pos
         }
         if (pos ne null)
-            Option(pos._1.asInstanceOf[P] /*property*/ )
+            Option(pos._1.asInstanceOf[P] /*property*/ /*the value may be null*/ )
         else
             None
     }
@@ -389,8 +423,9 @@ class PropertyStore private (
     /**
      * Returns an iterator of the different properties associated with the given element.
      *
-     * This method is the preferred way to get all properties of an entity and should be used,
-     * if you know that all properties are already computed.
+     * This method is the preferred way to get all properties of an entity and should be used
+     * if you know that all properties are already computed. Using this method will not
+     * trigger the computation of a property.
      *
      * @note The returned list represents a snapshot.
      *
@@ -826,6 +861,65 @@ class PropertyStore private (
         }
     }
 
+    /*
+    /** 
+     *  Registers an on-demand property computation that is executed in the caller's thread when
+     *  the property is requested for the first time. After that the computed value is cached
+     *  and returned the next time the property is requested. 
+     *
+     * 
+    * - an on-demand property computation (ODPC) may depend on other properties that are computed 
+    *   on demand if and only if the other properties belong to a different property kind and
+    *   the computation 
+    * - an on-demand property computation may use all properties that are fully computed before
+    *   the computation is registered
+    * - an on-demand property computation must query other on-demand property computations sequentially
+    * - the computed property must not have created any dependencies (i.e., an ImmediateResult)
+    * - cycles related to on-demand property computations are 
+    * - on demand computations are executed in the caller's thread to make it possible to
+    *    determine whether the computation is called as part of the
+     *     
+     */
+    def <<![P <: Property](pk : PropertyKey[P], odpc : (Entity) => Property) : Unit = {
+        /* The framework has to handle:
+         *  1. the situation that the same odpc is triggered by multiple other analyses concurrently
+         *  
+         * The framework does not have to handle the following two situations because on-demand
+         * properties may not depend on on-demand properties of the same kind. 
+         *  1. an odpc may require the calculation of an odpc that leads to a cycle
+         *  2. two or more odpc may depend on each other:
+         *  	t1:	o → o1 → o2
+         *                 ↙︎ ↑
+         *      t2:	o → o3 → o4
+         *      t1 and t2 are two threads that run concurrently; an arrow means that
+         *      Now: if o2 depends on o3 to finish, but o4 is currently running then o2 will block
+         *      	 but if now o4 requires the property computed by o2 it also needs to wait.
+         *      	 Hence, we have a deadlock.
+         */
+        theOnDemandPropertyComputations.synchronized{
+            theOnDemandPropertyComputations(pk.id) = odpc    
+        }
+    }
+*/
+    /**
+     * Registers a function that lazily computes a property for an element
+     * of the store if the property of the respective kind is requested.
+     * Hence, a first request of such a property will always first return the result "None".
+     *
+     * The computation is triggered by a(n in)direct call of this store's `apply` method. I.e.,
+     * the allHaveProperty and the apply mehod will trigger the computation if necessary.
+     * The methods
+     *
+     * This store ensures that the property computation function `pc` is never invoked more
+     * than once for the same element at the same time. If `pc` is invoked again for a specific
+     * element then only because a dependee has changed!
+     */
+    def <<?[P <: Property](pk: PropertyKey[P], pc: PropertyComputation): Unit = {
+        accessStore {
+            theLazyPropertyComputations(pk.id) = pc
+        }
+    }
+
     /**
      * Registers a function that calculates a property for all or some elements
      * of the store.
@@ -952,6 +1046,8 @@ class PropertyStore private (
      * The set of all entities which have a property that passes the given filter.
      *
      * This is a blocking operation; the returned set is independent of the store.
+     *
+     * @note This method will not trigger lazy property computations.
      */
     def entities(propertyFilter: Property ⇒ Boolean): scala.collection.mutable.Set[Entity] = {
         accessStore {
@@ -968,6 +1064,8 @@ class PropertyStore private (
      * The set of all entities which have a property that passes the given filter.
      *
      * This is a blocking operation; the returned set is independent of the store.
+     *
+     * @note This method will not trigger lazy property computations.
      */
     def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
@@ -1703,7 +1801,7 @@ class PropertyStore private (
     }
 
     // Locks: Store (access), Entity and scheduleContinuation: Tasks
-    private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
+    def handleResult(r: PropertyComputationResult): Unit = {
         accessEntity {
             (r.id: @annotation.switch) match {
 
