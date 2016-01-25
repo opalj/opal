@@ -32,14 +32,9 @@ package analysis
 package cg
 
 import org.opalj.br.analyses._
-import org.opalj.br.{Method, MethodDescriptor, MethodSignature, ObjectType}
-import org.opalj.fpcf.analysis.methods.CallBySignatureTargetAnalysis
-
-//import scala.collection.mutable
-import java.util.concurrent.{ConcurrentHashMap ⇒ JCHashMap}
+import org.opalj.br.{Method, MethodDescriptor, ObjectType}
+import org.opalj.fpcf.analysis.methods.{NoResolution, CbsTargets, CallBySignatureTargetAnalysis}
 import scala.collection.immutable.Set
-//import scala.collection.JavaConverters._
-//import scala.collection.mutable.ListBuffer
 
 /**
  * An index that enables the efficient lookup of potential
@@ -51,11 +46,9 @@ import scala.collection.immutable.Set
  * @author Michael Reif
  */
 class CallBySignatureResolution private (
-        val project:  SomeProject,
-        projectIndex: ProjectIndex,
-        cache:        JCHashMap[ObjectType, JCHashMap[MethodSignature, Set[Method]]] = new JCHashMap[ObjectType, JCHashMap[MethodSignature, Set[Method]]]()
+        val project:       SomeProject,
+        val propertyStore: PropertyStore
 ) {
-    //    val methods: Map[(ObjectType /*InterfaceType*/ , String, MethodDescriptor), Set[Method]]) {
 
     /**
      * Given the `name` and `descriptor` of a method declared by an interface and the `declaringClass`
@@ -80,28 +73,20 @@ class CallBySignatureResolution private (
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
-        def computeTargets(): Set[Method] = {
-            CallBySignatureTargetAnalysis.cbsTargets(name, descriptor, declClass, project, projectIndex)
+        val method = project.classFile(declClass) match {
+            case None ⇒ return Set.empty;
+            case Some(cf) ⇒
+                val m = cf.findMethod(name, descriptor)
+                if (m.isEmpty)
+                    return Set.empty
+                else m.get
+
         }
 
-        val methodSignature = MethodSignature(name, descriptor)
-
-        cache.get(declClass) match {
-            case null ⇒
-                val targets = computeTargets()
-                val targetMap = new JCHashMap[MethodSignature, Set[Method]]()
-                targetMap.put(methodSignature, targets)
-                cache.put(declClass, targetMap)
-                targets
-            case methodSignatureMap ⇒
-                methodSignatureMap.get(name) match {
-                    case null ⇒
-                        val targets = computeTargets()
-                        methodSignatureMap.put(methodSignature, targets)
-                        cache.put(declClass, methodSignatureMap)
-                        targets
-                    case targets ⇒ targets
-                }
+        val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey).get
+        result match {
+            case CbsTargets(targetMethods) ⇒ targetMethods
+            case NoResolution              ⇒ Set.empty
         }
     }
 
@@ -141,6 +126,11 @@ object CallBySignatureResolution {
                 "call-by-signature resolution for application (like) is not supported"
             )
 
-        new CallBySignatureResolution(project, project.get(ProjectIndexKey)) //methods.asScala)
+        CallBySignatureTargetAnalysis.start(project)
+
+        new CallBySignatureResolution(
+            project,
+            project.get(SourceElementsPropertyStoreKey)
+        )
     }
 }
