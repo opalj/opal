@@ -103,8 +103,6 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     runAnalysis(project)
 
-    testAnnotations()
-
     /*
      * PROPERTY VALIDATION
      */
@@ -207,28 +205,26 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
     /*
      * TESTS - test every method with the corresponding annotation
      */
-
-    def testAnnotations(): Unit = {
-        for {
-            classFile ← project.allClassFiles
-            annotation ← classFile.runtimeVisibleAnnotations
-            if annotation.annotationType == propertyAnnotation
-        } {
-            analysisName should ("correctly calculate the property of the class "+classFile.fqn) in {
-                validatePropertyByClassFile(classFile, annotation)
-            }
-        }
-
-        for {
-            classFile ← project.allClassFiles
-            method ← classFile.methods
-            annotation ← method.runtimeVisibleAnnotations
-            if annotation.annotationType == propertyAnnotation
-        } {
-            analysisName should ("correctly calculate the property of the method "+
-                method.toJava+" in class "+classFile.fqn) in {
-                    validatePropertyByMethod(method, annotation)
-                }
+    for {
+        classFile ← project.allClassFiles
+        annotation ← classFile.runtimeVisibleAnnotations
+        if annotation.annotationType == propertyAnnotation
+    } {
+        analysisName should ("correctly calculate the property of the class "+classFile.fqn) in {
+            validatePropertyByClassFile(classFile, annotation)
         }
     }
+
+    for {
+        classFile ← project.allClassFiles
+        method ← classFile.methods
+        annotation ← method.runtimeVisibleAnnotations
+        if annotation.annotationType == propertyAnnotation
+    } {
+        analysisName should ("correctly calculate the property of the method "+
+            method.toJava+" in class "+classFile.fqn) in {
+                validatePropertyByMethod(method, annotation)
+            }
+    }
+
 }
