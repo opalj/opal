@@ -3,7 +3,7 @@ package fpcf
 package analysis
 package methods
 
-import org.opalj.br.{ClassFile, ObjectType, Method}
+import org.opalj.br._
 import org.opalj.br.analyses._
 
 import scala.collection.mutable.ListBuffer
@@ -25,12 +25,11 @@ class CallBySignatureTargetAnalysis private (
         projectIndex: ProjectIndex
     )(method: Method): Property = {
 
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
-        val interfaceClassFile = project.classFile(method)
-
+        implicit val methodName = method.name
+        implicit val methodDescriptor = method.descriptor
+        implicit val interfaceClassFile = project.classFile(method)
+        implicit val classHierarchy = project.classHierarchy
         val interfaceType = interfaceClassFile.thisType
-        val classHierarchy = project.classHierarchy
 
         val cbsTargets = ListBuffer.empty[Method]
 
@@ -56,12 +55,12 @@ class CallBySignatureTargetAnalysis private (
             if (classHierarchy.isSubtypeOf(clazzType, interfaceType).isYes /* we want to get a sound overapprox. not: OrUnknown*/ )
                 return ;
 
-            if (hasSubclassInheritingTheInterface(clazzType, m, interfaceType, project).isYes)
+            if (hasSubclassInheritingTheInterface(clazzType, interfaceType, project).isYes)
                 return ;
 
             if (!clazzClassFile.isPublic &&
                 isClosedLibrary &&
-                !hasSubclassProxyForMethod(clazzType, m, interfaceClassFile, project).isYesOrUnknown)
+                !hasSubclassProxyForMethod(clazzType, interfaceClassFile, project).isYesOrUnknown)
                 return ;
 
             cbsTargets += m
@@ -105,14 +104,12 @@ class CallBySignatureTargetAnalysis private (
 
     private[this] def hasSubclassProxyForMethod(
         classType:          ObjectType,
-        method:             Method,
         interfaceClassFile: ClassFile,
         project:            SomeProject
-    ): Answer = {
-
-        val classHierarchy = project.classHierarchy
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
+    )(implicit
+        methodName: String,
+      methodDescriptor: MethodDescriptor,
+      classHierarchy:   ClassHierarchy): Answer = {
 
         var isUnknown = false
 
@@ -138,13 +135,12 @@ class CallBySignatureTargetAnalysis private (
 
     private[this] def hasSubclassInheritingTheInterface(
         classType:     ObjectType,
-        method:        Method,
         interfaceType: ObjectType,
         project:       SomeProject
-    ): Answer = {
-        val classHierarchy = project.classHierarchy
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
+    )(implicit
+        methodName: String,
+      methodDescriptor: MethodDescriptor,
+      classHierarchy:   ClassHierarchy): Answer = {
 
         val itr = classHierarchy.allSubclasses(classType, reflexive = false)
         var isUnknown = false
