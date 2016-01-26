@@ -163,7 +163,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     //    object NoReachableNodes extends ReachableNodes(Set.empty)
 
     override def afterEach(): Unit = {
+        psStrings.waitOnPropertyComputationCompletion(false)
         psStrings.reset()
+
+        psNodes.waitOnPropertyComputationCompletion(false)
         psNodes.reset()
     }
 
@@ -334,7 +337,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
         }
 
-        describe("computations depending on a group of entities") {
+        describe("computations for groups of entities") {
 
             it("should be executed for each group in parallel") {
                 import scala.collection.mutable
@@ -520,17 +523,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("a", StringLengthKey) // but hopefully only once (tested using "triggered")
 
                 @volatile var superPalindromeCompleted = false
-                val pcr =
-                    ps.allHaveProperty(
-                        "aa", SuperPalindromeKey,
-                        List("a"), Palindrome // the computation of "PalindromeProperty" is triggered
-                    ) { aIsPalindrome ⇒
-                            superPalindromeCompleted = true
-                            Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
-                        }
+                // triggers the computation of "PalindromeProperty
+                val pcr = ps.allHaveProperty("aa", SuperPalindromeKey, List("a"), Palindrome) { aIsPalindrome ⇒
+                    superPalindromeCompleted = true
+                    Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
+                }
                 pcr shouldBe a[SuspendedPC[_]]
 
-                // We can explicitly add results those this is generally not required in a well
+                // We can explicitly add results though this is generally not required in a well
                 // written analysis.
                 ps.handleResult(pcr)
 
@@ -538,7 +538,30 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps("a", StringLengthKey) should be(Some(StringLength(1)))
                 ps("a", PalindromeKey) should be(Some(Palindrome))
+                ps("aa", SuperPalindromeKey) should be(Some(SuperPalindrome))
                 superPalindromeCompleted should be(true)
+            }
+
+            it("should be triggered for all that are queried using \"allHaveProperty\"") {
+                val ps = psStrings
+
+                val palindromePC: PropertyComputation = (e: Entity) ⇒ {
+                    val s = e.toString
+                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
+                }
+                ps <<? (PalindromeKey, palindromePC)
+
+                // triggers the computation of "PalindromeProperty
+                val pcr = ps.allHaveProperty("aaa", SuperPalindromeKey, List("a", "aa"), Palindrome) { arePalindromes ⇒
+                    Result("aaa", if (arePalindromes) SuperPalindrome else NoSuperPalindrome)
+                }
+                pcr shouldBe a[SuspendedPC[_]]
+                ps.handleResult(pcr)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                ps("a", PalindromeKey) should be(Some(Palindrome))
+                ps("aa", PalindromeKey) should be(Some(Palindrome))
+                ps("aaa", SuperPalindromeKey) should be(Some(SuperPalindrome))
             }
 
         }
@@ -581,6 +604,29 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 // test that the other computations are not immediately executed were executed
                 ps.entities { p ⇒ true } should be(Set("a", "aea"))
+            }
+
+            it("should not be triggered for those that are queried using \"allHaveProperty\" if the query fails early") {
+                val ps = psStrings
+
+                val palindromePC = (e: Entity) ⇒ {
+                    val s = e.toString
+                    Some(if (s.reverse == s) Palindrome else NoPalindrome)
+                }
+                ps <<! (PalindromeKey, palindromePC)
+
+                // triggers the computation of PalindromeProperty for bc...
+                val pcr = ps.allHaveProperty("aaa", SuperPalindromeKey, List("bc", "a", "aa"), Palindrome) { arePalindromes ⇒
+                    Result("aaa", if (arePalindromes) SuperPalindrome else NoSuperPalindrome)
+                }
+                pcr shouldBe a[Result]
+                ps.handleResult(pcr)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                ps("bc") should be(List(NoPalindrome))
+                ps("aaa", SuperPalindromeKey) should be(Some(NoSuperPalindrome))
+                ps("a") should be(Nil)
+                ps("aa") should be(Nil)
             }
 
             it("can depend on other direct property computations (chaining of direct property computations)") {

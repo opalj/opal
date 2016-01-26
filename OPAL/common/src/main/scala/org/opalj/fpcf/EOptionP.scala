@@ -61,11 +61,11 @@ trait EOptionP[P <: Property] {
 }
 
 object EOptionP {
-    
-    def apply[P <: Property](e : Entity, pk : PropertyKey[P], pOption : Option[P]) : EOptionP[P] = {
-        pOption match{
-            case Some(p) => EP(e,p)
-            case None => EPK(e,pk)
+
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P], pOption: Option[P]): EOptionP[P] = {
+        pOption match {
+            case Some(p) ⇒ EP(e, p)
+            case None    ⇒ EPK(e, pk)
         }
     }
 }

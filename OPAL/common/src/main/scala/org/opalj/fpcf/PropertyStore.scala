@@ -667,7 +667,7 @@ class PropertyStore private (
             remainingEs = remainingEs.tail
             this(dependeeE, dependeePK) match {
                 case Some(dependeeP) ⇒
-                    if (expectedP(dependeeP))
+                    if (!expectedP(dependeeP))
                         return c(false);
                 case None ⇒
                     unavailableEs = dependeeE :: unavailableEs
@@ -684,7 +684,7 @@ class PropertyStore private (
         val deependeeE = unavailableEs.head
         new SuspendedPC[DependeeP](dependerE, dependerPK, deependeeE, dependeePK) {
             override def continue(dependeeP: DependeeP): PropertyComputationResult = {
-                if (expectedP(dependeeP))
+                if (!expectedP(dependeeP))
                     return c(false);
 
                 val remainingUnavailableEs = unavailableEs.tail
