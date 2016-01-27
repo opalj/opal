@@ -105,7 +105,8 @@ object CallBySignatureResolution {
                 "call-by-signature resolution for application (like) is not supported"
             )
 
-        CallBySignatureTargetAnalysis.start(project)
+        val analysisManager = project.get(FPCFAnalysesManagerKey)
+        analysisManager.runWithRecommended(CallBySignatureTargetAnalysis)(waitOnCompletion = false)
 
         new CallBySignatureResolution(
             project,

@@ -33,30 +33,23 @@ package methods
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
+/**
+ * Deterrmines for each method if it potentially can be inherit by a '''future'''
+ * subtype.
+ *
+ * @note This property is computed by a direct property computation.
+ *
+ * @author Michael Reif
+ */
 sealed trait ClientCallable extends Property {
 
     final type Self = ClientCallable
-    /**
-     * Returns the key used by all `Purity` properties.
-     */
-    // All instances have to share the SAME key!
+
     final def key = ClientCallableKey
 
-    /**
-     * Non of the derived ´ClientCallable´ properties are refineable.
-     */
-    def isRefineable = false
-}
-
-object ClientCallable extends PropertyMetaInformation {
-
-    /**
-     * Returns the key used by all `Purity` properties.
-     */
-    // All instances have to share the SAME key!
-    final def key = ClientCallable.key
+    final def isRefineable = false
 }
 
 case object IsClientCallable extends ClientCallable
@@ -64,7 +57,7 @@ case object IsClientCallable extends ClientCallable
 case object NotClientCallable extends ClientCallable
 
 /**
- * This analysis determines whether a method can directly called by a client. This is in particular
+ * This analysis computes the ClientCallable property.* I.e., it determines whether a method can directly called by a client. This is in particular
  * important when analyzing libraries.
  *
  * ==Usage==
@@ -79,93 +72,89 @@ case object NotClientCallable extends ClientCallable
  * The results of this analysis are stored in the property store of the project. You can receive
  * the results as follows:
  * {{{
- * val theProjectStore = theProject.get(SourceElementsPropertyStoreKey)
- * val instantiableClasses = theProjectStore.entities { (p: Property) ⇒
- * p == IsInheritable
- * }
+ * val thePropertyStore = theProject.get(SourceElementsPropertyStoreKey)
+ * val property = thePropertyStore(method, ClientCallableKey)
+  * property match {
+  *   case Some(IsClientCallable) => ...
+  *   case Some(NotClientCallable) => ...
+  *   case None => ... // this happens only if an not supported entity is passed to the computation.
+  * }
  * }}}
  *
- * @note The need of this property comes for example from call-by-signature computations
- *
- * @note This analysis does not make sense for applications, since these will not be extended by the client.
- *
- *
+ * @note This analysis implements a direct property computation that is only executed when
+  * 		required.
+  *
  * @author Michael Reif
  */
-class InheritableMethodAnalysis private (
+class CallableByClientAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
     /**
-     * This determines for a method whether it could be inherited by a library client.
+     * Determines whether a method could be inherited by a library client.
      * It should not be called if the current analysis mode is application-related.
      *
      */
-    def determineInheritability(method: Method): PropertyComputationResult = {
+    def clientCallability(e: Entity): Option[Property] = {
+        if (!e.isInstanceOf[Method])
+            return None;
+
+        val method = e.asInstanceOf[Method]
 
         if (method.isPrivate)
-            return ImmediateResult(method, NotClientCallable);
+            return Some(NotClientCallable);
 
         val classFile = project.classFile(method)
 
         if (classFile.isEffectivelyFinal)
-            return ImmediateResult(method, NotClientCallable);
+            return Some(NotClientCallable);
 
         if (isClosedLibrary && method.isPackagePrivate)
-            return ImmediateResult(method, NotClientCallable);
+            return Some(NotClientCallable);
 
         if (classFile.isPublic || isOpenLibrary)
-            return ImmediateResult(method, IsClientCallable);
+            return Some(IsClientCallable);
 
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
         val methodName = method.name
         val methodDescriptor = method.descriptor
 
-        val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
+        val subtypes = mutable.Queue.empty ++= classHierarchy.directSubtypesOf(classType)
         while (subtypes.nonEmpty) {
-            val subtype = subtypes.head
+            val subtype = subtypes.dequeue()
             project.classFile(subtype) match {
                 case Some(subclass) if subclass.isClassDeclaration || subclass.isEnumDeclaration ⇒
-                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
-                        if (subclass.isPublic) {
+                    if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
+                        if (subclass.isPublic)
                             // the original method is now visible (and not shadowed)
-                            return ImmediateResult(method, IsClientCallable);
-                        } else
-                            subtypes ++= classHierarchy.directSubtypesOf(subtype)
+                            return Some(IsClientCallable);
+                    } else
+                        subtypes ++= classHierarchy.directSubtypesOf(subtype)
+
                 // we need to continue our search for a class that makes the method visible
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange!
-                    return ImmediateResult(method, IsClientCallable);
+                    return Some(IsClientCallable);
                 case _ ⇒
             }
-            subtypes -= subtype
         }
 
-        val x = Array(2, 3, 5, 6L)
-        x foreach { element: Long ⇒
-            println(element)
-        }
-
-        ImmediateResult(method, NotClientCallable)
+        Some(NotClientCallable)
     }
 }
 
-object InheritableMethodAnalysis extends FPCFAnalysisRunner {
+object CallableByClientAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract ⇒ m
-    }
-
-    override def derivedProperties: Set[PropertyKind] = Set(IsExtensible)
+    override def derivedProperties: Set[PropertyKind] = Set(ClientCallableKey)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        val analysis = new InheritableMethodAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineInheritability)
+        val analysis = new CallableByClientAnalysis(project)
+        propertyStore <<! (ClientCallableKey, analysis.clientCallability)
         analysis
     }
 }
