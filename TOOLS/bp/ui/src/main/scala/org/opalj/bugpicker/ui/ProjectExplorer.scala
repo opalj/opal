@@ -428,7 +428,7 @@ class ProjectExplorer(
         @inline def propertiesNotFound() = propView.engine.loadContent(Messages.NO_PROPERTIES_FOUND)
 
         if (method.isEmpty) {
-            val properties = propertyStore(cf)
+            val properties = propertyStore.properties(cf)
             if (properties.size == 0)
                 propertiesNotFound
             else
@@ -441,7 +441,7 @@ class ProjectExplorer(
                         "\n}"
                 )
         } else {
-            val properties = propertyStore(method.get)
+            val properties = propertyStore.properties(method.get)
             if (properties.isEmpty)
                 propertiesNotFound
             else {

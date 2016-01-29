@@ -8,17 +8,18 @@ import org.opalj.br.analyses._
 
 import scala.collection.mutable
 
-/** This analysis computes the CallBySignature property.
-  * I.e., it determines the call-by-signature targets of an interface method.
-  *
-  * It is in particular relevant when analyzing software libraries and not whole applications,
-  * since applications cannot be extended anymore w.r.t. to subtyping.
-  *
-  * @note This analysis implements a direct property computation that is only executed when
-  * 		required.
-  *
-  * @author Michael Reif
-  */
+/**
+ * This analysis computes the CallBySignature property.
+ * I.e., it determines the call-by-signature targets of an interface method.
+ *
+ * It is in particular relevant when analyzing software libraries and not whole applications,
+ * since applications cannot be extended anymore w.r.t. to subtyping.
+ *
+ * @note This analysis implements a direct property computation that is only executed when
+ * 		required.
+ *
+ * @author Michael Reif
+ */
 class CallBySignatureTargetAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     // THIS ANALYSS IS ONLY DEFINED FOR LIBRARY ANALYSES
@@ -82,13 +83,14 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
         Some(if (cbsTargets.isEmpty) NoCBSTargets else CBSTargets(cbsTargets))
     }
 
-    /** A method is considered inheritable if:
-      * - it is either public or projected
-      * - OPA is applied and the method is package private
-      *
-      * @note This does not consider the visibility of the method's declaring class.
-      *     Hence, it should be checked separately if the class can be subclassed.
-      */
+    /**
+     * A method is considered inheritable if:
+     * - it is either public or projected
+     * - OPA is applied and the method is package private
+     *
+     * @note This does not consider the visibility of the method's declaring class.
+     *     Hence, it should be checked separately if the class can be subclassed.
+     */
     @inline private[this] def isInheritableMethod(method: Method): Boolean = {
 
         if (method.isPackagePrivate)
@@ -101,10 +103,11 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
     }
 
     private[this] def hasSubclassWhichInheritsFromInterface(
-        classType: ObjectType,
-        interfaceType: ObjectType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor): Answer = {
+        classType:        ObjectType,
+        interfaceType:    ObjectType,
+        methodName:       String,
+        methodDescriptor: MethodDescriptor
+    ): Answer = {
 
         val itr = classHierarchy.allSubclasses(classType, reflexive = false)
         var isUnknown = false
@@ -137,8 +140,9 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
     override def requirements: Set[FPCFAnalysisRunner] = Set(CallableByClientAnalysis)
 
     protected[analysis] def start(
-        project: SomeProject,
-        propertyStore: PropertyStore): FPCFAnalysis = {
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
         val analysis = new CallBySignatureTargetAnalysis(project)
         val projectIndex = project.get(ProjectIndexKey)
         propertyStore <<! (CallBySignatureKey, analysis.determineCallBySignatureTargets(projectIndex))

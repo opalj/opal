@@ -67,18 +67,9 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
             executer.run(CallableFromClassesInOtherPackagesAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        //        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
-        //        val notLeakedMethodsInfo = buildMethodInfo(notLeakedMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
-        //
-        //        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == Callable }
 
-        val leakedMethods = propertyStore.entities { (p: Property) ⇒
-            p == Callable
-        }
-
-        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒
-            p == NotCallable
-        }
+        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒ p == NotCallable }
         BasicReport(
             //            nonOverriddenInfoString +
             propertyStore.toString+
