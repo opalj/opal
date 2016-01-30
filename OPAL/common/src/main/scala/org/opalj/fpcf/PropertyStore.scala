@@ -482,12 +482,12 @@ class PropertyStore private (
                 else {
                     val dpc = theDirectPropertyComputations(pkId)
                     if (dpc ne null) {
-                        var isBeingComputed: PropertyIsBeingComputed = null
+                        var isBeingComputed: PropertyIsDirectlyComputed = null
                         withWriteLock(lock) {
                             pos = properties(pkId)
                             if (pos eq null) {
                                 // => no other thread is currently computing this property
-                                isBeingComputed = new PropertyIsBeingComputed
+                                isBeingComputed = new PropertyIsDirectlyComputed
                                 properties(pkId) = new PropertyAndObservers(isBeingComputed, null)
                             }
                         }
@@ -510,7 +510,7 @@ class PropertyStore private (
         }
         if (pos ne null) {
             pos.p match {
-                case p: PropertyIsBeingComputed ⇒
+                case p: PropertyIsDirectlyComputed ⇒
                     p.await() // this establishes the happen before relation to make the next line correct                
                     val pos = data.get(e).ps(pkId)
                     if (pos ne null)
