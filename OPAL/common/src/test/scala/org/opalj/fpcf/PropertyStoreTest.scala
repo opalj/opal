@@ -277,13 +277,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             // that contain at least two chars
 
             ps.onPropertyDerivation(StringsWithAtLeastTwoChars) { (s: String) ⇒
-                ps.update(s, PalindromeKey) { (p: Option[PalindromeProperty]) ⇒
-                    assert(p == None)
-                    if (s.reverse == s)
-                        Some(Palindrome)
-                    else
-                        Some(NoPalindrome)
-                }
+                ps.handleResult(ImmediateResult(
+                    s,
+                    if (s.reverse == s) Palindrome else NoPalindrome
+                ))
             }
 
             // "run the initial analysis"
@@ -307,13 +304,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 if (s.size % 2 == 0) ps.add(EvenNumberOfChars)(s)
             }
             ps.onPropertyDerivation(EvenNumberOfChars) { (s: String) ⇒
-                ps.update(s, PalindromeKey) { (p: Option[PalindromeProperty]) ⇒
-                    assert(p == None)
-                    if (s.reverse == s)
-                        Some(Palindrome)
-                    else
-                        Some(NoPalindrome)
-                }
+                ps.handleResult(ImmediateResult(
+                    s,
+                    if (s.reverse == s) Palindrome else NoPalindrome
+                ))
             }
 
             // "run the initial analysis"

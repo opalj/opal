@@ -788,61 +788,6 @@ class PropertyStore private (
     def set(ps: Traversable[SomeEP]): Unit = ps.foreach { ep ⇒ set(ep.e, ep.p) }
 
     /**
-     * Updates the property of the given kind associated with the given entity by calling the
-     * given function `u` with the current property.
-     *
-     * @note Updating a property is only supported if the current property is not effectively final.
-     * 		I.e., if the property is not final and if the property was not stored using [[Result]]
-     * 		or [[ImmediateResult]].
-     *
-     * @param u The function that updates the current property associated with the given entity.
-     * 		The parameter passed to `u` is `None` if the given entity is not associated with a
-     * 		property of the given kind and `Some(Property)` otherwise. `u` is expected to return
-     * 		`None` whenever the associated property already abstracts over the new property. I.e.,
-     * 		only if the updated property is not equal to the given property, `u` is allowed to
-     * 		return `Some(Property)`.
-     */
-    // Locks: Store, e@Entity (WriteLock) and this.update(...): e(WriteLock)
-    def update[P <: Property](
-        e:  Entity,
-        pk: PropertyKey[P]
-    )(
-        u: Option[P] ⇒ Option[P]
-    ): Unit = {
-        // FIXME We don't want to run update in parallel with some other function that computes the property... 
-        accessEntity {
-            val eps = data.get(e)
-            val lock = eps.l
-            val properties = eps.ps
-            withWriteLock(lock) {
-                val oldPOs = properties(pk.id)
-                val newP = oldPOs match {
-                    case null /* <= no one was interested in the property so far*/ |
-                        PropertyUnavailable() /* <= we have observers, but no property so far*/ ⇒
-                        u(None)
-                    case oldPOs ⇒
-                        u(Some(oldPOs.p.asInstanceOf[P]))
-                }
-                newP match {
-                    case Some(newP) ⇒
-                        assert(
-                            (oldPOs eq null) || (oldPOs.p eq null) ||
-                                (oldPOs.p.isRefineable && newP != oldPOs.p),
-                            s"the old property ${oldPOs.p} is not refineable or "+
-                                s"it is not equal to the new property $newP"
-                        )
-                        update(
-                            e, newP,
-                            if (newP.isFinal) FinalUpdate else IntermediateUpdate
-                        )
-                    case None ⇒
-                    // Nothing to do as the update didn't reveal anything new!
-                }
-            }
-        }
-    }
-
-    /**
      * Registers the function `f` that is called whenever an element `e` is associated with
      * a property of the respective kind (`pk`). For those elements that are already associated
      * with a respective property `p`,  `f` will immediately be scheduled
