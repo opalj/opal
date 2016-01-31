@@ -568,36 +568,36 @@ class PropertyStore private (
         }
     }
 
-    /**
-     * Returns the property associated with the required entity.
-     */
-    // Locks of this.apply(...): Store, Entity 
-    def requireNext[DependeeP <: Property](
-        dependerE:  Entity,
-        dependerPK: SomePropertyKey,
-        dependeeE:  Entity,
-        dependeePK: PropertyKey[DependeeP]
-    )(
-        c: IncrementalStep
-    ): IncrementalPropertyComputationResult = {
-        this(dependeeE, dependeePK) match {
-            case Some(dependeeP) ⇒
-                // dependeeP may be already updated, but it is now on the caller to make
-                // a decision whether it will continue listening for further updates or not
-                assert(dependeeP.key == dependeePK)
-                c(dependeeE, dependeeP)
-            case _ /*None*/ ⇒
-                IncrementalPropertyComputationResult(
-                    new SuspendedIPC[DependeeP](dependerE, dependerPK, dependeeE, dependeePK) {
-                        override def continue(dependeeP: DependeeP) = {
-                            assert(dependeeP.key == dependeePK)
-                            c(dependeeE, dependeeP)
-                        }
-                    },
-                    Nil
-                )
-        }
-    }
+    //    /**
+    //     * Returns the property associated with the required entity.
+    //     */
+    //    // Locks of this.apply(...): Store, Entity 
+    //    def requireNext[DependeeP <: Property](
+    //        dependerE:  Entity,
+    //        dependerPK: SomePropertyKey,
+    //        dependeeE:  Entity,
+    //        dependeePK: PropertyKey[DependeeP]
+    //    )(
+    //        c: IncrementalStep
+    //    ): IncrementalPropertyComputationResult = {
+    //        this(dependeeE, dependeePK) match {
+    //            case Some(dependeeP) ⇒
+    //                // dependeeP may be already updated, but it is now on the caller to make
+    //                // a decision whether it will continue listening for further updates or not
+    //                assert(dependeeP.key == dependeePK)
+    //                c(dependeeE, dependeeP)
+    //            case _ /*None*/ ⇒
+    //                IncrementalPropertyComputationResult(
+    //                    new SuspendedIPC[DependeeP](dependerE, dependerPK, dependeeE, dependeePK) {
+    //                        override def continue(dependeeP: DependeeP) = {
+    //                            assert(dependeeP.key == dependeePK)
+    //                            c(dependeeE, dependeeP)
+    //                        }
+    //                    },
+    //                    Nil
+    //                )
+    //        }
+    //    }
 
     /**
      * Tests if all entities have the given property. If the respective property is
@@ -1918,58 +1918,58 @@ class PropertyStore private (
                         /*immediately exec*/ handleResult(continuation())
                     }
 
-                case SuspendedIPC.id ⇒
-                    val suspended @ SuspendedIPC(dependerE, dependerPK, dependeeE, dependeePK) = r
-
-                    def createAndRegisterObserver(): PropertyObserver = {
-                        val dependerEPK = EPK(dependerE, dependerPK)
-                        val dependeeEPK = EPK(dependeeE, dependeePK)
-                        val o = new DefaultPropertyObserver(
-                            dependerEPK,
-                            removeAfterNotification = true
-                        ) {
-
-                            def apply(dependeeE: Entity, dependeeP: Property): Unit = {
-                                propagationCount.incrementAndGet()
-                                val ipc = (e: AnyRef) ⇒
-                                    suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
-                                scheduleIncrementalComputation(ipc, dependerE)
-                            }
-                        }
-                        registerObserverWithItsDepender(dependerEPK, dependeeEPK, o)
-                        o
-                    }
-
-                    val dependeeEPs = data.get(dependeeE)
-                    val lock = dependeeEPs.l
-                    val properties = dependeeEPs.ps
-                    val continuation = withWriteLock(lock) {
-                        val dependeePKId = dependeePK.id
-                        properties(dependeePKId) match {
-                            case null ⇒
-                                properties(dependeePKId) = new PropertyAndObservers(null, Buffer(createAndRegisterObserver()))
-                                null
-
-                            case PropertyAndObservers(dependeeP, dependeeOs) ⇒
-                                if ((dependeeP eq null) || dependeeP.isBeingComputed) {
-                                    dependeeOs += createAndRegisterObserver()
-                                    null
-                                } else {
-                                    if (debug) OPALLogger.debug(
-                                        "analysis progress",
-                                        "immediately continued the suspended incremental computation of "+
-                                            s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
-                                    )
-                                    /*prepare for immediate exec*/ () ⇒
-                                        suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
-                                }
-                        }
-                    }
-                    if (continuation ne null) {
-                        val IncrementalPropertyComputationResult(result, nextComputations) = continuation()
-                        handleResult(result)
-                        bulkScheduleIncrementalComputations(nextComputations)
-                    }
+                //                case SuspendedIPC.id ⇒
+                //                    val suspended @ SuspendedIPC(dependerE, dependerPK, dependeeE, dependeePK) = r
+                //
+                //                    def createAndRegisterObserver(): PropertyObserver = {
+                //                        val dependerEPK = EPK(dependerE, dependerPK)
+                //                        val dependeeEPK = EPK(dependeeE, dependeePK)
+                //                        val o = new DefaultPropertyObserver(
+                //                            dependerEPK,
+                //                            removeAfterNotification = true
+                //                        ) {
+                //
+                //                            def apply(dependeeE: Entity, dependeeP: Property): Unit = {
+                //                                propagationCount.incrementAndGet()
+                //                                val ipc = (e: AnyRef) ⇒
+                //                                    suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
+                //                                scheduleIncrementalComputation(ipc, dependerE)
+                //                            }
+                //                        }
+                //                        registerObserverWithItsDepender(dependerEPK, dependeeEPK, o)
+                //                        o
+                //                    }
+                //
+                //                    val dependeeEPs = data.get(dependeeE)
+                //                    val lock = dependeeEPs.l
+                //                    val properties = dependeeEPs.ps
+                //                    val continuation = withWriteLock(lock) {
+                //                        val dependeePKId = dependeePK.id
+                //                        properties(dependeePKId) match {
+                //                            case null ⇒
+                //                                properties(dependeePKId) = new PropertyAndObservers(null, Buffer(createAndRegisterObserver()))
+                //                                null
+                //
+                //                            case PropertyAndObservers(dependeeP, dependeeOs) ⇒
+                //                                if ((dependeeP eq null) || dependeeP.isBeingComputed) {
+                //                                    dependeeOs += createAndRegisterObserver()
+                //                                    null
+                //                                } else {
+                //                                    if (debug) OPALLogger.debug(
+                //                                        "analysis progress",
+                //                                        "immediately continued the suspended incremental computation of "+
+                //                                            s"$dependerE($dependerPK) using $dependeeE(dependeeP)"
+                //                                    )
+                //                                    /*prepare for immediate exec*/ () ⇒
+                //                                        suspended.asInstanceOf[SuspendedIPC[Property]].continue(dependeeP)
+                //                                }
+                //                        }
+                //                    }
+                //                    if (continuation ne null) {
+                //                        val IncrementalPropertyComputationResult(result, nextComputations) = continuation()
+                //                        handleResult(result)
+                //                        bulkScheduleIncrementalComputations(nextComputations)
+                //                    }
             }
         }
     }
