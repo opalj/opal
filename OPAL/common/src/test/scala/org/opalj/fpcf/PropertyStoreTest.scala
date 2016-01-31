@@ -208,6 +208,20 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         }
     }
 
+    it("should be possible to interrupt the computations") {
+        val EntitiesCount = 100000
+        val entities: List[java.lang.Integer] = (1 to EntitiesCount).map(Integer.valueOf).toList
+
+        val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
+        @volatile var doInterrupt = false
+        val ps = PropertyStore(entities, () ⇒ doInterrupt, debug = false)(GlobalLogContext)
+        ps << { e: Entity ⇒ triggeredComputations.incrementAndGet(); Thread.sleep(50); NoResult }
+        doInterrupt = true
+        ps.waitOnPropertyComputationCompletion(false)
+
+        if (triggeredComputations.get == EntitiesCount) fail("interrupting the computations failed")
+    }
+
     describe("set properties") {
 
         it("an onPropertyDerivation function should be called if entities are associated with the property after the registration of the function") {
