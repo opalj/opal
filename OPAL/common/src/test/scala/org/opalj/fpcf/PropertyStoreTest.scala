@@ -600,6 +600,27 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("aaa", SuperPalindromeKey) should be(Some(SuperPalindrome))
             }
 
+            it("should be triggered in case of a \"require\" dependency") {
+                val ps = psStrings
+
+                val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
+                    val s = e.toString
+                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
+                }
+                ps <<? (PalindromeKey, palindromePC)
+
+                // triggers the computation of "PalindromeProperty
+                val pcr = ps.require("aaa", SuperPalindromeKey, "a", PalindromeKey) { (e, p) ⇒
+                    Result("aaa", if (p == Palindrome) SuperPalindrome else NoSuperPalindrome)
+                }
+                pcr shouldBe a[SuspendedPC[_]]
+                ps.handleResult(pcr)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                ps("a", PalindromeKey) should be(Some(Palindrome))
+                ps("aaa", SuperPalindromeKey) should be(Some(SuperPalindrome))
+            }
+
         }
 
         describe("direct computations of an entity's property") {
