@@ -185,7 +185,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             // let's fill the property store with:
             //  - an entity based property and 
-            //  - a set property
+            //  - a set property and
             //  - an on property derivation function
             ps.onPropertyChange(PalindromeKey) { (e, p) ⇒
                 if (p == Palindrome && e.toString().size % 2 == 0)
@@ -521,9 +521,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 val ps = psStrings
                 @volatile var stringLengthTriggered = false
-                val stringLengthPC: PropertyComputation = (e: Entity) ⇒ {
+                val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
                     stringLengthTriggered = true
-                    ImmediateResult(e, StringLength(e.toString.size))
+                    ImmediateResult(e, StringLength(e.size))
                 }
                 ps <<? (StringLengthKey, stringLengthPC)
 
@@ -537,14 +537,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 val ps = psStrings
                 @volatile var stringLengthTriggered = false
-                val stringLengthPC: PropertyComputation = (e: Entity) ⇒ {
+                val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
                     if (stringLengthTriggered) fail("computation is already triggered")
                     stringLengthTriggered = true
-                    ImmediateResult(e, StringLength(e.toString.size))
+                    ImmediateResult(e, StringLength(e.size))
                 }
                 ps <<? (StringLengthKey, stringLengthPC)
 
-                val palindromePC: PropertyComputation = (e: Entity) ⇒ {
+                val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
                     val s = e.toString
                     ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }
@@ -581,7 +581,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             it("should be triggered for all that are queried using \"allHaveProperty\"") {
                 val ps = psStrings
 
-                val palindromePC: PropertyComputation = (e: Entity) ⇒ {
+                val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
                     val s = e.toString
                     ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }

@@ -400,7 +400,7 @@ class PropertyStore private (
 
     // access to this field is synchronized using the store's lock 
     // the map's keys are the ids of the PropertyKeys
-    private[this] final val theLazyPropertyComputations = ArrayMap[PropertyComputation](5)
+    private[this] final val theLazyPropertyComputations = ArrayMap[SomePropertyComputation](5)
 
     // access to this field is synchronized using the store's lock
     // the map's keys are the ids of the PropertyKeys
@@ -529,6 +529,11 @@ class PropertyStore private (
      *
      * The function `c` is the function that is called when the property becomes
      * available and which computes – and then returns – the property for the depender.
+     *
+     * Require can only be used if it is guaranteed that the computation of the property
+     * dependeePK will never require the property dependerPK. Hence, it should only be used
+     * in combination with properties where the most precise analysis will never requirer
+     * `dependerPk`.
      *
      * @example
      * {{{
@@ -740,7 +745,7 @@ class PropertyStore private (
      * Directly associate the given property `p` with given entity `e`.
      *
      * This method must not be used if the given entity might already be associated with
-     * a property of the respective kind or '''if there might be a computation that
+     * a property of the respective kind or '''if there might be a (schedule) computation that
      * computes the property `p` for `e`''' (e.g., a lazy property computation).
      *
      * The primary use case is an analysis that does not use the property store for
@@ -760,13 +765,12 @@ class PropertyStore private (
                 if ((pos eq null) || (pos.p eq null))
                     // we do not have a property...
                     update(e, p, OneStepFinalUpdate)
-                else {
-                    if (debug) OPALLogger.debug(
-                        "analysis progress",
-                        s"did not set the property ${p} for $e, "+
-                            s"because the entity already has a property or it is currently computed"
-                    )
-                }
+                else if (debug) OPALLogger.debug(
+                    "analysis progress",
+                    s"did not set the property ${p} for $e, "+
+                        s"because the entity already has a property or it is currently computed"
+                )
+
             }
         }
     }
@@ -825,10 +829,7 @@ class PropertyStore private (
     ): Unit = {
         val groupedEntities = keysList.view.collect(entitySelector).groupBy(groupBy)
         for ((key, entities) ← groupedEntities if !Tasks.isInterrupted) {
-            scheduleRunnable {
-                val results = f(key, entities)
-                set(results)
-            }
+            scheduleRunnable { set(f(key, entities)) }
         }
     }
 
@@ -912,7 +913,7 @@ class PropertyStore private (
      *  	ps(e,pk).get
      * 		}}}
      */
-    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = {
+    def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = accessStore {
         /* The framework has to handle:
          *  1. the situation that the same dpc is potentially triggered by multiple other analyses 
          *     concurrently
@@ -929,9 +930,7 @@ class PropertyStore private (
          *      	 but if now o4 requires the property computed by o2 it also needs to wait.
          *      	 Hence, we have a deadlock.
          */
-        theDirectPropertyComputations.synchronized {
-            theDirectPropertyComputations(pk.id) = dpc
-        }
+        theDirectPropertyComputations(pk.id) = dpc
     }
 
     /**
@@ -947,10 +946,8 @@ class PropertyStore private (
      * than once for the same element at the same time. If `pc` is invoked again for a specific
      * element then only because a dependee has changed!
      */
-    def <<?[P <: Property](pk: PropertyKey[P], pc: PropertyComputation): Unit = {
-        accessStore {
-            theLazyPropertyComputations(pk.id) = pc
-        }
+    def <<?[P <: Property](pk: PropertyKey[P], pc: SomePropertyComputation): Unit = accessStore {
+        theLazyPropertyComputations(pk.id) = pc
     }
 
     /**
@@ -962,60 +959,58 @@ class PropertyStore private (
      * same element at the same time. If `pc` is invoked again for a specific element
      * then only because a dependee has changed!
      */
-    def <<(pc: PropertyComputation): Unit = {
-        bulkScheduleComputations(keysList, pc)
-    }
+    def <<(pc: SomePropertyComputation): Unit = bulkScheduleComputations(keysList, pc)
 
-    /**
-     * Registers a function `f` that performs a computation for some root entities `es` and
-     * which returns for each entity `e` a [[PropertyComputationResult]] along with a set of
-     * new(!) entities for which the computation should be performed.
-     *
-     * The set of entities must be disjunct across all returned sets.
-     * This is, e.g., in general given, if we analyze the classes of the class hierarchy
-     * in a top-down fashion.
-     */
-    def <^<(
-        initialEntities: Traversable[Entity],
-        initialF:        IncrementalPropertyComputation
-    ): Unit = {
+    //    /**
+    //     * Registers a function `f` that performs a computation for some root entities `es` and
+    //     * which returns for each entity `e` a [[PropertyComputationResult]] along with a set of
+    //     * new(!) entities for which the computation should be performed.
+    //     *
+    //     * The set of entities must be disjunct across all returned sets.
+    //     * This is, e.g., in general given, if we analyze the classes of the class hierarchy
+    //     * in a top-down fashion.
+    //     */
+    //    def <^<(
+    //        initialEntities: Traversable[Entity],
+    //        initialF:        IncrementalPropertyComputation
+    //    ): Unit = {
+    //
+    //        initialEntities foreach { ie ⇒
+    //            if (isInterrupted())
+    //                return ;
+    //
+    //            scheduleRunnable {
+    //                val IncrementalPropertyComputationResult(pc, es) = initialF(ie)
+    //                handleResult(pc)
+    //                bulkScheduleIncrementalComputations(es)
+    //            }
+    //        }
+    //    }
+    //
+    //    private[this] def bulkScheduleIncrementalComputations(
+    //        fes: Traversable[(IncrementalPropertyComputation, Entity)]
+    //    ): Unit = {
+    //        fes foreach { fe ⇒
+    //            val (f, e) = fe
+    //            if (isInterrupted())
+    //                return ;
+    //
+    //            scheduleIncrementalComputation(f, e)
+    //        }
+    //    }
 
-        initialEntities foreach { ie ⇒
-            if (isInterrupted())
-                return ;
-
-            scheduleRunnable {
-                val IncrementalPropertyComputationResult(pc, es) = initialF(ie)
-                handleResult(pc)
-                bulkScheduleIncrementalComputations(es)
-            }
-        }
-    }
-
-    private[this] def bulkScheduleIncrementalComputations(
-        fes: Traversable[(IncrementalPropertyComputation, Entity)]
-    ): Unit = {
-        fes foreach { fe ⇒
-            val (f, e) = fe
-            if (isInterrupted())
-                return ;
-
-            scheduleIncrementalComputation(f, e)
-        }
-    }
-
-    private[this] def scheduleIncrementalComputation(
-        f: IncrementalPropertyComputation,
-        e: Entity
-    ): Unit = {
-        scheduleRunnable {
-            val IncrementalPropertyComputationResult(pc, es) = f(e)
-            handleResult(pc)
-            bulkScheduleIncrementalComputations(
-                es.asInstanceOf[Traversable[(IncrementalPropertyComputation, Entity)]]
-            )
-        }
-    }
+    //    private[this] def scheduleIncrementalComputation(
+    //        f: IncrementalPropertyComputation,
+    //        e: Entity
+    //    ): Unit = {
+    //        scheduleRunnable {
+    //            val IncrementalPropertyComputationResult(pc, es) = f(e)
+    //            handleResult(pc)
+    //            bulkScheduleIncrementalComputations(
+    //                es.asInstanceOf[Traversable[(IncrementalPropertyComputation, Entity)]]
+    //            )
+    //        }
+    //    }
 
     /**
      * Registers a function that calculates a property for those elements
@@ -1027,7 +1022,7 @@ class PropertyStore private (
      *      For which the analysis may compute some property.
      *      The filter function is performed in the context of the calling thread.
      */
-    def <|<(f: Entity ⇒ Boolean, c: PropertyComputation): Unit = {
+    def <|<(f: Entity ⇒ Boolean, c: SomePropertyComputation): Unit = {
         val it = keys.iterator()
         var es: List[Entity] = Nil
         while (it.hasNext) {
@@ -1050,10 +1045,7 @@ class PropertyStore private (
      *      passed to the function`c` and for which the analysis may compute some property.
      *      The function pf is performed in the context of the calling thread.
      */
-    def <||<[E <: Entity](
-        pf: PartialFunction[Entity, E],
-        c:  E ⇒ PropertyComputationResult
-    ): Unit = {
+    def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
         val es = keysList.collect(pf)
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
@@ -1141,13 +1133,13 @@ class PropertyStore private (
         // ALL ACCESSES TO "executed" and "scheduled" ARE SYNCHRONIZED
         private[this] var executed = 0
 
-        private[this] var cleanUpRequired = false
-
         /**
          * The number of scheduled tasks. I.e., the number of tasks that are running or
          * that will run in the future.
          */
         @volatile private[this] var scheduled = 0
+
+        private[this] var cleanUpRequired = false
 
         private[PropertyStore] def executedComputations: Int = synchronized { executed }
 
@@ -1308,10 +1300,9 @@ class PropertyStore private (
                     }
                 }
             }
-            if (debug && !validateStore()) {
-                val storeState = store.toString(true)
-                throw new UnknownError(s"the property store is inconsistent:\n$storeState")
-            }
+            assert(validateStore(),
+                s"the property store is inconsistent:\n${store.toString(true)}")
+            
 
             /*
       		 * Returns the list of observers related to the given entity and property kind.
@@ -1458,10 +1449,7 @@ class PropertyStore private (
             this.useFallbackForIncomputableProperties = useFallbackForIncomputableProperties
             //noinspection LoopVariableNotUpdated
             while (scheduled > 0) {
-                if (debug) OPALLogger.debug(
-                    "analysis progress",
-                    s"all previously scheduled tasks finished (newly scheduled tasks: $scheduled)"
-                )
+                if (debug) OPALLogger.debug("analysis progress", s"remaining tasks: $scheduled)")
                 wait()
             }
         }
@@ -1495,7 +1483,7 @@ class PropertyStore private (
     // Locks of scheduleComputation: Tasks    
     private[this] def bulkScheduleComputations(
         es: List[_ <: Entity],
-        pc: PropertyComputation
+        pc: SomePropertyComputation
     ): Unit = {
         es foreach { e ⇒ if (!isInterrupted()) scheduleComputation(e, pc) }
     }
@@ -1509,8 +1497,8 @@ class PropertyStore private (
      * Schedules the computation of a property w.r.t. the entity `e`.
      */
     // Locks of scheduleRunnable: Tasks
-    private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
-        scheduleRunnable { handleResult(pc(e)) }
+    private[this] def scheduleComputation(e: Entity, pc: SomePropertyComputation): Unit = {
+        scheduleRunnable { handleResult(pc.asInstanceOf[Entity ⇒ PropertyComputationResult](e)) }
     }
 
     // Locks of scheduleTask: Tasks
@@ -1518,7 +1506,8 @@ class PropertyStore private (
         scheduleTask(new Runnable {
             override def run(): Unit = {
                 try {
-                    f
+                    if (!isInterrupted())
+                        f
                 } catch {
                     case t: Throwable ⇒ handleUncaughtException(Thread.currentThread(), t)
                 } finally {

@@ -96,7 +96,9 @@ package object fpcf {
      *      about some other entity is available or,
      *  - an intermediate result.
      */
-    type PropertyComputation = (Entity) ⇒ PropertyComputationResult
+    type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
+
+    type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
     /**
      * A function that continues the computation of a property. It takes
