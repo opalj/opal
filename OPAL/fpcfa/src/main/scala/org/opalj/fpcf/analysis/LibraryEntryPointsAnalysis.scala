@@ -56,9 +56,6 @@ class LibraryEntryPointsAnalysis private (
                 Result(method, NoEntryPoint)
     }
 
-    /**
-     * Identifies those private static non-final fields that are initialized exactly once.
-     */
     def determineProperty(method: Method): PropertyComputationResult = {
 
         val classFile = project.classFile(method)

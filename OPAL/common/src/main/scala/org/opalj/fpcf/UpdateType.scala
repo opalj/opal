@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,31 +33,38 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-private[fpcf] object UpdateTypes extends Enumeration {
+private[fpcf] sealed abstract class UpdateType(name: String) {
+    val ID: Int
+}
 
-    /**
-     * The result is just an intermediate result that may be refined in the future.
-     */
-    val IntermediateUpdate = Value("Intermediate Update")
+/**
+ * The result is just an intermediate result that may be refined in the future.
+ */
+case object IntermediateUpdate extends UpdateType("Intermediate Update") {
+    final val ID = 1
+}
 
-    /**
-     * The result is the final result and was computed using other information.
-     */
-    val FinalUpdate = Value("Final Update")
+/**
+ * The result is the final result and was computed using other information.
+ */
+case object FinalUpdate extends UpdateType("Final Update") {
+    final val ID = 2
+}
 
-    /**
-     * The result is the final result and was computed without requiring any other information.
-     */
+/**
+ * The result is the final result and was computed without requiring any other information.
+ */
+case object OneStepFinalUpdate extends UpdateType("Final Updated Without Dependencies") {
+    final val ID = 3
+}
 
-    val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
-
-    /**
-     * The result was determined by looking up a property kind's fallback property. Hence,
-     * no "real" computation was performed.
-     * Furthermore, it may be the case that
-     * the updated value – at the point in time when it is handled - is no longer relevant
-     * and has to be dropped.
-     */
-    val FallbackUpdate = Value("Fallback Update")
-
+/**
+ * The result was determined by looking up a property kind's fallback property. Hence,
+ * no "real" computation was performed.
+ * Furthermore, it may be the case that
+ * the updated value – at the point in time when it is handled - is no longer relevant
+ * and has to be dropped.
+ */
+case object FallbackUpdate extends UpdateType("Fallback Update") {
+    final val ID = 4
 }

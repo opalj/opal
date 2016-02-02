@@ -120,6 +120,9 @@ class PerformanceEvaluation extends Locking {
     protected[this] def doResetAll(): Unit = timeSpans.clear()
 
 }
+
+object GlobalPerformanceEvaluation extends PerformanceEvaluation
+
 /**
  * Collection of helper functions useful when evaluating the performance of some
  * code.

@@ -41,6 +41,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.util.GlobalPerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation
 
 object CHADemo extends DefaultOneStepAnalysis {
@@ -79,16 +80,29 @@ object CHADemo extends DefaultOneStepAnalysis {
             traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
         } { t ⇒ println("naive CHA computation time: "+t.toSeconds) }
 
+        println(GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println(GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+
         var opaCCG: ComputedCallGraph = null
 
         PerformanceEvaluation.time {
             opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
         } { t ⇒ println("OPA-CHA computation time: "+t.toSeconds) }
 
+        println("OPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("OPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("OPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+
+        GlobalPerformanceEvaluation.resetAll()
+
         var cpaCCG: ComputedCallGraph = null
         PerformanceEvaluation.time {
             cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
         } { t ⇒ println("CPA-CHA computation time: "+t.toSeconds) }
+
+        println("CPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("CPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("CPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
 
         val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)

@@ -172,8 +172,5 @@ package object fpcf {
      * single element in the property store.
      */
     private[fpcf]type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
-
-    private[fpcf]type UpdateType = UpdateTypes.Value
-
 }
 

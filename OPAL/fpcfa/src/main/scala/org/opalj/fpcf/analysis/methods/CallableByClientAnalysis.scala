@@ -74,16 +74,16 @@ case object NotClientCallable extends ClientCallable
  * {{{
  * val thePropertyStore = theProject.get(SourceElementsPropertyStoreKey)
  * val property = thePropertyStore(method, ClientCallableKey)
-  * property match {
-  *   case Some(IsClientCallable) => ...
-  *   case Some(NotClientCallable) => ...
-  *   case None => ... // this happens only if an not supported entity is passed to the computation.
-  * }
+ * property match {
+ *   case Some(IsClientCallable) => ...
+ *   case Some(NotClientCallable) => ...
+ *   case None => ... // this happens only if a not supported entity is passed to the computation.
+ * }
  * }}}
  *
  * @note This analysis implements a direct property computation that is only executed when
-  * 		required.
-  *
+ * 		required.
+ *
  * @author Michael Reif
  */
 class CallableByClientAnalysis private (
