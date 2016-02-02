@@ -70,3 +70,8 @@ private[fpcf] final class PropertyIsBeingComputed extends CountDownLatch(1) with
     override private[fpcf] def isBeingComputed: Boolean = true
 }
 
+object PropertyIsBeingComputed {
+
+    def unapply(p: Property): Boolean = p.isBeingComputed
+}
+

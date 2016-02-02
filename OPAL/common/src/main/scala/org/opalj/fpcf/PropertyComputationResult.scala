@@ -119,8 +119,9 @@ object Result {
  *
  * Furthermore, if a property of any of the dependees changes (outgoing dependencies),
  * the given continuation `c` is invoked.
- * (This requires that the given continuation is thread-safe! In most cases the easiest
- * and correct solution is to just wrap it in a synchronized block.)
+ *
+ * @note All elements on which the result declares to be dependent on must have been queried
+ * 		before (using one of the `apply` functions of the property store.)
  */
 case class IntermediateResult(
         e:          Entity,
