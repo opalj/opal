@@ -127,7 +127,7 @@ class CHACallGraphExtractor(
         }
 
         /**
-         * @param receiverMayBeNull The parameter is `false` if:
+         * @param receiverIsNull The parameter is `false` if:
          *      - a static method is called,
          *      - this is an invokespecial call (in this case the receiver is `this`),
          *      - the receiver is known not to be null and the type is known to be precise.

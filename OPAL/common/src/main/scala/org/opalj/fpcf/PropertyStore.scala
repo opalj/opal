@@ -177,11 +177,6 @@ class PropertyStore private (
 
     def isKnown(e: Entity): Boolean = keys.contains(e)
 
-    import UpdateTypes.FinalUpdate
-    import UpdateTypes.OneStepFinalUpdate
-    import UpdateTypes.IntermediateUpdate
-    import UpdateTypes.FallbackUpdate
-
     /**
      * Counts how often some observer was notified. I.e., how often an analysis reacted
      * upon the update of a value and was no able to directly use a/the value.
@@ -1685,15 +1680,15 @@ class PropertyStore private (
             // 2. update the property
             properties(pkId) match {
                 case null ⇒ // No one was interested in this property so far...
-                    updateType match {
-                        case OneStepFinalUpdate ⇒
+                    updateType.ID match {
+                        case OneStepFinalUpdate.ID ⇒
                             assert(
                                 clearDependeeObservers(e, pk) == false,
                                 s"the analysis returned an immediate result for $e($pk) though it relied on other properties"
                             )
                             properties(pkId) = (p, null)
 
-                        case FinalUpdate ⇒
+                        case FinalUpdate.ID ⇒
                             // Note that it is possible to have a Final Update though the underlying
                             // property is refineable. This is the case whenever the analysis knows
                             // that no further refinement may happen (given the current program).
@@ -1702,12 +1697,12 @@ class PropertyStore private (
                             clearDependeeObservers(e, pk)
                             properties(pkId) = (p, null)
 
-                        case IntermediateUpdate ⇒
+                        case IntermediateUpdate.ID ⇒
                             assert(p.isRefineable, s"$e: intermediate update of a final property $p")
                             val os = Buffer.empty[PropertyObserver]
                             properties(pkId) = (p, os)
 
-                        case FallbackUpdate ⇒
+                        case FallbackUpdate.ID ⇒
                             throw new UnknownError(
                                 s"fallback property ($p) assigned to an entity ($e) that has no outgoing dependencies"
                             )
@@ -1729,9 +1724,9 @@ class PropertyStore private (
                         s"$e: the old ($oldP) and the new property ($p) are identical (updateType=$updateType)"
                     )
 
-                    updateType match {
+                    updateType.ID match {
 
-                        case OneStepFinalUpdate ⇒
+                        case OneStepFinalUpdate.ID ⇒
                             // The computation did not create any (still living) dependencies!
                             assert(
                                 clearDependeeObservers(e, pk) == false,
@@ -1743,14 +1738,14 @@ class PropertyStore private (
                                 // there are/there cannot be any observers
                                 return ;
 
-                        case FinalUpdate ⇒
+                        case FinalUpdate.ID ⇒
                             // We may still observe other entities... we have to clear
                             // these dependencies.
                             clearDependeeObservers(e, pk)
                             obsoleteOs = os
                             properties(pkId) = (p, null /*The incoming observers are no longer required!*/ )
 
-                        case IntermediateUpdate ⇒
+                        case IntermediateUpdate.ID ⇒
                             assert(p.isRefineable, s"$e: intermediate update of a final property $p")
                             // We still continue observing all other entities;
                             // hence, we only need to clear our one-time observers.
@@ -1766,7 +1761,7 @@ class PropertyStore private (
                             obsoleteOs = oneTimeObservers
                             properties(pkId) = (p, newOs)
 
-                        case FallbackUpdate ⇒
+                        case FallbackUpdate.ID ⇒
                             if (oldP eq null) {
                                 if (debug) OPALLogger.debug(
                                     "analysis progress",

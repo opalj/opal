@@ -220,7 +220,7 @@ private final class SingleArgumentMethodDescriptor(
         (other.parametersCount == 1) &&
             (other.parameterType(0) == parameterType)
 
-    override val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
+    override lazy val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -260,7 +260,7 @@ private final class TwoArgumentsMethodDescriptor(
             (other.parameterType(0) == firstParameterType) &&
             (other.parameterType(1) == secondParameterType)
 
-    override val hashCode: Int =
+    override lazy val hashCode: Int =
         ((returnType.hashCode() * 61) +
             firstParameterType.hashCode) * 13 +
             secondParameterType.hashCode
@@ -290,7 +290,7 @@ private final class MultiArgumentsMethodDescriptor(
     override def equalParameters(other: MethodDescriptor): Boolean =
         other.parameterTypes == this.parameterTypes
 
-    override val hashCode: Int =
+    override lazy val hashCode: Int =
         (returnType.hashCode() * 13) + parameterTypes.hashCode
 
     override def equals(other: Any): Boolean = {
