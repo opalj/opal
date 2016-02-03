@@ -26,16 +26,17 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
 
     private implicit val classHierarchy = project.classHierarchy
 
-    def determineCallBySignatureTargets(projectIndex: ProjectIndex)(e: Entity): Option[Property] = {
-        import org.opalj.util.GlobalPerformanceEvaluation.time
+    def determineCallBySignatureTargets(projectIndex: ProjectIndex)(e: Entity): Property = {
+		import org.opalj.util.GlobalPerformanceEvaluation.time
+		time('cbst) {
+        val method: Method = e.asInstanceOf[Method]
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
 
-        time('cbst) {
-            if (!e.isInstanceOf[Method])
-                return None;
+        import projectIndex.findMethods
 
-            import projectIndex.findMethods
-
-            val method: Method = e.asInstanceOf[Method]
+        val interfaceClassFile = project.classFile(method)
+        val interfaceType = interfaceClassFile.thisType
 
             val methodName = method.name
             val methodDescriptor = method.descriptor
@@ -82,8 +83,8 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
             }
             findMethods(methodName, methodDescriptor) foreach analyzePotentialCBSTarget
 
-            Some(if (cbsTargets.isEmpty) NoCBSTargets else CBSTargets(cbsTargets))
         }
+        if (cbsTargets.isEmpty) NoCBSTargets else CBSTargets(cbsTargets)
     }
 
     /**

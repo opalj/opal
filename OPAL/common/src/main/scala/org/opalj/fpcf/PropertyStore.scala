@@ -1300,9 +1300,10 @@ class PropertyStore private (
                     }
                 }
             }
-            assert(validateStore(),
-                s"the property store is inconsistent:\n${store.toString(true)}")
-            
+            assert(
+                validateStore(),
+                s"the property store is inconsistent:\n${store.toString(true)}"
+            )
 
             /*
       		 * Returns the list of observers related to the given entity and property kind.
@@ -1602,134 +1603,135 @@ class PropertyStore private (
             onPropertyComputations foreach { opc ⇒ opc(e, p) }
 
             // 2. update the property
-            properties(pkId) match {
-                case null ⇒ // No one was interested in this property so far...
-                    updateType.ID match {
-                        case OneStepFinalUpdate.ID ⇒
-                            assert(
-                                clearDependeeObservers(e, pk) == false,
-                                s"the analysis returned an immediate result for $e($pk) though it relied on other properties"
-                            )
-                            properties(pkId) = new PropertyAndObservers(p, null)
+            val pos = properties(pkId)
+            if (pos eq null) {
+                // No one was interested in this property so far...
+                (updateType.id: @scala.annotation.switch) match {
+                    case OneStepFinalUpdate.id ⇒
+                        assert(
+                            clearDependeeObservers(e, pk) == false,
+                            s"the analysis returned an immediate result for $e($pk) though it relied on other properties"
+                        )
+                        properties(pkId) = new PropertyAndObservers(p, null)
 
-                        case FinalUpdate.ID ⇒
-                            // Note that it is possible to have a Final Update though the underlying
-                            // property is refineable. This is the case whenever the analysis knows
-                            // that no further refinement may happen (given the current program).
+                    case FinalUpdate.id ⇒
+                        // Note that it is possible to have a Final Update though the underlying
+                        // property is refineable. This is the case whenever the analysis knows
+                        // that no further refinement may happen (given the current program).
 
-                            // We (still) may have a hard dependency on another entity...
-                            clearDependeeObservers(e, pk)
-                            properties(pkId) = new PropertyAndObservers(p, null)
+                        // We (still) may have a hard dependency on another entity...
+                        clearDependeeObservers(e, pk)
+                        properties(pkId) = new PropertyAndObservers(p, null)
 
-                        case IntermediateUpdate.ID ⇒
-                            assert(p.isRefineable, s"$e: intermediate update of a final property $p")
-                            val os = Buffer.empty[PropertyObserver]
-                            properties(pkId) = new PropertyAndObservers(p, os)
+                    case IntermediateUpdate.id ⇒
+                        assert(p.isRefineable, s"$e: intermediate update of a final property $p")
+                        val os = Buffer.empty[PropertyObserver]
+                        properties(pkId) = new PropertyAndObservers(p, os)
 
-                        case FallbackUpdate.ID ⇒
-                            throw new UnknownError(
-                                s"fallback property ($p) assigned to an entity ($e) that has no outgoing dependencies"
-                            )
+                    case FallbackUpdate.id ⇒
+                        throw new UnknownError(
+                            s"fallback property ($p) assigned to an entity ($e) that has no outgoing dependencies"
+                        )
 
-                    }
-                    return ;
-
-                case pos ⇒
-                    val oldP = pos.p
-                    val os = pos.os
-                    assert(
-                        (oldP eq null) || oldP.isBeingComputed || oldP.isRefineable || updateType == FallbackUpdate,
-                        s"the old property $oldP is already a final property and refinement to $p is not supported"
-                    )
-                    assert(
-                        (os ne null) || oldP.isBeingComputed || updateType == FallbackUpdate,
-                        s"$e: the list of observers is null; the old property was ($oldP) and the new property is $p"
-                    )
-                    assert(
-                        oldP != p,
-                        s"$e: the old ($oldP) and the new property ($p) are identical (updateType=$updateType)"
-                    )
-
-                    updateType.ID match {
-
-                        case OneStepFinalUpdate.ID ⇒
-                            // The computation did not create any (still living) dependencies!
-                            assert(
-                                clearDependeeObservers(e, pk) == false,
-                                s"the analysis returned an immediate result for $e($pk) though it had intermediate dependencies"
-                            )
-                            obsoleteOs = os
-                            properties(pkId) = new PropertyAndObservers(p, null /*The list of observers is no longer required!*/ )
-                            if (PropertyIsDirectlyComputed(oldP))
-                                // there are/there cannot be any observers
-                                return ;
-
-                        case FinalUpdate.ID ⇒
-                            // We may still observe other entities... we have to clear
-                            // these dependencies.
-                            clearDependeeObservers(e, pk)
-                            obsoleteOs = os
-                            properties(pkId) = new PropertyAndObservers(p, null /* the incoming observers are no longer required */ )
-
-                        case IntermediateUpdate.ID ⇒
-                            assert(p.isRefineable, s"$e: intermediate update of a final property $p")
-                            // We still continue observing all other entities;
-                            // hence, we only need to clear our one-time observers.
-                            var oneTimeObservers = List.empty[PropertyObserver]
-                            val newOs = os.filter { o ⇒
-                                if (o.removeAfterNotification) {
-                                    oneTimeObservers = o :: oneTimeObservers
-                                    false
-                                } else {
-                                    true
-                                }
-                            }
-                            obsoleteOs = oneTimeObservers
-                            properties(pkId) = new PropertyAndObservers(p, newOs)
-
-                        case FallbackUpdate.ID ⇒
-                            if (oldP eq null) {
-                                if (debug) OPALLogger.debug(
-                                    "analysis progress",
-                                    s"associated default property $p with $e"
-                                )
-                                effectiveDefaultPropertiesCount.incrementAndGet()
-                                val newOs =
-                                    if (p.isFinal) {
-                                        clearDependeeObservers(e, pk)
-                                        obsoleteOs = os
-                                        null /*The incoming observers are no longer required!*/
-                                    } else {
-                                        // the fallback property is refineable...
-                                        var oneTimeObservers = List.empty[PropertyObserver]
-                                        val newOs = os.filter { o ⇒
-                                            if (o.removeAfterNotification) {
-                                                oneTimeObservers = o :: oneTimeObservers
-                                                false
-                                            } else {
-                                                true
-                                            }
-                                        }
-                                        obsoleteOs = oneTimeObservers
-                                        newOs
-                                    }
-                                properties(pkId) = new PropertyAndObservers(p, newOs)
-                            } else {
-                                // Nothing to do... the entity is already associated
-                                // with a property.
-                                if (debug) OPALLogger.debug(
-                                    "analysis progress",
-                                    s"fallback update ignored; the property $oldP is already associated with $e"
-                                )
-                                assert(
-                                    (os eq null) || os.isEmpty,
-                                    s"the fallback update of $e was aborted due to the existing property $oldP but observers found"
-                                )
-                                return ;
-                            }
-                    }
-                    os
+                }
+                return ;
             }
+
+            val oldP = pos.p
+            val os = pos.os
+            assert(
+                (oldP eq null) || oldP.isBeingComputed || oldP.isRefineable || updateType == FallbackUpdate,
+                s"the old property $oldP is already a final property and refinement to $p is not supported"
+            )
+            assert(
+                (os ne null) || oldP.isBeingComputed || updateType == FallbackUpdate,
+                s"$e: the list of observers is null; the old property was ($oldP) and the new property is $p"
+            )
+            assert(
+                oldP != p,
+                s"$e: the old ($oldP) and the new property ($p) are identical (updateType=$updateType)"
+            )
+
+            updateType.id match {
+
+                case OneStepFinalUpdate.id ⇒
+                    // The computation did not create any (still living) dependencies!
+                    assert(
+                        clearDependeeObservers(e, pk) == false,
+                        s"the analysis returned an immediate result for $e($pk) though it had intermediate dependencies"
+                    )
+                    obsoleteOs = os
+                    properties(pkId) = new PropertyAndObservers(p, null /*The list of observers is no longer required!*/ )
+                    if (PropertyIsDirectlyComputed(oldP))
+                        // there are/there cannot be any observers
+                        return ;
+
+                case FinalUpdate.id ⇒
+                    // We may still observe other entities... we have to clear
+                    // these dependencies.
+                    clearDependeeObservers(e, pk)
+                    obsoleteOs = os
+                    properties(pkId) = new PropertyAndObservers(p, null /* the incoming observers are no longer required */ )
+
+                case IntermediateUpdate.id ⇒
+                    assert(p.isRefineable, s"$e: intermediate update of a final property $p")
+                    // We still continue observing all other entities;
+                    // hence, we only need to clear our one-time observers.
+                    var oneTimeObservers = List.empty[PropertyObserver]
+                    val newOs = os.filter { o ⇒
+                        if (o.removeAfterNotification) {
+                            oneTimeObservers = o :: oneTimeObservers
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    obsoleteOs = oneTimeObservers
+                    properties(pkId) = new PropertyAndObservers(p, newOs)
+
+                case FallbackUpdate.id ⇒
+                    if (oldP eq null) {
+                        if (debug) OPALLogger.debug(
+                            "analysis progress",
+                            s"associated default property $p with $e"
+                        )
+                        effectiveDefaultPropertiesCount.incrementAndGet()
+                        val newOs =
+                            if (p.isFinal) {
+                                clearDependeeObservers(e, pk)
+                                obsoleteOs = os
+                                null /*The incoming observers are no longer required!*/
+                            } else {
+                                // the fallback property is refineable...
+                                var oneTimeObservers = List.empty[PropertyObserver]
+                                val newOs = os.filter { o ⇒
+                                    if (o.removeAfterNotification) {
+                                        oneTimeObservers = o :: oneTimeObservers
+                                        false
+                                    } else {
+                                        true
+                                    }
+                                }
+                                obsoleteOs = oneTimeObservers
+                                newOs
+                            }
+                        properties(pkId) = new PropertyAndObservers(p, newOs)
+                    } else {
+                        // Nothing to do... the entity is already associated
+                        // with a property.
+                        if (debug) OPALLogger.debug(
+                            "analysis progress",
+                            s"fallback update ignored; the property $oldP is already associated with $e"
+                        )
+                        assert(
+                            (os eq null) || os.isEmpty,
+                            s"the fallback update of $e was aborted due to the existing property $oldP but observers found"
+                        )
+                        return ;
+                    }
+            }
+            os
+
         }
         // ... non-exclusive access to the observers/entities (just clear the observers)
         if (obsoleteOs.nonEmpty) {

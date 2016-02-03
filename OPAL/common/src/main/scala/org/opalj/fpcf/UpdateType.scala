@@ -34,28 +34,28 @@ package org.opalj.fpcf
  * @author Michael Eichberg
  */
 private[fpcf] sealed abstract class UpdateType(name: String) {
-    val ID: Int
+    val id: Int
 }
 
 /**
  * The result is just an intermediate result that may be refined in the future.
  */
 case object IntermediateUpdate extends UpdateType("Intermediate Update") {
-    final val ID = 1
+    final val id = 1
 }
 
 /**
  * The result is the final result and was computed using other information.
  */
 case object FinalUpdate extends UpdateType("Final Update") {
-    final val ID = 2
+    final val id = 2
 }
 
 /**
  * The result is the final result and was computed without requiring any other information.
  */
 case object OneStepFinalUpdate extends UpdateType("Final Updated Without Dependencies") {
-    final val ID = 3
+    final val id = 3
 }
 
 /**
@@ -66,5 +66,5 @@ case object OneStepFinalUpdate extends UpdateType("Final Updated Without Depende
  * and has to be dropped.
  */
 case object FallbackUpdate extends UpdateType("Fallback Update") {
-    final val ID = 4
+    final val id = 4
 }

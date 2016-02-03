@@ -95,25 +95,22 @@ class CallableByClientAnalysis private (
      * It should not be called if the current analysis mode is application-related.
      *
      */
-    def clientCallability(e: Entity): Option[Property] = {
-        if (!e.isInstanceOf[Method])
-            return None;
-
+    def clientCallability(e: Entity): Property = {
         val method = e.asInstanceOf[Method]
 
         if (method.isPrivate)
-            return Some(NotClientCallable);
+            return NotClientCallable;
 
         val classFile = project.classFile(method)
 
         if (classFile.isEffectivelyFinal)
-            return Some(NotClientCallable);
+            return NotClientCallable;
 
         if (isClosedLibrary && method.isPackagePrivate)
-            return Some(NotClientCallable);
+            return NotClientCallable;
 
         if (classFile.isPublic || isOpenLibrary)
-            return Some(IsClientCallable);
+            return IsClientCallable;
 
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
@@ -128,7 +125,7 @@ class CallableByClientAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
                         if (subclass.isPublic)
                             // the original method is now visible (and not shadowed)
-                            return Some(IsClientCallable);
+                            return IsClientCallable;
                     } else
                         subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -136,12 +133,12 @@ class CallableByClientAnalysis private (
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange!
-                    return Some(IsClientCallable);
+                    return IsClientCallable;
                 case _ ⇒
             }
         }
 
-        Some(NotClientCallable)
+        NotClientCallable
     }
 }
 

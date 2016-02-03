@@ -173,16 +173,16 @@ object ImmutabilityAnalysisRunner extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set(FieldUpdates)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        import project.classHierarchy.rootTypes
+        //import project.classHierarchy.rootTypes
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
         val analysis = new ImmutabilityAnalysis(
             project,
             fieldAccessInformation
         )
-        propertyStore <^< (
-            rootTypes.map(objectType ⇒ project.classFile(objectType).get),
-            analysis.determineInitialProperty _
-        )
+        //        propertyStore <^< (
+        //            rootTypes.map(objectType ⇒ project.classFile(objectType).get),
+        //            analysis.determineInitialProperty _
+        //        )
         analysis
     }
 
