@@ -30,7 +30,6 @@ package org.opalj
 
 import scala.collection.mutable
 import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
-import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
@@ -163,14 +162,6 @@ package object fpcf {
      * The underlying assumption is that not every property key is actually associated
      * with a property value for each element.
      */
-    private[fpcf]type Properties = OArrayMap[(Property, Observers)]
-
-    /**
-     * The type of the value associated with each entity (key) found in the store.
-     *
-     * We use one reentrant read/write lock for all properties associated with a
-     * single element in the property store.
-     */
-    private[fpcf]type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
+    private[fpcf]type Properties = OArrayMap[PropertyAndObservers]
 }
 
