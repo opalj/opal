@@ -42,21 +42,25 @@ import scala.collection.mutable.ListBuffer
 class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def determineProperty(method: Method): PropertyComputationResult = {
-        if (method.isPrivate)
-            return ImmediateResult(method, ClassLocal)
+        import org.opalj.util.GlobalPerformanceEvaluation
 
-        if (isOpenLibrary)
-            return ImmediateResult(method, Global)
+        GlobalPerformanceEvaluation.time('methodAccess) {
+            if (method.isPrivate)
+                return ImmediateResult(method, ClassLocal)
 
-        // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
-        //
-        if (method.isPackagePrivate)
-            return ImmediateResult(method, PackageLocal)
+            if (isOpenLibrary)
+                return ImmediateResult(method, Global)
 
-        if (method.isStatic)
-            determineStaticMethodAccessibility(method)
-        else
-            determineInstanceMethodAccessibility(method)
+            // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
+            //
+            if (method.isPackagePrivate)
+                return ImmediateResult(method, PackageLocal)
+
+            if (method.isStatic)
+                determineStaticMethodAccessibility(method)
+            else
+                determineInstanceMethodAccessibility(method)
+        }
     }
 
     private[this] def determineStaticMethodAccessibility(

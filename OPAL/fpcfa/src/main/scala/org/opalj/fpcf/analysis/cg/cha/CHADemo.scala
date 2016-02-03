@@ -92,6 +92,9 @@ object CHADemo extends DefaultOneStepAnalysis {
         println("OPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
         println("OPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
         println("OPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("OPA (callableByOthers): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("OPA (methodAccess): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("OPA (inst): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
 
         GlobalPerformanceEvaluation.resetAll()
 
@@ -103,6 +106,9 @@ object CHADemo extends DefaultOneStepAnalysis {
         println("CPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
         println("CPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
         println("CPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("CPA (callableByOthers): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("CPA (methodAccess): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("CPA (inst): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
 
         val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)
