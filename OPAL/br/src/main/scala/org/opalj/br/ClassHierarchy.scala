@@ -789,14 +789,26 @@ class ClassHierarchy private (
                     No
                 else
                     Unknown
+            } else if (superinterfaceTypes.isEmpty) {
+                No
             } else {
                 var answer: Answer = No
-                superinterfaceTypes foreach { intermediateType ⇒
+                val yes = Yes
+                val superTypesIterator = superinterfaceTypes.iterator
+                while (superTypesIterator.hasNext) {
+                    val intermediateType = superTypesIterator.next()
                     val anotherAnswer = implementsInterface(intermediateType, theSupertype)
-                    if (anotherAnswer.isYes)
-                        return Yes;
+                    if (anotherAnswer eq yes)
+                        return yes;
                     answer = answer join anotherAnswer
                 }
+                // superinterfaceTypes foreach { intermediateType ⇒
+                //     val anotherAnswer = implementsInterface(intermediateType, theSupertype)
+                //     if (anotherAnswer.isYes)
+                //         return Yes;
+                //     answer = answer join anotherAnswer
+                // }
+
                 answer
             }
         }
