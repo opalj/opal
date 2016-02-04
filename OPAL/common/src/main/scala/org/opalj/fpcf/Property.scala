@@ -95,7 +95,7 @@ private[fpcf] object PropertyIsDirectlyComputed {
     def apply(p: Property): Boolean = (p ne null) && p.isInstanceOf[PropertyIsDirectlyComputed]
 }
 
-private[fpcf] object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
+private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
     type Self = PropertyIsLazilyComputed.type
 }
 
