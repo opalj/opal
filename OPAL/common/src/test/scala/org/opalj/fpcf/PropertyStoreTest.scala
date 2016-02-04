@@ -302,8 +302,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             ps.waitOnPropertyComputationCompletion(true)
 
-            ps.entities { p ⇒ p == NoPalindrome } should be(Set("ab", "bc", "cd"))
-            ps.entities { p ⇒ p == Palindrome } should be(
+            ps.entities(p ⇒ p == NoPalindrome).toSet should be(Set("ab", "bc", "cd"))
+            ps.entities(p ⇒ p == Palindrome).toSet should be(
                 Set("aa", "bb", "cc", "aaa", "aea", "aabbcbbaa",
                     "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
@@ -329,8 +329,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             ps.waitOnPropertyComputationCompletion(true)
 
-            ps.entities { p ⇒ p == NoPalindrome } should be(Set("ab", "bc", "cd"))
-            ps.entities { p ⇒ p == Palindrome } should be(
+            ps.entities(p ⇒ p == NoPalindrome).toSet should be(Set("ab", "bc", "cd"))
+            ps.entities(p ⇒ p == Palindrome).toSet should be(
                 Set("aa", "bb", "cc", "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
         }
@@ -560,10 +560,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 @volatile var superPalindromeCompleted = false
                 // triggers the computation of "PalindromeProperty
-                val pcr = ps.allHaveProperty("aa", SuperPalindromeKey, List("a"), Palindrome) { aIsPalindrome ⇒
-                    superPalindromeCompleted = true
-                    Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
-                }
+                val pcr = ps.allHaveProperty(
+                    "aa", SuperPalindromeKey,
+                    List("a"), Palindrome
+                ) { aIsPalindrome ⇒
+                        superPalindromeCompleted = true
+                        Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
+                    }
                 pcr shouldBe a[SuspendedPC[_]]
 
                 // We can explicitly add results though this is generally not required in a well
@@ -588,9 +591,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps <<? (PalindromeKey, palindromePC)
 
                 // triggers the computation of "PalindromeProperty
-                val pcr = ps.allHaveProperty("aaa", SuperPalindromeKey, List("a", "aa"), Palindrome) { arePalindromes ⇒
-                    Result("aaa", if (arePalindromes) SuperPalindrome else NoSuperPalindrome)
-                }
+                val pcr =
+                    ps.allHaveProperty(
+                        "aaa", SuperPalindromeKey,
+                        List("a", "aa"), Palindrome
+                    ) { arePalindromes ⇒
+                            Result("aaa", if (arePalindromes) SuperPalindrome else throw new UnknownError)
+                        }
                 pcr shouldBe a[SuspendedPC[_]]
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
@@ -660,7 +667,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("aea", StringLengthKey) should be(Some(StringLength(3)))
 
                 // test that the other computations are not immediately executed were executed
-                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+                ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
             }
 
             it("should not be triggered for those that are queried using \"allHaveProperty\" if the query fails early") {
@@ -709,7 +716,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("aea", PalindromeKey) should be(Some(Palindrome))
 
                 // test that the other computations are not immediately executed/were executed
-                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+                ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
             }
 
             it("block other computations that request the property until the computation is complete") {
