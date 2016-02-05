@@ -89,13 +89,18 @@ object CHADemo extends DefaultOneStepAnalysis {
             opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
         } { t ⇒ println("OPA-CHA computation time: "+t.toSeconds) }
 
-        println("OPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
-        println("OPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
-        println("OPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
-        println("OPA (callableByOthers): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
-        println("OPA (methodAccess): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
-        println("OPA (inst): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
-
+        println("OPA (cbs resolution index): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("OPA (cbs analysis): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("OPA (entry points): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("OPA (clientCallable): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("OPA (method accessibility): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("OPA (instantiable classes index): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("OPA (cg construction): "+GlobalPerformanceEvaluation.getTime('const).toSeconds.toString(true))
+        println("OPA (invoke virtual): \t - "+GlobalPerformanceEvaluation.getTime('invokevirtual).toSeconds.toString(true))
+        println("OPA (invoke interface): \t - "+GlobalPerformanceEvaluation.getTime('invokeinterface).toSeconds.toString(true))
+        println("OPA (invoke special): \t - "+GlobalPerformanceEvaluation.getTime('invokespecial).toSeconds.toString(true))
+        println("OPA (invoke static): \t - "+GlobalPerformanceEvaluation.getTime('invokestatic).toSeconds.toString(true))
+        println("OPA (cg builder): \t - "+GlobalPerformanceEvaluation.getTime('cgbuilder).toSeconds.toString(true)+"\n\n")
         GlobalPerformanceEvaluation.resetAll()
 
         var cpaCCG: ComputedCallGraph = null
@@ -103,17 +108,24 @@ object CHADemo extends DefaultOneStepAnalysis {
             cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
         } { t ⇒ println("CPA-CHA computation time: "+t.toSeconds) }
 
-        println("CPA (cbs): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
-        println("CPA (cbst): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
-        println("CPA (ep): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
-        println("CPA (callableByOthers): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
-        println("CPA (methodAccess): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
-        println("CPA (inst): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("CPA (cbs resolution index): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("CPA (cbs analysis): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("CPA (entry points): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("CPA (clientCallable): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("CPA (method accessibility): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("CPA (instantiable classes index): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("CPA (cg construction): "+GlobalPerformanceEvaluation.getTime('const).toSeconds.toString(true))
+        println("CPA (invoke virtual): \t - "+GlobalPerformanceEvaluation.getTime('invokevirtual).toSeconds.toString(true))
+        println("CPA (invoke interface): \t - "+GlobalPerformanceEvaluation.getTime('invokeinterface).toSeconds.toString(true))
+        println("CPA (invoke special): \t - "+GlobalPerformanceEvaluation.getTime('invokespecial).toSeconds.toString(true))
+        println("CPA (invoke static): \t - "+GlobalPerformanceEvaluation.getTime('invokestatic).toSeconds.toString(true))
+        println("CPA (cg builder): \t - "+GlobalPerformanceEvaluation.getTime('cgbuilder).toSeconds.toString(true)+"\n\n")
 
         val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)
-        val newCpaCG = cpaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
+
         val newOpaCG = opaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
+        val newCpaCG = cpaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
 
         // ENTRY POINT INFO
 

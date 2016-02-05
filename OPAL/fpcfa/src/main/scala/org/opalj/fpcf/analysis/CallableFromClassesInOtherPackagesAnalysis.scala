@@ -40,6 +40,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.VoidType
 import org.opalj.br.LongType
 import org.opalj.br.IntegerType
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 sealed trait CallableFromClassesInOtherPackagesPropertyMetaInformation
@@ -135,9 +136,9 @@ class CallableFromClassesInOtherPackagesAnalysis private (
             val methodDescriptor = method.descriptor
 
             if (!classFile.isFinal) {
-                val subtypes = ListBuffer.empty ++= classHierarchy.directSubtypesOf(classType)
+                val subtypes = mutable.Queue.empty ++= classHierarchy.directSubtypesOf(classType)
                 while (subtypes.nonEmpty) {
-                    val subtype = subtypes.head
+                    val subtype = subtypes.dequeue()
                     project.classFile(subtype) match {
                         case Some(subclass) ⇒
                             if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
@@ -153,7 +154,6 @@ class CallableFromClassesInOtherPackagesAnalysis private (
                             // the project configuration is rather strange!
                             return ImmediateResult(method, Callable);
                     }
-                    subtypes -= subtype
                 }
             }
 
@@ -202,8 +202,8 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
     /**
      * Selects all non-static and non-abstract methods.
      */
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && !m.isAbstract ⇒ m
+    final def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
+        case m: Method if !m.isStatic && !m.isAbstract && !project.isLibraryType(project.classFile(m)) ⇒ m
     }
 
     override def derivedProperties: Set[PropertyKind] = {
@@ -212,7 +212,7 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
 
     protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }
 }

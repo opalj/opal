@@ -150,6 +150,7 @@ object CallGraphFactory {
         import java.util.concurrent.Callable
         import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
+        import org.opalj.util.GlobalPerformanceEvaluation
 
         val extractor = configuration.Extractor
         import extractor.extract
@@ -187,7 +188,7 @@ object CallGraphFactory {
             }
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](
-                ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1))
+                ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks, 1))
             )
 
         @inline def submitMethod(method: Method): Unit = {
@@ -223,58 +224,61 @@ object CallGraphFactory {
         // Initialization
         entryPoints foreach { method ⇒ submitMethod(method) }
 
-        val builder = new CallGraphBuilder(theProject)
-        var exceptions = List.empty[CallGraphConstructionException]
-        var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
-        var analyzedMethods = 0
-        while (futuresCount > 0) {
-            // 1. GET NEXT RESULT
-            val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception, cbsCallCount) =
-                completionService.take().get()
-            futuresCount -= 1
-            analyzedMethods += 1
+        GlobalPerformanceEvaluation.time('cgbuilder) {
 
-            if (debug && (analyzedMethods % 1000 == 0)) {
+            val builder = new CallGraphBuilder(theProject)
+            var exceptions = List.empty[CallGraphConstructionException]
+            var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+            var analyzedMethods = 0
+            while (futuresCount > 0) {
+                // 1. GET NEXT RESULT
+                val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception, cbsCallCount) =
+                    completionService.take().get()
+                futuresCount -= 1
+                analyzedMethods += 1
+
+                if (debug && (analyzedMethods % 1000 == 0)) {
+                    OPALLogger.info(
+                        "progress - call graph",
+                        s"analyzed: $analyzedMethods methods"
+                    )
+                }
+
+                // 2. ENQUE NEXT METHODS
+                if (callEdges.nonEmpty) {
+                    callEdges.foreach(_._2.foreach { m ⇒
+                        // A body may not be defined in two cases:
+                        // 1. the method is native
+                        // 2. the method belongs to the library and is loaded using the
+                        //    library class file loader which drops the implementation of
+                        //    methods.
+                        if (m.body.isDefined) {
+                            submitMethod(m)
+                        }
+                    })
+                }
+
+                // 3. PROCESS RESULTS
+                if (moreUnresolvedMethodCalls.nonEmpty)
+                    unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
+                if (exception.isDefined)
+                    exceptions = exception.get :: exceptions
+                builder.addCallEdges(callSite, cbsCallCount)
+            }
+
+            if (debug)
                 OPALLogger.info(
                     "progress - call graph",
-                    s"analyzed: $analyzedMethods methods"
+                    "finished analzying the bytecode, constructing the final call graph"
                 )
-            }
 
-            // 2. ENQUE NEXT METHODS
-            if (callEdges.nonEmpty) {
-                callEdges.foreach(_._2.foreach { m ⇒
-                    // A body may not be defined in two cases:
-                    // 1. the method is native
-                    // 2. the method belongs to the library and is loaded using the
-                    //    library class file loader which drops the implementation of
-                    //    methods.
-                    if (m.body.isDefined) {
-                        submitMethod(m)
-                    }
-                })
-            }
-
-            // 3. PROCESS RESULTS
-            if (moreUnresolvedMethodCalls.nonEmpty)
-                unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
-            if (exception.isDefined)
-                exceptions = exception.get :: exceptions
-            builder.addCallEdges(callSite, cbsCallCount)
-        }
-
-        if (debug)
-            OPALLogger.info(
-                "progress - call graph",
-                "finished analzying the bytecode, constructing the final call graph"
+            ComputedCallGraph(
+                builder.buildCallGraph,
+                findEntryPoints,
+                unresolvedMethodCalls,
+                exceptions
             )
-
-        ComputedCallGraph(
-            builder.buildCallGraph,
-            findEntryPoints,
-            unresolvedMethodCalls,
-            exceptions
-        )
+        }
     }
 }
 

@@ -67,7 +67,12 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
             val fpcfManager = project.get(FPCFAnalysesManagerKey)
             if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
                 fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
-            val entryPoints = getEntryPointsFromPropertyStore(project)
+        }
+
+        project.get(InstantiableClassesIndexKey)
+
+        val entryPoints = getEntryPointsFromPropertyStore(project)
+        time('const) {
             CallGraphFactory.create(
                 project, () ⇒ entryPoints,
                 new CHACallGraphAlgorithmConfiguration(project)

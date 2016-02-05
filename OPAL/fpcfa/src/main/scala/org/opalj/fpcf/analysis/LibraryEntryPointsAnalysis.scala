@@ -59,9 +59,9 @@ class LibraryEntryPointsAnalysis private (
     def determineProperty(method: Method): PropertyComputationResult = {
         val classFile = project.classFile(method)
 
-        if (project.isLibraryType(classFile))
-            //we are not interested in library classFiles
-            return NoResult;
+        //        if (project.isLibraryType(classFile))
+        //            //we are not interested in library classFiles
+        //            return NoResult;
 
         if (classFile.isInterfaceDeclaration) {
             if (isOpenLibrary)
@@ -86,7 +86,7 @@ class LibraryEntryPointsAnalysis private (
 
         import propertyStore.require
         val c_inst: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-            val isInstantiable = (dependeeP == Instantiable)
+            val isInstantiable = (dependeeP eq Instantiable)
             val isAbstractOrInterface = dependeeE match {
                 case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
                 case _             ⇒ false
@@ -95,12 +95,12 @@ class LibraryEntryPointsAnalysis private (
                 Result(method, IsEntryPoint)
             else {
                 val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (dependeeP == ClassLocal)
+                    if (dependeeP eq ClassLocal)
                         Result(method, NoEntryPoint)
-                    else if (dependeeP == Global && (isInstantiable || method.isStatic))
+                    else if ((dependeeP eq Global) && (isInstantiable || method.isStatic))
                         Result(method, IsEntryPoint)
-                    else if (dependeeP == Global && !isInstantiable && isAbstractOrInterface ||
-                        dependeeP == PackageLocal)
+                    else if ((dependeeP eq Global) && !isInstantiable && isAbstractOrInterface ||
+                        (dependeeP eq PackageLocal))
                         require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
                             leakageContinuation(method)
                         )
@@ -117,8 +117,8 @@ class LibraryEntryPointsAnalysis private (
 
 object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract && !m.isNative ⇒ m
+    final def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
+        case m: Method if !m.isAbstract && !m.isNative && !project.isLibraryType(project.classFile(m)) ⇒ m
     }
 
     override def derivedProperties: Set[PropertyKind] = Set(EntryPoint)
@@ -144,7 +144,7 @@ object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
         val analysis = new LibraryEntryPointsAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
+        propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }
 }
