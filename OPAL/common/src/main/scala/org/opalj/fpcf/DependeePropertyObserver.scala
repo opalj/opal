@@ -28,13 +28,42 @@
  */
 package org.opalj.fpcf
 
-private[fpcf] abstract class DefaultPropertyObserver(
-        final val depender:                SomeEPK,
-        final val removeAfterNotification: Boolean
+import java.util.concurrent.atomic.AtomicBoolean
+
+/**
+ * A property observer that can be associated with multiple
+ * entities and which ensures that the property update event is propagated at most once and
+ * which also removes itself from all observed entities by calling the given `deregisterObserver`
+ * method.
+ *
+ * @author Michael Eichberg
+ */
+private[fpcf] abstract class DependeePropertyObserver(
+        final val dependerEPK:        SomeEPK,
+        final val deregisterObserver: (SomeEPK) ⇒ _
 ) extends PropertyObserver {
+
+    private[this] val isExecuted = new AtomicBoolean(false)
+
+    final def deregister(): Unit = {
+        val isAlreadyExecuted = isExecuted.getAndSet(true)
+        if (!isAlreadyExecuted) {
+            deregisterObserver(dependerEPK)
+        }
+    }
+
+    final override def apply(e: Entity, p: Property, u: UpdateType): Unit = {
+        val isNotYetExecuted = isExecuted.compareAndSet(false, true)
+        if (isNotYetExecuted) {
+            deregisterObserver(dependerEPK)
+            propertyChanged(e, p, u)
+        }
+    }
+
+    def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString
-        s"PropertyObserver(depender=$depender,oneTimeOnly=$removeAfterNotification,id=$id)"
+        s"ShareablePropertyObserver(dependerEPK=$dependerEPK,isExecuted=${isExecuted.get},id=$id)"
     }
 }

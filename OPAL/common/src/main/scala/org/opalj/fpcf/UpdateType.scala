@@ -33,28 +33,31 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-private[fpcf] sealed abstract class UpdateType(name: String) {
+sealed abstract class UpdateType(name: String) {
     val id: Int
 }
+
+sealed abstract class UserUpdateType(name: String) extends UpdateType(name)
 
 /**
  * The result is just an intermediate result that may be refined in the future.
  */
-case object IntermediateUpdate extends UpdateType("Intermediate Update") {
+case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
     final val id = 1
 }
 
 /**
  * The result is the final result and was computed using other information.
  */
-case object FinalUpdate extends UpdateType("Final Update") {
+case object FinalUpdate extends UserUpdateType("Final Update") {
     final val id = 2
 }
 
 /**
  * The result is the final result and was computed without requiring any other information.
  */
-case object OneStepFinalUpdate extends UpdateType("Final Updated Without Dependencies") {
+private[fpcf] case object OneStepFinalUpdate
+        extends UpdateType("Final Updated Without Dependencies") {
     final val id = 3
 }
 
@@ -65,6 +68,6 @@ case object OneStepFinalUpdate extends UpdateType("Final Updated Without Depende
  * the updated value – at the point in time when it is handled - is no longer relevant
  * and has to be dropped.
  */
-case object FallbackUpdate extends UpdateType("Fallback Update") {
+private[fpcf] case object FallbackUpdate extends UpdateType("Fallback Update") {
     final val id = 4
 }

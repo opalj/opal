@@ -32,6 +32,7 @@ package concurrent
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
@@ -77,6 +78,37 @@ object Locking {
         } finally {
             if (isLocked) lock.unlock()
         }
+    }
+
+    @inline final def withWriteLocks(rwLocks: Seq[ReentrantReadWriteLock])(f: ⇒ Unit): Unit = {
+        var acquiredRWLocks: List[WriteLock] = Nil
+        var error: Throwable = null
+        val allLocked =
+            rwLocks.forall { rwLock ⇒
+                try {
+                    val l = rwLock.writeLock
+                    l.lock
+                    acquiredRWLocks = l :: acquiredRWLocks
+                    true
+                } catch {
+                    case t: Throwable ⇒ error = t; false
+                }
+            }
+
+        if (allLocked) {
+            try { f } catch { case t: Throwable ⇒ error = t }
+        }
+
+        acquiredRWLocks.foreach { rwLock ⇒
+            try {
+                rwLock.unlock()
+            } catch {
+                case t: Throwable ⇒
+                    if (error eq null) error = t // else something will fail anyway... 
+            }
+        }
+
+        if (error != null) throw error
     }
 
     /**
