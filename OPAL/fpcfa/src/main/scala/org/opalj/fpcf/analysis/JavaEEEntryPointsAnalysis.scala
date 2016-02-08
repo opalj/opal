@@ -56,29 +56,29 @@ class JavaEEEntryPointsAnalysis private (
     def determineProperty(classFile: ClassFile): PropertyComputationResult = {
 
         if (project.isLibraryType(classFile))
-            //we are not interested in library classFiles
-            return NoResult;
+            // the library does not contain the relevant entry points
+            return ImmediateMultiResult(classFile.methods.map(m ⇒ EP(m, NoEntryPoint)));
 
         val isAnnotated = classFile.annotations.size > 0
         val willBeInjected = InjectedClasses.isInjected(classFile)
-        val result = ListBuffer.empty[(Entity, Property)]
+        val result = ListBuffer.empty[SomeEP]
         val isWebFactory = project.classHierarchy.isSubtypeOf(classFile.thisType, ExceptionHandlerFactory).isYesOrUnknown
         classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
 
             if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (method.isConstructor && willBeInjected) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (method.isPrivate) {
-                result += ((method, NoEntryPoint))
+                result += EP(method, NoEntryPoint)
             } else if (method.isStaticInitializer) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (isAnnotated) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (hasAnnotatedSubtypeAndInheritsMethod(classFile, method)) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (isWebFactory && !method.isPrivate) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             }
         }
 
