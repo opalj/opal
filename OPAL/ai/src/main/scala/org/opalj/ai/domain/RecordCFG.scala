@@ -109,7 +109,7 @@ trait RecordCFG
      * If the instruction with the given `pc` was never executed and empty set is
      * returned.
      *
-     * @param a valid PC
+     * @param pc A valid program counter.
      */
     def predecessorsOf(pc: PC): PCs = {
         val predecessors = {
@@ -124,7 +124,7 @@ trait RecordCFG
                             val oldPredecessorsOfSuccessor = predecessors(successorPC)
                             predecessors(successorPC) =
                                 if (oldPredecessorsOfSuccessor == null) {
-                                    UShortSet(successorPC)
+                                    UShortSet(pc)
                                 } else {
                                     pc +≈: oldPredecessorsOfSuccessor
                                 }

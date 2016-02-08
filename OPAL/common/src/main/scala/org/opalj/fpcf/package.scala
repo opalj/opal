@@ -100,17 +100,13 @@ package object fpcf {
 
     type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
+    type OnUpdateContinuation = (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult
+
     /**
      * A function that continues the computation of a property. It takes
      * the entity + property of the entity on which the computation depends.
      */
     type Continuation = (Entity, Property) ⇒ PropertyComputationResult
-
-    /**
-     * The result of a computation if the computation derives multiple properties
-     * at the same time.
-     */
-    type ComputationResults = Traversable[(Entity, Property)]
 
     type SomePropertyKey = PropertyKey[_ <: Property]
 
@@ -121,26 +117,10 @@ package object fpcf {
     type SomeEP = EP[_ <: Property]
 
     /**
-     * A computation of a property that was restarted (under different properties)
-     * yielded the same result.
-     *
-     * @note This is just an alias for [[NoResult]].
+     * The result of a computation if the computation derives multiple properties
+     * at the same time.
      */
-    final val Unchanged: NoResult.type = NoResult
-
-    /**
-     * Computing a property for the a specific element is not/never possible.
-     *
-     * @note This is just an alias for [[NoResult]].
-     */
-    final val Impossible: NoResult.type = NoResult
-
-    /**
-     * The computation has no results (and there will be no results in the future!).
-     *
-     * @note This is just an alias for [[NoResult]].
-     */
-    final val Empty: NoResult.type = NoResult
+    type ComputationResults = Traversable[SomeEP]
 
     //
     //

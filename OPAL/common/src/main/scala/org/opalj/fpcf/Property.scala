@@ -35,8 +35,9 @@ import java.util.concurrent.CountDownLatch
  * property kind identified by a [[PropertyKey]]. Furthermore, each property
  * is associated with at most one property per property kind.
  *
- * Instances of SetProperty will always get negative ids [-X,...,-1] and instances of per
- * entity properties will get positive ids [0,...X]; to be precise the underlying property keys.
+ * ==Implementation Requirements==
+ * Each implementation of the property trait has to implement an equals method that
+ * determines if two properties are equal.
  *
  * @author Michael Eichberg
  */
@@ -52,6 +53,11 @@ trait Property extends PropertyMetaInformation {
      *  Returns `true` if this property is always final and no refinement is possible.
      */
     def isFinal = !isRefineable
+
+    /**
+     *
+     */
+    override def equals(other: Any): Boolean
 
     /**
      * Returns true if the this property is currently computed or if a computation is already
@@ -95,7 +101,7 @@ private[fpcf] object PropertyIsDirectlyComputed {
     def apply(p: Property): Boolean = (p ne null) && p.isInstanceOf[PropertyIsDirectlyComputed]
 }
 
-private[fpcf] object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
+private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
     type Self = PropertyIsLazilyComputed.type
 }
 

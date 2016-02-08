@@ -29,30 +29,25 @@
 package org.opalj.fpcf
 
 /**
- * A PropertyObserver is a function that is called if the property associated
+ * A `PropertyObserver` is a function that is called if the property associated
  * with the respective entity is computed or refined.
  *
  * The parameters of the function are the observed element (dependee) and its
  * (then available/refined) property.
  *
  * ==Core Properties==
- * A `PropertyObserver` never directly executes/continues the analysis but schedules it if
- * necessary.
+ * All implementations of a `PropertyObserver` never directly execute/continue
+ * the analysis but schedules it if necessary.
  *
  * @author Michael Eichberg
  */
-private[fpcf] trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
+private[fpcf] trait PropertyObserver extends ((Entity, Property, UpdateType) ⇒ Unit) {
 
     /**
      * The entity and property key for which the property of the observed element
      * is necessary.
      */
-    def depender: SomeEPK
+    def dependerEPK: SomeEPK
 
-    /**
-     * If `true` this observer is immediately deregistered when it is called (for the
-     * first time).
-     */
-    def removeAfterNotification: Boolean
 }
 

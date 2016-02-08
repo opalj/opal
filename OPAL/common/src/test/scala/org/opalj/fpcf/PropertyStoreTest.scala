@@ -33,6 +33,7 @@ import org.junit.runner.RunWith
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.collection.{Set ⇒ SomeSet}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -81,6 +82,19 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case object Palindrome extends PalindromeProperty
     case object NoPalindrome extends PalindromeProperty
 
+    final val BitsKey = {
+        PropertyKey.create[BitsProperty](
+            "Bits",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    case class BitsProperty(bits: Int) extends Property {
+        type Self = BitsProperty
+        def key = BitsKey
+        def isRefineable = false
+    }
+
     // HERE: we consider a palindrome to be a super palindrome if the lead is itself a 
     //         a palindrom. E.g. aa => Lead: a => Palindrome => aa => SuperPalindrome
     final val SuperPalindromeKey = {
@@ -122,7 +136,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             case that: Node ⇒ this.name equals that.name
             case _          ⇒ false
         }
-        override def toString: String = s"Node($name -> {${targets.map(_.name).mkString(",")}})"
+        //override def toString: String = s"""$name->{${targets.map(_.name).mkString(",")}}"""
+        override def toString: String = name
     }
     object Node { def apply(name: String) = new Node(name) }
     val nodeA = Node("a")
@@ -133,14 +148,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     val nodeR = Node("R")
     nodeA.targets += nodeB // the graph:
     nodeB.targets += nodeC // a -> b -> c
-    nodeB.targets += nodeD //      b -> d
+    nodeB.targets += nodeD //        ↘︎ d
     nodeD.targets += nodeD //           d ⟲
     nodeD.targets += nodeE //           d -> e
     nodeE.targets += nodeR //                e -> r
-    nodeR.targets += nodeB //       ↖︎----------< r
+    nodeR.targets += nodeB //       ↖︎-----------↵︎
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
     val psNodes: PropertyStore = {
-        PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        PropertyStore(nodeEntities, () ⇒ false, debug = true)(GlobalLogContext)
     }
 
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
@@ -148,14 +163,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             "ReachableNodes",
             (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/ ,
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
-                // in case of a cycle we collect all current targets of all members of the 
-                // cycle and assign the result to "one" member (the property store's
-                // propagation mechanism will take care of the rest...
-                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
-                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
-                }
-                val epk = epks.head
-                Iterable(Result(epk.e, ReachableNodes(allReachableNodes)))
+                //                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
+                //                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
+                //                }
+                //                val epk = epks.head
+                //                Iterable(Result(epk.e, ReachableNodes(allReachableNodes)))
+                // Cycles are completely handled by the analysis;
+                // i.e., we do not need to lift the results!
+                Iterable.empty
             }
         )
     }
@@ -164,7 +179,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         def key = ReachableNodesKey
         def isRefineable = true
     }
-    object NoReachableNodes extends ReachableNodes(Set.empty)
+    object NoReachableNodes extends ReachableNodes(Set.empty) {
+        override def toString: String = "NoReachableNodes"
+    }
+
+    if (NoReachableNodes != NoReachableNodes) fail("comparison of ReachableNodes properties failed")
 
     override def afterEach(): Unit = {
         psStrings.waitOnPropertyComputationCompletion(false)
@@ -215,7 +234,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
         @volatile var doInterrupt = false
         val ps = PropertyStore(entities, () ⇒ doInterrupt, debug = false)(GlobalLogContext)
-        ps << { e: Entity ⇒ triggeredComputations.incrementAndGet(); Thread.sleep(50); NoResult }
+        ps << { e: Entity ⇒
+            triggeredComputations.incrementAndGet()
+            Thread.sleep(50)
+            ImmediateResult(e, BitsProperty(Integer.bitCount(e.asInstanceOf[Integer])))
+        }
         doInterrupt = true
         ps.waitOnPropertyComputationCompletion(false)
 
@@ -302,8 +325,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             ps.waitOnPropertyComputationCompletion(true)
 
-            ps.entities { p ⇒ p == NoPalindrome } should be(Set("ab", "bc", "cd"))
-            ps.entities { p ⇒ p == Palindrome } should be(
+            ps.entities(p ⇒ p == NoPalindrome).toSet should be(Set("ab", "bc", "cd"))
+            ps.entities(p ⇒ p == Palindrome).toSet should be(
                 Set("aa", "bb", "cc", "aaa", "aea", "aabbcbbaa",
                     "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
@@ -329,8 +352,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             ps.waitOnPropertyComputationCompletion(true)
 
-            ps.entities { p ⇒ p == NoPalindrome } should be(Set("ab", "bc", "cd"))
-            ps.entities { p ⇒ p == Palindrome } should be(
+            ps.entities(p ⇒ p == NoPalindrome).toSet should be(Set("ab", "bc", "cd"))
+            ps.entities(p ⇒ p == Palindrome).toSet should be(
                 Set("aa", "bb", "cc", "aaaffffffaaa", "aaaffffffffffffffffaaa")
             )
         }
@@ -455,48 +478,152 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 results(NoPalindrome) should be(Set("ab", "bc", "cd"))
             }
 
-            it("should be triggered whenever the property is updated") {
+            it("should be triggered whenever the property is updated and supports an incremental update based on the given property") {
                 import scala.collection.mutable
                 val ps = psNodes
 
-                /* The following analysis collects all nodes a node is connected with (transitive 
-                 * closure).
+                /* The following analysis only uses the new information given to it and updates
+                 * the set of observed dependees.
                  */
-                var exception: Throwable = null
                 def analysis(n: Node): PropertyComputationResult = {
-                    try {
-                        val targets: mutable.Set[Node] = n.targets
-                        if (targets.isEmpty) {
-                            ImmediateResult(n, NoReachableNodes);
-                        } else {
-                            val dependeePs = ps(targets, ReachableNodesKey)
-                            def c(dependeeE: Entity, dependeeP: Property): PropertyComputationResult = {
-                                val targetNodes = ps(n, ReachableNodesKey).get.nodes // get the currently accumulated targets
-                                val ReachableNodes(dependeeTargets) = dependeeP
-                                if (!dependeeTargets.subsetOf(targetNodes)) {
-                                    val newTargetNodes = targetNodes ++ dependeeTargets
-                                    val newP = ReachableNodes(newTargetNodes)
-                                    IntermediateResult(n, newP, dependeePs /*FIXME*/ , c)
-                                } else {
-                                    Unchanged
-                                }
-                            }
-                            val targetNodes = dependeePs.foldLeft(targets.clone) { (reachableNodes, dependee) ⇒
-                                if (dependee.hasProperty)
-                                    reachableNodes ++ dependee.p.nodes
-                                else
-                                    reachableNodes
-                            }
-                            val intermediateP = ReachableNodes(targetNodes)
+                    val nTargets = n.targets
+                    if (nTargets.isEmpty)
+                        return ImmediateResult(n, NoReachableNodes);
 
-                            IntermediateResult(n, intermediateP, dependeePs, c)
+                    val allDependees: mutable.Set[Node] = nTargets.clone
+                    var dependeePs: Traversable[EOptionP[_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
+
+                    // incremental computation
+                    def c(
+                        dependeeE:  Entity,
+                        dependeeP:  Property,
+                        updateType: UpdateType
+                    ): PropertyComputationResult = {
+                        // Get the set of currently reachable nodes:
+                        val alreadyReachableNodes: SomeSet[Node] =
+                            ps(n, ReachableNodesKey) match {
+                                case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                case None                                 ⇒ Set.empty
+                            }
+                        // Get the set of nodes reached by the dependee:
+                        val ReachableNodes(depeendeeReachableNodes) = dependeeP
+
+                        // Compute the new set of reachable nodes:
+                        val newReachableNodes = alreadyReachableNodes ++ depeendeeReachableNodes
+                        val newP = ReachableNodes(newReachableNodes)
+
+                        // Adapt the set of dependeePs to ensure termination
+                        dependeePs = dependeePs.filter { _.e ne dependeeE }
+                        if (updateType != FinalUpdate) {
+                            dependeePs = dependeePs ++ Traversable(EP(dependeeE, dependeeP.asInstanceOf[ReachableNodes]))
                         }
-                    } catch { case t: Throwable ⇒ exception = t; throw t }
+                        if (dependeePs.nonEmpty)
+                            IntermediateResult(n, newP, dependeePs, c)
+                        else
+                            Result(n, newP)
+                    }
+
+                    // initial computation
+                    val reachableNodes =
+                        dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
+                            if (dependee.hasProperty)
+                                reachableNodes ++ dependee.p.nodes
+                            else
+                                reachableNodes
+                        }
+                    val intermediateP = ReachableNodes(reachableNodes)
+                    IntermediateResult(n, intermediateP, dependeePs, c)
                 }
 
                 ps <||< ({ case n: Node ⇒ n }, analysis)
                 ps.waitOnPropertyComputationCompletion(true)
 
+                println(ps.toString(true))
+                // the graph:
+                // a -> b -> c
+                //      b -> d
+                //           d ⟲
+                //           d -> e
+                //                e -> r
+                //       ↖︎----------< r
+                ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            }
+
+            it("should be triggered whenever the property is updated and supports a complete update based on a query of the store's value") {
+                import scala.collection.mutable
+                val ps = psNodes
+
+                /* The following analysis collects all nodes a node is connected with (i.e.,
+                 * it computes the transitive closure).
+                 */
+                def analysis(n: Node): PropertyComputationResult = {
+                    val nTargets = n.targets
+                    if (nTargets.isEmpty)
+                        return ImmediateResult(n, NoReachableNodes);
+
+                    val remainingDependees: mutable.Set[Node] = nTargets.clone
+                    def c(
+                        dependeeE:  Entity,
+                        dependeeP:  Property,
+                        updateType: UpdateType
+                    ): PropertyComputationResult = {
+                        // Get the set of currently reachable nodes.
+                        val alreadyReachableNodes: SomeSet[Node] =
+                            ps(n, ReachableNodesKey) match {
+                                case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                case None                                 ⇒ Set.empty
+                            }
+                        // Whenever we continue a computation we have have to query
+                        // all relevant entities about their "current" properties.
+                        // This is strictly necessary to ensure termination because the
+                        // property store uses this information to decide whether to immediately
+                        // continue the computation or not.
+                        val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                        val dependeesReachableNodes =
+                            dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
+                                if (dependee.hasProperty)
+                                    reachableNodes ++ dependee.p.nodes
+                                else
+                                    reachableNodes
+                            }
+
+                        val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
+                        val newP = ReachableNodes(newReachableNodes)
+
+                        if (updateType == FinalUpdate) {
+                            remainingDependees -= dependeeE.asInstanceOf[Node]
+                            val filteredDependeePs = dependeePs.filter { _.e ne dependeeE }
+                            if (filteredDependeePs.nonEmpty)
+                                IntermediateResult(n, newP, filteredDependeePs, c)
+                            else
+                                Result(n, newP)
+                        } else {
+                            IntermediateResult(n, newP, dependeePs, c)
+                        }
+                    }
+
+                    // initial computation
+                    val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                    val reachableNodes =
+                        dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
+                            if (dependee.hasProperty)
+                                reachableNodes ++ dependee.p.nodes
+                            else
+                                reachableNodes
+                        }
+                    val intermediateP = ReachableNodes(reachableNodes)
+                    IntermediateResult(n, intermediateP, dependeePs, c)
+                }
+
+                ps <||< ({ case n: Node ⇒ n }, analysis)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                println(ps.toString(true))
                 // the graph:
                 // a -> b -> c
                 //      b -> d
@@ -560,10 +687,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 @volatile var superPalindromeCompleted = false
                 // triggers the computation of "PalindromeProperty
-                val pcr = ps.allHaveProperty("aa", SuperPalindromeKey, List("a"), Palindrome) { aIsPalindrome ⇒
-                    superPalindromeCompleted = true
-                    Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
-                }
+                val pcr = ps.allHaveProperty(
+                    "aa", SuperPalindromeKey,
+                    List("a"), Palindrome
+                ) { aIsPalindrome ⇒
+                        superPalindromeCompleted = true
+                        Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
+                    }
                 pcr shouldBe a[SuspendedPC[_]]
 
                 // We can explicitly add results though this is generally not required in a well
@@ -588,9 +718,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps <<? (PalindromeKey, palindromePC)
 
                 // triggers the computation of "PalindromeProperty
-                val pcr = ps.allHaveProperty("aaa", SuperPalindromeKey, List("a", "aa"), Palindrome) { arePalindromes ⇒
-                    Result("aaa", if (arePalindromes) SuperPalindrome else NoSuperPalindrome)
-                }
+                val pcr =
+                    ps.allHaveProperty(
+                        "aaa", SuperPalindromeKey,
+                        List("a", "aa"), Palindrome
+                    ) { arePalindromes ⇒
+                            Result("aaa", if (arePalindromes) SuperPalindrome else throw new UnknownError)
+                        }
                 pcr shouldBe a[SuspendedPC[_]]
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
@@ -660,7 +794,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("aea", StringLengthKey) should be(Some(StringLength(3)))
 
                 // test that the other computations are not immediately executed were executed
-                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+                ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
             }
 
             it("should not be triggered for those that are queried using \"allHaveProperty\" if the query fails early") {
@@ -709,7 +843,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps("aea", PalindromeKey) should be(Some(Palindrome))
 
                 // test that the other computations are not immediately executed/were executed
-                ps.entities { p ⇒ true } should be(Set("a", "aea"))
+                ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
             }
 
             it("block other computations that request the property until the computation is complete") {
