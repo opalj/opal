@@ -36,6 +36,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * which also removes itself from all observed entities by calling the given `deregisterObserver`
  * method.
  *
+ * This property observer can only be used if - for the computation of one kind of property of an
+ * entity - only one instance of an observer is used. I.e., it is not possible to have multiple
+ * observers observing different properties as we have no means to coordinate them.
+ *
  * @author Michael Eichberg
  */
 private[fpcf] abstract class DependeePropertyObserver(
@@ -64,6 +68,6 @@ private[fpcf] abstract class DependeePropertyObserver(
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString
-        s"ShareablePropertyObserver(dependerEPK=$dependerEPK,isExecuted=${isExecuted.get},id=$id)"
+        s"DependeePropertyObserver(dependerEPK=$dependerEPK,isExecuted=${isExecuted.get},id=$id)"
     }
 }
