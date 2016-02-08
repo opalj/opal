@@ -52,7 +52,7 @@ class FieldUpdatesAnalysis private (
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
         var effectivelyFinalFields = psnfFields
         if (psnfFields.isEmpty)
-            return Empty;
+            return NoEntities;
 
         val concreteMethods = classFile.methods filter { m ⇒
             !m.isStaticInitializer /*the static initializer is only executed once and at the beginning */ &&
@@ -70,7 +70,7 @@ class FieldUpdatesAnalysis private (
                         val field = classFile.findField(fieldName)
                         if (field.isDefined) { effectivelyFinalFields -= field.get }
                         if (effectivelyFinalFields.isEmpty)
-                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinalByAnalysis)));
+                            return ImmediateMultiResult(psnfFields.map(f ⇒ EP(f, NonFinalByAnalysis)));
                     case _ ⇒
                     /*Nothing to do*/
                 }
@@ -79,9 +79,9 @@ class FieldUpdatesAnalysis private (
 
         val results = psnfFields map { f ⇒
             if (effectivelyFinalFields.contains(f))
-                (f, EffectivelyFinal)
+                EP(f, EffectivelyFinal)
             else
-                (f, NonFinalByAnalysis)
+                EP(f, NonFinalByAnalysis)
         }
         ImmediateMultiResult(results)
     }

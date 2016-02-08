@@ -34,6 +34,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
+
 case object IsExtensible extends SetProperty[ClassFile]
 
 /**
@@ -47,9 +48,7 @@ case object IsExtensible extends SetProperty[ClassFile]
  *
  * @author Michael Reif
  */
-class ClassExtensibilityAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Computes the extensibility of a class or an interface and their supertypes w.r.t. to future types. (e.i. in libraries)

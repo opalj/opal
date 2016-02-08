@@ -280,9 +280,6 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         method: Method
     ): PropertyComputationResult = {
 
-        /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
-            /* FOR TESTING PURPOSES!!!!! */ return Impossible;
-
         // Due to a lack of knowledge, we classify all native methods or methods that
         // belong to a library (and hence lack the body) as impure...
         if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
