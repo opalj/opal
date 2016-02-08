@@ -478,14 +478,89 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 results(NoPalindrome) should be(Set("ab", "bc", "cd"))
             }
 
-            it("should be triggered whenever the property is updated") {
+            it("should be triggered whenever the property is updated and supports an incremental update based on the given property") {
+                import scala.collection.mutable
+                val ps = psNodes
+
+                /* The following analysis only uses the new information given to it and updates
+                 * the set of observed dependees.
+                 */
+                def analysis(n: Node): PropertyComputationResult = {
+                    val nTargets = n.targets
+                    if (nTargets.isEmpty)
+                        return ImmediateResult(n, NoReachableNodes);
+
+                    val allDependees: mutable.Set[Node] = nTargets.clone
+                    var dependeePs: Traversable[EOptionP[_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
+
+                    // incremental computation
+                    def c(
+                        dependeeE:  Entity,
+                        dependeeP:  Property,
+                        updateType: UpdateType
+                    ): PropertyComputationResult = {
+                        // Get the set of currently reachable nodes:
+                        val alreadyReachableNodes: SomeSet[Node] =
+                            ps(n, ReachableNodesKey) match {
+                                case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                case None                                 ⇒ Set.empty
+                            }
+                        // Get the set of nodes reached by the dependee:
+                        val ReachableNodes(depeendeeReachableNodes) = dependeeP
+
+                        // Compute the new set of reachable nodes:
+                        val newReachableNodes = alreadyReachableNodes ++ depeendeeReachableNodes
+                        val newP = ReachableNodes(newReachableNodes)
+
+                        // Adapt the set of dependeePs to ensure termination
+                        dependeePs = dependeePs.filter { _.e ne dependeeE }
+                        if (updateType != FinalUpdate) {
+                            dependeePs = dependeePs ++ Traversable(EP(dependeeE, dependeeP.asInstanceOf[ReachableNodes]))
+                        }
+                        if (dependeePs.nonEmpty)
+                            IntermediateResult(n, newP, dependeePs, c)
+                        else
+                            Result(n, newP)
+                    }
+
+                    // initial computation
+                    val reachableNodes =
+                        dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
+                            if (dependee.hasProperty)
+                                reachableNodes ++ dependee.p.nodes
+                            else
+                                reachableNodes
+                        }
+                    val intermediateP = ReachableNodes(reachableNodes)
+                    IntermediateResult(n, intermediateP, dependeePs, c)
+                }
+
+                ps <||< ({ case n: Node ⇒ n }, analysis)
+                ps.waitOnPropertyComputationCompletion(true)
+
+                println(ps.toString(true))
+                // the graph:
+                // a -> b -> c
+                //      b -> d
+                //           d ⟲
+                //           d -> e
+                //                e -> r
+                //       ↖︎----------< r
+                ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            }
+
+            it("should be triggered whenever the property is updated and supports a complete update based on a query of the store's value") {
                 import scala.collection.mutable
                 val ps = psNodes
 
                 /* The following analysis collects all nodes a node is connected with (i.e.,
                  * it computes the transitive closure).
                  */
-                // var exception: Throwable = null
                 def analysis(n: Node): PropertyComputationResult = {
                     val nTargets = n.targets
                     if (nTargets.isEmpty)
