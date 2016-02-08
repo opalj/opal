@@ -45,7 +45,9 @@ sealed trait PropertyComputationResult {
  * dependent computations (observers).
  */
 case class Result(e: Entity, p: Property) extends PropertyComputationResult {
+
     private[fpcf] final def id = Result.id
+
 }
 
 /**
@@ -57,7 +59,9 @@ case class Result(e: Entity, p: Property) extends PropertyComputationResult {
  * dependent computations (observers).
  */
 case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult {
+
     private[fpcf] final val id = ImmediateResult.id
+
 }
 private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
 
@@ -67,6 +71,7 @@ private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
 object Result {
 
     private[fpcf] final val id = 3
+
 }
 
 /**
@@ -77,7 +82,9 @@ object Result {
  * dependent computations (observers).
  */
 case class MultiResult(properties: ComputationResults) extends PropertyComputationResult {
+
     private[fpcf] final def id = MultiResult.id
+
 }
 private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
 
@@ -90,7 +97,9 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  * dependent computations (observers).
  */
 case class ImmediateMultiResult(properties: ComputationResults) extends PropertyComputationResult {
+
     private[fpcf] final val id = ImmediateMultiResult.id
+
 }
 private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
 
@@ -98,13 +107,10 @@ private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
  * Encapsulates an intermediate result of the computation of a property.
  *
  * Intermediate results are to be used if further refinements are possible and may happen.
- *
- * All current computations (incoming dependencies)
- * depending on the given entry's property remain registered and will be invoked in the future
- * if another `IntermediateResult` or `Result` is computed for the specified entity `e`.
- *
- * Furthermore, if a property of any of the dependees changes (outgoing dependencies),
+ * Hence, if a property of any of the dependees changes (outgoing dependencies),
  * the given continuation `c` is invoked.
+ *
+ * All current computations that depend on the property of the entity will be invoked.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  * 		before (using one of the `apply` functions of the property store.)
@@ -115,6 +121,7 @@ case class IntermediateResult(
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
+
     private[fpcf] final def id = IntermediateResult.id
 
     override def hashCode: Int = (e.hashCode * 13 + p.hashCode) * 17 + dependees.hashCode
@@ -130,12 +137,9 @@ case class IntermediateResult(
             case _ ⇒ false
         }
     }
-    override def toString: String = {
-        "IntermediateResult"+
-            "("+
-            s"$e,$p,dependees=${dependees.mkString("{", ",", "}")}"+
-            ")"
 
+    override def toString: String = {
+        s"IntermediateResult($e,$p,dependees=${dependees.mkString("{", ",", "}")})"
     }
 }
 private[fpcf] object IntermediateResult { private[fpcf] final val id = 5 }
