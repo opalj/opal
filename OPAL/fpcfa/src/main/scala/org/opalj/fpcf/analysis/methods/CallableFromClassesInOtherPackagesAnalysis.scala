@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -30,78 +30,69 @@
 package org.opalj
 package fpcf
 package analysis
+package methods
 
+import org.opalj.br.BooleanType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor._
-import org.opalj.br.BooleanType
+import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
-import org.opalj.br.LongType
-import org.opalj.br.IntegerType
+import org.opalj.br.analyses.SomeProject
+
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
-sealed trait CallableFromClassesInOtherPackagesPropertyMetaInformation
-        extends PropertyMetaInformation {
-    final type Self = CallableFromClassesInOtherPackages
+/** Determines for each method if it potentially can be directly called by a client.
+  * This can happens if:
+  * - the method is directly visible to the client
+  * - the method can become visible by a visible subclass which inherits the respective method
+  * - the method can become pseudo-visible by a call on a superclass/interface (if the class is upcasted)
+  *
+  * @note This property is computed on-demand by a direct property computation.
+  * @author Michael Reif
+  */
+sealed trait ClientCallable extends Property {
+    final type Self = ClientCallable
+
+    final def key = ClientCallableKey
+
+    final def isRefineable = false
 }
 
-/**
- * This property expresses the leakage of methods to the client such that
- * the method can be called by a client. A method does only leak if it gets accessible
- * though inheritance where a immediate non-abstract subclass inherits the target method.
- */
-sealed trait CallableFromClassesInOtherPackages
-        extends Property
-        with CallableFromClassesInOtherPackagesPropertyMetaInformation {
-    final def key = CallableFromClassesInOtherPackages.key
-}
+case object IsClientCallable extends ClientCallable
 
-object CallableFromClassesInOtherPackages
-        extends CallableFromClassesInOtherPackagesPropertyMetaInformation {
-    final val key = PropertyKey.create("CallableFromClassesInOtherPackages", Callable)
-}
+case object NotClientCallable extends ClientCallable
 
-case object Callable extends CallableFromClassesInOtherPackages {
-    final val isRefineable: Boolean = false
-}
-
-case object NotCallable extends CallableFromClassesInOtherPackages {
-    final val isRefineable: Boolean = false
-}
-
-/**
- * This Analysis determines the ´LibraryLeakage´ property of a method. A method is considered as leaked
- * if it is overridden in every immediate non-abstract subclass.
- *
- * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
- * also always overridden.
- * {{{
- * 		/*package visible*/ class C { public Object m() }
- * 		/*package visible*/ abstract class A extends C { /*empty*/ }
- * 		public class B extends A { public Object m() }
- * }}}
- *
- *  @author Michael Reif
- */
+/** This Analysis determines the ´ClientCallable´ property of a method. A method is considered as leaked
+  * if it is overridden in every immediate non-abstract subclass.
+  *
+  * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
+  * also always overridden.
+  * {{{
+  * 		/*package visible*/ class C { public Object m() }
+  * 		/*package visible*/ abstract class A extends C { /*empty*/ }
+  * 		public class B extends A { public Object m() }
+  * }}}
+  *
+  * @author Michael Reif
+  */
 class CallableFromClassesInOtherPackagesAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+    val project: SomeProject) extends FPCFAnalysis {
 
-    /**
-     * Determines the [[CallableFromClassesInOtherPackages]] property of non-static methods.
-     * It is tailored to entry point set computation where we have to consider different kind of
-     * program/library usage scenarios.
-     * Computational differences regarding static methods are :
-     *  - private methods can be handled equal in every context
-     *  - if OPA is met, all package visible classes are visible which implies that all non-private methods are
-     *    visible too
-     *  - if CPA is met, methods in package visible classes are not visible by default.
-     *
-     */
-    def determineProperty(method: Method): PropertyComputationResult = {
+    /** Determines the [[ClientCallable]] property of non-static methods.
+      * It is tailored to entry point set computation where we have to consider different kind of
+      * program/library usage scenarios.
+      * Computational differences regarding static methods are :
+      * - private methods can be handled equal in every context
+      * - if OPA is met, all package visible classes are visible which implies that all non-private methods are
+      *   visible too
+      * - if CPA is met, methods in package visible classes are not visible by default.
+      *
+      */
+    def determineProperty(e: Entity): Property = {
+        val method = e.asInstanceOf[Method]
 
         import org.opalj.util.GlobalPerformanceEvaluation
 
@@ -109,25 +100,25 @@ class CallableFromClassesInOtherPackagesAnalysis private (
 
             if (method.isPrivate)
                 /* private methods are only visible in the scope of the class */
-                return ImmediateResult(method, NotCallable);
+                return NotClientCallable;
 
             if (isOpenLibrary)
-                return ImmediateResult(method, Callable);
+                return IsClientCallable;
 
             //we are now either analyzing a library under CPA or an application.
             if (method.isPackagePrivate || method.isConstructor)
                 /* a package private method can not leak to the client under CPA */
-                return ImmediateResult(method, NotCallable);
+                return NotClientCallable;
 
             val classFile = project.classFile(method)
             if (classFile.isEffectivelyFinal && !method.isPublic)
-                return ImmediateResult(method, NotCallable);
+                return NotClientCallable;
 
-            // When we reach this point:
+            // From now on, we have the following conditions:
             // - the method is public or protected
             // - the class is not final
             if (classFile.isPublic)
-                return ImmediateResult(method, Callable);
+                return IsClientCallable;
 
             val classHierarchy = project.classHierarchy
 
@@ -135,29 +126,31 @@ class CallableFromClassesInOtherPackagesAnalysis private (
             val methodName = method.name
             val methodDescriptor = method.descriptor
 
+            // From now on we operate with a package private class
+            // We first check whether the method is inherited by a visible subclass
             if (!classFile.isFinal) {
                 val subtypes = mutable.Queue.empty ++= classHierarchy.directSubtypesOf(classType)
                 while (subtypes.nonEmpty) {
                     val subtype = subtypes.dequeue()
                     project.classFile(subtype) match {
                         case Some(subclass) ⇒
-                            if (subclass.findMethod(methodName, methodDescriptor).isEmpty)
+                            if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
                                 if (subclass.isPublic) {
                                     // the original method is now visible (and not shadowed)
-                                    return ImmediateResult(method, Callable);
+                                    return IsClientCallable;
                                 } else
                                     subtypes ++= classHierarchy.directSubtypesOf(subtype)
-
+                            }
                         // we need to continue our search for a class that makes the method visible
                         case None ⇒
                             // The type hierarchy is obviously not downwards closed; i.e.,
                             // the project configuration is rather strange!
-                            return ImmediateResult(method, Callable);
+                            return IsClientCallable;
                     }
                 }
             }
 
-            //Now: A method does not leak through a subclass, but we also have to check the superclasses
+            //Now: A method does not become visible through a public subclass, but we also have to check the superclasses
             val EqualsSignature = MethodDescriptor(ObjectType.Object, BooleanType)
             val BasicWaitSignature = MethodDescriptor(LongType, VoidType)
             val PreciseWaitSignature = MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)
@@ -168,7 +161,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
                         if (declMethod.isDefined) {
                             val m = declMethod.get
                             if ((m.isPublic || m.isProtected) && superclass.isPublic)
-                                return ImmediateResult(method, Callable);
+                                return IsClientCallable;
                         }
                     }
                     case None if supertype eq ObjectType.Object ⇒
@@ -184,35 +177,33 @@ class CallableFromClassesInOtherPackagesAnalysis private (
                                 ("wait", NoArgsAndReturnVoid) |
                                 ("wait", BasicWaitSignature) |
                                 ("wait", PreciseWaitSignature) ⇒
-                                return ImmediateResult(method, Callable);
+                                return IsClientCallable;
                             case _ ⇒ /* nothing leaks */
                         }
                     case _ ⇒
-                        return ImmediateResult(method, Callable);
+                        return IsClientCallable;
                 }
             }
 
-            ImmediateResult(method, NotCallable)
+            NotClientCallable
         }
     }
 }
 
 object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
 
-    /**
-     * Selects all non-static and non-abstract methods.
-     */
-    final def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
-        case m: Method if !m.isStatic && !m.isAbstract && !project.isLibraryType(project.classFile(m)) ⇒ m
-    }
+    //    /**
+    //     * Selects all non-static and non-abstract methods.
+    //     */
+    //    final def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
+    //        case m: Method if !m.isStatic && !m.isAbstract && !project.isLibraryType(project.classFile(m)) ⇒ m
+    //    }
 
-    override def derivedProperties: Set[PropertyKind] = {
-        Set(CallableFromClassesInOtherPackages)
-    }
+    override def derivedProperties: Set[PropertyKind] = Set(ClientCallableKey)
 
     protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore <||< (entitySelector(project), analysis.determineProperty)
+        propertyStore <<! (ClientCallableKey, analysis.determineProperty)
         analysis
     }
 }

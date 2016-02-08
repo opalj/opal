@@ -36,7 +36,7 @@ import org.opalj.fpcf.test.annotations.CallabilityKeys
 /**
  * @author Michael Reif
  */
-abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
     def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
 
@@ -46,7 +46,7 @@ abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFi
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 
-    override def propertyKey: PropertyKey[CallableFromClassesInOtherPackages] = CallableFromClassesInOtherPackages.key
+    override def propertyKey: PropertyKey[ClientCallable] = CallableFromClassesInOtherPackages.key
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
@@ -54,12 +54,12 @@ abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFi
     def defaultValue = CallabilityKeys.Callable.toString
 }
 
-class CallableFromClassesInOtherPackagesAnalysisCPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
+class ClientCallableAnalysisCPATest
+        extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class CallableFromClassesInOtherPackagesAnalysisOPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
+class ClientCallableAnalysisOPATest
+        extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

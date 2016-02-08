@@ -67,7 +67,7 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
             executer.run(CallableFromClassesInOtherPackagesAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == Callable }
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsCallable }
 
         val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒ p == NotCallable }
         BasicReport(

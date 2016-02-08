@@ -71,7 +71,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
 
                 if (isClosedLibrary &&
                     cbsCalleeDeclaringClass.isPackageVisible &&
-                    (propertyStore(cbsCallee, ClientCallableKey).get eq NotClientCallable))
+                    (propertyStore(cbsCallee, ClientInheritableKey).get eq NotClientInheritable))
                     return ;
 
                 cbsTargets += cbsCallee
@@ -134,7 +134,7 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(CallBySignatureKey)
 
-    override def usedProperties: Set[PropertyKind] = Set(ClientCallableKey)
+    override def usedProperties: Set[PropertyKind] = Set(ClientInheritableKey)
 
     override def requirements: Set[FPCFAnalysisRunner] = Set(CallableByClientAnalysis)
 
