@@ -220,11 +220,11 @@ class PropertyStore private (
     @inline final private[this] def accessEntity[B](f: ⇒ B) = withReadLock(StoreLock)(f)
     @inline final private[this] def accessStore[B](f: ⇒ B) = withWriteLock(StoreLock)(f)
 
-    @inline final private[this] def withEntitiesWriteLocks(
+    @inline final private[this] def withEntitiesWriteLocks[T](
         entities: Set[Entity]
     )(
-        f: ⇒ Unit
-    ): Unit = {
+        f: ⇒ T
+    ): T = {
         val sortedEntities = entities.toList.sortWith((e1, e2) ⇒ data.get(e1).id < data.get(e1).id)
         withWriteLocks(sortedEntities.map(e ⇒ data.get(e).l))(f)
     }
@@ -280,6 +280,7 @@ class PropertyStore private (
                     val p = pos.p
                     val os = pos.os
                     val observedByCount = if (os eq null) 0 else os.size
+                    registeredObservers += observedByCount
                     val observingCount =
                         if (p eq null)
                             "N/A"
@@ -289,9 +290,7 @@ class PropertyStore private (
                                 observers.size.toString()
                             else
                                 "0"
-
                         }
-                    registeredObservers += observedByCount
                     (
                         if (p eq null) {
                             unsatisfiedPropertyDependencies += 1
@@ -1455,7 +1454,11 @@ class PropertyStore private (
                         handleResult(result)
                     }
                 } else {
-                    logInfo("analysis progress", s"\tresolution produced no results\n\t")
+                    val infoMessage = s"\tresolution produced no results; removing observers\n\t"
+                    logInfo("analysis progress", infoMessage)
+                    for (epk ← cSCC) {
+                        clearDependeeObservers(epk)
+                    }
                 }
             }
 
@@ -1747,7 +1750,11 @@ class PropertyStore private (
             }
             if (os.nonEmpty) {
                 // inform all (previously registered) observers about the value
-                os foreach { o ⇒ o(e, p, updateType) }
+                println("will be called....:"+os.mkString(","))
+                os foreach { o ⇒
+                    println(o.hashCode.toHexString + s" - Calling:$updateType($e($p))")
+                    o(e, p, updateType)
+                }
             }
         }
 
@@ -1759,7 +1766,7 @@ class PropertyStore private (
         // epk is currently computed!)
         //
         // All calls to store have to acquire either entity access (using "accessEntity")
-        // or store wide access (using "accessStore")
+        // or store wide access (using "accessStore") and also the entity's write lock
         // Locks: Entity (write) (=> clearDependeeObservers)
         def storeIntermediateProperty(e: Entity, p: Property): Unit = {
             assert(!p.isBeingComputed)
@@ -1769,26 +1776,26 @@ class PropertyStore private (
             val eps = data.get(e)
             val properties = eps.ps
 
-            withWriteLock(eps.l) {
-                val pos = properties(pkId)
-                if (pos eq null) {
-                    properties(pkId) = new PropertyAndObservers(p, Buffer.empty)
-                } else {
-                    val oldP = pos.p
-                    assert(
-                        (oldP eq null) || oldP.isRefineable,
-                        s"the old property $oldP is already a final property and refinement to $p is not supported"
-                    )
-                    val os = pos.os
-                    assert(
-                        (os ne null),
-                        s"$e is effectively final; the old property was ($oldP) and the new property is $p"
-                    )
-                    if (oldP != p) {
-                        properties(pkId) = new PropertyAndObservers(p, os)
-                    }
+            // implicitly locked: withWriteLock(eps.l) {
+            val pos = properties(pkId)
+            if (pos eq null) {
+                properties(pkId) = new PropertyAndObservers(p, Buffer.empty)
+            } else {
+                val oldP = pos.p
+                assert(
+                    (oldP eq null) || oldP.isRefineable,
+                    s"the old property $oldP is already a final property and refinement to $p is not supported"
+                )
+                val os = pos.os
+                assert(
+                    (os ne null),
+                    s"$e is effectively final; the old property was ($oldP) and the new property is $p"
+                )
+                if (oldP != p) {
+                    properties(pkId) = new PropertyAndObservers(p, os)
                 }
             }
+            // }
         }
 
         //
@@ -1822,7 +1829,9 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
-                    withEntitiesWriteLocks(dependees.map(_.e).toSet /*FIXME use IdentityHashSet*/ + e) {
+
+                    val accessedEntities = dependees.map(_.e).toSet /*FIXME use IdentityHashSet*/ + e
+                    val boundC = withEntitiesWriteLocks(accessedEntities) {
                         assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
                         assert(p.isRefineable, s"intermediate result $r used to store final property $p")
 
@@ -1893,27 +1902,31 @@ class PropertyStore private (
                                     }
                             }
                         }
+                        if (boundC ne null) {
+                            // These two steps have to be done while we still hold all locks:
+                            o.deregister()
+                            storeIntermediateProperty(e, p)
+                        } else {
+                            update(e, p, IntermediateUpdate)
+                        }
+                        boundC
+                    }
+                    if (boundC ne null) {
                         try {
-                            if (boundC ne null) {
-                                o.deregister()
-                                storeIntermediateProperty(e, p)
-                                val newResult = boundC()
-                                if (debug && newResult == r) {
-                                    // this is a user-level error!
-                                    throw new AssertionError(
-                                        s"failed rexecuting the computation of $e(${p}) => $boundC\n"+
-                                            s"the results:\n$r\n\tvs.\n$newResult\n didn't change"
-                                    )
-                                }
-                                logInfo(
-                                    "analysis progress",
-                                    s"immediately continued computation of $e(${p}) => $boundC\n"+
-                                        s"\told result: $r\n\tnew result: $newResult"
+                            val newResult = boundC()
+                            if (debug && newResult == r) {
+                                // this is a user-level error!
+                                throw new AssertionError(
+                                    s"failed rexecuting the computation of $e(${p}) => $boundC\n"+
+                                        s"the results:\n$r\n\tvs.\n$newResult\n didn't change"
                                 )
-                                handleResult(newResult)
-                            } else {
-                                update(e, p, IntermediateUpdate)
                             }
+                            logInfo(
+                                "analysis progress",
+                                s"immediately continued computation of $e(${p}) => $boundC\n"+
+                                    s"\told result: $r\n\tnew result: $newResult"
+                            )
+                            handleResult(newResult)
                         } catch {
                             case soe: StackOverflowError ⇒
                                 val message =
@@ -2147,6 +2160,10 @@ private[fpcf] object PropertyUnavailable {
     }
 }
 
+/**
+ * @param id This id is used to sort entities to acquire locks related to multiple entities in
+ * 			a globally consistent order.
+ */
 private[fpcf] final class EntityProperties(
         final val id: Int,
         final val l:  ReentrantReadWriteLock,
