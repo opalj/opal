@@ -80,7 +80,7 @@ object Locking {
         }
     }
 
-    @inline final def withWriteLocks(rwLocks: Seq[ReentrantReadWriteLock])(f: ⇒ Unit): Unit = {
+    @inline final def withWriteLocks[T](rwLocks: Seq[ReentrantReadWriteLock])(f: ⇒ T): T = {
         var acquiredRWLocks: List[WriteLock] = Nil
         var error: Throwable = null
         val allLocked =
@@ -90,25 +90,24 @@ object Locking {
                     l.lock
                     acquiredRWLocks = l :: acquiredRWLocks
                     true
-                } catch {
-                    case t: Throwable ⇒ error = t; false
-                }
+                } catch { case t: Throwable ⇒ error = t; false }
             }
 
-        if (allLocked) {
-            try { f } catch { case t: Throwable ⇒ error = t }
-        }
+        assert(allLocked || (error ne null))
 
-        acquiredRWLocks.foreach { rwLock ⇒
-            try {
-                rwLock.unlock()
-            } catch {
-                case t: Throwable ⇒
-                    if (error eq null) error = t // else something will fail anyway... 
+        try {
+            if (allLocked)
+                f
+            else
+                // if we are here, something went so terribly wrong, that the performance
+                // penalty of throwing an exception and immediately catching it, is a no-brainer...
+                throw error;
+        } finally {
+            acquiredRWLocks.foreach { rwLock ⇒
+                try { rwLock.unlock() } catch { case t: Throwable ⇒ if (error eq null) error = t }
             }
+            if (error ne null) throw error;
         }
-
-        if (error != null) throw error
     }
 
     /**
