@@ -1772,9 +1772,7 @@ class PropertyStore private (
             }
             if (os.nonEmpty) {
                 // inform all (previously registered) observers about the value
-                os foreach { o ⇒
-                    o(e, p, updateType)
-                }
+                scheduleRunnable { os foreach { o ⇒ o(e, p, updateType) } }
             }
         }
 
