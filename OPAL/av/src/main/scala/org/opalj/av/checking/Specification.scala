@@ -98,7 +98,10 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     ) {
         this(
             run {
-                Project(projectClassFilesWithSources = classFiles, Traversable.empty)
+                Project(
+                    projectClassFilesWithSources = classFiles,
+                    Traversable.empty,
+                    libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/ )
             } { (t, project) ⇒
                 import project.logContext
                 val logMessage = "1. reading "+project.classFilesCount+" class files took "+t.toSeconds

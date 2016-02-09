@@ -48,6 +48,8 @@ import org.scalatest.BeforeAndAfterEach
 @RunWith(classOf[JUnitRunner])
 class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
+    final val TestDuration /*in minutes*/ = 0.083d // <=> 5 sek.
+
     //**********************************************************************************************
     //
     // TEST FIXTURE
@@ -482,161 +484,180 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 import scala.collection.mutable
                 val ps = psNodes
 
-                /* The following analysis only uses the new information given to it and updates
-                 * the set of observed dependees.
-                 */
-                def analysis(n: Node): PropertyComputationResult = {
-                    val nTargets = n.targets
-                    if (nTargets.isEmpty)
-                        return ImmediateResult(n, NoReachableNodes);
+                var runs = 0
+                val startTime = System.currentTimeMillis()
+                while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
+                    runs += 1
+                    /* The following analysis only uses the new information given to it and updates
+                 	 * the set of observed dependees.
+                 	 */
+                    def analysis(n: Node): PropertyComputationResult = {
+                        val nTargets = n.targets
+                        if (nTargets.isEmpty)
+                            return ImmediateResult(n, NoReachableNodes);
 
-                    val allDependees: mutable.Set[Node] = nTargets.clone
-                    var dependeePs: Traversable[EOptionP[_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
+                        val allDependees: mutable.Set[Node] = nTargets.clone
+                        var dependeePs: Traversable[EOptionP[_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
 
-                    // incremental computation
-                    def c(
-                        dependeeE:  Entity,
-                        dependeeP:  Property,
-                        updateType: UpdateType
-                    ): PropertyComputationResult = {
-                        // Get the set of currently reachable nodes:
-                        val alreadyReachableNodes: SomeSet[Node] =
-                            ps(n, ReachableNodesKey) match {
-                                case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                case None                                 ⇒ Set.empty
+                        // incremental computation
+                        def c(
+                            dependeeE:  Entity,
+                            dependeeP:  Property,
+                            updateType: UpdateType
+                        ): PropertyComputationResult = {
+                            // Get the set of currently reachable nodes:
+                            val alreadyReachableNodes: SomeSet[Node] =
+                                ps(n, ReachableNodesKey) match {
+                                    case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                    case None                                 ⇒ Set.empty
+                                }
+                            // Get the set of nodes reached by the dependee:
+                            val ReachableNodes(depeendeeReachableNodes) = dependeeP
+
+                            // Compute the new set of reachable nodes:
+                            val newReachableNodes = alreadyReachableNodes ++ depeendeeReachableNodes
+                            val newP = ReachableNodes(newReachableNodes)
+
+                            // Adapt the set of dependeePs to ensure termination
+                            dependeePs = dependeePs.filter { _.e ne dependeeE }
+                            if (updateType != FinalUpdate) {
+                                dependeePs = dependeePs ++ Traversable(EP(dependeeE, dependeeP.asInstanceOf[ReachableNodes]))
                             }
-                        // Get the set of nodes reached by the dependee:
-                        val ReachableNodes(depeendeeReachableNodes) = dependeeP
-
-                        // Compute the new set of reachable nodes:
-                        val newReachableNodes = alreadyReachableNodes ++ depeendeeReachableNodes
-                        val newP = ReachableNodes(newReachableNodes)
-
-                        // Adapt the set of dependeePs to ensure termination
-                        dependeePs = dependeePs.filter { _.e ne dependeeE }
-                        if (updateType != FinalUpdate) {
-                            dependeePs = dependeePs ++ Traversable(EP(dependeeE, dependeeP.asInstanceOf[ReachableNodes]))
+                            if (dependeePs.nonEmpty)
+                                IntermediateResult(n, newP, dependeePs, c)
+                            else
+                                Result(n, newP)
                         }
-                        if (dependeePs.nonEmpty)
-                            IntermediateResult(n, newP, dependeePs, c)
-                        else
-                            Result(n, newP)
+
+                        // initial computation
+                        val reachableNodes =
+                            dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
+                                if (dependee.hasProperty)
+                                    reachableNodes ++ dependee.p.nodes
+                                else
+                                    reachableNodes
+                            }
+                        val intermediateP = ReachableNodes(reachableNodes)
+                        IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
-                    // initial computation
-                    val reachableNodes =
-                        dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
-                            if (dependee.hasProperty)
-                                reachableNodes ++ dependee.p.nodes
-                            else
-                                reachableNodes
-                        }
-                    val intermediateP = ReachableNodes(reachableNodes)
-                    IntermediateResult(n, intermediateP, dependeePs, c)
+                    ps <||< ({ case n: Node ⇒ n }, analysis)
+                    ps.waitOnPropertyComputationCompletion(true)
+
+                    println(ps.toString(true))
+                    // the graph:
+                    // a -> b -> c
+                    //      b -> d
+                    //           d ⟲
+                    //           d -> e
+                    //                e -> r
+                    //       ↖︎----------< r
+                    ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                    ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+
+                    psNodes.waitOnPropertyComputationCompletion(false)
+                    psNodes.reset()
                 }
-
-                ps <||< ({ case n: Node ⇒ n }, analysis)
-                ps.waitOnPropertyComputationCompletion(true)
-
-                println(ps.toString(true))
-                // the graph:
-                // a -> b -> c
-                //      b -> d
-                //           d ⟲
-                //           d -> e
-                //                e -> r
-                //       ↖︎----------< r
-                ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                info(s"executed the test $runs times")
             }
 
             it("should be triggered whenever the property is updated and supports a complete update based on a query of the store's value") {
                 import scala.collection.mutable
                 val ps = psNodes
 
-                /* The following analysis collects all nodes a node is connected with (i.e.,
+                var runs = 0
+                val startTime = System.currentTimeMillis()
+                while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
+                    runs += 1
+
+                    /* The following analysis collects all nodes a node is connected with (i.e.,
                  * it computes the transitive closure).
                  */
-                def analysis(n: Node): PropertyComputationResult = {
-                    val nTargets = n.targets
-                    if (nTargets.isEmpty)
-                        return ImmediateResult(n, NoReachableNodes);
+                    def analysis(n: Node): PropertyComputationResult = {
+                        val nTargets = n.targets
+                        if (nTargets.isEmpty)
+                            return ImmediateResult(n, NoReachableNodes);
 
-                    val remainingDependees: mutable.Set[Node] = nTargets.clone
-                    def c(
-                        dependeeE:  Entity,
-                        dependeeP:  Property,
-                        updateType: UpdateType
-                    ): PropertyComputationResult = {
-                        // Get the set of currently reachable nodes.
-                        val alreadyReachableNodes: SomeSet[Node] =
-                            ps(n, ReachableNodesKey) match {
-                                case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                case None                                 ⇒ Set.empty
+                        val remainingDependees: mutable.Set[Node] = nTargets.clone
+                        def c(
+                            dependeeE:  Entity,
+                            dependeeP:  Property,
+                            updateType: UpdateType
+                        ): PropertyComputationResult = {
+                            // Get the set of currently reachable nodes.
+                            val alreadyReachableNodes: SomeSet[Node] =
+                                ps(n, ReachableNodesKey) match {
+                                    case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                    case None                                 ⇒ Set.empty
+                                }
+                            // Whenever we continue a computation we have have to query
+                            // all relevant entities about their "current" properties.
+                            // This is strictly necessary to ensure termination because the
+                            // property store uses this information to decide whether to immediately
+                            // continue the computation or not.
+                            val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                            val dependeesReachableNodes =
+                                dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
+                                    if (dependee.hasProperty)
+                                        reachableNodes ++ dependee.p.nodes
+                                    else
+                                        reachableNodes
+                                }
+
+                            val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
+                            val newP = ReachableNodes(newReachableNodes)
+
+                            if (updateType == FinalUpdate) {
+                                remainingDependees -= dependeeE.asInstanceOf[Node]
+                                val filteredDependeePs = dependeePs.filter { _.e ne dependeeE }
+                                if (filteredDependeePs.nonEmpty)
+                                    IntermediateResult(n, newP, filteredDependeePs, c)
+                                else
+                                    Result(n, newP)
+                            } else {
+                                IntermediateResult(n, newP, dependeePs, c)
                             }
-                        // Whenever we continue a computation we have have to query
-                        // all relevant entities about their "current" properties.
-                        // This is strictly necessary to ensure termination because the
-                        // property store uses this information to decide whether to immediately
-                        // continue the computation or not.
+                        }
+
+                        // initial computation
                         val dependeePs = ps(remainingDependees, ReachableNodesKey)
-                        val dependeesReachableNodes =
+                        val reachableNodes =
                             dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
                                 if (dependee.hasProperty)
                                     reachableNodes ++ dependee.p.nodes
                                 else
                                     reachableNodes
                             }
-
-                        val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
-                        val newP = ReachableNodes(newReachableNodes)
-
-                        if (updateType == FinalUpdate) {
-                            remainingDependees -= dependeeE.asInstanceOf[Node]
-                            val filteredDependeePs = dependeePs.filter { _.e ne dependeeE }
-                            if (filteredDependeePs.nonEmpty)
-                                IntermediateResult(n, newP, filteredDependeePs, c)
-                            else
-                                Result(n, newP)
-                        } else {
-                            IntermediateResult(n, newP, dependeePs, c)
-                        }
+                        val intermediateP = ReachableNodes(reachableNodes)
+                        IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
-                    // initial computation
-                    val dependeePs = ps(remainingDependees, ReachableNodesKey)
-                    val reachableNodes =
-                        dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
-                            if (dependee.hasProperty)
-                                reachableNodes ++ dependee.p.nodes
-                            else
-                                reachableNodes
-                        }
-                    val intermediateP = ReachableNodes(reachableNodes)
-                    IntermediateResult(n, intermediateP, dependeePs, c)
+                    ps <||< ({ case n: Node ⇒ n }, analysis)
+                    ps.waitOnPropertyComputationCompletion(true)
+
+                    println(ps.toString(true))
+                    // the graph:
+                    // a -> b -> c
+                    //      b -> d
+                    //           d ⟲
+                    //           d -> e
+                    //                e -> r
+                    //       ↖︎----------< r
+                    ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                    ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+
+                    psNodes.waitOnPropertyComputationCompletion(false)
+                    psNodes.reset()
                 }
-
-                ps <||< ({ case n: Node ⇒ n }, analysis)
-                ps.waitOnPropertyComputationCompletion(true)
-
-                println(ps.toString(true))
-                // the graph:
-                // a -> b -> c
-                //      b -> d
-                //           d ⟲
-                //           d -> e
-                //                e -> r
-                //       ↖︎----------< r
-                ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                info(s"executed the test $runs times")
             }
 
         }

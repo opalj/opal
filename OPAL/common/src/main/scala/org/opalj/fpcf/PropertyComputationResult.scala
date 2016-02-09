@@ -104,6 +104,11 @@ case class ImmediateMultiResult(properties: ComputationResults) extends Property
 private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
 
 /**
+ * Used if the analysis found no entities for which a property could be computed.
+ */
+object NoEntities extends ImmediateMultiResult(Traversable.empty)
+
+/**
  * Encapsulates an intermediate result of the computation of a property.
  *
  * Intermediate results are to be used if further refinements are possible and may happen.

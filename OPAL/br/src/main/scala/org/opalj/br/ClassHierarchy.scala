@@ -74,10 +74,10 @@ import org.opalj.log.OPALLogger
  */
 class ClassHierarchy private (
         // the case "java.lang.Object" is handled explicitly!
-        private[this] val knownTypesMap:       Array[ObjectType],
-        private[this] val interfaceTypesMap:   Array[Boolean],
-        private[this] val superclassTypeMap:   Array[ObjectType],
-        private[this] val isKnownToBeFinalMap: Array[Boolean],
+        private[this] val knownTypesMap:          Array[ObjectType],
+        private[this] val interfaceTypesMap:      Array[Boolean],
+        private[this] val superclassTypeMap:      Array[ObjectType],
+        private[this] val isKnownToBeFinalMap:    Array[Boolean],
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
         private[this] val subclassTypesMap:       Array[Set[ObjectType]],
         private[this] val subinterfaceTypesMap:   Array[Set[ObjectType]],
@@ -93,7 +93,7 @@ class ClassHierarchy private (
     assert(subclassTypesMap.forall { e ⇒ e == null || e.nonEmpty })
     assert(subinterfaceTypesMap.forall { e ⇒ e == null || e.nonEmpty })
     assert(superinterfaceTypesMap.forall { e ⇒ e == null || e.nonEmpty })
-    
+
     /**
      * Returns the set of all types which have no super type; that is all (pseudo) root types;
      * if the class hierarchy is complete then this set contains exactly one element and
@@ -120,8 +120,8 @@ class ClassHierarchy private (
         val leafTypes = knownTypesView filter { objectType ⇒
             objectType != null && {
                 val objectTypeId = objectType.id
-                (subclassTypesMap(objectTypeId) eq null) && 
-                (subinterfaceTypesMap(objectTypeId) eq null)
+                (subclassTypesMap(objectTypeId) eq null) &&
+                    (subinterfaceTypesMap(objectTypeId) eq null)
             }
         }
         leafTypes
@@ -753,22 +753,21 @@ class ClassHierarchy private (
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
         if (subtype eq theSupertype)
-                return Yes;
-        
+            return Yes;
+
         val Object = ObjectType.Object
-         if (theSupertype eq Object)
+        if (theSupertype eq Object)
             return Yes;
 
         if (subtype eq Object /* && theSupertype != ObjectType.Object*/ )
             return No;
 
         if (isUnknown(subtype)) {
-            if(isKnownToBeFinal(theSupertype))
-            return No;
+            if (isKnownToBeFinal(theSupertype))
+                return No;
             else
                 return Unknown;
         }
-
 
         if (isUnknown(theSupertype)) {
             if (isSupertypeInformationComplete(subtype))
@@ -786,8 +785,8 @@ class ClassHierarchy private (
             return No;
 
         @inline def implementsInterface(
-            subtype: ObjectType,
-            theSuperinterfaceType:     ObjectType
+            subtype:               ObjectType,
+            theSuperinterfaceType: ObjectType
         ): Answer = {
             if (subtype eq theSuperinterfaceType)
                 return Yes;
@@ -901,32 +900,32 @@ class ClassHierarchy private (
         if (subtype eq Object)
             return No; // the given supertype has to be a subtype...
 
-        if(subtype.isObjectType){
+        if (subtype.isObjectType) {
             val subtypeAsObjectType = subtype.asObjectType
             if (supertype.isArrayType)
-                    No
-                else
-                    // The analysis is conclusive iff we can get all supertypes
-                    // for the given type (ot) up until "java/lang/Object"; i.e.,
-                    // if there are no holes.
-                    isSubtypeOf(subtypeAsObjectType, supertype.asObjectType)
+                No
+            else
+                // The analysis is conclusive iff we can get all supertypes
+                // for the given type (ot) up until "java/lang/Object"; i.e.,
+                // if there are no holes.
+                isSubtypeOf(subtypeAsObjectType, supertype.asObjectType)
         } else {
             // ... subtype is an ArrayType
-            if(supertype.isObjectType) {
+            if (supertype.isObjectType) {
                 import ObjectType.Serializable
                 import ObjectType.Cloneable
-                Answer((supertype eq Serializable) ||(supertype eq Cloneable))
+                Answer((supertype eq Serializable) || (supertype eq Cloneable))
             } else {
-            	val componentType = subtype.asArrayType.componentType
-            	val superComponentType = supertype.asArrayType.componentType
-            	 if(superComponentType.isBaseType || componentType.isBaseType)
-            	     No
-            	// The case:
-            	//    componentType eq superComponentType
-            	// is already handled by the very first test subtype eq supertype because
-            	// ArrayTypes are internalized.
-            	else
-            	    isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
+                val componentType = subtype.asArrayType.componentType
+                val superComponentType = supertype.asArrayType.componentType
+                if (superComponentType.isBaseType || componentType.isBaseType)
+                    No
+                // The case:
+                //    componentType eq superComponentType
+                // is already handled by the very first test subtype eq supertype because
+                // ArrayTypes are internalized.
+                else
+                    isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
             }
         }
     }
