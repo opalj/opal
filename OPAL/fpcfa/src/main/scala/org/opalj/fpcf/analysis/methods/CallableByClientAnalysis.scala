@@ -46,7 +46,7 @@ sealed trait ClientInheritable extends Property {
 
     final type Self = ClientInheritable
 
-  final def key = ClientInheritableKey
+    final def key = ClientInheritableKey
 
     final def isRefineable = false
 }
@@ -99,18 +99,18 @@ class CallableByClientAnalysis private (
         if (method.isPrivate)
             return NotClientInheritable;
 
-      val classFile = project.classFile(method)
+        val classFile = project.classFile(method)
 
         if (classFile.isEffectivelyFinal)
             return NotClientInheritable;
 
-      if (isClosedLibrary && method.isPackagePrivate)
+        if (isClosedLibrary && method.isPackagePrivate)
             return NotClientInheritable;
 
-      if (classFile.isPublic || isOpenLibrary)
+        if (classFile.isPublic || isOpenLibrary)
             return IsClientInheritable;
 
-      val classType = classFile.thisType
+        val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
         val methodName = method.name
         val methodDescriptor = method.descriptor

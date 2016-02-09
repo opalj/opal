@@ -35,6 +35,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import java.net.URL
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.IsClientCallable
+import org.opalj.fpcf.analysis.methods.NotClientCallable
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
@@ -67,9 +70,9 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
             executer.run(CallableFromClassesInOtherPackagesAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsCallable }
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsClientCallable }
 
-        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒ p == NotCallable }
+        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒ p == NotClientCallable }
         BasicReport(
             //            nonOverriddenInfoString +
             propertyStore.toString+

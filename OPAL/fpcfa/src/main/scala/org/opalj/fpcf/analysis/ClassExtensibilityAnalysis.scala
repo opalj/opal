@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -58,13 +58,13 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
      * 	- one of its subtypes is extensible
      *  - it is not (effectively) final  and either public or the analyis mode is OPA
      */
-    def determineExtensibility(classFile: ClassFile): PropertyComputationResult = {
+    def determineExtensibility(classFile: ClassFile): Unit = {
 
         val objectType = classFile.thisType
 
         if (isDesktopApplication || isJEEApplication) {
             // application types can not be extended
-            return NoResult
+            return ;
         }
 
         val classHierarchy = project.classHierarchy
@@ -96,8 +96,6 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
                 }
             }
         }
-
-        NoResult
     }
 
     /**
@@ -108,7 +106,6 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
         objectType:     ObjectType,
         classHierarchy: ClassHierarchy
     ): Unit = {
-
         classHierarchy.allSupertypes(objectType, true).foreach { superType ⇒
             project.classFile(superType) match {
                 case Some(cf) ⇒ propertyStore.add(IsExtensible)(cf)
@@ -120,10 +117,6 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
 
 object ClassExtensibilityAnalysis extends FPCFAnalysisRunner {
 
-    final def entitySelector(leafTypes: Seq[ObjectType]): PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile if leafTypes.contains(cf.thisType) ⇒ cf
-    }
-
     override def derivedProperties: Set[PropertyKind] = Set(IsExtensible)
 
     protected[analysis] def start(
@@ -132,7 +125,11 @@ object ClassExtensibilityAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
         val analysis = new ClassExtensibilityAnalysis(project)
         val leafTypes = project.classHierarchy.leafTypes
-        propertyStore <||< (entitySelector(leafTypes), analysis.determineExtensibility)
+        leafTypes foreach { leafType ⇒
+            val cf = project.classFile(leafType)
+            if (cf.isDefined)
+                analysis.determineExtensibility(cf.get)
+        }
         analysis
     }
 }

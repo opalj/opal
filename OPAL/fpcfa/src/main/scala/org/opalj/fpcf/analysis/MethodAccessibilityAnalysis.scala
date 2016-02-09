@@ -32,6 +32,8 @@ package analysis
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.NotClientCallable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -116,7 +118,7 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
-            if (dependeeP == NotCallable)
+            if (dependeeP == NotClientCallable)
                 Result(method, PackageLocal)
             else
                 Result(method, Global)
@@ -124,7 +126,7 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
         propertyStore.require(
             method, ProjectAccessibility.key,
-            method, CallableFromClassesInOtherPackages.key
+            method, methods.ClientCallableKey
         )(
             c
         )
@@ -158,7 +160,7 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
     }
 
     override def usedProperties: Set[PropertyKind] = {
-        Set(CallableFromClassesInOtherPackages)
+        Set(methods.ClientCallableKey)
     }
 }
 
@@ -180,7 +182,7 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
     }
 
     override def usedProperties: Set[PropertyKind] = {
-        Set(CallableFromClassesInOtherPackages)
+        Set(methods.ClientCallableKey)
     }
 
     protected[analysis] def start(

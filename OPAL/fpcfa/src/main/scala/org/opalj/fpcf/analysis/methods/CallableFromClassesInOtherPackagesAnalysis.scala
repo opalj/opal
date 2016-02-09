@@ -44,15 +44,16 @@ import org.opalj.br.analyses.SomeProject
 
 import scala.collection.mutable
 
-/** Determines for each method if it potentially can be directly called by a client.
-  * This can happens if:
-  * - the method is directly visible to the client
-  * - the method can become visible by a visible subclass which inherits the respective method
-  * - the method can become pseudo-visible by a call on a superclass/interface (if the class is upcasted)
-  *
-  * @note This property is computed on-demand by a direct property computation.
-  * @author Michael Reif
-  */
+/**
+ * Determines for each method if it potentially can be directly called by a client.
+ * This can happens if:
+ * - the method is directly visible to the client
+ * - the method can become visible by a visible subclass which inherits the respective method
+ * - the method can become pseudo-visible by a call on a superclass/interface (if the class is upcasted)
+ *
+ * @note This property is computed on-demand by a direct property computation.
+ * @author Michael Reif
+ */
 sealed trait ClientCallable extends Property {
     final type Self = ClientCallable
 
@@ -65,32 +66,35 @@ case object IsClientCallable extends ClientCallable
 
 case object NotClientCallable extends ClientCallable
 
-/** This Analysis determines the ´ClientCallable´ property of a method. A method is considered as leaked
-  * if it is overridden in every immediate non-abstract subclass.
-  *
-  * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
-  * also always overridden.
-  * {{{
-  * 		/*package visible*/ class C { public Object m() }
-  * 		/*package visible*/ abstract class A extends C { /*empty*/ }
-  * 		public class B extends A { public Object m() }
-  * }}}
-  *
-  * @author Michael Reif
-  */
+/**
+ * This Analysis determines the ´ClientCallable´ property of a method. A method is considered as leaked
+ * if it is overridden in every immediate non-abstract subclass.
+ *
+ * In the following scenario, m defined by B overrides m in C and (in this specific scenario) m in C is
+ * also always overridden.
+ * {{{
+ * 		/*package visible*/ class C { public Object m() }
+ * 		/*package visible*/ abstract class A extends C { /*empty*/ }
+ * 		public class B extends A { public Object m() }
+ * }}}
+ *
+ * @author Michael Reif
+ */
 class CallableFromClassesInOtherPackagesAnalysis private (
-    val project: SomeProject) extends FPCFAnalysis {
+        val project: SomeProject
+) extends FPCFAnalysis {
 
-    /** Determines the [[ClientCallable]] property of non-static methods.
-      * It is tailored to entry point set computation where we have to consider different kind of
-      * program/library usage scenarios.
-      * Computational differences regarding static methods are :
-      * - private methods can be handled equal in every context
-      * - if OPA is met, all package visible classes are visible which implies that all non-private methods are
-      *   visible too
-      * - if CPA is met, methods in package visible classes are not visible by default.
-      *
-      */
+    /**
+     * Determines the [[ClientCallable]] property of non-static methods.
+     * It is tailored to entry point set computation where we have to consider different kind of
+     * program/library usage scenarios.
+     * Computational differences regarding static methods are :
+     * - private methods can be handled equal in every context
+     * - if OPA is met, all package visible classes are visible which implies that all non-private methods are
+     *   visible too
+     * - if CPA is met, methods in package visible classes are not visible by default.
+     *
+     */
     def determineProperty(e: Entity): Property = {
         val method = e.asInstanceOf[Method]
 

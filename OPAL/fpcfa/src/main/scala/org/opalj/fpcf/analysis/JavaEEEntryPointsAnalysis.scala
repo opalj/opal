@@ -1,6 +1,6 @@
 /**
  * BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -44,7 +44,6 @@ class JavaEEEntryPointsAnalysis private (
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.key
     private[this] final val InstantiabilityKey = Instantiability.key
-    private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
     private[this] final val ExceptionHandlerFactory = ObjectType("javax.faces.context.ExceptionHandlerFactory")

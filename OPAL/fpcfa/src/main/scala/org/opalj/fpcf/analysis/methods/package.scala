@@ -78,17 +78,17 @@ package object methods {
         )
     }
 
-  /**
-    * The key associated with every ´CallableFromClassesInOtherPackages´ property.
-    */
-  final val ClientInheritableKey = {
-    PropertyKey.create[ClientInheritable](
-      // The unique name of the property.
-      "ClientCallable",
-      // The default property that will be used if no analysis is able
-      // to (directly) compute the respective property.
-      IsClientInheritable
-    )
-  }
+    /**
+     * The key associated with every ´CallableFromClassesInOtherPackages´ property.
+     */
+    final val ClientInheritableKey = {
+        PropertyKey.create[ClientInheritable](
+            // The unique name of the property.
+            "ClientCallable",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            IsClientInheritable
+        )
+    }
 }
 
