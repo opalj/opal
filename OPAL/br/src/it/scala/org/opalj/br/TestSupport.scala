@@ -70,8 +70,8 @@ object TestSupport {
         classFiles.toSeq
     }
 
-    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles(), Traversable.empty)
+    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles(), Traversable.empty, true)
 
-    def createRTJarProject: Project[java.net.URL] = Project(readRTJarClassFiles(), Traversable.empty)
+    def createRTJarProject: Project[java.net.URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
 
 }

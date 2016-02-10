@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -39,7 +39,6 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.BasicVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
@@ -123,7 +122,7 @@ object CallGraphVisualization {
                         }
                     cache = null
                     ClassFileReader = null
-                    val project = Project(classFiles, Traversable.empty)
+                    val project = Project(classFiles, Traversable.empty, true)
                     println(
                         project.statistics.map(e ⇒ "\t"+e._1+": "+e._2).toSeq.sorted.
                             mkString("Project statistics:\n\t", "\n\t", "")
@@ -173,7 +172,7 @@ object CallGraphVisualization {
 
                 // Some statistics
                 val callGraph = computedCallGraph.callGraph
-                import callGraph.{calls, callsCount, calledByCount, foreachCallingMethod}
+                import callGraph.{callsCount, calledByCount, foreachCallingMethod}
                 println("Methods with at least one resolved call: "+callsCount)
                 println("Methods which are called by at least one method: "+calledByCount)
 

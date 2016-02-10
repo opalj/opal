@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,22 +32,12 @@ package analyses
 
 import java.net.URL
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.{Set, Map}
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
-import scala.collection.parallel.mutable.ParArray
-import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 import scala.collection.SortedMap
-import scala.collection.mutable.LinkedHashMap
-import scala.collection.SortedMap
-import scala.collection.generic.FilterMonadic
-import scala.reflect.ClassTag
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
@@ -63,9 +53,7 @@ import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.DefaultLogContext
-import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -894,11 +882,11 @@ object Project {
     /**
      * Creates a new Project.
      *
-     * @param classFiles The list of class files of this project that are considered
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
      *    	to belong to the application/library that will be analyzed.
      *    	[Thread Safety] The underlying data structure has to support concurrent access.
      *
-     * @param libraryClassFiles The list of class files of this project that make up
+     * @param libraryClassFilesWithSources The list of class files of this project that make up
      *    	the libraries used by the project that will be analyzed.
      *    	[Thread Safety] The underlying data structure has to support concurrent access.
      *

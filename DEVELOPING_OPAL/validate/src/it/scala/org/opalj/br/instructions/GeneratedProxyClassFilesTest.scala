@@ -135,7 +135,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
         }
 
         describe("the project should be extendable with the generated proxies") {
-            val extendedProject = testProject.extend(proxies, Iterable.empty)
+            val extendedProject = testProject.extend(proxies)
 
             it("should have the right amount of class files") {
                 extendedProject.classFilesCount should be(

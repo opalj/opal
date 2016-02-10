@@ -31,6 +31,8 @@ package fpcf
 package analysis
 
 import org.opalj.br.ObjectType
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.ClientCallable
 import org.opalj.fpcf.test.annotations.CallabilityKeys
 
 /**
@@ -46,7 +48,7 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 
-    override def propertyKey: PropertyKey[ClientCallable] = CallableFromClassesInOtherPackages.key
+    override def propertyKey: PropertyKey[ClientCallable] = methods.ClientCallableKey
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")

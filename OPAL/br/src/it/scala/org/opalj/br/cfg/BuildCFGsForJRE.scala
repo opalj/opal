@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 201&
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -38,10 +38,8 @@ import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.TestSupport
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.collection.mutable.UShortSet
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -137,7 +135,7 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
 
         it("should be possible for all methods of the OPAL 0.3 snapshot") {
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
+            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
@@ -149,7 +147,7 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
             })
             info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
             opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty)
+            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
 
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)

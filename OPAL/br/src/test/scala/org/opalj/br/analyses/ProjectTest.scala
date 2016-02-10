@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -323,13 +323,13 @@ private object ProjectTest {
     //
     val resources = locateTestResources("classfiles/Methods.jar", "bi")
     val libraryResources = locateTestResources("classfiles/Attributes.jar", "bi")
-    val project = Project(ClassFiles(resources), ClassFiles(libraryResources))
+    val project = Project(ClassFiles(resources), ClassFiles(libraryResources), true)
 
     val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty)
+    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
 
     //
     //

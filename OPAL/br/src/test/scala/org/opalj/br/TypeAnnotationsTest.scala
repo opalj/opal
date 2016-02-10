@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -86,7 +86,7 @@ private object TypeAnnotationsTest {
 
     val project = {
         val testResources = locateTestResources("classfiles/TypeAnnotations.jar", "bi")
-        Project(ClassFiles(testResources), Traversable.empty)
+        Project(ClassFiles(testResources), Traversable.empty, true)
     }
 
     //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/ATypeAnnotationUser.class
