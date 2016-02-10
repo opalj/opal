@@ -61,8 +61,7 @@ class LibraryEntryPointsAnalysis private (
     def determineProperty(method: Method): PropertyComputationResult = {
         val classFile = project.classFile(method)
 
-        // TODO ask the project whether third party libraries are fully available
-        if (project.isLibraryType(classFile))
+        if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile))
             // if the analyze the library with the the public interface of third party libraries
             // we don't want the public API only as entry points.
             return ImmediateResult(method, NoEntryPoint);
@@ -72,7 +71,7 @@ class LibraryEntryPointsAnalysis private (
                 return ImmediateResult(method, IsEntryPoint);
             else {
                 val epProperty = isClientCallable(method)
-                return ImmediateResult(method, epProperty)
+                return ImmediateResult(method, epProperty);
             }
         }
 
