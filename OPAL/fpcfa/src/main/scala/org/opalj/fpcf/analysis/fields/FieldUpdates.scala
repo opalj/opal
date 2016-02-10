@@ -32,7 +32,9 @@ package analysis
 package fields
 
 sealed trait FieldUpdatesPropertyMetaInformation extends PropertyMetaInformation {
+
     type Self = FieldUpdates
+
 }
 
 /**
@@ -49,7 +51,9 @@ sealed trait FieldUpdatesPropertyMetaInformation extends PropertyMetaInformation
  * @author Michael Eichberg
  */
 sealed trait FieldUpdates extends Property with FieldUpdatesPropertyMetaInformation {
+
     final def key = FieldUpdates.key // All instances have to share the SAME key!
+
 }
 
 object FieldUpdates extends FieldUpdatesPropertyMetaInformation {
@@ -62,7 +66,9 @@ object FieldUpdates extends FieldUpdatesPropertyMetaInformation {
  * The field is only set once to a non-default value and only the updated value is used.
  */
 sealed trait Final extends FieldUpdates {
+
     final val isRefineable: Boolean = false
+
     val byDefinition: Boolean
 }
 
