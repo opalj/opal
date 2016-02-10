@@ -48,7 +48,7 @@ import org.scalatest.BeforeAndAfterEach
 @RunWith(classOf[JUnitRunner])
 class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
-    final val TestDuration /*in minutes*/ = 0.083d // <=> 5 sek.
+    final val TestDuration /*in minutes*/ = 1d / 60d
 
     //**********************************************************************************************
     //
@@ -544,20 +544,21 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     ps <||< ({ case n: Node ⇒ n }, analysis)
                     ps.waitOnPropertyComputationCompletion(true)
 
-                    println(ps.toString(true))
-                    // the graph:
-                    // a -> b -> c
-                    //      b -> d
-                    //           d ⟲
-                    //           d -> e
-                    //                e -> r
-                    //       ↖︎----------< r
-                    ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                    ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    try {
+                        // the graph:
+                        // a -> b -> c
+                        //      b -> d
+                        //           d ⟲
+                        //           d -> e
+                        //                e -> r
+                        //       ↖︎----------< r
+                        ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                        ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    } catch { case t: Throwable ⇒ info(ps.toString(true)); throw t; }
 
                     psNodes.waitOnPropertyComputationCompletion(false)
                     psNodes.reset()
@@ -639,20 +640,21 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     ps <||< ({ case n: Node ⇒ n }, analysis)
                     ps.waitOnPropertyComputationCompletion(true)
 
-                    println(ps.toString(true))
-                    // the graph:
-                    // a -> b -> c
-                    //      b -> d
-                    //           d ⟲
-                    //           d -> e
-                    //                e -> r
-                    //       ↖︎----------< r
-                    ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                    ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    try {
+                        // the graph:
+                        // a -> b -> c
+                        //      b -> d
+                        //           d ⟲
+                        //           d -> e
+                        //                e -> r
+                        //       ↖︎----------< r
+                        ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
+                        ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                    } catch { case t: Throwable ⇒ info(ps.toString(true)); throw t; }
 
                     psNodes.waitOnPropertyComputationCompletion(false)
                     psNodes.reset()
