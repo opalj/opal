@@ -72,13 +72,13 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
 
         val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsClientCallable }
 
-        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒ p == NotClientCallable }
+        val notLeakedMethods = propertyStore.entities { (p: Property) ⇒ p == NotClientCallable }
         BasicReport(
             //            nonOverriddenInfoString +
             propertyStore.toString+
                 "\nAnalysis time: "+analysisTime +
                 s"\nleaked: ${leakedMethods.size}"+
-                s"\n not leaked: ${notLeakedMethods2.size}"
+                s"\n not leaked: ${notLeakedMethods.size}"
         )
     }
 }
