@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,9 +37,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.graphs.Node
-import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
@@ -1074,7 +1072,7 @@ class ClassHierarchy private (
      * Otherwise None will be returned.
      *
      * @example
-     *  ================= START ==================
+     *  ================= START =================
      *
      *  subtype: [[ClassSignature]] from class A where A extends List<String>
      *  supertype: List as [[ObjectType]]
@@ -1083,7 +1081,7 @@ class ClassHierarchy private (
      *  the concrete class declaration of List where it is bound to String. The above example
      *  would yield the [[ClassTypeSignature]] of List<String>.
      *
-     *  ================== END ===================
+     *  ================== END =================
      *
      * @param subtype Any type or interface.
      * @param supertype Any type or interface.
@@ -1311,7 +1309,6 @@ class ClassHierarchy private (
                                 case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.isEmpty ⇒ Yes
                                 case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.nonEmpty ⇒ {
                                     val ss = getClassSignature(containerType).flatMap { cs ⇒ getSupertypeDeclaration(cs, superContainerType) }
-                                    typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) ⇒ x }
                                     if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) ⇒ x }.size > 0)
                                         compareTypeArgumentsOfClassSuffixes(List(subtype.simpleClassTypeSignature), List(superSuffix.last))
                                     else compareTypeArgumentsOfClassSuffixes(List(ss.get.classTypeSignatureSuffix.last), List(superSuffix.last))
@@ -1333,7 +1330,7 @@ class ClassHierarchy private (
      * `subtype` is actually a subtype of the class, interface or intersection type encoded
      * in the [[FormalTypeParameter]] of the `supertype` parameter. The subtype relation is
      * fulfilled if the subtype is a subtype of the class bound and/or all interface types
-     * that are prescriped by the formal type specification.
+     * that are prescribed by the formal type specification.
      *
      * @note This method does consider generics types specified within the [[FormalTypeParameter]].
      *
@@ -1651,7 +1648,7 @@ class ClassHierarchy private (
      *  @param methodDescriptor The method's descriptor.
      *  @param project Required to get a type's implementing class file.
      *       This method expects unrestricted access to the pool of all class files.
-     *  @param classesFiler A function that returns `true`, if the runtime type of
+     *  @param classesFilter A function that returns `true`, if the runtime type of
      *       the `receiverType` may be of the type defined by the given object type. For
      *       example, if you analyze a project and perform a lookup of all methods that
      *       implement the method `toString`, then this set would probably be very large.
