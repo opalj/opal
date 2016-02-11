@@ -323,7 +323,7 @@ private object ProjectTest {
     //
     val resources = locateTestResources("classfiles/Methods.jar", "bi")
     val libraryResources = locateTestResources("classfiles/Attributes.jar", "bi")
-    val project = Project(ClassFiles(resources), ClassFiles(libraryResources), true)
+    val project = Project(ClassFiles(resources), ClassFiles(libraryResources), false)
 
     val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
