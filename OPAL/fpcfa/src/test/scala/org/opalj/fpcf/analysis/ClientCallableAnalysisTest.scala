@@ -42,7 +42,7 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
 
     def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
 
-    override def testFileName = "classfiles/callableFromClassesInOtherPackagesTest.jar"
+    override def testFileName = "classfiles/clientCallableTest.jar"
 
     override def testFilePath = "fpcfa"
 
@@ -53,7 +53,7 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
 
-    def defaultValue = CallabilityKeys.Callable.toString
+    def defaultValue = CallabilityKeys.IsClientCallable.toString
 }
 
 class ClientCallableAnalysisCPATest

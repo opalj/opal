@@ -47,17 +47,17 @@ public @interface CallabilityProperty {
 	 * This refers to the LibraryLeakageProperty when the property is computed for
 	 * a library under the open package assumption. 
 	 */
-	CallabilityKeys opa() default CallabilityKeys.Callable;
+	CallabilityKeys opa() default CallabilityKeys.IsClientCallable;
 	
 	/**
 	 * This refers to the LibraryLeakageProperty when the property is computed for
 	 * a library under the closed package assumption. 
 	 */
-	CallabilityKeys cpa() default CallabilityKeys.Callable;
+	CallabilityKeys cpa() default CallabilityKeys.IsClientCallable;
 	
 	/**
 	 * This refers to the LibraryLeakageProperty when the property is computed for
 	 * an application.
 	 */
-	CallabilityKeys application() default CallabilityKeys.Callable;
+	CallabilityKeys application() default CallabilityKeys.NotClientCallable;
 }
