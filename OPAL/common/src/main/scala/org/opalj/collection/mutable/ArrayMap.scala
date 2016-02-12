@@ -121,12 +121,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         assert(value ne null, "ArrayMap only supports non-null values")
 
         val max = data.length
-        if (key < max)
+        if (key < max) {
             data(key) = value
-        else if (key == max) {
-            data = data :+ value
         } else {
-            val newData = new Array[T](key + 1)
+            val newData = new Array[T](key + 2)
             System.arraycopy(data, 0, newData, 0, max)
             newData(key) = value
             data = newData
@@ -232,11 +230,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         val max = data.length
         while (i < max) {
             val e = data(i)
-            if (e ne null)
-                s += s"$i -> $e"
+            if (e ne null) s += s"$i -> $e"
             i += 1
-            if ((e ne null) && i < max)
-                s += sep
+            while (i < max && (data(i) eq null)) i += 1
+            if ((e ne null) && i < max) s += sep
         }
         s + end
     }
