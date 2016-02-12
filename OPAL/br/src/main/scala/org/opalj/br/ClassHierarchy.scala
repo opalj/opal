@@ -1441,6 +1441,8 @@ class ClassHierarchy private (
                                         compareTypeArgumentsOfClassSuffixes(List(subtype.simpleClassTypeSignature), List(superSuffix.last))
                                     else compareTypeArgumentsOfClassSuffixes(List(ss.get.classTypeSignatureSuffix.last), List(superSuffix.last))
                                 }
+                                case Yes    ⇒ compareTypeArgumentsOfClassSuffixes(List(suffix.last), List(superSuffix.last))
+                                case answer ⇒ answer
                             }
                             case answer ⇒ answer
                         }
