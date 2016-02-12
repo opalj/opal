@@ -101,7 +101,7 @@ class LibraryEntryPointsAnalysis private (
                     else if ((dependeeP eq Global) && !isInstantiable && isAbstractOrInterface ||
                         (dependeeP eq PackageLocal)) {
                         val epProperty = isClientCallable(method)
-                        return Result(method, epProperty)
+                        Result(method, epProperty)
                     } else
                         Result(method, NoEntryPoint)
                 }
