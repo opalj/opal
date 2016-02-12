@@ -108,7 +108,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
         methodDescriptor: MethodDescriptor
     ): Answer = {
 
-        val itr = classHierarchy.allSubclasses(classType, reflexive = false)
+        val itr = classHierarchy.allSubclassTypes(classType, reflexive = false)
         var isUnknown = false
 
         while (itr.hasNext) {
