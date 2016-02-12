@@ -29,8 +29,6 @@
 package org.opalj
 package br
 
-import scala.collection.Set
-
 /**
  * Stores information about a type's supertypes.
  *
@@ -42,4 +40,3 @@ case class TypeDeclaration(
     theSuperclassType:      Option[ObjectType],
     theSuperinterfaceTypes: Set[ObjectType]
 )
-
