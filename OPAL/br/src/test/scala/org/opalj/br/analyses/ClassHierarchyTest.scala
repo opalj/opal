@@ -57,14 +57,15 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     //
     // Setup
     //
-    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
-    val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
-
     val jlsCHFile = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
     val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+
+    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
+
+    val javaLangCHFile = "JavaLangClassHierarchy.ths"
+    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
+    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -520,41 +521,41 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(Set.empty)
     }
 
-    behavior of "the ClassHierarchy's allSubclasses method"
+    behavior of "the ClassHierarchy's allSubclassTypes method"
 
     it should "return the empty iterator if the type has no subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAAABBCType, false).size should be(0)
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAAABBCType, false).size should be(0)
     }
 
     it should "return the singleton iterator if the type has no subclasses but we want the relation to be reflexive" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAAABBCType, true).size should be(1)
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAAABBCType, true).size should be(1)
     }
 
     it should "return all subclasses of a leaf-type in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootType, true).toSet should be(Set(cRootType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootType, true).toSet should be(Set(cRootType))
     }
 
     it should "return all subclasses (non-reflexive) of a leaf-type in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootType, false).toSet should be(Set())
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootType, false).toSet should be(Set())
     }
 
     it should "return all subclasses in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAType, true).toSet should be(Set(cRootAType, cRootAABType, cRootAAABBCType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAType, true).toSet should be(Set(cRootAType, cRootAABType, cRootAAABBCType))
     }
 
     it should "return all subclasses (non-reflexive) in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAType, false).toSet should be(Set(cRootAABType, cRootAAABBCType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAType, false).toSet should be(Set(cRootAABType, cRootAAABBCType))
     }
 
     it should "return all subclasses (non-reflexive) of a class with multiple direct subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
             Set(
                 ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
                 ObjectType("java/lang/StringIndexOutOfBoundsException")
@@ -563,8 +564,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     }
 
     it should "return all subclasses (reflexive) of a class with multiple direct subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
             Set(
                 ObjectType("java/lang/IndexOutOfBoundsException"),
                 ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
@@ -782,7 +783,11 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         // check if the SimpleWindow is in the Set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
-        subtypes.contains(simpleWindow) should be(true)
+        if (!subtypes.contains(simpleWindow))
+            fail(s"SimpleWindow is not among the subtypes: $subtypes; "+
+                s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; "+
+                s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
+                classHierarchy.structure)
 
         clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
             method.name == "draw" &&

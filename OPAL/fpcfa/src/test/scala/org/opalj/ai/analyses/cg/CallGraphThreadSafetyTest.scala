@@ -59,7 +59,7 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
     def testFilePath = "ai"
     def testFile = locateTestResources(testFileName, testFilePath)
     val classFiles = Java8Framework.ClassFiles(testFile)
-    val project = br.analyses.Project(classFiles, Traversable.empty)
+    val project = br.analyses.Project(classFiles, Traversable.empty, true)
     def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration(project)
 
     //
