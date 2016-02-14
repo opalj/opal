@@ -225,7 +225,7 @@ class PropertyStore private (
     )(
         f: ⇒ T
     ): T = {
-        val sortedEntities = entities.toList.sortWith((e1, e2) ⇒ data.get(e1).id < data.get(e1).id)
+        val sortedEntities = entities.toList.sortWith((e1, e2) ⇒ data.get(e1).id < data.get(e2).id)
         withWriteLocks(sortedEntities.map(e ⇒ data.get(e).l))(f)
     }
 
