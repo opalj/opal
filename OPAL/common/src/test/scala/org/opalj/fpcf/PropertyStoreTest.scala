@@ -84,6 +84,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case object Palindrome extends PalindromeProperty
     case object NoPalindrome extends PalindromeProperty
 
+    /**
+     * The number of bits of something...
+     */
     final val BitsKey = {
         PropertyKey.create[BitsProperty](
             "Bits",
@@ -115,6 +118,22 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case object SuperPalindrome extends SuperPalindromeProperty
     case object NoSuperPalindrome extends SuperPalindromeProperty
 
+    final val TaintedKey = {
+        PropertyKey.create[TaintedProperty](
+            "Tainted",
+            (ps: PropertyStore, e: Entity) ⇒ Tainted,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    sealed trait TaintedProperty extends Property {
+        type Self = TaintedProperty
+        def key = TaintedKey
+        def isRefineable = false
+    }
+    // Multiple properties can share the same property instance
+    case object Tainted extends TaintedProperty
+    case object NotTainted extends TaintedProperty
+
     final val StringLengthKey: PropertyKey[StringLength] = {
         PropertyKey.create(
             "StringLength",
@@ -123,10 +142,26 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         )
     }
     case class StringLength(length: Int) extends Property {
-        type Self = StringLength
-        def key = StringLengthKey
-        def isRefineable = false
+        final type Self = StringLength
+        final def key = StringLengthKey
+        final def isRefineable = false
     }
+
+    final val PurityKey: PropertyKey[Purity] = {
+        PropertyKey.create(
+            "Purity",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ Iterable(Result(epks.head.e, Pure))
+        )
+    }
+    sealed trait Purity extends Property {
+        final type Self = Purity
+        final def key = PurityKey
+
+    }
+    case object Pure extends Purity { final override def isRefineable = false }
+    case object Impure extends Purity { final override def isRefineable = false }
+    case object ConditionallyPure extends Purity { final override def isRefineable = true }
 
     object EvenNumberOfChars extends SetProperty[String]
 
@@ -157,7 +192,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     nodeR.targets += nodeB //       ↖︎-----------↵︎
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
     val psNodes: PropertyStore = {
-        PropertyStore(nodeEntities, () ⇒ false, debug = true)(GlobalLogContext)
+        PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
     }
 
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
@@ -376,6 +411,37 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
         }
 
+        describe("default property values") {
+
+            it("should be possible to execute an analysis that uses properties for which we have no analysis running and, hence, for which the default property value needs to be used") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+
+                // Idea... only if data is tainted we check if it is a palindrome...
+
+                ps << { e: Entity ⇒
+                    ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
+                        if (p == Tainted) {
+                            if (e.toString.reverse == e.toString())
+                                ImmediateResult(e, Palindrome)
+                            else
+                                ImmediateResult(e, NoPalindrome)
+                        } else {
+                            NoEntities
+                        }
+                    }
+                }
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                stringEntities.foreach { e ⇒
+                    ps(e, TaintedKey).get should be(Tainted)
+                }
+            }
+
+        }
+
         describe("computations for groups of entities") {
 
             it("should be executed for each group in parallel") {
@@ -478,6 +544,110 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 )
                 results(Palindrome) should be(expectedPalindromes)
                 results(NoPalindrome) should be(Set("ab", "bc", "cd"))
+            }
+
+            it("should be possible to execute a dependent analysis where the dependee is scheduled later") {
+                import scala.collection.mutable
+
+                val ps = psStrings
+
+                // Here, only if data is tainted we check if it is a palindrome...
+
+                ps << { e: Entity ⇒
+                    ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
+                        if (p == Tainted) {
+                            if (e.toString.reverse == e.toString())
+                                ImmediateResult(e, Palindrome)
+                            else
+                                ImmediateResult(e, NoPalindrome)
+                        } else {
+                            NoEntities // it is technically possible to not associate an entity with a property...
+                        }
+                    }
+                }
+
+                ps << { e: Entity ⇒
+                    ps.require(e, TaintedKey, e, StringLengthKey) { (e: Entity, p) ⇒
+                        if (p.length % 2 == 0) {
+                            ImmediateResult(e, Tainted)
+                        } else {
+                            ImmediateResult(e, NotTainted)
+                        }
+                    }
+                }
+
+                ps << { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+
+                ps.waitOnPropertyComputationCompletion(true)
+
+                stringEntities.foreach { e ⇒
+                    ps(e, TaintedKey).get should be(if (e.length % 2 == 0) Tainted else NotTainted)
+                    ps(e, StringLengthKey).get should be(StringLength(e.length))
+                    if (ps(e, TaintedKey).get == NotTainted) ps(e, PalindromeKey) should be(None)
+                }
+
+            }
+
+            it("should be possible to execute an analysis which at some point stabilizes itself in an intermediate result") {
+                import scala.collection.mutable
+
+                val testSizes = Set(1, 5, 50000)
+                for (testSize ← testSizes) {
+                    // 1. we create a very long chain
+                    val firstNode = Node(0.toString)
+                    val allNodes = mutable.Set(firstNode)
+                    var prevNode = firstNode
+                    for { i ← 1 to 5 } {
+                        val nextNode = Node(i.toString)
+                        allNodes += nextNode
+                        prevNode.targets += nextNode
+                        prevNode = nextNode
+                    }
+                    prevNode.targets += firstNode
+
+                    // 2. we create the store
+                    val store = PropertyStore(allNodes, () ⇒ false, debug = false)(GlobalLogContext)
+
+                    // 3. lets add the analysis
+                    def onUpdate(node: Node)(e: Entity, p: Property, u: UserUpdateType): PropertyComputationResult = {
+                        purityAnalysis(node)
+                    }
+                    def purityAnalysis(node: Node): PropertyComputationResult = {
+                        val nextNode = node.targets.head // HER: we always only have ony successor
+                        store(nextNode, PurityKey) match {
+                            case None ⇒
+                                IntermediateResult(
+                                    node,
+                                    ConditionallyPure,
+                                    Iterable(EPK(nextNode, PurityKey)),
+                                    onUpdate(node)
+                                )
+                            case Some(Pure)   ⇒ Result(node, Pure)
+                            case Some(Impure) ⇒ Result(node, Impure)
+                            case Some(ConditionallyPure) ⇒
+                                IntermediateResult(
+                                    node,
+                                    ConditionallyPure,
+                                    Iterable(EP(nextNode, ConditionallyPure)),
+                                    onUpdate(node)
+                                )
+
+                        }
+                    }
+                    // 4. execute analysis
+                    store <||< ({ case n: Node ⇒ n }, purityAnalysis)
+                    store.waitOnPropertyComputationCompletion(true)
+
+                    // 5. let's evaluate the result                
+                    store.entities(PurityKey) foreach { ep ⇒
+                        if (ep.p != Pure) {
+                            info(store.toString(true))
+                            fail(s"Node(${ep.e}) is not Pure (${ep.p})")
+                        }
+                    }
+
+                    info(s"test succeeded with $testSize node(s) in a circle")
+                }
             }
 
             it("should be triggered whenever the property is updated and supports an incremental update based on the given property") {
