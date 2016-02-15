@@ -106,7 +106,9 @@ package object fpcf {
      * A function that continues the computation of a property. It takes
      * the entity + property of the entity on which the computation depends.
      */
-    type Continuation = (Entity, Property) ⇒ PropertyComputationResult
+    type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
+
+    type SomeContinuation = Continuation[_ <: Property]
 
     type SomePropertyKey = PropertyKey[_ <: Property]
 
