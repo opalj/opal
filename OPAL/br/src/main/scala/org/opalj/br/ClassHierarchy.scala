@@ -1458,7 +1458,7 @@ class ClassHierarchy private (
      * `subtype` is actually a subtype of the class, interface or intersection type encoded
      * in the [[FormalTypeParameter]] of the `supertype` parameter. The subtype relation is
      * fulfilled if the subtype is a subtype of the class bound and/or all interface types
-     * that are prescriped by the formal type specification.
+     * that are prescribed by the formal type specification.
      *
      * @note This method does consider generics types specified within the [[FormalTypeParameter]].
      * @param subtype Any `ClassTypeSignature`.
