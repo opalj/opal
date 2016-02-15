@@ -43,8 +43,9 @@ import org.opalj.fpcf.analysis.methods.{NoCBSTargets, CBSTargets, CallBySignatur
  * call by signature resolution interface methods
  * given the method's name and the descriptor type.
  *
- * @note To get call by signature resolution information call [[Project.get]] and pass in
- *    the [[CallBySignatureResolutionKey]] object.
+ * @note To get call by signature resolution information call
+ * 		[[org.opalj.br.analyses.Project]]'s method and pass in the
+ * 		[[CallBySignatureResolutionKey]] object.
  * @author Michael Reif
  */
 class CallBySignatureResolution private (
