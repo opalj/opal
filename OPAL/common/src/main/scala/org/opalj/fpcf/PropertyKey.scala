@@ -41,11 +41,9 @@ import org.opalj.concurrent.Locking.withWriteLock
  *
  * @author Michael Eichberg
  */
-class PropertyKey[+P] private[fpcf] (
-        final val id: Int
-) extends AnyVal with PropertyKind {
+class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with PropertyKind {
 
-    override def toString: String = s"PropertyKey(${PropertyKey.name(id)},id=$id)"
+    override def toString: String = s"PK(${PropertyKey.name(id)},id=$id)"
 }
 
 /**
@@ -71,6 +69,9 @@ object PropertyKey {
         cycleResolutionStrategy: (PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]
     ): PropertyKey[P] = {
         withWriteLock(lock) {
+            if (propertyKeyNames.contains(name))
+                throw new IllegalArgumentException(s"the property kind name $name is already used")
+
             lastKeyId += 1
             propertyKeyNames += name
             fallbackProperties += fallbackProperty
