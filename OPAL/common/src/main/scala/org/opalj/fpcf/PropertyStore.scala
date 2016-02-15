@@ -333,6 +333,30 @@ class PropertyStore private (
      */
     override def toString: String = toString(false)
 
+    /**
+     * Checks the consistency of the store.
+     */
+    @throws[AssertionError]("if the store is inconsistent")
+    def validate(): Unit = {
+        entries foreach { entry ⇒
+            val (_ /*e*/ , eps) = entry
+
+            val ps = eps.ps
+            ps foreach { (id, pos) ⇒
+                if (pos ne null) {
+                    val p = pos.p
+                    if ((p ne null) && !p.isBeingComputed) {
+                        if (p.id != id)
+                            throw new AssertionError(s"illegal property $p stored in slot $id")
+
+                        if (p.isFinal && (pos.os ne null))
+                            throw new AssertionError(s"final property $p has observers ${pos.os}")
+                    }
+                }
+            }
+        }
+    }
+
     // =============================================================================================
     // SET PROPERTIES
     //
@@ -1318,27 +1342,7 @@ class PropertyStore private (
         //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
         private[this] def handleUnsatisfiedDependencies(): Unit = {
 
-            def validateStore(): Boolean = {
-                entitiesProperties forall {
-                    _.ps.forall { pos ⇒
-                        (pos ne null) || {
-                            val p = pos.p
-                            val os = pos.os
-                            if ((p ne null) && p.isFinal && os != null) {
-                                val error = s"final property $p has ${os.size} observers"
-                                logError("internal error", error)
-                                false
-                            } else {
-                                true
-                            }
-                        }
-                    }
-                }
-            }
-            assert(
-                validateStore(),
-                s"the property store is inconsistent:\n${store.toString(true)}"
-            )
+            if (debug) store.validate()
 
             /*
       		 * Returns the list of observers related to the given entity and property kind.

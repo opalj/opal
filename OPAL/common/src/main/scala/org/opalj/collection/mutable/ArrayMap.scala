@@ -131,13 +131,24 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         }
     }
 
-    def foreach(f: T ⇒ Unit): Unit = {
+    def foreachValue(f: T ⇒ Unit): Unit = {
         var i = 0
         val max = data.length
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
             if (e != null) f(e)
+            i += 1
+        }
+    }
+
+    def foreach(f: (Int, T) ⇒ Unit): Unit = {
+        var i = 0
+        val max = data.length
+        while (i < max) {
+            val e = data(i)
+            // Recall that all values have to be non-null...
+            if (e != null) f(i, e)
             i += 1
         }
     }
@@ -218,7 +229,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒
+        foreachValue { e ⇒
             hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
         }
         hc
