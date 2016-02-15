@@ -84,7 +84,7 @@ class LibraryEntryPointsAnalysis private (
         // which relates somehow to object serialization.
 
         import propertyStore.require
-        val c_inst: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+        val c_inst: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
             val isInstantiable = (dependeeP eq Instantiable)
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
@@ -93,7 +93,7 @@ class LibraryEntryPointsAnalysis private (
                     case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
                     case _             ⇒ false
                 }
-                val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                val c_vis: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
                     if (dependeeP eq ClassLocal)
                         Result(method, NoEntryPoint)
                     else if ((dependeeP eq Global) && (isInstantiable || method.isStatic))
