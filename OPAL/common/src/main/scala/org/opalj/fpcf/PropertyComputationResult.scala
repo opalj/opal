@@ -49,6 +49,7 @@ case class Result(e: Entity, p: Property) extends PropertyComputationResult {
     private[fpcf] final def id = Result.id
 
 }
+private[fpcf] object Result { private[fpcf] final val id = 3 }
 
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
@@ -64,15 +65,6 @@ case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationRe
 
 }
 private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
-
-/**
- * Factory for [[Result]] and [[FinalResult]] objects.
- */
-object Result {
-
-    private[fpcf] final val id = 3
-
-}
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties.
@@ -116,6 +108,9 @@ object NoEntities extends ImmediateMultiResult(Traversable.empty)
  * the given continuation `c` is invoked.
  *
  * All current computations that depend on the property of the entity will be invoked.
+ *
+ * @param dependees The list of entity/property (kind) pairs the analysis depends on. Each
+ * 		entity/property kind must occur at most once in the list.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  * 		before (using one of the `apply` functions of the property store.)
