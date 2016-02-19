@@ -1,4 +1,4 @@
-/* BSD 2Clause License:
+/* BSD 2-Clause License:
  * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
@@ -26,40 +26,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
-package analyses
+package org.opalj
+package fpcf
+package analysis
 
-import java.net.URL
+package object methods {
 
-/**
- * Prints information about those methods for which we need to do call by signature resolution
- * when we analyze a library.
- *
- * @author Michael Reif
- */
-object CallBySignatureInformation extends DefaultOneStepAnalysis {
-
-    override def title: String =
-        "computes potential target methods for interface based method calls"
-
-    override def description: String =
-        """|Determines for every interface method if there are methods 
-           |with matching signatures in classes that are not final and 
-           |which do not implement the respective interface. In such cases, and if we 
-           |analyze a library, the respective target methods need to be taken into account.""".
-            stripMargin('|')
-
-    override def doAnalyze(
-        project:       org.opalj.br.analyses.Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-
-        val cbs = project.get(CallBySignatureResolutionKey)
-
-        val methodReferenceStatistics = cbs.methodReferenceStatistics.mkString("\n", "\n", "\n")
-        val generalStatistics = cbs.statistics.map(e ⇒ e._1+": "+e._2).mkString("Statistics{\n\t", "\n\t", "\n}")
-        BasicReport(methodReferenceStatistics + generalStatistics)
+    /**
+     * The key associated with every call-by-signature property.
+     */
+    final val CallBySignatureKey = {
+        PropertyKey.create[CallBySignature](
+            // The unique name of the property.
+            "CallBySignatureTargets",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError("internal error"),
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ throw new UnknownError("internal error")
+        )
     }
 
+    /**
+     * The key associated with every ´ClientCallable´ property.
+     */
+    final val ClientCallableKey = {
+        PropertyKey.create[ClientCallable]("IsClientCallable", IsClientCallable)
+    }
+
+    /**
+     * The key associated with every ´CallableFromClassesInOtherPackages´ property.
+     */
+    final val ClientInheritableKey = {
+        PropertyKey.create[ClientInheritable]("ClientInheritable", IsClientInheritable)
+    }
 }
+

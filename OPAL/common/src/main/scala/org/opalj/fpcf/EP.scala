@@ -36,9 +36,9 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-final class EP(val e: Entity, val p: Property)
-        extends EOptionP
-        with Product2[Entity, Property] {
+final class EP[P <: Property](val e: Entity, val p: P)
+        extends EOptionP[P]
+        with Product2[Entity, P] {
 
     def _1 = e
     def _2 = p
@@ -47,14 +47,14 @@ final class EP(val e: Entity, val p: Property)
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EP ⇒ (that.e eq this.e) && this.p == that.p
-            case _        ⇒ false
+            case that: EP[_] ⇒ (that.e eq this.e) && this.p == that.p
+            case _           ⇒ false
         }
     }
 
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP]
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP[_]]
 
-    def pk: PropertyKey = p.key
+    def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
     override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
@@ -68,9 +68,10 @@ final class EP(val e: Entity, val p: Property)
  */
 object EP {
 
-    def apply(e: Entity, p: Property): EP = new EP(e, p)
+    def apply[P <: Property](e: Entity, p: P): EP[P] =
+        new EP(e, p)
 
-    def unapply(that: EP): Option[(Entity, Property)] = {
+    def unapply[P <: Property](that: EP[P]): Option[(Entity, P)] = {
         that match {
             case null ⇒ None
             case ep   ⇒ Some((ep.e, ep.p))

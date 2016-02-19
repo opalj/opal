@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,7 +33,6 @@ package analyses
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import reader.Java8Framework.ClassFiles
@@ -58,14 +57,15 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     //
     // Setup
     //
-    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
-    val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
-
     val jlsCHFile = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
     val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+
+    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
+
+    val javaLangCHFile = "JavaLangClassHierarchy.ths"
+    val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))
+    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -348,13 +348,13 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     behavior of "the default ClassHierarchy's isDirectSupertypeInformationComplete method"
 
     it should "return true if a type's super type information is definitive complete" in {
-        javaLangCH.isDirectSupertypeInformationComplete(Object) should be(true)
-        javaLangCH.isDirectSupertypeInformationComplete(Throwable) should be(true)
+        javaLangCH.isDirectSuperclassTypeInformationComplete(Object) should be(true)
+        javaLangCH.isDirectSuperclassTypeInformationComplete(Throwable) should be(true)
     }
 
     it should "return false if a type's super type information is not guaranteed to be complete" in {
-        javaLangCH.isDirectSupertypeInformationComplete(Serializable) should be(false)
-        javaLangCH.isDirectSupertypeInformationComplete(AnUnknownType) should be(false)
+        javaLangCH.isDirectSuperclassTypeInformationComplete(Serializable) should be(false)
+        javaLangCH.isDirectSuperclassTypeInformationComplete(AnUnknownType) should be(false)
     }
 
     behavior of "the default ClassHierarchy's allSupertypesOf method w.r.t. class types"
@@ -486,7 +486,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classfiles/types.jar", "br")),
-            Traversable.empty
+            Traversable.empty,
+            true
         )
 
     val cRootType = ObjectType("types/CRoot")
@@ -520,41 +521,41 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(Set.empty)
     }
 
-    behavior of "the ClassHierarchy's allSubclasses method"
+    behavior of "the ClassHierarchy's allSubclassTypes method"
 
     it should "return the empty iterator if the type has no subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAAABBCType, false).size should be(0)
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAAABBCType, false).size should be(0)
     }
 
     it should "return the singleton iterator if the type has no subclasses but we want the relation to be reflexive" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAAABBCType, true).size should be(1)
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAAABBCType, true).size should be(1)
     }
 
     it should "return all subclasses of a leaf-type in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootType, true).toSet should be(Set(cRootType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootType, true).toSet should be(Set(cRootType))
     }
 
     it should "return all subclasses (non-reflexive) of a leaf-type in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootType, false).toSet should be(Set())
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootType, false).toSet should be(Set())
     }
 
     it should "return all subclasses in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAType, true).toSet should be(Set(cRootAType, cRootAABType, cRootAAABBCType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAType, true).toSet should be(Set(cRootAType, cRootAABType, cRootAAABBCType))
     }
 
     it should "return all subclasses (non-reflexive) in the complete type hierarchy" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(cRootAType, false).toSet should be(Set(cRootAABType, cRootAAABBCType))
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(cRootAType, false).toSet should be(Set(cRootAABType, cRootAAABBCType))
     }
 
     it should "return all subclasses (non-reflexive) of a class with multiple direct subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
             Set(
                 ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
                 ObjectType("java/lang/StringIndexOutOfBoundsException")
@@ -563,8 +564,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     }
 
     it should "return all subclasses (reflexive) of a class with multiple direct subclasses" in {
-        import typesProject.classHierarchy.allSubclasses
-        allSubclasses(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
+        import typesProject.classHierarchy.allSubclassTypes
+        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
             Set(
                 ObjectType("java/lang/IndexOutOfBoundsException"),
                 ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
@@ -761,7 +762,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val clusteringProject =
         Project(
             ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi")),
-            Traversable.empty
+            Traversable.empty,
+            true
         )
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
@@ -781,7 +783,11 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         // check if the SimpleWindow is in the Set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
-        subtypes.contains(simpleWindow) should be(true)
+        if (!subtypes.contains(simpleWindow))
+            fail(s"SimpleWindow is not among the subtypes: $subtypes; "+
+                s"SimpleWindow <: ${classHierarchy.allSupertypes(simpleWindow)}; "+
+                s"Window >: ${classHierarchy.allSubtypes(window, false)}\n"+
+                classHierarchy.structure)
 
         clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
             method.name == "draw" &&
@@ -805,7 +811,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val fieldsProject =
         Project(
             ClassFiles(locateTestResources("classfiles/Fields.jar", "bi")),
-            Traversable.empty
+            Traversable.empty,
+            true
         )
     import fieldsProject.classFile
 
@@ -888,7 +895,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val methodsProject =
         Project(
             ClassFiles(locateTestResources("classfiles/Methods.jar", "bi")),
-            Traversable.empty
+            Traversable.empty,
+            true
         )
 
     val superI = ObjectType("methods/b/SuperI")
@@ -932,6 +940,6 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 object ClassHierarchyTest {
 
     val generics = locateTestResources("classfiles/genericTypes.jar", "br")
-    val genericProject = Project(ClassFiles(generics), Traversable.empty)
+    val genericProject = Project(ClassFiles(generics), Traversable.empty, true)
 
 }

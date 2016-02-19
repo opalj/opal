@@ -33,12 +33,17 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-trait EOptionP {
+trait EOptionP[P <: Property] {
 
     /**
      * The entity.
      */
     val e: Entity
+
+    /**
+     * The property key of the optionally available property.
+     */
+    def pk: PropertyKey[P]
 
     /**
      * @return `true` if the entity is associated with a property.
@@ -50,8 +55,17 @@ trait EOptionP {
      * thrown.
      */
     @throws[UnsupportedOperationException]("if no property is available")
-    def p: Property
+    def p: P
 
-    def pk: PropertyKey
+    override def toString: String = s"EOptionP($e,$p)"
 }
 
+object EOptionP {
+
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P], pOption: Option[P]): EOptionP[P] = {
+        pOption match {
+            case Some(p) ⇒ EP(e, p)
+            case None    ⇒ EPK(e, pk)
+        }
+    }
+}

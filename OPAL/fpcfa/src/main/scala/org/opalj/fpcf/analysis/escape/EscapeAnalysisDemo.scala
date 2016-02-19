@@ -66,13 +66,12 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakingEntities: Traversable[(AnyRef, Property)] =
-            projectStore(SelfReferenceLeakage.Key).filter { ep ⇒
-                val leakage = ep._2
-                leakage == DoesNotLeakSelfReference
+        val notLeakingEntities: Traversable[EP[SelfReferenceLeakage]] =
+            projectStore.entities(SelfReferenceLeakage.Key).filter { ep ⇒
+                ep.p == DoesNotLeakSelfReference
             }
-        val notLeakingClasses = notLeakingEntities.map { e ⇒
-            val classFile = e._1.asInstanceOf[ClassFile]
+        val notLeakingClasses = notLeakingEntities.map { ep ⇒
+            val classFile = ep.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType
             val className = classFile.thisType.toJava
             if (project.classHierarchy.isInterface(classType))

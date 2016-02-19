@@ -54,7 +54,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     val project: SomeProject = Project(
         Java8Framework.ClassFiles(testResources),
-        Java8LibraryFramework.ClassFiles(rtJar)
+        Java8LibraryFramework.ClassFiles(rtJar),
+        true
     )
 
     private def testMethod(classFile: ClassFile, name: String): Unit = {

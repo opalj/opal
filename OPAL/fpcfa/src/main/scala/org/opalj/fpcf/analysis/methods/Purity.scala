@@ -31,31 +31,27 @@ package fpcf
 package analysis
 package methods
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
+sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
+    final type Self = Purity
+}
 
 /**
  * Common supertrait of all purity properties.
  */
-sealed trait Purity extends Property {
+sealed trait Purity extends Property with PurityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `Purity` properties.
      */
     // All instances have to share the SAME key!
     final def key = Purity.key
-
 }
-/**
- * Common constants use by all [[Purity]] properties associated with methods.
- */
-object Purity extends PropertyMetaInformation {
+object Purity extends PurityPropertyMetaInformation {
 
     /**
      * The key associated with every purity property.
      */
-    final val key =
+    final val key: PropertyKey[Purity] = {
         PropertyKey.create(
             // The unique name of the property.
             "Purity",
@@ -70,6 +66,7 @@ object Purity extends PropertyMetaInformation {
         // as a sideeffect of setting the pureness of one method!
         // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
         )
+    }
 }
 
 /**

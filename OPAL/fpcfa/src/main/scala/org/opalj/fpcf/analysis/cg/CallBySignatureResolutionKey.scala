@@ -26,40 +26,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package analysis
+package org.opalj.fpcf.analysis.cg
 
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.test.annotations.CallabilityKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
+ * The ''key'' object to get the interface methods for which call by signature resolution
+ * needs to be done.
+ *
+ * @note To get call by signature information use the [[org.opalj.br.analyses.Project]]'s `get`
+ * 		method and pass in `this` object.
+ *
+ * @see [[CallBySignatureResolution]] for further information.
+ *
  * @author Michael Reif
  */
-abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatureResolution] {
 
-    def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
+    /**
+     * The computation of [[CallBySignatureResolution]] information needs the
+     * [[org.opalj.br.analyses.ProjectIndex]].
+     */
+    protected def requirements = List(ProjectIndexKey)
 
-    override def testFileName = "classfiles/callableFromClassesInOtherPackagesTest.jar"
-
-    override def testFilePath = "fpcfa"
-
-    override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
-
-    override def propertyKey: PropertyKey = CallableFromClassesInOtherPackages.key
-
-    override def propertyAnnotation: ObjectType =
-        ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
-
-    def defaultValue = CallabilityKeys.Callable.toString
+    /**
+     * Computes the [[CallBySignatureResolution]] for the given project.
+     */
+    override protected def compute(project: SomeProject): CallBySignatureResolution = {
+        CallBySignatureResolution(project, () ⇒ Thread.currentThread().isInterrupted())
+    }
 }
 
-class CallableFromClassesInOtherPackagesAnalysisCPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
-}
-
-class CallableFromClassesInOtherPackagesAnalysisOPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
-    override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
-}

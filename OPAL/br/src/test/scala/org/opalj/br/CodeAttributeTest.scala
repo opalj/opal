@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,7 +32,6 @@ package br
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
@@ -242,7 +241,8 @@ private object CodeAttributeTest {
         Project(
             ClassFiles(locateTestResources("classfiles/Code.jar", "bi")) ++
                 ClassFiles(locateTestResources("classfiles/cfgtest8.jar", "br")),
-            Traversable.empty
+            Traversable.empty,
+            true
         )
 
     val nestedCatch =

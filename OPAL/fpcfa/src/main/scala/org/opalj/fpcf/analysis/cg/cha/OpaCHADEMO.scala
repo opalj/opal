@@ -33,13 +33,14 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.fpcf.Property
+import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.GlobalPerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation
 
 object OpaCHADemo extends DefaultOneStepAnalysis {
 
@@ -56,24 +57,33 @@ object OpaCHADemo extends DefaultOneStepAnalysis {
         val opaProject = AnalysisModeConfigFactory.resetAnalysisMode(project, AnalysisModes.OPA)
         val opaStore = opaProject.get(SourceElementsPropertyStoreKey)
 
-        OPALLogger.updateLogger(opaProject.logContext, new ConsoleOPALLogger(true, Warn))
-
         val methodsCount: Double = project.methodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
-        // CALL GRAPH STUFF
-        val ccg = opaProject.get(CHACallGraphKey)
-        val execpetions = ccg.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
+        var opaCCG: ComputedCallGraph = null
+        PerformanceEvaluation.time {
+            opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        } { t ⇒ println("OPA-CHA computation time: "+t.toSeconds) }
+
+        println("CPA (cbs resolution index): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("CPA (cbs analysis): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("CPA (entry points): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("CPA (clientCallable): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("CPA (method accessibility): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("CPA (instantiable classes index): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("CPA (cg construction): "+GlobalPerformanceEvaluation.getTime('const).toSeconds.toString(true))
+        println("CPA (invoke virtual): \t - "+GlobalPerformanceEvaluation.getTime('invokevirtual).toSeconds.toString(true))
+        println("CPA (invoke interface): \t - "+GlobalPerformanceEvaluation.getTime('invokeinterface).toSeconds.toString(true))
+        println("CPA (invoke special): \t - "+GlobalPerformanceEvaluation.getTime('invokespecial).toSeconds.toString(true))
+        println("CPA (invoke static): \t - "+GlobalPerformanceEvaluation.getTime('invokestatic).toSeconds.toString(true))
+        println("CPA (cg builder): \t - "+GlobalPerformanceEvaluation.getTime('cgbuilder).toSeconds.toString(true)+"\n\n")
+
+        val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)
-        val newOpaCG = ccg.callGraph
-        // CALL GRAPH STUFF
 
-        val opaEP = opaStore.entities { (p: Property) ⇒
-            p == IsEntryPoint
-        }
+        val newOpaCG = opaCCG.callGraph
 
-        val cbs = opaProject.get(CallBySignatureResolutionKey)
-        println(cbs.statistics)
+        val opaEP = opaStore.entities { (p: Property) ⇒ p == IsEntryPoint }
 
         BasicReport(
             s"#methods:  ${methodsCount}\n"+

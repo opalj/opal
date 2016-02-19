@@ -144,10 +144,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 while (root.getCause != null) root = root.getCause
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        root.getStackTrace().take(5).map{stackTraceElement =>
-                        stackTraceElement.getClassName+" { "+
-                            stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
-                            " }"
+                        root.getStackTrace().take(5).map { stackTraceElement ⇒
+                            stackTraceElement.getClassName+" { "+
+                                stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
+                                " }"
                         }.mkString("; ")
                     } else {
                         "<location unavailable>"
@@ -172,7 +172,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
+            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
@@ -184,7 +184,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
             })
             info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
             opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty)
+            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
 
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)

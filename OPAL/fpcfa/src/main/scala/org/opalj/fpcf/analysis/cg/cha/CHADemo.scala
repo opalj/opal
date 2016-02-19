@@ -33,14 +33,16 @@ package cg
 package cha
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, CallBySignatureResolutionKey, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
-import org.opalj.br.Method
+import org.opalj.ai.analyses.cg.{CallGraph, ComputedCallGraph}
+import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisModeConfigFactory
+import org.opalj.util.GlobalPerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation
 
 object CHADemo extends DefaultOneStepAnalysis {
 
@@ -71,17 +73,59 @@ object CHADemo extends DefaultOneStepAnalysis {
         val methodsCount: Double = project.projectMethodsCount.toDouble
         def getPercentage(value: Int): String = "%1.2f" format (value.toDouble / methodsCount * 100d)
 
+        var traditionalCG: CallGraph = null
+
         // CALL GRAPH STUFF
+        PerformanceEvaluation.time {
+            traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
+        } { t ⇒ println("naive CHA computation time: "+t.toSeconds) }
 
-        val traditionalCG = project.get(org.opalj.ai.analyses.cg.CHACallGraphKey).callGraph
+        println(GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println(GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
 
-        val cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
-        val opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        var opaCCG: ComputedCallGraph = null
+
+        PerformanceEvaluation.time {
+            opaCCG = opaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        } { t ⇒ println("OPA-CHA computation time: "+t.toSeconds) }
+
+        println("OPA (cbs resolution index): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("OPA (cbs analysis): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("OPA (entry points): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("OPA (clientCallable): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("OPA (method accessibility): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("OPA (instantiable classes index): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("OPA (cg construction): "+GlobalPerformanceEvaluation.getTime('const).toSeconds.toString(true))
+        println("OPA (invoke virtual): \t - "+GlobalPerformanceEvaluation.getTime('invokevirtual).toSeconds.toString(true))
+        println("OPA (invoke interface): \t - "+GlobalPerformanceEvaluation.getTime('invokeinterface).toSeconds.toString(true))
+        println("OPA (invoke special): \t - "+GlobalPerformanceEvaluation.getTime('invokespecial).toSeconds.toString(true))
+        println("OPA (invoke static): \t - "+GlobalPerformanceEvaluation.getTime('invokestatic).toSeconds.toString(true))
+        println("OPA (cg builder): \t - "+GlobalPerformanceEvaluation.getTime('cgbuilder).toSeconds.toString(true)+"\n\n")
+        GlobalPerformanceEvaluation.resetAll()
+
+        var cpaCCG: ComputedCallGraph = null
+        PerformanceEvaluation.time {
+            cpaCCG = cpaProject.get(org.opalj.fpcf.analysis.cg.cha.CHACallGraphKey)
+        } { t ⇒ println("CPA-CHA computation time: "+t.toSeconds) }
+
+        println("CPA (cbs resolution index): "+GlobalPerformanceEvaluation.getTime('cbs).toSeconds.toString(true))
+        println("CPA (cbs analysis): "+GlobalPerformanceEvaluation.getTime('cbst).toSeconds.toString(true))
+        println("CPA (entry points): "+GlobalPerformanceEvaluation.getTime('ep).toSeconds.toString(true))
+        println("CPA (clientCallable): "+GlobalPerformanceEvaluation.getTime('callableByOthers).toSeconds.toString(true))
+        println("CPA (method accessibility): "+GlobalPerformanceEvaluation.getTime('methodAccess).toSeconds.toString(true))
+        println("CPA (instantiable classes index): "+GlobalPerformanceEvaluation.getTime('inst).toSeconds.toString(true))
+        println("CPA (cg construction): "+GlobalPerformanceEvaluation.getTime('const).toSeconds.toString(true))
+        println("CPA (invoke virtual): \t - "+GlobalPerformanceEvaluation.getTime('invokevirtual).toSeconds.toString(true))
+        println("CPA (invoke interface): \t - "+GlobalPerformanceEvaluation.getTime('invokeinterface).toSeconds.toString(true))
+        println("CPA (invoke special): \t - "+GlobalPerformanceEvaluation.getTime('invokespecial).toSeconds.toString(true))
+        println("CPA (invoke static): \t - "+GlobalPerformanceEvaluation.getTime('invokestatic).toSeconds.toString(true))
+        println("CPA (cg builder): \t - "+GlobalPerformanceEvaluation.getTime('cgbuilder).toSeconds.toString(true)+"\n\n")
 
         val execpetions = opaCCG.constructionExceptions.map(_.toFullString).mkString("Construction Exception\n\n", "\n", "\n")
         println(execpetions)
-        val newCpaCG = cpaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
+
         val newOpaCG = opaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
+        val newCpaCG = cpaCCG.callGraph.asInstanceOf[CallBySignatureCallGraph]
 
         // ENTRY POINT INFO
 
@@ -132,12 +176,6 @@ object CHADemo extends DefaultOneStepAnalysis {
             println("nonInstClasses(OPA): "+opaNon.size)
             println("nonInstClasses(CPA): "+cpaNon.size)
             println((cpaNon -- opaNon).mkString("\n"))
-        }
-
-        val callBySignaturePossibilities = true
-        if (callBySignaturePossibilities) {
-            println("OPA STATISTICS\n\n"+opaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
-            println("CPA STATISTICS\n\n"+cpaProject.get(CallBySignatureResolutionKey).statistics()+"\n\n")
         }
 
         val callSiteInfo = true

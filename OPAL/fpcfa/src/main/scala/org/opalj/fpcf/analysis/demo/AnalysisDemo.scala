@@ -42,15 +42,14 @@ import org.opalj.br.ClassFile
  */
 trait AnalysisDemo extends DefaultOneStepAnalysis {
 
-    def entitiesByProperty(
-        property: Property
+    def entitiesByProperty[P <: Property](
+        property: P
     )(
         implicit
         propertyStore: PropertyStore
-    ): Traversable[(Entity, Property)] =
-        propertyStore(property.key).filter { ep ⇒
-            val isFactoryMethod = ep._2
-            isFactoryMethod == property
+    ): Traversable[EP[property.Self]] =
+        propertyStore.entities(property.key).filter { ep ⇒
+            ep.p == property
         }
 
     def finalReport(infoStrings: Traversable[String], caption: String): String =
@@ -60,13 +59,13 @@ trait AnalysisDemo extends DefaultOneStepAnalysis {
 trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
-        entities:    Traversable[(Entity, Property)],
-        withJarInfo: Boolean                         = false
+        entities:    Traversable[SomeEP],
+        withJarInfo: Boolean             = false
     )(
         implicit
         project: Project[URL]
-    ): Traversable[String] = entities.map { e ⇒
-        val method = e._1.asInstanceOf[Method]
+    ): Traversable[String] = entities.map { ep ⇒
+        val method = ep.e.asInstanceOf[Method]
         val methodString = getVisibilityModifier(method)+" "+method.name
         val classFile = project.classFile(method)
         val jarInfo = if (withJarInfo)

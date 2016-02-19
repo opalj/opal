@@ -30,12 +30,16 @@ package org.opalj
 package fpcf
 package analysis
 
+sealed trait ProjectAccessibilityPropertyMetaInformation extends PropertyMetaInformation {
+    final type Self = ProjectAccessibility
+}
+
 /**
  * This is a common trait for all ProjectAccessibility properties which can be emitted to the
  * PropertyStore. It describes the accessibility of a given entity.
  */
-sealed trait ProjectAccessibility extends Property {
-    final def key: org.opalj.fpcf.PropertyKey = ProjectAccessibility.key
+sealed trait ProjectAccessibility extends Property with ProjectAccessibilityPropertyMetaInformation {
+    final def key = ProjectAccessibility.key
 }
 
 /**
@@ -43,10 +47,8 @@ sealed trait ProjectAccessibility extends Property {
  * all properties derived from the ProjectAccessibility property, as well as it defines defines
  * the (sound) fall back if the property is not computed but requested by another analysis.
  */
-object ProjectAccessibility extends PropertyMetaInformation {
-
-    final val key: org.opalj.fpcf.PropertyKey = PropertyKey.create("Accessible", Global)
-
+object ProjectAccessibility extends ProjectAccessibilityPropertyMetaInformation {
+    final val key = PropertyKey.create[ProjectAccessibility]("Accessible", Global)
 }
 
 /**

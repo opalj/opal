@@ -32,6 +32,8 @@ package analysis
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.NotClientCallable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -39,26 +41,28 @@ import scala.collection.mutable.ListBuffer
  *
  * @author Michael Reif
  */
-class MethodAccessibilityAnalysis private[analysis] (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def determineProperty(method: Method): PropertyComputationResult = {
-        if (method.isPrivate)
-            return ImmediateResult(method, ClassLocal)
+        import org.opalj.util.GlobalPerformanceEvaluation
 
-        if (isOpenLibrary)
-            return ImmediateResult(method, Global)
+        GlobalPerformanceEvaluation.time('methodAccess) {
+            if (method.isPrivate)
+                return ImmediateResult(method, ClassLocal)
 
-        // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
-        //
-        if (method.isPackagePrivate)
-            return ImmediateResult(method, PackageLocal)
+            if (isOpenLibrary)
+                return ImmediateResult(method, Global)
 
-        if (method.isStatic)
-            determineStaticMethodAccessibility(method)
-        else
-            determineInstanceMethodAccessibility(method)
+            // THE ANALYSISMODE IS NOW "CLOSED LIBRARY" OR "APPLICATION"
+            //
+            if (method.isPackagePrivate)
+                return ImmediateResult(method, PackageLocal)
+
+            if (method.isStatic)
+                determineStaticMethodAccessibility(method)
+            else
+                determineInstanceMethodAccessibility(method)
+        }
     }
 
     private[this] def determineStaticMethodAccessibility(
@@ -114,7 +118,7 @@ class MethodAccessibilityAnalysis private[analysis] (
             return ImmediateResult(method, Global);
 
         def c(dependeeE: Entity, dependeeP: Property) = {
-            if (dependeeP == NotCallable)
+            if (dependeeP == NotClientCallable)
                 Result(method, PackageLocal)
             else
                 Result(method, Global)
@@ -122,7 +126,7 @@ class MethodAccessibilityAnalysis private[analysis] (
 
         propertyStore.require(
             method, ProjectAccessibility.key,
-            method, CallableFromClassesInOtherPackages.key
+            method, methods.ClientCallableKey
         )(
             c
         )
@@ -156,7 +160,7 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
     }
 
     override def usedProperties: Set[PropertyKind] = {
-        Set(CallableFromClassesInOtherPackages)
+        Set(methods.ClientCallableKey)
     }
 }
 
@@ -178,7 +182,7 @@ object StaticMethodAccessibilityAnalysis extends FPCFAnalysisRunner {
     }
 
     override def usedProperties: Set[PropertyKind] = {
-        Set(CallableFromClassesInOtherPackages)
+        Set(methods.ClientCallableKey)
     }
 
     protected[analysis] def start(

@@ -148,12 +148,12 @@ class Demo {
         return cpureCallee(i / 21);
     }
 
-    static int cpureCalleeCalleeCalle(int i) {
+    static int cpureCalleeCalleeCallee(int i) {
         return cpureCalleeCallee1(i / 21) * cpureCalleeCallee2(i / 21);
     }
 
     static int cpureCalleeCalleeCalleCallee(int i) {
-        return cpureCalleeCalleeCalle(1299);
+        return cpureCalleeCalleeCallee(1299);
     }
 
     // All methods are involved in multiple cycles of dependent methods

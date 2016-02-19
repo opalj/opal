@@ -47,11 +47,11 @@ public enum CallabilityKeys {
 	 * This has to be used if a method can't be inherit by any immediate non-abstract 
 	 * subclass and due to this is overridden in every concrete subclass.
 	 */
-	NotCallable, 
+	NotClientCallable,
 	
 	/**
 	 * This has to be used if there is a subclass that inherits that method and the method
 	 * is not overridden by every existing subclass.
 	 */
-	Callable,
+	IsClientCallable,
 }

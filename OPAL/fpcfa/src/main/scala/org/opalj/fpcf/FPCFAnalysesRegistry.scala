@@ -30,8 +30,9 @@ package org.opalj
 package fpcf
 
 import org.opalj.fpcf.analysis._
-import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
+import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -126,9 +127,9 @@ object FPCFAnalysesRegistry {
     )
 
     register(
-        "FieldUpdatesAnalysis",
+        "FieldMutabilityAnalysis",
         "Determines if fields are (effectively) final.",
-        FieldUpdatesAnalysis
+        FieldMutabilityAnalysis
     )
 
     register(

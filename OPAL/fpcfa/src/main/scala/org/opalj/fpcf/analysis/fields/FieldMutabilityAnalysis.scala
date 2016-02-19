@@ -39,28 +39,25 @@ import org.opalj.br.instructions.PUTSTATIC
  * Determines if a field is always initialized at most once or if a field is or can be mutated
  * after (lazy) initialization.
  */
-class FieldUpdatesAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    def determineProperty(
-        classFile: ClassFile
-    ): PropertyComputationResult = {
+    def determineProperty(classFile: ClassFile): PropertyComputationResult = {
 
         val thisType = classFile.thisType
+
         val fields = classFile.fields
+
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
         var effectivelyFinalFields = psnfFields
-        if (psnfFields.isEmpty)
-            return Empty;
-
-        val concreteMethods = classFile.methods filter { m ⇒
-            !m.isStaticInitializer /*the static initializer is only executed once and at the beginning */ &&
-                !m.isNative &&
-                !m.isAbstract
-        }
-        concreteMethods foreach { m ⇒
-            m.body.get foreach { (pc, instruction) ⇒
+        for {
+            method ← classFile.methods
+            if !method.isStaticInitializer
+            if !method.isAbstract
+            if !method.isNative
+            if effectivelyFinalFields.nonEmpty
+            code = method.body.get
+        } {
+            code exists { (pc, instruction) ⇒
                 instruction match {
                     case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
                         // we don't need to lookup the field in the
@@ -69,37 +66,40 @@ class FieldUpdatesAnalysis private (
                         // resolution of the field reference.
                         val field = classFile.findField(fieldName)
                         if (field.isDefined) { effectivelyFinalFields -= field.get }
-                        if (effectivelyFinalFields.isEmpty)
-                            return ImmediateMultiResult(psnfFields.map(f ⇒ (f, NonFinalByAnalysis)));
+
+                        effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code
                     case _ ⇒
+                        false
                     /*Nothing to do*/
                 }
             }
         }
 
-        val results = psnfFields map { f ⇒
+        val psnfFieldsResult = psnfFields map { f ⇒
             if (effectivelyFinalFields.contains(f))
-                (f, EffectivelyFinal)
+                EP(f, EffectivelyFinal)
             else
-                (f, NonFinalByAnalysis)
+                EP(f, NonFinalByAnalysis)
         }
-        ImmediateMultiResult(results)
+
+        val r = psnfFieldsResult ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinal) }
+        ImmediateMultiResult(r)
     }
 }
 
-object FieldUpdatesAnalysis extends FPCFAnalysisRunner {
+object FieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def entitySelector(project: SomeProject): PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile if !project.isLibraryType(cf) ⇒ cf
+        case cf: ClassFile if !project.libraryClassFilesAreInterfacesOnly || !project.isLibraryType(cf) ⇒ cf
     }
 
-    def derivedProperties: Set[PropertyKind] = Set(FieldUpdates)
+    def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        val analysis = new FieldUpdatesAnalysis(project)
+        val analysis = new FieldMutabilityAnalysis(project)
         propertyStore <||< (entitySelector(project), analysis.determineProperty)
         analysis
     }

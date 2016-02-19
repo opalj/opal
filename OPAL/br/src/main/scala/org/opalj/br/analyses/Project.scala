@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,22 +32,12 @@ package analyses
 
 import java.net.URL
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.{Set, Map}
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
-import scala.collection.parallel.mutable.ParArray
-import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 import scala.collection.SortedMap
-import scala.collection.mutable.LinkedHashMap
-import scala.collection.SortedMap
-import scala.collection.generic.FilterMonadic
-import scala.reflect.ClassTag
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
@@ -63,9 +53,7 @@ import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.DefaultLogContext
-import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -110,13 +98,16 @@ import org.opalj.collection.mutable.ArrayMap
  *      context after the project is no longer referenced (garbage collected) is not
  *      possible.
  *
+ * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
+ * 		of the methods of the library's classes is available.
+ *
  * @author Michael Eichberg
  * @author Marco Torsello
  */
 class Project[Source] private (
         private[this] val projectClassFiles:              Array[ClassFile],
         private[this] val libraryClassFiles:              Array[ClassFile],
-        private[this] val methods:                        Array[Method], // the concrete methods, sorted by size in descending order
+        private[this] val methodsSortedBySize:            Array[Method], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes:                   Set[ObjectType], // the types defined by the class files belonging to the project's code
         private[this] val fieldToClassFile:               AnyRefMap[Field, ClassFile],
         private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
@@ -131,26 +122,28 @@ class Project[Source] private (
         val libraryFieldsCount:                           Int,
         val codeSize:                                     Long,
         val classHierarchy:                               ClassHierarchy,
-        val analysisMode:                                 AnalysisMode
+        val analysisMode:                                 AnalysisMode,
+        val libraryClassFilesAreInterfacesOnly:           Boolean
 )(
         implicit
         val logContext: LogContext,
         val config:     Config
 ) extends ClassFileRepository {
 
+    assert(
+        !libraryClassFilesAreInterfacesOnly || libraryClassFiles.forall(_.methods.forall(_.body.isEmpty)),
+        "the library's methods contain bodies though libraryClassFilesAreInterfacesOnly is true"
+    )
+
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
     /**
      * Creates a new `Project` which also includes the given class files.
      */
-    def extend(
-        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty
-    ): Project[Source] = {
+    def extend(projectClassFilesWithSources: Iterable[(ClassFile, Source)]): Project[Source] = {
         Project.extend[Source](
             this,
-            projectClassFilesWithSources,
-            libraryClassFilesWithSources
+            projectClassFilesWithSources
         )
     }
 
@@ -158,11 +151,17 @@ class Project[Source] private (
      * Creates a new `Project` which also includes this as well as the other project's
      * class files.
      */
-    def extend(otherProject: Project[Source]): Project[Source] = {
+    def extend(other: Project[Source]): Project[Source] = {
+        if (this.analysisMode != other.analysisMode)
+            throw new IllegalArgumentException("the projects have different analysis modes")
+
+        if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly)
+            throw new IllegalArgumentException("the projects libraries are loaded differently")
+
         Project.extend[Source](
             this,
-            otherProject.projectClassFilesWithSources,
-            otherProject.libraryClassFilesWithSources
+            other.projectClassFilesWithSources,
+            other.libraryClassFilesWithSources
         )
     }
 
@@ -210,7 +209,7 @@ class Project[Source] private (
     }
 
     def parForeachProjectClassFile[T](
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -453,8 +452,7 @@ class Project[Source] private (
     /**
      * Converts this project abstraction into a standard Java `HashMap`.
      *
-     * @note This method should only be used by Java projects that want to interact
-     *      with BAT.
+     * @note This method is intended to be used by Java projects that want to interact with OPAL.
      */
     def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
@@ -484,7 +482,7 @@ class Project[Source] private (
     }
 
     /**
-     * Returns the number of (non-synthetic) methods per method length
+     * Returns the (number of) (non-synthetic) methods per method length
      * (size in length of the method's code array).
      */
     def projectMethodsLengthDistribution: Map[Int, (Int, Set[Method])] = {
@@ -505,7 +503,7 @@ class Project[Source] private (
         //        result
 
         var data = SortedMap.empty[Int, (Int, Set[Method])]
-        methods.view.filterNot(_.isSynthetic).foreach { method ⇒
+        methodsSortedBySize.view.filterNot(_.isSynthetic).foreach { method ⇒
             val size = method.body.get.instructions.length
             val (count, methods) = data.getOrElse(size, (0, Set.empty[Method]))
             data += ((size, (count + 1, methods + method)))
@@ -525,8 +523,8 @@ class Project[Source] private (
             // we want to collect the size in relation to the source code; 
             //i.e., across all nested classes 
             val count =
-                classFile.methods.view.filterNot { _.isSynthetic }.size +
-                    classFile.fields.view.filterNot { _.isSynthetic }.size
+                classFile.methods.view.filterNot(_.isSynthetic).size +
+                    classFile.fields.view.filterNot(_.isSynthetic).size
 
             var key = classFile.thisType.toJava
             if (classFile.isInnerClass) {
@@ -555,11 +553,9 @@ class Project[Source] private (
     def lookupClassFiles(
         objectTypes: Traversable[ObjectType]
     )(
-        filter: ClassFile ⇒ Boolean
+        classFileFilter: ClassFile ⇒ Boolean
     ): Traversable[ClassFile] = {
-        objectTypes.view.flatMap(classFile(_)) filter { someClassFile: ClassFile ⇒
-            filter(someClassFile)
-        }
+        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
     }
 
     override def toString: String = {
@@ -568,7 +564,15 @@ class Project[Source] private (
                 val (ot, source) = entry
                 ot.toJava+" « "+source.toString
             }
-        "Project( "+classDescriptions.mkString("\n\t", "\n\t", "\n")+")"
+
+        classDescriptions.mkString(
+            "Project("+
+                "\n\tanalysisMode="+analysisMode+
+                "\n\tlibraryClassFilesAreInterfacesOnly="+libraryClassFilesAreInterfacesOnly+
+                "\n\t",
+            "\n\t",
+            "\n)"
+        )
     }
 
     // ----------------------------------------------------------------------------------
@@ -745,6 +749,7 @@ object Project {
         Project.apply[Source](
             projectClassFilesWithSources,
             Traversable.empty,
+            libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
             virtualClassFiles = Traversable.empty
         )(
             projectLogger = projectLogger
@@ -758,6 +763,7 @@ object Project {
         apply(
             Java8ClassFileReader.ClassFiles(projectFile),
             Java8LibraryClassFileReader.ClassFiles(libraryFile),
+            libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
     }
@@ -769,6 +775,7 @@ object Project {
         apply(
             Java8ClassFileReader.AllClassFiles(projectFiles),
             Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
+            libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
     }
@@ -778,18 +785,20 @@ object Project {
     }
 
     /**
-     * Creates a new `Project` that consists of the source files of the previous
-     * project and the newly given source files.
+     * Creates a new `Project` that consists of the class files of the previous
+     * project and the newly given class files.
      */
     def extend[Source](
         project:                      Project[Source],
-        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)]
     ): Project[Source] = {
 
         apply(
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
-            project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
+            // We cannot ensure that the newly provided class files are loaded in the same way
+            // therefore, we do not support extending the set of library class files.
+            project.libraryClassFilesWithSources,
+            project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
                 config = project.config,
@@ -797,13 +806,36 @@ object Project {
             )
     }
 
+    /**
+     * Creates a new `Project` that consists of the class files of the previous
+     * project and the newly given class files.
+     */
+    private def extend[Source](
+        project:                      Project[Source],
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)]
+    ): Project[Source] = {
+
+        apply(
+            project.projectClassFilesWithSources ++ projectClassFilesWithSources,
+            project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
+            project.libraryClassFilesAreInterfacesOnly,
+            virtualClassFiles = Traversable.empty
+        )(
+                project.config,
+                OPALLogger.logger(project.logContext.successor)
+            )
+    }
+
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)]
+        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesAreInterfacesOnly: Boolean
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             libraryClassFilesWithSources,
+            libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )
     }
@@ -818,16 +850,13 @@ object Project {
         config:                 Config,
         useOldConfigAsFallback: Boolean         = true
     ) = {
-
         apply(
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
+            project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback)
-                config.withFallback(project.config)
-            else
-                config,
+            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
             projectLogger = OPALLogger.logger(project.logContext.successor)
         )
     }
@@ -853,13 +882,17 @@ object Project {
     /**
      * Creates a new Project.
      *
-     * @param classFiles The list of class files of this project that are considered
-     *    to belong to the application/library that will be analyzed.
-     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
+     *    	to belong to the application/library that will be analyzed.
+     *    	[Thread Safety] The underlying data structure has to support concurrent access.
      *
-     * @param libraryClassFiles The list of class files of this project that make up
-     *    the libraries used by the project that will be analyzed.
-     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param libraryClassFilesWithSources The list of class files of this project that make up
+     *    	the libraries used by the project that will be analyzed.
+     *    	[Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
+     * 		and no private methods or method implementations are available. Otherwise,
+     * 		the libraries are completely loaded.
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
@@ -878,10 +911,11 @@ object Project {
      *      meaningful option for several advanced analyses.)
      */
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
-        virtualClassFiles:            Traversable[ClassFile]           = Traversable.empty,
-        handleInconsistentProject:    HandleInconsistenProject         = defaultHandlerForInconsistentProjects
+        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesAreInterfacesOnly: Boolean,
+        virtualClassFiles:                  Traversable[ClassFile]           = Traversable.empty,
+        handleInconsistentProject:          HandleInconsistenProject         = defaultHandlerForInconsistentProjects
     )(
         implicit
         config:        Config     = ConfigFactory.load(),
@@ -1036,7 +1070,8 @@ object Project {
                 libraryFieldsCount,
                 codeSize,
                 Await.result(classHierarchyFuture, Duration.Inf),
-                AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey))
+                AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey)),
+                libraryClassFilesAreInterfacesOnly
             )
         } catch {
             case t: Throwable ⇒

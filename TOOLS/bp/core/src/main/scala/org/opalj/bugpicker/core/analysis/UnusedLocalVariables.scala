@@ -31,13 +31,12 @@ package bugpicker
 package core
 package analysis
 
+import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.AIResult
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheCode
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -49,12 +48,6 @@ import org.opalj.br.instructions.DCONST_0
 import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analysis.methods.Purity
-import org.opalj.fpcf.analysis.methods.Pure
-import scala.util.control.ControlThrowable
-import org.opalj.log.OPALLogger
-import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.br.LocalVariable
 import org.opalj.br.instructions.ICONST_M1
 import org.opalj.br.instructions.IINC
@@ -82,6 +75,14 @@ import org.opalj.issues.IssueLocation
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.MethodLocation
 
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.Pure
 /**
  * Identifies unused local variables in non-synthetic methods.
  *
@@ -103,7 +104,7 @@ object UnusedLocalVariables {
 
         //
         //
-        // IDENTIFYING RAW ISSUES; IN OTHER WORDS: "THE ANALYSIS" 
+        // IDENTIFYING RAW ISSUES; IN OTHER WORDS: "THE ANALYSIS"
         //
         //
 
@@ -131,7 +132,7 @@ object UnusedLocalVariables {
         var issues = List.empty[Issue]
 
         // It may happen that a user defines a final local constant
-        // which is then used by the compiler whenever we 
+        // which is then used by the compiler whenever we
         // see a reference in the code; in this case we an unused
         // local variable...
         // E.g., given the following code:
@@ -158,7 +159,7 @@ object UnusedLocalVariables {
                 // for instance methods that can be/are inherited
                 if (method.isStatic ||
                     method.isPrivate ||
-                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
+                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
                     method.name == "<init>") {
                     relevance = Relevance.High
                     if (vo == -1 && !method.isStatic) {
@@ -223,7 +224,7 @@ object UnusedLocalVariables {
                                 }
                             // else... we filter basically all issues unless we are sure that this is real; i.e.,
                             //  - it is not a default value
-                            //  - it it not a final local variable 
+                            //  - it is not a final local variable
 
                             case _ ⇒
                                 issue = "the constant value "+
@@ -242,8 +243,8 @@ object UnusedLocalVariables {
                         if (constantValues.contains(value)) {
                             // => the value is only found once in the source code and
                             // the value is not used!
-                            issue = "the constant value "+
-                                instruction.toString(vo)+
+                            issue = "the constant "+
+                                instruction.toString(vo).replace("\n", "\\n")+
                                 " is not used"
                             relevance = Relevance.TechnicalArtifact
                         }
@@ -253,9 +254,7 @@ object UnusedLocalVariables {
                         relevance = Relevance.DefaultRelevance
 
                     case _ ⇒
-                        issue = "the value of the expression "+
-                            instruction.toString(vo)+
-                            " is not used"
+                        issue = "the value of "+instruction.toString(vo).replace("\n", "\\n")+" is not used"
                         relevance = Relevance.VeryHigh
                 }
 
