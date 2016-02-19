@@ -71,7 +71,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     final val MinRelevancePattern = """-minRelevance=(\d\d?)""".r
     final val MinRelevance = 0
 
-    final val IssueKindsPattern = """-kinds=([\w, ]+)""".r
+    final val IssueKindsPattern = """-kinds=([\w_,]+)""".r
 
     override def main(unparsedArgs: Array[String]): Unit = {
         try {
@@ -114,8 +114,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               may happen that many analyses are aborted because the evaluation time
             |               is exhausted and – overall – the analysis reports less issues!]
             |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.]
-            |[-kinds=<Issue Kinds="constant computation,dead path,throws exception,
-            |                unguarded use,unused">] a comma seperated list of issue kinds
+            |[-kinds=<Issue Kinds="constant_computation,dead_path,throws_exception,
+            |                unguarded_use,..."> a comma seperated list of issue kinds
             |                that should be reported.]
             |[-eclipse      creates an eclipse console compatible output.]
             |[-idl          creates an idl report.]
@@ -170,7 +170,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         val issues = parameters.collectFirst { case IssueKindsPattern(ks) ⇒ ks } match {
             case Some(ks) ⇒
-                val relevantKinds = ks.split(',').toSet
+                val relevantKinds = ks.split(',').map(_.replace('_', ' ')).toSet
                 issues1.filter(issue ⇒ (issue.kinds intersect (relevantKinds)).nonEmpty)
             case None ⇒
                 issues1
@@ -312,7 +312,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     true
 
                 case IssueKindsPattern(ks) ⇒
-                    val kinds = ks.split(',')
+                    val kinds = ks.split(',').map(_.replace('_', ' '))
                     kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
                 case MinRelevancePattern(_) ⇒
