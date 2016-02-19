@@ -118,9 +118,9 @@ case class Issue(
 
     def toEclipseConsoleString: String = {
         locations.map(_.toEclipseConsoleString).mkString(
-            "«"+analysis+"»"+relevance.toEclipseConsoleString+" "+summary+"\n\t",
-            "\n\t",
-            "\n"
+            summary+" «"+analysis + relevance.toEclipseConsoleString+"» ",
+            " ",
+            ""
         )
     }
 
