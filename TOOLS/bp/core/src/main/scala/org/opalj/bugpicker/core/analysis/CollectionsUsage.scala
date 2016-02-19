@@ -97,7 +97,10 @@ object CollectionsUsage {
 
                 case INVOKESTATIC(Collections, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒
                     val origins = domain.operandOrigin(pc, 0)
-                    if (origins.size == 1 && instructions(origins.head).opcode == NEW.opcode) {
+                    if ((origins ne null) && // the instruction is not dead
+                        origins.size == 1 &&
+                        origins.head >= 0 && // the origin is not a parameter
+                        instructions(origins.head).opcode == NEW.opcode) {
                         // there is just one path on which the value is initialized
                         val usages = domain.usedBy(origins.head)
                         if (usages.size == 2) {
