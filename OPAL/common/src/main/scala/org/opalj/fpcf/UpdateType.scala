@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -33,31 +33,46 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-private[fpcf] object UpdateTypes extends Enumeration {
+sealed abstract class UpdateType(name: String) {
+    val id: Int
 
-    /**
-     * The result is just an intermediate result that may be refined in the future.
-     */
-    val IntermediateUpdate = Value("Intermediate Update")
+    def asUserUpdateType: UserUpdateType
+}
 
-    /**
-     * The result is the final result and was computed using other information.
-     */
-    val FinalUpdate = Value("Final Update")
+sealed abstract class UserUpdateType(name: String) extends UpdateType(name) {
+    final override def asUserUpdateType: this.type = this
+}
 
-    /**
-     * The result is the final result and was computed without requiring any other information.
-     */
+/**
+ * The result is just an intermediate result that may be refined in the future.
+ */
+case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
+    final val id = 1
+}
 
-    val OneStepFinalUpdate = Value("Final Updated Without Dependencies")
+/**
+ * The result is the final result and was computed using other information.
+ */
+case object FinalUpdate extends UserUpdateType("Final Update") {
+    final val id = 2
+}
 
-    /**
-     * The result was determined by looking up a property kind's fallback property. Hence,
-     * no "real" computation was performed.
-     * Furthermore, it may be the case that
-     * the updated value – at the point in time when it is handled - is no longer relevant
-     * and has to be dropped.
-     */
-    val FallbackUpdate = Value("Fallback Update")
+/**
+ * The result is the final result and was computed without requiring any other information.
+ */
+private[fpcf] case object OneStepFinalUpdate extends UpdateType("Final Update Without Dependencies") {
+    final val id = 3
+    final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
+}
 
+/**
+ * The result was determined by looking up a property kind's fallback property. Hence,
+ * no "real" computation was performed.
+ * Furthermore, it may be the case that
+ * the updated value – at the point in time when it is handled - is no longer relevant
+ * and has to be dropped.
+ */
+private[fpcf] case object FallbackUpdate extends UpdateType("Fallback Update") {
+    final val id = 4
+    final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
 }

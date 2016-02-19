@@ -35,6 +35,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import java.net.URL
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.IsClientCallable
+import org.opalj.fpcf.analysis.methods.NotClientCallable
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
@@ -67,24 +70,15 @@ object LibraryLeakageAnalysisDemo extends MethodAnalysisDemo {
             executer.run(CallableFromClassesInOtherPackagesAnalysis)
         } { t ⇒ analysisTime = t.toSeconds }
 
-        //        val notLeakedMethods = entitiesByProperty(NoLeakage)(propertyStore)
-        //        val notLeakedMethodsInfo = buildMethodInfo(notLeakedMethods)(project) filter { str ⇒ str.trim.startsWith("public java.") }
-        //
-        //        val nonOverriddenInfoString = finalReport(notLeakedMethodsInfo, "Found non-overridden methods")
+        val leakedMethods = propertyStore.entities { (p: Property) ⇒ p == IsClientCallable }
 
-        val leakedMethods = propertyStore.entities { (p: Property) ⇒
-            p == Callable
-        }
-
-        val notLeakedMethods2 = propertyStore.entities { (p: Property) ⇒
-            p == NotCallable
-        }
+        val notLeakedMethods = propertyStore.entities { (p: Property) ⇒ p == NotClientCallable }
         BasicReport(
             //            nonOverriddenInfoString +
             propertyStore.toString+
                 "\nAnalysis time: "+analysisTime +
                 s"\nleaked: ${leakedMethods.size}"+
-                s"\n not leaked: ${notLeakedMethods2.size}"
+                s"\n not leaked: ${notLeakedMethods.size}"
         )
     }
 }

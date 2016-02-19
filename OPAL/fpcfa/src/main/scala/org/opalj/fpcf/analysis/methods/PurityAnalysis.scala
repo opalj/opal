@@ -69,7 +69,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.fpcf.analysis.immutability.ImmutableType
 import org.opalj.fpcf.analysis.immutability.TypeImmutability
-import org.opalj.fpcf.analysis.fields.FieldUpdates
+import org.opalj.fpcf.analysis.fields.FieldMutability
 import org.opalj.fpcf.analysis.fields.EffectivelyFinal
 
 /**
@@ -105,18 +105,17 @@ import org.opalj.fpcf.analysis.fields.EffectivelyFinal
  */
 class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    final val MutabilityKey = org.opalj.fpcf.analysis.fields.FieldUpdates.key
-
-    /*
+    /**
      * Determines the purity of the method starting with the instruction with the given
-     * pc. If the given pc is larger than 0 then all previous instructions must be pure.
+     * pc. If the given pc is larger than 0 then all previous instructions (in particular
+     * method calls) must not violate this method's purity.
      *
      * This function encapsulates the continuation.
      */
-    private[this] def determinePurityCont(
-        method:    Method,
-        pc:        PC,
-        dependees: Set[EOptionP[Purity]]
+    private[this] def doDeterminePurity(
+        method:           Method,
+        pc:               PC,
+        initialDependees: Set[EOptionP[Purity]]
     ): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
@@ -126,9 +125,9 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         val instructions = body.instructions
         val maxPC = instructions.size
 
-        var currentPC = pc
-        var currentDependees = dependees
+        var dependees = initialDependees
 
+        var currentPC = pc
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
 
@@ -142,20 +141,20 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                         /* Nothing to do; constants do not impede purity! */
 
                         case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            val c: Continuation =
-                                (dependeeE: Entity, dependeeP: Property) ⇒
+                            // We are suspending this computation and wait for the result.
+                            return propertyStore.require(
+                                method, Purity.key,
+                                field, FieldMutability.key
+                            ) { (e: Entity, dependeeP: Property) ⇒
+                                {
                                     if (dependeeP == EffectivelyFinal) {
                                         val nextPC = body.pcOfNextInstruction(currentPC)
-                                        determinePurityCont(method, nextPC, dependees)
+                                        doDeterminePurity(method, nextPC, dependees)
                                     } else {
                                         Result(method, Impure)
                                     }
-                            // We are suspending this computation and wait for the result.
-                            // This, however, does not make this a multi-step computation,
-                            // as the analysis is only continued when property becomes
-                            // available.
-                            import propertyStore.require
-                            return require(method, PurityKey, field, MutabilityKey)(c);
+                                };
+                            }
 
                         case _ ⇒
                             // We know nothing about the target field (it is not
@@ -172,14 +171,14 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                     case MethodInvocationInstruction(declaringClassType, methodName, methodDescriptor) ⇒
                         import project.classHierarchy.lookupMethodDefinition
-                        val calleeOpt =
+                        val calleeOption =
                             lookupMethodDefinition(
                                 declaringClassType.asObjectType /* this is safe...*/ ,
                                 methodName,
                                 methodDescriptor,
                                 project
                             )
-                        calleeOpt match {
+                        calleeOption match {
                             case None ⇒
                                 // We know nothing about the target method (it is not
                                 // found in the scope of the current project).
@@ -187,22 +186,20 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                             case Some(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
-                                val purity = propertyStore(callee, PurityKey)
+                                val purity = propertyStore(callee, Purity.key)
 
                                 purity match {
-                                    case Some(Pure)   ⇒ /* Nothing to do...*/
-                                    case Some(Impure) ⇒ return ImmediateResult(method, Impure);
+                                    case Some(Pure) ⇒ /* Nothing to do...*/
+
+                                    case Some(Impure | MaybePure) ⇒
+                                        return ImmediateResult(method, Impure);
 
                                     // Handling cyclic computations
                                     case Some(ConditionallyPure) ⇒
-                                        currentDependees += EP(callee, ConditionallyPure)
+                                        dependees += EP(callee, ConditionallyPure)
 
                                     case None ⇒
-                                        currentDependees += EPK(callee, PurityKey)
-
-                                    case _ ⇒
-                                        val message = s"unknown purity $purity"
-                                        throw new UnknownError(message)
+                                        dependees += EPK(callee, Purity.key)
                                 }
                         }
                 }
@@ -222,6 +219,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                    // improve: If the data-structure was created locally... then we don't care.
                     return ImmediateResult(method, Impure);
 
                 case _ ⇒
@@ -231,60 +229,40 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         }
 
         // Every method that is not identified as being impure is (conditionally)pure.
-        if (currentDependees.isEmpty)
-            ImmediateResult(method, Pure)
-        else {
-            val continuation = new ((Entity, Property) ⇒ PropertyComputationResult) {
+        if (dependees.isEmpty)
+            return ImmediateResult(method, Pure);
 
-                // We use the set of remaining dependencies to test if we have seen
-                // all remaining properties.
-                var remainingDependendees = currentDependees.map(eOptionP ⇒ eOptionP.e)
+        def c(e: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+            p match {
+                case Impure | MaybePure ⇒
+                    Result(method, Impure)
 
-                def apply(e: Entity, p: Property): PropertyComputationResult = this.synchronized {
-                    if (remainingDependendees.isEmpty)
-                        return Unchanged;
+                case ConditionallyPure ⇒
+                    dependees = dependees.filter { _.e ne e }
+                    val newDependees = dependees + EP(e, p.asInstanceOf[Purity])
+                    IntermediateResult(method, ConditionallyPure, newDependees, c)
 
-                    p match {
-                        case Impure ⇒
-                            remainingDependendees = Set.empty
-                            Result(method, Impure)
+                case Pure ⇒
+                    dependees = dependees.filter { _.e ne e }
+                    if (dependees.isEmpty)
+                        Result(method, Pure)
+                    else
+                        IntermediateResult(method, ConditionallyPure, dependees, c)
 
-                        case Pure ⇒
-                            remainingDependendees -= e
-                            if (remainingDependendees.isEmpty) {
-                                Result(method, Pure)
-                            } else
-                                Unchanged
-
-                        case MaybePure ⇒
-                            // In this case the framework "terminated" this computation
-                            // because it is waiting on a result that will never come
-                            // because no more tasks are scheduled.
-                            remainingDependendees = Set.empty
-                            Result(method, Impure)
-
-                        case ConditionallyPure ⇒ Unchanged
-                    }
-                }
             }
-            IntermediateResult(method, ConditionallyPure, currentDependees, continuation)
         }
+
+        IntermediateResult(method, ConditionallyPure, dependees, c)
+
     }
 
     /**
      * Determines the purity of the given method.
      */
-    def determineProperty(
-        propertyStore: PropertyStore
-    )(
-        method: Method
-    ): PropertyComputationResult = {
-
-        /* FOR TESTING PURPOSES!!!!! */ if (method.name == "cpure")
-            /* FOR TESTING PURPOSES!!!!! */ return Impossible;
+    def determinePurity(method: Method): PropertyComputationResult = {
 
         // Due to a lack of knowledge, we classify all native methods or methods that
-        // belong to a library (and hence lack the body) as impure...
+        // have no body because they are loaded using a library class file loader as Impure.
         if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
             return ImmediateResult(method, Impure);
 
@@ -294,14 +272,12 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             return ImmediateResult(method, Impure);
 
         propertyStore.allHaveProperty(
-            method, PurityKey,
-            referenceTypeParameters, ImmutableType
+            method, Purity.key, referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒
             if (areImmutable) {
-                val purity = determinePurityCont(method, 0, Set.empty[EOptionP[Purity]])
-                purity
+                doDeterminePurity(method, 0, Set.empty[EOptionP[Purity]])
             } else {
-                return ImmediateResult(method, Impure);
+                ImmediateResult(method, Impure)
             }
         }
     }
@@ -318,13 +294,13 @@ object PurityAnalysis extends FPCFAnalysisRunner {
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
-    override def derivedProperties: Set[PropertyKind] = Set(PurityKey)
+    override def derivedProperties: Set[PropertyKind] = Set(Purity)
 
-    override def usedProperties: Set[PropertyKind] = Set(TypeImmutability)
+    override def usedProperties: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new PurityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty(propertyStore))
+        propertyStore <||< (entitySelector, analysis.determinePurity)
         analysis
     }
 }

@@ -33,25 +33,6 @@ package analysis
 package object methods {
 
     /**
-     * The key associated with every purity property.
-     */
-    final val PurityKey: PropertyKey[Purity] = {
-        PropertyKey.create(
-            // The unique name of the property.
-            "Purity",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MaybePure,
-            // When we have a cycle all properties are necessarily conditionally pure
-            // hence, we can leverage the "pureness" 
-            Pure // NOTE
-        // We DO NOT increase the pureness of all methods as this will happen automatically
-        // as a sideeffect of setting the pureness of one method!
-        // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
-        )
-    }
-
-    /**
      * The key associated with every call-by-signature property.
      */
     final val CallBySignatureKey = {
@@ -69,13 +50,14 @@ package object methods {
      * The key associated with every ´ClientCallable´ property.
      */
     final val ClientCallableKey = {
-        PropertyKey.create[ClientCallable](
-            // The unique name of the property.
-            "ClientCallable",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            IsClientCallable
-        )
+        PropertyKey.create[ClientCallable]("IsClientCallable", IsClientCallable)
+    }
+
+    /**
+     * The key associated with every ´CallableFromClassesInOtherPackages´ property.
+     */
+    final val ClientInheritableKey = {
+        PropertyKey.create[ClientInheritable]("ClientInheritable", IsClientInheritable)
     }
 }
 

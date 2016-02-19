@@ -1,6 +1,6 @@
 /**
  * BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -9,11 +9,11 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
+ * - Redistributions of source code must retain the above copyright notice,
+ *  this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *  this list of conditions and the following disclaimer in the documentation
+ *  and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -37,46 +37,41 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 
+/**
+ * Determines which methods of a library are the entry points of
+ *
+ *
+ * @author Michael Reif
+ */
 class LibraryEntryPointsAnalysis private (
     val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.key
     private[this] final val InstantiabilityKey = Instantiability.key
-    private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
     private[this] final val SerializableType = ObjectType.Serializable
 } with FPCFAnalysis {
 
-    val propertyKey = EntryPoint.key
-
-    @inline private[this] def leakageContinuation(method: Method): Continuation = {
-        (dependeeE: Entity, dependeeP: Property) ⇒
-            if (dependeeP == Callable)
-                Result(method, IsEntryPoint)
-            else
-                Result(method, NoEntryPoint)
+    @inline private[this] def isClientCallable(method: Method): EntryPoint = {
+        propertyStore(method, methods.ClientCallableKey) match {
+            case Some(methods.IsClientCallable) | None ⇒ IsEntryPoint
+            case Some(methods.NotClientCallable)       ⇒ NoEntryPoint
+        }
     }
 
-    /**
-     * Identifies those private static non-final fields that are initialized exactly once.
-     */
     def determineProperty(method: Method): PropertyComputationResult = {
-
         val classFile = project.classFile(method)
 
-        if (project.isLibraryType(classFile))
-            //we are not interested in library classFiles
-            return NoResult;
+        if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile))
+            // if the analyze the library with the the public interface of third party libraries
+            // we don't want the public API only as entry points.
+            return ImmediateResult(method, NoEntryPoint);
 
         if (classFile.isInterfaceDeclaration) {
-            if (isOpenLibrary)
-                return ImmediateResult(method, IsEntryPoint);
-            else if (classFile.isPublic && (method.isStatic || method.isPublic))
+            if (isOpenLibrary || classFile.isPublic)
                 return ImmediateResult(method, IsEntryPoint);
             else {
-                import propertyStore.require
-                require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
-                    leakageContinuation(method)
-                )
+                val epProperty = isClientCallable(method)
+                return ImmediateResult(method, epProperty);
             }
         }
 
@@ -89,33 +84,33 @@ class LibraryEntryPointsAnalysis private (
         // which relates somehow to object serialization.
 
         import propertyStore.require
-        val c_inst: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-            val isInstantiable = (dependeeP == Instantiable)
-            val isAbstractOrInterface = dependeeE match {
-                case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
-                case _             ⇒ false
-            }
+        val c_inst: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
+            val isInstantiable = (dependeeP eq Instantiable)
             if (isInstantiable && method.isStaticInitializer)
                 Result(method, IsEntryPoint)
             else {
-                val c_vis: Continuation = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (dependeeP == ClassLocal)
+                val isAbstractOrInterface = dependeeE match {
+                    case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
+                    case _             ⇒ false
+                }
+                val c_vis: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
+                    if (dependeeP eq ClassLocal)
                         Result(method, NoEntryPoint)
-                    else if (dependeeP == Global && (isInstantiable || method.isStatic))
+                    else if ((dependeeP eq Global) && (isInstantiable || method.isStatic))
                         Result(method, IsEntryPoint)
-                    else if (dependeeP == Global && !isInstantiable && isAbstractOrInterface ||
-                        dependeeP == PackageLocal)
-                        require(method, propertyKey, method, CallableFromClassesInOtherPackagesKey)(
-                            leakageContinuation(method)
-                        )
-                    else Result(method, NoEntryPoint)
+                    else if ((dependeeP eq Global) && !isInstantiable && isAbstractOrInterface ||
+                        (dependeeP eq PackageLocal)) {
+                        val epProperty = isClientCallable(method)
+                        Result(method, epProperty)
+                    } else
+                        Result(method, NoEntryPoint)
                 }
 
-                require(method, propertyKey, method, AccessKey)(c_vis)
+                require(method, EntryPoint.key, method, AccessKey)(c_vis)
             }
         }
 
-        require(method, propertyKey, classFile, InstantiabilityKey)(c_inst);
+        require(method, EntryPoint.key, classFile, InstantiabilityKey)(c_inst);
     }
 }
 
@@ -128,7 +123,7 @@ object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
     override def derivedProperties: Set[PropertyKind] = Set(EntryPoint)
 
     override def usedProperties: Set[PropertyKind] = {
-        Set(ProjectAccessibility, CallableFromClassesInOtherPackages, Instantiability)
+        Set(ProjectAccessibility, methods.ClientCallableKey, Instantiability)
     }
 
     /*
@@ -138,7 +133,7 @@ object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
     override def recommendations: Set[FPCFAnalysisRunner] = {
         Set(
             SimpleInstantiabilityAnalysis,
-            CallableFromClassesInOtherPackagesAnalysis,
+            methods.CallableFromClassesInOtherPackagesAnalysis,
             MethodAccessibilityAnalysis
         )
     }

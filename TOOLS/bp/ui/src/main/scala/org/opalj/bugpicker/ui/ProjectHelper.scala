@@ -132,11 +132,13 @@ object ProjectHelper {
             case None         ⇒ defaultConfig
         }
         Project(
-            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty
+            classFiles,
+            libraryClassFiles,
+            virtualClassFiles = Traversable.empty,
+            libraryClassFilesAreInterfacesOnly = true
         )(
             config = projectConfig,
             projectLogger = new BugPickerOPALLogger(projectLogMessages)
         )
     }
 }
-

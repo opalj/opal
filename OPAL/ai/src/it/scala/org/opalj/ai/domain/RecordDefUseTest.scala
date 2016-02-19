@@ -172,7 +172,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
+            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
@@ -184,7 +184,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
             })
             info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
             opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty)
+            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
 
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)

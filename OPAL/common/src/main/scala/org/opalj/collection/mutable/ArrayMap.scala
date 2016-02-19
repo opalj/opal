@@ -121,25 +121,34 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         assert(value ne null, "ArrayMap only supports non-null values")
 
         val max = data.length
-        if (key < max)
+        if (key < max) {
             data(key) = value
-        else if (key == max) {
-            data = data :+ value
         } else {
-            val newData = new Array[T](key + 1)
+            val newData = new Array[T](key + 2)
             System.arraycopy(data, 0, newData, 0, max)
             newData(key) = value
             data = newData
         }
     }
 
-    def foreach(f: T ⇒ Unit): Unit = {
+    def foreachValue(f: T ⇒ Unit): Unit = {
         var i = 0
         val max = data.length
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
             if (e != null) f(e)
+            i += 1
+        }
+    }
+
+    def foreach(f: (Int, T) ⇒ Unit): Unit = {
+        var i = 0
+        val max = data.length
+        while (i < max) {
+            val e = data(i)
+            // Recall that all values have to be non-null...
+            if (e != null) f(i, e)
             i += 1
         }
     }
@@ -220,7 +229,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒
+        foreachValue { e ⇒
             hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === System.identityHashCode(null) */ }
         }
         hc
@@ -232,11 +241,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         val max = data.length
         while (i < max) {
             val e = data(i)
-            if (e ne null)
-                s += s"$i -> $e"
+            if (e ne null) s += s"$i -> $e"
             i += 1
-            if ((e ne null) && i < max)
-                s += sep
+            while (i < max && (data(i) eq null)) i += 1
+            if ((e ne null) && i < max) s += sep
         }
         s + end
     }

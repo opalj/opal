@@ -36,25 +36,24 @@ import org.opalj.br.Method
 import scala.collection.mutable
 
 /**
- * Deterrmines for each method if it potentially can be inherit by a '''future'''
+ * Determines for each method if it potentially can be inherit by a '''future'''
  * subtype.
  *
  * @note This property is computed by a direct property computation.
- *
  * @author Michael Reif
  */
-sealed trait ClientCallable extends Property {
+sealed trait ClientInheritable extends Property {
 
-    final type Self = ClientCallable
+    final type Self = ClientInheritable
 
-    final def key = ClientCallableKey
+    final def key = ClientInheritableKey
 
     final def isRefineable = false
 }
 
-case object IsClientCallable extends ClientCallable
+case object IsClientInheritable extends ClientInheritable
 
-case object NotClientCallable extends ClientCallable
+case object NotClientInheritable extends ClientInheritable
 
 /**
  * This analysis computes the ClientCallable property.* I.e., it determines whether a method can directly called by a client. This is in particular
@@ -74,16 +73,15 @@ case object NotClientCallable extends ClientCallable
  * {{{
  * val thePropertyStore = theProject.get(SourceElementsPropertyStoreKey)
  * val property = thePropertyStore(method, ClientCallableKey)
-  * property match {
-  *   case Some(IsClientCallable) => ...
-  *   case Some(NotClientCallable) => ...
-  *   case None => ... // this happens only if an not supported entity is passed to the computation.
-  * }
+ * property match {
+ *   case Some(IsClientCallable) => ...
+ *   case Some(NotClientCallable) => ...
+ *   case None => ... // this happens only if a not supported entity is passed to the computation.
+ * }
  * }}}
  *
  * @note This analysis implements a direct property computation that is only executed when
-  * 		required.
-  *
+ * 		required.
  * @author Michael Reif
  */
 class CallableByClientAnalysis private (
@@ -91,29 +89,26 @@ class CallableByClientAnalysis private (
 ) extends FPCFAnalysis {
 
     /**
-     * Determines whether a method could be inherited by a library client.
-     * It should not be called if the current analysis mode is application-related.
+     * Determines whether a method can be called by a library client.
+     * This should not be called if the current analysis mode is application-related.
      *
      */
-    def clientCallability(e: Entity): Option[Property] = {
-        if (!e.isInstanceOf[Method])
-            return None;
-
+    def clientCallability(e: Entity): Property = {
         val method = e.asInstanceOf[Method]
 
         if (method.isPrivate)
-            return Some(NotClientCallable);
+            return NotClientInheritable;
 
         val classFile = project.classFile(method)
 
         if (classFile.isEffectivelyFinal)
-            return Some(NotClientCallable);
+            return NotClientInheritable;
 
         if (isClosedLibrary && method.isPackagePrivate)
-            return Some(NotClientCallable);
+            return NotClientInheritable;
 
         if (classFile.isPublic || isOpenLibrary)
-            return Some(IsClientCallable);
+            return IsClientInheritable;
 
         val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
@@ -128,7 +123,7 @@ class CallableByClientAnalysis private (
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
                         if (subclass.isPublic)
                             // the original method is now visible (and not shadowed)
-                            return Some(IsClientCallable);
+                            return IsClientInheritable;
                     } else
                         subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -136,25 +131,25 @@ class CallableByClientAnalysis private (
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange!
-                    return Some(IsClientCallable);
+                    return IsClientInheritable;
                 case _ ⇒
             }
         }
 
-        Some(NotClientCallable)
+        NotClientInheritable
     }
 }
 
 object CallableByClientAnalysis extends FPCFAnalysisRunner {
 
-    override def derivedProperties: Set[PropertyKind] = Set(ClientCallableKey)
+    override def derivedProperties: Set[PropertyKind] = Set(ClientInheritableKey)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
         val analysis = new CallableByClientAnalysis(project)
-        propertyStore <<! (ClientCallableKey, analysis.clientCallability)
+        propertyStore <<! (ClientInheritableKey, analysis.clientCallability)
         analysis
     }
 }

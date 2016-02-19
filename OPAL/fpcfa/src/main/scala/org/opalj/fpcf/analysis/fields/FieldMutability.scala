@@ -31,8 +31,10 @@ package fpcf
 package analysis
 package fields
 
-sealed trait FieldUpdatesPropertyMetaInformation extends PropertyMetaInformation {
-    type Self = FieldUpdates
+sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformation {
+
+    type Self = FieldMutability
+
 }
 
 /**
@@ -48,21 +50,24 @@ sealed trait FieldUpdatesPropertyMetaInformation extends PropertyMetaInformation
  *
  * @author Michael Eichberg
  */
-sealed trait FieldUpdates extends Property with FieldUpdatesPropertyMetaInformation {
-    final def key = FieldUpdates.key // All instances have to share the SAME key!
+sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaInformation {
+
+    final def key = FieldMutability.key // All instances have to share the SAME key!
+
+    final val isRefineable: Boolean = false
 }
 
-object FieldUpdates extends FieldUpdatesPropertyMetaInformation {
+object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
-    final val key = PropertyKey.create("Mutability", NonFinalByLackOfInformation)
+    final val key = PropertyKey.create("FieldMutability", NonFinalByLackOfInformation)
 
 }
 
 /**
  * The field is only set once to a non-default value and only the updated value is used.
  */
-sealed trait Final extends FieldUpdates {
-    final val isRefineable: Boolean = false
+sealed trait Final extends FieldMutability {
+
     val byDefinition: Boolean
 }
 
@@ -73,15 +78,8 @@ case object DeclaredFinal extends Final { final val byDefinition = true }
 /**
  * The field is potentially updated multiple times.
  */
-sealed trait NonFinal extends FieldUpdates {
-    final val isRefineable: Boolean = false
-    val byReason: String
-}
+sealed trait NonFinal extends FieldMutability
 
-case object NonFinalByAnalysis extends NonFinal {
-    final val byReason = "determined by analysis"
-}
+case object NonFinalByAnalysis extends NonFinal
 
-case object NonFinalByLackOfInformation extends NonFinal {
-    final val byReason = "some required information was not available"
-}
+case object NonFinalByLackOfInformation extends NonFinal

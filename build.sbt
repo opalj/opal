@@ -2,7 +2,8 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
 
-version := "0.1-SNAPSHOT"
+//version := "0.1" // LAST RELEASE
+version := "0.9-SNAPSHOT"
 
 organization in ThisBuild := "de.opal-project"
 
@@ -64,7 +65,7 @@ EclipseKeys.withSource := true
 // Publish jars to Eclipse plugin project
 //
 //
-addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
+//addCommandAlias("copyToEclipsePlugin", "; set publishTo in ThisBuild := Some(Resolver.file(\"file\", new File(\"TOOLS/ep/lib\"))) ; publish")
 
 //
 //

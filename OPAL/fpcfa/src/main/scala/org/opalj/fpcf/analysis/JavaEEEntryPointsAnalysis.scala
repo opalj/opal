@@ -1,6 +1,6 @@
 /**
  * BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -44,7 +44,6 @@ class JavaEEEntryPointsAnalysis private (
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.key
     private[this] final val InstantiabilityKey = Instantiability.key
-    private[this] final val CallableFromClassesInOtherPackagesKey = CallableFromClassesInOtherPackages.key
     private[this] final val SerializableType = ObjectType.Serializable
     private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
     private[this] final val ExceptionHandlerFactory = ObjectType("javax.faces.context.ExceptionHandlerFactory")
@@ -56,29 +55,29 @@ class JavaEEEntryPointsAnalysis private (
     def determineProperty(classFile: ClassFile): PropertyComputationResult = {
 
         if (project.isLibraryType(classFile))
-            //we are not interested in library classFiles
-            return NoResult;
+            // the library does not contain the relevant entry points
+            return ImmediateMultiResult(classFile.methods.map(m ⇒ EP(m, NoEntryPoint)));
 
         val isAnnotated = classFile.annotations.size > 0
         val willBeInjected = InjectedClasses.isInjected(classFile)
-        val result = ListBuffer.empty[(Entity, Property)]
+        val result = ListBuffer.empty[SomeEP]
         val isWebFactory = project.classHierarchy.isSubtypeOf(classFile.thisType, ExceptionHandlerFactory).isYesOrUnknown
         classFile.methods.filter { m ⇒ !m.isAbstract && !m.isNative }.foreach { method ⇒
 
             if (CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(project.classHierarchy)) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (method.isConstructor && willBeInjected) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (method.isPrivate) {
-                result += ((method, NoEntryPoint))
+                result += EP(method, NoEntryPoint)
             } else if (method.isStaticInitializer) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (isAnnotated) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (hasAnnotatedSubtypeAndInheritsMethod(classFile, method)) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             } else if (isWebFactory && !method.isPrivate) {
-                result += ((method, IsEntryPoint))
+                result += EP(method, IsEntryPoint)
             }
         }
 

@@ -127,7 +127,7 @@ class CHACallGraphExtractor(
         }
 
         /**
-         * @param receiverMayBeNull The parameter is `false` if:
+         * @param receiverIsNull The parameter is `false` if:
          *      - a static method is called,
          *      - this is an invokespecial call (in this case the receiver is `this`),
          *      - the receiver is known not to be null and the type is known to be precise.
@@ -212,34 +212,41 @@ class CHACallGraphExtractor(
         val cbsIndex = project.get(CallBySignatureResolutionKey)
         val context = new AnalysisContext(project, classFile, method, cbsIndex)
 
+        import org.opalj.util.GlobalPerformanceEvaluation
+
         method.body.get.foreach { (pc, instruction) ⇒
             instruction.opcode match {
                 case INVOKEVIRTUAL.opcode ⇒
-                    val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
-                    if (declaringClass.isArrayType) {
-                        context.nonVirtualCall(
-                            pc, ObjectType.Object, name, descriptor, Unknown
-                        )
-                    } else {
-                        context.virtualCall(
-                            pc, declaringClass.asObjectType, name, descriptor
-                        )
+                    GlobalPerformanceEvaluation.time('invokevirtual) {
+                        val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
+                        if (declaringClass.isArrayType) {
+                            context.nonVirtualCall(
+                                pc, ObjectType.Object, name, descriptor, Unknown
+                            )
+                        } else {
+                            context.virtualCall(
+                                pc, declaringClass.asObjectType, name, descriptor
+                            )
+                        }
                     }
                 case INVOKEINTERFACE.opcode ⇒
-                    val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
-                    context.virtualCall(pc, declaringClass, name, descriptor, true)
-
+                    GlobalPerformanceEvaluation.time('invokeinterface) {
+                        val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
+                        context.virtualCall(pc, declaringClass, name, descriptor, true)
+                    }
                 case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
-                    // for invokespecial the dynamic type is not "relevant" (even for Java 8)
-                    context.nonVirtualCall(
-                        pc, declaringClass, name, descriptor,
-                        receiverIsNull = No /*the receiver is "this" object*/ )
-
+                    GlobalPerformanceEvaluation.time('invokespecial) {
+                        val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
+                        // for invokespecial the dynamic type is not "relevant" (even for Java 8)
+                        context.nonVirtualCall(
+                            pc, declaringClass, name, descriptor,
+                            receiverIsNull = No /*the receiver is "this" object*/ )
+                    }
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declaringClass, name, descriptor) = instruction
-                    context.staticCall(pc, declaringClass, name, descriptor)
-
+                    GlobalPerformanceEvaluation.time('invokestatic) {
+                        val INVOKESTATIC(declaringClass, name, descriptor) = instruction
+                        context.staticCall(pc, declaringClass, name, descriptor)
+                    }
                 case _ ⇒
                 // Nothing to do...
             }

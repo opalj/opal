@@ -158,8 +158,7 @@ sealed abstract class MethodDescriptor
 // (Done after a study of the heap memory usage)
 //
 
-private object NoArgumentAndNoReturnValueMethodDescriptor
-        extends MethodDescriptor {
+private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
 
     override def returnType = VoidType
 
@@ -176,9 +175,8 @@ private object NoArgumentAndNoReturnValueMethodDescriptor
 }
 
 private final class NoArgumentMethodDescriptor(
-    val returnType: Type
-)
-        extends MethodDescriptor {
+        val returnType: Type
+) extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq.empty
 
@@ -200,10 +198,9 @@ private final class NoArgumentMethodDescriptor(
 }
 
 private final class SingleArgumentMethodDescriptor(
-    val parameterType: FieldType,
-    val returnType:    Type
-)
-        extends MethodDescriptor {
+        val parameterType: FieldType,
+        val returnType:    Type
+) extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq(parameterType)
 
@@ -220,7 +217,7 @@ private final class SingleArgumentMethodDescriptor(
         (other.parametersCount == 1) &&
             (other.parameterType(0) == parameterType)
 
-    override val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
+    override lazy val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -234,11 +231,10 @@ private final class SingleArgumentMethodDescriptor(
 }
 
 private final class TwoArgumentsMethodDescriptor(
-    val firstParameterType:  FieldType,
-    val secondParameterType: FieldType,
-    val returnType:          Type
-)
-        extends MethodDescriptor {
+        val firstParameterType:  FieldType,
+        val secondParameterType: FieldType,
+        val returnType:          Type
+) extends MethodDescriptor {
 
     override def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
 
@@ -260,7 +256,7 @@ private final class TwoArgumentsMethodDescriptor(
             (other.parameterType(0) == firstParameterType) &&
             (other.parameterType(1) == secondParameterType)
 
-    override val hashCode: Int =
+    override lazy val hashCode: Int =
         ((returnType.hashCode() * 61) +
             firstParameterType.hashCode) * 13 +
             secondParameterType.hashCode
@@ -278,10 +274,9 @@ private final class TwoArgumentsMethodDescriptor(
 }
 
 private final class MultiArgumentsMethodDescriptor(
-    val parameterTypes: IndexedSeq[FieldType],
-    val returnType:     Type
-)
-        extends MethodDescriptor {
+        val parameterTypes: IndexedSeq[FieldType],
+        val returnType:     Type
+) extends MethodDescriptor {
 
     override def parameterType(index: Int): FieldType = parameterTypes(index)
 
@@ -290,7 +285,7 @@ private final class MultiArgumentsMethodDescriptor(
     override def equalParameters(other: MethodDescriptor): Boolean =
         other.parameterTypes == this.parameterTypes
 
-    override val hashCode: Int =
+    override lazy val hashCode: Int =
         (returnType.hashCode() * 13) + parameterTypes.hashCode
 
     override def equals(other: Any): Boolean = {
@@ -335,10 +330,8 @@ object SingleArgumentMethodDescriptor {
 
     def unapply(md: MethodDescriptor): Option[(FieldType, Type)] =
         md match {
-            case md: SingleArgumentMethodDescriptor ⇒
-                Some((md.parameterType, md.returnType))
-            case _ ⇒
-                None
+            case md: SingleArgumentMethodDescriptor ⇒ Some((md.parameterType, md.returnType))
+            case _                                  ⇒ None
         }
 }
 
@@ -427,13 +420,13 @@ object MethodDescriptor {
             case ObjectType.ObjectId ⇒ JustReturnsObject
             case ObjectType.StringId ⇒ JustReturnsString
             case ObjectType.ClassId  ⇒ JustReturnsClass
-            case _ ⇒
-                new NoArgumentMethodDescriptor(returnType)
+            case _                   ⇒ new NoArgumentMethodDescriptor(returnType)
         }
     }
 
-    def apply(parameterType: FieldType, returnType: Type): MethodDescriptor =
+    def apply(parameterType: FieldType, returnType: Type): MethodDescriptor = {
         new SingleArgumentMethodDescriptor(parameterType, returnType)
+    }
 
     def apply(
         parameterTypes: IndexedSeq[FieldType],

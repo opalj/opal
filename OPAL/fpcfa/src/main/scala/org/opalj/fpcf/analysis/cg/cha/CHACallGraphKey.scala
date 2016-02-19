@@ -46,7 +46,6 @@ import org.opalj.ai.analyses.cg.ComputedCallGraph
  * @example
  *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
- *
  * @author Michael Reif
  */
 object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
@@ -62,14 +61,23 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
-            fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
+        import org.opalj.util.GlobalPerformanceEvaluation.time
+
+        time('ep) {
+            val fpcfManager = project.get(FPCFAnalysesManagerKey)
+            if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
+                fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
+        }
+
+        project.get(InstantiableClassesIndexKey)
+
         val entryPoints = getEntryPointsFromPropertyStore(project)
-        CallGraphFactory.create(
-            project, () ⇒ entryPoints,
-            new CHACallGraphAlgorithmConfiguration(project)
-        )
+        time('const) {
+            CallGraphFactory.create(
+                project, () ⇒ entryPoints,
+                new CHACallGraphAlgorithmConfiguration(project)
+            )
+        }
     }
 
     /*

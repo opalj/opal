@@ -35,8 +35,9 @@ import java.util.concurrent.CountDownLatch
  * property kind identified by a [[PropertyKey]]. Furthermore, each property
  * is associated with at most one property per property kind.
  *
- * Instances of SetProperty will always get negative ids [-X,...,-1] and instances of per
- * entity properties will get positive ids [0,...X]; to be precise the underlying property keys.
+ * ==Implementation Requirements==
+ * Each implementation of the property trait has to implement an equals method that
+ * determines if two properties are equal.
  *
  * @author Michael Eichberg
  */
@@ -53,20 +54,54 @@ trait Property extends PropertyMetaInformation {
      */
     def isFinal = !isRefineable
 
+    /**
+     *
+     */
+    override def equals(other: Any): Boolean
+
+    /**
+     * Returns true if the this property is currently computed or if a computation is already
+     * scheduled.
+     */
     // only used in combination with direct property computations
     private[fpcf] def isBeingComputed: Boolean = false
 }
 
+private[fpcf] trait PropertyIsBeingComputed extends Property {
+    final override def key = throw new UnsupportedOperationException
+    final override def isRefineable = throw new UnsupportedOperationException
+    final override def isFinal = throw new UnsupportedOperationException
+    final override private[fpcf] def isBeingComputed: Boolean = true
+}
+
+private[fpcf] object PropertyIsBeingComputed {
+    def unapply(p: Property): Boolean = (p ne null) && p.isBeingComputed
+}
+
 /**
- * A generic property that is used to state that the property is currently computed.
+ * A property that is used to state that the property is currently computed as part of a
+ * direct property computation.
+ *
  * This property is used to synchronize access to the property if the property
- * is computed using a direct property computation.
+ * is computed using a direct property computation; in this case the first process - which also
+ * performs the computation - decrements the CountDownLatch once the computation has succeed.
+ * All other processes just wait until the CountDownLatch is decremented.
+ *
+ * Recall that a direct property computation is executed by the thread that querys the thread and
+ * that a direct property computation is always only allowed to depend on either previously computed
+ * properties or properties whose computation must not have a dependency on the currently
+ * computed property.
  */
-private[fpcf] final class PropertyIsBeingComputed extends CountDownLatch(1) with Property {
-    type Self = PropertyIsBeingComputed
-    def key = throw new UnsupportedOperationException
-    override def isRefineable = throw new UnsupportedOperationException
-    override def isFinal = throw new UnsupportedOperationException
-    override private[fpcf] def isBeingComputed: Boolean = true
+private[fpcf] final class PropertyIsDirectlyComputed
+        extends CountDownLatch(1)
+        with PropertyIsBeingComputed {
+    type Self = PropertyIsDirectlyComputed
+}
+private[fpcf] object PropertyIsDirectlyComputed {
+    def apply(p: Property): Boolean = (p ne null) && p.isInstanceOf[PropertyIsDirectlyComputed]
+}
+
+private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
+    type Self = PropertyIsLazilyComputed.type
 }
 

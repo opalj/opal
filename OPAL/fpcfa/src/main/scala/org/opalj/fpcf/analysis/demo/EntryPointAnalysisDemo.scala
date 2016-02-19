@@ -34,6 +34,7 @@ package demo
 import org.opalj.br.analyses.BasicReport
 import java.net.URL
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
 import org.opalj.log.OPALLogger
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext

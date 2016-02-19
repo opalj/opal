@@ -32,16 +32,18 @@ package analysis
 package demo
 
 import java.net.URL
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
 import org.opalj.br.Field
-import org.opalj.fpcf.analysis.fields.FieldUpdates
-import org.opalj.fpcf.analysis.fields.FieldUpdatesAnalysis
+import org.opalj.fpcf.analysis.fields.FieldMutability
+import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
-import org.opalj.fpcf.analysis.methods.PurityKey
+import org.opalj.fpcf.analysis.methods.Purity
 
 /**
  * Demonstrates how to run the purity analysis.
@@ -63,29 +65,26 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
+        projectStore.debug = false
 
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
-        var analysisTime = org.opalj.util.Seconds.None
-        org.opalj.util.PerformanceEvaluation.time {
-            manager.runAll(FieldUpdatesAnalysis, PurityAnalysis)
-        } { t ⇒ analysisTime = t.toSeconds }
+        var t = Seconds.None
+        time { manager.runAll(FieldMutabilityAnalysis, PurityAnalysis) } { r ⇒ t = r.toSeconds }
 
-        val effectivelyFinalEntities: Traversable[(AnyRef, Property)] = projectStore(FieldUpdates.key)
+        val effectivelyFinalEntities: Traversable[EP[FieldMutability]] =
+            projectStore.entities(FieldMutability.key)
+
         val effectivelyFinalFields: Traversable[(Field, Property)] =
-            effectivelyFinalEntities.map(e ⇒ (e._1.asInstanceOf[Field], e._2))
+            effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
+
         val effectivelyFinalFieldsAsStrings =
             effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
-        val pureEntities: Traversable[(AnyRef, Property)] =
-            projectStore(PurityKey)
-        //            projectStore(Purity.Key).filter { ep ⇒
-        //                val purity = ep._2
-        //                (purity == Pure || purity == ConditionallyPure)
-        //            }
+        val pureEntities: Traversable[EP[Purity]] = projectStore.entities(Purity.key)
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
         val pureMethodsAsStrings =
@@ -104,6 +103,6 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 "\n",
                 s"\nTotal: ${pureMethods.size}\n"
             )
-        BasicReport(fieldInfo + methodInfo + projectStore+"\nAnalysis time: "+analysisTime)
+        BasicReport(fieldInfo + methodInfo + projectStore.toString(false)+"\nAnalysis time: "+t)
     }
 }

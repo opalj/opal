@@ -31,35 +31,37 @@ package fpcf
 package analysis
 
 import org.opalj.br.ObjectType
+import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.methods.ClientCallable
 import org.opalj.fpcf.test.annotations.CallabilityKeys
 
 /**
  * @author Michael Reif
  */
-abstract class CallableFromClassesInOtherPackagesAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
+abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssumptionTest {
 
     def analysisName = "CallableFromClassesInOtherPackagesAnalysis"
 
-    override def testFileName = "classfiles/callableFromClassesInOtherPackagesTest.jar"
+    override def testFileName = "classfiles/clientCallableTest.jar"
 
     override def testFilePath = "fpcfa"
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 
-    override def propertyKey: PropertyKey[CallableFromClassesInOtherPackages] = CallableFromClassesInOtherPackages.key
+    override def propertyKey: PropertyKey[ClientCallable] = methods.ClientCallableKey
 
     override def propertyAnnotation: ObjectType =
         ObjectType("org/opalj/fpcf/test/annotations/CallabilityProperty")
 
-    def defaultValue = CallabilityKeys.Callable.toString
+    def defaultValue = CallabilityKeys.IsClientCallable.toString
 }
 
-class CallableFromClassesInOtherPackagesAnalysisCPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
+class ClientCallableAnalysisCPATest
+        extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class CallableFromClassesInOtherPackagesAnalysisOPATest
-        extends CallableFromClassesInOtherPackagesAnalysisTest {
+class ClientCallableAnalysisOPATest
+        extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

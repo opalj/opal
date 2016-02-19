@@ -31,6 +31,8 @@ package fpcf
 package analysis
 package cg
 
+import org.opalj.util.PerformanceEvaluation
+
 import scala.collection.Set
 import org.opalj.br.analyses._
 import org.opalj.br.{Method, MethodDescriptor, ObjectType}
@@ -41,8 +43,9 @@ import org.opalj.fpcf.analysis.methods.{NoCBSTargets, CBSTargets, CallBySignatur
  * call by signature resolution interface methods
  * given the method's name and the descriptor type.
  *
- * @note To get call by signature resolution information call [[Project.get]] and pass in
- *    the [[CallBySignatureResolutionKey]] object.
+ * @note To get call by signature resolution information call
+ * 		[[org.opalj.br.analyses.Project]]'s method and pass in the
+ * 		[[CallBySignatureResolutionKey]] object.
  * @author Michael Reif
  */
 class CallBySignatureResolution private (
@@ -73,20 +76,26 @@ class CallBySignatureResolution private (
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
-        val method = project.classFile(declClass) match {
-            case None ⇒ return Set.empty;
-            case Some(cf) ⇒
-                val m = cf.findMethod(name, descriptor)
-                if (m.isEmpty)
-                    return Set.empty
-                else m.get
-        }
+        import org.opalj.util.GlobalPerformanceEvaluation.time
 
-        val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey)
-        result match {
-            case Some(CBSTargets(targetMethods)) ⇒ targetMethods
-            case Some(NoCBSTargets)              ⇒ Set.empty
-            case None                            ⇒ throw new AnalysisException("unsupported entity", null)
+        time('cbs) {
+
+            val method = project.classFile(declClass) match {
+                case Some(cf) ⇒
+                    val m = cf.findMethod(name, descriptor)
+                    if (m.isEmpty)
+                        return Set.empty
+                    else
+                        m.get
+                case None ⇒ return Set.empty;
+            }
+
+            val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey)
+            result match {
+                case Some(NoCBSTargets)              ⇒ Set.empty
+                case Some(CBSTargets(targetMethods)) ⇒ targetMethods
+                case None                            ⇒ throw new AnalysisException("unsupported entity", null)
+            }
         }
     }
 }

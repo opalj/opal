@@ -295,7 +295,7 @@ trait AnalysisExecutor {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val project = Project(classFiles, libraryClassFiles)
+        val project = Project(classFiles, libraryClassFiles, libraryClassFilesAreInterfacesOnly = true)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         OPALLogger.info(

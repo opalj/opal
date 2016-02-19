@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,7 +35,6 @@ import analyses.Project
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
@@ -50,7 +49,7 @@ class IsInnerClassPropertyTest extends FlatSpec with Matchers {
 
     val project = {
         val testResources = locateTestResources("classfiles/Innerclasses.jar", "bi")
-        Project(ClassFiles(testResources), Traversable.empty)
+        Project(ClassFiles(testResources), Traversable.empty, true)
     }
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")

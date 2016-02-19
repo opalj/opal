@@ -30,7 +30,6 @@ package org.opalj
 
 import scala.collection.mutable
 import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
-import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
@@ -97,19 +96,19 @@ package object fpcf {
      *      about some other entity is available or,
      *  - an intermediate result.
      */
-    type PropertyComputation = (Entity) ⇒ PropertyComputationResult
+    type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
+
+    type SomePropertyComputation = PropertyComputation[_ <: Entity]
+
+    type OnUpdateContinuation = (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult
 
     /**
      * A function that continues the computation of a property. It takes
      * the entity + property of the entity on which the computation depends.
      */
-    type Continuation = (Entity, Property) ⇒ PropertyComputationResult
+    type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
 
-    /**
-     * The result of a computation if the computation derives multiple properties
-     * at the same time.
-     */
-    type ComputationResults = Traversable[(Entity, Property)]
+    type SomeContinuation = Continuation[_ <: Property]
 
     type SomePropertyKey = PropertyKey[_ <: Property]
 
@@ -120,26 +119,10 @@ package object fpcf {
     type SomeEP = EP[_ <: Property]
 
     /**
-     * A computation of a property that was restarted (under different properties)
-     * yielded the same result.
-     *
-     * @note This is just an alias for [[NoResult]].
+     * The result of a computation if the computation derives multiple properties
+     * at the same time.
      */
-    final val Unchanged: NoResult.type = NoResult
-
-    /**
-     * Computing a property for the a specific element is not/never possible.
-     *
-     * @note This is just an alias for [[NoResult]].
-     */
-    final val Impossible: NoResult.type = NoResult
-
-    /**
-     * The computation has no results (and there will be no results in the future!).
-     *
-     * @note This is just an alias for [[NoResult]].
-     */
-    final val Empty: NoResult.type = NoResult
+    type ComputationResults = Traversable[SomeEP]
 
     //
     //
@@ -163,17 +146,6 @@ package object fpcf {
      * The underlying assumption is that not every property key is actually associated
      * with a property value for each element.
      */
-    private[fpcf]type Properties = OArrayMap[(Property, Observers)]
-
-    /**
-     * The type of the value associated with each entity (key) found in the store.
-     *
-     * We use one reentrant read/write lock for all properties associated with a
-     * single element in the property store.
-     */
-    private[fpcf]type PropertyStoreValue = (ReentrantReadWriteLock, Properties)
-
-    private[fpcf]type UpdateType = UpdateTypes.Value
-
+    private[fpcf]type Properties = OArrayMap[PropertyAndObservers]
 }
 

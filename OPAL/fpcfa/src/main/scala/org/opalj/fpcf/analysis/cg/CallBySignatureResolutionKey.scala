@@ -28,21 +28,26 @@
  */
 package org.opalj.fpcf.analysis.cg
 
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
  * The ''key'' object to get the interface methods for which call by signature resolution
  * needs to be done.
  *
- * @note To get call by signature information use the [[Project]]'s `get` method and pass in
- * 		`this` object.
+ * @note To get call by signature information use the [[org.opalj.br.analyses.Project]]'s `get`
+ * 		method and pass in `this` object.
+ *
  * @see [[CallBySignatureResolution]] for further information.
+ *
  * @author Michael Reif
  */
 object CallBySignatureResolutionKey extends ProjectInformationKey[CallBySignatureResolution] {
 
     /**
-     * The computation of [[CallBySignatureResolution]] information needs the [[ProjectIndex]].
+     * The computation of [[CallBySignatureResolution]] information needs the
+     * [[org.opalj.br.analyses.ProjectIndex]].
      */
     protected def requirements = List(ProjectIndexKey)
 

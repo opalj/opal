@@ -82,7 +82,6 @@ import org.opalj.ai.domain.TheCode
 import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.analysis.methods.Purity
-import org.opalj.fpcf.analysis.methods.PurityKey
 import org.opalj.fpcf.analysis.methods.Pure
 /**
  * Identifies unused local variables in non-synthetic methods.
@@ -105,7 +104,7 @@ object UnusedLocalVariables {
 
         //
         //
-        // IDENTIFYING RAW ISSUES; IN OTHER WORDS: "THE ANALYSIS" 
+        // IDENTIFYING RAW ISSUES; IN OTHER WORDS: "THE ANALYSIS"
         //
         //
 
@@ -133,7 +132,7 @@ object UnusedLocalVariables {
         var issues = List.empty[Issue]
 
         // It may happen that a user defines a final local constant
-        // which is then used by the compiler whenever we 
+        // which is then used by the compiler whenever we
         // see a reference in the code; in this case we an unused
         // local variable...
         // E.g., given the following code:
@@ -160,7 +159,7 @@ object UnusedLocalVariables {
                 // for instance methods that can be/are inherited
                 if (method.isStatic ||
                     method.isPrivate ||
-                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
+                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
                     method.name == "<init>") {
                     relevance = Relevance.High
                     if (vo == -1 && !method.isStatic) {
@@ -183,7 +182,7 @@ object UnusedLocalVariables {
                         try {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
                             // TODO Use a more precise method to determine if a method has a side effect "pureness" is actually too strong
-                            if (resolvedMethod.exists(m ⇒ propertyStore(m, PurityKey) == Pure)) {
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
                                 issue = "the return value of the call of "+invoke.declaringClass.toJava+
                                     "{ "+
                                     invoke.methodDescriptor.toJava(invoke.name)+
@@ -225,7 +224,7 @@ object UnusedLocalVariables {
                                 }
                             // else... we filter basically all issues unless we are sure that this is real; i.e.,
                             //  - it is not a default value
-                            //  - it it not a final local variable 
+                            //  - it is not a final local variable
 
                             case _ ⇒
                                 issue = "the constant value "+
