@@ -326,7 +326,10 @@ package object ai {
         targetDomain: ValuesDomain with ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
 
-        assert(operands.size == calledMethod.parametersCount)
+        assert(
+            operands.size == (calledMethod.parametersCount + { if (calledMethod.isStatic) 0 else 1 }),
+            s"${calledMethod.toJava()} ${operands.mkString("Operands(", ",", ")")}"
+        )
 
         import org.opalj.collection.mutable.Locals
         implicit val domainValue = targetDomain.DomainValue
