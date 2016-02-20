@@ -1668,7 +1668,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * @see [[lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)]]
+     * @see `lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)`
      */
     def lookupMethodDefinition(
         invocation: MethodInvocationInstruction,
