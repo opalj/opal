@@ -853,7 +853,12 @@ trait AI[D <: Domain] {
                                         )
                                     }
                                 } else {
-                                    isTargetScheduled = No
+                                    // keep default: isTargetScheduled = Unknown
+                                    // (We just know that the instruction is not
+                                    // scheduled in the context of the calling parent
+                                    // routine, but it may be scheduled in a different
+                                    // context!)
+                                    // isTargetScheduled = No if we don't have subroutines.. 
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
