@@ -30,9 +30,15 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.log.Level
+import org.opalj.log.Warn
+
 /**
  * Thrown if we identify that the project is not consistent.
  *
  * @author Michael Eichberg
  */
-case class InconsistentProjectException(message: String) extends Exception(message)
+case class InconsistentProjectException(
+    message:  String,
+    severity: Level  = Warn
+) extends Exception(message)
