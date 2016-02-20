@@ -865,8 +865,8 @@ trait AI[D <: Domain] {
                 }
 
             assert(
-                (worklist.count(_ == targetPC) != 0) == isTargetScheduled.isYesOrUnknown ||
-                    (worklist.count(_ == targetPC) == 0) == isTargetScheduled.isNoOrUnknown,
+                (worklist.exists(_ == targetPC)) == isTargetScheduled.isYesOrUnknown ||
+                    (!worklist.exists(_ == targetPC)) == isTargetScheduled.isNoOrUnknown,
                 s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled "+
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
