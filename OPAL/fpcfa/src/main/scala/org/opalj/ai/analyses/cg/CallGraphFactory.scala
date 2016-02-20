@@ -136,7 +136,10 @@ object CallGraphFactory {
             } else if (isImplicitlyUsed) {
                 methods.add(method)
             } else if (isNonPrivate) {
-                println("no entry method: "+method.toJava(classFile))
+                OPALLogger.info(
+                    "progress",
+                    "non private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
+                )(project.logContext)
             }
         }
         import scala.collection.JavaConverters._
