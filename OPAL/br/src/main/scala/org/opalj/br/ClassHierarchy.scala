@@ -30,14 +30,11 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.io.BufferedSource
-
 import org.opalj.io.processSource
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
@@ -48,6 +45,7 @@ import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -1667,6 +1665,26 @@ class ClassHierarchy private (
             }
         }
         None
+    }
+
+    /**
+     * @see [[lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)]]
+     */
+    def lookupMethodDefinition(
+        invocation: MethodInvocationInstruction,
+        project:    ClassFileRepository
+    ): Option[Method] = {
+        val receiverType = invocation.declaringClass match {
+            case ot: ObjectType ⇒ ot
+            case at: ArrayType  ⇒ ObjectType.Object
+        }
+
+        lookupMethodDefinition(
+            receiverType,
+            invocation.name,
+            invocation.methodDescriptor,
+            project
+        )
     }
 
     /**
