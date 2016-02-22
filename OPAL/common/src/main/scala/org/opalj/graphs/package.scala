@@ -280,155 +280,161 @@ package object graphs {
         cSCCs
 
     }
-    
-        /**
+
+    /**
      * This method assumes that the graph is fully connected
      * and has one start node without any ingoing edges
      */
     def dominators[N >: Null <: AnyRef](graph: Graph[N]): Map[N, Set[N]] = {
-      val vertices = graph.vertices.clone()
-      for(v <- graph.vertices) {
-        vertices --= graph.apply(v)
-      }
-      dominators(vertices.head, graph.apply)
+        val vertices = graph.vertices.clone()
+        for (v ← graph.vertices) {
+            vertices --= graph(v)
+        }
+        dominators(vertices.head, graph.apply)
     }
-    
+
     /**
      * Computes the dominators for each node of a given flowgraph
-     * 
+     *
      * @param start the start node of the flowgraph
      * @param successors should take a node and provide its successors
      */
     def dominators[N >: Null <: AnyRef](
-        start:        N,
-        successors:   N ⇒ Traversable[N]
+        start:      N,
+        successors: N ⇒ Traversable[N]
     ): Map[N, Set[N]] = {
-      
-      // This is an implementation of the "fast dominators" algorithm
-      // presented by T. Lengauaer and R. Tarjan in
-      // A Fast Algorithm for Finding Dominators in a Flowgraph
-      // ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
-            
-      // Variables
-      var n = 0;
-      val parent = Map[N, N]()
-      val predecessors = Map[N, Set[N]]()
-      val semi = Map[N, Int]()
-      val vertex = Map[Int, N]()
-      val bucket = Map[N, Set[N]]()
-      val dom = Map[N, N]()
-      val ancestor = Map[N,N]()
-      val label = Map[N,N]()
-      
-      def doDFS(v: N): Unit = {
-        ancestor(v) = null
-        label(v) = v
-        dom(v) = v
-        
-        n = n + 1
-        semi(v) = n
-        vertex(n) = v
-        for(w <- successors(v)) {
-          if(!(semi.keySet contains w)) {
-            parent(w) = v
-            doDFS(w)
-          }
-          if(predecessors.keySet contains w) {
-            predecessors(w) += v
-          } else {
-            predecessors(w) = Set(v)
-          }
+
+        // This is an implementation of the "fast dominators" algorithm
+        // presented by T. Lengauaer and R. Tarjan in
+        // A Fast Algorithm for Finding Dominators in a Flowgraph
+        // ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+
+        // Variables
+        var n = 0;
+        val parent = Map[N, N]()
+        val predecessors = Map[N, Set[N]]()
+        val semi = Map[N, Int]()
+        val vertex = Map[Int, N]()
+        val bucket = Map[N, Set[N]]()
+        val dom = Map[N, N]()
+        val ancestor = Map[N, N]()
+        val label = Map[N, N]()
+
+        def doDFS(v: N): Unit = {
+            label(v) = v
+            dom(v) = v
+
+            n = n + 1
+            semi(v) = n
+            vertex(n) = v
+            for (w ← successors(v)) {
+                if (!(semi contains w)) {
+                    parent(w) = v
+                    doDFS(w)
+                }
+                if (predecessors contains w) {
+                    predecessors(w) += v
+                } else {
+                    predecessors(w) = Set(v)
+                }
+            }
         }
-      }
-            
- 		  // Step 1
-      doDFS(start)
-      
-      // Steps 2 & 3
-      def link(v: N, w: N): Unit = {
-        ancestor(w) = v
-      }
-      
-      def eval(v: N): N = {
-        if(ancestor(v) == null) {
-          return v
-        } else {
-          compress(v)
-          return label(v)
+
+        // Step 1
+        doDFS(start)
+
+        // Steps 2 & 3
+        def link(v: N, w: N): Unit = {
+            ancestor(w) = v
         }
-      }
-      
-      def compress(v: N): Unit = {
-        if(ancestor(ancestor(v)) != null) {
-          compress(ancestor(v))
-          if(semi(label(ancestor(v))) < semi(label(v))) {
-            label(v) = label(ancestor(v))
-          }
-          ancestor(v) = ancestor(ancestor(v))
+
+        def eval(v: N): N = {
+            if (!(ancestor contains v)) {
+                v
+            } else {
+                compress(v)
+                label(v)
+            }
         }
-      }
-      
-      for(i <- n to 2 by -1) {
-        val w = vertex(i)
-        
-        // Step 2
-        for(v <- predecessors(w)) {
-          val u = eval(v)
-          if(semi(u) < semi(w)) {
-            semi(w) = semi(u)
-          }
+
+        def compress(v: N): Unit = {
+            val theAncestor = ancestor(v)
+            if (ancestor contains theAncestor) {
+                compress(theAncestor)
+                if (semi(label(theAncestor)) < semi(label(v))) {
+                    label(v) = label(theAncestor)
+                }
+                ancestor(v) = ancestor(theAncestor)
+            }
         }
-        
-        if(bucket.keySet contains vertex(semi(w))) {
-          bucket(vertex(semi(w))) += w
-        } else {
-          bucket(vertex(semi(w))) = Set(w)
+
+        var i = n
+        while (i >= 2) {
+            val w = vertex(i)
+
+            // Step 2
+            for (v ← predecessors(w)) {
+                val u = eval(v)
+                val uSemi = semi(u)
+                if (uSemi < semi(w)) {
+                    semi(w) = uSemi
+                }
+            }
+
+            if (bucket contains vertex(semi(w))) {
+                bucket(vertex(semi(w))) += w
+            } else {
+                bucket(vertex(semi(w))) = Set(w)
+            }
+            link(parent(w), w)
+
+            // Step 3
+            val wParent = parent(w)
+            if (bucket contains wParent) {
+                for (v ← bucket(wParent)) {
+                    bucket(wParent) -= v
+                    val u = eval(v)
+                    dom(v) = if (semi(u) < semi(v)) u else wParent; //not inv true & false
+                }
+            }
+            i = i - 1
         }
-        link(parent(w), w)
-        
-        // Step 3
-        if(bucket.keySet contains parent(w)){
-          for(v <- bucket(parent(w))) {
-            bucket(parent(w)) -= v
-            val u = eval(v)
-            dom(v) = if (semi(u) < semi(v)) u else parent(w);
-          }
+
+        // Step 4
+        var j = 2;
+        while (j <= n) {
+            val w = vertex(j)
+            if (dom(w) ne vertex(semi(w))) {
+                dom(w) = dom(dom(w)) //not inv. false & true
+            }
+            j = j + 1
         }
-      }
-      
-      // Step 4
-      for(i <- 2 to n) {
-        val w = vertex(i)
-        if(dom(w) != vertex(semi(w))) {
-          dom(w) = dom(dom(w))
+
+        def getAllDominators(dom: Map[N, N]): Map[N, Set[N]] = {
+            val dominators = Map[N, Set[N]]()
+            var visited = Set[N]()
+
+            def traverseGraph(node: N): Set[N] = {
+                if (node eq start) {
+                    return Set(node)
+                }
+                var ret = Set[N]()
+                if (!(visited contains node)) {
+                    visited += node
+                    ret = Set(node) ++ traverseGraph(dom(node))
+                }
+                ret
+            }
+
+            for (n ← dom.keySet) {
+                visited = Set[N]()
+                dominators(n) = traverseGraph(n) + n
+            }
+
+            dominators
         }
-      }
-      
-      def getAllDominators(dom: Map[N,N]): Map[N,Set[N]] = {
-        val dominators = Map[N,Set[N]]()
-        var visited = Set[N]()
-                      
-        def traverseGraph(node: N): Set[N] = {
-          if(node == start) {
-            return Set(node)
-          }
-          var ret = Set[N]()
-          if(!(visited contains node)) {
-            visited += node
-            ret = Set(node) ++ traverseGraph(dom(node))
-          }
-          ret
-        }
-                      
-        for (n ← dom.keySet) {
-          visited = Set[N]()
-          dominators(n) = traverseGraph(n) + n
-        }
-                      
-        dominators
-      }
-                 
-      getAllDominators(dom)
+
+        getAllDominators(dom)
     }
 
 }
