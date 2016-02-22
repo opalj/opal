@@ -64,7 +64,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         "aabbcbbaa",
         "aaaffffffaaa", "aaaffffffffffffffffaaa"
     )
-    val psStrings: PropertyStore = {
+    var psStrings: PropertyStore = initPSStrings()
+    def initPSStrings(): PropertyStore = {
         PropertyStore(stringEntities, () ⇒ false, debug = false)(GlobalLogContext)
     }
 
@@ -191,8 +192,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     nodeE.targets += nodeR //                e -> r
     nodeR.targets += nodeB //       ↖︎-----------↵︎
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
-    val psNodes: PropertyStore = {
-        PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+    var psNodes: PropertyStore = initPSNodes
+    def initPSNodes(): PropertyStore = {
+        psNodes = PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        psNodes
     }
 
     final val ReachableNodesKey: PropertyKey[ReachableNodes] = {
@@ -223,11 +226,21 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     if (NoReachableNodes != NoReachableNodes) fail("comparison of ReachableNodes properties failed")
 
     override def afterEach(): Unit = {
-        psStrings.waitOnPropertyComputationCompletion(false)
-        psStrings.reset()
+        if (psStrings.isShutdown()) {
+            info("reinitializing string entities property store")
+            initPSStrings()
+        } else {
+            psStrings.waitOnPropertyComputationCompletion(false)
+            psStrings.reset()
+        }
 
-        psNodes.waitOnPropertyComputationCompletion(false)
-        psNodes.reset()
+        if (psNodes.isShutdown()) {
+            info("reinitializing nodes property store")
+            initPSNodes()
+        } else {
+            psNodes.waitOnPropertyComputationCompletion(false)
+            psNodes.reset()
+        }
     }
 
     //**********************************************************************************************
@@ -728,10 +741,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                         ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                         ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    } catch { case t: Throwable ⇒ info(ps.toString(true)); throw t; }
+                    } catch {
+                        case t: Throwable ⇒
+                            info(s"failed on run $runs\n"+ps.toString(true))
+                            throw t
+                    }
 
-                    psNodes.waitOnPropertyComputationCompletion(false)
-                    psNodes.reset()
+                    ps.reset()
                 }
                 info(s"executed the test $runs times")
             }
@@ -824,9 +840,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                         ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                         ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                    } catch { case t: Throwable ⇒ info(ps.toString(true)); throw t; }
+                    } catch {
+                        case t: Throwable ⇒
+                            info(s"failed on run $runs\n"+ps.toString(true))
+                            throw t
+                    }
 
-                    psNodes.waitOnPropertyComputationCompletion(false)
                     psNodes.reset()
                 }
                 info(s"executed the test $runs times")
