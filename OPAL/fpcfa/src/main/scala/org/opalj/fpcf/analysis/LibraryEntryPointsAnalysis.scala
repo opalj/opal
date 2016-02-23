@@ -80,6 +80,10 @@ class LibraryEntryPointsAnalysis private (
             return ImmediateResult(method, IsEntryPoint);
         }
 
+        if (method.isPrivate ||
+            (isClosedLibrary && method.isPackagePrivate))
+            return ImmediateResult(method, NoEntryPoint)
+
         // Now: the method is neither an (static or default) interface method nor and method
         // which relates somehow to object serialization.
 
