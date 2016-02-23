@@ -32,18 +32,14 @@ package analyses
 
 import java.net.URL
 import java.io.File
-
 import scala.collection.{Set, Map}
 import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 import scala.collection.SortedMap
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
@@ -54,6 +50,13 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.DefaultLogContext
+import org.opalj.br.instructions.NEW
+import org.opalj.log.Error
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKEINTERFACE
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -875,7 +878,7 @@ object Project {
         ex:         InconsistentProjectException
     ): Unit = {
 
-        OPALLogger.log(Warn("project configuration", ex.message))(logContext)
+        OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
 
     }
 
@@ -1052,7 +1055,7 @@ object Project {
                     v1._1.body.get.instructions.size > v2._1.body.get.instructions.size
                 }.map(e ⇒ (sources(e._2.thisType), e._2, e._1)).toArray
 
-            new Project(
+            val project = new Project(
                 projectClassFiles.toArray,
                 libraryClassFiles.toArray,
                 methodsSortedBySize,
@@ -1073,10 +1076,87 @@ object Project {
                 AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey)),
                 libraryClassFilesAreInterfacesOnly
             )
+
+            val issues = validate(project)
+            issues foreach { handleInconsistentProject(logContext, _) }
+            OPALLogger.info(
+                "project",
+                s"validation of the project configruation revealed ${issues.size} significant issues"+
+                    (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
+            )
+
+            project
         } catch {
             case t: Throwable ⇒
                 OPALLogger.unregister(logContext)
                 throw t
         }
+    }
+
+    /**
+     * Performs some fundamental validations to make sure that subsequent analyses don't have
+     * to deal with completely broken projects!
+     */
+    private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
+
+        val disclaimer = "(this inconsistency will lead to analyses failing miserably)"
+
+        val ch = p.classHierarchy
+
+        var exs = List.empty[InconsistentProjectException]
+        val exsMutex = new Object
+        def addException(ex: InconsistentProjectException): Unit = {
+            exsMutex.synchronized { exs = ex :: exs }
+        }
+
+        p.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
+            val (_ /*Source*/ , c: ClassFile, m: Method) = e
+            m.body.get.foreach { (pc, instruction) ⇒
+                (instruction.opcode: @scala.annotation.switch) match {
+
+                    case NEW.opcode ⇒
+                        val objectType = instruction.asInstanceOf[NEW].objectType
+                        if (ch.isInterface(objectType)) {
+                            val ex = InconsistentProjectException(
+                                s"cannot create an instance of interface ${objectType.toJava} in "+
+                                    m.toJava(c) + s"pc=$pc $disclaimer",
+                                Error
+                            )
+                            addException(ex)
+                        }
+
+                    case INVOKESTATIC.opcode ⇒
+                        val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
+                        ch.lookupMethodDefinition(invokestatic, p) foreach { m ⇒
+                            if (!m.isStatic) {
+                                val ex = InconsistentProjectException(
+                                    s"static method call $invokestatic of an instance method in "+
+                                        m.toJava(c) + s"pc=$pc $disclaimer",
+                                    Error
+                                )
+                                addException(ex)
+                            }
+                        }
+
+                    case INVOKEVIRTUAL.opcode | INVOKESPECIAL.opcode | INVOKEINTERFACE.opcode ⇒
+                        val invocation = instruction.asInstanceOf[MethodInvocationInstruction]
+                        ch.lookupMethodDefinition(invocation, p) foreach { m ⇒
+                            if (m.isStatic) {
+                                val method = invocation.methodDescriptor.toJava(invocation.name)
+                                val ex = InconsistentProjectException(
+                                    s"instance method call of the static method $method in "+
+                                        m.toJava(c) + s"pc=$pc $disclaimer",
+                                    Error
+                                )
+                                addException(ex)
+                            }
+                        }
+
+                    case _ ⇒ // Nothing special is checked (so far)
+                }
+            }
+        }
+
+        exs
     }
 }

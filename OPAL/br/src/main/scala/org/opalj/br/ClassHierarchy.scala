@@ -30,14 +30,11 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
-
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.io.BufferedSource
-
 import org.opalj.io.processSource
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
@@ -48,6 +45,7 @@ import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -80,7 +78,7 @@ class ClassHierarchy private (
         private[this] val interfaceTypesMap:   Array[Boolean],
         private[this] val isKnownToBeFinalMap: Array[Boolean],
 
-        // The element is null for types for which we have no complete information 
+        // The element is null for types for which we have no complete information
         // (unless it is java.lang.Object)!
         private[this] val superclassTypeMap:      Array[ObjectType],
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
@@ -1190,21 +1188,17 @@ class ClassHierarchy private (
 
     /**
      * Determines whether the given [[ClassSignature]] of the potential `subtype` does implement or extend
-     * the interface or class given with the parameter `supertype` of type [[ObjectType]]. In case that the
-     * `subtype` does implement or extend the `supertype`, an `Option` of [[ClassTypeSignature]] is returned.
-     * Otherwise None will be returned.
+     * the given type `supertype` of type [[ObjectType]].
+     * In case that the `subtype` does implement or extend the `supertype`, an `Option` of
+     * [[ClassTypeSignature]] is returned. Otherwise None will be returned.
      *
      * @example
-     *  ================= START =================
-     *
      *  subtype: [[ClassSignature]] from class A where A extends List<String>
      *  supertype: List as [[ObjectType]]
      *
      *  This method scans all super classes and super interfaces of A in order to find
      *  the concrete class declaration of List where it is bound to String. The above example
      *  would yield the [[ClassTypeSignature]] of List<String>.
-     *
-     *  ================== END =================
      *
      * @param subtype Any type or interface.
      * @param supertype Any type or interface.
@@ -1671,6 +1665,26 @@ class ClassHierarchy private (
             }
         }
         None
+    }
+
+    /**
+     * @see `lookupMethodDefinition(ObjectType,String,MethodDescriptor,ClassFileRepository)`
+     */
+    def lookupMethodDefinition(
+        invocation: MethodInvocationInstruction,
+        project:    ClassFileRepository
+    ): Option[Method] = {
+        val receiverType = invocation.declaringClass match {
+            case ot: ObjectType ⇒ ot
+            case at: ArrayType  ⇒ ObjectType.Object
+        }
+
+        lookupMethodDefinition(
+            receiverType,
+            invocation.name,
+            invocation.methodDescriptor,
+            project
+        )
     }
 
     /**
@@ -2671,4 +2685,3 @@ object ClassHierarchy {
         )
     }
 }
-

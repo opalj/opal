@@ -236,6 +236,8 @@ class PropertyStore private (
     def reset(): Unit = {
         writeSetPropertyObservers {
             accessStore {
+                Tasks.reset()
+
                 // reset statistics
                 propagationCount.set(0l)
                 effectiveDefaultPropertiesCount.set(0l)
@@ -321,6 +323,7 @@ class PropertyStore private (
 
         "PropertyStore(\n"+
             s"\tentitiesCount=${data.size()}\n"+
+            s"\tscheduledComputations=${Tasks.scheduledComputations}\n"+
             s"\texecutedComputations=${Tasks.executedComputations}\n"+
             s"\tpropagations=${propagationCount.get}\n"+
             s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
@@ -1182,6 +1185,12 @@ class PropertyStore private (
     private[this] final val threadPool = ThreadPoolN(ThreadCount)
 
     /**
+     * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
+     * 		new computations.
+     */
+    def isShutdown(): Boolean = threadPool.isShutdown()
+
+    /**
      * General handling of the tasks that are executed.
      */
     private[this] object Tasks {
@@ -1191,17 +1200,33 @@ class PropertyStore private (
         @volatile private[PropertyStore] var isInterrupted: Boolean = false
 
         // ALL ACCESSES TO "executed" and "scheduled" ARE SYNCHRONIZED
-        private[this] var executed = 0
+        @volatile private[this] var executed: Int = 0
 
         /**
          * The number of scheduled tasks. I.e., the number of tasks that are running or
          * that will run in the future.
          */
-        @volatile private[this] var scheduled = 0
+        @volatile private[this] var scheduled: Int = 0
 
         private[this] var cleanUpRequired = false
 
-        private[PropertyStore] def executedComputations: Int = synchronized { executed }
+        private[PropertyStore] def executedComputations: Int = executed
+
+        private[PropertyStore] def scheduledComputations: Int = scheduled
+
+        private[PropertyStore] def reset(): Unit = {
+            if (isInterrupted || isShutdown)
+                throw new InterruptedException();
+
+            this.synchronized {
+                if (scheduled > 0)
+                    throw new IllegalStateException("computations are still running");
+
+                useFallbackForIncomputableProperties = false
+                executed = 0
+                cleanUpRequired = false
+            }
+        }
 
         /**
          * Terminates all scheduled but not executing computations and afterwards
@@ -1408,9 +1433,10 @@ class PropertyStore private (
                 newDependentEPKs
             }
 
-            // Let's determine all EPKs that have a dependency on an incomputableEPK
-            // (They may be in a strongly connected component, but we don't care about
-            // these, because they may still be subject to some refinement.)
+            /* Let's determine all EPKs that have a dependency on an incomputableEPK
+             * (They may be in a strongly connected component, but we don't care about
+             * these, because they may still be subject to some refinement.)
+             */
             def determineIncomputableEPKs(dependerEPK: SomeEPK): Unit = {
                 cyclicComputableEPKCandidates --=
                     determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
@@ -1444,9 +1470,24 @@ class PropertyStore private (
                 }
             }
 
+            val epkSuccessors: (SomeEPK) ⇒ Traversable[SomeEPK] = (epk: SomeEPK) ⇒ {
+                val observers = store.observers.get(epk)
+                assert(
+                    observers ne null,
+                    s"$epk has no observers: $observers\n"+
+                        s"\tcyclicComputableEPKCandidates=$cyclicComputableEPKCandidates"+
+                        {
+                            cyclicComputableEPKCandidates.
+                                map(c ⇒ store.observers.get(c).map(_._1)).
+                                mkString("", "->", "\n")
+                        } +
+                        s"\tdirectlyIncomputableEPKs=$directlyIncomputableEPKs\n"+
+                        s"\tindirectlyIncomputableEPKs=$indirectlyIncomputableEPKs"
+                )
+                observers.view.map(_._1)
+            }
             val cSCCs: List[Iterable[SomeEPK]] = org.opalj.graphs.closedSCCs[SomeEPK](
-                cyclicComputableEPKCandidates,
-                (epk: SomeEPK) ⇒ observers.get(epk).view.map(_._1)
+                cyclicComputableEPKCandidates, epkSuccessors
             )
             if (debug && cSCCs.nonEmpty) logDebug(
                 "analysis progress",
@@ -1876,7 +1917,8 @@ class PropertyStore private (
                         val pk = p.key
                         val dependerEPK = EPK(e, pk)
                         // we use ONE observer to make sure that the continuation function
-                        // is called at most once
+                        // is called at most once independent of how many entities are 
+                        // arctually observed
                         val o = new DependeePropertyObserver(dependerEPK, clearDependeeObservers) {
                             def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
                                 propagationCount.incrementAndGet()
@@ -1970,9 +2012,9 @@ class PropertyStore private (
                                     s"the analysis which computed $e($p) failed miserably "+
                                         "with a StackOverflowError; possible reasons: "+
                                         "1. the computed properties do not implement the equals "+
-                                        "method (correctly - structural equality) or 2. the "+
+                                        "method correctly (structural equality) or 2. the "+
                                         s"dependee information ${dependees.mkString(", ")} is not "+
-                                        "update in each round"
+                                        "correctly updated in each round"
                                 logError("implementation error", message)
                                 throw new Error(message, soe)
                         }
@@ -2210,4 +2252,5 @@ private[fpcf] final class EntityProperties(
 
 private[fpcf] object PropertiesOfEntity {
     def unapply(eps: EntityProperties): Some[Properties] = Some(eps.ps)
+
 }

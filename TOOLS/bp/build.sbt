@@ -21,6 +21,10 @@ scalacOptions in ThisBuild ++= Seq(
 
 fork in run := true
 
+javaOptions in run += "-Xmx8G" // BETTER: javaOptions in run += "-Xmx16G"
+
+javaOptions in run += "-Xms4G"
+
 mainClass in "bp" in Compile := (mainClass in "BugPickerUI" in Compile).value
 
 fullClasspath in "bp" in Runtime ++= (fullClasspath in "BugPickerUI" in Runtime).value

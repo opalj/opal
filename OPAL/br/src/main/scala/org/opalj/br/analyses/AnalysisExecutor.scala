@@ -164,7 +164,11 @@ trait AnalysisExecutor {
                 showError(s"Cannot read: $file $workingDirectory.")
                 None
             } else if (!file.isDirectory() &&
-                !filename.endsWith(".jar") && !filename.endsWith(".class")) {
+                !filename.endsWith(".jar") &&
+                !filename.endsWith(".ear") &&
+                !filename.endsWith(".war") &&
+                !filename.endsWith(".zip") &&
+                !filename.endsWith(".class")) {
                 showError(s"Input file is neither a directory nor a class or JAR file: $file.")
                 None
             } else

@@ -521,12 +521,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             }
         }
 
+        def isClassFileRepository(filename: String): Boolean = {
+            filename.endsWith(".jar") || filename.endsWith(".war") || filename.endsWith(".ear") ||
+                filename.endsWith(".zip")
+
+        }
+
         if (!file.exists()) {
             Nil
         } else if (file.isFile()) {
             val filename = file.getName
             if (file.length() == 0) Nil
-            else if (filename.endsWith(".jar")) processJar(file)
+            else if (isClassFileRepository(filename)) processJar(file)
             else if (filename.endsWith(".class")) processClassFile(file)
             else Nil
         } else if (file.isDirectory()) {
@@ -540,7 +546,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                     val filename = file.getName
                     if (file.isFile()) {
                         if (file.length() == 0) Nil
-                        else if (filename.endsWith(".jar")) jarFiles ::= file
+                        else if (isClassFileRepository(filename)) jarFiles ::= file
                         else if (filename.endsWith(".class")) classFiles ::= file
                     } else if (file.isDirectory()) {
                         collectFiles(file.listFiles())

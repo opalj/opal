@@ -30,7 +30,6 @@ package org.opalj
 package ai
 
 import scala.collection.BitSet
-import scala.collection.mutable
 import org.opalj.collection.UShortSet
 import org.opalj.br.Code
 
@@ -89,11 +88,30 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
-        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        val evaluatedInstructions = new scala.collection.mutable.BitSet(code.instructions.size)
         evaluated.foreach { pc ⇒
             if (pc >= 0 /*skip "subroutine boundaries"*/ ) evaluatedInstructions += pc
         }
         evaluatedInstructions
+    }
+
+    /**
+     * Returns all instructions that belong to a subroutine.
+     */
+    lazy val subroutineInstructions: UShortSet = {
+        var instructions = org.opalj.collection.mutable.UShortSet.empty
+        var subroutineLevel = 0
+        // It is possible to have a method with just JSRs and no RETs...
+        // Hence, we have to iterate from the beginning.
+        evaluated.reverse.foreach { pc ⇒
+            (pc: @scala.annotation.switch) match {
+                case SUBROUTINE_START          ⇒ subroutineLevel += 1
+                case SUBROUTINE_END            ⇒ subroutineLevel -= 1
+                case pc if subroutineLevel > 0 ⇒ instructions = pc +≈: instructions
+                case _                         ⇒ // we don't care
+            }
+        }
+        instructions
     }
 
     /**

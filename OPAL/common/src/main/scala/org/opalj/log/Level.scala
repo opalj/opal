@@ -36,6 +36,10 @@ package log
  */
 sealed trait Level {
 
+    def apply(info: String): LogMessage
+
+    def apply(category: String, info: String): LogMessage
+
     def ansiColorEscape: String
 
     def id: String

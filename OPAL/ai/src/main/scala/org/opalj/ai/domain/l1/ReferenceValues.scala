@@ -790,8 +790,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override val isPrecise: Boolean,
         theUpperTypeBound:      ObjectType,
         override val t:         Timestamp
-    )
-            extends super.SObjectValue(theUpperTypeBound)
+    ) extends super.SObjectValue(theUpperTypeBound)
             with ObjectValue
             with NonNullSingleOriginSReferenceValue {
         this: DomainObjectValue ⇒
@@ -802,8 +801,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             !isPrecise ||
                 !classHierarchy.isKnown(theUpperTypeBound) ||
                 !classHierarchy.isInterface(theUpperTypeBound),
-            s"the type $theUpperTypeBound is an interface type and, "+
-                "hence, should (only) be an upper type bound (not be precise)"
+            s"the type ${theUpperTypeBound.toJava} defines an interface and, "+
+                "hence, cannnot be the concrete(precise) type of an object instance "+
+                "(if this assertion fails, the project configuration may be bogus))"
         )
 
         override def updateT(

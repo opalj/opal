@@ -537,11 +537,17 @@ trait AI[D <: Domain] {
         def integrateSubroutineInformation(): Unit = {
             if (subroutinesOperandsArray ne null) {
                 foreachNonNullValue(subroutinesOperandsArray) { (pc, value) ⇒
-                    assert((operandsArray(pc) eq null) && (localsArray(pc) eq null))
-                    val subroutineOperands = subroutinesOperandsArray(pc)
-                    val subroutineLocals = subroutinesLocalsArray(pc)
-                    operandsArray(pc) = subroutineOperands
-                    localsArray(pc) = subroutineLocals
+                    // It is possible to have a method that only has jsr instructions, but no
+                    // ret instruction(s); e.g. com.sun.mail.imap.IMAPStore compiled with Java 1.4.
+                    // In this case the subroutine and the normal functionality are overlapping.
+                    // In this case, the "normal" operands/locals array already contains the 
+                    // combined state.
+                    if ((operandsArray(pc) eq null) /* && (localsArray(pc) eq null)*/ ) {
+                        val subroutineOperands = subroutinesOperandsArray(pc)
+                        val subroutineLocals = subroutinesLocalsArray(pc)
+                        operandsArray(pc) = subroutineOperands
+                        localsArray(pc) = subroutineLocals
+                    }
                 }
             }
         }
@@ -853,7 +859,12 @@ trait AI[D <: Domain] {
                                         )
                                     }
                                 } else {
-                                    isTargetScheduled = No
+                                    // keep default: isTargetScheduled = Unknown
+                                    // (We just know that the instruction is not
+                                    // scheduled in the context of the calling parent
+                                    // routine, but it may be scheduled in a different
+                                    // context!)
+                                    // isTargetScheduled = No if we don't have subroutines.. 
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
@@ -865,8 +876,8 @@ trait AI[D <: Domain] {
                 }
 
             assert(
-                (worklist.count(_ == targetPC) != 0) == isTargetScheduled.isYesOrUnknown ||
-                    (worklist.count(_ == targetPC) == 0) == isTargetScheduled.isNoOrUnknown,
+                (worklist.exists(_ == targetPC)) == isTargetScheduled.isYesOrUnknown ||
+                    (!worklist.exists(_ == targetPC)) == isTargetScheduled.isNoOrUnknown,
                 s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled "+
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
@@ -974,14 +985,14 @@ trait AI[D <: Domain] {
                         // ... we finished the analysis of a subroutine for the first time.
                         subroutinesOperandsArray = new Array(instructions.length)
                         subroutinesLocalsArray = new Array(instructions.length)
-                        subroutine.foreach { pc ⇒
+                        subroutine foreach { pc ⇒
                             if (pc >= 0) {
                                 subroutinesOperandsArray(pc) = operandsArray(pc)
                                 subroutinesLocalsArray(pc) = localsArray(pc)
                             }
                         }
                     } else {
-                        subroutine.foreach { pc ⇒
+                        subroutine foreach { pc ⇒
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
                                 assert(currentOperands ne null)
