@@ -31,14 +31,13 @@ package ai
 package domain
 
 import java.io.{ByteArrayOutputStream, PrintStream}
-
 import scala.xml.Node
 import scala.collection.BitSet
 import scala.collection.mutable
-
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.{UShortSet ⇒ OUShortSet}
 import org.opalj.collection.mutable.SmallValuesSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
@@ -378,6 +377,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
         joinInstructions:         BitSet,
+        isSubroutineInstruction:  (PC) ⇒ Boolean,
         operandsArray:            OperandsArray
     ): Boolean = {
 
@@ -496,14 +496,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 // reached for the first time, hence there will
                                 // always be an initialization before the next
                                 // use of the register value and we can drop all
-                                // information.... unless we have a JSR/RET.
+                                // information.... unless we have a JSR/RET and we are in
+                                // a subroutine!
                                 if (o eq null) {
                                     if ((n ne null) &&
-                                        joinInstructions.contains(successorPC) &&
-                                        (
-                                            instruction.isInstanceOf[JSRInstruction] ||
-                                            instructions(successorPC).opcode == RET.opcode
-                                        )) {
+                                        isSubroutineInstruction(successorPC)) {
+                                        //                                        joinInstructions.contains(successorPC) &&
+                                        //                                        (
+                                        //                                            instruction.isInstanceOf[JSRInstruction] ||
+                                        //                                            instructions(successorPC).opcode == RET.opcode
+                                        //                                        )) {
                                         newUsage = true
                                         n
                                     } else {
@@ -511,11 +513,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                     }
                                 } else if (n eq null) {
                                     if ((o ne null) &&
-                                        joinInstructions.contains(successorPC) &&
-                                        (
-                                            instruction.isInstanceOf[JSRInstruction] ||
-                                            instructions(successorPC).opcode == RET.opcode
-                                        )) {
+                                        isSubroutineInstruction(successorPC)) {
+                                        //                                        joinInstructions.contains(successorPC) &&
+                                        //                                        (
+                                        //                                            instruction.isInstanceOf[JSRInstruction] ||
+                                        //                                            instructions(successorPC).opcode == RET.opcode
+                                        //                                        )) {
                                         newUsage = true
                                         o
                                     } else {
@@ -885,7 +888,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case ARETURN.opcode |
                 DRETURN.opcode | FRETURN.opcode | IRETURN.opcode | LRETURN.opcode |
                 ATHROW.opcode ⇒
-                updateUsageInformation(defOps(successorPC).head, successorPC)
+                val usedValues = defOps(successorPC).head
+                updateUsageInformation(usedValues, successorPC)
 
             case _ ⇒ /* let's continue with the standard handling */
         }
@@ -906,6 +910,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         val operandsArray = aiResult.operandsArray
         val joinInstructions = aiResult.joinInstructions
+        def isSubroutineInstruction(pc: PC): Boolean = {
+            aiResult.subroutineInstructions.contains(pc)
+        }
 
         var subroutinePCs: Set[PC] = Set.empty
         val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
@@ -935,6 +942,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow,
                         joinInstructions,
+                        isSubroutineInstruction,
                         operandsArray
                     )
                 } catch {
@@ -986,9 +994,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             }
 
-            val isCurrentInstructionARETInstruction = instructions(currPC).opcode == RET.opcode
             regularSuccessorsOf(currPC).foreach { succPC ⇒
-                if (isCurrentInstructionARETInstruction) {
+                if (instructions(currPC).opcode == RET.opcode) {
                     // We have to check if we can "already return" to all given targets.
                     // This is only possible for those targets that follow a JSR instruction
                     // that was already evaluated, otherwise we may lack some important def/use
