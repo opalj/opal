@@ -220,7 +220,14 @@ object InterpretMethod {
                     Some(
                         "Created: "+(new java.util.Date).toString+"<br>"+
                             "Domain: "+domainClass.getName+"<br>"+
-                            XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                            XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
+                            (
+                                if (result.subroutineInstructions.nonEmpty)
+                                    XHTML.instructionsToXHTML("Subroutine instructions", result.subroutineInstructions.iterable)
+                                else
+                                    ""
+                            ) +
+                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                     ),
                     result.domain
                 )(
