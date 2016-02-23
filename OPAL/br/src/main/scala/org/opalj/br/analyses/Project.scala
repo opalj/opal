@@ -1081,8 +1081,8 @@ object Project {
             issues foreach { handleInconsistentProject(logContext, _) }
             OPALLogger.info(
                 "project",
-                s"validation of the project configruation revealed ${issues.size} significant issues; "+
-                    "validate the used libraries"
+                s"validation of the project configruation revealed ${issues.size} significant issues"+
+                    (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
             )
 
             project
