@@ -285,41 +285,41 @@ package object graphs {
     }
 
     /**
-     * Computes for each node the set of dominators.
+     * Computes for each node the set of all nodes that dominate the given node.
      *
      * This method assumes that the graph is fully connected
      * and has one start node without any incomming edges
      */
-    def dominators[N >: Null <: AnyRef](graph: Graph[N]): Map[N, Set[N]] = {
+    def dominators[N >: Null <: AnyRef](graph: Graph[N]): Map[N, List[N]] = {
         val rootNodes = graph.rootNodes(ignoreSelfRecursiveDependencies = true)
         assert(rootNodes.size == 1)
 
-        dominators(rootNodes.head, graph)
+        val start = rootNodes.head
+        dominators(start, immediateDominators(start, graph))
     }
 
     /**
-     * Computes the dominators for each node of a given flowgraph.
+     * Computes the immediate dominators for each node of a given flowgraph.
      *
-     * @param start the start node of the flowgraph
-     * @param successors should take a node and provide its successors
+     * @param start The unique start node of the graph.
+     * @param successors A function that returns the successors for each node.
      *
-     * @note
-     * This is an implementation of the "fast dominators" algorithm
-     * presented by T. Lengauaer and R. Tarjan in
-     * A Fast Algorithm for Finding Dominators in a Flowgraph
-     * ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     * @note 	This is an implementation of the "fast dominators" algorithm
+     * 			presented by T. Lengauaer and R. Tarjan in
+     * 			A Fast Algorithm for Finding Dominators in a Flowgraph
+     * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      */
-    def dominators[N >: Null <: AnyRef](
+    def immediateDominators[N >: Null <: AnyRef](
         start:      N,
         successors: N ⇒ Traversable[N]
-    ): Map[N, Set[N]] = {
+    ): Map[N, N] = {
 
         var n = 0;
         val parent = Map.empty[Object, Object]
         val predecessors = Map.empty[Object, mutable.Set[Object]]
         val semi = Map.empty[Object, Int]
         val vertex = ArrayMap.empty[Object]
-        val bucket = Map.empty[Object, Set[Object]]
+        val bucket = Map.empty[Object, mutable.Set[Object]]
         val dom = Map.empty[Object, Object]
         val ancestor = Map.empty[Object, Object]
         val label = Map.empty[Object, Object]
@@ -362,8 +362,175 @@ package object graphs {
             val theAncestor = ancestor(v)
             if (ancestor contains theAncestor) {
                 compress(theAncestor)
-                if (semi(label(theAncestor)) < semi(label(v))) {
-                    label(v) = label(theAncestor)
+                val ancestorLabel = label(theAncestor)
+                if (semi(ancestorLabel) < semi(label(v))) {
+                    label(v) = ancestorLabel
+                }
+                ancestor(v) = ancestor(theAncestor)
+            }
+        }
+
+        var i = n
+        while (i >= 2) {
+            val w = vertex(i)
+
+            // Step 2
+            for (v ← predecessors(w)) {
+                val u = eval(v)
+                val uSemi = semi(u)
+                if (uSemi < semi(w)) {
+                    semi(w) = uSemi
+                }
+            }
+            bucket.getOrElseUpdate(vertex(semi(w)), mutable.Set.empty) += w
+            link(parent(w), w)
+
+            // Step 3
+            val wParent = parent(w)
+            val wParentBucketOpt = bucket.get(wParent)
+            if (wParentBucketOpt.isDefined) {
+                val wParentBucket = wParentBucketOpt.get
+                for { v ← wParentBucket } {
+
+                    val u = eval(v)
+                    dom(v) = if (semi(u) < semi(v)) u else wParent; //not inv true & false
+                }
+                wParentBucket.clear()
+            }
+            i = i - 1
+        }
+
+        // Step 4
+        var j = 2;
+        while (j <= n) {
+            val w = vertex(j)
+            if (dom(w) ne vertex(semi(w))) {
+                dom(w) = dom(dom(w)) //not inv. false & true
+            }
+            j = j + 1
+        }
+
+        dom.asInstanceOf[Map[N, N]]
+    }
+
+    /**
+     * Returns for each dominator the set of all dominators of that node.
+     */
+    def dominators[N](start: N, dom: scala.collection.Map[N, N]): Map[N, List[N]] = {
+        dominators(start, dom.keySet, dom)
+    }
+
+    def dominators[N](
+        start: N,
+        nodes: Traversable[N],
+        dom:   (N) ⇒ N
+    ): Map[N, List[N]] = {
+        // Step 5 (collect all dominators for each node)
+        val dominators = Map(start → List(start))
+
+        for (n ← nodes if !dominators.contains(n)) {
+            // Since we traverse the dom tree no "visited" checks are necessary.
+
+            // The method needs to be tail recursive to be able to handle "larger graphs" 
+            // which are,e.g., generated by large methods.
+            @tailrec def traverseDomTree(path: List[N]): List[N] = {
+                val node = path.head
+                dominators.get(node) match {
+                    case Some(nodeDoms) ⇒
+                        // we have found a node for which we already have the list of dominators
+                        var accDoms = nodeDoms
+                        path.tail foreach { n ⇒
+                            accDoms ::= n
+                            // let's also update the map to speed up overall processing
+                            dominators(n) = accDoms
+                        }
+                        accDoms
+
+                    case None ⇒
+                        traverseDomTree(dom(node) :: path)
+                }
+            }
+
+            dominators(n) = traverseDomTree(List(n))
+        }
+
+        dominators
+    }
+
+    /**
+     * Computes the immediate dominators for each node of a given graph where each node
+     * is identified using a unique int value in the range [0..maxNodeId]; the unique root node
+     * of the graph has to have the id 0.
+     *
+     * @param successors A function that returns the successors for each node.
+     * @return The array contains for each node the immediate dominator.
+     * 			If not all unique ids are used then the array is a sparse array and external
+     * 			knowledge is necessary to determine which elements of the array contain useful
+     * 			information.
+     *
+     * @note 	This is an implementation of the "fast dominators" algorithm
+     * 			presented by T. Lengauaer and R. Tarjan in
+     * 			A Fast Algorithm for Finding Dominators in a Flowgraph
+     * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     */
+    def immediateDominators(
+        successors: Int ⇒ Traversable[Int],
+        maxNodeId:  Int
+    ): Array[Int] = {
+        val max = maxNodeId + 1
+
+        var n = 0;
+        val parent = new Array[Int](max)
+        val predecessors = new Array[mutable.Set[Int]](max)
+        val semi = new Array[Int](max)
+        val vertex = new Array[Int](max + 1)
+        val bucket = new Array[mutable.Set[Int]](max)
+        val dom = new Array[Int](max)
+        val ancestor = new Array[Int](max)
+        val label = new Array[Int](max)
+
+        // Step 1 (assign dfsnum)
+        var nodes = List(0)
+        while (nodes.nonEmpty) {
+            val v = nodes.head
+            nodes = nodes.tail
+            label(v) = v
+            dom(v) = v
+
+            n = n + 1
+            semi(v) = n
+            vertex(n) = v
+            for (w ← successors(v)) {
+                val preds = predecessors(w)
+                if (preds eq null) predecessors(w) = mutable.Set(v) else preds += v
+                if (semi(w) == 0) {
+                    parent(w) = v
+                    nodes = w :: nodes
+                }
+            }
+        }
+
+        // Steps 2 & 3
+        def link(v: Int, w: Int): Unit = {
+            ancestor(w) = v
+        }
+
+        def eval(v: Int): Int = {
+            if (ancestor(v) == 0) {
+                v
+            } else {
+                compress(v)
+                label(v)
+            }
+        }
+
+        def compress(v: Int): Unit = {
+            val theAncestor = ancestor(v)
+            if (ancestor(theAncestor) != 0) {
+                compress(theAncestor)
+                val ancestorLabel = label(theAncestor)
+                if (semi(ancestorLabel) < semi(label(v))) {
+                    label(v) = ancestorLabel
                 }
                 ancestor(v) = ancestor(theAncestor)
             }
@@ -382,21 +549,24 @@ package object graphs {
                 }
             }
 
-            if (bucket contains vertex(semi(w))) {
-                bucket(vertex(semi(w)).asInstanceOf[N]) += w
+            val v = vertex(semi(w))
+            val b = bucket(v)
+            if (b ne null) {
+                b += w
             } else {
-                bucket(vertex(semi(w)).asInstanceOf[N]) = Set(w)
+                bucket(v) = mutable.Set(w)
             }
             link(parent(w), w)
 
             // Step 3
             val wParent = parent(w)
-            if (bucket contains wParent) {
-                for (v ← bucket(wParent)) {
-                    bucket(wParent) -= v
+            val wParentBucket = bucket(wParent)
+            if (wParentBucket != null) {
+                for (v ← wParentBucket) {
                     val u = eval(v)
                     dom(v) = if (semi(u) < semi(v)) u else wParent; //not inv true & false
                 }
+                wParentBucket.clear()
             }
             i = i - 1
         }
@@ -405,42 +575,13 @@ package object graphs {
         var j = 2;
         while (j <= n) {
             val w = vertex(j)
-            if (dom(w) ne vertex(semi(w))) {
+            if (dom(w) != vertex(semi(w))) {
                 dom(w) = dom(dom(w)) //not inv. false & true
             }
             j = j + 1
         }
 
-        // Step 5 (collect results)
-        val dominators = Map[Object, Set[Object]](start → Set(start))
-
-        for (n ← dom.keySet if !dominators.contains(n)) {
-            // Since we traverse the dom tree no "visited" checks are necessary.
-
-            // The method needs to be tail recursive to be able to handle "larger graphs" 
-            // which are generated, e.g., by large methods.
-            @tailrec def traverseDomTree(path: List[Object]): Set[Object] = {
-                val node = path.head
-                dominators.get(node) match {
-                    case Some(nodeDoms) ⇒
-                        // we have found a node for which we already have the list of dominators
-                        var accDoms = nodeDoms
-                        path foreach { n ⇒
-                            accDoms += n
-                            // let's also update the map to speed up overall processing
-                            dominators(n) = accDoms
-                        }
-                        accDoms
-
-                    case None ⇒
-                        traverseDomTree(dom(node) :: path)
-                }
-            }
-
-            dominators(n) = traverseDomTree(List(n))
-        }
-
-        dominators.asInstanceOf[Map[N, Set[N]]]
+        dom
     }
 
 }

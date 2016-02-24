@@ -35,6 +35,8 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.util.PerformanceEvaluation.time
+
 /**
  * Tests the dominator algorithm.
  *
@@ -45,32 +47,44 @@ class DominatorTest extends FlatSpec with Matchers {
 
     "a graph with just one node" should "yield the node dominating itself" in {
         val g = Graph.empty[AnyRef] += "a"
-        dominators(g) should be(Map("a" → Set("a")))
+        time {
+            dominators(g) should be(Map("a" → List("a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
         val g = Graph.empty[AnyRef] += ("a" → "b")
-        dominators(g) should be(Map("a" → Set("a"), "b" → Set("a", "b")))
+        time {
+            dominators(g) should be(Map("a" → List("a"), "b" → List("b", "a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a simple graph" should "yield the correct dominators" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e")
-        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "b", "a"), "c" → Set("c", "b", "a")))
+        time {
+            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a cyclic graph" should "not crash the algorithm" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("c" → "b")
-        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "b", "a"), "c" → Set("c", "b", "a")))
+        time {
+            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a graph with a big cycle" should "not crash the algorithm" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("d" → "f") += ("f" → "b")
-        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "a", "b"), "c" → Set("c", "b", "a"), "f" → Set("d", "b", "a", "f")))
+        time {
+            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a"), "f" → List("f", "d", "b", "a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a graph with multiple paths" should "yield only the real dominators" in {
         val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("e" → "d")
-        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "a"), "c" → Set("c", "b", "a")))
+        time {
+            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "a"), "c" → List("c", "b", "a")))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
     }
 
     "a very large, degenerated graph" should "be possible to process without a stackoverflow error" in {
@@ -80,10 +94,68 @@ class DominatorTest extends FlatSpec with Matchers {
             g += (lastI.toString → i.toString)
             lastI = i
         }
+        val immediateDoms = time {
+            immediateDominators("0", g)
+        } { t ⇒ info("immediate dominators computed in "+t.toSeconds) }
+        val doms = time {
+            dominators("0", immediateDoms)
+        } { t ⇒ info("all dominators collected in "+t.toSeconds) }
 
-        dominators[String](g)(0.toString) should be(Set("0"))
-        dominators[String](g)(1.toString).size should be(2)
-        dominators[String](g)(59999.toString).size should be(60000)
+        doms(0.toString) should be(List("0"))
+        doms(1.toString).size should be(2)
+        doms(59999.toString).size should be(60000)
+    }
+
+    //
+    // TESTING THE SECOND IMPLEMENTATION WHICH OPERATES ON INTS...
+    //
+
+    "an int graph with just one node" should "yield the node dominating itself" in {
+        val g = Graph.empty[Int] += 0
+        time {
+            dominators(0, g.vertices, immediateDominators(g, 0)) should be(Map(0 → List(0)))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+    }
+
+    "an int graph with two connected nodes" should "yield one node dominating the other" in {
+        val g = Graph.empty[Int] += (0 → 1)
+        time {
+            dominators(0, g.vertices, immediateDominators(g, 1)) should be(Map(0 → List(0), 1 → List(1, 0)))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+    }
+
+    "a simple int graph" should "yield the correct dominators" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (1 → 4)
+        time {
+            dominators(0, g.vertices, immediateDominators(g, 4)) should be(Map(0 → List(0), 1 → List(1, 0), 2 → List(2, 1, 0), 3 → List(3, 1, 0), 4 → List(4, 1, 0)))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+    }
+
+    "a cyclic int graph" should "not crash the algorithm" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
+        time {
+            dominators(0, g.vertices, immediateDominators(g, 4)) should be(Map(0 → List(0), 4 → List(4, 0), 1 → List(1, 0), 3 → List(3, 1, 0), 2 → List(2, 1, 0)))
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+    }
+
+    "a very large, degenerated int graph" should "be possible to process without a stackoverflow error" in {
+        val g = Graph.empty[Int]
+        var lastI = 0
+        for (i ← 1 to 65000) {
+            g += (lastI → i)
+            lastI = i
+        }
+        val immediateDoms = time {
+            immediateDominators(g, 65000)
+        } { t ⇒ info("immediate dominators computed in "+t.toSeconds) }.zipWithIndex.map(_.swap).toMap
+
+        val doms = time {
+            dominators(0, immediateDoms)
+        } { t ⇒ info("all dominators collected in "+t.toSeconds) }
+
+        doms(0) should be(List(0))
+        doms(1).size should be(2)
+        doms(59999).size should be(60000)
     }
 
 }
