@@ -73,5 +73,18 @@ class DominatorTest extends FlatSpec with Matchers {
         dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "a"), "c" → Set("c", "b", "a")))
     }
 
+    "a very large, degenerated graph" should "be possible to process" in {
+
+        val g = Graph.empty[String]
+        var lastI = 0
+        for (i ← 1 to 65000) {
+            g += (lastI.toString → i.toString)
+            lastI = i
+        }
+
+        dominators[String](g)(0.toString) should be(empty)
+        dominators[String](g)(60000.toString).size should be(60000)
+    }
+
 }
 
