@@ -375,6 +375,9 @@ trait RecordCFG
 
     /**
      * Creates a graph representation of the CFG.
+     *
+     * @note The returned graph is recomputed whenever this method is called.  
+     * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
         val instructions = code.instructions
