@@ -30,8 +30,12 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.BitSet
+import scala.collection.{Map ⇒ AMap}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.graphs.Node
+import org.opalj.graphs.immediateDominators
+import org.opalj.graphs.{dominators ⇒ theDominators}
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
@@ -39,7 +43,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.graphs.MutableNode
-import scala.collection.BitSet
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -74,6 +77,7 @@ trait RecordCFG
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
     private[this] var predecessors: Array[UShortSet] = _
     private[this] var exitPCs: UShortSet = _
+    private[this] var dominators: AMap[PC, List[PC]] = _
 
     abstract override def initProperties(
         code:             Code,
@@ -87,7 +91,8 @@ trait RecordCFG
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
-        predecessors = null;
+        predecessors = null
+        dominators = null
 
         super.initProperties(code, joinInstructions, initialLocals)
     }
@@ -112,31 +117,61 @@ trait RecordCFG
      * @param pc A valid program counter.
      */
     def predecessorsOf(pc: PC): PCs = {
-        val predecessors = {
-            var predecessors = this.predecessors
-            if (predecessors == null) synchronized {
-                predecessors = this.predecessors
-                if (predecessors == null) {
-                    // => this.regularPredecessors == null
-                    predecessors = new Array[UShortSet](regularSuccessors.length)
-                    for (pc ← code.programCounters) {
-                        for (successorPC ← allSuccessorsOf(pc)) {
-                            val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                            predecessors(successorPC) =
-                                if (oldPredecessorsOfSuccessor == null) {
-                                    UShortSet(pc)
-                                } else {
-                                    pc +≈: oldPredecessorsOfSuccessor
-                                }
-                        }
+
+        var predecessors = this.predecessors
+        if (predecessors eq null) synchronized {
+            predecessors = this.predecessors
+            if (predecessors eq null) {
+                // => this.regularPredecessors == null
+                predecessors = new Array[UShortSet](regularSuccessors.length)
+                for (pc ← code.programCounters) {
+                    for (successorPC ← allSuccessorsOf(pc)) {
+                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                        predecessors(successorPC) =
+                            if (oldPredecessorsOfSuccessor == null) {
+                                UShortSet(pc)
+                            } else {
+                                pc +≈: oldPredecessorsOfSuccessor
+                            }
                     }
-                    this.predecessors = predecessors
                 }
+                this.predecessors = predecessors
             }
-            predecessors
         }
         val s = predecessors(pc)
         if (s != null) s else NoPCs
+    }
+
+    /**
+     * Returns an array which stores for each pc the instruction (pc) which immediately
+     * dominates the respective instruction.
+     */
+    def allImmediateDominators: Array[PC] = {
+        immediateDominators(
+            (pc: PC) ⇒ allSuccessorsOf(pc).iterable,
+            code.instructions.size - 1
+        )
+    }
+
+    def allDominators: AMap[PC, List[PC]] = {
+        var dominators = this.dominators
+        if (dominators eq null) synchronized {
+            dominators = this.dominators
+            if (dominators eq null) {
+                dominators = theDominators(
+                    0,
+                    code.programCounters.toIterable,
+                    allImmediateDominators
+                )
+                this.dominators = dominators
+            }
+        }
+        dominators
+    }
+
+    def dominatorsOf(pc: PC): List[PC] = {
+        val doms = allDominators(pc)
+        if (doms != null) doms else Nil
     }
 
     /**
@@ -376,7 +411,7 @@ trait RecordCFG
     /**
      * Creates a graph representation of the CFG.
      *
-     * @note The returned graph is recomputed whenever this method is called.  
+     * @note The returned graph is recomputed whenever this method is called.
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
