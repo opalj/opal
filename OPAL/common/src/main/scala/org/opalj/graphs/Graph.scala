@@ -33,7 +33,7 @@ import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 
 /**
- * A very simple representation of a graph that is generally useful, but was designed
+ * A very simple representation of a mutable graph that is generally useful, but was designed
  * to facilitate testing of graph based algorithms.
  *
  * @author Michael Eichberg
@@ -60,6 +60,47 @@ class Graph[N >: Null <: AnyRef] private (
         edges += ((s, t :: edges.getOrElse(s, List.empty)))
 
         this
+    }
+
+    /**
+     * Returns the set of nodes with no incoming dependencies; self-dependencies are ignored.
+     *
+     * @param ignoreSelfRecursiveDependencies If true self-dependencies are ignored. This means that
+     * 		nodes that have a self dependency are considered as being root nodes if
+     * 		they have no further incoming dependencies.
+     *
+     * @Example
+     * {{{
+     * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("f" -> "e") += ("y" -> "y")  += ("a" -> "f")
+     * g: org.opalj.graphs.Graph[AnyRef] =
+     * Graph{
+     * d => {}
+     * c => {}
+     * a => {f,e,b}
+     * b => {d,c}
+     * e => {}
+     * y => {y}
+     * f => {e}
+     * }
+     *
+     * scala> g.rootNodes(ignoreSelfRecursiveDependencies = true)
+     * res1: scala.collection.mutable.Set[AnyRef] = Set(a)
+     *
+     * scala> g.rootNodes(ignoreSelfRecursiveDependencies = false)
+     * res2: scala.collection.mutable.Set[AnyRef] = Set(y, a)
+     * }}}
+     */
+    def rootNodes(ignoreSelfRecursiveDependencies: Boolean = true): Set[N] = {
+        val rootNodes = vertices.clone()
+        for {
+            v ← vertices
+            tsOpt ← edges.get(v)
+            t ← tsOpt
+            if ignoreSelfRecursiveDependencies || (t ne v)
+        } {
+            rootNodes -= t
+        }
+        rootNodes
     }
 
     override def toString: String = {
