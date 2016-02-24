@@ -289,7 +289,7 @@ package object graphs {
      * This method assumes that the graph is fully connected
      * and has one start node without any incomming edges
      */
-    def dominators[N >: Null <: AnyRef: ClassTag](graph: Graph[N]): Map[N, Set[N]] = {
+    def dominators[N >: Null <: AnyRef](graph: Graph[N]): Map[N, Set[N]] = {
         val rootNodes = graph.rootNodes(ignoreSelfRecursiveDependencies = true)
         assert(rootNodes.size == 1)
 
@@ -308,20 +308,20 @@ package object graphs {
      * A Fast Algorithm for Finding Dominators in a Flowgraph
      * ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      */
-    def dominators[N >: Null <: AnyRef: ClassTag](
+    def dominators[N >: Null <: AnyRef](
         start:      N,
         successors: N ⇒ Traversable[N]
     ): Map[N, Set[N]] = {
 
         var n = 0;
-        val parent = Map.empty[N, N]
-        val predecessors = Map.empty[N, Set[N]]
-        val semi = Map.empty[N, Int]
-        val vertex = ArrayMap.empty[N]
-        val bucket = Map.empty[N, Set[N]]
-        val dom = Map.empty[N, N]
-        val ancestor = Map.empty[N, N]
-        val label = Map.empty[N, N]
+        val parent = Map.empty[Object, Object]
+        val predecessors = Map.empty[Object, Set[Object]]
+        val semi = Map.empty[Object, Int]
+        val vertex = ArrayMap.empty[Object]
+        val bucket = Map.empty[Object, Set[Object]]
+        val dom = Map.empty[Object, Object]
+        val ancestor = Map.empty[Object, Object]
+        val label = Map.empty[Object, Object]
 
         def doDFS(v: N): Unit = {
             label(v) = v
@@ -347,11 +347,11 @@ package object graphs {
         doDFS(start)
 
         // Steps 2 & 3
-        def link(v: N, w: N): Unit = {
+        def link(v: Object, w: Object): Unit = {
             ancestor(w) = v
         }
 
-        def eval(v: N): N = {
+        def eval(v: Object): Object = {
             if (!(ancestor contains v)) {
                 v
             } else {
@@ -360,7 +360,7 @@ package object graphs {
             }
         }
 
-        def compress(v: N): Unit = {
+        def compress(v: Object): Unit = {
             val theAncestor = ancestor(v)
             if (ancestor contains theAncestor) {
                 compress(theAncestor)
@@ -385,9 +385,9 @@ package object graphs {
             }
 
             if (bucket contains vertex(semi(w))) {
-                bucket(vertex(semi(w))) += w
+                bucket(vertex(semi(w)).asInstanceOf[N]) += w
             } else {
-                bucket(vertex(semi(w))) = Set(w)
+                bucket(vertex(semi(w)).asInstanceOf[N]) = Set(w)
             }
             link(parent(w), w)
 
@@ -413,32 +413,22 @@ package object graphs {
             j = j + 1
         }
 
-        def getAllDominators(dom: Map[N, N]): Map[N, Set[N]] = {
-            val dominators = Map.empty[N, Set[N]]
+        // Step 5 (collect results)
+        val dominators = Map[Object, Set[Object]](start → Set(start))
 
-            for (n ← dom.keySet) {
-                val visited = mutable.Set.empty[N]
-                def traverseDomTree(node: N): Set[N] = {
-                    if (node eq start)
-                        return Set(node);
+        for (n ← dom.keySet if n ne start) {
+            // since we traverse the dom tree no "visited" checks are necessary
 
-                    dominators.getOrElse(node, {
-                        var ret = Set.empty[N]
-                        if (!(visited contains node)) {
-                            visited += node
-                            ret = Set(node) ++ traverseDomTree(dom(node))
-                        }
-                        ret
-                    })
-                }
+            // TODO We need to use a while loop to avoid a stack overflow error in case of a degenerated graph! 
 
-                dominators(n) = traverseDomTree(n) + n
+            def traverseDomTree(node: Object): Set[Object] = {
+                dominators.getOrElse(node, { traverseDomTree(dom(node)) + node })
             }
 
-            dominators
+            dominators(n) = traverseDomTree(n) + n
         }
 
-        getAllDominators(dom)
+        dominators.asInstanceOf[Map[N, Set[N]]]
     }
 
 }
