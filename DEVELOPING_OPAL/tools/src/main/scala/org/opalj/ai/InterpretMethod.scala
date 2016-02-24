@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import scala.util.control.ControlThrowable
+import scala.collection.mutable.LinkedHashMap
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
@@ -38,7 +40,7 @@ import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.graphs.toDot
-import scala.util.control.ControlThrowable
+import org.opalj.graphs.Graph
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -201,9 +203,14 @@ object InterpretMethod {
                     result
                 }
             if (result.domain.isInstanceOf[RecordCFG]) {
-                val graph = result.domain.asInstanceOf[RecordCFG]
-                val dotGraph = toDot(Set(graph.cfgAsGraph()), ranksep = "0.3").toString
-                writeAndOpen(dotGraph, "RuntimeCFG", ".dot")
+                val cfgDomain = result.domain.asInstanceOf[RecordCFG]
+                val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
+                println("Runtime CFG: "+writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot"))
+
+                val edges = cfgDomain.allImmediateDominators.zipWithIndex.map(domPC ⇒ (domPC._2, List(domPC._1))).filter(pcDom ⇒ result.code.instructions(pcDom._1) ne null).toMap
+                val dominatorTree = Graph(edges)
+                val dominatorTreeAsDot = dominatorTree.toDot
+                println("Dominator tree: "+writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheRuntimeCFG", ".dot"))
             }
             if (result.domain.isInstanceOf[RecordDefUse]) {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
