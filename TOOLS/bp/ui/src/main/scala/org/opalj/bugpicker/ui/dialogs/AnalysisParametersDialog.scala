@@ -108,6 +108,17 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
             bottom = new HBox {
                 children = Seq(
                     new Button {
+                        text = "_Reset"
+                        mnemonicParsing = true
+                        minWidth = buttonMinWidth.toDouble
+                        margin = buttonMargin
+                        onAction = { e: ActionEvent ⇒
+                            configEditor.text = BugPicker.renderConfig(ConfigFactory.load())
+
+                        }
+                    },
+
+                    new Button {
                         text = "_Cancel"
                         mnemonicParsing = true
                         minWidth = buttonMinWidth.toDouble
@@ -141,16 +152,6 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 configuration = Some(config)
                                 close()
                             }
-                        }
-                    },
-                    new Button {
-                        text = "_Reset"
-                        mnemonicParsing = true
-                        minWidth = buttonMinWidth.toDouble
-                        margin = buttonMargin
-                        onAction = { e: ActionEvent ⇒
-                            configEditor.text = BugPicker.renderConfig(ConfigFactory.load())
-
                         }
                     }
                 )
