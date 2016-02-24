@@ -145,6 +145,12 @@ object XHTML {
         }
     }
 
+    def instructionsToXHTML(title: String, instructions: Traversable[PC]): Node = {
+        <p>
+            <span>{ title }: { instructions.mkString(", ") }</span>
+        </p>
+    }
+
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
         val header = "Evaluated instructions: "+evaluated.count(_ >= 0)+"<br>"
         val footer = ""
