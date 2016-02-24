@@ -28,6 +28,7 @@
  */
 package org.opalj
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
@@ -315,7 +316,7 @@ package object graphs {
 
         var n = 0;
         val parent = Map.empty[Object, Object]
-        val predecessors = Map.empty[Object, Set[Object]]
+        val predecessors = Map.empty[Object, mutable.Set[Object]]
         val semi = Map.empty[Object, Int]
         val vertex = ArrayMap.empty[Object]
         val bucket = Map.empty[Object, Set[Object]]
@@ -323,7 +324,11 @@ package object graphs {
         val ancestor = Map.empty[Object, Object]
         val label = Map.empty[Object, Object]
 
-        def doDFS(v: N): Unit = {
+        // Step 1 (assign dfsnum)
+        var nodes = List(start)
+        while (nodes.nonEmpty) {
+            val v = nodes.head
+            nodes = nodes.tail
             label(v) = v
             dom(v) = v
 
@@ -331,20 +336,13 @@ package object graphs {
             semi(v) = n
             vertex(n) = v
             for (w ← successors(v)) {
+                predecessors.getOrElseUpdate(w, mutable.Set.empty) += v
                 if (!(semi contains w)) {
                     parent(w) = v
-                    doDFS(w)
-                }
-                if (predecessors contains w) {
-                    predecessors(w) += v
-                } else {
-                    predecessors(w) = Set(v)
+                    nodes = w :: nodes
                 }
             }
         }
-
-        // Step 1
-        doDFS(start)
 
         // Steps 2 & 3
         def link(v: Object, w: Object): Unit = {
@@ -416,16 +414,30 @@ package object graphs {
         // Step 5 (collect results)
         val dominators = Map[Object, Set[Object]](start → Set(start))
 
-        for (n ← dom.keySet if n ne start) {
-            // since we traverse the dom tree no "visited" checks are necessary
+        for (n ← dom.keySet if !dominators.contains(n)) {
+            // Since we traverse the dom tree no "visited" checks are necessary.
 
-            // TODO We need to use a while loop to avoid a stack overflow error in case of a degenerated graph! 
+            // The method needs to be tail recursive to be able to handle "larger graphs" 
+            // which are generated, e.g., by large methods.
+            @tailrec def traverseDomTree(path: List[Object]): Set[Object] = {
+                val node = path.head
+                dominators.get(node) match {
+                    case Some(nodeDoms) ⇒
+                        // we have found a node for which we already have the list of dominators
+                        var accDoms = nodeDoms
+                        path foreach { n ⇒
+                            accDoms += n
+                            // let's also update the map to speed up overall processing
+                            dominators(n) = accDoms
+                        }
+                        accDoms
 
-            def traverseDomTree(node: Object): Set[Object] = {
-                dominators.getOrElse(node, { traverseDomTree(dom(node)) + node })
+                    case None ⇒
+                        traverseDomTree(dom(node) :: path)
+                }
             }
 
-            dominators(n) = traverseDomTree(n) + n
+            dominators(n) = traverseDomTree(List(n))
         }
 
         dominators.asInstanceOf[Map[N, Set[N]]]
