@@ -31,6 +31,7 @@ package graphs
 
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
+import scala.collection.{Map ⇒ AMap}
 
 /**
  * A very simple representation of a mutable graph that is generally useful, but was designed
@@ -38,7 +39,7 @@ import scala.collection.mutable.Set
  *
  * @author Michael Eichberg
  */
-class Graph[N >: Null <: AnyRef] private (
+class Graph[N] private (
         val vertices: Set[N],
         val edges:    LinkedHashMap[N, List[N]]
 ) extends (N ⇒ Traversable[N]) {
@@ -96,7 +97,7 @@ class Graph[N >: Null <: AnyRef] private (
             v ← vertices
             tsOpt ← edges.get(v)
             t ← tsOpt
-            if ignoreSelfRecursiveDependencies || (t ne v)
+            if ignoreSelfRecursiveDependencies || (t != v)
         } {
             rootNodes -= t
         }
@@ -129,5 +130,10 @@ class Graph[N >: Null <: AnyRef] private (
 
 object Graph {
 
-    def empty[N >: Null <: AnyRef] = new Graph[N](Set.empty, LinkedHashMap.empty)
+    def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty)
+
+    def apply[N](edges: AMap[N, List[N]]): Graph[N] = {
+        new Graph[N](Set.empty ++= edges.keySet, LinkedHashMap.empty ++= edges)
+
+    }
 }
