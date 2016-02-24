@@ -142,6 +142,16 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 close()
                             }
                         }
+                    },
+                    new Button {
+                        text = "_Reset"
+                        mnemonicParsing = true
+                        minWidth = buttonMinWidth.toDouble
+                        margin = buttonMargin
+                        onAction = { e: ActionEvent ⇒
+                            configEditor.text = BugPicker.renderConfig(ConfigFactory.load())
+
+                        }
                     }
                 )
                 alignment = Pos.Center
