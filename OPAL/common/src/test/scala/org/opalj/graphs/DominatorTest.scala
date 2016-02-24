@@ -42,37 +42,36 @@ import org.scalatest.ParallelTestExecution
  */
 @RunWith(classOf[JUnitRunner])
 class DominatorTest extends FlatSpec with Matchers {
-    
+
     "a graph with just one node" should "yield the node dominating itself" in {
-      val g = Graph.empty[AnyRef] += "a"
-      dominators(g) should be(Map("a" -> Set("a")))
-    }
-  
-    "a graph with two connected nodes" should "yield one node dominating the other" in {
-      val g = Graph.empty[AnyRef] += ("a" → "b")
-      dominators(g) should be(Map("a" -> Set("a"),"b" -> Set("a","b")))
-    }
-    
-    "a simple graph" should "yield the correct dominators" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e")
-        dominators(g) should be(Map("a" -> Set("a"),"e" -> Set("e", "a"), "b" -> Set("b", "a"), "d" -> Set("d", "b", "a"), "c" -> Set("c", "b", "a")))
-    }
-    
-    "a cyclic graph" should "not crash the algorithm" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("c" → "b")
-        dominators(g) should be(Map("a" -> Set("a"),"e" -> Set("e", "a"), "b" -> Set("b", "a"), "d" -> Set("d", "b", "a"), "c" -> Set("c", "b", "a")))
-    }
-        
-    "a graph with a big cycle" should "not crash the algorithm" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("d" → "f") += ("f" → "b")
-        dominators(g) should be(Map("a" -> Set("a"),"e" -> Set("e", "a"), "b" -> Set("b", "a"), "d" -> Set("d", "a", "b"), "c" -> Set("c", "b", "a"), "f" -> Set("d", "b", "a", "f")))
-    }
-    
-    "a graph with multiple paths" should "yield only the real dominators" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("e" → "d")
-        dominators(g) should be(Map("a" -> Set("a"),"e" -> Set("e", "a"), "b" -> Set("b", "a"), "d" -> Set("d", "a"), "c" -> Set("c", "b", "a")))
+        val g = Graph.empty[AnyRef] += "a"
+        dominators(g) should be(Map("a" → Set("a")))
     }
 
+    "a graph with two connected nodes" should "yield one node dominating the other" in {
+        val g = Graph.empty[AnyRef] += ("a" → "b")
+        dominators(g) should be(Map("a" → Set("a"), "b" → Set("a", "b")))
+    }
+
+    "a simple graph" should "yield the correct dominators" in {
+        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e")
+        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "b", "a"), "c" → Set("c", "b", "a")))
+    }
+
+    "a cyclic graph" should "not crash the algorithm" in {
+        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("c" → "b")
+        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "b", "a"), "c" → Set("c", "b", "a")))
+    }
+
+    "a graph with a big cycle" should "not crash the algorithm" in {
+        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("d" → "f") += ("f" → "b")
+        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "a", "b"), "c" → Set("c", "b", "a"), "f" → Set("d", "b", "a", "f")))
+    }
+
+    "a graph with multiple paths" should "yield only the real dominators" in {
+        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("e" → "d")
+        dominators(g) should be(Map("a" → Set("a"), "e" → Set("e", "a"), "b" → Set("b", "a"), "d" → Set("d", "a"), "c" → Set("c", "b", "a")))
+    }
 
 }
 
