@@ -31,6 +31,8 @@ package org.opalj
 import scala.collection.mutable
 import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
+import org.opalj.collection.mutable.ArrayMap
+import scala.reflect.ClassTag
 
 /**
  * Defines factory methods to generate specific representations of (multi-) graphs.
@@ -282,43 +284,44 @@ package object graphs {
     }
 
     /**
+     * Computes for each node the set of dominators.
+     *
      * This method assumes that the graph is fully connected
-     * and has one start node without any ingoing edges
+     * and has one start node without any incomming edges
      */
-    def dominators[N >: Null <: AnyRef](graph: Graph[N]): Map[N, Set[N]] = {
-        val vertices = graph.vertices.clone()
-        for (v ← graph.vertices) {
-            vertices --= graph(v)
-        }
-        dominators(vertices.head, graph.apply)
+    def dominators[N >: Null <: AnyRef: ClassTag](graph: Graph[N]): Map[N, Set[N]] = {
+        val rootNodes = graph.rootNodes(ignoreSelfRecursiveDependencies = true)
+        assert(rootNodes.size == 1)
+
+        dominators(rootNodes.head, graph)
     }
 
     /**
-     * Computes the dominators for each node of a given flowgraph
+     * Computes the dominators for each node of a given flowgraph.
      *
      * @param start the start node of the flowgraph
      * @param successors should take a node and provide its successors
+     *
+     * @note
+     * This is an implementation of the "fast dominators" algorithm
+     * presented by T. Lengauaer and R. Tarjan in
+     * A Fast Algorithm for Finding Dominators in a Flowgraph
+     * ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      */
-    def dominators[N >: Null <: AnyRef](
+    def dominators[N >: Null <: AnyRef: ClassTag](
         start:      N,
         successors: N ⇒ Traversable[N]
     ): Map[N, Set[N]] = {
 
-        // This is an implementation of the "fast dominators" algorithm
-        // presented by T. Lengauaer and R. Tarjan in
-        // A Fast Algorithm for Finding Dominators in a Flowgraph
-        // ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
-
-        // Variables
         var n = 0;
-        val parent = Map[N, N]()
-        val predecessors = Map[N, Set[N]]()
-        val semi = Map[N, Int]()
-        val vertex = Map[Int, N]()
-        val bucket = Map[N, Set[N]]()
-        val dom = Map[N, N]()
-        val ancestor = Map[N, N]()
-        val label = Map[N, N]()
+        val parent = Map.empty[N, N]
+        val predecessors = Map.empty[N, Set[N]]
+        val semi = Map.empty[N, Int]
+        val vertex = ArrayMap.empty[N]
+        val bucket = Map.empty[N, Set[N]]
+        val dom = Map.empty[N, N]
+        val ancestor = Map.empty[N, N]
+        val label = Map.empty[N, N]
 
         def doDFS(v: N): Unit = {
             label(v) = v
@@ -411,24 +414,25 @@ package object graphs {
         }
 
         def getAllDominators(dom: Map[N, N]): Map[N, Set[N]] = {
-            val dominators = Map[N, Set[N]]()
-            var visited = Set[N]()
-
-            def traverseGraph(node: N): Set[N] = {
-                if (node eq start) {
-                    return Set(node)
-                }
-                var ret = Set[N]()
-                if (!(visited contains node)) {
-                    visited += node
-                    ret = Set(node) ++ traverseGraph(dom(node))
-                }
-                ret
-            }
+            val dominators = Map.empty[N, Set[N]]
 
             for (n ← dom.keySet) {
-                visited = Set[N]()
-                dominators(n) = traverseGraph(n) + n
+                val visited = mutable.Set.empty[N]
+                def traverseDomTree(node: N): Set[N] = {
+                    if (node eq start)
+                        return Set(node);
+
+                    dominators.getOrElse(node, {
+                        var ret = Set.empty[N]
+                        if (!(visited contains node)) {
+                            visited += node
+                            ret = Set(node) ++ traverseDomTree(dom(node))
+                        }
+                        ret
+                    })
+                }
+
+                dominators(n) = traverseDomTree(n) + n
             }
 
             dominators
