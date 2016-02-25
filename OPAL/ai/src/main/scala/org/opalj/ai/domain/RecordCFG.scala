@@ -145,32 +145,56 @@ trait RecordCFG
     /**
      * Returns an array which stores for each pc the instruction (pc) which immediately
      * dominates the respective instruction.
+     *
+     * @note Only those fields of the array contain reasonable values for which the corresponding
+     * 		instructions was executed(!). The latter information is directly accessible using
+     * 		an abstract interpretation's result object.
+     *
+     * @note The information is recomputed on every method call.
+     *
+     * @retuen The returned array can be freely mutated.
+     *
+     * @example
+     * To get the list of all evaluated instructions and their dominators.
+     * {{{
+     *  val result = AI(...,...,...)
+     *  val evaluated = result.evaluatedInstructions
+     *  allImmediateDominators.zipWithIndex.filter(domPC ⇒ evaluated.contains(pcDom._2))
+     * }}}
+     *
      */
     def allImmediateDominators: Array[PC] = {
-        immediateDominators(
-            (pc: PC) ⇒ allSuccessorsOf(pc).iterable,
-            code.instructions.size - 1
-        )
+        immediateDominators((pc: PC) ⇒ allSuccessorsOf(pc).iterable, code.instructions.size - 1)
     }
 
-    def allDominators: AMap[PC, List[PC]] = {
+    /**
+     * The map which contains for each evaluated instruction the list of all dominating instructions.
+     */
+    def allDominators(evaluated: Traversable[PC]): AMap[PC, List[PC]] = {
         var dominators = this.dominators
         if (dominators eq null) synchronized {
             dominators = this.dominators
             if (dominators eq null) {
-                dominators = theDominators(
-                    0,
-                    code.programCounters.toIterable,
-                    allImmediateDominators
-                )
+                dominators = theDominators(start = 0, nodes = evaluated, allImmediateDominators)
                 this.dominators = dominators
             }
         }
         dominators
     }
 
-    def dominatorsOf(pc: PC): List[PC] = {
-        val doms = allDominators(pc)
+    /**
+     * Returns the dominators of the instruction with the given pc.
+     *
+     * @param evaluated The list of evaluated instructions.
+     * @return The list of all dominators of the given instruction. This list always contains
+     * 		the given pc as the first element. The second element is then the immediate dominator
+     * 		of the instruction with the given pc.
+     *
+     * @note The result is only defined for those pc which were executed as part of the abstract
+     * 		interpretation.
+     */
+    def dominatorsOf(evaluated: Traversable[PC])(pc: PC): List[PC] = {
+        val doms = allDominators(evaluated)(pc)
         if (doms != null) doms else Nil
     }
 
