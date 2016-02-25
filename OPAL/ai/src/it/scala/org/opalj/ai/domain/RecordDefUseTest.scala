@@ -31,13 +31,14 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
+import org.opalj.br.reader.{ BytecodeInstructionsCache, Java8FrameworkWithCaching }
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.scalatest.FunSpec
 import scala.collection.JavaConverters._
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -48,6 +49,8 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 @RunWith(classOf[JUnitRunner])
 class RecordDefUseTest extends FunSpec with Matchers {
+    
+    object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
     class DefUseDomain[I](val method: Method, val project: Project[java.net.URL])
         extends CorrelationalDomain
@@ -85,6 +88,12 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 val domain = new DefUseDomain(method, project)
                 val body = method.body.get
                 val r = BaseAI(classFile, method, domain)
+                val evaluatedInstructions = r.evaluatedInstructions
+                val dom = DominatorsPerformanceEvaluation.time('Dominators){domain.allDominators(r)}
+                evaluatedInstructions.foreach {  pc  =>  
+                    dom(pc) should not be (empty)
+                }
+               
                 r.operandsArray.zipWithIndex.foreach { opsPC ⇒
                     val (ops, pc) = opsPC
                     if ((ops ne null) &&
@@ -166,17 +175,22 @@ class RecordDefUseTest extends FunSpec with Matchers {
         import reader.AllClassFiles
 
         it("should be possible to calculate the def/use information for all methods of the JDK") {
+            DominatorsPerformanceEvaluation.resetAll()
             val project = org.opalj.br.TestSupport.createJREProject
-            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
+            info("computing dominator information took (CPU time) "+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
         }
 
         it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
+            DominatorsPerformanceEvaluation.resetAll()
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
+            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
         }
 
         it("should be possible to calculate the def/use information for all methods of the OPAL-08-14-2014 snapshot") {
+            DominatorsPerformanceEvaluation.resetAll()
             val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
             val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
                 def accept(dir: java.io.File, name: String) =
@@ -188,7 +202,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)
-            } { t ⇒ info("the analysis took "+t.toSeconds) }
+            } { t ⇒ info("the analysis took (real time) "+t.toSeconds) }
+            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
         }
 
     }
