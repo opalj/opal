@@ -60,7 +60,9 @@ import org.opalj.issues.IssueKind
 import org.opalj.issues.InstructionLocation
 
 /**
- * Identifies computations that lead to the same result as the previous computation.
+ * Identifies computations of primitive values that lead to the same result as a
+ * previous computation. Such computations (which could be a constant expression)
+ * are generally useless and hinder code comprehension.
  *
  * @author Michael Eichberg
  */
@@ -76,7 +78,6 @@ object UselessReComputationsAnalysis {
         import result.domain
 
         if (!domain.code.localVariableTable.isDefined)
-
             // This analysis requires debug information to increase the likelihood
             // the we identify the correct local variable re-assignments. Otherwise
             // we are not able to distinguish the reuse of a "register variable"/
@@ -98,24 +99,24 @@ object UselessReComputationsAnalysis {
                     ) if localsArray(pc) != null &&
                     domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
-
-                    val lv = code.localVariable(pc, index).get
-
-                    Issue(
-                        "UselessReevaluation",
-                        Relevance.VeryLow,
-                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
-                        Set(IssueCategory.Comprehensibility),
-                        Set(IssueKind.ConstantComputation),
-                        List(new InstructionLocation(
-                            Some("useless (re-)assignment"),
-                            theProject,
-                            classFile,
-                            method,
-                            pc,
-                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
-                        ))
-                    )
+                    (pc,index,a.toString)
+//                    val lv = code.localVariable(pc, index).get
+//
+//                    Issue(
+//                        "UselessReevaluation",
+//                        Relevance.Low,
+//                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
+//                        Set(IssueCategory.Comprehensibility),
+//                        Set(IssueKind.ConstantComputation),
+//                        List(new InstructionLocation(
+//                            Some("useless (re-)assignment"),
+//                            theProject,
+//                            classFile,
+//                            method,
+//                            pc,
+//                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
+//                        ))
+//                    )
 
                 case (
                     pc,
@@ -124,13 +125,34 @@ object UselessReComputationsAnalysis {
                     ) if localsArray(pc) != null &&
                     domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+(pc,index,a.toString)
+//                    val lv = code.localVariable(pc, index).get
+//
+//                    Issue(
+//                        "UselessReevaluation",
+//                        Relevance.Low,
+//                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
+//                        Set(IssueCategory.Comprehensibility),
+//                        Set(IssueKind.ConstantComputation),
+//                        List(new InstructionLocation(
+//                            Some("useless (re-)assignment"),
+//                            theProject,
+//                            classFile,
+//                            method,
+//                            pc,
+//                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
+//                        ))
+//                    )
+            }
 
-                    val lv = code.localVariable(pc, index).get
+        methodsWithValueReassignment.map { e =>
+            val (pc,index,value) = e
+            val lv = code.localVariable(pc, index).get
 
                     Issue(
                         "UselessReevaluation",
-                        Relevance.VeryLow,
-                        "(re-)assigned the same value ("+a+") to the same variable ("+lv.name+")",
+                        Relevance.Low,
+                        s"(re-)assigned the same value ($value) to the same variable (${lv.name})",
                         Set(IssueCategory.Comprehensibility),
                         Set(IssueKind.ConstantComputation),
                         List(new InstructionLocation(
@@ -142,9 +164,7 @@ object UselessReComputationsAnalysis {
                             List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
                         ))
                     )
-            }
 
-        methodsWithValueReassignment
+        }
     }
 }
-
