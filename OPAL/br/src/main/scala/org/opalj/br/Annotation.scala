@@ -60,7 +60,9 @@ case class Annotation(
         "@"+name + parameters
     }
 }
-
+/**
+ * Factory object to create [[Annotation]] objects.
+ */
 object Annotation {
 
     def apply(

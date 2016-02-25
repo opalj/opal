@@ -114,12 +114,15 @@ class Graph[N] private (
     }
 
     def toNodes: Iterable[Node] = {
-        val nodesMap: Map[N, DefaultMutableNode[String]] = vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
+        val nodesMap: Map[N, DefaultMutableNode[String]] =
+            vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
+
         vertices.foreach { v ⇒
             val node = nodesMap(v)
             val successors = this(v).map(v ⇒ nodesMap(v)).toList
             node.addChildren(successors)
         }
+
         nodesMap.values
     }
 
@@ -128,6 +131,9 @@ class Graph[N] private (
     }
 }
 
+/**
+ * Defines factory methods to create simple graphs.
+ */
 object Graph {
 
     def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty)
