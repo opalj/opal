@@ -90,6 +90,12 @@ package object graphs {
         s
     }
 
+    // ---------------------------------------------------------------------------------------
+    //
+    // Closed strongly connected components
+    //
+    // ---------------------------------------------------------------------------------------
+
     final def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[Iterable[N]] = {
         // println(s"Computing closed SCCs for $g")
         closedSCCs(g.vertices, g)
@@ -284,6 +290,12 @@ package object graphs {
 
     }
 
+    // ---------------------------------------------------------------------------------------
+    //
+    // Dominators
+    //
+    // ---------------------------------------------------------------------------------------
+
     /**
      * Computes for each node the set of all nodes that dominate the given node.
      *
@@ -304,10 +316,14 @@ package object graphs {
      * @param start The unique start node of the graph.
      * @param successors A function that returns the successors for each node.
      *
-     * @note 	This is an implementation of the "fast dominators" algorithm
-     * 			presented by T. Lengauaer and R. Tarjan in
-     * 			A Fast Algorithm for Finding Dominators in a Flowgraph
-     * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     * @note This is an implementation of the "fast dominators" algorithm
+     * 		 presented by T. Lengauaer and R. Tarjan in
+     * 		 A Fast Algorithm for Finding Dominators in a Flowgraph
+     * 		 ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     *
+     * @note This implementation is able to handle basically all kinds of graphs, but is
+     * 		 significantly slower than the version which is just using ints to identify
+     * 		 nodes.
      */
     def immediateDominators[N >: Null <: AnyRef](
         start:      N,
@@ -414,12 +430,22 @@ package object graphs {
     }
 
     /**
-     * Returns for each dominator the set of all dominators of that node.
+     * Returns for each node the set of all direct and indirect dominators of that node.
+     *
+     * The returned list is ordered such that the node with index n+1 is the immediate dominator of
+     * the node with index n. Given that the dominator relation is reflexive the list always contains
+     * the node itself as the first element.
+     *
      */
     def dominators[N](start: N, dom: scala.collection.Map[N, N]): Map[N, List[N]] = {
         dominators(start, dom.keySet, dom)
     }
 
+    /**
+     * Calculates the transitive hull of all nodes dominating the given nodes. The returned
+     * list is ordered such that the node with the index n+1 it the immediate dominator of
+     * the node with index n.
+     */
     def dominators[N](
         start: N,
         nodes: Traversable[N],
@@ -460,9 +486,10 @@ package object graphs {
     /**
      * Computes the immediate dominators for each node of a given graph where each node
      * is identified using a unique int value in the range [0..maxNodeId]; the unique root node
-     * of the graph has to have the id 0.
+     * of the graph has to have the id 0, but not all ids need to be used.
      *
      * @param successors A function that returns the successors for each node.
+     *
      * @return The array contains for each node the immediate dominator.
      * 			If not all unique ids are used then the array is a sparse array and external
      * 			knowledge is necessary to determine which elements of the array contain useful
