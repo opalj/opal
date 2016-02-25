@@ -43,7 +43,8 @@ import org.opalj.issues.Relevance
 
 /**
  * This analysis reports anonymous inner classes that do not use their reference to the
- * parent class and as such could be made `static` in order to save some memory.
+ * parent class and as such could be made `static` in order to save some memory and
+ * to improve overall comprehension.
  *
  * Since anonymous inner classes cannot be declared `static`, they must be refactored to
  * named inner classes first.
