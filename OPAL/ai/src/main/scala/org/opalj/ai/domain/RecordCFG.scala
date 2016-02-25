@@ -167,6 +167,10 @@ trait RecordCFG
         immediateDominators((pc: PC) ⇒ allSuccessorsOf(pc).iterable, code.instructions.size - 1)
     }
 
+    def allDominators(result: AIResult): AMap[PC, List[PC]] = {
+        allDominators(result.evaluatedInstructions)
+    }
+
     /**
      * The map which contains for each evaluated instruction the list of all dominating instructions.
      */
