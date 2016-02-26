@@ -29,6 +29,7 @@
 package org.opalj
 
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.Closeable
 
@@ -97,9 +98,7 @@ package object io {
     ): File = {
 
         val file = File.createTempFile(filenamePrefix, filenameSuffix)
-        process { new java.io.FileOutputStream(file) } { fos ⇒
-            fos.write(data.getBytes("UTF-8"))
-        }
+        process { new FileOutputStream(file) } { fos ⇒ fos.write(data.getBytes("UTF-8")) }
 
         try {
             java.awt.Desktop.getDesktop().open(file)
