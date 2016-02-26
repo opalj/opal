@@ -34,7 +34,7 @@ import scala.collection.mutable
 /**
  * Counts how often some piece of code is executed. Usually it is sufficient
  * to create an instance of this object and to execute some piece of code using
- * the function `time(Symbol,=>T)`. Afterwards it is possible to query this object
+ * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object
  * to get detailed information: (1) how often the function given to `time` was evaluated
  * and (2) about the accumulated time.
  *

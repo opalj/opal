@@ -136,7 +136,7 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Converts the specified number of bytes into the corresponding nubmer of mega bytes
+     * Converts the specified number of bytes into the corresponding number of megabytes
      * and returns a textual representation.
      */
     def asMB(bytesCount: Long): String = {
@@ -245,7 +245,7 @@ object PerformanceEvaluation {
      *      def r(lastExecutionTime:Nanoseconds, consideredExecutionTimes : Seq[Nanoseconds]) : Unit
      *      }}}
      *       1. The first parameter is the last execution time of `f`.
-     *       1. The last parameter are the times of the evaluation of `f` that are taken
+     *       1. The last parameter is the list of times required to evaluate `f` that are taken
      *      into consideration when calculating the average.
      */
     def time[T >: Null <: AnyRef](
