@@ -89,9 +89,11 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 val body = method.body.get
                 val r = BaseAI(classFile, method, domain)
                 val evaluatedInstructions = r.evaluatedInstructions
-                val dom = DominatorsPerformanceEvaluation.time('Dominators){domain.allDominators(r)}
-                evaluatedInstructions.foreach {  pc  =>  
-                    dom(pc) should not be (empty)
+                val dt = DominatorsPerformanceEvaluation.time('Dominators){
+                    domain.dominatorTree
+                    }
+                evaluatedInstructions foreach {  pc  =>
+                    if (pc != 0) dt.dom(pc) should  be < (domain.code.instructions.size)
                 }
                
                 r.operandsArray.zipWithIndex.foreach { opsPC ⇒

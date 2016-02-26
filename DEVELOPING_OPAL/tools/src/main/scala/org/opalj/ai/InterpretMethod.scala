@@ -206,17 +206,7 @@ object InterpretMethod {
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
                 println("Runtime CFG: "+writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot"))
-
-                val evaluated = result.evaluatedInstructions
-                val edges =
-                    cfgDomain.allImmediateDominators.
-                        zipWithIndex.
-                        map(domPC ⇒ (domPC._2, List(domPC._1))).
-                        filter(pcDom ⇒ evaluated.contains(pcDom._1)).
-                        toMap
-                val dominatorTree = Graph(edges)
-                val dominatorTreeAsDot = dominatorTree.toDot
-                println("Dominator tree: "+writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheRuntimeCFG", ".dot"))
+                println("Dominator tree: "+writeAndOpen(cfgDomain.dominatorTree.toDot, "DominatorTreeOfTheRuntimeCFGAsDot", ".dot"))
             }
             if (result.domain.isInstanceOf[RecordDefUse]) {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]

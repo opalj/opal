@@ -39,12 +39,13 @@ import scala.collection.{Map ⇒ AMap}
  *
  * @author Michael Eichberg
  */
-class Graph[N] private (
-        val vertices: Set[N],
-        val edges:    LinkedHashMap[N, List[N]]
+class Graph[@specialized(Int) N] private (
+        val vertices:     Set[N],
+        val successors:   LinkedHashMap[N, List[N]],
+        val predecessors: LinkedHashMap[N, List[N]]
 ) extends (N ⇒ Traversable[N]) {
 
-    def apply(s: N): Traversable[N] = edges.getOrElse(s, List.empty)
+    def apply(s: N): Traversable[N] = successors.getOrElse(s, List.empty)
 
     def +=(n: N): this.type = {
         vertices += n
@@ -58,8 +59,8 @@ class Graph[N] private (
 
     def +=(s: N, t: N): this.type = {
         vertices += s += t
-        edges += ((s, t :: edges.getOrElse(s, List.empty)))
-
+        successors += ((s, t :: successors.getOrElse(s, List.empty)))
+        predecessors += ((t, s :: predecessors.getOrElse(t, List.empty)))
         this
     }
 
@@ -70,7 +71,7 @@ class Graph[N] private (
      * 		nodes that have a self dependency are considered as being root nodes if
      * 		they have no further incoming dependencies.
      *
-     * @Example
+     * @example
      * {{{
      * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("f" -> "e") += ("y" -> "y")  += ("a" -> "f")
      * g: org.opalj.graphs.Graph[AnyRef] =
@@ -95,7 +96,7 @@ class Graph[N] private (
         val rootNodes = vertices.clone()
         for {
             v ← vertices
-            tsOpt ← edges.get(v)
+            tsOpt ← successors.get(v)
             t ← tsOpt
             if ignoreSelfRecursiveDependencies || (t != v)
         } {
@@ -108,7 +109,7 @@ class Graph[N] private (
         "Graph{\n"+
             vertices.map { v ⇒
                 v.toString() +
-                    edges.getOrElse(v, List.empty).mkString(" => {", ",", "}")
+                    successors.getOrElse(v, List.empty).mkString(" => {", ",", "}")
             }.mkString("\n")+
             "\n}"
     }
@@ -136,10 +137,17 @@ class Graph[N] private (
  */
 object Graph {
 
-    def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty)
+    def empty[N]: Graph[N] = new Graph[N](Set.empty, LinkedHashMap.empty, LinkedHashMap.empty)
 
     def apply[N](edges: AMap[N, List[N]]): Graph[N] = {
-        new Graph[N](Set.empty ++= edges.keySet, LinkedHashMap.empty ++= edges)
+        val g = Graph.empty[N]
+        edges foreach { e ⇒
+            val (s, ts) = e
+            ts foreach { t ⇒
+                g += (s → t)
+            }
+        }
+        g
 
     }
 }

@@ -45,117 +45,148 @@ import org.opalj.util.PerformanceEvaluation.time
 @RunWith(classOf[JUnitRunner])
 class DominatorTest extends FlatSpec with Matchers {
 
-    "a graph with just one node" should "yield the node dominating itself" in {
-        val g = Graph.empty[AnyRef] += "a"
-        time {
-            dominators(g) should be(Map("a" → List("a")))
+    "a graph with just one node" should "result in a dominator tree with a single node" in {
+        val g = Graph.empty[Int] += 0
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 0)
         } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        var ns: List[Int] = null
+
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(0))
+
+        ns = Nil
+        dt.foreachDom(0, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(Nil)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b")
-        time {
-            dominators(g) should be(Map("a" → List("a"), "b" → List("b", "a")))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "a simple graph" should "yield the correct dominators" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e")
-        time {
-            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a")))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "a cyclic graph" should "not crash the algorithm" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("c" → "b")
-        time {
-            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a")))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "a graph with a big cycle" should "not crash the algorithm" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("d" → "f") += ("f" → "b")
-        time {
-            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "b", "a"), "c" → List("c", "b", "a"), "f" → List("f", "d", "b", "a")))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "a graph with multiple paths" should "yield only the real dominators" in {
-        val g = Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("e" → "d")
-        time {
-            dominators(g) should be(Map("a" → List("a"), "e" → List("e", "a"), "b" → List("b", "a"), "d" → List("d", "a"), "c" → List("c", "b", "a")))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "a very large, degenerated graph" should "be possible to process without a stackoverflow error" in {
-        val g = Graph.empty[String]
-        var lastI = 0
-        for (i ← 1 to 65000) {
-            g += (lastI.toString → i.toString)
-            lastI = i
-        }
-        val immediateDoms = time {
-            immediateDominators("0", g)
-        } { t ⇒ info("immediate dominators computed in "+t.toSeconds) }
-        val doms = time {
-            dominators("0", immediateDoms)
-        } { t ⇒ info("all dominators collected in "+t.toSeconds) }
-
-        doms(0.toString) should be(List("0"))
-        doms(1.toString).size should be(2)
-        doms(59999.toString).size should be(60000)
-    }
-
-    //
-    // TESTING THE SECOND IMPLEMENTATION WHICH OPERATES ON INTS...
-    //
-
-    "an int graph with just one node" should "yield the node dominating itself" in {
-        val g = Graph.empty[Int] += 0
-        time {
-            dominators(0, g.vertices, immediateDominators(g, 0)) should be(Map(0 → List(0)))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
-    }
-
-    "an int graph with two connected nodes" should "yield one node dominating the other" in {
         val g = Graph.empty[Int] += (0 → 1)
-        time {
-            dominators(0, g.vertices, immediateDominators(g, 1)) should be(Map(0 → List(0), 1 → List(1, 0)))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(0)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
-    "a simple int graph" should "yield the correct dominators" in {
+    "a simple tree" should "result in a corresponding dominator tree" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (1 → 4)
-        time {
-            dominators(0, g.vertices, immediateDominators(g, 4)) should be(Map(0 → List(0), 1 → List(1, 0), 2 → List(2, 1, 0), 3 → List(3, 1, 0), 4 → List(4, 1, 0)))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+        dt.dom(1) should be(0)
+        dt.dom(2) should be(1)
+        dt.dom(3) should be(1)
+        dt.dom(4) should be(1)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
-    "a cyclic int graph" should "not crash the algorithm" in {
+    "a graph with a cycle" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
-        time {
-            dominators(0, g.vertices, immediateDominators(g, 4)) should be(Map(0 → List(0), 4 → List(4, 0), 1 → List(1, 0), 3 → List(3, 1, 0), 2 → List(2, 1, 0)))
-        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(0)
+        dt.dom(2) should be(1)
+        dt.dom(3) should be(1)
+        dt.dom(4) should be(0)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
-    "a very large, degenerated int graph" should "be possible to process without a stackoverflow error" in {
+    "a graph with a cycle related to the root node" should "correctly be resolved" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 0)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(0)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+
+    "a sparse cyclic graph" should "result in a compact dominator tree" in {
+        val g = Graph.empty[Int] += (0 → 8) += (8 → 20) += (8 → 3) += (0 → 4) += (20 → 8)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 20)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(3) should be(8)
+        dt.dom(4) should be(0)
+        dt.dom(8) should be(0)
+        dt.dom(20) should be(8)
+
+        var ns: List[Int] = Nil
+        dt.foreachDom(20, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(0, 8, 20))
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+
+    "a graph with a long cycle" should "be handled gracefully" in {
+        import scala.language.implicitConversions
+        implicit def stringToInt(s: String): Int = s.charAt(0).toInt
+        val g = Graph.empty[Int] += (0, "b") += ("b", "c") += ("b", "d") += (0, "e") += ("d", "f") += ("f", "b")
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 128)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        var ns: List[Int] = Nil
+        dt.foreachDom("f", reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List[Int]("f", "d", "b", 0).reverse)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+
+    "a very large, degenerated graph (path)" should "be computed in due time and should not raise an exception (e.g. StackOverflowError)" in {
         val g = Graph.empty[Int]
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         var lastI = 0
         for (i ← 1 to 65000) {
             g += (lastI → i)
             lastI = i
         }
-        val immediateDoms = time {
-            immediateDominators(g, 65000)
-        } { t ⇒ info("immediate dominators computed in "+t.toSeconds) }.zipWithIndex.map(_.swap).toMap
+        val dt = time {
+            DominatorTree(foreachSuccessor, foreachPredecessor, 65000)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+        var ns: List[Int] = null
 
-        val doms = time {
-            dominators(0, immediateDoms)
-        } { t ⇒ info("all dominators collected in "+t.toSeconds) }
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(0))
 
-        doms(0) should be(List(0))
-        doms(1).size should be(2)
-        doms(59999).size should be(60000)
+        ns = Nil
+        dt.foreachDom(1, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(0, 1))
+
+        ns = Nil
+        dt.foreachDom(60000, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(Range(0, 60000, 1).toList)
+
+        io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
 }
