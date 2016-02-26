@@ -116,31 +116,12 @@ class ClassValuesTest extends FlatSpec with Matchers {
         c1.join(-1, c2) should be(c2.join(-1, c1))
     }
 
-    // these following test cases require a more precise domain
-    // the functionality to trace string values across method calls exists in principle,
-    // but not in the domain set up for these tests.
-    ignore should ("be able to trace literal strings in method parameters in Class.forName calls") in {
-        val domain = new RecordingDomain
-        import domain.ClassValue
-        val method = classFile.methods.find(m ⇒ m.name == "literalStringAsParameterInClassForName").get
-        BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
-    }
-
     it should ("be able to trace static class values of primitves") in {
         val domain = new RecordingDomain
         import domain.ClassValue
         val method = classFile.methods.find(m ⇒ m.name == "staticPrimitveClassValue").get
         BaseAI(classFile, method, domain)
         domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(IntegerType))
-    }
-
-    ignore should ("be able to trace known string variables in method parameters in Class.forName calls") in {
-        val domain = new RecordingDomain
-        import domain.ClassValue
-        val method = classFile.methods.find(m ⇒ m.name == "stringVariableAsParameterInClassForName").get
-        BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 }
 
