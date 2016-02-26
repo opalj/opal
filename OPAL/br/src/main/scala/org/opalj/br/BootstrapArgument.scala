@@ -38,5 +38,6 @@ package br
 trait BootstrapArgument {
 
     def toJava: String
+
 }
 

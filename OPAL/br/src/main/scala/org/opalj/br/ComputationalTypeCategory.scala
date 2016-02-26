@@ -36,20 +36,23 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed abstract class ComputationalTypeCategory(
-        val operandSize: Byte
-) {
+sealed abstract class ComputationalTypeCategory {
+    /**
+     * The size of operands of the values of this category
+     */
+    val operandSize: Byte
+
     /**
      * Identifies the computational type category.
      */
     val id: Byte
 }
-case object Category1ComputationalTypeCategory
-        extends ComputationalTypeCategory(1) {
+case object Category1ComputationalTypeCategory extends ComputationalTypeCategory {
+    final val operandSize = 1.toByte
     final val id /*: Byte*/ = 1.toByte
 }
-case object Category2ComputationalTypeCategory
-        extends ComputationalTypeCategory(2) {
+case object Category2ComputationalTypeCategory extends ComputationalTypeCategory {
+    final val operandSize = 2.toByte
     final val id /*: Byte*/ = 2.toByte
 }
 

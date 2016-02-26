@@ -29,14 +29,16 @@
 package org.opalj
 package br
 
-import bi.ACC_ABSTRACT
-import bi.ACC_STRICT
-import bi.ACC_NATIVE
-import bi.ACC_BRIDGE
-import bi.ACC_VARARGS
-import bi.ACC_SYNCHRONIZED
-import bi.AccessFlagsContexts
-import bi.AccessFlags
+import scala.math.Ordered
+import org.opalj.bi.ACC_ABSTRACT
+import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ACC_NATIVE
+import org.opalj.bi.ACC_BRIDGE
+import org.opalj.bi.ACC_VARARGS
+import org.opalj.bi.ACC_SYNCHRONIZED
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.Instruction
@@ -72,7 +74,7 @@ final class Method private (
         val descriptor:  MethodDescriptor,
         val body:        Option[Code],
         val attributes:  Attributes
-) extends ClassMember with scala.math.Ordered[Method] with InstructionsContainer {
+) extends ClassMember with Ordered[Method] with InstructionsContainer {
 
     final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
@@ -80,24 +82,12 @@ final class Method private (
 
     final override def asMethod = this
 
-    final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod =
+    final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod = {
         asVirtualMethod(declaringClassFile.thisType)
+    }
 
-    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
+    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
         VirtualMethod(declaringClassType, name, descriptor)
-
-    /**
-     * Returns `true` if this method and the given method have the same signature.
-     *
-     * @param ignoreReturnType If `false` (default), then the return type is taken
-     *      into consideration. This models the behavior of the JVM w.r.t. method
-     *      dispatch.
-     *      However, if you want to determine whether this method potentially overrides
-     *      the given one, you may want to specify that you want to ignore the return type.
-     *      (The Java compiler generate the appropriate methods.)
-     */
-    def hasSameSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
-        this.hasSameSignature(other.name, other.descriptor, ignoreReturnType)
     }
 
     /**
@@ -107,7 +97,7 @@ final class Method private (
      *      into consideration. This models the behavior of the JVM w.r.t. method
      *      dispatch.
      */
-    def hasSameSignature(
+    def hasSignature(
         name:             String,
         descriptor:       MethodDescriptor,
         ignoreReturnType: Boolean
@@ -121,39 +111,53 @@ final class Method private (
     }
 
     /**
+     * Returns `true` if this method and the given method have the same signature.
+     *
+     * @param ignoreReturnType If `false` (default), then the return type is taken
+     *      into consideration. This models the behavior of the JVM w.r.t. method
+     *      dispatch.
+     *      However, if you want to determine whether this method potentially overrides
+     *      the given one, you may want to specify that you want to ignore the return type.
+     *      (The Java compiler generate the appropriate methods.)
+     */
+    def hasSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
+        this.hasSignature(other.name, other.descriptor, ignoreReturnType)
+    }
+
+    /**
      * Returns `true` if this method has the given name and descriptor.
      *
      * @note When matching the descriptor the return type is also taken into consideration.
      */
-    def hasSameSignature(name: String, descriptor: MethodDescriptor): Boolean = {
-        this.hasSameSignature(name, descriptor, false)
+    def hasSignature(name: String, descriptor: MethodDescriptor): Boolean = {
+        this.hasSignature(name, descriptor, false)
     }
 
-    def runtimeVisibleParameterAnnotations: ParameterAnnotations =
-        (attributes collectFirst {
-            case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas
-        }) match {
+    def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
+        attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) ⇒ as } match {
             case Some(annotations) ⇒ annotations
             case None              ⇒ IndexedSeq.empty
         }
+    }
 
-    def runtimeInvisibleParameterAnnotations: ParameterAnnotations =
-        (attributes collectFirst {
-            case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas
-        }) match {
+    def runtimeInvisibleParameterAnnotations: ParameterAnnotations = {
+        attributes.collectFirst { case RuntimeInvisibleParameterAnnotationTable(as) ⇒ as } match {
             case Some(annotations) ⇒ annotations
             case None              ⇒ IndexedSeq.empty
         }
+    }
 
-    def parameterAnnotations: ParameterAnnotations =
+    def parameterAnnotations: ParameterAnnotations = {
         runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
+    }
 
     /**
      * If this method represents a method of an annotation that defines a default
      * value then this value is returned.
      */
-    def annotationDefault: Option[ElementValue] =
+    def annotationDefault: Option[ElementValue] = {
         attributes collectFirst { case ev: ElementValue ⇒ ev }
+    }
 
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
@@ -192,11 +196,13 @@ final class Method private (
     /**
      * Each method optionally defines a method type signature.
      */
-    def methodTypeSignature: Option[MethodTypeSignature] =
+    def methodTypeSignature: Option[MethodTypeSignature] = {
         attributes collectFirst { case s: MethodTypeSignature ⇒ s }
+    }
 
-    def exceptionTable: Option[ExceptionTable] =
+    def exceptionTable: Option[ExceptionTable] = {
         attributes collectFirst { case et: ExceptionTable ⇒ et }
+    }
 
     /**
      * Defines an absolute order on `Method` instances based on their method signatures.
@@ -206,18 +212,16 @@ final class Method private (
      * their method descriptors.
      */
     def compare(other: Method): Int = {
-        if (this.name eq other.name) {
+        if (this.name eq other.name)
             this.descriptor.compare(other.descriptor)
-        } else if (this.name < other.name)
-            -1
-        else {
-            1
-        }
+        else
+            this.name.compareTo(other.name)
     }
 
-    def toJava(): String =
-        VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("") +
-            descriptor.toJava(name)
+    def toJava(): String = {
+        val visibility = VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
+        visibility + descriptor.toJava(name)
+    }
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 
@@ -251,18 +255,6 @@ final class Method private (
  */
 object Method {
 
-    final val readObjectDescriptor =
-        MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
-
-    final val writeObjectDescriptor =
-        MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
-
-    final val readObjectInputDescriptor =
-        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
-
-    final val writeObjectOutputDescriptor =
-        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
-
     /**
      * Returns `true` if the method is object serialization related.
      * That is, if the declaring class is `Externalizable` then the methods readObject and
@@ -290,33 +282,39 @@ object Method {
     ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
+        import MethodDescriptor.readObjectDescriptor
+        import MethodDescriptor.writeObjectDescriptor
+        import MethodDescriptor.readObjectInputDescriptor
+        import MethodDescriptor.writeObjectOutputDescriptor
 
+        val name = method.name
+        val descriptor = method.descriptor
         /*The default constructor is used by the deserialization process*/
-        (method.name == "<init>" && method.descriptor == NoArgsAndReturnVoid) ||
-            (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
-            (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
-            (method.name == "writeReplace" && method.descriptor == JustReturnsObject) ||
+        (name == "<init>" && descriptor == NoArgsAndReturnVoid) ||
+            (name == "readObjectNoData" && descriptor == NoArgsAndReturnVoid) ||
+            (name == "readResolve" && descriptor == JustReturnsObject) ||
+            (name == "writeReplace" && descriptor == JustReturnsObject) ||
             (
 
                 (
-                    (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
-                    (method.name == "writeObject" && method.descriptor == writeObjectDescriptor)
+                    (name == "readObject" && descriptor == readObjectDescriptor) ||
+                    (name == "writeObject" && descriptor == writeObjectDescriptor)
                 ) && isInheritedBySerializableOnlyClass.isYesOrUnknown
             ) ||
                     (
                         method.isPublic /*we are implementing an interface...*/ &&
                         (
-                            (method.name == "readExternal" && method.descriptor == readObjectInputDescriptor) ||
-                            (method.name == "writeExternal" && method.descriptor == writeObjectOutputDescriptor)
+                            (name == "readExternal" && descriptor == readObjectInputDescriptor) ||
+                            (name == "writeExternal" && descriptor == writeObjectOutputDescriptor)
                         ) &&
                             isInheritedByExternalizableClass.isYesOrUnknown
                     )
     }
 
-    final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
-
-    private def isNativeAndVarargs(accessFlags: Int) =
+    private def isNativeAndVarargs(accessFlags: Int) = {
+        import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
         (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
+    }
 
     /**
      * @param name The name of the method. In case of a constructor the method
@@ -331,11 +329,8 @@ object Method {
     ): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
-        val theBody =
-            if (bodySeq.nonEmpty)
-                Some(bodySeq.head.asInstanceOf[Code])
-            else
-                None
+        val theBody = bodySeq.headOption.asInstanceOf[Option[Code]]
+
         new Method(
             accessFlags,
             name.intern(),
@@ -346,13 +341,13 @@ object Method {
     }
 
     /**
-     * Factory method for Method objects.
+     * Factory for Method objects.
      *
      * @example A new method that is public abstract that takes no parameters and
-     * returns void and has the name "myMethod" can be created as shown next:
-     * {{{
-     *  val myMethod = Method(name="myMethod");
-     * }}}
+     * 			returns void and has the name "myMethod" can be created as shown next:
+     * 			{{{
+     *  		val myMethod = Method(name="myMethod");
+     * 			}}}
      */
     def apply(
         accessFlags:    Int                   = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,

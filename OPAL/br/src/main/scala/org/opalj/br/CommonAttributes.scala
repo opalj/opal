@@ -39,24 +39,32 @@ trait CommonAttributes {
 
     def attributes: Attributes
 
-    def runtimeVisibleTypeAnnotations: TypeAnnotations =
+    def runtimeVisibleTypeAnnotations: TypeAnnotations = {
         attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) ⇒ vas } match {
             case Some(typeAnnotations) ⇒ typeAnnotations
             case None                  ⇒ IndexedSeq.empty
         }
+    }
 
-    def runtimeInvisibleTypeAnnotations: TypeAnnotations =
+    def runtimeInvisibleTypeAnnotations: TypeAnnotations = {
         attributes collectFirst { case RuntimeInvisibleTypeAnnotationTable(ias) ⇒ ias } match {
             case Some(typeAnnotations) ⇒ typeAnnotations
             case None                  ⇒ IndexedSeq.empty
         }
+    }
 
-    /**
-     * The list of all type annotations. In general, if a specific type annotation is
-     * searched for, the method [[runtimeVisibleTypeAnnotations]] or
-     * [[runtimeInvisibleTypeAnnotations]] should be used.
-     */
-    def typeAnnotations: TypeAnnotations =
-        runtimeVisibleTypeAnnotations ++ runtimeInvisibleTypeAnnotations
+    //    /**
+    //     * The list of all type annotations. In general, if a specific type annotation is
+    //     * searched for, the method [[runtimeVisibleTypeAnnotations]] or
+    //     * [[runtimeInvisibleTypeAnnotations]] should be used.
+    //     */
+    //    def typeAnnotations: TypeAnnotations = {
+    //        runtimeVisibleTypeAnnotations ++ runtimeInvisibleTypeAnnotations
+    //    }
+
+    final def foreachTypeAnnotation[U](f: TypeAnnotation ⇒ U): Unit = {
+        runtimeVisibleTypeAnnotations.foreach(f)
+        runtimeInvisibleTypeAnnotations.foreach(f)
+    }
 
 }

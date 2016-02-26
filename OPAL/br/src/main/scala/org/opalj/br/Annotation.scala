@@ -59,6 +59,7 @@ case class Annotation(
                 elementValuePairs.map(_.toJava).mkString("(\n\t", ",\n\t", "\n)")
         "@"+name + parameters
     }
+
 }
 /**
  * Factory object to create [[Annotation]] objects.

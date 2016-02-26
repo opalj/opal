@@ -37,10 +37,7 @@ import org.opalj.bi.AccessFlagsContexts
  *
  * @author Michael Eichberg
  */
-case class InnerClassTable(
-    innerClasses: InnerClasses
-)
-        extends Attribute {
+case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 
     override def kindId: Int = InnerClassTable.KindId
 

@@ -38,9 +38,7 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] {
-
-}
+sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T]
 
 final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 

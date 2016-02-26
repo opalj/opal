@@ -643,9 +643,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
-                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                            arguments(1).asInstanceOf[MethodCallMethodHandle]
                         val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
-                            bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                            arguments(2).asInstanceOf[MethodDescriptor]
                         assert(!ClassFileFactory.isVirtualMethodReference(
                             targetMethodHandle.opcodeOfUnderlyingInstruction,
                             targetMethodHandle.receiverType.asObjectType,
@@ -663,7 +663,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
-                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                            arguments(1).asInstanceOf[MethodCallMethodHandle]
                         assert(!ClassFileFactory.isNewInvokeSpecial(
                             targetMethodHandle.opcodeOfUnderlyingInstruction,
                             targetMethodHandle.name
@@ -682,7 +682,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val indy = newValueMethod.body.get.instructions.find(
                         _.isInstanceOf[INVOKEDYNAMIC]
                     ).get.asInstanceOf[INVOKEDYNAMIC]
-                    val targetMethod = indy.bootstrapMethod.bootstrapArguments(1).
+                    val targetMethod = indy.bootstrapMethod.arguments(1).
                         asInstanceOf[MethodCallMethodHandle]
                     val opcode = targetMethod.opcodeOfUnderlyingInstruction
                     val methodName = targetMethod.name
@@ -727,9 +727,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val invokedynamic = filterOutEmptyValuesMethod.body.get.instructions.
                         find(_.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
                     val targetMethodHandle = invokedynamic.bootstrapMethod.
-                        bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                        arguments(1).asInstanceOf[MethodCallMethodHandle]
                     val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
-                        bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                        arguments(2).asInstanceOf[MethodDescriptor]
                     assert(ClassFileFactory.isVirtualMethodReference(
                         targetMethodHandle.opcodeOfUnderlyingInstruction,
                         targetMethodHandle.receiverType.asObjectType,

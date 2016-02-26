@@ -30,10 +30,10 @@ package org.opalj
 package br
 
 import java.util.Arrays.fill
-import scala.collection.BitSet
-import org.opalj.br.instructions._
 import scala.annotation.tailrec
-import scala.collection.mutable.Queue
+import scala.collection.BitSet
+import scala.collection.mutable
+import org.opalj.br.instructions._
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -122,11 +122,11 @@ final class Code private (
         val subroutineIds = new Array[Int](instructions.length)
         fill(subroutineIds, -1) // <= initially all instructions belong to "no routine"
 
-        val nextSubroutines = Queue[PC](0)
+        val nextSubroutines = mutable.Queue[PC](0)
 
         def propagate(subroutineId: Int, subroutinePC: PC): Unit = {
 
-            val nextPCs = Queue[PC](subroutinePC)
+            val nextPCs = mutable.Queue[PC](subroutinePC)
             while (nextPCs.nonEmpty) {
                 val pc = nextPCs.dequeue
                 if (subroutineIds(pc) == -1) {
@@ -233,7 +233,7 @@ final class Code private (
     def joinInstructions: BitSet = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val joinInstructions = new scala.collection.mutable.BitSet(instructionsLength)
+        val joinInstructions = new mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
@@ -242,7 +242,7 @@ final class Code private (
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
         // past, it will then mark the instruction as a "join" instruction.
-        val isReached = new scala.collection.mutable.BitSet(instructionsLength)
+        val isReached = new mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
         var pc = 0
         while (pc < instructionsLength) {
@@ -373,7 +373,9 @@ final class Code private (
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = handlersFor(pc, justExceptions = true)
+    def exceptionHandlersFor(pc: PC): List[ExceptionHandler] = {
+        handlersFor(pc, justExceptions = true)
+    }
 
     /**
      * The set of pcs of those instructions that may handle an exception if the evaluation
@@ -457,8 +459,9 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      *      attribute may not be reified.
      */
-    def lineNumberTable: Option[LineNumberTable] =
+    def lineNumberTable: Option[LineNumberTable] = {
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
+    }
 
     /**
      * Returns the line number associated with the instruction with the given pc if
@@ -467,8 +470,9 @@ final class Code private (
      * @param pc Index of the instruction for which we want to get the line number.
      * @return `Some` line number or `None` if no line-number information is available.
      */
-    def lineNumber(pc: PC): Option[Int] =
+    def lineNumber(pc: PC): Option[Int] = {
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
+    }
 
     /**
      * Returns `Some(true)` if both pcs have the same line number. If line number information
@@ -491,8 +495,7 @@ final class Code private (
      *      }
      *      }}}
      */
-    def firstLineNumber: Option[Int] =
-        lineNumberTable.flatMap(_.firstLineNumber)
+    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber)
 
     /**
      * Collects all local variable tables.
@@ -503,8 +506,9 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      * 	    attribute may not be reified.
      */
-    def localVariableTable: Option[LocalVariables] =
+    def localVariableTable: Option[LocalVariables] = {
         attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
+    }
 
     /**
      * Returns the set of local variables defined at the given pc.
@@ -551,8 +555,9 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      * 	    attribute may not be reified.
      */
-    def localVariableTypeTable: Seq[LocalVariableTypes] =
+    def localVariableTypeTable: Seq[LocalVariableTypes] = {
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
+    }
 
     /**
      * Collects all local variable type tables.
@@ -560,8 +565,9 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      *      attribute may not be reified.
      */
-    def runtimeVisibleType: Seq[LocalVariableTypes] =
+    def runtimeVisibleType: Seq[LocalVariableTypes] = {
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
+    }
 
     /**
      * The JVM specification mandates that a Code attribute has at most one
@@ -570,8 +576,9 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      * 	    attribute may not be reified.
      */
-    def stackMapTable: Option[StackMapFrames] =
+    def stackMapTable: Option[StackMapFrames] = {
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
+    }
 
     /**
      * True if the instruction with the given program counter is modified by wide.
@@ -679,7 +686,7 @@ final class Code private (
         while (pc < max_pc) {
             val params = (pc, instructions(pc))
             if (f.isDefinedAt(params))
-                return Some(f(params))
+                return Some(f(params));
 
             pc = pcOfNextInstruction(pc)
         }
@@ -696,7 +703,7 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             if (f(instructions(pc)))
-                return Some(pc)
+                return Some(pc);
 
             pc = pcOfNextInstruction(pc)
         }
@@ -850,9 +857,7 @@ final class Code private (
      *      } yield ...
      * }}}
      */
-    def collectPair[B](
-        f: PartialFunction[(Instruction, Instruction), B]
-    ): List[(PC, B)] = {
+    def collectPair[B](f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
         val max_pc = instructions.size
 
         var first_pc = 0
@@ -972,9 +977,8 @@ final class Code private (
      * Tests if the sequence of instructions that starts with the given `pc` always ends
      * with an `ATHROW` instruction or a method call that always throws an
      * exception. The call sequence furthermore has to contain no complex logic.
-     * Here, complex means
-     * that evaluating the instruction may result in multiple control flows. If the
-     * sequence contains complex logic, `false` will be returned.
+     * Here, complex means that evaluating the instruction may result in multiple control flows.
+     * If the sequence contains complex logic, `false` will be returned.
      *
      * One use case of this method is to, e.g., check if the code
      * of the default case of a switch
@@ -1104,7 +1108,7 @@ object Code {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0
-        attributes.foreach { a ⇒
+        attributes foreach { a ⇒
             if (a.isInstanceOf[LocalVariableTable]) {
                 localVariableTablesCount += 1
             } else if (a.isInstanceOf[UnpackedLineNumberTable]) {

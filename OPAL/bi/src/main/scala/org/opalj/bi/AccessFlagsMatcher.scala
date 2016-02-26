@@ -46,8 +46,9 @@ sealed trait AccessFlagsMatcher { left ⇒
     def &&(right: AccessFlagsMatcher): AccessFlagsMatcher = {
         new AccessFlagsMatcher {
 
-            override def unapply(accessFlags: Int): Boolean =
+            override def unapply(accessFlags: Int): Boolean = {
                 left.unapply(accessFlags) && right.unapply(accessFlags)
+            }
 
             override def toString: String = "("+left.toString+" && "+right.toString+")"
         }
@@ -56,8 +57,9 @@ sealed trait AccessFlagsMatcher { left ⇒
     def ||(right: AccessFlagsMatcher): AccessFlagsMatcher = {
         new AccessFlagsMatcher {
 
-            override def unapply(accessFlags: Int): Boolean =
+            override def unapply(accessFlags: Int): Boolean = {
                 left.unapply(accessFlags) || right.unapply(accessFlags)
+            }
 
             override def toString: String = "("+left.toString+" || "+right.toString+")"
         }
@@ -124,32 +126,34 @@ object PrimitiveAccessFlagsMatcher {
  */
 object AccessFlagsMatcher {
 
+    final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
+
     // DEFINED FOR READABILITY PURPOSES:
-    val PUBLIC = ACC_PUBLIC
-    val PRIVATE = ACC_PRIVATE
-    val PROTECTED = ACC_PROTECTED
+    final val PUBLIC = ACC_PUBLIC
+    final val PRIVATE = ACC_PRIVATE
+    final val PROTECTED = ACC_PROTECTED
 
-    val STATIC = ACC_STATIC
+    final val STATIC = ACC_STATIC
 
-    val PUBLIC_INTERFACE = ACC_PUBLIC && ACC_INTERFACE
-    val PUBLIC_ABSTRACT = ACC_PUBLIC && ACC_ABSTRACT
-    val PUBLIC_FINAL = ACC_PUBLIC && ACC_FINAL
-    val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
-    val PUBLIC_STATIC = ACC_PUBLIC && ACC_STATIC
+    final val PUBLIC_INTERFACE = ACC_PUBLIC && ACC_INTERFACE
+    final val PUBLIC_ABSTRACT = ACC_PUBLIC && ACC_ABSTRACT
+    final val PUBLIC_FINAL = ACC_PUBLIC && ACC_FINAL
+    final val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
+    final val PUBLIC_STATIC = ACC_PUBLIC && ACC_STATIC
 
-    val NOT_INTERFACE = !ACC_INTERFACE
-    val NOT_STATIC = !ACC_STATIC
-    val NOT_PRIVATE = !ACC_PRIVATE
-    val NOT_FINAL = !ACC_FINAL
-    val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
-    val NOT_NATIVE = !ACC_NATIVE
-    val NOT_ABSTRACT = !ACC_ABSTRACT
-    val NOT_ENUM = !ACC_ENUM
+    final val NOT_INTERFACE = !ACC_INTERFACE
+    final val NOT_STATIC = !ACC_STATIC
+    final val NOT_PRIVATE = !ACC_PRIVATE
+    final val NOT_FINAL = !ACC_FINAL
+    final val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
+    final val NOT_NATIVE = !ACC_NATIVE
+    final val NOT_ABSTRACT = !ACC_ABSTRACT
+    final val NOT_ENUM = !ACC_ENUM
 
-    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
+    final val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
 
-    val PUBLIC___OR___PROTECTED_AND_NOT_FINAL = ACC_PUBLIC || (ACC_PROTECTED && NOT_FINAL)
+    final val PUBLIC___OR___PROTECTED_AND_NOT_FINAL = ACC_PUBLIC || (ACC_PROTECTED && NOT_FINAL)
 
-    val ANY = new AccessFlagsMatcher { def unapply(accessFlags: Int): Boolean = true }
+    final val ANY = new AccessFlagsMatcher { def unapply(accessFlags: Int): Boolean = true }
 }
 

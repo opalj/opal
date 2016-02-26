@@ -65,8 +65,9 @@ trait ClassMember extends ConcreteSourceElement {
     /**
      * `True` if the `Synthetic` access flag or attribute is used.
      */
-    final override def isSynthetic: Boolean =
+    final override def isSynthetic: Boolean = {
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
+    }
 
     /**
      * The simple name of this class member (method or field).

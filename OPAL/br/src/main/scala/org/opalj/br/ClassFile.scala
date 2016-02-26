@@ -191,7 +191,9 @@ final class ClassFile private (
         isClassDeclaration &&
             innerClasses.map { ics ⇒
                 ics.exists { i ⇒
-                    i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
+                    i.innerClassType == thisType && {
+                        if (i.innerName.isEmpty) true else return false;
+                    }
                 }
             }.getOrElse(false)
     }
@@ -295,7 +297,7 @@ final class ClassFile private (
                         nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
                     }
                     val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
-                    return filteredNestedClasses
+                    return filteredNestedClasses;
                 case None ⇒
                     OPALLogger.warn(
                         "project information",
@@ -303,7 +305,7 @@ final class ClassFile private (
                             "; the inner classes information may be incomplete"
                     )
 
-                    return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
+                    return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
 
         }
@@ -391,9 +393,10 @@ final class ClassFile private (
                     i = -1
                 else {
                     val methodName = methods(i).name
-                    if (methodName < "<init>")
+                    val r = methodName.compareTo("<init>")
+                    if (r < 0 /*methodName < "<init>"*/ )
                         lookupNextConstructor()
-                    else if (methodName > "<init>")
+                    else if (r > 0 /*methodName > "<init>"*/ )
                         i = -1;
                 }
             }
@@ -438,14 +441,14 @@ final class ClassFile private (
         var i = 0
         while (i < methodsCount) {
             val method = methods(i)
-            val methodName = method.name
+            val methodNameComparison = method.name.compareTo("<clinit>")
 
-            if (methodName == "<clinit>" &&
+            if (methodNameComparison == 0 &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
                 (majorVersion < 51 || method.isStatic))
                 return Some(method);
 
-            else if (methodName > "<clinit>")
+            else if (methodNameComparison < 0)
                 return None;
 
             i += 1
@@ -465,10 +468,10 @@ final class ClassFile private (
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
             val field = fields(mid)
-            val fieldName = field.name
-            if (fieldName == name) {
+            val fieldNameComparison = field.name.compareTo(name)
+            if (fieldNameComparison == 0) {
                 Some(field)
-            } else if (fieldName.compareTo(name) < 0) {
+            } else if (fieldNameComparison < 0) {
                 findField(mid + 1, high)
             } else {
                 findField(low, mid - 1)
@@ -519,16 +522,16 @@ final class ClassFile private (
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
-            val methodName = method.name
-            if (methodName == name) {
-                val methodDescriptor = method.descriptor
-                if (methodDescriptor < descriptor)
+            val nameComparison = method.name.compareTo(name)
+            if (nameComparison == 0) {
+                val methodDescriptorComparison = method.descriptor.compare(descriptor)
+                if (methodDescriptorComparison < 0)
                     findMethod(mid + 1, high)
-                else if (descriptor == methodDescriptor)
+                else if (methodDescriptorComparison == 0)
                     Some(method)
                 else
                     findMethod(low, mid - 1)
-            } else if (methodName.compareTo(name) < 0) {
+            } else if (nameComparison < 0) {
                 findMethod(mid + 1, high)
             } else {
                 findMethod(low, mid - 1)
@@ -543,11 +546,7 @@ final class ClassFile private (
         descriptor: MethodDescriptor,
         matcher:    AccessFlagsMatcher
     ): Option[Method] = {
-        val candidateMethod = findMethod(name, descriptor)
-        if (candidateMethod exists { m ⇒ matcher.unapply(m.accessFlags) })
-            candidateMethod
-        else
-            None
+        findMethod(name, descriptor) filter { m ⇒ matcher.unapply(m.accessFlags) }
     }
 
     /**
@@ -556,11 +555,12 @@ final class ClassFile private (
      */
     override def hashCode: Int = thisType.id
 
-    override def equals(other: Any): Boolean =
+    override def equals(other: Any): Boolean = {
         other match {
             case that: ClassFile ⇒ that eq this
             case _               ⇒ false
         }
+    }
 
     override def toString: String = {
         try {

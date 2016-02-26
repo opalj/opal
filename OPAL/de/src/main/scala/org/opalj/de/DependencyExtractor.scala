@@ -827,7 +827,7 @@ class DependencyExtractor(
         }
         processDependency(declaringMethod, methodDescriptor.returnType, RETURN_TYPE_OF_CALLED_METHOD)
 
-        bootstrapMethod.methodHandle match {
+        bootstrapMethod.handle match {
 
             case handle: MethodCallMethodHandle ⇒ {
                 // the class containing the bootstrap method

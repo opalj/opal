@@ -39,10 +39,9 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * @author Michael Eichberg
  */
 class AccessFlagsIterator private (
-    private[this] var flags:  Int,
-    val potentialAccessFlags: IndexedSeq[AccessFlag]
-)
-        extends Iterator[AccessFlag] {
+        private[this] var flags:  Int,
+        val potentialAccessFlags: IndexedSeq[AccessFlag]
+) extends Iterator[AccessFlag] {
 
     private[this] var index = -1
 
@@ -53,10 +52,10 @@ class AccessFlagsIterator private (
             index += 1
             if ((flags & potentialAccessFlags(index).mask) != 0) {
                 flags = flags & (~potentialAccessFlags(index).mask)
-                return potentialAccessFlags(index)
+                return potentialAccessFlags(index);
             }
         }
-        throw new BytecodeProcessingFailedException("Unknown access flag(s): "+Integer.toHexString(flags))
+        throw new BytecodeProcessingFailedException("Unknown access flag(s): "+flags.toHexString)
     }
 }
 
@@ -73,7 +72,8 @@ object AccessFlagsIterator {
      *      flags bit vector partially depends on the concrete source element that
      *      defines the accessFlags.
      */
-    def apply(accessFlags: Int, ctx: AccessFlagsContext) =
+    def apply(accessFlags: Int, ctx: AccessFlagsContext) = {
         new AccessFlagsIterator(accessFlags, AccessFlagsContexts.potentialAccessFlags(ctx))
+    }
 }
 
