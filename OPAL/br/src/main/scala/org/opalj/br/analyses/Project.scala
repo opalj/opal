@@ -1080,8 +1080,8 @@ object Project {
             val issues = validate(project)
             issues foreach { handleInconsistentProject(logContext, _) }
             OPALLogger.info(
-                "project",
-                s"validation of the project configuration revealed ${issues.size} significant issues"+
+                "project configuration",
+                s"validation revealed ${issues.size} significant issues"+
                     (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
             )
 
@@ -1099,7 +1099,7 @@ object Project {
      */
     private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
 
-        val disclaimer = "(this inconsistency will lead to analyses failing miserably)"
+        val disclaimer = "(this inconsistency may lead to analyses failing miserably)"
 
         val ch = p.classHierarchy
 
