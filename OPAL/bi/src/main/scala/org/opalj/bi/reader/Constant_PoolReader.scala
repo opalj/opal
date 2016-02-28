@@ -166,10 +166,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_InterfaceMethodref_ID ⇒
                     i += 1
-                    CONSTANT_InterfaceMethodref_info(
-                        in.readUnsignedShort,
-                        in.readUnsignedShort
-                    )
+                    CONSTANT_InterfaceMethodref_info(in.readUnsignedShort,in.readUnsignedShort)
                 case CONSTANT_String_ID ⇒
                     i += 1
                     CONSTANT_String_info(in.readUnsignedShort)

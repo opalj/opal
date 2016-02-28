@@ -144,6 +144,19 @@ case class IntermediateResult(
 }
 private[fpcf] object IntermediateResult { private[fpcf] final val id = 5 }
 
+/**
+ * Encapsulates some result and also some computations that should be scheduled after handling the
+ * result.
+ */
+case class IncrementalResult[E <: Entity](
+        result:           PropertyComputationResult,
+        nextComputations: Traversable[(PropertyComputation[E], E)]
+) extends PropertyComputationResult {
+    private[fpcf] final def id = IncrementalResult.id
+}
+
+private[fpcf] object IncrementalResult { private[fpcf] final val id = 6 }
+
 //
 //
 // PACKAGE PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
@@ -158,7 +171,7 @@ private[fpcf] case class FallbackResult(
     private[fpcf] final def id = FallbackResult.id
 
 }
-private[fpcf] object FallbackResult { private[fpcf] final val id = 6 }
+private[fpcf] object FallbackResult { private[fpcf] final val id = 7 }
 
 /**
  * Represents a suspended computation.
@@ -193,7 +206,7 @@ abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
  */
 private[fpcf] object SuspendedPC {
 
-    private[fpcf] final val id = 7
+    private[fpcf] final val id = 8
 
     def unapply[DependeeP <: Property](
         c: SuspendedPC[DependeeP]
@@ -201,42 +214,4 @@ private[fpcf] object SuspendedPC {
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }
-//
-///**
-// * Represents a suspended '''incremental''' computation.
-// *
-// * @param dependeeE The entity about which some knowledge is required by this
-// *      computation before the computation can be continued.
-// * @param dependeePK The property kind of the given entity about which some knowledge
-// *      is required.
-// */
-//private[fpcf] abstract class SuspendedIPC[DependeeP <: Property](
-//        val e:          Entity,
-//        val pk:         SomePropertyKey,
-//        val dependeeE:  Entity,
-//        val dependeePK: PropertyKey[DependeeP]
-//) extends PropertyComputationResult {
-//
-//    /**
-//     * Called by the framework when the property of the element `dependeeE` on which
-//     * this computation is depending on was computed.
-//     */
-//    def continue(dependeeP: DependeeP): IncrementalPropertyComputationResult
-//
-//    private[fpcf] final def id = SuspendedIPC.id
-//}
-//
-///**
-// * Factory for creating [[Suspended]] computations.
-// */
-//private[fpcf] object SuspendedIPC {
-//
-//    private[fpcf] final val id = 8
-//
-//    def unapply[DependeeP <: Property](
-//        c: SuspendedIPC[DependeeP]
-//    ): Some[(Entity, SomePropertyKey, Entity, PropertyKey[DependeeP])] =
-//        Some((c.e, c.pk, c.dependeeE, c.dependeePK))
-//
-//}
 

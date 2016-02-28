@@ -38,9 +38,7 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait Unknown_attributeReader
-        extends Constant_PoolAbstractions
-        with Unknown_attributeAbstractions {
+trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
 
     //
     // ABSTRACT DEFINITIONS

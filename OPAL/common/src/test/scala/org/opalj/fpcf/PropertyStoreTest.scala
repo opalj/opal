@@ -48,7 +48,7 @@ import org.scalatest.BeforeAndAfterEach
 @RunWith(classOf[JUnitRunner])
 class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
-    final val TestDuration /*in minutes*/ = 1d / 60d
+    final val TestDuration /*in minutes*/ = 3.0d / 60.0d
 
     //**********************************************************************************************
     //
@@ -178,6 +178,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         override def toString: String = name
     }
     object Node { def apply(name: String) = new Node(name) }
+
+    // DESCRIPTION OF A GRAPH (WITH CYCLES)
     val nodeA = Node("a")
     val nodeB = Node("b")
     val nodeC = Node("c")
@@ -225,6 +227,38 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     if (NoReachableNodes != NoReachableNodes) fail("comparison of ReachableNodes properties failed")
 
+    // DESCRIPTION OF A TREE
+    val nodeRoot = Node("Root")
+    val nodeLRoot = Node("Root->L")
+    val nodeLLRoot = Node("Root->L->L")
+    val nodeRRoot = Node("Root->R")
+    val nodeLRRoot = Node("Root->R->L")
+    val nodeRRRoot = Node("Root->R->R")
+    nodeRoot.targets += nodeLRoot
+    nodeRoot.targets += nodeRRoot
+    nodeLRoot.targets += nodeLLRoot
+    nodeRRoot.targets += nodeLRRoot
+    nodeRRoot.targets += nodeRRRoot
+    val treeEntities = List[Node](nodeRoot, nodeLRoot, nodeLLRoot, nodeRRoot, nodeLRRoot, nodeRRRoot)
+    var treeNodes: PropertyStore = initTreeNodes
+    def initTreeNodes(): PropertyStore = {
+        treeNodes = PropertyStore(treeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        treeNodes
+    }
+
+    final val TreeLevelKey: PropertyKey[TreeLevel] = {
+        PropertyKey.create(
+            "TreeLevel",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    case class TreeLevel(length: Int) extends Property {
+        final type Self = TreeLevel
+        final def key = TreeLevelKey
+        final def isRefineable = false
+    }
+
     override def afterEach(): Unit = {
         if (psStrings.isShutdown()) {
             info("reinitializing string entities property store")
@@ -235,11 +269,19 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         }
 
         if (psNodes.isShutdown()) {
-            info("reinitializing nodes property store")
+            info("reinitializing graph nodes property store")
             initPSNodes()
         } else {
             psNodes.waitOnPropertyComputationCompletion(false)
             psNodes.reset()
+        }
+
+        if (treeNodes.isShutdown()) {
+            info("reinitializing tree nodes property store")
+            initTreeNodes()
+        } else {
+            treeNodes.waitOnPropertyComputationCompletion(false)
+            treeNodes.reset()
         }
     }
 
@@ -599,6 +641,45 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     if (ps(e, TaintedKey).get == NotTainted) ps(e, PalindromeKey) should be(None)
                 }
 
+            }
+
+            it("should be possible to execute an analysis incrementally using the standard scheduling funcation <||<") {
+                import scala.collection.mutable
+                val ps = treeNodes
+
+                var runs = 0
+                val startTime = System.currentTimeMillis()
+                while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
+                    runs += 1
+                    /* The following analysis only uses the new information given to it and updates
+                 	 * the set of observed dependees.
+                 	 */
+                    def analysis(level: Int)(n: Node): PropertyComputationResult = {
+                        val nextPCs : Traversable[(PropertyComputation[Node], Node)] = 
+                            n.targets.map(t => (analysis(level+1) _,t))
+                        IncrementalResult(ImmediateResult(n, TreeLevel(level)), nextPCs)
+                    }
+
+                    ps <||<[Node] ({ case n @ `nodeRoot` ⇒ n.asInstanceOf[Node]}, analysis(0))
+                    ps.waitOnPropertyComputationCompletion(true)
+
+                    try {
+                        ps(nodeRoot, TreeLevelKey) should be(Some(TreeLevel(0)))
+                        ps(nodeRRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
+                        ps(nodeRRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        ps(nodeLRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        ps(nodeLRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
+                        ps(nodeLLRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        
+                    } catch {
+                        case t: Throwable ⇒
+                            info(s"failed on run $runs\n"+ps.toString(true))
+                            throw t
+                    }
+
+                    ps.reset()
+                }
+                info(s"executed the test $runs times")
             }
 
             it("should be possible to execute an analysis which at some point stabilizes itself in an intermediate result") {
