@@ -40,6 +40,9 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  * Specified if all instances of a respective type (this includes the instances of the
  * type's subtypes) are (conditionally) immutable.
  *
+ * This property is of particular interest if the precise type cannot be computed statically and
+ * basically depends on the [[AnalysisMode]] and [[ObjectImmutability]].
+ *
  * @author Michael Eichberg
  */
 sealed trait TypeImmutability extends Property with TypeImmutabilityPropertyMetaInformation {

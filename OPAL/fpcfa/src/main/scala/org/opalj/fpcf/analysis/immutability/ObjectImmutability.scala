@@ -38,16 +38,16 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
 }
 
 /**
- * Specifies the mutability of instances of a class type. The
- * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
- * then "Mutable".
+ * Specifies the mutability of instances of a specific class.
+ * The highest rating is "Immutable", then "Conditionally Immutable", then "Mutable".
  *
- * A class is considered immutable if the state of a class does not change after
- * initialization; this includes all classes referenced by the class (transitive hull).
- * A class is considered conditionally immutable if the state of the class itself
- * cannot be mutated, but objects referenced by the class can be mutated (so called
- * immutable collections are typically rated as "conditionally immutable"). A class is
- * – at the latest – considered mutable if a client can mutate (directly or indirectly)
+ * Immutable means that the state of an instance of the respective class does not change after
+ * initialization in a client visible manner! This includes all classes referenced by the instances
+ * (transitive hull).
+ * Conditionally immutable means that the state of the instance of the respective class
+ * cannot be mutated, but objects referenced by it can be mutated (so called
+ * immutable collections are typically rated as "conditionally immutable").
+ * Mutable means that a client can mutate (directly or indirectly)
  * the state of respective objects. In general the state of a class is determined w.r.t.
  * the declared fields. I.e., a method that has, e.g., a call time dependent behavior,
  * but which does not mutate the state of the class does not affect the mutability rating.
@@ -67,7 +67,9 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * ==Inheritance==
  *  - Instances of `java.lang.Object` are immutable. However, if a class defines a
  * constructor which has a parameter of type object and which assigns the respective
- * parameter value to a field will at-most be conditionally immutable; in general
+ * parameter value to a field will at-most be conditionally immutable (instances of the
+ * class object are immutable, but instances of the type (which includes all subtypes) are
+ * not immutable; in general
  * we must assume that the referenced object may be (at runtime) some mutable object.
  *  - In general, only classes that inherit from (conditionally) immutable class can be
  * (conditionally) immutable; if a class is mutable, all subclasses are also
@@ -77,11 +79,8 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * as unknown. (Interfaces are generally ignored as they are always immutable.)
  *
  * ==Native Methods==
- * Native methods are ignored.
- *
- * ==Class Instances==
- * The mutability of class instances is determined by analyzing the class instance
- * only.
+ * Unknown native methods are considered as mutating the state unless all state is
+ * explicitly final.
  *
  * ==Interfaces==
  * Are not considered during the analysis as they are always immutable. (All fields are

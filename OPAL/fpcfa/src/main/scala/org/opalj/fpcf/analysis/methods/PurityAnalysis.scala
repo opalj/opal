@@ -146,15 +146,13 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                                 method, Purity.key,
                                 field, FieldMutability.key
                             ) { (e: Entity, dependeeP: Property) ⇒
-                                {
-                                    if (dependeeP == EffectivelyFinal) {
-                                        val nextPC = body.pcOfNextInstruction(currentPC)
-                                        doDeterminePurity(method, nextPC, dependees)
-                                    } else {
-                                        Result(method, Impure)
-                                    }
-                                };
-                            }
+                                if (dependeeP == EffectivelyFinal) {
+                                    val nextPC = body.pcOfNextInstruction(currentPC)
+                                    doDeterminePurity(method, nextPC, dependees)
+                                } else {
+                                    Result(method, Impure)
+                                }
+                            };
 
                         case _ ⇒
                             // We know nothing about the target field (it is not

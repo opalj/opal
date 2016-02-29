@@ -81,8 +81,8 @@ case object MaybePure extends Purity { final val isRefineable = true }
  * Used if we know that the pureness of a methods only depends on the pureness
  * of the target methods.
  *
- * A conditionally pure method has to be treated as an inpure methods by clients
- * except that it may be refined later on.
+ * A method calling a ConditionallyPure method can at most be ConditionallyPure itself, unless
+ * ConditionallyPure is refined to [[Pure]].
  */
 case object ConditionallyPure extends Purity { final val isRefineable = true }
 

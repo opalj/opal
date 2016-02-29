@@ -38,56 +38,8 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 /**
- * Specifies the mutability of instances of a class type. The
- * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
- * then "Mutable".
+ * Specifies the mutability of the class instance of a type.
  *
- * A class is considered immutable if the state of a class does not change after
- * initialization; this includes all classes referenced by the class (transitive hull).
- * A class is considered conditionally immutable if the state of the class itself
- * cannot be mutated, but objects referenced by the class can be mutated (so called
- * immutable collections are typically rated as "conditionally immutable"). A class is
- * – at the latest – considered mutable if a client can mutate (directly or indirectly)
- * the state of respective objects. In general the state of a class is determined w.r.t.
- * the declared fields. I.e., a method that has, e.g., a call time dependent behavior,
- * but which does not mutate the state of the class does not affect the mutability rating.
- *
- * The mutability assessment is by default done on a per class basis and only includes
- * the super classes of a class. A rating that includes all usages is only meaningful
- * if we analyze an application.
- *
- * ==Thread-safe Lazily Initialized Fields==
- * A field that is initialized lazily in a thread-safe manner; i.e.,
- * which is set at most once after construction and which is always set to the
- * same value independent of the time of (lazy) initialization, may not affect the
- * mutability rating. However, an analysis may rate such a class as mutable. An
- * example of such a field is the field that stores the lazily calculated hashCode of
- * a `String` object.
- *
- * ==Inheritance==
- *  - Instances of `java.lang.Object` are immutable. However, if a class defines a
- * constructor which has a parameter of type object and which assigns the respective
- * parameter value to a field will at-most be conditionally immutable; in general
- * we must assume that the referenced object may be (at runtime) some mutable object.
- *  - In general, only classes that inherit from (conditionally) immutable class can be
- * (conditionally) immutable; if a class is mutable, all subclasses are also
- * considered to be mutable. I.e., a subclass can never have a higher mutability rating
- * than a superclass.
- *  - All classes for which the superclasstype information is not complete are rated
- * as unknown. (Interfaces are generally ignored as they are always immutable.)
- *
- * ==Native Methods==
- * Native methods are ignored.
- *
- * ==Class Instances==
- * The mutability of class instances is determined by analyzing the class instance
- * only.
- *
- * ==Interfaces==
- * Are not considered during the analysis as they are always immutable. (All fields are
- * `static` and `final`.)
- *
- * @author Andre Pacak
  * @author Michael Eichberg
  */
 sealed trait ClassImmutability extends Property with ClassImmutabilityPropertyMetaInformation {
@@ -119,7 +71,9 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
         )
 }
 
-case object UnknownClassImmutability extends ClassImmutability
+case object UnknownClassImmutability extends ClassImmutability {
+    final val isRefineable = true
+}
 
 /**
  * An instance of the respective class is effectively immutable. I.e., after creation it is not
