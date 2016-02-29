@@ -31,8 +31,11 @@ package fpcf
 package analysis
 package immutability
 
+import scala.collection.mutable
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
 
 //
 //import org.opalj.br.ClassFile
@@ -333,16 +336,55 @@ object ImmutabilityAnalysis {
 
 class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
-    def determineObjectImmutability(classFile: ClassFile): PropertyComputationResult = {
-        ???
+    final def classHierarchy = project.classHierarchy
+
+    def determineObjectImmutability(
+        superClassMutability: ObjectImmutability // either immutable or conditionally immutable
+    )(
+        cf: ClassFile
+    ): PropertyComputationResult = {
+        if (cf.fields.forall(f ⇒ f.isFinal || f.isStatic)) {
+            // ... this class is potentially immutable
+            //
+            //            val result =
+            //                // but, if the superclass is only ConditionallyImmutable, then this class is also
+            //                // at most conditionally immutable, and we don't need to do any further analyses
+            //                if (superClassMutability eq ConditionallyImmutableObject) {
+            //                    ImmediateResult(cf, ConditionallyImmutableObject)
+            //                } else if (cf.fields.exists(f ⇒ f.fieldType.isArrayType)) {
+            //                    // IMPROVE we could analyze if the array is effectively final
+            //                    ImmediateResult(cf, ConditionallyImmutableObject)
+            //                } else {
+            //                    val fieldTypes =
+            //                        mutable.Set.empty[ObjectType] ++
+            //                            cf.fields.collect { case f if f.fieldType.isObjectType ⇒ f.fieldType }
+            //                    fieldTypes
+            //
+            //                }
+            //
+            //            val directSubclasses =
+            //                classHierarchy.directSubtypesOf(cf.thisType).view.
+            //                    map(ot ⇒ project.classFile(ot)).
+            //                    collect { case Some(cf) ⇒ cf }
+
+            //            IncrementalResult(
+            //                result,
+            //                directSubclasses.map(c ⇒(determineObjectImmutability(superClassMutability) _, c))
+            //            )
+            ???
+        } else {
+            // The class is definitively mutable and therefore also all subclasses
+            MultiResult(
+                classHierarchy.allSubclassTypes(cf.thisType, reflexive = true).
+                map(project.classFile(_)).collect({ case Some(cf) ⇒ cf }).
+                map(cf ⇒ EP(cf, MutableObjectByAnalysis)).toTraversable
+            )
+        }
     }
+
 }
 
 object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
-
-    final val entitySelector: PartialFunction[Entity, ClassFile] = {
-        case cf: ClassFile if !cf.isInterfaceDeclaration ⇒ cf
-    }
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
 
@@ -350,9 +392,37 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def usedProperties: Set[PropertyKind] = Set.empty
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new ObjectImmutabilityAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineObjectImmutability)
+        val classHierarchy = project.classHierarchy
+
+        // 1.
+        // java.lang.Object is by definition immutable
+        project.classFile(ObjectType.Object) foreach { cf ⇒
+            ps.handleResult(ImmediateResult(cf, ImmutableObject))
+        }
+
+        // 2.
+        // all classes that do not have complete superclass information are mutable 
+        // due to the lack of knowledge
+        val typesForWhichItMayBePossibleToComputeTheMutability = {
+            classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
+        }
+        classHierarchy.rootTypes.
+            filter(_ ne ObjectType.Object).
+            map(rt ⇒ classHierarchy.allSubtypes(rt, reflexive = true)).flatten.
+            filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
+            map(ot ⇒ project.classFile(ot) foreach { cf ⇒
+                ps.handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))
+            })
+
+        // 3.
+        // the initial set of classes for which we want to determine the mutability
+        val es = project.classHierarchy.directSubtypesOf(ObjectType.Object).view.
+            map(ot ⇒ project.classFile(ot)).
+            collect { case Some(cf) if !cf.isInterfaceDeclaration ⇒ cf }
+        ps <|<< (es, analysis.determineObjectImmutability(ImmutableObject))
+
         analysis
     }
 
