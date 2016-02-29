@@ -175,7 +175,7 @@ class ClassHierarchy private (
                 "project configuration",
                 "missing supertype information for: "+
                     rootTypes.filterNot(_ eq ObjectType.Object).
-                    map(_.toJava).mkString(", ")
+                    map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).mkString(", ")
             ))
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒

@@ -1694,7 +1694,7 @@ class PropertyStore private (
                         case OneStepFinalUpdate.id ⇒
                             assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
-                                s"the old property $oldP is already a final property and refinement to $p is not supported"
+                                s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
                             assert(clearDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
@@ -1704,7 +1704,7 @@ class PropertyStore private (
                         case FinalUpdate.id ⇒
                             assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
-                                s"the old property $oldP is already a final property and refinement to $p is not supported"
+                                s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
                             clearDependeeObservers(EPK(e, pk))
                             properties(pkId) = new PropertyAndObservers(p, null /* there will be no furhter observations  */ )
