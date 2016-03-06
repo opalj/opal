@@ -95,11 +95,11 @@ package object fpcf {
 
     type SomePropertyKey = PropertyKey[_ <: Property]
 
-    type SomeEOptionP = EOptionP[_ <: Property]
+    type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
 
-    type SomeEPK = EPK[_ <: Property]
+    type SomeEPK = EPK[_ <: Entity, _ <: Property]
 
-    type SomeEP = EP[_ <: Property]
+    type SomeEP = EP[_ <: Entity, _ <: Property]
 
     /**
      * The result of a computation if the computation derives multiple properties
@@ -131,4 +131,3 @@ package object fpcf {
      */
     private[fpcf]type Properties = OArrayMap[PropertyAndObservers]
 }
-

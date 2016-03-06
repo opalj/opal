@@ -41,6 +41,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
 import org.opalj.fpcf.analysis.immutability.ObjectImmutabilityAnalysis
 import org.opalj.fpcf.analysis.immutability.ObjectImmutability
+import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
 
 /**
  * Demonstrates how to run the immutability analysis.
@@ -70,7 +71,9 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         var t = Seconds.None
-        time { manager.runAll(ObjectImmutabilityAnalysis) } { r ⇒ t = r.toSeconds }
+        time {
+            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+        } { r ⇒ t = r.toSeconds }
 
         val immutableClasses =
             projectStore.entities(ObjectImmutability.key).groupBy { _.p }
@@ -78,6 +81,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         val immutableClassesInfo =
             immutableClasses.values.flatten.
                 map(ep ⇒ ep._1.asInstanceOf[ClassFile].thisType.toJava+"=> "+ep.p).mkString("\n")
+
         BasicReport(immutableClassesInfo+"\n"+projectStore.toString(false)+"\nAnalysis time: "+t)
     }
 }

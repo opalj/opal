@@ -115,7 +115,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     private[this] def doDeterminePurity(
         method:           Method,
         pc:               PC,
-        initialDependees: Set[EOptionP[Purity]]
+        initialDependees: Set[EOptionP[Method, Purity]]
     ): PropertyComputationResult = {
 
         val declaringClassType = project.classFile(method).thisType
@@ -237,7 +237,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                 case ConditionallyPure ⇒
                     dependees = dependees.filter { _.e ne e }
-                    val newDependees = dependees + EP(e, p.asInstanceOf[Purity])
+                    val newDependees = dependees + EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
                     IntermediateResult(method, ConditionallyPure, newDependees, c)
 
                 case Pure ⇒
@@ -273,7 +273,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             method, Purity.key, referenceTypeParameters, ImmutableType
         ) { areImmutable ⇒
             if (areImmutable) {
-                doDeterminePurity(method, 0, Set.empty[EOptionP[Purity]])
+                doDeterminePurity(method, 0, Set.empty[EOptionP[Method, Purity]])
             } else {
                 ImmediateResult(method, Impure)
             }

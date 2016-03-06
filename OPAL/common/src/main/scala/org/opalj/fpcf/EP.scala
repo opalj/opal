@@ -36,23 +36,23 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-final class EP[P <: Property](val e: Entity, val p: P)
-        extends EOptionP[P]
-        with Product2[Entity, P] {
+final class EP[+E <: Entity, +P <: Property](val e: E, val p: P)
+        extends EOptionP[E, P]
+        with Product2[E, P] {
 
-    def _1 = e
-    def _2 = p
+    def _1: E = e
+    def _2: P = p
 
     def hasProperty = true
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EP[_] ⇒ (that.e eq this.e) && this.p == that.p
-            case _           ⇒ false
+            case that: EP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
+            case _              ⇒ false
         }
     }
 
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP[_]]
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP[_, _]]
 
     def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
@@ -68,10 +68,10 @@ final class EP[P <: Property](val e: Entity, val p: P)
  */
 object EP {
 
-    def apply[P <: Property](e: Entity, p: P): EP[P] =
+    def apply[E <: Entity, P <: Property](e: E, p: P): EP[E, P] =
         new EP(e, p)
 
-    def unapply[P <: Property](that: EP[P]): Option[(Entity, P)] = {
+    def unapply[E <: Entity, P <: Property](that: EP[E, P]): Option[(E, P)] = {
         that match {
             case null ⇒ None
             case ep   ⇒ Some((ep.e, ep.p))

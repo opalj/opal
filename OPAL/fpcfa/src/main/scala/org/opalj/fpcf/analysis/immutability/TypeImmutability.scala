@@ -52,6 +52,11 @@ sealed trait TypeImmutability extends Property with TypeImmutabilityPropertyMeta
      */
     final def key = TypeImmutability.key
 
+    def isMutable: Boolean
+
+    def isConditionallyImmutable: Boolean
+
+    def join(other: TypeImmutability): TypeImmutability
 }
 /**
  * Common constants use by all [[TypeImmutability]] properties associated with methods.
@@ -61,15 +66,16 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
     /**
      * The key associated with every [[TypeImmutability]] property.
      */
-    final val key = PropertyKey.create(
-        "TypeImmutability",
-        // The default property that will be used if no analysis is able
-        // to (directly) compute the respective property.
-        MutableTypeDueToNoAnalysis,
-        // When we have a cycle all properties are necessarily at least conditionally immutable
-        // hence, we can leverage the "immutability" 
-        ImmutableType
-    )
+    final val key =
+        PropertyKey.create[TypeImmutability](
+            "TypeImmutability",
+            // The default property that will be used if no analysis is able
+            // to (directly) compute the respective property.
+            MutableType,
+            // When we have a cycle all properties are necessarily at least conditionally
+            // immutable hence, we can leverage the "immutability"
+            ImmutableType
+        )
 }
 
 /**
@@ -77,30 +83,66 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  * possible for a client to set a field or to call a method that updates the internal state
  *
  */
-case object ImmutableType extends TypeImmutability { final val isRefineable = false }
-
-case object ConditionallyImmutableType extends TypeImmutability { final val isRefineable = false }
-
-case object AtLeastConditionallyImmutableType extends TypeImmutability { final val isRefineable = true }
-
-sealed trait MutableType extends TypeImmutability {
+case object ImmutableType extends TypeImmutability {
     final val isRefineable = false
-    val reason: String
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(other: TypeImmutability): TypeImmutability = {
+        if (other eq ImmutableType)
+            this
+        else
+            other
+    }
 }
 
-case object MutableTypeByAnalysis extends MutableType {
-    final val reason = "determined by analysis"
+case object UnknownTypeImmutability extends TypeImmutability {
+    final val isRefineable = true
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(other: TypeImmutability): TypeImmutability = {
+        if (other eq MutableType)
+            MutableType
+        else
+            this
+    }
+
 }
 
-case object MutableTypeDueToUnknownSupertypes extends MutableType {
-    final val reason = "type hierarchy upwards incomplete"
+case object ConditionallyImmutableType extends TypeImmutability {
+    final val isRefineable = false
+    final val isMutable = false
+    final val isConditionallyImmutable = true
+
+    def join(other: TypeImmutability): TypeImmutability = {
+        other match {
+            case MutableType | UnknownTypeImmutability ⇒ other
+            case _                                     ⇒ this
+        }
+    }
+
 }
 
-case object MutableTypeDueToUnresolvableDependency extends MutableType {
-    final val reason = "a dependency cannot be resolved"
+case object AtLeastConditionallyImmutableType extends TypeImmutability {
+    final val isRefineable = true
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(other: TypeImmutability): TypeImmutability = {
+        other match {
+            case MutableType | UnknownTypeImmutability | ConditionallyImmutableType ⇒ other
+            case _ ⇒ this
+        }
+    }
+
 }
 
-case object MutableTypeDueToNoAnalysis extends MutableType {
-    final val reason = "a dependency cannot be resolved"
-}
+case object MutableType extends TypeImmutability {
+    final val isRefineable = false
+    final val isMutable = true
+    final val isConditionallyImmutable = false
 
+    def join(other: TypeImmutability): this.type = this
+
+}

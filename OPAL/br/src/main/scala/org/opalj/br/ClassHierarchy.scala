@@ -133,14 +133,44 @@ class ClassHierarchy private (
         rootTypes.toSet
     }
 
+    /**
+     * The set of all class types (excluding interfaces) which have no super type;
+     * that is all (pseudo) root types;
+     * if the class hierarchy is complete then this set contains exactly one element and
+     * that element must identify `java.lang.Object`.
+     *
+     * @note
+     *    If we load an application and all the jars used to implement it or a library
+     *    and all the library it depends on then the class hierarchy '''should not'''
+     *    contain multiple root types. However, the (complete) JDK contains some references
+     *    to Eclipse classes which are not part of the JDK.
+     */
+    def rootClassTypes: Traversable[ObjectType] = {
+        knownTypesMap.view filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                (superclassTypeMap(oid) eq null) && !interfaceTypesMap(oid)
+            }
+        }
+    }
+
     val leafTypes: Set[ObjectType] = {
         val leafTypes = knownTypesMap.view filter { objectType ⇒
             (objectType ne null) && {
-                val objectTypeId = objectType.id
-                subclassTypesMap(objectTypeId).isEmpty && subinterfaceTypesMap(objectTypeId).isEmpty
+                val oid = objectType.id
+                subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
             }
         }
         leafTypes.toSet
+    }
+
+    def leafClassTypes: Iterable[ObjectType] = {
+        knownTypesMap.view filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                subclassTypesMap(oid).isEmpty && !interfaceTypesMap(oid)
+            }
+        }
     }
 
     /**

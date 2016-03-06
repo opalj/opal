@@ -96,6 +96,7 @@ sealed trait ObjectImmutability extends Property with ObjectImmutabilityProperty
      */
     final def key = ObjectImmutability.key
 
+    def correspondingTypeImmutability: TypeImmutability
 }
 /**
  * Common constants use by all [[ObjectImmutability]] properties associated with methods.
@@ -111,11 +112,24 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
             // The default property that will be used if no analysis is able
             // to (directly) compute the respective property.
             MutableObjectDueToUnresolvableDependency,
-            // When we have a cycle all properties are necessarily at least conditionally immutable
-            // hence, we can leverage the "immutability" 
+            // When we have a cycle all properties are necessarily at least conditionally
+            // immutable hence, we can leverage the "immutability"
             ImmutableObject
 
         )
+}
+
+/**
+ * An instance of the respective class is effectively immutable
+ * and also all reference objects. I.e., after creation it is not
+ * possible for a client to set a field or to call a method that updates the internal state
+ * of the instance or an object
+ * referred to by the instance in such a way that the client can observe the state change.
+ *
+ */
+case object ImmutableObject extends ObjectImmutability {
+    final val isRefineable = false
+    final val correspondingTypeImmutability = ImmutableType
 }
 
 /**
@@ -123,21 +137,20 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
  * possible for a client to set a field or to call a method that updates the internal state
  *
  */
-case object ImmutableObject extends ObjectImmutability {
-    final val isRefineable = false
-}
-
 case object ConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = false
+    final val correspondingTypeImmutability = ConditionallyImmutableType
 }
 
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = true
+    final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
 }
 
 sealed trait MutableObject extends ObjectImmutability {
     final val isRefineable = false
     val reason: String
+    final val correspondingTypeImmutability = MutableType
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
@@ -151,4 +164,3 @@ case object MutableObjectDueToUnknownSupertypes extends MutableObject {
 case object MutableObjectDueToUnresolvableDependency extends MutableObject {
     final val reason = "a dependency cannot be resolved"
 }
-

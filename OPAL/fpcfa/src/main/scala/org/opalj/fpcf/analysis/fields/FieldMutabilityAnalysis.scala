@@ -36,8 +36,8 @@ import org.opalj.br.ClassFile
 import org.opalj.br.instructions.PUTSTATIC
 
 /**
- * Determines if a field is always initialized at most once or if a field is or can be mutated
- * after (lazy) initialization.
+ * Determines if a field is always initialized at most once or if a field is or can be
+ * mutated after (lazy) initialization.
  */
 class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 

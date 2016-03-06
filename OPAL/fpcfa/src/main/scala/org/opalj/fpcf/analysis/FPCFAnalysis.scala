@@ -50,6 +50,8 @@ trait FPCFAnalysis {
 
     final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
 
+    final def ps = propertyStore
+
     // The project type:
 
     final def isOpenLibrary: Boolean = project.analysisMode eq OPA

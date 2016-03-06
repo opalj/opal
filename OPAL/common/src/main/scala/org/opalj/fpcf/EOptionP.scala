@@ -33,12 +33,12 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-trait EOptionP[P <: Property] {
+trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * The entity.
      */
-    val e: Entity
+    val e: E
 
     /**
      * The property key of the optionally available property.
@@ -62,7 +62,7 @@ trait EOptionP[P <: Property] {
 
 object EOptionP {
 
-    def apply[P <: Property](e: Entity, pk: PropertyKey[P], pOption: Option[P]): EOptionP[P] = {
+    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P], pOption: Option[P]): EOptionP[E, P] = {
         pOption match {
             case Some(p) ⇒ EP(e, p)
             case None    ⇒ EPK(e, pk)
