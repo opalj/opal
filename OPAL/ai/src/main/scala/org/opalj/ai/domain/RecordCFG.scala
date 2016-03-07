@@ -159,6 +159,7 @@ trait RecordCFG
             if (theDominatorTree eq null) {
                 theDominatorTree =
                     DominatorTree(
+                        0,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         code.instructions.size - 1
@@ -167,6 +168,23 @@ trait RecordCFG
             }
         }
         theDominatorTree
+    }
+    
+    def postDominatorTree: DominatorTree = {
+      // reverse flowgraph
+      val StartNode = code.instructions.size
+      val foreachSucc: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒  n match {
+        case StartNode ⇒ allExitPCs.foreach
+        case _ ⇒ foreachPredecessorOf(n)
+      }
+      val foreachPred: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+        if(allExitPCs contains n) {
+          Set(StartNode).foreach
+        } else {
+          foreachSuccessorOf(n)
+        }
+      }
+      DominatorTree(StartNode,foreachSucc,foreachPred,StartNode)
     }
 
     /**

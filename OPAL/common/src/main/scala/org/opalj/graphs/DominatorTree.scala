@@ -130,8 +130,7 @@ object DominatorTree {
     /**
      * Computes the immediate dominators for each node of a given graph where each node
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
-     * [0..maxNodeId]; the unique root node of the graph has to have the id 0,
-     * but not all ids need to be used.
+     * [0..maxNodeId], although not all ids need to be used.
      *
      * @param foreachSuccessorOf A function that given a node executes the given function for
      * 			each direct successor.
@@ -152,6 +151,7 @@ object DominatorTree {
      * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      */
     def apply(
+        startNode:            Int,
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNodeId:            Int
@@ -170,7 +170,7 @@ object DominatorTree {
 
         // Step 1 (assign dfsnum)
         val nodes = new IntArrayStack((maxNodeId + 1) / 4)
-        nodes.push(0)
+        nodes.push(startNode)
         while (nodes.nonEmpty) {
             val v = nodes.pull
 
@@ -242,7 +242,7 @@ object DominatorTree {
             if (wParentBucket != null) {
                 for (v ← wParentBucket) {
                     val u = eval(v)
-                    dom(v) = if (semi(u) < semi(v)) u else wParent; //not inv true & false
+                    dom(v) = if (semi(u) < semi(v)) u else wParent;
                 }
                 bucket(wParent) = null
             }
@@ -254,7 +254,7 @@ object DominatorTree {
         while (j <= n) {
             val w = vertex(j)
             if (dom(w) != vertex(semi(w))) {
-                dom(w) = dom(dom(w)) //not inv. false & true
+                dom(w) = dom(dom(w))
             }
             j = j + 1
         }
