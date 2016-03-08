@@ -41,7 +41,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * 			knowledge is necessary to determine which elements of the array contain useful
  * 			information.
  */
-class DominatorTree private (idom: Array[Int]) {
+class DominatorTree private (idom: Array[Int], start: Int) {
 
     /**
      * Returns the immediate dominator of the node with the given id.
@@ -63,13 +63,13 @@ class DominatorTree private (idom: Array[Int]) {
      * if reflexive is `true`.
      */
     final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
-        if (n > 0 || reflexive) {
+        if (n != start || reflexive) {
             var c = if (reflexive) n else idom(n)
-            while (c > 0) {
+            while (c != start) {
                 f(c)
                 c = idom(c)
             }
-            f(0)
+            f(start)
         }
     }
 
@@ -259,7 +259,7 @@ object DominatorTree {
             j = j + 1
         }
 
-        new DominatorTree(dom)
+        new DominatorTree(dom, startNode)
     }
 
 }
