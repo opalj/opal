@@ -66,6 +66,27 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
+    
+    "a graph with just one custom node" should "result in a dominator tree with a single node" in {
+        val g = Graph.empty[Int] += 7
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+
+        val dt = time {
+            DominatorTree(7, foreachSuccessor, foreachPredecessor, 7)
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        var ns: List[Int] = null
+
+        ns = Nil
+        dt.foreachDom(7, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(7))
+
+        ns = Nil
+        dt.foreachDom(7, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(Nil)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
         val g = Graph.empty[Int] += (0 → 1)
@@ -96,16 +117,21 @@ class DominatorTreeTest extends FlatSpec with Matchers {
     }
     
     "a tree with a custom start node" should "result in a corresponding dominator tree" in {
-        val g = Graph.empty[Int] += (5 → 1) += (1 → 2) += (1 → 3) += (1 → 4)
+        val g = Graph.empty[Int] += (5 → 0) += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
             DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
-        dt.dom(1) should be(5)
+        dt.dom(0) should be(5)
+        dt.dom(1) should be(0)
         dt.dom(2) should be(1)
         dt.dom(3) should be(1)
-        dt.dom(4) should be(1)
+        dt.dom(4) should be(2)
+        
+        var ns: List[Int] = Nil
+        dt.foreachDom(4, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 0, 1, 2, 4))
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
@@ -125,6 +151,22 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
+    
+    "a graph with a cycle and custom start node" should "correctly be resolved" in {
+        val g = Graph.empty[Int] += (5 → 1) += (1 → 2) += (1 → 3) += (5 → 4) += (2 → 1)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(5)
+        dt.dom(2) should be(1)
+        dt.dom(3) should be(1)
+        dt.dom(4) should be(5)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
 
     "a graph with a cycle related to the root node" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 0)
@@ -135,6 +177,19 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+
+    "a graph with a cycle related to a custom root node" should "correctly be resolved" in {
+        val g = Graph.empty[Int] += (2 → 1) += (1 → 2)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(2, foreachSuccessor, foreachPredecessor, 2)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(2)
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }

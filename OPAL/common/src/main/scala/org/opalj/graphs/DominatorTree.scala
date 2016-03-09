@@ -41,16 +41,16 @@ import org.opalj.collection.mutable.IntArrayStack
  * 			knowledge is necessary to determine which elements of the array contain useful
  * 			information.
  */
-class DominatorTree private (idom: Array[Int], start: Int) {
+class DominatorTree private (idom: Array[Int], startNode: Int) {
 
     /**
      * Returns the immediate dominator of the node with the given id.
      *
-     * @note The root node with the id 0 does not have an immediate dominator!
+     * @note The root node does not have an immediate dominator!
      */
     final def dom(n: Int): Int = {
-        if (n == 0) {
-            val errorMessage = "the root node (id=0) does not have an immediate dominator"
+        if (n == startNode) {
+            val errorMessage = "the root node does not have an immediate dominator"
             throw new IllegalArgumentException(errorMessage)
         }
 
@@ -63,13 +63,13 @@ class DominatorTree private (idom: Array[Int], start: Int) {
      * if reflexive is `true`.
      */
     final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
-        if (n != start || reflexive) {
+        if (n != startNode || reflexive) {
             var c = if (reflexive) n else idom(n)
-            while (c != start) {
+            while (c != startNode) {
                 f(c)
                 c = idom(c)
             }
-            f(start)
+            f(startNode)
         }
     }
 
