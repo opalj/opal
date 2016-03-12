@@ -61,6 +61,7 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
      * Iterates over all dominator nodes of the given node. Iteration starts with the immediate
      * dominator of the given node if reflexive is `false` and starts with the node itself
      * if reflexive is `true`.
+     * For postdominators, it includes an extra node outside the range of valid nodes.
      */
     final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
         if (n != startNode || reflexive) {
@@ -117,6 +118,40 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
     //     dominators
     // }
 
+}
+
+/**
+ * Factory to compute[[DominatorTree]]s representing postdominators.
+ *
+ * @author Stephan Neumann
+ */
+object PostDominatorTree {
+    def apply(
+        foreachExitNode:      (Int ⇒ Unit) ⇒ Unit,
+        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNodeId:            Int
+    ): DominatorTree = {
+      // Introduce artificial start node
+      val StartNode = maxNodeId + 1
+      // Reverse flowgraph
+      val foreachSucc: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒  n match {
+        case StartNode ⇒ foreachExitNode
+        case _ ⇒ foreachPredecessorOf(n)
+      }
+      val foreachPred: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+        def isExitNode(n: Int): Boolean = {
+          foreachExitNode {e ⇒ if(e == n) return true}
+          false
+        }
+        if(isExitNode(n)) {
+          Set(StartNode).foreach
+        } else {
+          foreachSuccessorOf(n)
+        }
+      }
+      DominatorTree(StartNode, foreachSucc, foreachPred, StartNode)
+    }
 }
 
 /**

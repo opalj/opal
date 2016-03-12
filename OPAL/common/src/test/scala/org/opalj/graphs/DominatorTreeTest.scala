@@ -259,6 +259,78 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
+    
+    "a graph with just one node" should "result in a postdominator tree with a single node" in {
+        val g = Graph.empty[Int] += 0
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        
+        val dt = time {
+            PostDominatorTree(Set(0).foreach, foreachSuccessor, foreachPredecessor, 0)
+        } { t ⇒ info("postdominators computed in "+t.toSeconds) }
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(1,0))
+
+        ns = Nil
+        dt.foreachDom(0, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(1))
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a simple tree" should "result in a corresponding postdominator tree" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            PostDominatorTree(Set(3,4).foreach, foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("postdominator tree computed in "+t.toSeconds) }
+        dt.dom(0) should be(1)
+        dt.dom(1) should be(5)
+        dt.dom(2) should be(4)
+        dt.dom(3) should be(5)
+        dt.dom(4) should be(5)
+        
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 1,0))
+        
+        ns = Nil
+        dt.foreachDom(2, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 4))
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a graph with a cycle" should "yield the correct postdominators" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            PostDominatorTree(Set(3,4).foreach, foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(3)
+        dt.dom(2) should be(1)
+        dt.dom(0) should be(5)
+
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 0))     
+        
+        ns = Nil
+        dt.foreachDom(1, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 3))
+        
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
 
 }
 

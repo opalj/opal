@@ -41,6 +41,7 @@ import org.opalj.graphs.Node
 import org.opalj.graphs.MutableNode
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
+import org.opalj.graphs.PostDominatorTree
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -171,20 +172,12 @@ trait RecordCFG
     }
     
     def postDominatorTree: DominatorTree = {
-      // reverse flowgraph
-      val StartNode = code.instructions.size
-      val foreachSucc: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒  n match {
-        case StartNode ⇒ allExitPCs.foreach
-        case _ ⇒ foreachPredecessorOf(n)
-      }
-      val foreachPred: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
-        if(allExitPCs contains n) {
-          Set(StartNode).foreach
-        } else {
-          foreachSuccessorOf(n)
-        }
-      }
-      DominatorTree(StartNode,foreachSucc,foreachPred,StartNode)
+      PostDominatorTree(
+          allExitPCs.foreach,
+          foreachSuccessorOf,
+          foreachPredecessorOf,
+          code.instructions.size-1
+      )
     }
 
     /**
