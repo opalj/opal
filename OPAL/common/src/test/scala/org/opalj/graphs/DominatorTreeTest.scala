@@ -52,7 +52,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
 
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 0)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 0)
         } { t ⇒ info("dominators computed in "+t.toSeconds) }
         var ns: List[Int] = null
 
@@ -66,13 +66,34 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
+    
+    "a graph with just one custom node" should "result in a dominator tree with a single node" in {
+        val g = Graph.empty[Int] += 7
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+
+        val dt = time {
+            DominatorTree(7, foreachSuccessor, foreachPredecessor, 7)
+        } { t ⇒ info("dominators computed in "+t.toSeconds) }
+        var ns: List[Int] = null
+
+        ns = Nil
+        dt.foreachDom(7, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(7))
+
+        ns = Nil
+        dt.foreachDom(7, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(Nil)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
         val g = Graph.empty[Int] += (0 → 1)
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
@@ -85,12 +106,32 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
         dt.dom(1) should be(0)
         dt.dom(2) should be(1)
         dt.dom(3) should be(1)
         dt.dom(4) should be(1)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a tree with a custom start node" should "result in a corresponding dominator tree" in {
+        val g = Graph.empty[Int] += (5 → 0) += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+        dt.dom(0) should be(5)
+        dt.dom(1) should be(0)
+        dt.dom(2) should be(1)
+        dt.dom(3) should be(1)
+        dt.dom(4) should be(2)
+        
+        var ns: List[Int] = Nil
+        dt.foreachDom(4, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 0, 1, 2, 4))
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
@@ -100,7 +141,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
@@ -110,16 +151,45 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
+    
+    "a graph with a cycle and custom start node" should "correctly be resolved" in {
+        val g = Graph.empty[Int] += (5 → 1) += (1 → 2) += (1 → 3) += (5 → 4) += (2 → 1)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(5)
+        dt.dom(2) should be(1)
+        dt.dom(3) should be(1)
+        dt.dom(4) should be(5)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
 
     "a graph with a cycle related to the root node" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 0)
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+
+    "a graph with a cycle related to a custom root node" should "correctly be resolved" in {
+        val g = Graph.empty[Int] += (2 → 1) += (1 → 2)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            DominatorTree(2, foreachSuccessor, foreachPredecessor, 2)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(2)
 
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
@@ -129,7 +199,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 20)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 20)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(3) should be(8)
@@ -151,7 +221,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 128)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 128)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         var ns: List[Int] = Nil
@@ -171,7 +241,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
             lastI = i
         }
         val dt = time {
-            DominatorTree(foreachSuccessor, foreachPredecessor, 65000)
+            DominatorTree(0, foreachSuccessor, foreachPredecessor, 65000)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
         var ns: List[Int] = null
 
@@ -187,6 +257,78 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         dt.foreachDom(60000, reflexive = false) { n ⇒ ns = n :: ns }
         ns should be(Range(0, 60000, 1).toList)
 
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a graph with just one node" should "result in a postdominator tree with a single node" in {
+        val g = Graph.empty[Int] += 0
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        
+        val dt = time {
+            PostDominatorTree(Set(0).foreach, foreachSuccessor, foreachPredecessor, 0)
+        } { t ⇒ info("postdominators computed in "+t.toSeconds) }
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(1,0))
+
+        ns = Nil
+        dt.foreachDom(0, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(1))
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a simple tree" should "result in a corresponding postdominator tree" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            PostDominatorTree(Set(3,4).foreach, foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("postdominator tree computed in "+t.toSeconds) }
+        dt.dom(0) should be(1)
+        dt.dom(1) should be(5)
+        dt.dom(2) should be(4)
+        dt.dom(3) should be(5)
+        dt.dom(4) should be(5)
+        
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 1,0))
+        
+        ns = Nil
+        dt.foreachDom(2, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 4))
+
+        //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
+    }
+    
+    "a graph with a cycle" should "yield the correct postdominators" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val dt = time {
+            PostDominatorTree(Set(3,4).foreach, foreachSuccessor, foreachPredecessor, 4)
+        } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
+
+        dt.dom(1) should be(3)
+        dt.dom(2) should be(1)
+        dt.dom(0) should be(5)
+
+        var ns: List[Int] = null
+        
+        ns = Nil
+        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 0))     
+        
+        ns = Nil
+        dt.foreachDom(1, reflexive = false) { n ⇒ ns = n :: ns }
+        ns should be(List(5, 3))
+        
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 

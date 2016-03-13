@@ -41,16 +41,16 @@ import org.opalj.collection.mutable.IntArrayStack
  * 			knowledge is necessary to determine which elements of the array contain useful
  * 			information.
  */
-class DominatorTree private (idom: Array[Int]) {
+class DominatorTree private (idom: Array[Int], startNode: Int) {
 
     /**
      * Returns the immediate dominator of the node with the given id.
      *
-     * @note The root node with the id 0 does not have an immediate dominator!
+     * @note The root node does not have an immediate dominator!
      */
     final def dom(n: Int): Int = {
-        if (n == 0) {
-            val errorMessage = "the root node (id=0) does not have an immediate dominator"
+        if (n == startNode) {
+            val errorMessage = "the root node does not have an immediate dominator"
             throw new IllegalArgumentException(errorMessage)
         }
 
@@ -61,15 +61,16 @@ class DominatorTree private (idom: Array[Int]) {
      * Iterates over all dominator nodes of the given node. Iteration starts with the immediate
      * dominator of the given node if reflexive is `false` and starts with the node itself
      * if reflexive is `true`.
+     * For postdominators, it includes an extra node outside the range of valid nodes.
      */
     final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
-        if (n > 0 || reflexive) {
+        if (n != startNode || reflexive) {
             var c = if (reflexive) n else idom(n)
-            while (c > 0) {
+            while (c != startNode) {
                 f(c)
                 c = idom(c)
             }
-            f(0)
+            f(startNode)
         }
     }
 
@@ -120,6 +121,40 @@ class DominatorTree private (idom: Array[Int]) {
 }
 
 /**
+ * Factory to compute[[DominatorTree]]s representing postdominators.
+ *
+ * @author Stephan Neumann
+ */
+object PostDominatorTree {
+    def apply(
+        foreachExitNode:      (Int ⇒ Unit) ⇒ Unit,
+        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNodeId:            Int
+    ): DominatorTree = {
+      // Introduce artificial start node
+      val StartNode = maxNodeId + 1
+      // Reverse flowgraph
+      val foreachSucc: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒  n match {
+        case StartNode ⇒ foreachExitNode
+        case _ ⇒ foreachPredecessorOf(n)
+      }
+      val foreachPred: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+        def isExitNode(n: Int): Boolean = {
+          foreachExitNode {e ⇒ if(e == n) return true}
+          false
+        }
+        if(isExitNode(n)) {
+          Set(StartNode).foreach
+        } else {
+          foreachSuccessorOf(n)
+        }
+      }
+      DominatorTree(StartNode, foreachSucc, foreachPred, StartNode)
+    }
+}
+
+/**
  * Factory to compute[[DominatorTree]]s.
  *
  * @author Stephan Neumann
@@ -130,8 +165,7 @@ object DominatorTree {
     /**
      * Computes the immediate dominators for each node of a given graph where each node
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
-     * [0..maxNodeId]; the unique root node of the graph has to have the id 0,
-     * but not all ids need to be used.
+     * [0..maxNodeId], although not all ids need to be used.
      *
      * @param foreachSuccessorOf A function that given a node executes the given function for
      * 			each direct successor.
@@ -152,6 +186,7 @@ object DominatorTree {
      * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
      */
     def apply(
+        startNode:            Int,
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNodeId:            Int
@@ -170,7 +205,7 @@ object DominatorTree {
 
         // Step 1 (assign dfsnum)
         val nodes = new IntArrayStack((maxNodeId + 1) / 4)
-        nodes.push(0)
+        nodes.push(startNode)
         while (nodes.nonEmpty) {
             val v = nodes.pull
 
@@ -242,7 +277,7 @@ object DominatorTree {
             if (wParentBucket != null) {
                 for (v ← wParentBucket) {
                     val u = eval(v)
-                    dom(v) = if (semi(u) < semi(v)) u else wParent; //not inv true & false
+                    dom(v) = if (semi(u) < semi(v)) u else wParent;
                 }
                 bucket(wParent) = null
             }
@@ -254,12 +289,12 @@ object DominatorTree {
         while (j <= n) {
             val w = vertex(j)
             if (dom(w) != vertex(semi(w))) {
-                dom(w) = dom(dom(w)) //not inv. false & true
+                dom(w) = dom(dom(w))
             }
             j = j + 1
         }
 
-        new DominatorTree(dom)
+        new DominatorTree(dom, startNode)
     }
 
 }
