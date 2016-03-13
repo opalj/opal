@@ -61,7 +61,7 @@ private[fpcf] object Result { private[fpcf] final val id = 3 }
  */
 case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult {
 
-    private[fpcf] final val id = ImmediateResult.id
+    private[fpcf] final def id = ImmediateResult.id
 
 }
 private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
@@ -90,7 +90,7 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  */
 case class ImmediateMultiResult(properties: ComputationResults) extends PropertyComputationResult {
 
-    private[fpcf] final val id = ImmediateMultiResult.id
+    private[fpcf] final def id = ImmediateMultiResult.id
 
 }
 private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
@@ -121,6 +121,12 @@ case class IntermediateResult(
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
+
+    assert(
+        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
+        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
+            "contains duplicate entries (E - PK pairs)!"
+    )
 
     private[fpcf] final def id = IntermediateResult.id
 
@@ -214,4 +220,3 @@ private[fpcf] object SuspendedPC {
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }
-
