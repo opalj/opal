@@ -77,6 +77,7 @@ trait RecordCFG
     private[this] var predecessors: Array[UShortSet] = _
     private[this] var exitPCs: UShortSet = _
     private[this] var theDominatorTree: DominatorTree = _
+    private[this] var thePostDominatorTree: DominatorTree = _
 
     abstract override def initProperties(
         code:             Code,
@@ -92,6 +93,7 @@ trait RecordCFG
         // interpretation was (successfully) performed!
         predecessors = null
         theDominatorTree = null
+        thePostDominatorTree = null
 
         super.initProperties(code, joinInstructions, initialLocals)
     }
@@ -172,12 +174,23 @@ trait RecordCFG
     }
 
     def postDominatorTree: DominatorTree = {
+        var thePostDominatorTree = this.thePostDominatorTree
+        if (thePostDominatorTree eq null) synchronized {
+            thePostDominatorTree = this.thePostDominatorTree
+            if (thePostDominatorTree eq null) {
+                thePostDominatorTree =
                     PostDominatorTree(
                         allExitPCs.contains,
                         allExitPCs.foreach,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         code.instructions.size - 1
+                    )
+                this.thePostDominatorTree = thePostDominatorTree
+            }
+        }
+        thePostDominatorTree
+
     }
 
     /**
