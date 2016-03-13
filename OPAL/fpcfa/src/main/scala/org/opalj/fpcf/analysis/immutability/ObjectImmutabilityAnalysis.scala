@@ -76,7 +76,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         @inline def directSubclasses(): Traversable[ClassFile] =
             classHierarchy.directSubtypesOf(cf.thisType).view.
                 map(ot ⇒ project.classFile(ot)).
-                collect { case Some(cf) ⇒ cf }
+                collect { case Some(cf) ⇒ cf }.force
 
         @inline def createIncrementalResult(
             result:               PropertyComputationResult,
@@ -84,7 +84,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         ): IncrementalResult[ClassFile] = {
             IncrementalResult(
                 result,
-                directSubclasses().map { c ⇒
+                directSubclasses() map { c ⇒
                     (determineObjectImmutability(cf, superClassMutability) _, c)
                 }
             )
@@ -202,7 +202,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                         if (dependees.size == 1) // we have no other dependencies than the current one
                             Result(cf, ImmutableObject)
                         else {
-                            dependees = dependees.filter(_.e ne e)
+                            dependees = dependees.filter(_.e ne e).toSet
                             IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
                         }
                 }

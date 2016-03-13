@@ -123,8 +123,8 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                 assert(
                                     previousDependencies != dependencies ||
                                         previousJoinedImmutability != joinedImmutability,
-                                    s"${cf.thisType.toJava}:::$e($p): dependencies and result were not updated: "+
-                                        s"$previousDependencies => $dependencies; "+
+                                    s"${cf.thisType.toJava}:::\n$e($p):\ndependencies and result were not updated:\n"+
+                                        s"$previousDependencies => $dependencies;\n"+
                                         s"$previousJoinedImmutability => $joinedImmutability"
                                 )
                                 IntermediateResult(cf, joinedImmutability, dependencies, c)
@@ -137,16 +137,27 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             Result(cf, MutableType)
 
                         case UnknownTypeImmutability ⇒
+                            var updated = false
                             dependencies = dependencies map {
-                                case EPK(`e`, _) ⇒ EP(e.asInstanceOf[ClassFile], UnknownTypeImmutability)
-                                case d           ⇒ d
+                                case EPK(dependeeE, _) if dependeeE eq e ⇒
+                                    updated = true
+                                    EP(e.asInstanceOf[ClassFile], UnknownTypeImmutability)
+                                case d ⇒
+                                    d
                             }
-                            assert(joinedImmutability eq UnknownTypeImmutability)
+                            assert(
+                                updated,
+                                s"${cf.thisType.toJava}: didn't find the dependeeE $e in ${dependencies.mkString("(", ",", ")")}"
+                            )
+                            assert(
+                                joinedImmutability eq UnknownTypeImmutability,
+                                s"the previous joined immutability was $joinedImmutability but it was expected to be UnknownTypeImmutability"
+                            )
                             assert(
                                 previousDependencies != dependencies ||
                                     previousJoinedImmutability != joinedImmutability,
-                                s"${cf.thisType.toJava}:::$e($p): dependencies and result were not updated: "+
-                                    s"$previousDependencies => $dependencies; "+
+                                s"${cf.thisType.toJava}:\n$e($p):\ndependencies and result were not updated:\n"+
+                                    s"$previousDependencies => $dependencies;\n"+
                                     s"$previousJoinedImmutability => $joinedImmutability"
                             )
                             IntermediateResult(cf, joinedImmutability, dependencies, c)
@@ -159,8 +170,9 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             nextResult()
                         case AtLeastConditionallyImmutableType ⇒
                             dependencies = dependencies map {
-                                case EPK(`e`, _) | EP(`e`, _) ⇒ EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
-                                case d                        ⇒ d
+                                case EPK(dependeeE, _) if dependeeE eq e ⇒ EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
+                                case EP(dependeeE, _) if dependeeE eq e  ⇒ EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
+                                case d                                   ⇒ d
                             }
                             nextResult()
                     }
@@ -202,6 +214,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
         /*just an
          *optimization: */ project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
+
         ps <||< (
             { case cf: ClassFile if !mutableTypes.contains(cf) && !(cf.thisType eq ObjectType.Object) ⇒ cf },
             analysis.determineTypeImmutabilityApp

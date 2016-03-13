@@ -63,7 +63,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore.debug = false
+        projectStore.debug = true
 
         // We immediately also schedule the purity analysis to improve the
         // parallelization!

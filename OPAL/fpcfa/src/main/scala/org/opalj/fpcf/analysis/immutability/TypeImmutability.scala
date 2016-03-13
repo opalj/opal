@@ -45,7 +45,10 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  *
  * @author Michael Eichberg
  */
-sealed trait TypeImmutability extends Property with TypeImmutabilityPropertyMetaInformation {
+sealed trait TypeImmutability
+        extends Property
+        with TypeImmutabilityPropertyMetaInformation
+        with scala.math.Ordered[TypeImmutability] {
 
     /**
      * Returns the key used by all `TypeImmutability` properties.
@@ -94,6 +97,14 @@ case object ImmutableType extends TypeImmutability {
         else
             other
     }
+
+    def compare(that: TypeImmutability) = {
+        val self = this
+        that match {
+            case `self` ⇒ 0
+            case _      ⇒ 1
+        }
+    }
 }
 
 case object UnknownTypeImmutability extends TypeImmutability {
@@ -108,6 +119,13 @@ case object UnknownTypeImmutability extends TypeImmutability {
             this
     }
 
+    def compare(that: TypeImmutability) = {
+        val self = this
+        that match {
+            case `self` ⇒ 0
+            case _      ⇒ -1
+        }
+    }
 }
 
 case object ConditionallyImmutableType extends TypeImmutability {
@@ -119,6 +137,15 @@ case object ConditionallyImmutableType extends TypeImmutability {
         other match {
             case MutableType | UnknownTypeImmutability ⇒ other
             case _                                     ⇒ this
+        }
+    }
+
+    def compare(that: TypeImmutability) = {
+        val self = this
+        that match {
+            case `self` ⇒ 0
+            case UnknownTypeImmutability | AtLeastConditionallyImmutableType ⇒ 1
+            case _ ⇒ -1
         }
     }
 
@@ -136,6 +163,15 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
         }
     }
 
+    def compare(that: TypeImmutability) = {
+        val self = this
+        that match {
+            case `self`                  ⇒ 0
+            case UnknownTypeImmutability ⇒ 1
+            case _                       ⇒ -1
+        }
+    }
+
 }
 
 case object MutableType extends TypeImmutability {
@@ -144,5 +180,13 @@ case object MutableType extends TypeImmutability {
     final val isConditionallyImmutable = false
 
     def join(other: TypeImmutability): this.type = this
+
+    def compare(that: TypeImmutability) = {
+        val self = this
+        that match {
+            case `self` ⇒ 0
+            case _      ⇒ throw new IllegalArgumentException
+        }
+    }
 
 }
