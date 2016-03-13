@@ -53,7 +53,7 @@ class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with Pro
  */
 object PropertyKey {
 
-    private[this] val lock = new ReentrantReadWriteLock
+    private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames =
         ArrayBuffer.empty[String]
@@ -68,7 +68,7 @@ object PropertyKey {
         fallbackProperty:        (PropertyStore, Entity) ⇒ P,
         cycleResolutionStrategy: (PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]
     ): PropertyKey[P] = {
-        withWriteLock(lock) {
+        withWriteLock(keysLock) {
             if (propertyKeyNames.contains(name))
                 throw new IllegalArgumentException(s"the property kind name $name is already used")
 
@@ -119,14 +119,14 @@ object PropertyKey {
     // ===============================================
     //
 
-    def name(id: Int): String = withReadLock(lock) { propertyKeyNames(id) }
+    def name(id: Int): String = withReadLock(keysLock) { propertyKeyNames(id) }
 
     def fallbackProperty[P <: Property](
         ps: PropertyStore,
         e:  Entity,
         pk: PropertyKey[P]
     ): P = {
-        withReadLock(lock) {
+        withReadLock(keysLock) {
             fallbackProperties(pk.id)(ps, e).asInstanceOf[P]
         }
     }
@@ -135,13 +135,12 @@ object PropertyKey {
         ps:   PropertyStore,
         epks: Iterable[SomeEPK]
     ): Iterable[PropertyComputationResult] = {
-        withReadLock(lock) {
+        withReadLock(keysLock) {
             val epk = epks.head
             cycleResolutionStrategies(epk.pk.id)(ps, epks)
         }
     }
 
-    private[fpcf] def maxId = withReadLock(lock) { lastKeyId }
+    private[fpcf] def maxId = withReadLock(keysLock) { lastKeyId }
 
 }
-

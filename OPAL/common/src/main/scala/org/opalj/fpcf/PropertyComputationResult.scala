@@ -109,8 +109,13 @@ object NoEntities extends ImmediateMultiResult(Traversable.empty)
  *
  * All current computations that depend on the property of the entity will be invoked.
  *
- * @param dependees The list of entity/property (kind) pairs the analysis depends on. Each
+ * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
  * 		entity/property kind must occur at most once in the list.
+ *
+ * @param c
+ * 		The function which is called if a property of any of the dependees is updated.
+ * 		`c` does not have to be thread safe unless the same instance of c is returned multiple
+ * 		times for different entities (`e`).
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  * 		before (using one of the `apply` functions of the property store.)

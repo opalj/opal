@@ -323,7 +323,7 @@ class PropertyStore private (
 
         "PropertyStore(\n"+
             s"\tentitiesCount=${data.size()}\n"+
-            s"\tscheduledComputations=${Tasks.scheduledComputations}\n"+
+            s"\t(still)scheduledComputations=${Tasks.scheduledComputations}\n"+
             s"\texecutedComputations=${Tasks.executedComputations}\n"+
             s"\tpropagations=${propagationCount.get}\n"+
             s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
@@ -1603,7 +1603,7 @@ class PropertyStore private (
     /**
      * Processes the result.
      *
-     * @param updateChain `true` if during the processing of a result (e.g., an
+     * @param forceDependerNotification `true` if during the processing of a result (e.g., an
      * 		[[IntermediateResult]]) the property store determines that a value has changed
      * 		and immediately continues (not reschedules!) the execution of the analysis.
      */
@@ -1681,9 +1681,9 @@ class PropertyStore private (
                 } else {
                     // USELESS INTERMEDIATE UPDATES CAN HAPPEN IF:
                     // a -> b and a -> c
-                    // 1. b is updated X such that a has a new property P
-                    // 2. c is updated Y such that a has still the property P
-                    // But given that a was triggered it need to reregister the listeners!
+                    // 1. b is updated such that a has a new property P
+                    // 2. c is updated such that a has still the property P
+                    // But given that c was triggered it need to reregister the listeners!
 
                     // We are either updating or setting a property or changing the state of the
                     // property => intermediate result => final result
@@ -1727,7 +1727,7 @@ class PropertyStore private (
                                 )
                                 os = Nil
                             }
-                        // WE STILL NEED TO INFORM ALL DEPENDEES TO GIVE THEM THE
+                        // TODO FIX OR REMOVE THIS COMMENT:::: WE STILL NEED TO INFORM ALL DEPENDEES TO GIVE THEM THE
                         // CHANCE TO REREGISTER THEIR LISTENERS!
 
                         case FallbackUpdate.id ⇒
@@ -1847,7 +1847,7 @@ class PropertyStore private (
                         val pk = p.key
                         val dependerEPK = EPK(e, pk)
                         // we use ONE observer to make sure that the continuation function
-                        // is called at most once independent of how many entities are
+                        // is called at most once - independent of how many entities are
                         // actually observed
                         val o = new DependeePropertyObserver(dependerEPK, clearDependeeObservers) {
                             def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
@@ -1878,24 +1878,7 @@ class PropertyStore private (
                                     false
 
                                 case PropertyAndObservers(currentDependeeP, dependeeOs) ⇒
-                                    if (!eOptionP.hasProperty || eOptionP.p != currentDependeeP) {
-                                        val updateType =
-                                            if (dependeeOs eq null)
-                                                FinalUpdate
-                                            else
-                                                IntermediateUpdate
-                                        // => a/the property is now available or has changed!
-                                        boundC = new (() ⇒ PropertyComputationResult) {
-                                            def apply(): PropertyComputationResult = {
-                                                c(dependeeE, currentDependeeP, updateType)
-                                            }
-                                            override def toString: String = {
-                                                val ep = EP(dependeeE, currentDependeeP)
-                                                s"Continuation(dependeeEP=$ep,$updateType)"
-                                            }
-                                        }
-                                        true
-                                    } else if (dependeeOs eq null) {
+                                    if (dependeeOs eq null) {
                                         // => the state of the property has changed => final
                                         boundC = new (() ⇒ PropertyComputationResult) {
                                             def apply(): PropertyComputationResult = {
@@ -1904,6 +1887,18 @@ class PropertyStore private (
                                             override def toString: String = {
                                                 val ep = EP(dependeeE, currentDependeeP)
                                                 s"Continuation(dependeeEP=$ep,FinalUpdate)"
+                                            }
+                                        }
+                                        true
+                                    } else if (!eOptionP.hasProperty || eOptionP.p != currentDependeeP) {
+                                        // => a/the property is now available or has changed!
+                                        boundC = new (() ⇒ PropertyComputationResult) {
+                                            def apply(): PropertyComputationResult = {
+                                                c(dependeeE, currentDependeeP, IntermediateUpdate)
+                                            }
+                                            override def toString: String = {
+                                                val ep = EP(dependeeE, currentDependeeP)
+                                                s"Continuation(dependeeEP=$ep,IntermediateUpdate)"
                                             }
                                         }
                                         true
@@ -1928,6 +1923,20 @@ class PropertyStore private (
                     if (boundC ne null) {
                         try {
                             val newResult = boundC()
+
+                            assert(
+                                newResult.id != IntermediateUpdate.id || {
+                                    newResult.asInstanceOf[IntermediateResult].dependees.forall { newEP ⇒
+                                        dependees.exists { oldEP ⇒
+                                            (newEP.e eq oldEP.e) && (oldEP.p.isRefineable) &&
+                                                (!oldEP.p.isInstanceOf[Ordered[_]] ||
+                                                    oldEP.p.asInstanceOf[Ordered[Property]].compare(newEP.p) <= 0)
+                                        }
+                                    }
+                                },
+                                s"the new result $newResult referes to older results than the old result $r"
+                            )
+
                             if (debug) logDebug(
                                 "analysis progress",
                                 s"immediately continued computation of $e(${p}) => $boundC\n"+
@@ -1976,16 +1985,16 @@ class PropertyStore private (
                     }
 
                     val eps = data.get(dependeeE)
-                    val lock = eps.l
-                    val properties = eps.ps
+                    val dependeeLock = eps.l
+                    val dependeePS = eps.ps
                     val dependeePKId = dependeePK.id
-                    val p = withWriteLock(lock) {
-                        properties(dependeePKId) match {
+                    val p = withWriteLock(dependeeLock) {
+                        dependeePS(dependeePKId) match {
                             case null ⇒
                                 // this computation is the first one which is interested
                                 // in the property
                                 val os = Buffer(createAndRegisterObserver())
-                                properties(dependeePKId) = new PropertyAndObservers(null, os)
+                                dependeePS(dependeePKId) = new PropertyAndObservers(null, os)
                                 null
 
                             case PropertyAndObservers(dependeeP, dependeeOs) ⇒
