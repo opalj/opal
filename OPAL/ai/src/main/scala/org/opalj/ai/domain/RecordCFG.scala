@@ -160,24 +160,24 @@ trait RecordCFG
             if (theDominatorTree eq null) {
                 theDominatorTree =
                     DominatorTree(
-                        0,
+                        startNode = 0,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
-                        code.instructions.size - 1
+                        maxNode = code.instructions.size - 1
                     )
                 this.theDominatorTree = theDominatorTree
             }
         }
         theDominatorTree
     }
-    
+
     def postDominatorTree: DominatorTree = {
-      PostDominatorTree(
-          allExitPCs.foreach,
-          foreachSuccessorOf,
-          foreachPredecessorOf,
-          code.instructions.size-1
-      )
+                    PostDominatorTree(
+                        allExitPCs.contains,
+                        allExitPCs.foreach,
+                        foreachSuccessorOf,
+                        foreachPredecessorOf,
+                        code.instructions.size - 1
     }
 
     /**
