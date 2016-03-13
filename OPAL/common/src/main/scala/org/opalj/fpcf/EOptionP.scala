@@ -45,6 +45,8 @@ trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def pk: PropertyKey[P]
 
+    def toEPK: EPK[E, P]
+
     /**
      * @return `true` if the entity is associated with a property.
      */
@@ -62,7 +64,11 @@ trait EOptionP[+E <: Entity, +P <: Property] {
 
 object EOptionP {
 
-    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P], pOption: Option[P]): EOptionP[E, P] = {
+    def apply[E <: Entity, P <: Property](
+        e:       E,
+        pk:      PropertyKey[P],
+        pOption: Option[P]
+    ): EOptionP[E, P] = {
         pOption match {
             case Some(p) ⇒ EP(e, p)
             case None    ⇒ EPK(e, pk)

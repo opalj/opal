@@ -39,12 +39,13 @@ package org.opalj.fpcf
 final class EPK[+E <: Entity, +P <: Property](val e: E, val pk: PropertyKey[P])
         extends EOptionP[E, P]
         with Product2[E, PropertyKey[P]] {
+    def _1 = e
+    def _2 = pk
 
     def hasProperty: Boolean = false
     def p: Nothing = throw new UnsupportedOperationException()
 
-    def _1 = e
-    def _2 = pk
+    def toEPK: this.type = this
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -55,7 +56,7 @@ final class EPK[+E <: Entity, +P <: Property](val e: E, val pk: PropertyKey[P])
 
     override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK[_, _]]
 
-    override val hashCode: Int = e.hashCode() * 511 + pk.id
+    override def hashCode: Int = e.hashCode() * 511 + pk.id
 
     override def toString: String = s"EPK($e,${PropertyKey.name(pk.id)})"
 }

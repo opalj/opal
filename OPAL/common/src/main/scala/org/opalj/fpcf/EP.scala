@@ -56,6 +56,8 @@ final class EP[+E <: Entity, +P <: Property](val e: E, val p: P)
 
     def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
+    def toEPK: EPK[E, P] = EPK(e, pk)
+
     override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
     override def toString: String = s"EP($e,$p)"
@@ -68,8 +70,7 @@ final class EP[+E <: Entity, +P <: Property](val e: E, val p: P)
  */
 object EP {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): EP[E, P] =
-        new EP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, p: P): EP[E, P] = new EP(e, p)
 
     def unapply[E <: Entity, P <: Property](that: EP[E, P]): Option[(E, P)] = {
         that match {
