@@ -150,16 +150,16 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
         val incompleteDependencies: Traversable[EOptionP[Entity, Property]] =
             fieldTypesImmutability.filterNot { eOptP ⇒
-                eOptP.hasProperty && (eOptP.p eq ImmutableType)
+                eOptP.hasProperty && (eOptP.p == ImmutableType)
             }
 
         if (incompleteDependencies.isEmpty) {
-            if (superClassMutability eq ImmutableObject) {
+            if (superClassMutability == ImmutableObject) {
                 createIncrementalResult(
                     ImmediateResult(cf, superClassMutability),
                     superClassMutability
                 )
-            } else if (superClassMutability eq AtLeastConditionallyImmutableObject) {
+            } else if (superClassMutability == AtLeastConditionallyImmutableObject) {
                 val dependees = Traversable(EP(superClassFile, superClassMutability))
                 val c = (e: Entity, p: Property, ut: UserUpdateType) ⇒ {
                     assert(
@@ -181,7 +181,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
             // We have dependencies to a type for which the immutability information
             // is not yet complete
             var dependees: Set[EOptionP[Entity, Property]] = incompleteDependencies.toSet[EOptionP[Entity, Property]]
-            if (superClassMutability eq AtLeastConditionallyImmutableObject)
+            if (superClassMutability == AtLeastConditionallyImmutableObject)
                 dependees = dependees + EP(superClassFile, superClassMutability)
             def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
