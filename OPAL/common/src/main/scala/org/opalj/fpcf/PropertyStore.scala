@@ -281,32 +281,33 @@ class PropertyStore private (
         var registeredObservers = 0
         val properties = new StringBuilder
         for { (e, eps) ← entries } {
-            val ps = eps.ps.entries.filter(pk ⇒ pk._2 ne null).map {
-                case (pkId, pos) ⇒
-                    val p = pos.p
-                    val os = pos.os
-                    val observedByCount = if (os eq null) 0 else os.size
-                    registeredObservers += observedByCount
-                    val observingCount =
-                        if (p eq null)
-                            "N/A"
-                        else {
-                            val observers = store.observers.get(EPK(e, p.key))
-                            if (observers ne null)
-                                observers.size.toString()
-                            else
-                                "0"
-                        }
-                    (
-                        if (p eq null) {
-                            unsatisfiedPropertyDependencies += 1
-                            s"$pkId#<TBD: ${PropertyKey.name(pkId)}>"
-                        } else {
-                            perEntityPropertiesCount += 1
-                            perPropertyKeyEntities(pkId) = perPropertyKeyEntities(pkId) + 1
-                            s"$pkId#$p[${p.key}]"
-                        }
-                    ) + s"[observedBy=$observedByCount,observing=$observingCount]"
+            val ps = eps.ps.entries.filter(pk ⇒ pk._2 ne null).map { e ⇒
+                val (pkId, pos) = e
+                val p = pos.p
+                val os = pos.os
+                val observedByCount = if (os eq null) 0 else os.size
+                registeredObservers += observedByCount
+                val observingCount = {
+                    if (p eq null)
+                        "N/A"
+                    else {
+                        val observers = store.observers.get(EPK(e, p.key))
+                        if (observers ne null)
+                            observers.size
+                        else
+                            0
+                    }
+                }
+                (
+                    if (p eq null) {
+                        unsatisfiedPropertyDependencies += 1
+                        s"$pkId#<TBD: ${PropertyKey.name(pkId)}>"
+                    } else {
+                        perEntityPropertiesCount += 1
+                        perPropertyKeyEntities(pkId) = perPropertyKeyEntities(pkId) + 1
+                        s"$pkId#$p[${p.key}]"
+                    }
+                ) + s"[observedBy=$observedByCount,observing=$observingCount]"
             }
             if (printProperties && ps.nonEmpty) {
                 val s = ps.mkString("\t\t"+e.toString+" => {", ", ", "}\n")
@@ -521,27 +522,27 @@ class PropertyStore private (
     def apply[P <: Property](e: Entity, pk: PropertyKey[P]): Option[P] = {
         val pkId = pk.id
         val eps = data.get(e)
-        val properties = eps.ps
+        val ps = eps.ps
         val lock = eps.l
 
         @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): Some[P] = {
             // establish the happen before relation
             p.await()
-            Some(properties(pkId).p.asInstanceOf[P])
+            Some(ps(pkId).p.asInstanceOf[P])
         }
 
         accessEntity {
-            var pos = withReadLock(lock) { properties(pkId) }
+            var pos = withReadLock(lock) { ps(pkId) }
             if (pos eq null) {
                 // => the property is not (yet) computed;
                 // let's check if we have a registered lazy or direct property computation function
                 val lpc = theLazyPropertyComputations(pkId)
                 if (lpc ne null) withWriteLock(lock) {
                     // pos is not null if we have a property or if the property is currently computed
-                    pos = properties(pkId)
+                    pos = ps(pkId)
                     if (pos eq null) {
-                        val ps = new PropertyAndObservers(PropertyIsLazilyComputed, new Buffer)
-                        properties(pkId) = ps
+                        val pos = new PropertyAndObservers(PropertyIsLazilyComputed, new Buffer)
+                        ps(pkId) = pos
                         scheduleComputation(e, lpc)
                         None
                     } else {
@@ -553,11 +554,11 @@ class PropertyStore private (
                     val dpc = theDirectPropertyComputations(pkId)
                     if (dpc ne null) {
                         withWriteLock(lock) {
-                            pos = properties(pkId)
+                            pos = ps(pkId)
                             if (pos eq null) {
                                 // => no other thread is currently computing this property
                                 val computationLatch = new PropertyIsDirectlyComputed
-                                properties(pkId) = new PropertyAndObservers(computationLatch, null)
+                                ps(pkId) = new PropertyAndObservers(computationLatch, null)
                                 Left(computationLatch)
                             } else {
                                 // => either the property is now available or some other thread
@@ -803,7 +804,6 @@ class PropertyStore private (
                     s"did not set the property ${p} for $e, "+
                         s"because the entity already has a property or it is currently computed"
                 )
-
             }
         }
     }
@@ -1066,7 +1066,7 @@ class PropertyStore private (
                 (e, eps) ← entries
                 if eps.ps.values.exists { pos ⇒
                     val p = pos.p
-                    p != null && !p.isBeingComputed && propertyFilter(p)
+                    (p ne null) && !p.isBeingComputed && propertyFilter(p)
                 }
             } yield {
                 e
@@ -1651,14 +1651,14 @@ class PropertyStore private (
 
             val updateTypeId = updateType.id
             val eps = data.get(e)
-            val properties = eps.ps
+            val ps = eps.ps
 
             val os = withWriteLock(eps.l) {
                 // we first need to acquire the lock to avoid that a scheduled "on property change
                 // computation" is run before the property is actually updated
                 onPropertyComputations foreach { opc ⇒ scheduleRunnable { opc(e, p) } }
 
-                val pos = properties(pkId)
+                val pos = ps(pkId)
                 if (pos eq null) {
                     // No one was interested in this property so far...
                     (updateTypeId: @scala.annotation.switch) match {
@@ -1666,11 +1666,11 @@ class PropertyStore private (
                             // Note that it is possible to have a Final Update though the underlying
                             // property is refineable. This is the case whenever the analysis knows
                             // that no further refinement may happen (given the current program).
-                            properties(pkId) = new PropertyAndObservers(p, null)
+                            ps(pkId) = new PropertyAndObservers(p, null)
 
                         case IntermediateUpdate.id ⇒
                             assert(p.isRefineable, s"$e: intermediate update of a final property $p")
-                            properties(pkId) = new PropertyAndObservers(p, Buffer.empty)
+                            ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
 
                         case FallbackUpdate.id ⇒
                             val m = s"fallback property $p assigned to entity $e without dependers"
@@ -1698,7 +1698,7 @@ class PropertyStore private (
                             )
                             assert(clearDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
-                            properties(pkId) = new PropertyAndObservers(p, null /* there will be no further observations */ )
+                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observations */ )
                             if (PropertyIsDirectlyComputed(oldP)) os = Nil /* => there are no observers */
 
                         case FinalUpdate.id ⇒
@@ -1707,7 +1707,7 @@ class PropertyStore private (
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
                             clearDependeeObservers(EPK(e, pk))
-                            properties(pkId) = new PropertyAndObservers(p, null /* there will be no furhter observations  */ )
+                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no furhter observations  */ )
 
                         case IntermediateUpdate.id ⇒
                             assert(
@@ -1719,16 +1719,15 @@ class PropertyStore private (
                                 s"$e: intermediate update using a final property $p"
                             )
                             if (oldP != p) {
-                                properties(pkId) = new PropertyAndObservers(p, Buffer.empty)
+                                ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
                             } else if (!forceDependerNotification) {
-                                if (debug) logDebug(
+                                //if (debug)
+                                logDebug(
                                     "analysis progress",
                                     s"useless intermediate update $e($oldP): $p"
                                 )
-                                os = Nil
+                                os = Nil // os will be non-null if we force depender notification
                             }
-                        // TODO FIX OR REMOVE THIS COMMENT:::: WE STILL NEED TO INFORM ALL DEPENDEES TO GIVE THEM THE
-                        // CHANCE TO REREGISTER THEIR LISTENERS!
 
                         case FallbackUpdate.id ⇒
                             // Fallback updates are only used in case a property of an entity
@@ -1749,7 +1748,7 @@ class PropertyStore private (
 
                             // We may still observe other entities... we have to clear
                             // these dependencies (e.g., if this is a fallback update)
-                            properties(pkId) = new PropertyAndObservers(p, null)
+                            ps(pkId) = new PropertyAndObservers(p, null)
                     }
                     os
                 }
@@ -1775,12 +1774,14 @@ class PropertyStore private (
             assert(p.isRefineable, s"$e: the final property $p is stored as an intermediate one")
 
             val pkId = p.key.id
-            val properties = data.get(e).ps
+            val ps = data.get(e).ps
+
+            if (debug) logDebug("analysis progress", s"storing intermediate property $e($p)")
 
             // implicitly locked: withWriteLock(eps.l) {
-            val pos = properties(pkId)
+            val pos = ps(pkId)
             if (pos eq null) {
-                properties(pkId) = new PropertyAndObservers(p, Buffer.empty)
+                ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
             } else {
                 val oldP = pos.p
                 assert(
@@ -1793,7 +1794,7 @@ class PropertyStore private (
                     s"$e is effectively final; the old property was ($oldP) and the new property is $p"
                 )
                 if (oldP != p) {
-                    properties(pkId) = new PropertyAndObservers(p, os)
+                    ps(pkId) = new PropertyAndObservers(p, os)
                 }
             }
             // }
@@ -1803,7 +1804,7 @@ class PropertyStore private (
         // PROCESSING RESULTS
         //
 
-        if (debug) logDebug("analysis progress", "analysis result: "+r)
+        if (debug) logDebug("analysis progress", s"analysis result $r($forceDependerNotification)")
         val resultId = r.id
         accessEntity {
             (resultId: @scala.annotation.switch) match {
@@ -1839,7 +1840,7 @@ class PropertyStore private (
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
 
-                    val accessedEntities = dependees.map(_.e) ++ Set(e)
+                    val accessedEntities = dependees.map(_.e) ++ Set(e) // make dependees a Seq
                     val boundC = withEntitiesWriteLocks(accessedEntities) {
                         assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
                         assert(p.isRefineable, s"intermediate result $r used to store final property $p")
@@ -1919,7 +1920,7 @@ class PropertyStore private (
                             update(e, p, IntermediateUpdate)
                         }
                         boundC
-                    }
+                    } // End of write lock for all written entities
                     if (boundC ne null) {
                         try {
                             val newResult = boundC()
@@ -2053,10 +2054,10 @@ object PropertyStore {
     ): PropertyStore = {
 
         val entitiesCount = entities.size
-        val map = new JIDMap[Entity, EntityProperties](entitiesCount)
+        val data = new JIDMap[Entity, EntityProperties](entitiesCount)
         var entityId = 0
-        entities foreach { e ⇒ map.put(e, new EntityProperties(entityId)); entityId += 1 }
-        new PropertyStore(map, isInterrupted, debug)
+        entities foreach { e ⇒ data.put(e, new EntityProperties(entityId)); entityId += 1 }
+        new PropertyStore(data, isInterrupted, debug)
     }
 
     /**
@@ -2124,8 +2125,8 @@ private[fpcf] object PropertyUnavailable {
 }
 
 /**
- * @param id This id is used to sort entities to acquire locks related to multiple entities in
- * 			a globally consistent order.
+ * @param id A globally unique id that is used to sort entities to acquire locks related to
+ * 			multiple entities in a globally consistent order.
  */
 private[fpcf] final class EntityProperties(
         final val id: Int,
@@ -2138,6 +2139,7 @@ private[fpcf] final class EntityProperties(
 }
 
 private[fpcf] object PropertiesOfEntity {
+
     def unapply(eps: EntityProperties): Some[Properties] = Some(eps.ps)
 
 }
