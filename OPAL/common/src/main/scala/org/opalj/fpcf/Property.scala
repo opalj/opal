@@ -54,9 +54,6 @@ trait Property extends PropertyMetaInformation {
      */
     def isFinal = !isRefineable
 
-    /**
-     *
-     */
     override def equals(other: Any): Boolean
 
     /**
@@ -88,8 +85,8 @@ private[fpcf] object PropertyIsBeingComputed {
  * All other processes just wait until the CountDownLatch is decremented.
  *
  * Recall that a direct property computation is executed by the thread that querys the thread and
- * that a direct property computation is always only allowed to depend on either previously computed
- * properties or properties whose computation must not have a dependency on the currently
+ * that a direct property computation is always only allowed to depend on either previously
+ * computed properties or properties whose computation must not have a dependency on the currently
  * computed property.
  */
 private[fpcf] final class PropertyIsDirectlyComputed
@@ -104,4 +101,3 @@ private[fpcf] object PropertyIsDirectlyComputed {
 private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
     type Self = PropertyIsLazilyComputed.type
 }
-

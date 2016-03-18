@@ -72,6 +72,8 @@ private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
  * A [[MultiResult]] is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
+ *
+ * The encapsulated results are not atomically set.
  */
 case class MultiResult(properties: ComputationResults) extends PropertyComputationResult {
 
