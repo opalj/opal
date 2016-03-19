@@ -767,10 +767,6 @@ class PropertyStore private (
         val pkId = pk.id
         accessStore {
             entries collect {
-                case (e, PropertiesOfEntity(ps)) if (ps(pkId) match {
-                    case PropertyUnavailable() ⇒ false
-                    case _                     ⇒ true
-                }) ⇒ EP(e, ps(pkId).p.asInstanceOf[P])
                 case (e, PropertiesOfEntity(ps)) if !isPropertyUnavailable(ps(pkId)) ⇒
                     EP(e, ps(pkId).p.asInstanceOf[P])
             }
@@ -1232,11 +1228,13 @@ class PropertyStore private (
             // pending computations that now can be activated.
             if (scheduled == 0) accessStore {
                 this.synchronized {
+
                     if (scheduled == 0 && cleanUpRequired) {
                         cleanUpRequired = false
                         // Let's check if we have some potentially refineable intermediate results.
                         if (debug) logDebug(
-                            "analysis progress", s"all $executed previously scheduled tasks have finished"
+                            "analysis progress",
+                            s"all $executed previously scheduled tasks have finished"
                         )
 
                         try {
@@ -1679,7 +1677,7 @@ class PropertyStore private (
                             throw new UnknownError(m)
 
                     }
-                    Nil
+                    Nil // <=> we have no observers
                 } else {
                     // USELESS INTERMEDIATE UPDATES CAN HAPPEN IF:
                     // a -> b and a -> c
@@ -1700,7 +1698,7 @@ class PropertyStore private (
                             )
                             assert(clearDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
-                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observations */ )
+                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observers */ )
                             if (PropertyIsDirectlyComputed(oldP)) os = Nil /* => there are no observers */
 
                         case FinalUpdate.id ⇒
@@ -1709,7 +1707,8 @@ class PropertyStore private (
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
                             clearDependeeObservers(EPK(e, pk))
-                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no furhter observations  */ )
+                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no
+                            further observers  */ )
 
                         case IntermediateUpdate.id ⇒
                             assert(
