@@ -75,12 +75,15 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ t = r.toSeconds }
 
+        projectStore.validate()
+
         val immutableClasses =
             projectStore.entities(ObjectImmutability.key).groupBy { _.p }
 
         val immutableClassesInfo =
             immutableClasses.values.flatten.
-                map(ep ⇒ ep._1.asInstanceOf[ClassFile].thisType.toJava+"=> "+ep.p).mkString("\n")
+                map(ep ⇒ ep._1.asInstanceOf[ClassFile].thisType.toJava+"=> "+ep.p).
+                toList.sorted.mkString("\n")
 
         BasicReport(immutableClassesInfo+"\n"+projectStore.toString(false)+"\nAnalysis time: "+t)
     }
