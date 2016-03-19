@@ -771,6 +771,8 @@ class PropertyStore private (
                     case PropertyUnavailable() ⇒ false
                     case _                     ⇒ true
                 }) ⇒ EP(e, ps(pkId).p.asInstanceOf[P])
+                case (e, PropertiesOfEntity(ps)) if !isPropertyUnavailable(ps(pkId)) ⇒
+                    EP(e, ps(pkId).p.asInstanceOf[P])
             }
         }
     }
@@ -1742,8 +1744,16 @@ class PropertyStore private (
                                 os ne null,
                                 s"the fallback property $p for $e is not required"
                             )
-                            if (debug)
-                                logDebug("analysis progress", s"using default property $p for $e")
+                            assert(
+                                clearDependeeObservers(EPK(e, pk)) == false,
+                                s"assigning fallback property $p to $e which has unsatisfied dependencies"
+                            )
+
+                            if (debug)                                logDebug(
+                                    "analysis progress",
+                                    s"using default property $p for $e"
+                                    )
+
                             effectiveDefaultPropertiesCount.incrementAndGet()
 
                             // We may still observe other entities... we have to clear
@@ -1832,18 +1842,15 @@ class PropertyStore private (
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                     handleResult(ir)
-                    npcs foreach { npc ⇒
-                        val (pc, e) = npc
-                        scheduleComputation(e, pc)
-                    }
+                    npcs foreach { npc ⇒                        val (pc, e) = npc;                         scheduleComputation(e, pc)                    }
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
+                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
+                    assert(p.isRefineable, s"intermediate result $r used to store final property $p")
 
                     val accessedEntities = dependees.map(_.e) ++ Set(e) // make dependees a Seq
                     val boundC = withEntitiesWriteLocks(accessedEntities) {
-                        assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
-                        assert(p.isRefineable, s"intermediate result $r used to store final property $p")
 
                         val pk = p.key
                         val dependerEPK = EPK(e, pk)
@@ -1940,7 +1947,9 @@ class PropertyStore private (
 
                             if (debug) logDebug(
                                 "analysis progress",
-                                s"immediately continued computation of $e(${p}) => $boundC\n"+
+                                s"immediately continued computation of $e(${p}) => \n\t$boundC\n"+
+                                    s"\told and new result are equal: ${newResult == r} "+
+                                    s"(forceDependerNotification=$forceDependerNotification)\n"+
                                     s"\told result: $r\n\tnew result: $newResult"
                             )
                             val newForceDependerNotification =
@@ -2024,6 +2033,10 @@ class PropertyStore private (
             }
         }
     }
+
+    private[this] def isPropertyUnavailable(pos: PropertyAndObservers): Boolean = {
+        (pos eq null) || { val p = pos.p; (p eq null) || p.isBeingComputed }
+    }
 }
 
 /**
@@ -2078,6 +2091,7 @@ object PropertyStore {
             }
         }
     }
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2116,17 +2130,9 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
 }
 
 /**
- * An extractor to match those properties that are not yet computed.
- */
-private[fpcf] object PropertyUnavailable {
-    def unapply(pos: PropertyAndObservers): Boolean = {
-        (pos eq null) || { val p = pos.p; (p eq null) || p.isBeingComputed }
-    }
-}
-
-/**
  * @param id A globally unique id that is used to sort entities to acquire locks related to
  * 			multiple entities in a globally consistent order.
+ * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(
         final val id: Int,
