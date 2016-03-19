@@ -1712,7 +1712,7 @@ class PropertyStore private (
 
                         case IntermediateUpdate.id ⇒
                             assert(
-                                (oldP eq null) || oldP.isBeingComputed || oldP.isRefineable,
+                                (oldP eq null) || oldP.isBeingComputed ||( oldP.isRefineable && (os ne null)),
                                 s"$e: impossible intermediate update of the old property $oldP with $p"
                             )
                             assert(
