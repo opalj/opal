@@ -76,7 +76,8 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
             // to (directly) compute the respective property.
             MutableType,
             // When we have a cycle all properties are necessarily at least conditionally
-            // immutable hence, we can leverage the "immutability"
+            // immutable hence, we can leverage the "immutability" of one of the members of
+            // the cycle and wait for the automatic propagation...
             ImmutableType
         )
 }
@@ -91,19 +92,12 @@ case object ImmutableType extends TypeImmutability {
     final val isMutable = false
     final val isConditionallyImmutable = false
 
-    def join(other: TypeImmutability): TypeImmutability = {
-        if (other eq ImmutableType)
-            this
-        else
-            other
+    def join(that: TypeImmutability): TypeImmutability = {
+        if (this == that) this else that
     }
 
     def compare(that: TypeImmutability) = {
-        val self = this
-        that match {
-            case `self` ⇒ 0
-            case _      ⇒ 1
-        }
+        if (this == that) 0 else 1
     }
 }
 
@@ -112,19 +106,12 @@ case object UnknownTypeImmutability extends TypeImmutability {
     final val isMutable = false
     final val isConditionallyImmutable = false
 
-    def join(other: TypeImmutability): TypeImmutability = {
-        if (other eq MutableType)
-            MutableType
-        else
-            this
+    def join(that: TypeImmutability): TypeImmutability = {
+        if (that == MutableType) MutableType else this
     }
 
     def compare(that: TypeImmutability) = {
-        val self = this
-        that match {
-            case `self` ⇒ 0
-            case _      ⇒ -1
-        }
+        if (this == that) 0 else -1
     }
 }
 
@@ -133,20 +120,20 @@ case object ConditionallyImmutableType extends TypeImmutability {
     final val isMutable = false
     final val isConditionallyImmutable = true
 
-    def join(other: TypeImmutability): TypeImmutability = {
-        other match {
-            case MutableType | UnknownTypeImmutability ⇒ other
+    def join(that: TypeImmutability): TypeImmutability = {
+        that match {
+            case MutableType | UnknownTypeImmutability ⇒ that
             case _                                     ⇒ this
         }
     }
 
     def compare(that: TypeImmutability) = {
-        val self = this
-        that match {
-            case `self` ⇒ 0
-            case UnknownTypeImmutability | AtLeastConditionallyImmutableType ⇒ 1
-            case _ ⇒ -1
-        }
+        if (this == that)
+            0
+        else if (that == UnknownTypeImmutability || that == AtLeastConditionallyImmutableType)
+            1
+        else
+            -1
     }
 
 }
@@ -164,12 +151,7 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
     }
 
     def compare(that: TypeImmutability) = {
-        val self = this
-        that match {
-            case `self`                  ⇒ 0
-            case UnknownTypeImmutability ⇒ 1
-            case _                       ⇒ -1
-        }
+        if (this == that) 0 else if (that == UnknownTypeImmutability) 1 else -1
     }
 
 }
@@ -182,11 +164,7 @@ case object MutableType extends TypeImmutability {
     def join(other: TypeImmutability): this.type = this
 
     def compare(that: TypeImmutability) = {
-        val self = this
-        that match {
-            case `self` ⇒ 0
-            case _      ⇒ throw new IllegalArgumentException
-        }
+        if (this == that) 0 else throw new IllegalArgumentException
     }
 
 }
