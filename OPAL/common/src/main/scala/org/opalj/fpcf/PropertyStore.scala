@@ -1429,7 +1429,7 @@ class PropertyStore private (
                         logInfo("analysis progress", infoMessage)
                     }
                     for (epk ← cSCC) {
-                        clearDependeeObservers(epk)
+                        clearAllDependeeObservers(epk)
                     }
                 }
             }
@@ -1566,7 +1566,7 @@ class PropertyStore private (
      * @return `true` if some observers were removed.
      */
     // Locks: Entity (write)
-    private[this] def clearDependeeObservers(dependerEPK: SomeEPK): Boolean = {
+    private[this] def clearAllDependeeObservers(dependerEPK: SomeEPK): Boolean = {
         // observers : JCHMap[EPK, Buffer[(EPK, PropertyObserver)]]()
         val observers = store.observers
         val dependerOs = observers.remove(dependerEPK) // outgoing ones...
@@ -1640,7 +1640,7 @@ class PropertyStore private (
         //
         // All calls to update have to acquire either entity access (using "accessEntity")
         // or store wide access (using "accessStore")
-        // Locks: Entity (write) (=> clearDependeeObservers)
+        // Locks: Entity (write) (=> clearAllDependeeObservers)
         def update(e: Entity, p: Property, updateType: UpdateType): Unit = {
             assert(!p.isBeingComputed)
             val pk = p.key
@@ -1696,7 +1696,7 @@ class PropertyStore private (
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
-                            assert(clearDependeeObservers(EPK(e, pk)) == false)
+                            assert(clearAllDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
                             ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observers */ )
                             if (PropertyIsDirectlyComputed(oldP)) os = Nil /* => there are no observers */
@@ -1706,13 +1706,13 @@ class PropertyStore private (
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
-                            clearDependeeObservers(EPK(e, pk))
+                            clearAllDependeeObservers(EPK(e, pk))
                             ps(pkId) = new PropertyAndObservers(p, null /* there will be no
                             further observers  */ )
 
                         case IntermediateUpdate.id ⇒
                             assert(
-                                (oldP eq null) || oldP.isBeingComputed ||( oldP.isRefineable && (os ne null)),
+                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: impossible intermediate update of the old property $oldP with $p"
                             )
                             assert(
@@ -1744,14 +1744,14 @@ class PropertyStore private (
                                 s"the fallback property $p for $e is not required"
                             )
                             assert(
-                                clearDependeeObservers(EPK(e, pk)) == false,
+                                clearAllDependeeObservers(EPK(e, pk)) == false,
                                 s"assigning fallback property $p to $e which has unsatisfied dependencies"
                             )
 
-                            if (debug)                                logDebug(
-                                    "analysis progress",
-                                    s"using default property $p for $e"
-                                    )
+                            if (debug) logDebug(
+                                "analysis progress",
+                                s"using default property $p for $e"
+                            )
 
                             effectiveDefaultPropertiesCount.incrementAndGet()
 
@@ -1777,7 +1777,7 @@ class PropertyStore private (
         //
         // All calls to store have to acquire either entity access (using "accessEntity")
         // or store wide access (using "accessStore") and also the entity's write lock
-        // Locks: Entity (write) (=> clearDependeeObservers)
+        // Locks: Entity (write) (=> clearAllDependeeObservers)
         def storeIntermediateProperty(e: Entity, p: Property): Unit = {
             assert(!p.isBeingComputed)
             assert(p.isRefineable, s"$e: the final property $p is stored as an intermediate one")
@@ -1841,7 +1841,7 @@ class PropertyStore private (
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                     handleResult(ir)
-                    npcs foreach { npc ⇒                        val (pc, e) = npc;                         scheduleComputation(e, pc)                    }
+                    npcs foreach { npc ⇒ val (pc, e) = npc; scheduleComputation(e, pc) }
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, p, dependees: Traversable[SomeEOptionP], c) = r
@@ -1856,7 +1856,7 @@ class PropertyStore private (
                         // we use ONE observer to make sure that the continuation function
                         // is called at most once - independent of how many entities are
                         // actually observed
-                        val o = new DependeePropertyObserver(dependerEPK, clearDependeeObservers) {
+                        val o = new DependeePropertyObserver(dependerEPK, clearAllDependeeObservers) {
                             def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
                                 propagationCount.incrementAndGet()
                                 scheduleContinuation(e, p, u.asUserUpdateType, c)
@@ -1981,7 +1981,7 @@ class PropertyStore private (
                     def createAndRegisterObserver(): PropertyObserver = {
                         val dependerEPK = EPK(dependerE, dependerPK)
                         val dependeeEPK = EPK(dependeeE, dependeePK)
-                        val o = new DependeePropertyObserver(dependerEPK, clearDependeeObservers) {
+                        val o = new DependeePropertyObserver(dependerEPK, clearAllDependeeObservers) {
                             def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
                                 propagationCount.incrementAndGet()
                                 val suspendedPC = suspended.asInstanceOf[SuspendedPC[Property]]
