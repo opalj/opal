@@ -931,9 +931,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                     } catch {
                         case t: Throwable ⇒
-                            info(s"failed on run $runs\n"+ps.toString(true))
-                            throw t
-                    }
+                                                        info(s"test failed on run $runs\n"+ps.toString(true))
+                            try{ps.validate()} catch {
+                                case ae:AssertionError =>
+                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                            }
+                            throw t                    }
 
                     psNodes.reset()
                 }
