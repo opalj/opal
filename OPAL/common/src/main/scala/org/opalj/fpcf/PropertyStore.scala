@@ -1700,6 +1700,7 @@ class PropertyStore private (
                             // The computation did not create any (still living) dependencies!
                             ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observers */ )
                             if (PropertyIsDirectlyComputed(oldP)) os = Nil /* => there are no observers */
+                            if (oldP.isInstanceOf[PropertyIsDirectlyComputed]) os = Nil /* => there are no observers */
 
                         case FinalUpdate.id ⇒
                             assert(
