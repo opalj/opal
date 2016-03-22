@@ -50,26 +50,22 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             ps(cf, ObjectImmutability.key) match {
                 case Some(p: ObjectImmutability) ⇒
                     val typeImmutability = p.correspondingTypeImmutability
-                    println(typeImmutability+":"+cf.thisType.toJava)
                     ImmediateResult(cf, typeImmutability)
                 case None ⇒
                     def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                         val objectImmutability = p.asInstanceOf[ObjectImmutability]
                         val typeImmutability = objectImmutability.correspondingTypeImmutability
                         if (typeImmutability == AtLeastConditionallyImmutableType) {
-                            println(s"$typeImmutability:Final/NoSubtypes[Intermediate]:${cf.thisType.toJava}")
                             IntermediateResult(
                                 cf, typeImmutability,
                                 Traversable(EP(cf, p)),
                                 c
                             )
                         } else {
-                            println(typeImmutability+":Final/NoSubtypes[Result]:"+cf.thisType.toJava)
                             Result(cf, typeImmutability)
                         }
                     }
 
-                    println("UnknownTypeImmutability:Final/NoSubtypes[Intermediate]:"+cf.thisType.toJava)
                     IntermediateResult(
                         cf, UnknownTypeImmutability,
                         Traversable(EPK(cf, ObjectImmutability.key)),
@@ -86,7 +82,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 ps(subclassFile, TypeImmutability.key) match {
                     case Some(ImmutableType) ⇒ /*ignore*/
                     case Some(MutableType) ⇒
-                        println("MutableType:"+cf.thisType.toJava)
                         return Result(cf, MutableType);
                     case Some(next @ ConditionallyImmutableType) ⇒
                         joinedImmutability = joinedImmutability.join(next)
@@ -108,10 +103,8 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     (maxImmutability == ConditionallyImmutableType) ||
                         (maxImmutability == ImmutableType)
                 )
-                println(maxImmutability+":"+cf.thisType.toJava)
                 Result(cf, maxImmutability)
             } else if (joinedImmutability == ConditionallyImmutableType) {
-                println("ConditionallyImmutableType:"+cf.thisType.toJava)
                 Result(cf, ConditionallyImmutableType)
             } else {
                 // when we reach this point, we have dependencies to types for which
@@ -124,7 +117,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                     def nextResult(): PropertyComputationResult = {
                         if (dependencies.isEmpty) {
-                            println(maxImmutability+":"+cf.thisType.toJava)
                             Result(cf, maxImmutability)
                         } else {
                             joinedImmutability =
@@ -137,7 +129,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                         UnknownTypeImmutability
                                 }
                             if (joinedImmutability == ConditionallyImmutableType) {
-                                println(joinedImmutability+":"+cf.thisType.toJava)
                                 Result(cf, ConditionallyImmutableType)
                             } else {
                                 assert(joinedImmutability.isRefineable)
@@ -148,7 +139,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                         s"$previousDependencies => $dependencies;\n"+
                                         s"$previousJoinedImmutability => $joinedImmutability"
                                 )
-                                println(joinedImmutability+":"+cf.thisType.toJava)
                                 IntermediateResult(cf, joinedImmutability, dependencies, c)
                             }
                         }
@@ -156,7 +146,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                     p match {
                         case MutableType ⇒
-                            println("MutableType:"+cf.thisType.toJava)
                             Result(cf, MutableType)
 
                         case UnknownTypeImmutability ⇒
@@ -183,7 +172,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                     s"$previousDependencies => $dependencies;\n"+
                                     s"$previousJoinedImmutability => $joinedImmutability"
                             )
-                            println(joinedImmutability+":"+cf.thisType.toJava)
                             IntermediateResult(cf, joinedImmutability, dependencies, c)
                         case ImmutableType ⇒
                             dependencies = dependencies.filter(_.e ne e)
@@ -201,7 +189,6 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             nextResult()
                     }
                 }
-                println(joinedImmutability+":"+cf.thisType.toJava)
                 IntermediateResult(cf, joinedImmutability, dependencies, c)
             }
         }
@@ -233,10 +220,7 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
             s"${mutableTypes.map(_.thisType.toJava).mkString(",")} contains interfaces"
         )
 
-        mutableTypes foreach { cf ⇒
-            println("MutableType:"+cf.thisType.toJava)
-            ps.handleResult(ImmediateResult(cf, MutableType))
-        }
+        mutableTypes foreach { cf ⇒ ps.handleResult(ImmediateResult(cf, MutableType)) }
 
         // the initial set of classes for which we want to determine the mutability
 
