@@ -135,11 +135,9 @@ object EP {
  * @author Michael Eichberg
  */
 final class EPK[+E <: Entity, +P <: Property](
-    val e:  E,
-    val pk: PropertyKey[P]
-)
-        extends EOptionP[E, P]
-        with Product2[E, PropertyKey[P]] {
+        val e:  E,
+        val pk: PropertyKey[P]
+) extends EOptionP[E, P] with Product2[E, PropertyKey[P]] {
 
     override def _1 = e
     override def _2 = pk
