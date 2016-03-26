@@ -86,9 +86,10 @@ object EOptionP {
  *
  * @author Michael Eichberg
  */
-final class EP[+E <: Entity, +P <: Property](val e: E, val p: P)
-        extends EOptionP[E, P]
-        with Product2[E, P] {
+final class EP[+E <: Entity, +P <: Property](
+        val e: E,
+        val p: P
+) extends EOptionP[E, P] with Product2[E, P] {
 
     override def _1: E = e
     override def _2: P = p
