@@ -1883,7 +1883,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * The direct subtypes of the given type.
+     * The direct subtypes of the given type (not reflexive).
      */
     def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
         if (isUnknown(objectType))
