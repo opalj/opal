@@ -674,7 +674,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     } catch {
                         case t: Throwable ⇒
                                                         info(s"test failed on run $runs\n"+ps.toString(true))
-                            try{ps.validate()} catch {
+                            try{ps.validate(None)} catch {
                                 case ae:AssertionError =>
                                     info(s"validation failed on run $runs\n"+ae.getMessage.toString)
                             }
@@ -764,7 +764,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         if (nTargets.isEmpty)
                             return ImmediateResult(n, NoReachableNodes);
 
-                        val allDependees: mutable.Set[Node] = nTargets.clone
+                        val allDependees: mutable.Set[Node] = nTargets.clone - n // self-dependencies are ignored!
                         var dependeePs: Traversable[EOptionP[Entity,_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
 
                         // incremental computation
@@ -805,7 +805,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                 else
                                     reachableNodes
                             }
-                        val intermediateP = ReachableNodes(reachableNodes)
+                        val intermediateP = ReachableNodes(
+                                if(n.targets contains n)
+                                reachableNodes + n
+                                else
+                                    reachableNodes
+                                )
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
@@ -829,7 +834,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     } catch {
                         case t: Throwable ⇒
                                                                                     info(s"test failed on run $runs\n"+ps.toString(true))
-                            try{ps.validate()} catch {
+                            try{ps.validate(None)} catch {
                                 case ae:AssertionError =>
                                     info(s"validation failed on run $runs\n"+ae.getMessage.toString)
                             }
@@ -858,7 +863,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         if (nTargets.isEmpty)
                             return ImmediateResult(n, NoReachableNodes);
 
-                        val remainingDependees: mutable.Set[Node] = nTargets.clone
+                        val remainingDependees: mutable.Set[Node] = nTargets.clone - n
                         def c(
                             dependeeE:  Entity,
                             dependeeP:  Property,
@@ -908,7 +913,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                 else
                                     reachableNodes
                             }
-                        val intermediateP = ReachableNodes(reachableNodes)
+                        val intermediateP = ReachableNodes(
+                                if(n.targets contains n)
+                                reachableNodes + n
+                                else
+                                    reachableNodes
+                                )
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
@@ -932,7 +942,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     } catch {
                         case t: Throwable ⇒
                                                         info(s"test failed on run $runs\n"+ps.toString(true))
-                            try{ps.validate()} catch {
+                            try{ps.validate(None)} catch {
                                 case ae:AssertionError =>
                                     info(s"validation failed on run $runs\n"+ae.getMessage.toString)
                             }
@@ -998,7 +1008,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         superPalindromeCompleted = true
                         Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
                     }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
 
                 // We can explicitly add results though this is generally not required in a well
                 // written analysis.
@@ -1029,7 +1039,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     ) { arePalindromes ⇒
                             Result("aaa", if (arePalindromes) SuperPalindrome else throw new UnknownError)
                         }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -1051,7 +1061,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val pcr = ps.require("aaa", SuperPalindromeKey, "a", PalindromeKey) { (e, p) ⇒
                     Result("aaa", if (p == Palindrome) SuperPalindrome else NoSuperPalindrome)
                 }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
