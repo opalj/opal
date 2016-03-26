@@ -76,7 +76,7 @@ private[fpcf] abstract class DependeePropertyObserver(
      * Called exactly once when this observer, which may be registered with multiple entities,
      * is notified.
      */
-    def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit
+    protected[this] def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString
