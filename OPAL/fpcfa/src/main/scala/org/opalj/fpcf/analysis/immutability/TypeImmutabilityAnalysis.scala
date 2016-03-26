@@ -46,30 +46,36 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def determineTypeImmutabilityApp(cf: ClassFile): PropertyComputationResult = {
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
+
         if (cf.isFinal || /*APP:*/ directSubtypes.isEmpty) {
+            def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                p match {
+                    case AtLeastConditionallyImmutableObject ⇒
+                        IntermediateResult(cf, AtLeastConditionallyImmutableType, Traversable(EP(cf, p)), c)
+                    case p: ObjectImmutability ⇒
+                        Result(cf, p.correspondingTypeImmutability)
+                }
+            }
+
             ps(cf, ObjectImmutability.key) match {
                 case Some(p: ObjectImmutability) ⇒
-                    val typeImmutability = p.correspondingTypeImmutability
-                    ImmediateResult(cf, typeImmutability)
-                case None ⇒
-                    def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-                        val objectImmutability = p.asInstanceOf[ObjectImmutability]
-                        val typeImmutability = objectImmutability.correspondingTypeImmutability
-                        if (typeImmutability == AtLeastConditionallyImmutableType) {
+                    p match {
+                        case p: MutableObject             ⇒ ImmediateResult(cf, MutableType)
+                        case ImmutableObject              ⇒ ImmediateResult(cf, ImmutableType)
+                        case ConditionallyImmutableObject ⇒ ImmediateResult(cf, ConditionallyImmutableType)
+                        case AtLeastConditionallyImmutableObject ⇒
+                            // In this case we have a class who's immutability (type) depends
+                            // on the immutability of its object.
                             IntermediateResult(
-                                cf, typeImmutability,
-                                Traversable(EP(cf, p)),
-                                c
+                                cf, AtLeastConditionallyImmutableType,
+                                Traversable(EP(cf, AtLeastConditionallyImmutableObject)), c
                             )
-                        } else {
-                            Result(cf, typeImmutability)
-                        }
                     }
 
+                case None ⇒
                     IntermediateResult(
                         cf, UnknownTypeImmutability,
-                        Traversable(EPK(cf, ObjectImmutability.key)),
-                        c
+                        Traversable(EPK(cf, ObjectImmutability.key)), c
                     )
             }
         } else {
