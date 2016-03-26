@@ -183,6 +183,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
             var dependees: Set[EOptionP[Entity, Property]] = incompleteDependencies.toSet[EOptionP[Entity, Property]]
             if (superClassMutability == AtLeastConditionallyImmutableObject)
                 dependees = dependees + EP(superClassFile, superClassMutability)
+
             def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
 
@@ -190,7 +191,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                         // we now have some information, but it doesn't change a thing...
                         dependees = dependees.filter(_.e ne e) + EP(e, p)
                         IntermediateResult(
-                            cf, AtLeastConditionallyImmutableType,
+                            cf, AtLeastConditionallyImmutableObject,
                             dependees, c
                         )
 
@@ -202,13 +203,13 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
                         if (dependees.size == 1) // we have no other dependencies than the current one
                             Result(cf, ImmutableObject)
                         else {
-                            dependees = dependees.filter(_.e ne e).toSet
-                            IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
+                            dependees = dependees.filter(_.e ne e)
+                            IntermediateResult(cf, AtLeastConditionallyImmutableObject, dependees, c)
                         }
                 }
             }
 
-            val result = IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
+            val result = IntermediateResult(cf, AtLeastConditionallyImmutableObject, dependees, c)
             createIncrementalResult(result, AtLeastConditionallyImmutableObject)
         }
 
@@ -216,6 +217,11 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
 }
 
+/**
+ * Runs an immutability analysis to determine the mutability of objects.
+ *
+ * @author Michael Eichberg
+ */
 object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def recommendations: Set[FPCFAnalysisRunner] = Set.empty
@@ -235,7 +241,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         }
 
         // 1.2
-        // all interfaces are (by their very definition) also immutable
+        // all (instances of) interfaces are (by their very definition) also immutable
         ps.handleResult(ImmediateMultiResult(
             project.allClassFiles.
                 filter(cf ⇒ cf.isInterfaceDeclaration).
@@ -261,6 +267,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         val es = project.classHierarchy.directSubtypesOf(ObjectType.Object).view.
             map(ot ⇒ project.classFile(ot)).
             collect { case Some(cf) if !cf.isInterfaceDeclaration ⇒ cf }
+
         ps <|<< (es, analysis.determineObjectImmutability(null, ImmutableObject))
 
         analysis
