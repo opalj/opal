@@ -106,17 +106,15 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
     /**
      * The key associated with every [[ObjectImmutability]] property.
      */
-    final val key =
-        PropertyKey.create[ObjectImmutability](
-            "ObjectImmutability",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MutableObjectDueToUnresolvableDependency,
-            // When we have a cycle all properties are necessarily at least conditionally
-            // immutable hence, we can leverage the "immutability"
-            ImmutableObject
-
-        )
+    final val key: PropertyKey[ObjectImmutability] = PropertyKey.create(
+        "ObjectImmutability",
+        // The default property that will be used if no analysis is able
+        // to (directly) compute the respective property.
+        MutableObjectDueToUnresolvableDependency,
+        // When we have a cycle all properties are necessarily at least conditionally
+        // immutable hence, we can leverage the "immutability"
+        ImmutableObject
+    )
 }
 
 /**
