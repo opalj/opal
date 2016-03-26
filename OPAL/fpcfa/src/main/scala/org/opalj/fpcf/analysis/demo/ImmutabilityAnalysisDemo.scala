@@ -75,7 +75,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ t = r.toSeconds }
 
-        projectStore.validate()
+        projectStore.validate(None)
 
         val immutableClasses =
             projectStore.entities(ObjectImmutability.key).groupBy { _.p }

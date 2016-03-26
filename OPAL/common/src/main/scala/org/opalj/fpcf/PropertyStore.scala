@@ -148,9 +148,9 @@ import org.opalj.log.LogContext
 // lpc = Lazy Property Computation
 // dpc = Direct Property Computation
 // c = Continuation (The rest of a computation if a specific, dependent property was computed.)
-// o = Property Observer
-// os = Property Observers
-// pos = A pair consisting of one Property and its Observers
+// (p)o = PropertyObserver
+// os = PropertyObservers
+// pos = PropertyAndObservers
 // EPK = An Entity and a Property Key
 // EP = An Entity and an associated Property
 // EOptionP = An Entity and either a Property Key or (if available) a Property
@@ -343,9 +343,14 @@ class PropertyStore private (
 
     /**
      * Checks the consistency of the store.
+     *
+     * Only checks related to potentially internal bugs are performed. None of the checks is
+     * relevant to developers of analyses.
      */
+    // REQUIRES: Lock: AccessStore (!)
     @throws[AssertionError]("if the store is inconsistent")
-    def validate(): Unit = {
+    private[fpcf] def validate(dependerEPKOpt: Option[SomeEPK] = None): Boolean = {
+        // 1. check that the properties are stored in the correct slots.
         entries foreach { entry ⇒
             val (_ /*e*/ , eps) = entry
 
@@ -363,6 +368,44 @@ class PropertyStore private (
                 }
             }
         }
+
+        // 2. check that each observer found in observers still exists
+        // observers : JCHMap[SomeEPK, Buffer[(SomeEPK, PropertyObserver)]]()
+        // data:  JIDMap[Entity, EntityProperties]
+        for {
+            dependerEPK ← dependerEPKOpt
+            dependeeOss = observers.get(dependerEPK)
+            if dependeeOss ne null
+            (dependeeEPK, po) ← dependeeOss
+        } {
+            if (!data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).os.contains(po)) {
+                val message = s"observers contains for $dependerEPK -> $dependeeEPK "+
+                    s"a dangling observer: $po "
+                throw new AssertionError(message)
+            }
+        }
+
+        // 3. check that every found observer is recorded in observers
+        for {
+            relevantDependerEPK ← dependerEPKOpt
+            PropertiesOfEntity(ps) ← entitiesProperties
+        } {
+            ps.foreach { (id, pOss) ⇒
+                val os = pOss.os
+                if (os ne null) {
+                    os.foreach { pos ⇒
+                        val dependerEPK = pos.dependerEPK
+                        if (dependerEPK == relevantDependerEPK &&
+                            !observers.get(dependerEPK).exists(_._2 eq pos)) {
+                            val message = s"observers does not contain observer for $dependerEPK"
+                            throw new AssertionError(message)
+                        }
+                    }
+                }
+            }
+        }
+
+        true
     }
 
     // =============================================================================================
@@ -476,7 +519,8 @@ class PropertyStore private (
     //  1. A computation of a property finishes. In this case all observers need to
     //     be notified and removed from this map afterwards.
     //  1. A computation of a property generates an [[IntermediatResult]]
-    private[this] final val observers = new JCHMap[SomeEPK, Buffer[(SomeEPK, PropertyObserver)]]()
+    type ObserversMap = JCHMap[ /*Depender*/ SomeEPK, Buffer[( /*Dependee*/ SomeEPK, PropertyObserver)]]
+    private[this] final val observers = new ObserversMap()
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -1228,13 +1272,13 @@ class PropertyStore private (
             // pending computations that now can be activated.
             if (scheduled == 0) accessStore {
                 this.synchronized {
+                    assert(validate(None), s"the property store is inconsistent")
 
                     if (scheduled == 0 && cleanUpRequired) {
                         cleanUpRequired = false
                         // Let's check if we have some potentially refineable intermediate results.
                         if (debug) logDebug(
-                            "analysis progress",
-                            s"all $executed previously scheduled tasks have finished"
+                            "analysis progress", s"all $executed scheduled tasks have finished"
                         )
 
                         try {
@@ -1246,9 +1290,23 @@ class PropertyStore private (
                             }
                         } catch {
                             case t: Throwable ⇒
+                                val isValid =
+                                    try {
+                                        validate(None)
+                                    } catch {
+                                        case ae: AssertionError ⇒
+                                            logError(
+                                                "analysis progress",
+                                                "the property store is inconsistent",
+                                                ae
+                                            )
+                                            false
+                                    }
                                 logError(
                                     "analysis progress",
-                                    "handling suspended computations failed; aborting analyses",
+                                    "handling unsatisfied dependencies failed "+
+                                        s"${if (isValid) "(store is valid)" else ""}; "+
+                                        "aborting analyses",
                                     t
                                 )
                                 interrupt()
@@ -1291,8 +1349,6 @@ class PropertyStore private (
         //     which no computation exits.
         //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
         private[this] def handleUnsatisfiedDependencies(): Unit = {
-
-            if (debug) store.validate()
 
             /*
       		 * Returns the list of observers related to the given entity and property kind.
@@ -1396,8 +1452,8 @@ class PropertyStore private (
                 val observers = store.observers.get(epk)
                 assert(
                     observers ne null,
-                    s"$epk has no observers: $observers\n"+
-                        s"\tcyclicComputableEPKCandidates=$cyclicComputableEPKCandidates"+
+                    s"$epk has no observers!\n"+
+                        s"\tcyclicComputableEPKCandidates="+
                         {
                             cyclicComputableEPKCandidates.
                                 map(c ⇒ store.observers.get(c).map(_._1)).
@@ -1457,6 +1513,10 @@ class PropertyStore private (
                     "analysis progress", "created all tasks for setting the fallback properties"
                 )
             }
+            assert(
+                validate(None),
+                s"the property store is inconsistent after handling unsatisfied dependencies"
+            )
         }
 
         // Locks: Tasks
