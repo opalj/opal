@@ -2069,7 +2069,14 @@ object PropertyStore {
         val entitiesCount = entities.size
         val data = new JIDMap[Entity, EntityProperties](entitiesCount)
         var entityId = 0
-        entities foreach { e ⇒ data.put(e, new EntityProperties(entityId)); entityId += 1 }
+        entities foreach { e ⇒
+            if (data.put(e, new EntityProperties(entityId)) ne null) {
+                throw new IllegalArgumentException(
+                    s"the list of entities contains duplicates; e.g. $e"
+                )
+            }
+            entityId += 1
+        }
         new PropertyStore(data, isInterrupted, debug)
     }
 
