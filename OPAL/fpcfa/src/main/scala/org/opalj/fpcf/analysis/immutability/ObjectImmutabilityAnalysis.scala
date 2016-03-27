@@ -104,10 +104,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
         val fieldTypes =
             // IMPROVE Use the precise type of the field (if available)!
             mutable.Set.empty[ObjectType] ++
-                cf.fields.collect {
-                    case f if f.fieldType.isObjectType ⇒
-                        f.fieldType.asObjectType
-                }
+                cf.fields.collect { case f if f.fieldType.isObjectType ⇒ f.fieldType.asObjectType }
 
         val dependentClassFiles = mutable.Set.empty[ClassFile]
         val hasUnresolvableDependencies =
@@ -162,10 +159,6 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
             } else if (superClassMutability == AtLeastConditionallyImmutableObject) {
                 val dependees = Traversable(EP(superClassFile, superClassMutability))
                 val c = (e: Entity, p: Property, ut: UserUpdateType) ⇒ {
-                    assert(
-                        p == ImmutableObject || p == ConditionallyImmutableObject,
-                        s"$e: unexpected property update: $p"
-                    )
                     Result(cf, p)
                 }
                 val result = IntermediateResult(cf, superClassMutability, dependees, c)
