@@ -42,6 +42,7 @@ import org.opalj.br.ClassFile
 import org.opalj.fpcf.analysis.immutability.ObjectImmutabilityAnalysis
 import org.opalj.fpcf.analysis.immutability.ObjectImmutability
 import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
+import org.opalj.fpcf.analysis.immutability.TypeImmutability
 
 /**
  * Demonstrates how to run the immutability analysis.
@@ -63,7 +64,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore.debug = true
+        // projectStore.debug = true
 
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
@@ -78,12 +79,22 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         projectStore.validate(None)
 
         val immutableClasses =
-            projectStore.entities(ObjectImmutability.key).groupBy { _.p }
+            projectStore.entities(ObjectImmutability.key).groupBy { _.p }.map { kv ⇒
+                (
+                    kv._1,
+                    kv._2.toList.sortWith { (a, b) ⇒
+                        a.e.asInstanceOf[ClassFile].thisType.toJava < b.e.asInstanceOf[ClassFile].thisType.toJava
+                    }
+                )
+            }
 
         val immutableClassesInfo =
             immutableClasses.values.flatten.
-                map(ep ⇒ ep._1.asInstanceOf[ClassFile].thisType.toJava+"=> "+ep.p).
-                toList.sorted.mkString("\n")
+                map { ep ⇒
+                    ep.e.asInstanceOf[ClassFile].thisType.toJava+" => "+ep.p+" => "+
+                        projectStore(ep.e, TypeImmutability.key).get
+                }.
+                /*toList.sorted.*/ mkString("\n")
 
         BasicReport(immutableClassesInfo+"\n"+projectStore.toString(false)+"\nAnalysis time: "+t)
     }
