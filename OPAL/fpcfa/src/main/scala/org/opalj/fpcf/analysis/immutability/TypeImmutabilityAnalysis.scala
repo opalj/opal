@@ -35,6 +35,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.AnalysisException
+import org.opalj.log.OPALLogger
 
 class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
@@ -79,7 +80,18 @@ class TypeImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     )
             }
         } else {
-            val directSubclasses = directSubtypes.map(project.classFile(_).get)
+            val unavailableSubtype = directSubtypes.find(t ⇒ project.classFile(t).isEmpty)
+            if (unavailableSubtype.isDefined) {
+                OPALLogger.warn(
+                    "project configuration",
+                    s"the type ${cf.thisType.toJava}'s subtype ${unavailableSubtype.get.toJava} is not available"
+                )(project.logContext)
+                // obviously the type hierarchy is incommplete; hence, we have to make a sound decision
+                return Result(cf, MutableType)
+            }
+
+            val directSubclasses = directSubtypes map { subtype ⇒ project.classFile(subtype).get }
+
             var dependencies = List.empty[EOptionP[ClassFile, TypeImmutability]]
             var joinedImmutability: TypeImmutability = ImmutableType // this may become "Unknown..."
             var maxImmutability: TypeImmutability = ImmutableType
