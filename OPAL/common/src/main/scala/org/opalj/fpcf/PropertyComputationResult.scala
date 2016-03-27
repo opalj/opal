@@ -129,11 +129,19 @@ case class IntermediateResult(
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
-    assert(
-        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
-        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
-            "contains duplicate entries (E - PK pairs)!"
-    )
+    // TODO Make it possible to activate the assertions!
+    //    // End-User oriented assertion:
+    //    assert(
+    //        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
+    //        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
+    //            "contains duplicate entries (E - PK pairs)!"
+    //    )
+    //
+    //    // End-User oriented assertion:
+    //    assert(
+    //        { val dependerEPK = EPK(e, p.key); !dependees.exists(_ == dependerEPK) },
+    //        s"the computation of ${EPK(e, p.key)} depends on its own: ${dependees.find(_ == EPK(e, p.key))}"
+    //    )
 
     private[fpcf] final def id = IntermediateResult.id
 
