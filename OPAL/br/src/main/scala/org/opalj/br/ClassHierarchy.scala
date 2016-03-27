@@ -2529,6 +2529,14 @@ object ClassHierarchy {
         apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
     }
 
+    def noDefaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List.empty
+
+    def defaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List(
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
+    )
+
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
      * type declarations, and the specified predefined class hierarchies.
@@ -2554,12 +2562,8 @@ object ClassHierarchy {
      * defines `java.util.List`.
      */
     def apply(
-        classFiles: Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = List(
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        )
+        classFiles:               Traversable[ClassFile],
+        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = defaultTypeHierarchyDefinitions()
     )(
         implicit
         logContext: LogContext

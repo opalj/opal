@@ -523,8 +523,8 @@ class Project[Source] private (
         val data = OpenHashMap.empty[String, Int]
 
         projectClassFiles.foreach { classFile ⇒
-            // we want to collect the size in relation to the source code; 
-            //i.e., across all nested classes 
+            // we want to collect the size in relation to the source code;
+            //i.e., across all nested classes
             val count =
                 classFile.methods.view.filterNot(_.isSynthetic).size +
                     classFile.fields.view.filterNot(_.isSynthetic).size
@@ -935,10 +935,24 @@ object Project {
             import ExecutionContext.Implicits.global
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
+                val typeHierarchyDefinitions =
+                    if (projectClassFilesWithSources.exists(_._1.thisType == ObjectType.Object) ||
+                        libraryClassFilesWithSources.exists(_._1.thisType == ObjectType.Object)) {
+                        OPALLogger.info("project configuration", "the JDK is part of the analysis")
+                        ClassHierarchy.noDefaultTypeHierarchyDefinitions
+                    } else {
+                        OPALLogger.info(
+                            "project configuration",
+                            "the JDK is not configured; using the preconfigured type hierarchy for the most relevant types"
+                        )
+                        ClassHierarchy.defaultTypeHierarchyDefinitions
+                    }
+
                 ClassHierarchy(
                     projectClassFilesWithSources.view.map(_._1) ++
                         libraryClassFilesWithSources.view.map(_._1) ++
-                        virtualClassFiles
+                        virtualClassFiles,
+                    typeHierarchyDefinitions
                 )
             }
 
@@ -1081,7 +1095,7 @@ object Project {
             issues foreach { handleInconsistentProject(logContext, _) }
             OPALLogger.info(
                 "project configuration",
-                s"validation revealed ${issues.size} significant issues"+
+                s"project validation revealed ${issues.size} significant issues"+
                     (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
             )
 
