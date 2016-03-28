@@ -1261,7 +1261,7 @@ class PropertyStore private (
         // Locks: Tasks
         //        Store(exclusive access), Tasks, handleUnsatisfiedDependencies: Store (access), Entity and scheduleContinuation: Tasks
         def taskCompleted() = {
-            assert(scheduled > 0)
+            /*internal*/ // assert(scheduled > 0)
 
             this.synchronized {
                 scheduled -= 1
@@ -1272,7 +1272,7 @@ class PropertyStore private (
             // pending computations that now can be activated.
             if (scheduled == 0) accessStore {
                 this.synchronized {
-                    assert(validate(None), s"the property store is inconsistent")
+                    /*internal*/ // assert(validate(None), s"the property store is inconsistent")
 
                     if (scheduled == 0 && cleanUpRequired) {
                         cleanUpRequired = false
@@ -1428,12 +1428,12 @@ class PropertyStore private (
                         val dependeeEPK = dependee._1
                         if (!observers.containsKey(dependeeEPK)) {
                             directlyIncomputableEPKs += dependeeEPK
-                            assert(
+                            /*internal*/ /* assert(
                                 data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).p eq null,
                                 s"property propagation failed $dependeeEPK has a property("+
                                     s"${data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).p}"+
                                     s"), but $dependerEPK was not notified"
-                            )
+                            ) */
                             indirectlyIncomputableEPKs += dependerEPK
                             determineIncomputableEPKs(dependerEPK)
                         } else {
@@ -1450,7 +1450,7 @@ class PropertyStore private (
 
             val epkSuccessors: (SomeEPK) ⇒ Traversable[SomeEPK] = (epk: SomeEPK) ⇒ {
                 val observers = store.observers.get(epk)
-                assert(
+                /*internal*/ /* assert(
                     observers ne null,
                     s"$epk has no observers!\n"+
                         s"\tcyclicComputableEPKCandidates="+
@@ -1461,7 +1461,7 @@ class PropertyStore private (
                         } +
                         s"\tdirectlyIncomputableEPKs=$directlyIncomputableEPKs\n"+
                         s"\tindirectlyIncomputableEPKs=$indirectlyIncomputableEPKs"
-                )
+                ) */
                 observers.view.map(_._1)
             }
             val cSCCs: List[Iterable[SomeEPK]] = org.opalj.graphs.closedSCCs[SomeEPK](
@@ -1502,10 +1502,10 @@ class PropertyStore private (
                 for {
                     EPK(e, pk) ← directlyIncomputableEPKs
                 } {
-                    assert(
+                    /*internal*/ /* assert(
                         data.get(e).ps(pk.id).p eq null,
                         s"the entity $e already has a property ${data.get(e).ps(pk.id).p}($pk)"
-                    )
+                    ) */
                     val defaultP = PropertyKey.fallbackProperty(store, e, pk)
                     scheduleHandleFallbackResult(e, defaultP)
                 }
@@ -1513,10 +1513,10 @@ class PropertyStore private (
                     "analysis progress", "created all tasks for setting the fallback properties"
                 )
             }
-            assert(
+            /*internal*/ /* assert(
                 validate(None),
                 s"the property store is inconsistent after handling unsatisfied dependencies"
-            )
+            ) */
         }
 
         // Locks: Tasks
@@ -1693,7 +1693,7 @@ class PropertyStore private (
         // or store wide access (using "accessStore")
         // Locks: Entity (write) (=> clearAllDependeeObservers)
         def update(e: Entity, p: Property, updateType: UpdateType): Unit = {
-            assert(!p.isBeingComputed)
+            /*internal*/ // assert(!p.isBeingComputed)
             val pk = p.key
             val pkId = pk.id
 
@@ -1718,18 +1718,18 @@ class PropertyStore private (
                             // property is refineable. This is the case whenever the analysis knows
                             // that no further refinement may happen (given the current program).
                             ps(pkId) = new PropertyAndObservers(p, null)
-                            assert(
+                        /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
-                            )
+                            ) */
 
                         case IntermediateUpdate.id ⇒
                             assert(p.isRefineable, s"$e: intermediate update of a final property $p")
                             ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
-                            assert(
+                        /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
-                            )
+                            ) */
 
                         case FallbackUpdate.id ⇒
                             val m = s"fallback property $p assigned to entity $e without dependers"
@@ -1747,94 +1747,90 @@ class PropertyStore private (
                     // We are either updating or setting a property or changing the state of the
                     // property => intermediate result => final result
                     val oldP = pos.p
-                    assert(
+                    /*internal*/ /* assert(
                         (oldP eq null) || oldP.isBeingComputed || oldP.key == pk,
                         s"the key of the old property ${oldP.key} and the new property ${pk} are different"
-                    )
+                    ) */
                     var os: Seq[PropertyObserver] = pos.os
 
                     (updateTypeId: @scala.annotation.switch) match {
                         case OneStepFinalUpdate.id ⇒
-                            assert(
+                            if (debug) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
-                            assert(clearAllDependeeObservers(EPK(e, pk)) == false)
+                            /*internal*/ // assert(clearAllDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
                             ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observers */ )
-                            assert(
+                            /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
-                            )
+                            ) */
                             if (oldP.isInstanceOf[PropertyIsDirectlyComputed]) os = Nil /* => there are no observers */
 
                         case FinalUpdate.id ⇒
-                            assert(
+                            if (debug) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
                             )
                             clearAllDependeeObservers(EPK(e, pk))
                             ps(pkId) = new PropertyAndObservers(p, null /* <=> p is final  */ )
-                            assert(
+                        /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
-                            )
+                            ) */
 
                         case IntermediateUpdate.id ⇒
-                            assert(
+                            if (debug) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: impossible intermediate update of the old property $oldP with $p (os=$os)"
                             )
-                            assert(
-                                p.isRefineable,
-                                s"$e: intermediate update using a final property $p"
+                            if (debug) assert(
+                                p.isRefineable, s"$e: intermediate update using a final property $p"
                             )
                             if (oldP != p) {
-                                assert(p != oldP, s"equals is not reflexive: $p <=> $oldP")
+                                if (debug) assert(p != oldP, s"equals is not reflexive: $p <=> $oldP")
                                 ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
-                                assert(
+                                /*internal*/ /* assert(
                                     ps(p.key.id).p == p,
                                     s"the property store $pos does not contain the new property $p"
-                                )
+                                ) */
 
                             } else {
                                 if (debug) logDebug(
                                     "analysis progress",
-                                    s"useless intermediate update $e($oldP): $p"
+                                    s"$e: useless intermediate update $oldP => $p"
                                 )
-                                os = Nil // os will be non-null if we force depender notification
+                                os = Nil
                             }
 
                         case FallbackUpdate.id ⇒
                             // Fallback updates are only used in case a property of an entity
                             // is required by a dependent computation and no more computation is
                             // running that could compute this property.
-                            assert(p.isFinal, "fallback properties need to be final")
-                            assert(
+                            if (debug) assert(p.isFinal, "fallback properties need to be final")
+                            /*internal*/ /* assert(
                                 oldP eq null,
                                 s"$e already has a property $oldP; no fallback required"
-                            )
-                            assert(
+                            ) */
+                            /*internal*/ /* assert(
                                 os ne null,
                                 s"the fallback property $p for $e is not required"
-                            )
-                            assert(
+                            ) */
+                            /*internal*/ /* assert(
                                 clearAllDependeeObservers(EPK(e, pk)) == false,
                                 s"assigning fallback property $p to $e which has unsatisfied dependencies"
-                            )
+                            ) */
 
-                            if (debug) logDebug(
-                                "analysis progress",
-                                s"using default property $p for $e"
-                            )
+                            if (debug) logDebug("analysis progress", s"$e: using default property $p")
 
                             effectiveDefaultPropertiesCount.incrementAndGet()
 
                             ps(pkId) = new PropertyAndObservers(p, null)
-                            assert(
+                        /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
-                            )
+                            ) */
 
                     }
                     os
@@ -1858,10 +1854,10 @@ class PropertyStore private (
                 case ImmediateResult.id ⇒
                     val ImmediateResult(e, p) = r
                     update(e, p, OneStepFinalUpdate)
-                    assert(
+                /*internal*/ /* assert(
                         { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    )
+                    ) */
 
                 case ImmediateMultiResult.id ⇒
                     val ImmediateMultiResult(results) = r
@@ -1869,19 +1865,19 @@ class PropertyStore private (
                         val e = ep.e
                         val p = ep.p
                         update(e, p, OneStepFinalUpdate)
-                        assert(
+                        /*internal*/ /* assert(
                             { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                             s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        )
+                        ) */
                     }
 
                 case Result.id ⇒
                     val Result(e, p) = r
                     update(e, p, FinalUpdate)
-                    assert(
+                /*internal*/ /* assert(
                         { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    )
+                    ) */
 
                 case MultiResult.id ⇒
                     val MultiResult(results) = r
@@ -1889,19 +1885,19 @@ class PropertyStore private (
                         val e = ep.e
                         val p = ep.p
                         update(e, p, FinalUpdate)
-                        assert(
+                        /*internal*/ /* assert(
                             { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                             s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        )
+                        ) */
                     }
 
                 case FallbackResult.id ⇒
                     val FallbackResult(e, p) = r
                     update(e, p, FallbackUpdate)
-                    assert(
+                /*internal*/ /* assert(
                         { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    )
+                    ) */
 
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
@@ -1910,25 +1906,24 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(dependerE, dependerP, dependees: Traversable[SomeEOptionP], c) = r
-                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
-                    assert(dependerP.isRefineable, s"intermediate result $r used to store final property $dependerP")
+                    if (debug) assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
+                    if (debug) assert(dependerP.isRefineable, s"$dependerE: intermediate result $r used to store final property $dependerP")
 
                     val dependerPK = dependerP.key
                     val dependerEPK = EPK(dependerE, dependerPK)
 
-                    // End-User oriented assertion:
-                    assert(
+                    if (debug) assert(
                         !dependees.exists(_ == dependerEPK),
-                        s"the computation of $dependerEPK depends on its own: ${dependees.find(_ == dependerEPK)}"
+                        s"$dependerE: self-recursive computation of $dependerPK"
                     )
 
                     val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
                     withEntitiesWriteLocks(accessedEntities) {
-                        assert(
+                        /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
                             s"observers of $dependerEPK should be empty, but contains ${observers.get(dependerEPK)}"
-                        )
-                        assert(
+                        ) */
+                        /*internal*/ /* assert(
                             entitiesProperties.forall { eps ⇒
                                 val pos = eps.ps(dependerPK.id)
                                 (pos eq null) || {
@@ -1937,11 +1932,11 @@ class PropertyStore private (
                                 }
                             },
                             s"found dangling property observer"
-                        )
-                        assert(
+                        ) */
+                        /*internal*/ /* assert(
                             validate(Some(dependerEPK)),
                             s"the property store is inconsistent before intermediate update"
-                        )
+                        ) */
 
                         var dependeeEPKs = List.empty[SomeEPK]
 
@@ -1993,10 +1988,10 @@ class PropertyStore private (
                                     p: Property,
                                     u: UpdateType
                                 ): Unit = {
-                                    assert(
+                                    /*internal*/ /* assert(
                                         { val os = observers.get(dependerEPK); (os eq null) || os.isEmpty },
                                         s"failed to delete all observers for $dependerEPK"
-                                    )
+                                    ) */
                                     propagationCount.incrementAndGet()
                                     scheduleContinuation(e, p, u.asUserUpdateType, c)
                                 }
@@ -2020,10 +2015,10 @@ class PropertyStore private (
                                 registerDependeeObserverWithItsDepender(dependeeEPK, o)
                             }
                         }
-                        assert(
+                        /*internal*/ /* assert(
                             validate(Some(dependerEPK)),
                             s"the property store is inconsistent (after intermediate update)"
-                        )
+                        ) */
 
                         update(dependerE, dependerP, IntermediateUpdate)
                     }
