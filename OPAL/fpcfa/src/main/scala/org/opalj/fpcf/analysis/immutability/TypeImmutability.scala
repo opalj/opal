@@ -87,6 +87,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  *
  */
 case object ImmutableType extends TypeImmutability {
+
     final val isRefineable = false
     final val isMutable = false
     final val isConditionallyImmutable = false
@@ -95,12 +96,11 @@ case object ImmutableType extends TypeImmutability {
         if (this == that) this else that
     }
 
-    def compare(that: TypeImmutability) = {
-        if (this == that) 0 else 1
-    }
+    def compare(that: TypeImmutability) = { if (this == that) 0 else 1 }
 }
 
 case object UnknownTypeImmutability extends TypeImmutability {
+
     final val isRefineable = true
     final val isMutable = false
     final val isConditionallyImmutable = false
@@ -109,12 +109,12 @@ case object UnknownTypeImmutability extends TypeImmutability {
         if (that == MutableType) MutableType else this
     }
 
-    def compare(that: TypeImmutability) = {
-        if (this == that) 0 else -1
-    }
+    def compare(that: TypeImmutability) = { if (this == that) 0 else -1 }
+
 }
 
 case object ConditionallyImmutableType extends TypeImmutability {
+
     final val isRefineable = false
     final val isMutable = false
     final val isConditionallyImmutable = true
@@ -138,6 +138,7 @@ case object ConditionallyImmutableType extends TypeImmutability {
 }
 
 case object AtLeastConditionallyImmutableType extends TypeImmutability {
+
     final val isRefineable = true
     final val isMutable = false
     final val isConditionallyImmutable = false
@@ -156,6 +157,7 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
 }
 
 case object MutableType extends TypeImmutability {
+
     final val isRefineable = false
     final val isMutable = true
     final val isConditionallyImmutable = false
