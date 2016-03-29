@@ -52,7 +52,7 @@ trait Property extends PropertyMetaInformation {
     /**
      *  Returns `true` if this property is always final and no refinement is possible.
      */
-    def isFinal = !isRefineable
+    final def isFinal = !isRefineable
 
     override def equals(other: Any): Boolean
 
@@ -67,7 +67,6 @@ trait Property extends PropertyMetaInformation {
 private[fpcf] trait PropertyIsBeingComputed extends Property {
     final override def key = throw new UnsupportedOperationException
     final override def isRefineable = throw new UnsupportedOperationException
-    final override def isFinal = throw new UnsupportedOperationException
     final override private[fpcf] def isBeingComputed: Boolean = true
 }
 
