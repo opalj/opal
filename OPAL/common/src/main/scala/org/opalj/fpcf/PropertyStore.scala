@@ -539,6 +539,22 @@ class PropertyStore private (
     }
 
     /**
+     * Returns a snapshot of the properties with the given kind associated with the given entities.
+     *
+     * @note Querying the properties of the given entities will trigger lazy and direct property
+     * 		computations.
+     *
+     * @note The returned collection can be used to create an [[IntermediateResult]].
+     */
+    // Locks (indirectly): apply(Entity,PropertyKey)
+    def apply[E <: Entity, P <: Property](
+        es:  Traversable[E],
+        pmi: PropertyMetaInformation { type Self <: P }
+    ): Traversable[EOptionP[E, P]] = {
+        apply(es, pmi.key)
+    }
+
+    /**
      * Returns the property of the respective property kind `pk` currently associated
      * with the given element `e`.
      *
