@@ -330,8 +330,10 @@ class PropertyStore private (
             s"\tunsatisfiedPropertyDependencies=$unsatisfiedPropertyDependencies\n"+
             s"\tregisteredObservers=$registeredObservers\n"+
             s"\teffectiveDefaultPropertiesCount=$effectiveDefaultPropertiesCount\n"+
-            s"\tperEntityProperties[$perEntityPropertiesStatistics]"+
-            (if (printProperties) s"=\n$properties" else "\n") +
+            (if (printProperties)
+                s"\tperEntityProperties[$perEntityPropertiesStatistics]"+"\n"+properties
+            else
+                "") +
             (if (overallSetPropertyCount > 0) s"\tperSetPropertyEntities[$setPropertiesStatistics]\n" else "")+
             ")"
     }
