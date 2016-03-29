@@ -77,12 +77,12 @@ class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAna
 
         val psnfFieldsResult = psnfFields map { f ⇒
             if (effectivelyFinalFields.contains(f))
-                EP(f, EffectivelyFinal)
+                EP(f, EffectivelyFinalField)
             else
-                EP(f, NonFinalByAnalysis)
+                EP(f, NonFinalFieldByAnalysis)
         }
 
-        val r = psnfFieldsResult ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinal) }
+        val r = psnfFieldsResult ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
         ImmediateMultiResult(r)
     }
 }

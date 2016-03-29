@@ -70,7 +70,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.fpcf.analysis.immutability.ImmutableType
 import org.opalj.fpcf.analysis.immutability.TypeImmutability
 import org.opalj.fpcf.analysis.fields.FieldMutability
-import org.opalj.fpcf.analysis.fields.EffectivelyFinal
+import org.opalj.fpcf.analysis.fields.EffectivelyFinalField
 
 /**
  * This analysis determines whether a method is pure. I.e., whether the method
@@ -146,7 +146,7 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                                 method, Purity.key,
                                 field, FieldMutability.key
                             ) { (e: Entity, dependeeP: Property) ⇒
-                                if (dependeeP == EffectivelyFinal) {
+                                if (dependeeP == EffectivelyFinalField) {
                                     val nextPC = body.pcOfNextInstruction(currentPC)
                                     doDeterminePurity(method, nextPC, dependees)
                                 } else {
