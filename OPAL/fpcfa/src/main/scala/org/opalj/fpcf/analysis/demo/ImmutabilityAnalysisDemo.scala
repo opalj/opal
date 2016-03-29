@@ -43,19 +43,18 @@ import org.opalj.fpcf.analysis.immutability.ObjectImmutabilityAnalysis
 import org.opalj.fpcf.analysis.immutability.ObjectImmutability
 import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
 import org.opalj.fpcf.analysis.immutability.TypeImmutability
+import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 
 /**
- * Demonstrates how to run the immutability analysis.
+ * Runs the immutability analysis.
  *
  * @author Michael Eichberg
  */
 object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "determines those classes that are mmutable"
+    override def title: String = "determines the immutability of objects and types"
 
-    override def description: String =
-        "identifies classes/type which are immutable"
+    override def description: String = "determines the immutability of objects and types"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -64,7 +63,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        // projectStore.debug = true
+        projectStore.debug = true
 
         // We immediately also schedule the purity analysis to improve the
         // parallelization!
@@ -73,7 +72,11 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         var t = Seconds.None
         time {
-            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+            manager.runAll(
+                FieldMutabilityAnalysis,
+                ObjectImmutabilityAnalysis,
+                TypeImmutabilityAnalysis
+            )
         } { r ⇒ t = r.toSeconds }
 
         projectStore.validate(None)
@@ -83,19 +86,31 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                 (
                     kv._1,
                     kv._2.toList.sortWith { (a, b) ⇒
-                        a.e.asInstanceOf[ClassFile].thisType.toJava < b.e.asInstanceOf[ClassFile].thisType.toJava
+                        val cfA = a.e.asInstanceOf[ClassFile]
+                        val cfB = b.e.asInstanceOf[ClassFile]
+                        cfA.thisType.toJava < cfB.thisType.toJava
                     }
                 )
             }
 
         val immutableClassesInfo =
-            immutableClasses.values.flatten.
-                map { ep ⇒
-                    ep.e.asInstanceOf[ClassFile].thisType.toJava+" => "+ep.p+" => "+
-                        projectStore(ep.e, TypeImmutability.key).get
-                }.
-                /*toList.sorted.*/ mkString("\n")
+            immutableClasses.values.flatten.map { ep ⇒
+                ep.e.asInstanceOf[ClassFile].thisType.toJava+
+                    " => "+ep.p+
+                    " => "+projectStore(ep.e, TypeImmutability.key).get
+            }.mkString("\n")
 
-        BasicReport(immutableClassesInfo+"\n"+projectStore.toString(false)+"\nAnalysis time: "+t)
+        val categoryCounts =
+            immutableClasses.map(kv ⇒ kv._1+": "+kv._2.filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).size).
+                toList.sorted.mkString("\n")
+
+        BasicReport(
+            "Details:\n"+
+                immutableClassesInfo+"\n"+
+                "\nSummary:\n"+
+                categoryCounts+"\n"+
+                "\n"+projectStore.toString(false)+"\n"+
+                "The overall analysis took: "+t
+        )
     }
 }
