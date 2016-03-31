@@ -127,9 +127,7 @@ class Graph[@specialized(Int) N] private (
         nodesMap.values
     }
 
-    def toDot: String = {
-        org.opalj.graphs.toDot(toNodes.toSet)
-    }
+    def toDot: String = org.opalj.graphs.toDot(toNodes.toSet)
 }
 
 /**
