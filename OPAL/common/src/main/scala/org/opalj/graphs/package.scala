@@ -28,13 +28,13 @@
  */
 package org.opalj
 
+import scala.reflect.ClassTag
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.Stack
 import scala.collection.mutable.Map
-import org.opalj.collection.mutable.ArrayMap
-import scala.reflect.ClassTag
 import scala.collection.mutable.HashMap
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -215,7 +215,7 @@ package object graphs {
                 //                    s"thisParthFirstDFSNum=$thisPathFirstDFSNum; nextDFSNum=$nextDFSNum; nextCSCCId=$nextCSCCId }")
 
                 val n = worklist.pop()
-                if (n eq PathElementSeparator) { // i.e., we have visited all child elements 
+                if (n eq PathElementSeparator) { // i.e., we have visited all child elements
                     val n = worklist.pop()
                     val nDFSNum = dfsNum(n)
                     if (nDFSNum >= thisPathFirstDFSNum) {
@@ -295,4 +295,3 @@ package object graphs {
     }
 
 }
-
