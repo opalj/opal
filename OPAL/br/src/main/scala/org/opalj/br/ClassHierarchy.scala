@@ -203,9 +203,10 @@ class ClassHierarchy private (
         if (rootTypes.size > 1)
             OPALLogger.log(Warn(
                 "project configuration",
-                "missing supertype information for: "+
+                "supertype information incomplete:\n\t"+
                     rootTypes.filterNot(_ eq ObjectType.Object).
-                    map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).mkString(", ")
+                    map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).
+                    toList.sorted.mkString("\n\t")
             ))
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
@@ -1891,6 +1892,20 @@ class ClassHierarchy private (
 
         val oid = objectType.id
         this.subclassTypesMap(oid) ++ this.subinterfaceTypesMap(oid)
+    }
+
+    def directSubclassesOf(objectType: ObjectType): Set[ObjectType] = {
+        if (isUnknown(objectType))
+            return Set.empty;
+
+        this.subclassTypesMap(objectType.id)
+    }
+
+    def directSubinterfacesOf(objectType: ObjectType): Set[ObjectType] = {
+        if (isUnknown(objectType))
+            return Set.empty;
+
+        this.subinterfaceTypesMap(objectType.id)
     }
 
     /**
