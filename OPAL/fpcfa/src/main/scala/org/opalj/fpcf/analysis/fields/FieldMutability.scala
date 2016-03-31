@@ -61,7 +61,9 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
 
 object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
-    final val key = PropertyKey.create("FieldMutability", NonFinalFieldByLackOfInformation)
+    final val key: PropertyKey[FieldMutability] = {
+        PropertyKey.create("FieldMutability", NonFinalFieldByLackOfInformation)
+    }
 
 }
 
