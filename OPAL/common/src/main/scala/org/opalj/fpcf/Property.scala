@@ -62,6 +62,31 @@ trait Property extends PropertyMetaInformation {
      */
     // only used in combination with direct property computations
     private[fpcf] def isBeingComputed: Boolean = false
+
+    def isOrdered: Boolean = false
+
+    /**
+     * Used for debugging purposes only!
+     */
+    def asOrderedProperty: OrderedProperty = throw new UnsupportedOperationException
+
+}
+
+trait OrderedProperty extends Property {
+
+    final override def isOrdered: Boolean = true
+
+    final override def asOrderedProperty: this.type = this
+
+    /**
+     * Tests if the this property is a potentially valid successor property of the other property
+     * if a computation was performed as the result of an update to a dependency.
+     *
+     * @return None if this property is a valid successor of the other property else
+     * 		Some(description :String) is returned.
+     */
+    def isValidSuccessorOf(other: OrderedProperty): Option[String]
+
 }
 
 private[fpcf] trait PropertyIsBeingComputed extends Property {
