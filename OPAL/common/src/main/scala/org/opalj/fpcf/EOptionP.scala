@@ -160,7 +160,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hashCode: Int = e.hashCode() * 511 + pk.id
 
-    override def toString: String = s"EPK($e,name=${PropertyKey.name(pk.id)},id=${pk.id})"
+    override def toString: String = s"EPK($e,pkName=${PropertyKey.name(pk.id)},pkId=${pk.id})"
 }
 
 /**
