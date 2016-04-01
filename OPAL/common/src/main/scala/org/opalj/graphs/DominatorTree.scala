@@ -35,7 +35,7 @@ import org.opalj.collection.mutable.IntArrayStack
 /**
  * The (post) dominator tree of a control flow graph. To construct a dominator tree use this
  * class' companion object. To compute a post dominator tree use
- * [[org.opalj.graph.PostDominatorTree]].
+ * [[org.opalj.graphs.PostDominatorTree]].
  *
  * @param idom The array contains for each node its immediate dominator.
  * 			If not all unique ids are used then the array is a sparse array and external
