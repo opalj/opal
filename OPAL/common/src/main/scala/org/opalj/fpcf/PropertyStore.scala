@@ -46,6 +46,8 @@ import scala.collection.mutable.{HashMap ⇒ HMap}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
+import org.opalj.graphs.closedSCCs
+import org.opalj.io.writeAndOpen
 import org.opalj.collection.mutable.ArrayMap
 import org.opalj.concurrent.Locking.{withReadLock, withWriteLock, withWriteLocks}
 import org.opalj.concurrent.ThreadPoolN
@@ -54,27 +56,31 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.OPALLogger.{info ⇒ logInfo}
 import org.opalj.log.OPALLogger.{debug ⇒ logDebug}
 import org.opalj.log.OPALLogger.{error ⇒ logError}
+import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.LogContext
+import org.opalj.graphs.Graph
+import org.opalj.graphs.DefaultMutableMode
+import org.opalj.graphs.DefaultMutableNode
 
 /**
  * The property store manages the execution of computations of properties related to specific
- * entities (e.g., methods and classes of a program). These computations may require and provide
- * information about other entities of the store and the property store implements the logic
+ * entities (e.g., methods, fields and classes of a program). These computations may require and
+ * provide information about other entities of the store and the property store implements the logic
  * to handle the dependencies between the entities. Furthermore, the property store parallelizes
  * the computation of the properties as far as possible without requiring users to take care of it.
  *
  * The store supports two kinds of properties: '''set properties''' and '''per entity properties'''.
  * Set properties are particularly useful if the respective property (instance) is never specialized
- * for an entity. For example, the property whether a class is immutable or not can
- * be shared across all respective classes. The property which methods are calling a specific
+ * for any entity. For example, the property whether a method is only used during initialization or
+ * not could be shared across all respective classes. The property which methods are calling a specific
  * method m on the other hand is specific for each method m.
  * In general, if the concrete instance of a property may be shared by all entities it is
  * advantageous to model it as a set property. However, the more general mechanism are
- * per entity properties and is generally needed if the result of a computation may be refined.
+ * per entity properties and this is generally needed if the result of a computation may be refined
+ * during the computation.
  *
  * ==Usage==
- * The general strategy when using the PropertyStore is to always
- * continue computing the property
+ * The general strategy when using the PropertyStore is to always continue computing the property
  * of an entity and to collect the dependencies on those elements that are relevant.
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
@@ -92,7 +98,7 @@ import org.opalj.log.LogContext
  *      that derives properties of a specific kind related to a class file's methods must ensure
  *      that the same analysis running concurrently on two different class files do not derive
  *      information about the same method.
- *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new )property for
+ *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
  *      a specific element then the result must be more specific.
  *
  * ===Cyclic Dependencies===
@@ -131,29 +137,30 @@ import org.opalj.log.LogContext
  *  [1.] the global SET PROPERTY OBSERVERS related Lock (read/write)
  *  [2.] the specific SET PROPERTY related lock (mutex)
  *  [3.] the global STORE lock (accessEntity/accessStore=exclusive access)
- *  [4.] the specific ENTITY (read/write) related lock (the entity lock must only be acquired when the store lock is held
- *  	 (If multiple locks may be required at the same time, then all locks have to be acquired
- *  	  in the order of the entity id.)
+ *  [4.] the specific ENTITY (read/write) related lock (the entity lock must only be acquired
+ *  	 when the store lock (accessEntity/accessStore) is held.
+ *  	 If multiple locks are required at the same time, then all locks are acquired
+ *  	 in the order of the entity id; i.e., we are using a globally consistent order.
  *  [5.] the global TASKS related lock (<Tasks>.synchronized)
  */
 // COMMON ABBREVIATONS USED IN THE FOLLOWING:
 // ==========================================
-// e = Entity
-// l = Entity Lock (associated with an entity)
-// p = Property
-// ps = Properties (the properties of an entity)
-// eps = EntityProperties (the pairing of an entity's lock and its properties)
-// pk = Property Key
-// pc = Property Computation
-// lpc = Lazy Property Computation
-// dpc = Direct Property Computation
-// c = Continuation (The rest of a computation if a specific, dependent property was computed.)
-// (p)o = PropertyObserver
-// os = PropertyObservers
-// pos = PropertyAndObservers
-// EPK = An Entity and a Property Key
-// EP = An Entity and an associated Property
-// EOptionP = An Entity and either a Property Key or (if available) a Property
+// e =         Entity
+// l =         Entity Lock (associated with an entity)
+// p =         Property
+// ps =        Properties (the properties of an entity)
+// eps =       EntityProperties (the pairing of an entity's lock and its properties)
+// pk =        Property Key
+// pc =        Property Computation
+// lpc =       Lazy Property Computation
+// dpc =       Direct Property Computation
+// c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
+// (p)o =      PropertyObserver
+// os =        PropertyObservers
+// pos =       PropertyAndObservers
+// EPK =       Entity and a PropertyKey
+// EP =        Entity and an associated Property
+// EOptionP =  Entity and either a PropertyKey or (if available) a Property
 class PropertyStore private (
         // type Observers = mutable.ListBuffer[PropertyObserver]
         // class PropertyAndObservers(p: Property, os: Observers)
@@ -527,20 +534,20 @@ class PropertyStore private (
     //
     //
 
-    // access to this field is synchronized using the store's lock
-    // the map's keys are the ids of the PropertyKeys
+    // Access to this field is synchronized using the store's lock
+    // the map's keys are the ids of the PropertyKeys.
     private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
 
-    // access to this field is synchronized using the store's lock
-    // the map's keys are the ids of the PropertyKeys
+    // Access to this field is synchronized using the store's lock
+    // the map's keys are the ids of the PropertyKeys.
     private[this] final val theLazyPropertyComputations = ArrayMap[SomePropertyComputation](5)
 
-    // access to this field is synchronized using the store's lock
-    // the map's keys are the ids of the PropertyKeys
+    // Access to this field is synchronized using the store's lock
+    // the map's keys are the ids of the PropertyKeys.
     private[this] final val theOnPropertyComputations = ArrayMap[List[(Entity, Property) ⇒ Unit]](5)
 
-    // The list of observers used by the entity e to compute the property of kind k (EPK).
-    // In other words: the mapping between a Depender and its Dependee(s)/Observers!
+    // The list of observers used by the entity `e` to compute the property of kind `k` (EPK).
+    // In other words: the mapping between a Depender and its Dependee(s)!
     // The list of observers needs to be maintained whenever:
     //  1. A computation of a property finishes. In this case all observers need to
     //     be notified and removed from this map afterwards.
@@ -556,7 +563,7 @@ class PropertyStore private (
      *
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
-    // Locks: apply(Entity,PropertyKey)
+    // Locks (indirectly): apply(Entity,PropertyKey)
     def apply[E <: Entity, P <: Property](
         es: Traversable[E],
         pk: PropertyKey[P]
@@ -587,7 +594,8 @@ class PropertyStore private (
      * This is most basic method to get some property and it is the preferred way
      * if (a) you know that the property is already available – e.g., because some
      * property computation function was strictly run before the current one – or
-     * if (b) it may be possible to compute a final answer even if the property
+     * if (b) the property is computed using a direct or a lazy property computation - or
+     * if (c) it may be possible to compute a final answer even if the property
      * of the entity is not yet available.
      *
      * @note In general, the returned value may change over time but only such that it
@@ -612,12 +620,15 @@ class PropertyStore private (
         val lock = eps.l
 
         @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): Some[P] = {
-            // establish the happen before relation
+            // This also establishes the happen before relation!
             p.await()
             Some(ps(pkId).p.asInstanceOf[P])
         }
 
         accessEntity {
+            // Thread safety: We use double checked locking w.r.t. the entity to ensure that
+            // we minimize the time we have to keep some lock.
+
             var pos = withReadLock(lock) { ps(pkId) }
             if (pos eq null) {
                 // => the property is not (yet) computed;
@@ -682,8 +693,8 @@ class PropertyStore private (
      *
      * Require can only be used if it is guaranteed that the computation of the property
      * dependeePK will never require the property dependerPK. Hence, it should only be used
-     * in combination with properties where the most precise analysis will never requirer
-     * `dependerPk`.
+     * in combination with properties where the most precise analysis will never directly or
+     * indirectly requirer `dependerPk`.
      *
      * @example
      * {{{
@@ -739,6 +750,7 @@ class PropertyStore private (
      * 		kind as `expectedP` are not refineable/are final or if it is certain that no
      * 		further refinement of the respective properties can happen.
      */
+    // Locks (indirectly): this.apply(...): Store, Entity
     def allHaveProperty(
         dependerE: Entity, dependerPK: SomePropertyKey,
         dependees: Traversable[Entity], expectedP: Property
@@ -763,7 +775,7 @@ class PropertyStore private (
      * This function eagerly tries to determine if the answer is false and only
      * suspends the computation if the (negative) answer cannot directly be computed.
      */
-    // Locks of this.apply(...): Store, Entity
+    // Locks: this.apply(...): Store, Entity
     def allHaveProperty[DependeeP <: Property](
         dependerE: Entity, dependerPK: SomePropertyKey,
         dependees:  Traversable[Entity],
@@ -780,11 +792,8 @@ class PropertyStore private (
             remainingEs = remainingEs.tail
             val p = this(dependeeE, dependeePK)
             p match {
-                case Some(dependeeP) ⇒
-                    if (!expectedP(dependeeP))
-                        return c(false);
-                case None ⇒
-                    unavailableEs = dependeeE :: unavailableEs
+                case Some(dependeeP) ⇒ if (!expectedP(dependeeP)) return c(false);
+                case None            ⇒ unavailableEs = dependeeE :: unavailableEs
             }
         }
         if (unavailableEs.isEmpty) {
@@ -819,9 +828,9 @@ class PropertyStore private (
     /**
      * Returns an iterator of the different properties associated with the given element.
      *
-     * This method is the preferred way to get all properties of an entity and should be used
-     * if you know that all properties are already computed. Using this method will not
-     * trigger the computation of a property.
+     * This method is the preferred way to get a snapshot all properties of an entity and should
+     * be used if you know that all properties are already computed. Using this method '''will not
+     * trigger''' the computation of a property.
      *
      * @note The returned iterator operates on a snapshot and will never throw any
      * 		`ConcurrentModificatonException`.
@@ -829,7 +838,7 @@ class PropertyStore private (
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
-    // Locks: Store, Entity
+    // Locks: accessEntity, Entity
     def properties(e: Entity): List[Property] = {
         val eps = data.get(e)
         val l = eps.l
@@ -846,7 +855,7 @@ class PropertyStore private (
      *
      * While the view is computed all other computations are blocked.
      *
-     * @note Lazy/direct property computations are not triggered.
+     * Lazy/direct property computations are not triggered.
      */
     // Locks: accessStore
     def entities[P <: Property](pk: PropertyKey[P]): Traversable[EP[Entity, P]] = {
@@ -860,15 +869,14 @@ class PropertyStore private (
     }
 
     /**
-     * Directly associate the given property `p` with given entity `e`.
+     * Directly associate the given property `p` with given entity `e` if `e` has no property
+     * of the respective kind and no other lazy or direct computation is currently executed.
      *
-     * This method must not be used if the given entity might already be associated with
-     * a property of the respective kind or '''if there might be a (schedule) computation that
-     * computes the property `p` for `e`''' (e.g., a lazy property computation).
+     * This method must not be used '''if there might be a regular scheduled computation that
+     * computes the property `p` for `e`'''.
      *
-     * The primary use case is an analysis that does not use the property store for
-     * executing the analysis, but wants to store some results in the store (and to use the
-     * store's propagation mechanism.)
+     * A use case is an analysis that does not use the property store for executing the analysis,
+     * but wants to store some results in the store (and to use the store's propagation mechanism.)
      */
     // Locks: accessEntity and this.update(...): Entity
     def set(e: Entity, p: Property): Unit = {
@@ -883,11 +891,11 @@ class PropertyStore private (
                 if ((pos eq null) || (pos.p eq null))
                     // we do not have a property...
                     handleResult(ImmediateResult(e, p))
-                else if (debug) logDebug(
-                    "analysis progress",
-                    s"did not set the property ${p} for $e, "+
-                        s"because the entity already has a property or it is currently computed"
-                )
+                else
+                    logWarn(
+                        "analysis progress",
+                        s"$e: did not set the property $p because it already has ${pos.p}"
+                    )
             }
         }
     }
@@ -896,8 +904,10 @@ class PropertyStore private (
      * Stores the properties of the respective entities in the store if the respective property
      * is not yet associated with a property of the same kind. The properties are stored as
      * final values.
+     *
+     * @see `set(e:Entity,p:Property):Unit` for further details.
      */
-    // Locks: set(Entity,Property): accessEntity, Entity(write), this.update(...): Entity(write)
+    // Locks (indirectly): set(Entity,Property): accessEntity, Entity(write), this.update(...): Entity(write)
     def set(ps: Traversable[SomeEP]): Unit = ps foreach { ep ⇒ set(ep.e, ep.p) }
 
     /**
@@ -905,6 +915,9 @@ class PropertyStore private (
      * a property of the respective kind (`pk`). For those elements that are already associated
      * with a respective property `p`,  `f` will immediately be scheduled
      * (i.e., `f` will not be executed immediately.)
+     *
+     * If the entity `e` is updated multiple times no guarantee is given in which order `f`
+     * is called with the new properties.
      */
     // Locks: Store (Exclusive) and scheduleTask
     def onPropertyChange[P <: Property](pk: PropertyKey[P])(f: (Entity, P) ⇒ Unit): Unit = {
@@ -954,7 +967,8 @@ class PropertyStore private (
      * Executes the given function `f` in parallel for all entities in the store.
      * `f` is allowed to derive any properties related to any other entity found in the store.
      * However, if `f` derives a property `pNew` of property kind `pk` and the respective entity
-     * `e` already has a property `pOld` of property kind pk, then the new property will be ignored.
+     * `e` already has a property `pOld` of property kind `pk`, then the new property will be
+     * ignored.
      *
      * The function may also access the store to query '''other properties'''; however, this should
      * in general only be done after all previously scheduled computations - that
@@ -964,6 +978,8 @@ class PropertyStore private (
      *
      * This function cannot be used to register a function that (bi-directionally) interacts with
      * other analyses.
+     *
+     * @see `set(e:Entity,p:Property):Unit` for further details.
      *
      * @param entitySelector A partial function that selects the entities of interest.
      * @param f The function that computes the respective property.
@@ -977,7 +993,7 @@ class PropertyStore private (
         // we use the remaining entities as a worklist
         @volatile var remainingEntities = keysList
         var i = 0
-        // We use exactly ThreadCount number of threads that process all entities
+        // We use exactly ThreadCount number of threads that process all entities.
         val max = ThreadCount
         while (i < max) {
             i += 1
@@ -1031,9 +1047,8 @@ class PropertyStore private (
      * 		}}}
      */
     def <<![P <: Property](pk: PropertyKey[P], dpc: (Entity) ⇒ Property): Unit = accessStore {
-        /* The framework has to handle:
-         *  1. the situation that the same dpc is potentially triggered by multiple other analyses
-         *     concurrently
+        /* The framework has to handle the situation that the same dpc is potentially triggered
+         * by multiple other analyses concurrently!
          *
          * The framework does not have to handle the following two situations because direct
          * property computations may not depend on properties of the same kind.
@@ -1042,7 +1057,7 @@ class PropertyStore private (
          *  	t1:	o → o1 → o2
          *                 ↙︎ ↑
          *      t2:	o → o3 → o4
-         *      t1 and t2 are two threads that run concurrently; an arrow means that
+         *      t1 and t2 are two threads that run concurrently.
          *      Now: if o2 depends on o3 to finish, but o4 is currently running then o2 will block
          *      	 but if now o4 requires the property computed by o2 it also needs to wait.
          *      	 Hence, we have a deadlock.
@@ -1325,9 +1340,12 @@ class PropertyStore private (
 
                         try {
                             if (!isInterrupted) {
-                                if (debug) logDebug(
-                                    "analysis progress", s"handling unsatisfied dependencies"
-                                )
+                                if (debug) {
+                                    Thread.sleep(250)
+                                    logDebug(
+                                        "analysis progress", s"handling unsatisfied dependencies"
+                                    )
+                                }
                                 handleUnsatisfiedDependencies()
                             }
                         } catch {
@@ -1484,6 +1502,10 @@ class PropertyStore private (
             for (cSCC ← cSCCs) {
                 val results = PropertyKey.resolveCycle(store, cSCC)
                 if (results.nonEmpty) {
+                    if (debug) {
+                        val cycle = cSCC.mkString("", " → ", " ↺")
+                        logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
+                    }
                     for (result ← results) {
                         handleResult(result)
                     }
@@ -1492,9 +1514,7 @@ class PropertyStore private (
                         val infoMessage = s"\tresolution produced no results; removing observers\n\t"
                         logInfo("analysis progress", infoMessage)
                     }
-                    for (epk ← cSCC) {
-                        clearAllDependeeObservers(epk)
-                    }
+                    for (epk ← cSCC) { clearAllDependeeObservers(epk) }
                 }
             }
 
@@ -1741,6 +1761,10 @@ class PropertyStore private (
                     // We are either updating or setting a property or changing the state of the
                     // property => intermediate result => final result
                     val oldP = pos.p
+                    if (debug && (oldP ne null) && p.isOrdered) {
+                        p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty).foreach(s ⇒
+                            throw new AssertionError(s"$e: $s"))
+                    }
                     /*internal*/ /* assert(
                         (oldP eq null) || oldP.isBeingComputed || oldP.key == pk,
                         s"the key of the old property ${oldP.key} and the new property ${pk} are different"
@@ -1751,7 +1775,7 @@ class PropertyStore private (
                         case OneStepFinalUpdate.id ⇒
                             if (debug) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
-                                s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
+                                s"$e: the old property $oldP is final; refinement to $p is not supported"
                             )
                             /*internal*/ // assert(clearAllDependeeObservers(EPK(e, pk)) == false)
                             // The computation did not create any (still living) dependencies!
@@ -1765,7 +1789,7 @@ class PropertyStore private (
                         case FinalUpdate.id ⇒
                             if (debug) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
-                                s"$e: the old property $oldP is already a final property and refinement to $p is not supported"
+                                s"$e: the old property $oldP is final; refinement to $p is not supported"
                             )
                             clearAllDependeeObservers(EPK(e, pk))
                             ps(pkId) = new PropertyAndObservers(p, null /* <=> p is final  */ )
@@ -1792,8 +1816,7 @@ class PropertyStore private (
 
                             } else {
                                 if (debug) logDebug(
-                                    "analysis progress",
-                                    s"$e: useless intermediate update $oldP => $p"
+                                    "analysis progress", s"$e: ignoring useless update $oldP => $p"
                                 )
                                 os = Nil
                             }
@@ -1802,6 +1825,7 @@ class PropertyStore private (
                     os
                 }
             }
+            /*internal*/ //  assert(os ne null, s"$e($updateType => $p): os is null")
             if (os.nonEmpty) {
                 // inform all (previously registered) observers about the value
                 scheduleRunnable { os foreach { o ⇒ o(e, p, updateType) } }
@@ -1812,7 +1836,10 @@ class PropertyStore private (
         // PROCESSING RESULTS
         //
 
-        if (debug) logDebug("analysis progress", s"analysis result $r")
+        if (debug && r.id != Results.id && r.id != IncrementalResult.id) logDebug(
+            "analysis progress", s"analysis result $r"
+        )
+
         val resultId = r.id
         accessEntity {
             (resultId: @scala.annotation.switch) match {
@@ -1868,8 +1895,14 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(dependerE, dependerP, dependees: Traversable[SomeEOptionP], c) = r
-                    if (debug) assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
-                    if (debug) assert(dependerP.isRefineable, s"$dependerE: intermediate result $r used to store final property $dependerP")
+                    if (debug) assert(
+                        dependees.nonEmpty,
+                        s"the intermediate result $r has no dependencies"
+                    )
+                    if (debug) assert(
+                        dependerP.isRefineable,
+                        s"intermediate result $r used to store final property $dependerP"
+                    )
 
                     val dependerPK = dependerP.key
                     val dependerEPK = EPK(dependerE, dependerPK)
