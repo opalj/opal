@@ -53,7 +53,7 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * but which does not mutate the state of the class does not affect the mutability rating.
  *
  * The mutability assessment is by default done on a per class basis and only includes
- * the super classes of a class. A rating that includes all usages is only meaningful
+ * the super classes of a class. A rating that is based on all usages is only meaningful
  * if we analyze an application.
  *
  * ==Thread-safe Lazily Initialized Fields==
@@ -89,7 +89,9 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * @author Andre Pacak
  * @author Michael Eichberg
  */
-sealed trait ObjectImmutability extends Property with ObjectImmutabilityPropertyMetaInformation {
+sealed trait ObjectImmutability
+        extends OrderedProperty
+        with ObjectImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `ObjectImmutability` properties.
@@ -97,6 +99,7 @@ sealed trait ObjectImmutability extends Property with ObjectImmutabilityProperty
     final def key = ObjectImmutability.key
 
     def correspondingTypeImmutability: TypeImmutability
+
 }
 /**
  * Common constants use by all [[ObjectImmutability]] properties associated with methods.
@@ -117,6 +120,18 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
     )
 }
 
+case object UnknownObjectImmutability extends ObjectImmutability {
+    final val isRefineable = true
+    final val correspondingTypeImmutability = UnknownTypeImmutability
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other == UnknownObjectImmutability)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+}
+
 /**
  * An instance of the respective class is effectively immutable
  * and also all reference objects. I.e., after creation it is not
@@ -128,6 +143,13 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
 case object ImmutableObject extends ObjectImmutability {
     final val isRefineable = false
     final val correspondingTypeImmutability = ImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 /**
@@ -138,17 +160,38 @@ case object ImmutableObject extends ObjectImmutability {
 case object ConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = false
     final val correspondingTypeImmutability = ConditionallyImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = true
     final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 sealed trait MutableObject extends ObjectImmutability {
     final val isRefineable = false
     val reason: String
     final val correspondingTypeImmutability = MutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
