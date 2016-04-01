@@ -983,10 +983,10 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${projectType.toJava} is defined by multiple class files: "+
-                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and "+
+                            s"${projectType.toJava} is defined by multiple class files:\n\t"+
+                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and\n\t"+
                                 source.map(_.toString).getOrElse("<VIRTUAL>")+
-                                "; keeping the first one."
+                                "\n\tkeeping the first one."
                         )
                     )
                 } else {
