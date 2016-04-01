@@ -1869,6 +1869,10 @@ class PropertyStore private (
         accessEntity {
             (resultId: @scala.annotation.switch) match {
 
+                case Results.id ⇒
+                    val Results(results) = r
+                    results.foreach(handleResult(_))
+
                 case ImmediateResult.id ⇒
                     val ImmediateResult(e, p) = r
                     update(e, p, OneStepFinalUpdate)

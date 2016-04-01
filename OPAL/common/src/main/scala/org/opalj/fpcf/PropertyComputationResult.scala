@@ -178,6 +178,13 @@ case class IncrementalResult[E <: Entity](
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 6 }
 
+case class Results(results: List[PropertyComputationResult]) extends PropertyComputationResult {
+
+    private[fpcf] final def id = Results.id
+
+}
+private[fpcf] object Results { private[fpcf] final val id = 7 }
+
 //
 //
 // PACKAGE PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
