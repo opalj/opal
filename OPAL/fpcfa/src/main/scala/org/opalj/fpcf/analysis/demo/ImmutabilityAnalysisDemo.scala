@@ -63,13 +63,9 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val projectStore = project.get(SourceElementsPropertyStoreKey)
-        projectStore.debug = true
-
-        // We immediately also schedule the purity analysis to improve the
-        // parallelization!
+        //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-
         var t = Seconds.None
         time {
             manager.runAll(
@@ -94,14 +90,19 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             }
 
         val immutableClassesInfo =
-            immutableClasses.values.flatten.map { ep ⇒
+            immutableClasses.values.flatten.filter { ep ⇒
+                !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
+            }.map { ep ⇒
                 ep.e.asInstanceOf[ClassFile].thisType.toJava+
                     " => "+ep.p+
                     " => "+projectStore(ep.e, TypeImmutability.key).get
             }.mkString("\n")
 
         val categoryCounts =
-            immutableClasses.map(kv ⇒ kv._1+": "+kv._2.filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).size).
+            immutableClasses.map(kv ⇒
+                kv._1+
+                    ": "+
+                    kv._2.filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).size).
                 toList.sorted.mkString("\n")
 
         BasicReport(
