@@ -45,10 +45,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  *
  * @author Michael Eichberg
  */
-sealed trait TypeImmutability
-        extends Property
-        with TypeImmutabilityPropertyMetaInformation
-        with scala.math.Ordered[TypeImmutability] {
+sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `TypeImmutability` properties.
@@ -84,7 +81,6 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
 /**
  * An instance of the respective class is effectively immutable. I.e., after creation it is not
  * possible for a client to set a field or to call a method that updates the internal state
- *
  */
 case object ImmutableType extends TypeImmutability {
 
@@ -96,7 +92,12 @@ case object ImmutableType extends TypeImmutability {
         if (this == that) this else that
     }
 
-    def compare(that: TypeImmutability) = { if (this == that) 0 else 1 }
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 case object UnknownTypeImmutability extends TypeImmutability {
@@ -109,8 +110,12 @@ case object UnknownTypeImmutability extends TypeImmutability {
         if (that == MutableType) MutableType else this
     }
 
-    def compare(that: TypeImmutability) = { if (this == that) 0 else -1 }
-
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other == UnknownTypeImmutability)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
 case object ConditionallyImmutableType extends TypeImmutability {
@@ -126,13 +131,11 @@ case object ConditionallyImmutableType extends TypeImmutability {
         }
     }
 
-    def compare(that: TypeImmutability) = {
-        if (this == that)
-            0
-        else if (that == UnknownTypeImmutability || that == AtLeastConditionallyImmutableType)
-            1
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
         else
-            -1
+            Some(s"impossible refinement of $other to $this")
     }
 
 }
@@ -150,8 +153,11 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
         }
     }
 
-    def compare(that: TypeImmutability) = {
-        if (this == that) 0 else if (that == UnknownTypeImmutability) 1 else -1
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
     }
 
 }
@@ -164,8 +170,11 @@ case object MutableType extends TypeImmutability {
 
     def join(other: TypeImmutability): this.type = this
 
-    def compare(that: TypeImmutability) = {
-        if (this == that) 0 else throw new IllegalArgumentException
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
     }
 
 }
