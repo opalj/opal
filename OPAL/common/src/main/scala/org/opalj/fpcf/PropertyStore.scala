@@ -1537,7 +1537,6 @@ class PropertyStore private (
                     set(e, defaultP)
                 }
 
-                //                scheduleHandleFallbackResults(directlyIncomputableEPKs)
                 if (debug) logDebug(
                     "analysis progress", "created all tasks for setting the fallback properties"
                 )
