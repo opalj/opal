@@ -140,10 +140,8 @@ class TypeImmutabilityAnalysis(
                 // AtLeastConditionallyImmutableType
                 def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
 
-                    ///*debug*/
-                    val previousDependencies = dependencies
-                    ///*debug*/
-                    val previousJoinedImmutability = joinedImmutability
+                    ///*debug*/ val previousDependencies = dependencies
+                    ///*debug*/ val previousJoinedImmutability = joinedImmutability
 
                     def nextResult(): PropertyComputationResult = {
                         if (dependencies.isEmpty) {
@@ -159,7 +157,7 @@ class TypeImmutabilityAnalysis(
                             if (joinedImmutability == ConditionallyImmutableType) {
                                 Result(cf, ConditionallyImmutableType)
                             } else {
-                                /* DEBUGGING */
+                                /* DEBUGGING 
                                 assert(joinedImmutability.isRefineable)
                                 assert(
                                     previousDependencies != dependencies ||
@@ -171,7 +169,7 @@ class TypeImmutabilityAnalysis(
                                 maxImmutability.isValidSuccessorOf(joinedImmutability).foreach { s ⇒
                                     throw new AssertionError(s"associating $e with new property $p failed: $s")
                                 }
-                                /* */
+                                */
                                 IntermediateResult(cf, joinedImmutability, dependencies, c)
                             }
                         }
@@ -181,17 +179,15 @@ class TypeImmutabilityAnalysis(
                         case MutableType ⇒ Result(cf, MutableType)
 
                         case UnknownTypeImmutability ⇒
-                            //[DEBUG]
-                            var updated = false
+                            //[DEBUG] var updated = false
                             dependencies = dependencies map {
                                 case EPK(dependeeE, _) if dependeeE eq e ⇒
-                                    //[DEBUG]
-                                    updated = true
+                                    //[DEBUG] updated = true
                                     EP(e.asInstanceOf[ClassFile], UnknownTypeImmutability)
                                 case d ⇒
                                     d
                             }
-                            /* DEBUGGING */
+                            /* DEBUGGING
                             assert(
                                 updated,
                                 s"${cf.thisType.toJava}: didn't find the dependeeE $e in ${dependencies.mkString("(", ",", ")")}"
@@ -207,7 +203,7 @@ class TypeImmutabilityAnalysis(
                                     s"$previousDependencies => $dependencies;\n"+
                                     s"$previousJoinedImmutability => $joinedImmutability"
                             )
-                            /* */
+                            */
                             IntermediateResult(cf, joinedImmutability, dependencies, c)
                         case ImmutableType ⇒
                             dependencies = dependencies.filter(_.e ne e)
@@ -229,7 +225,7 @@ class TypeImmutabilityAnalysis(
                     }
                 }
 
-                assert(joinedImmutability.isRefineable)
+                //[DEBUG] assert(joinedImmutability.isRefineable)
                 IntermediateResult(cf, joinedImmutability, dependencies, c)
             }
         }
