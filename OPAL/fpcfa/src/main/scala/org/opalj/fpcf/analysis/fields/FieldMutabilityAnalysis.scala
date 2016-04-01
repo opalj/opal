@@ -41,12 +41,9 @@ import org.opalj.br.instructions.PUTSTATIC
  */
 class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    def determineProperty(classFile: ClassFile): PropertyComputationResult = {
-
+    def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
         val thisType = classFile.thisType
-
         val fields = classFile.fields
-
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
         var effectivelyFinalFields = psnfFields
         for {
@@ -95,12 +92,9 @@ object FieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
-    protected[analysis] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FieldMutabilityAnalysis(project)
-        propertyStore <||< (entitySelector(project), analysis.determineProperty)
+        propertyStore <||< (entitySelector(project), analysis.determineFieldMutabilities)
         analysis
     }
 }
