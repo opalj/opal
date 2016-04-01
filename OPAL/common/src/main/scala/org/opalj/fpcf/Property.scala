@@ -54,6 +54,9 @@ trait Property extends PropertyMetaInformation {
      */
     final def isFinal = !isRefineable
 
+    /**
+     * Equality of Properties has to be based on structural equality.
+     */
     override def equals(other: Any): Boolean
 
     /**
@@ -63,15 +66,27 @@ trait Property extends PropertyMetaInformation {
     // only used in combination with direct property computations
     private[fpcf] def isBeingComputed: Boolean = false
 
-    def isOrdered: Boolean = false
+    /**
+     * Returns true if this property inherits from [[OrderedProperty]].
+     */
+    private[fpcf] def isOrdered: Boolean = false
 
     /**
-     * Used for debugging purposes only!
+     * Returns `this` if this property inherits from [[OrderedProperty]].
+     *
+     * Used by the framework for debugging purposes only!
      */
-    def asOrderedProperty: OrderedProperty = throw new UnsupportedOperationException
+    private[fpcf] def asOrderedProperty: OrderedProperty = throw new UnsupportedOperationException
 
 }
 
+/**
+ * Ordered properties define a definitive order between all properties of a respective kind;
+ * all properties that are of the same kind have to inherit from ordered property or none.
+ *
+ * This information is used by the property store when debugging is turned on to test if an
+ * analysis which derives a new property always derives a more precise property.
+ */
 trait OrderedProperty extends Property {
 
     final override def isOrdered: Boolean = true
@@ -90,13 +105,17 @@ trait OrderedProperty extends Property {
 }
 
 private[fpcf] trait PropertyIsBeingComputed extends Property {
+
     final override def key = throw new UnsupportedOperationException
     final override def isRefineable = throw new UnsupportedOperationException
     final override private[fpcf] def isBeingComputed: Boolean = true
+
 }
 
 private[fpcf] object PropertyIsBeingComputed {
+
     def unapply(p: Property): Boolean = (p ne null) && p.isBeingComputed
+
 }
 
 /**
@@ -116,9 +135,13 @@ private[fpcf] object PropertyIsBeingComputed {
 private[fpcf] final class PropertyIsDirectlyComputed
         extends CountDownLatch(1)
         with PropertyIsBeingComputed {
+
     type Self = PropertyIsDirectlyComputed
+
 }
 
 private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
+
     type Self = PropertyIsLazilyComputed.type
+
 }

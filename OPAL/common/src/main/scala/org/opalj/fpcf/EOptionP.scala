@@ -64,6 +64,9 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     override def toString: String = s"EOptionP($e,$p)"
 }
 
+/**
+ * Factory object to create [[EP]] and [[EPK]] objects.
+ */
 object EOptionP {
 
     def apply[E <: Entity, P <: Property](
