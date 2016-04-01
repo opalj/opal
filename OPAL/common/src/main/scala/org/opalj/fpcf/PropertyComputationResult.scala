@@ -191,16 +191,6 @@ private[fpcf] object Results { private[fpcf] final val id = 7 }
 //
 //
 
-private[fpcf] case class FallbackResult(
-        e: Entity,
-        p: Property
-) extends PropertyComputationResult {
-
-    private[fpcf] final def id = FallbackResult.id
-
-}
-private[fpcf] object FallbackResult { private[fpcf] final val id = 7 }
-
 /**
  * Represents a suspended computation.
  *

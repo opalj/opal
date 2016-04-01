@@ -1512,21 +1512,22 @@ class PropertyStore private (
             // there are no open computations related to the respective property.
             // This is also the case if no respective analysis is registered so far.
             if (directlyIncomputableEPKs.nonEmpty && useFallbackForIncomputableProperties) {
-                if (debug) logDebug(
-                    "analysis progress",
-                    s"fallback is used for ${directlyIncomputableEPKs.size} entities: "+
-                        directlyIncomputableEPKs.mkString(",")
-                )
-                for {
-                    EPK(e, pk) ← directlyIncomputableEPKs
-                } {
+
+                for (EPK(e, pk) ← directlyIncomputableEPKs) {
                     /*internal*/ /* assert(
                         data.get(e).ps(pk.id).p eq null,
                         s"the entity $e already has a property ${data.get(e).ps(pk.id).p}($pk)"
                     ) */
                     val defaultP = PropertyKey.fallbackProperty(store, e, pk)
-                    scheduleHandleFallbackResult(e, defaultP)
+                    effectiveDefaultPropertiesCount.incrementAndGet()
+                    logInfo(
+                        "analysis progress",
+                        s"using default property ${PropertyKey.name(pk.id)}:$defaultP for $e"
+                    )
+                    set(e, defaultP)
                 }
+
+                //                scheduleHandleFallbackResults(directlyIncomputableEPKs)
                 if (debug) logDebug(
                     "analysis progress", "created all tasks for setting the fallback properties"
                 )
@@ -1545,16 +1546,6 @@ class PropertyStore private (
                 if (debug) logDebug("analysis progress", s"remaining tasks: $scheduled")
                 wait()
             }
-        }
-    }
-
-    /**
-     * Schedules the handling of the result of a property computation.
-     */
-    // Locks of scheduleRunnable: Tasks
-    private[this] def scheduleHandleFallbackResult(e: Entity, p: Property): Unit = {
-        scheduleRunnable {
-            handleResult(FallbackResult(e, p))
         }
     }
 
@@ -1748,11 +1739,6 @@ class PropertyStore private (
                                 ps(p.key.id).p == p,
                                 s"the property store $pos does not contain the new property $p"
                             ) */
-
-                        case FallbackUpdate.id ⇒
-                            val m = s"fallback property $p assigned to entity $e without dependers"
-                            throw new UnknownError(m)
-
                     }
                     Nil // <=> we have no observers
                 } else {
@@ -1822,34 +1808,6 @@ class PropertyStore private (
                                 os = Nil
                             }
 
-                        case FallbackUpdate.id ⇒
-                            // Fallback updates are only used in case a property of an entity
-                            // is required by a dependent computation and no more computation is
-                            // running that could compute this property.
-                            if (debug) assert(p.isFinal, "fallback properties need to be final")
-                            /*internal*/ /* assert(
-                                oldP eq null,
-                                s"$e already has a property $oldP; no fallback required"
-                            ) */
-                            /*internal*/ /* assert(
-                                os ne null,
-                                s"the fallback property $p for $e is not required"
-                            ) */
-                            /*internal*/ /* assert(
-                                clearAllDependeeObservers(EPK(e, pk)) == false,
-                                s"assigning fallback property $p to $e which has unsatisfied dependencies"
-                            ) */
-
-                            if (debug) logDebug("analysis progress", s"$e: using default property $p")
-
-                            effectiveDefaultPropertiesCount.incrementAndGet()
-
-                            ps(pkId) = new PropertyAndObservers(p, null)
-                        /*internal*/ /* assert(
-                                ps(p.key.id).p == p,
-                                s"the property store $pos does not contain the new property $p"
-                            ) */
-
                     }
                     os
                 }
@@ -1912,14 +1870,6 @@ class PropertyStore private (
                             s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                         ) */
                     }
-
-                case FallbackResult.id ⇒
-                    val FallbackResult(e, p) = r
-                    update(e, p, FallbackUpdate)
-                /*internal*/ /* assert(
-                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    ) */
 
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
