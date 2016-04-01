@@ -100,6 +100,7 @@ sealed trait ObjectImmutability
 
     def correspondingTypeImmutability: TypeImmutability
 
+    def isMutable: Answer
 }
 /**
  * Common constants use by all [[ObjectImmutability]] properties associated with methods.
@@ -130,6 +131,8 @@ case object UnknownObjectImmutability extends ObjectImmutability {
         else
             Some(s"impossible refinement of $other to $this")
     }
+
+    def isMutable: Answer = Unknown
 }
 
 /**
@@ -150,6 +153,8 @@ case object ImmutableObject extends ObjectImmutability {
         else
             Some(s"impossible refinement of $other to $this")
     }
+
+    final def isMutable: Answer = No
 }
 
 /**
@@ -167,6 +172,8 @@ case object ConditionallyImmutableObject extends ObjectImmutability {
         else
             Some(s"impossible refinement of $other to $this")
     }
+
+    final def isMutable: Answer = No
 }
 
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
@@ -179,6 +186,8 @@ case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
         else
             Some(s"impossible refinement of $other to $this")
     }
+
+    final def isMutable: Answer = No
 }
 
 sealed trait MutableObject extends ObjectImmutability {
@@ -192,6 +201,8 @@ sealed trait MutableObject extends ObjectImmutability {
         else
             Some(s"impossible refinement of $other to $this")
     }
+
+    final def isMutable: Answer = Yes
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
