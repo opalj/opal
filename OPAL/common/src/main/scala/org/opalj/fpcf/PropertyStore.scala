@@ -1391,38 +1391,17 @@ class PropertyStore private (
         //     which no computation exits.
         //Locks: handleResult: Store (access), Entity and scheduleContinuation: Tasks
         private[this] def handleUnsatisfiedDependencies(): Unit = {
-
-            /*
-      		 * Returns the list of observers related to the given entity and property kind.
-       		 * I.e., the list of observers on those elements that are needed to compute the
-       		 * given property kind.
-       		 */
-            def getDependeeObservers(e: Entity, pkId: Int): Observers = {
-                val eps = data.get(e)
-                if (eps eq null)
-                    return null; // <= the entity is unknown
-
-                val ps = eps.ps
-                val pos = ps(pkId)
-                if (pos eq null)
-                    null
-                else
-                    pos.os
-            }
-
             val observers = store.observers
 
+            val directlyIncomputableEPKs = HSet.empty[SomeEPK]
             val indirectlyIncomputableEPKs = HSet.empty[SomeEPK]
-
             // All those EPKs that require some information that do not depend (directly
             // or indirectly) on an incomputableEPK.
             val cyclicComputableEPKCandidates = HSet.empty[SomeEPK]
 
-            val directlyIncomputableEPKs = HSet.empty[SomeEPK]
-
             /*
              * @param epks The set of EPKs which have a dependency on dependerEPK.
-             * @return Those epks that are newly added to set epks. If epks is initially empty
+             * @return Those epks that are newly added to the set epks. If epks is initially empty
              * 		the returned list and the given set epks contain the same elements.
              */
             def determineDependentIncomputableEPKs(
@@ -1453,60 +1432,47 @@ class PropertyStore private (
                 newDependentEPKs
             }
 
-            /* Let's determine all EPKs that have a dependency on an incomputableEPK
-             * (They may be in a strongly connected component, but we don't care about
-             * these, because they may still be subject to some refinement.)
-             */
-            def determineIncomputableEPKs(dependerEPK: SomeEPK): Unit = {
-                cyclicComputableEPKCandidates --=
-                    determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
-            }
-
             observers.entrySet().asScala foreach { e ⇒
                 val dependerEPK = e.getKey
                 if (!indirectlyIncomputableEPKs.contains(dependerEPK)) {
+                    cyclicComputableEPKCandidates += dependerEPK
                     val dependees = e.getValue
                     dependees foreach { dependee ⇒
                         val dependeeEPK = dependee._1
                         if (!observers.containsKey(dependeeEPK)) {
                             directlyIncomputableEPKs += dependeeEPK
-                            /*internal*/ /* assert(
-                                data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).p eq null,
-                                s"property propagation failed $dependeeEPK has a property("+
-                                    s"${data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).p}"+
-                                    s"), but $dependerEPK was not notified"
-                            ) */
                             indirectlyIncomputableEPKs += dependerEPK
-                            determineIncomputableEPKs(dependerEPK)
+                            determineDependentIncomputableEPKs(dependerEPK, indirectlyIncomputableEPKs)
                         } else {
-                            // this EPK observes EPKs that have observers...
-                            // but, is it also observed?
-                            val observers = getDependeeObservers(dependerEPK.e, dependerEPK.pk.id)
-                            if (observers ne null) {
-                                cyclicComputableEPKCandidates += dependerEPK
-                            }
+                            cyclicComputableEPKCandidates += dependeeEPK
                         }
                     }
                 }
             }
+            cyclicComputableEPKCandidates --= directlyIncomputableEPKs
+            cyclicComputableEPKCandidates --= indirectlyIncomputableEPKs
 
             val epkSuccessors: (SomeEPK) ⇒ Traversable[SomeEPK] = (epk: SomeEPK) ⇒ {
                 val observers = store.observers.get(epk)
-                /*internal*/ /* assert(
+                /*internal*/ assert(
                     observers ne null,
-                    s"$epk has no observers!\n"+
-                        s"\tcyclicComputableEPKCandidates="+
-                        {
+                    {
+                        writeAndOpen(visualizeDependencies(), "PropertyStoreDependencies", ".dot")
+                        s"$epk has no dependees!\n"+
                             cyclicComputableEPKCandidates.
-                                map(c ⇒ store.observers.get(c).map(_._1)).
-                                mkString("", "->", "\n")
-                        } +
-                        s"\tdirectlyIncomputableEPKs=$directlyIncomputableEPKs\n"+
-                        s"\tindirectlyIncomputableEPKs=$indirectlyIncomputableEPKs"
-                ) */
+                            map(_.toString.replace("\n", "\n\t\t")).
+                            mkString("\tcyclicComputableEPKCandidates=\n\t\t", " ->\n\t\t", "\n") +
+                            directlyIncomputableEPKs.
+                            map(_.toString.replace("\n", "\n\t\t")).
+                            mkString("\tdirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n") +
+                            indirectlyIncomputableEPKs.
+                            map(_.toString.replace("\n", "\n\t\t")).
+                            mkString("\tindirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n")
+                    }
+                )
                 observers.view.map(_._1)
             }
-            val cSCCs: List[Iterable[SomeEPK]] = org.opalj.graphs.closedSCCs[SomeEPK](
+            val cSCCs: List[Iterable[SomeEPK]] = closedSCCs(
                 cyclicComputableEPKCandidates, epkSuccessors
             )
             if (debug && cSCCs.nonEmpty) logDebug(
