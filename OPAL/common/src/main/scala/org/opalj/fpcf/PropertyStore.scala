@@ -257,6 +257,30 @@ class PropertyStore private (
     }
 
     /**
+     * Returns a graphviz/dot representation of the current dependencies.
+     */
+    def visualizeDependencies(): String = accessStore {
+        val epkNodes = mutable.Map.empty[SomeEPK, DefaultMutableNode[SomeEPK]]
+
+        def getNode(epk: SomeEPK): DefaultMutableNode[SomeEPK] = {
+            epkNodes.getOrElseUpdate(
+                epk,
+                { new DefaultMutableNode[SomeEPK](epk, (epk) ⇒ epk.e.toString+"\n"+epk.pk) }
+            )
+        }
+
+        observers.entrySet().asScala foreach { e ⇒
+            val dependerEPK = e.getKey()
+            val dependeeEPKs = e.getValue().map(_._1)
+            val dependerNode = getNode(dependerEPK)
+            val dependeeNodes = dependeeEPKs.map(getNode(_))
+            dependerNode.addChildren(dependeeNodes.toList)
+        }
+
+        org.opalj.graphs.toDot(epkNodes.values.toSet)
+    }
+
+    /**
      * Returns a snapshot of the stored properties.
      *
      * @note Some computations may still be running.
