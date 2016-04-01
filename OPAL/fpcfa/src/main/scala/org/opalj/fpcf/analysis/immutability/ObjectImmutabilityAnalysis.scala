@@ -76,9 +76,9 @@ class ObjectImmutabilityAnalysis(
      */
 
     /*
-         * Create a result object that sets this type and all subclasses of if
-         * to the given immutability rating.
-         */
+     * Create a result object that sets this type and all subclasses of if
+     * to the given immutability rating.
+     */
     @inline private[this] def createResultForAllSubtypes(
         t:            ObjectType,
         immutability: MutableObject
@@ -114,20 +114,24 @@ class ObjectImmutabilityAnalysis(
     }
 
     /**
-     * The main method to determine the immutability of instances of given class file `cf`.
+     * Determines the immutability of instances of the given class file `cf`.
      *
      * @param superClassFile The direct super class (file) of the given class file `cf`.
      * 		Can be `null` if `superClassMutability` is `ImmutableObject`.
      * @param superClassMutability The mutability of the given super class. The mutability
-     * 		must not be "MutableObject"; this case has to be handled explicitly.
+     * 		must not be "MutableObject"; this case has to be handled explicitly. Hence,
+     * 		the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
     def determineObjectImmutability(
         superClassFile:       ClassFile,
-        superClassMutability: ObjectImmutability // either unknown, immutable or (at least) conditionally immutable
+        superClassMutability: ObjectImmutability 
     )(
         cf: ClassFile
     ): PropertyComputationResult = {
+        //[DEBUG] assert(superClassMutability.isMutable.isNoOrUnknown)
 
+        // If the mutability of the super class is not yet finally determined, we have to
+        // keep a dependency to it.
         var dependees: List[EOptionP[Entity, Property]] =
             if (superClassMutability.isFinal)
                 List.empty
@@ -146,13 +150,10 @@ class ObjectImmutabilityAnalysis(
                 // We don't have the mutability information so far.
                 hasFieldsWithUnknownMutability = true
                 epk
-
+                
             // case EP(e, p: EffectivelyFinalField) => we can ignore effectively final fields
         }
-        // (IF WE DON'T WANT TO CONSIDER FINAL FIELDS THAT ARE DETECTED LATER ON!)
-        //        if (hasFieldsWithUnknownMutability)
-        //            return createResultForAllSubtypes(cf.thisType, MutableObjectByAnalysis);
-
+       
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ObjectImmutability =
             if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType))
@@ -163,14 +164,13 @@ class ObjectImmutabilityAnalysis(
             else
                 ImmutableObject
 
-        val fieldTypes: Set[ObjectType] =
-            // IMPROVE Use the precise type of the field (if available)!
-            cf.fields.collect {
-                case f if !f.isStatic && f.fieldType.isObjectType ⇒ f.fieldType.asObjectType
-            }.toSet
-
         val fieldTypesClassFiles: List[ClassFile] =
             if (maxLocalImmutability == ImmutableObject) {
+                val fieldTypes: Set[ObjectType] =
+                    // IMPROVE Use the precise type of the field (if available)!
+                    cf.fields.collect {
+                        case f if !f.isStatic && f.fieldType.isObjectType ⇒ f.fieldType.asObjectType
+                    }.toSet
                 var fieldTypesClassFiles = List.empty[ClassFile]
                 val hasUnresolvableDependencies =
                     fieldTypes.exists { t ⇒
@@ -188,7 +188,7 @@ class ObjectImmutabilityAnalysis(
                 }
             } else {
                 // The class is at most ConditionallyImmutable; hence, we don't care about
-                // the immutability of the fields
+                // the immutability of the fields.
                 Nil
             }
 
@@ -207,13 +207,17 @@ class ObjectImmutabilityAnalysis(
         //
         // Additional handling is required w.r.t. the supertype:
         // If the supertype is Immutable =>
-        //            "nothing special to do"
+        //            Nothing special to do.
         // If the supertype is AtLeastConditionallyImmutable =>
-        //            "we have to declare a dependency on the supertype"
+        //            We have to declare a dependency on the supertype.
+        // If the supertype is ConditionallyImmutable =>
+        //            This type is also at most conditionally immutable.
         //
         // We furthermore have to take the mutability of the fields into consideration:
         // If a field is not effectively final =>
         //            This type is mutable.
+        // If a field is effectively final =>
+        //            Nothing special to do.
 
         val fieldTypesImmutability = propertyStore(fieldTypesClassFiles, TypeImmutability.key)
         val hasMutableOrConditionallyImmutableField =
@@ -245,7 +249,7 @@ class ObjectImmutabilityAnalysis(
                 else
                     superClassMutability
             }
-            assert(immutability.isFinal, s"immutability is not final $immutability")
+            //assert(immutability.isFinal, s"immutability is not final $immutability")
             return createIncrementalResult(cf, immutability, ImmediateResult(cf, immutability));
         }
 
@@ -258,19 +262,21 @@ class ObjectImmutabilityAnalysis(
                 AtLeastConditionallyImmutableObject
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-            val oldDependees = dependees
+            //[DEBUG]             val oldDependees = dependees
             p match {
                 // Field Mutability related dependencies
                 case _: NonFinalField ⇒ return Result(cf, MutableObjectByAnalysis);
 
-                case _: FinalField    ⇒ dependees = dependees.filter(_.e ne e)
+                case _: FinalField ⇒
+                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == FieldMutability.key)
 
                 // Superclass related dependencies
                 case _: MutableObject ⇒ return Result(cf, MutableObjectByAnalysis);
 
                 case ImmutableObject /* the super class */ ⇒
                     currentSuperClassMutability = ImmutableObject
-                    dependees = dependees.filter(_.e ne e)
+                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == ObjectImmutability.key)
+                    dependees = dependees
 
                 case ConditionallyImmutableObject /* the super class */ ⇒
                     dependees = dependees.filterNot { d ⇒
@@ -282,7 +288,8 @@ class ObjectImmutabilityAnalysis(
 
                 case AtLeastConditionallyImmutableObject ⇒
                     currentSuperClassMutability = AtLeastConditionallyImmutableObject
-                    dependees = EP(e, p) :: dependees.filter(_.e ne e)
+                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == ObjectImmutability.key)
+                    dependees = EP(e, p) :: dependees
 
                 case ConditionallyImmutableType | MutableType ⇒
                     dependees = dependees.filterNot { d ⇒ d.pk == TypeImmutability.key }
@@ -292,17 +299,21 @@ class ObjectImmutabilityAnalysis(
                     dependees = dependees.filter(_.e ne e)
 
                 case UnknownTypeImmutability | AtLeastConditionallyImmutableType ⇒
-                    dependees = EP(e, p) :: dependees.filter(_.e ne e)
+                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == TypeImmutability.key)
+                    dependees = EP(e, p) :: dependees
 
             }
 
+            /*[DEBUG]
             assert(
                 oldDependees != dependees,
-                s"dependees are not correctly updated\n:$oldDependees\n$dependees"
+                s"dependees are not correctly updated $e($p)\n:old=$oldDependees\nnew=$dependees"
             )
+            */
 
             val result =
                 if (dependees.isEmpty) {
+                    /*[DEBUG] 
                     assert(
                         maxLocalImmutability == ConditionallyImmutableObject ||
                             maxLocalImmutability == ImmutableObject
@@ -319,6 +330,7 @@ class ObjectImmutabilityAnalysis(
                             s"maxLocalImmutability=$maxLocalImmutability - "+
                             s"(old dependees: ${oldDependees.mkString(",")}"
                     )
+                     */
                     if (currentSuperClassMutability == ConditionallyImmutableObject ||
                         maxLocalImmutability == ConditionallyImmutableObject)
                         Result(cf, ConditionallyImmutableObject)
@@ -334,12 +346,10 @@ class ObjectImmutabilityAnalysis(
                     }
                 }
 
-            // println(s"${cf.thisType.toJava}(\n\tmaxLocalImmutability=$maxLocalImmutability,\n\tcurrentSuperClassMutability=$currentSuperClassMutability):\n$e($p) =>Dependees: $dependees =>Result: $result\n\n")
-
             result
         }
 
-        assert(initialImmutability.isRefineable)
+        //[DEBUG] assert(initialImmutability.isRefineable)
         val result = IntermediateResult(cf, initialImmutability, dependees, c)
         createIncrementalResult(cf, initialImmutability, result)
     }
