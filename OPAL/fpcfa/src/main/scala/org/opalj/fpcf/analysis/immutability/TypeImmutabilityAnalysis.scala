@@ -37,16 +37,19 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.log.OPALLogger
 import org.opalj.br.ClassHierarchy
+import org.opalj.fpcf.analysis.extensibility.IsExtensible
 
-class TypeImmutabilityAnalysis(
-        final val project:        SomeProject,
-        final val classHierarchy: ClassHierarchy
-) extends FPCFAnalysis {
+class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
+
+    final val extensibleClasses = propertyStore.entities(IsExtensible)
 
     /**
      * @param cf A class file which is not the class file of `java.lang.Object`.
      */
-    def determineTypeImmutabilityApp(cf: ClassFile): PropertyComputationResult = {
+    def determineTypeImmutability(cf: ClassFile): PropertyComputationResult = {
+
+        if (extensibleClasses.contains(cf))
+            return ImmediateResult(cf, MutableType);
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
 
@@ -157,7 +160,7 @@ class TypeImmutabilityAnalysis(
                             if (joinedImmutability == ConditionallyImmutableType) {
                                 Result(cf, ConditionallyImmutableType)
                             } else {
-                                /* DEBUGGING 
+                                /* DEBUGGING
                                 assert(joinedImmutability.isRefineable)
                                 assert(
                                     previousDependencies != dependencies ||
@@ -244,27 +247,17 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 
-    override def usedProperties: Set[PropertyKind] = Set(ObjectImmutability)
+    override def usedProperties: Set[PropertyKind] = Set(ObjectImmutability, IsExtensible)
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val classHierarchy = project.classHierarchy
-        val analysis = new TypeImmutabilityAnalysis(project, classHierarchy)
-
-        // All classes that do not have complete superclass information are mutable
-        // due to lack of knowledge.
-        val mutableTypes = classHierarchy.rootClassTypes.
-            filter { rt ⇒ rt ne ObjectType.Object }.
-            map { rt ⇒ classHierarchy.allSubtypes(rt, reflexive = true) }.flatten.
-            map { ot ⇒ project.classFile(ot) }.flatten.toSet
-
-        mutableTypes foreach { cf ⇒ ps.handleResult(ImmediateResult(cf, MutableType)) }
+        val analysis = new TypeImmutabilityAnalysis(project)
 
         // An optimization if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
         ps <||< (
-            { case cf: ClassFile if !mutableTypes.contains(cf) && (cf.thisType ne ObjectType.Object) ⇒ cf },
-            analysis.determineTypeImmutabilityApp
+            { case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf },
+            analysis.determineTypeImmutability
         )
 
         analysis
