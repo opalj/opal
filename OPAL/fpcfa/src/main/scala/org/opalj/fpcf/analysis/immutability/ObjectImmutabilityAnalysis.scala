@@ -62,10 +62,7 @@ import org.opalj.log.OPALLogger
  *
  * @author Michael Eichberg
  */
-class ObjectImmutabilityAnalysis(
-        val project:        SomeProject,
-        val classHierarchy: ClassHierarchy
-) extends FPCFAnalysis {
+class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
      * The analysis is implemented as an incremental analysis which starts with the analysis
      * of those types which directly inherit from java.lang.Object and then propagates the
@@ -363,21 +360,21 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         import classHierarchy.isInterface
         implicit val logContext = project.logContext
 
-        val analysis = new ObjectImmutabilityAnalysis(project, classHierarchy)
+        val analysis = new ObjectImmutabilityAnalysis(project)
 
         // 1.1
-        // java.lang.Object is by definition immutable
+        // java.lang.Object is by definition immutable.
         val objectClassFileOption = project.classFile(ObjectType.Object)
         objectClassFileOption.foreach(cf ⇒ handleResult(ImmediateResult(cf, ImmutableObject)))
 
         // 1.2
-        // all (instances of) interfaces are (by their very definition) also immutable
+        // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
         handleResult(ImmediateMultiResult(allInterfaces.map(cf ⇒ EP(cf, ImmutableObject))))
 
         // 2.
-        // all classes that do not have complete superclass information are mutable
-        // due to the lack of knowledge
+        // All classes that do not have complete superclass information are mutable
+        // due to the lack of knowledge.
         val typesForWhichItMayBePossibleToComputeTheMutability = allSubtypes(ObjectType.Object, reflexive = true)
         val unexpectedRootTypes = rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && !isInterface(rt))
         unexpectedRootTypes.map(rt ⇒ allSubtypes(rt, reflexive = true)).flatten.view.
@@ -387,7 +384,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
             })
 
         // 3.
-        // the initial set of classes for which we want to determine the mutability
+        // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
         classHierarchy.directSubclassesOf(ObjectType.Object).view.
             map(ot ⇒ (ot, project.classFile(ot))).
