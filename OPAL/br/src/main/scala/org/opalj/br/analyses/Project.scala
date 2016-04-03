@@ -117,20 +117,20 @@ class Project[Source] private (
         private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
         private[this] val sources:                        OpenHashMap[ObjectType, Source],
         private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
-        val projectClassFilesCount:                       Int,
-        val projectMethodsCount:                          Int,
-        val projectFieldsCount:                           Int,
-        val libraryClassFilesCount:                       Int,
-        val libraryMethodsCount:                          Int,
-        val libraryFieldsCount:                           Int,
-        val codeSize:                                     Long,
-        val classHierarchy:                               ClassHierarchy,
-        val analysisMode:                                 AnalysisMode,
-        val libraryClassFilesAreInterfacesOnly:           Boolean
+        final val projectClassFilesCount:                 Int,
+        final val projectMethodsCount:                    Int,
+        final val projectFieldsCount:                     Int,
+        final val libraryClassFilesCount:                 Int,
+        final val libraryMethodsCount:                    Int,
+        final val libraryFieldsCount:                     Int,
+        final val codeSize:                               Long,
+        final val classHierarchy:                         ClassHierarchy,
+        final val analysisMode:                           AnalysisMode,
+        final val libraryClassFilesAreInterfacesOnly:     Boolean
 )(
         implicit
-        val logContext: LogContext,
-        val config:     Config
+        final val logContext: LogContext,
+        final val config:     Config
 ) extends ClassFileRepository {
 
     assert(
@@ -877,9 +877,7 @@ object Project {
         logContext: LogContext,
         ex:         InconsistentProjectException
     ): Unit = {
-
         OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
-
     }
 
     /**
