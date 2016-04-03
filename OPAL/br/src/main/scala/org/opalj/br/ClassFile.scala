@@ -123,7 +123,10 @@ final class ClassFile private (
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
     /**
-     * Returns `true` if the class is final or if it only defines private constructors.
+     * Returns `true` if the class is final or if it only defines private constructors and it
+     * is therefore not possible to inherit from this class.
+     *
+     * An interface is never effectively final.
      */
     def isEffectivelyFinal: Boolean = isFinal || (constructors forall { _.isPrivate })
 
