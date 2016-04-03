@@ -39,6 +39,7 @@ import org.opalj.io.OpeningFileFailedException
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import com.typesafe.config.ConfigFactory
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -102,24 +103,24 @@ trait AnalysisExecutor {
      * Prints out general information how to use this analysis. Printed whenever
      * the set of specified parameters is not valid.
      */
-    protected def printUsage(): Unit = {
+    protected def printUsage(implicit logContext: LogContext): Unit = {
+        val analysisModes = AnalysisModes.values.map(_.toString.replace(" ", "_")).mkString(",")
         OPALLogger.info(
             "usage",
             "java "+
                 this.getClass().getName()+"\n"+
                 "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
+                "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
                 analysisSpecificParametersDescription
-        )(GlobalLogContext)
-        OPALLogger.info(
-            "info", "description: "+analysis.description
-        )(GlobalLogContext)
-        OPALLogger.info(
-            "info", "copyright: "+analysis.copyright
-        )(GlobalLogContext)
+        )
+        OPALLogger.info("info", "description: "+analysis.description)
+        OPALLogger.info("info", "copyright: "+analysis.copyright)
     }
 
     def main(unparsedArgs: Array[String]): Unit = {
+
+        implicit val logContext = GlobalLogContext
 
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
@@ -137,13 +138,11 @@ trait AnalysisExecutor {
             ).toArray
 
         if (args.contains("-help") || args.length < unparsedArgs.length) {
-            printUsage()
+            printUsage
             sys.exit(0)
         }
 
-        def showError(message: String): Unit = {
-            println(Console.RED+"[error] "+Console.RESET + message)
-        }
+        def showError(message: String): Unit = OPALLogger.error("setup", message)
 
         //
         // 1. check arguments
@@ -200,13 +199,11 @@ trait AnalysisExecutor {
                 sys.exit(2)
         }
 
-        OPALLogger.info(
-            "setup", s"the classpath is ${cp.mkString}"
-        )(GlobalLogContext)
+        OPALLogger.info("setup", s"the classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
-            printUsage()
+            printUsage
             sys.exit(1)
         }
 
@@ -224,14 +221,31 @@ trait AnalysisExecutor {
         }
         val libcpFiles = verifyFiles(libcp)
 
-        OPALLogger.info(
-            "setup",
-            "analysis specific paramters: "+args2.mkString(",")
-        )(GlobalLogContext)
-        val issues = checkAnalysisSpecificParameters(args2)
+        val (analysisMode, args3) = try {
+            args2.partition(_.startsWith("-analysisMode=")) match {
+                case (Array(), args3) ⇒
+                    (AnalysisModes.DesktopApplication, args3)
+                case (Array(analysisModeParameter), args3) ⇒
+                    val analysisMode = analysisModeParameter.substring(14).replace("_", " ")
+                    (AnalysisModes.withName(analysisMode), args3)
+            }
+
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                println(Console.RED+"[error] failed parsing the analysis mode:"+Console.RESET)
+                t.printStackTrace()
+                printUsage
+                sys.exit(2)
+        }
+        OPALLogger.info("setup", s"the analysis mode is $analysisMode")
+
+        if (args3.nonEmpty)
+            OPALLogger.info("setup", "analysis specific paramters: "+args3.mkString(","))
+        val issues = checkAnalysisSpecificParameters(args3)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ println(Console.RED+"[error] "+Console.RESET + i) }
-            printUsage()
+            printUsage
             sys.exit(2)
         }
 
@@ -239,12 +253,13 @@ trait AnalysisExecutor {
         // 2. setup project context
         //
         val project: Project[URL] = try {
-            setupProject(cpFiles, libcpFiles)
+            setupProject(cpFiles, libcpFiles, analysisMode)
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 println(Console.RED+"[error] setting up the project failed:"+Console.RESET)
                 t.printStackTrace()
+                printUsage
                 sys.exit(2)
         }
 
@@ -264,18 +279,19 @@ trait AnalysisExecutor {
         if (exceptions.isEmpty)
             return ;
 
+        implicit val logContext = project.logContext
         for (exception ← exceptions) {
-            import project.logContext
             OPALLogger.error("creating project", "ignoring invalid class file", exception)
         }
     }
 
     def setupProject(
-        cpFiles:    Iterable[File],
-        libcpFiles: Iterable[File]
-    ): Project[URL] = {
+        cpFiles:      Iterable[File],
+        libcpFiles:   Iterable[File],
+        analysisMode: AnalysisMode
+    )(implicit initialLogContext: LogContext): Project[URL] = {
 
-        OPALLogger.info("creating project", "reading project class files")(GlobalLogContext)
+        OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -284,22 +300,33 @@ trait AnalysisExecutor {
             reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
+                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
             )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                OPALLogger.info("creating project", "reading library class files")(GlobalLogContext)
+                OPALLogger.info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val project = Project(classFiles, libraryClassFiles, libraryClassFilesAreInterfacesOnly = true)
+        val config =
+            ConfigFactory.parseString(s"${AnalysisMode.ConfigKey} = $analysisMode").
+                withFallback(ConfigFactory.load())
+        val project =
+            Project(
+                classFiles,
+                libraryClassFiles,
+                libraryClassFilesAreInterfacesOnly = true,
+                Traversable.empty
+            )(
+                config = config
+            )
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         OPALLogger.info(
