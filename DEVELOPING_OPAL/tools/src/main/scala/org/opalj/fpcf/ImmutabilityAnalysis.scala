@@ -28,10 +28,9 @@
  */
 package org.opalj
 package fpcf
-package analysis
-package demo
 
 import java.net.URL
+import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
@@ -44,13 +43,16 @@ import org.opalj.fpcf.analysis.immutability.ObjectImmutability
 import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
 import org.opalj.fpcf.analysis.immutability.TypeImmutability
 import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
+import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
+import org.opalj.fpcf.analysis.extensibility.ClassExtensibilityAnalysis
+import org.opalj.fpcf.analysis.extensibility.IsExtensible
 
 /**
  * Runs the immutability analysis.
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = "determines the immutability of objects and types"
 
@@ -68,6 +70,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
         val manager = project.get(FPCFAnalysesManagerKey)
         var t = Seconds.None
         time {
+            manager.run(ClassExtensibilityAnalysis)
             manager.runAll(
                 FieldMutabilityAnalysis,
                 ObjectImmutabilityAnalysis,
@@ -77,17 +80,36 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         projectStore.validate(None)
 
+        val extensibleClasses =
+            projectStore.entities(IsExtensible).asScala.
+                map(_.thisType.toJava).
+                toList.sorted
+
         val immutableClasses =
-            projectStore.entities(ObjectImmutability.key).groupBy { _.p }.map { kv ⇒
-                (
-                    kv._1,
-                    kv._2.toList.sortWith { (a, b) ⇒
-                        val cfA = a.e.asInstanceOf[ClassFile]
-                        val cfB = b.e.asInstanceOf[ClassFile]
-                        cfA.thisType.toJava < cfB.thisType.toJava
-                    }
-                )
-            }
+            projectStore.entities(ObjectImmutability.key).
+                filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                groupBy { _.p }.map { kv ⇒
+                    (
+                        kv._1,
+                        kv._2.toList.sortWith { (a, b) ⇒
+                            val cfA = a.e.asInstanceOf[ClassFile]
+                            val cfB = b.e.asInstanceOf[ClassFile]
+                            cfA.thisType.toJava < cfB.thisType.toJava
+                        }
+                    )
+                }
+
+        val immutableClassesPerCategory =
+            immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toList.sorted.mkString("\n")
+
+        val immutableTypes =
+            projectStore.entities(TypeImmutability.key).
+                filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                groupBy { _.p }.map { kv ⇒
+                    (kv._1, kv._2.size)
+                }
+        val immutableTypesPerCategory =
+            immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
 
         val immutableClassesInfo =
             immutableClasses.values.flatten.filter { ep ⇒
@@ -96,20 +118,17 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                 ep.e.asInstanceOf[ClassFile].thisType.toJava+
                     " => "+ep.p+
                     " => "+projectStore(ep.e, TypeImmutability.key).get
-            }.mkString("\n")
-
-        val categoryCounts =
-            immutableClasses.map(kv ⇒
-                kv._1+
-                    ": "+
-                    kv._2.filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).size).
-                toList.sorted.mkString("\n")
+            }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(
             "Details:\n"+
-                immutableClassesInfo+"\n"+
-                "\nSummary:\n"+
-                categoryCounts+"\n"+
+                extensibleClasses.mkString("\tExtensible Classes:\n\t\t", "\n\t\t", "\n") +
+                immutableClassesInfo+
+                "\nSummary (w.r.t classes):\n"+
+                "\tObject Immutability:\n"+
+                immutableClassesPerCategory+"\n"+
+                "\tType Immutability:\n"+
+                immutableTypesPerCategory+"\n"+
                 "\n"+projectStore.toString(false)+"\n"+
                 "The overall analysis took: "+t
         )
