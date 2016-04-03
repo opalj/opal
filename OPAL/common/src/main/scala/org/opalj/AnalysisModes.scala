@@ -66,11 +66,13 @@ object AnalysisModes extends Enumeration {
      * the JVM by calling the application's main method.
      */
     final val DesktopApplication = Value("desktop application")
+    final def isDesktopApplication(mode: AnalysisMode): Boolean = mode eq DesktopApplication
 
     /**
      * This mode is to be used if a web application is analyzed which is developed using JavaEE 6.
      */
     final val JEE6WebApplication = Value("JEE6 web application")
+    final def isJEE6WebApplication(mode: AnalysisMode): Boolean = mode eq JEE6WebApplication
 
     final def isLibraryLike(mode: AnalysisMode): Boolean = {
         (mode eq CPA) || (mode eq OPA)
@@ -79,6 +81,7 @@ object AnalysisModes extends Enumeration {
     final def isApplicationLike(mode: AnalysisMode): Boolean = {
         (mode eq DesktopApplication) || (mode eq JEE6WebApplication)
     }
+
 }
 
 /**
