@@ -47,7 +47,9 @@ import org.opalj.log.LogContext
  */
 trait FPCFAnalysis {
 
-    def project: SomeProject
+    implicit def project: SomeProject
+
+    final implicit def classHierarchy = project.classHierarchy
 
     final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
 
