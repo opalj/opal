@@ -1977,11 +1977,7 @@ class PropertyStore private (
                             // is called at most once - independent of how many entities are
                             // actually observed
                             val o = new DependeePropertyObserver(dependerEPK, clearAllDependeeObservers) {
-                                protected[this] def propertyChanged(
-                                    e: Entity,
-                                    p: Property,
-                                    u: UpdateType
-                                ): Unit = {
+                                def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
                                     /*internal*/ /* assert(
                                         { val os = observers.get(dependerEPK); (os eq null) || os.isEmpty },
                                         s"failed to delete all observers for $dependerEPK"
