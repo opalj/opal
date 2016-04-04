@@ -64,15 +64,3 @@ private[fpcf] case object OneStepFinalUpdate extends UpdateType("Final Update Wi
     final val id = 3
     final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
 }
-
-/**
- * The result was determined by looking up a property kind's fallback property. Hence,
- * no "real" computation was performed.
- * Furthermore, it may be the case that
- * the updated value – at the point in time when it is handled - is no longer relevant
- * and has to be dropped.
- */
-private[fpcf] case object FallbackUpdate extends UpdateType("Fallback Update") {
-    final val id = 4
-    final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
-}

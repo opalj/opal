@@ -54,8 +54,9 @@ sealed abstract class MethodDescriptor
 
     def returnType: Type
 
-    def toJVMDescriptor: String =
-        "("+parameterTypes.map(_.toJVMTypeName).mkString("")+")"+returnType.toJVMTypeName
+    def toJVMDescriptor: String = {
+        parameterTypes.map(_.toJVMTypeName).mkString("(", "", ")") + returnType.toJVMTypeName
+    }
 
     def value: this.type = this
 
@@ -67,7 +68,8 @@ sealed abstract class MethodDescriptor
      * Returns a Java like view when a MethodDescriptor is used as a [[BootstrapArgument]].
      */
     def toJava: String = {
-        s"MethodDescriptor(${returnType.toJava},${parameterTypes.map(_.toJava).mkString("(", ",", ")")})"
+        val parameterTypes = this.parameterTypes.map(_.toJava).mkString("(", ",", ")")
+        s"MethodDescriptor(${returnType.toJava},$parameterTypes)"
     }
 
     def equalParameters(other: MethodDescriptor): Boolean
@@ -97,32 +99,35 @@ sealed abstract class MethodDescriptor
     //
     //
 
-    def toJava(methodName: String): String =
+    def toJava(methodName: String): String = {
         returnType.toJava+" "+
-            methodName+
-            "("+parameterTypes.view.map(_.toJava).mkString(",")+")"
+            methodName +
+            parameterTypes.view.map(_.toJava).mkString("(", ",", ")")
+    }
 
-    def toUMLNotation: String =
+    def toUMLNotation: String = {
         "("+{
             if (parameterTypes.size == 0)
                 ""
             else
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+"): "+returnType.toJava
+    }
 
     override def compare(other: MethodDescriptor): Int = {
-        if (this.parametersCount < other.parametersCount)
+        val thisParametersCount = this.parametersCount
+        val otherParametersCount = other.parametersCount
+        if (thisParametersCount < otherParametersCount)
             -1
-        else if (this.parametersCount > other.parametersCount)
+        else if (thisParametersCount > otherParametersCount)
             1
         else {
             var i = 0
-            val iMax = this.parametersCount
-            while (i < iMax) {
+            while (i < thisParametersCount) {
                 val parameterComparisonResult =
                     this.parameterTypes(i).compare(other.parameterTypes(i))
                 if (parameterComparisonResult != 0)
-                    return parameterComparisonResult
+                    return parameterComparisonResult;
                 else // the types are identical
                     i += 1
             }
@@ -131,16 +136,19 @@ sealed abstract class MethodDescriptor
     }
 
     override def <(other: MethodDescriptor): Boolean = {
-        (this.parametersCount < other.parametersCount) || (
-            this.parametersCount == other.parametersCount &&
+        val thisParametersCount = this.parametersCount
+        val otherParametersCount = other.parametersCount
+
+        (thisParametersCount < otherParametersCount) || (
+            thisParametersCount == otherParametersCount &&
             {
                 var i = 0
                 val iMax = this.parametersCount
                 while (i < iMax) {
                     if (this.parameterTypes(i) < other.parameterTypes(i))
-                        return true
+                        return true;
                     else if (other.parameterTypes(i) < this.parameterTypes(i))
-                        return false
+                        return false;
                     else // the types are identical
                         i += 1
                 }
@@ -363,8 +371,9 @@ object TwoArgumentsMethodDescriptor {
  */
 object MethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(IndexedSeq[FieldType], Type)] =
+    def unapply(md: MethodDescriptor): Option[(IndexedSeq[FieldType], Type)] = {
         Some((md.parameterTypes, md.returnType))
+    }
 
     final val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
@@ -405,6 +414,22 @@ object MethodDescriptor {
 
     final val JustTakesObject: MethodDescriptor =
         apply(ObjectType.Object, VoidType)
+
+    final val readObjectDescriptor = {
+        MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
+    }
+
+    final val writeObjectDescriptor = {
+        MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
+    }
+
+    final val readObjectInputDescriptor = {
+        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
+    }
+
+    final val writeObjectOutputDescriptor = {
+        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
+    }
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

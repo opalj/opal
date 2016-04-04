@@ -29,10 +29,11 @@
 package org.opalj
 package br
 
-import bi.ACC_TRANSIENT
-import bi.ACC_VOLATILE
-import bi.AccessFlagsContexts
-import bi.AccessFlags
+import scala.math.Ordered
+import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_VOLATILE
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlags
 import org.opalj.bi.VisibilityModifier
 
 /**
@@ -65,13 +66,11 @@ import org.opalj.bi.VisibilityModifier
  * @author Michael Eichberg
  */
 final class Field private (
-    val accessFlags: Int,
-    val name:        String, // the name is interned to enable reference comparisons!
-    val fieldType:   FieldType,
-    val attributes:  Attributes
-)
-        extends ClassMember
-        with scala.math.Ordered[Field] {
+        val accessFlags: Int,
+        val name:        String, // the name is interned to enable reference comparisons!
+        val fieldType:   FieldType,
+        val attributes:  Attributes
+) extends ClassMember with Ordered[Field] {
 
     final override def isField = true
 
@@ -90,14 +89,16 @@ final class Field private (
     /**
      * Returns this field's type signature.
      */
-    def fieldTypeSignature: Option[FieldTypeSignature] =
+    def fieldTypeSignature: Option[FieldTypeSignature] = {
         attributes collectFirst { case s: FieldTypeSignature ⇒ s }
+    }
 
     /**
      * Returns this field's constant value.
      */
-    def constantFieldValue: Option[ConstantFieldValue[_]] =
+    def constantFieldValue: Option[ConstantFieldValue[_]] = {
         attributes collectFirst { case cv: ConstantFieldValue[_] ⇒ cv }
+    }
 
     def toJavaSignature: String = fieldType.toJava+" "+name
 
@@ -159,12 +160,7 @@ object Field {
         fieldType:   FieldType,
         attributes:  Attributes
     ): Field = {
-        new Field(
-            accessFlags,
-            name.intern(),
-            fieldType,
-            attributes
-        )
+        new Field(accessFlags, name.intern(), fieldType, attributes)
     }
 
     def unapply(field: Field): Option[(Int, String, FieldType)] =

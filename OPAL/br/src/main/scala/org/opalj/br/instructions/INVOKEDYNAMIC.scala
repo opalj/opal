@@ -101,7 +101,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
      *      target cannot be resolved, `None` is returned; this method will never "crash".
      */
     def resolveJDK8(repository: ClassFileRepository): Option[Method] = {
-        bootstrapMethod.methodHandle match {
+        bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
                 ObjectType.LambdaMetafactory,
                 "metafactory",
@@ -111,8 +111,8 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
                     ObjectType.LambdaMetafactory,
                     "altMetafactory",
                     INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
-                    ) if bootstrapMethod.bootstrapArguments.size >= 2 ⇒ {
-                bootstrapMethod.bootstrapArguments(1) match {
+                    ) if bootstrapMethod.arguments.size >= 2 ⇒ {
+                bootstrapMethod.arguments(1) match {
                     // Oracle's JDK 8 doesn't make use of invokedynamic
                     // instructions in combination with arraytypes.
                     // However, to make sure that this method never fails, we perform

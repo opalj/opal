@@ -66,7 +66,7 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakingEntities: Traversable[EP[SelfReferenceLeakage]] =
+        val notLeakingEntities: Traversable[EP[Entity, SelfReferenceLeakage]] =
             projectStore.entities(SelfReferenceLeakage.Key).filter { ep ⇒
                 ep.p == DoesNotLeakSelfReference
             }
@@ -93,4 +93,3 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
         )
     }
 }
-

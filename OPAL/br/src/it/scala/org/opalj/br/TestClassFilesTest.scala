@@ -125,8 +125,8 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
             if (testedMethods.get) {
                 assert(testedForBeingIsomorphicCount.get > 0)
                 assert(testedForBeingNotIsomorphicCount.get > 0)
-                info(s"compared ${testedForBeingIsomorphicCount.get} for being isomorphic")
-                info(s"compared ${testedForBeingNotIsomorphicCount.get} for being not isomorphic")
+                info(s"compared ${testedForBeingIsomorphicCount.get} instructions for being isomorphic")
+                info(s"compared ${testedForBeingNotIsomorphicCount.get} instructions for being not isomorphic")
             }
         }
     }

@@ -51,7 +51,7 @@ package object bi {
     type ConstantPoolTag = ConstantPoolTags.Value
 
     /**
-     * Every Java class file start with "0xCAFEBABE".
+     * Every Java class file starts with "0xCAFEBABE".
      */
     final val ClassFileMagic = 0xCAFEBABE
 

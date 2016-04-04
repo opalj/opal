@@ -174,13 +174,28 @@ class ArrayMapTest extends FlatSpec with Matchers {
         m2.hashCode() should be(m1.hashCode())
     }
 
-    it should ("have a correct values iterator") in {
+    it should ("have a correct values iterator if the map is not continuous") in {
         val map = ArrayMap.empty[Integer]
         map(0) = 0
         map(2) = 2
         map(4) = 4
         map.values.size should be(3)
         map.values.map(_.intValue()).sum should be(6)
+    }
+
+    it should ("have a correct values iterator if the map is continuous") in {
+        val map = ArrayMap.empty[Integer]
+        map(0) = 0
+        map(2) = 2
+        map(3) = 3
+        map.values.size should be(3)
+        map.values.map(_.intValue()).sum should be(5)
+    }
+
+    it should ("have a correct values iterator if the map is empty") in {
+        val map = ArrayMap.empty[Integer]
+        map.values.size should be(0)
+        map.values.map(_.intValue()).sum should be(0)
     }
 
     it should ("have a useable map implementation") in {

@@ -61,7 +61,7 @@ private[fpcf] object Result { private[fpcf] final val id = 3 }
  */
 case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult {
 
-    private[fpcf] final val id = ImmediateResult.id
+    private[fpcf] final def id = ImmediateResult.id
 
 }
 private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
@@ -72,6 +72,8 @@ private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
  * A [[MultiResult]] is only to be used if no further refinement is possible
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
+ *
+ * The encapsulated results are not atomically set.
  */
 case class MultiResult(properties: ComputationResults) extends PropertyComputationResult {
 
@@ -90,7 +92,7 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  */
 case class ImmediateMultiResult(properties: ComputationResults) extends PropertyComputationResult {
 
-    private[fpcf] final val id = ImmediateMultiResult.id
+    private[fpcf] final def id = ImmediateMultiResult.id
 
 }
 private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
@@ -109,8 +111,13 @@ object NoEntities extends ImmediateMultiResult(Traversable.empty)
  *
  * All current computations that depend on the property of the entity will be invoked.
  *
- * @param dependees The list of entity/property (kind) pairs the analysis depends on. Each
+ * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
  * 		entity/property kind must occur at most once in the list.
+ *
+ * @param c
+ * 		The function which is called if a property of any of the dependees is updated.
+ * 		`c` does not have to be thread safe unless the same instance of c is returned multiple
+ * 		times for different entities (`e`).
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  * 		before (using one of the `apply` functions of the property store.)
@@ -121,6 +128,20 @@ case class IntermediateResult(
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
+
+    // TODO Make it possible to activate the assertions!
+    //    // End-User oriented assertion:
+    //    assert(
+    //        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
+    //        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
+    //            "contains duplicate entries (E - PK pairs)!"
+    //    )
+    //
+    //    // End-User oriented assertion:
+    //    assert(
+    //        { val dependerEPK = EPK(e, p.key); !dependees.exists(_ == dependerEPK) },
+    //        s"the computation of ${EPK(e, p.key)} depends on its own: ${dependees.find(_ == EPK(e, p.key))}"
+    //    )
 
     private[fpcf] final def id = IntermediateResult.id
 
@@ -144,21 +165,31 @@ case class IntermediateResult(
 }
 private[fpcf] object IntermediateResult { private[fpcf] final val id = 5 }
 
+/**
+ * Encapsulates some result and also some computations that should be scheduled after handling the
+ * result.
+ */
+case class IncrementalResult[E <: Entity](
+        result:           PropertyComputationResult,
+        nextComputations: Traversable[(PropertyComputation[E], E)]
+) extends PropertyComputationResult {
+    private[fpcf] final def id = IncrementalResult.id
+}
+
+private[fpcf] object IncrementalResult { private[fpcf] final val id = 6 }
+
+case class Results(results: List[PropertyComputationResult]) extends PropertyComputationResult {
+
+    private[fpcf] final def id = Results.id
+
+}
+private[fpcf] object Results { private[fpcf] final val id = 7 }
+
 //
 //
 // PACKAGE PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
 //
 //
-
-private[fpcf] case class FallbackResult(
-        e: Entity,
-        p: Property
-) extends PropertyComputationResult {
-
-    private[fpcf] final def id = FallbackResult.id
-
-}
-private[fpcf] object FallbackResult { private[fpcf] final val id = 6 }
 
 /**
  * Represents a suspended computation.
@@ -193,7 +224,7 @@ abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
  */
 private[fpcf] object SuspendedPC {
 
-    private[fpcf] final val id = 7
+    private[fpcf] final val id = 8
 
     def unapply[DependeeP <: Property](
         c: SuspendedPC[DependeeP]
@@ -201,42 +232,3 @@ private[fpcf] object SuspendedPC {
         Some((c.e, c.pk, c.dependeeE, c.dependeePK))
 
 }
-//
-///**
-// * Represents a suspended '''incremental''' computation.
-// *
-// * @param dependeeE The entity about which some knowledge is required by this
-// *      computation before the computation can be continued.
-// * @param dependeePK The property kind of the given entity about which some knowledge
-// *      is required.
-// */
-//private[fpcf] abstract class SuspendedIPC[DependeeP <: Property](
-//        val e:          Entity,
-//        val pk:         SomePropertyKey,
-//        val dependeeE:  Entity,
-//        val dependeePK: PropertyKey[DependeeP]
-//) extends PropertyComputationResult {
-//
-//    /**
-//     * Called by the framework when the property of the element `dependeeE` on which
-//     * this computation is depending on was computed.
-//     */
-//    def continue(dependeeP: DependeeP): IncrementalPropertyComputationResult
-//
-//    private[fpcf] final def id = SuspendedIPC.id
-//}
-//
-///**
-// * Factory for creating [[Suspended]] computations.
-// */
-//private[fpcf] object SuspendedIPC {
-//
-//    private[fpcf] final val id = 8
-//
-//    def unapply[DependeeP <: Property](
-//        c: SuspendedIPC[DependeeP]
-//    ): Some[(Entity, SomePropertyKey, Entity, PropertyKey[DependeeP])] =
-//        Some((c.e, c.pk, c.dependeeE, c.dependeePK))
-//
-//}
-

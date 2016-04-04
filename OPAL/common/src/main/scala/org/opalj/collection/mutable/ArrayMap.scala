@@ -38,19 +38,21 @@ import java.util.Arrays
 
 /**
  * Conceptually, a map where the keys are positive `Int` values and the values are
- * non-null.
- * The key values always have to
- * be larger than or equal to 0 and are ideally continues (0,1,2,3,...).
- * The values are stored in a plain array to enable true O(1) access.
+ * non-null. (`null` values are not permitted!)
+ * The key values always have to  be larger than or equal to 0 and are ideally continues
+ * (0,1,2,3,...). The values are stored in a plain array to enable true O(1) access.
  * Furthermore, the array is only as large as it has to be to keep the value associated
  * with the largest key.
  *
+ * @note This data structure is not thread safe!
+ *
  * @author Michael Eichberg
  */
-class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
-        private var data: Array[T]
-) {
+class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T]) {
 
+    /**
+     * Clears, but does not resize/shrink the map.
+     */
     def clear(): Unit = { Arrays.fill(data.asInstanceOf[Array[Object]], null) }
 
     /**
@@ -69,11 +71,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
     @throws[IndexOutOfBoundsException]("if the key is negative")
     def get(key: Int): Option[T] = {
         if (key < data.length) {
-            val entry = data(key)
-            if (entry ne null)
-                Some(entry)
-            else
-                None
+            Option(data(key))
         } else
             None
     }
@@ -90,11 +88,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         if (key < data.length) {
             val entry = data(key)
             if (entry ne null)
-                entry
-            else
-                f
-        } else
-            f
+                return entry;
+        }
+
+        f
     }
 
     @throws[IndexOutOfBoundsException]("if the key is negative")
@@ -136,8 +133,8 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         val max = data.length
         while (i < max) {
             val e = data(i)
-            // Recall that all values have to be non-null...
-            if (e != null) f(e)
+            // recall that all values have to be non-null...
+            if (e ne null) f(e)
             i += 1
         }
     }
@@ -148,7 +145,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
-            if (e != null) f(i, e)
+            if (e ne null) f(i, e)
             i += 1
         }
     }
@@ -159,7 +156,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (
         while (i < max) {
             val e = data(i)
             // Recall that all values have to be non-null...
-            if (e != null && !f(e))
+            if ((e ne null) && !f(e))
                 return false;
             i += 1
         }

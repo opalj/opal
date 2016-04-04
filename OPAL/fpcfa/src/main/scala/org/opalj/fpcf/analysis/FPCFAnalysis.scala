@@ -34,6 +34,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.AnalysisModes._
+import org.opalj.log.LogContext
 
 /**
  * Common super trait of all analyses that use the fixpoint
@@ -46,9 +47,15 @@ import org.opalj.AnalysisModes._
  */
 trait FPCFAnalysis {
 
-    def project: SomeProject
+    implicit def project: SomeProject
+
+    final implicit def classHierarchy = project.classHierarchy
 
     final implicit val propertyStore: PropertyStore = project.get(SourceElementsPropertyStoreKey)
+
+    final implicit val logContext: LogContext = project.logContext
+
+    final def ps = propertyStore
 
     // The project type:
 

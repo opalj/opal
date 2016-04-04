@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2015
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,13 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
+package analysis
+package extensibility
 
-/**
- * Encapsulates the result of an incremental computation of the properties of a project.
- */
+import org.opalj.br.ClassFile
 
-case class IncrementalPropertyComputationResult(
-    result:           PropertyComputationResult,
-    nextComputations: Traversable[(IncrementalPropertyComputation, Entity)]
-)
+case object IsExtensible extends SetProperty[ClassFile]

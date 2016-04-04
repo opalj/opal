@@ -86,7 +86,7 @@ class FPCFAnalysesManager private[analysis] (val project: SomeProject) {
             if (debug)
                 OPALLogger.debug(
                     "project configuration",
-                    s"the analysis ${analysisRunner.name} will be executed next"
+                    s"scheduling the analysis ${analysisRunner.name}"
                 )(project.logContext)
 
             registerProperties(analysisRunner)

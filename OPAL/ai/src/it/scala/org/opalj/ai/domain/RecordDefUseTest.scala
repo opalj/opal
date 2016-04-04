@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{ BytecodeInstructionsCache, Java8FrameworkWithCaching }
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
@@ -49,7 +49,7 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 @RunWith(classOf[JUnitRunner])
 class RecordDefUseTest extends FunSpec with Matchers {
-    
+
     object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
     class DefUseDomain[I](val method: Method, val project: Project[java.net.URL])
@@ -89,13 +89,13 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 val body = method.body.get
                 val r = BaseAI(classFile, method, domain)
                 val evaluatedInstructions = r.evaluatedInstructions
-                val dt = DominatorsPerformanceEvaluation.time('Dominators){
+                val dt = DominatorsPerformanceEvaluation.time('Dominators) {
                     domain.dominatorTree
-                    }
-                evaluatedInstructions foreach {  pc  =>
-                    if (pc != 0) dt.dom(pc) should  be < (domain.code.instructions.size)
                 }
-               
+                evaluatedInstructions foreach { pc ⇒
+                    if (pc != 0) dt.dom(pc) should be < (domain.code.instructions.size)
+                }
+
                 r.operandsArray.zipWithIndex.foreach { opsPC ⇒
                     val (ops, pc) = opsPC
                     if ((ops ne null) &&

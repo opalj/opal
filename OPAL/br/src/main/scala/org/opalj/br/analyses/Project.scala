@@ -117,20 +117,20 @@ class Project[Source] private (
         private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
         private[this] val sources:                        OpenHashMap[ObjectType, Source],
         private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
-        val projectClassFilesCount:                       Int,
-        val projectMethodsCount:                          Int,
-        val projectFieldsCount:                           Int,
-        val libraryClassFilesCount:                       Int,
-        val libraryMethodsCount:                          Int,
-        val libraryFieldsCount:                           Int,
-        val codeSize:                                     Long,
-        val classHierarchy:                               ClassHierarchy,
-        val analysisMode:                                 AnalysisMode,
-        val libraryClassFilesAreInterfacesOnly:           Boolean
+        final val projectClassFilesCount:                 Int,
+        final val projectMethodsCount:                    Int,
+        final val projectFieldsCount:                     Int,
+        final val libraryClassFilesCount:                 Int,
+        final val libraryMethodsCount:                    Int,
+        final val libraryFieldsCount:                     Int,
+        final val codeSize:                               Long,
+        final val classHierarchy:                         ClassHierarchy,
+        final val analysisMode:                           AnalysisMode,
+        final val libraryClassFilesAreInterfacesOnly:     Boolean
 )(
         implicit
-        val logContext: LogContext,
-        val config:     Config
+        final val logContext: LogContext,
+        final val config:     Config
 ) extends ClassFileRepository {
 
     assert(
@@ -523,8 +523,8 @@ class Project[Source] private (
         val data = OpenHashMap.empty[String, Int]
 
         projectClassFiles.foreach { classFile ⇒
-            // we want to collect the size in relation to the source code; 
-            //i.e., across all nested classes 
+            // we want to collect the size in relation to the source code;
+            //i.e., across all nested classes
             val count =
                 classFile.methods.view.filterNot(_.isSynthetic).size +
                     classFile.fields.view.filterNot(_.isSynthetic).size
@@ -877,9 +877,7 @@ object Project {
         logContext: LogContext,
         ex:         InconsistentProjectException
     ): Unit = {
-
         OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
-
     }
 
     /**
@@ -935,10 +933,24 @@ object Project {
             import ExecutionContext.Implicits.global
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
+                val typeHierarchyDefinitions =
+                    if (projectClassFilesWithSources.exists(_._1.thisType == ObjectType.Object) ||
+                        libraryClassFilesWithSources.exists(_._1.thisType == ObjectType.Object)) {
+                        OPALLogger.info("project configuration", "the JDK is part of the analysis")
+                        ClassHierarchy.noDefaultTypeHierarchyDefinitions
+                    } else {
+                        OPALLogger.info(
+                            "project configuration",
+                            "the JDK is not configured; using the preconfigured type hierarchy for the most relevant types"
+                        )
+                        ClassHierarchy.defaultTypeHierarchyDefinitions
+                    }
+
                 ClassHierarchy(
                     projectClassFilesWithSources.view.map(_._1) ++
                         libraryClassFilesWithSources.view.map(_._1) ++
-                        virtualClassFiles
+                        virtualClassFiles,
+                    typeHierarchyDefinitions
                 )
             }
 
@@ -969,10 +981,10 @@ object Project {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
-                            s"${projectType.toJava} is defined by multiple class files: "+
-                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and "+
+                            s"${projectType.toJava} is defined by multiple class files:\n\t"+
+                                sources.get(projectType).getOrElse("<VIRTUAL>")+" and\n\t"+
                                 source.map(_.toString).getOrElse("<VIRTUAL>")+
-                                "; keeping the first one."
+                                "\n\tkeeping the first one."
                         )
                     )
                 } else {
@@ -1080,8 +1092,8 @@ object Project {
             val issues = validate(project)
             issues foreach { handleInconsistentProject(logContext, _) }
             OPALLogger.info(
-                "project",
-                s"validation of the project configuration revealed ${issues.size} significant issues"+
+                "project configuration",
+                s"project validation revealed ${issues.size} significant issues"+
                     (if (issues.size > 0) "; validate the configured libraries for inconsistencies" else "")
             )
 
@@ -1099,7 +1111,7 @@ object Project {
      */
     private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
 
-        val disclaimer = "(this inconsistency will lead to analyses failing miserably)"
+        val disclaimer = "(this inconsistency may lead to analyses failing miserably)"
 
         val ch = p.classHierarchy
 

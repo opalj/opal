@@ -40,15 +40,23 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  * Specified if all instances of a respective type (this includes the instances of the
  * type's subtypes) are (conditionally) immutable.
  *
+ * This property is of particular interest if the precise type cannot be computed statically and
+ * basically depends on the [[AnalysisMode]] and [[ObjectImmutability]].
+ *
  * @author Michael Eichberg
  */
-sealed trait TypeImmutability extends Property with TypeImmutabilityPropertyMetaInformation {
+sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `TypeImmutability` properties.
      */
     final def key = TypeImmutability.key
 
+    def isMutable: Boolean
+
+    def isConditionallyImmutable: Boolean
+
+    def join(other: TypeImmutability): TypeImmutability
 }
 /**
  * Common constants use by all [[TypeImmutability]] properties associated with methods.
@@ -58,13 +66,14 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
     /**
      * The key associated with every [[TypeImmutability]] property.
      */
-    final val key = PropertyKey.create(
+    final val key: PropertyKey[TypeImmutability] = PropertyKey.create(
         "TypeImmutability",
         // The default property that will be used if no analysis is able
         // to (directly) compute the respective property.
-        MutableTypeDueToNoAnalysis,
-        // When we have a cycle all properties are necessarily at least conditionally immutable
-        // hence, we can leverage the "immutability" 
+        MutableType,
+        // When we have a cycle all properties are necessarily at least conditionally
+        // immutable hence, we can leverage the "immutability" of one of the members of
+        // the cycle and wait for the automatic propagation...
         ImmutableType
     )
 }
@@ -72,32 +81,100 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
 /**
  * An instance of the respective class is effectively immutable. I.e., after creation it is not
  * possible for a client to set a field or to call a method that updates the internal state
- *
  */
-case object ImmutableType extends TypeImmutability { final val isRefineable = false }
+case object ImmutableType extends TypeImmutability {
 
-case object ConditionallyImmutableType extends TypeImmutability { final val isRefineable = false }
-
-case object AtLeastConditionallyImmutableType extends TypeImmutability { final val isRefineable = true }
-
-sealed trait MutableType extends TypeImmutability {
     final val isRefineable = false
-    val reason: String
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(that: TypeImmutability): TypeImmutability = {
+        if (this == that) this else that
+    }
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
-case object MutableTypeByAnalysis extends MutableType {
-    final val reason = "determined by analysis"
+case object UnknownTypeImmutability extends TypeImmutability {
+
+    final val isRefineable = true
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(that: TypeImmutability): TypeImmutability = {
+        if (that == MutableType) MutableType else this
+    }
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other == UnknownTypeImmutability)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
 }
 
-case object MutableTypeDueToUnknownSupertypes extends MutableType {
-    final val reason = "type hierarchy upwards incomplete"
+case object ConditionallyImmutableType extends TypeImmutability {
+
+    final val isRefineable = false
+    final val isMutable = false
+    final val isConditionallyImmutable = true
+
+    def join(that: TypeImmutability): TypeImmutability = {
+        that match {
+            case MutableType | UnknownTypeImmutability ⇒ that
+            case _                                     ⇒ this
+        }
+    }
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
 }
 
-case object MutableTypeDueToUnresolvableDependency extends MutableType {
-    final val reason = "a dependency cannot be resolved"
+case object AtLeastConditionallyImmutableType extends TypeImmutability {
+
+    final val isRefineable = true
+    final val isMutable = false
+    final val isConditionallyImmutable = false
+
+    def join(other: TypeImmutability): TypeImmutability = {
+        other match {
+            case MutableType | UnknownTypeImmutability | ConditionallyImmutableType ⇒ other
+            case _ ⇒ this
+        }
+    }
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
 }
 
-case object MutableTypeDueToNoAnalysis extends MutableType {
-    final val reason = "a dependency cannot be resolved"
-}
+case object MutableType extends TypeImmutability {
 
+    final val isRefineable = false
+    final val isMutable = true
+    final val isConditionallyImmutable = false
+
+    def join(other: TypeImmutability): this.type = this
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+}

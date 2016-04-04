@@ -9,9 +9,9 @@ class java/lang/reflect/MalformedParameterizedTypeException extends java/lang/Ru
 class java/lang/reflect/Method extends java/lang/reflect/AccessibleObject implements java/lang/reflect/Member, java/lang/reflect/GenericDeclaration
 class java/lang/reflect/Modifier extends java/lang/Object
 class java/lang/reflect/Proxy extends java/lang/Object implements java/io/Serializable
-class java/lang/reflect/Proxy$1 extends java/lang/Object implements java/security/PrivilegedAction
-class java/lang/reflect/Proxy$ProxyAccessHelper extends java/lang/Object
-class java/lang/reflect/Proxy$ProxyAccessHelper$1 extends java/lang/Object implements java/security/PrivilegedAction
+#[INTERNAL CLASS]class java/lang/reflect/Proxy$1 extends java/lang/Object implements java/security/PrivilegedAction
+#[INTERNAL CLASS]class java/lang/reflect/Proxy$ProxyAccessHelper extends java/lang/Object
+#[INTERNAL CLASS]class java/lang/reflect/Proxy$ProxyAccessHelper$1 extends java/lang/Object implements java/security/PrivilegedAction
 class java/lang/reflect/ReflectAccess extends java/lang/Object implements sun/reflect/LangReflectAccess
 class java/lang/reflect/ReflectPermission extends java/security/BasicPermission
 class java/lang/reflect/UndeclaredThrowableException extends java/lang/RuntimeException

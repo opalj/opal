@@ -63,7 +63,7 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val instantiableClasses: Traversable[EP[Instantiability]] =
+        val instantiableClasses: Traversable[EP[Entity, Instantiability]] =
             propertyStore.entities(Instantiability.key).filter { ep ⇒ ep.p == Instantiable }
 
         val classInfo = instantiableClasses.map { e ⇒

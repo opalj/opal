@@ -35,10 +35,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class ExceptionTable(
-    exceptions: Exceptions
-)
-        extends Attribute {
+case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     override def kindId: Int = ExceptionTable.KindId
 

@@ -29,6 +29,7 @@
 package org.opalj.fpcf
 
 /**
+ * The meta information shared by properties and their respective kinds.
  *
  * @author Michael Eichberg
  */
@@ -47,4 +48,3 @@ trait PropertyMetaInformation extends PropertyKind {
 
     final def id = key.id
 }
-

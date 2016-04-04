@@ -31,14 +31,16 @@ package org.opalj.fpcf
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
+ * Registered with a specific entity's property kind to be informed about changes of
+ * the respective property.
  * A property observer that can be associated with multiple
- * entities and which ensures that the property update event is propagated at most once and
- * which also removes itself from all observed entities by calling the given `deregisterObserver`
- * method.
+ * entities and ensures that the property update event is propagated at most once.
+ * It also removes itself from all observed entities by calling the given
+ * `deregisterObserver` method.
  *
  * This property observer can only be used if - for the computation of one kind of property of an
  * entity - only one instance of an observer is used. I.e., it is not possible to have multiple
- * observers observing different properties as we have no means to coordinate them.
+ * observers of this kind observing different properties as we have no means to coordinate them.
  *
  * @author Michael Eichberg
  */
@@ -60,11 +62,21 @@ private[fpcf] abstract class DependeePropertyObserver(
         val isNotYetExecuted = isExecuted.compareAndSet(false, true)
         if (isNotYetExecuted) {
             deregisterObserver(dependerEPK)
+            // Note, between now and the point in time where the computation w.r.t. the new
+            // property is actually performed it is possible that further properties may
+            // have changed. This situation is, however, handled by the property store
+            // as it checks - when we have an intermediate result - that the dependee's
+            // properties reflect the current state in the property store. Hence, this
+            // notification primarily starts the computation process...
             propertyChanged(e, p, u)
         }
     }
 
-    def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit
+    /**
+     * Called exactly once when this observer, which may be registered with multiple entities,
+     * is notified.
+     */
+    protected[this] def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString

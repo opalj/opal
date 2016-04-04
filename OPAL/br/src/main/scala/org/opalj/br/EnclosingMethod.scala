@@ -38,11 +38,10 @@ package br
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
-    clazz:      ObjectType,
-    name:       Option[String],
-    descriptor: Option[MethodDescriptor]
-)
-        extends Attribute {
+        clazz:      ObjectType,
+        name:       Option[String],
+        descriptor: Option[MethodDescriptor]
+) extends Attribute {
 
     override def kindId: Int = EnclosingMethod.KindId
 

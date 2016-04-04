@@ -66,7 +66,7 @@ object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, B
                     case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
                         classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
                             s"    ${bootstrap.toJava}\n"+
-                            bootstrap.bootstrapArguments.mkString("    Arguments: {", ",", "}\n") +
+                            bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
                             s"    Calling:   ${descriptor.toJava(name)}\n"+
                             "} }\n"
                 }

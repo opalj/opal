@@ -133,14 +133,44 @@ class ClassHierarchy private (
         rootTypes.toSet
     }
 
+    /**
+     * The set of all class types (excluding interfaces) which have no super type;
+     * that is all (pseudo) root types;
+     * if the class hierarchy is complete then this set contains exactly one element and
+     * that element must identify `java.lang.Object`.
+     *
+     * @note
+     *    If we load an application and all the jars used to implement it or a library
+     *    and all the library it depends on then the class hierarchy '''should not'''
+     *    contain multiple root types. However, the (complete) JDK contains some references
+     *    to Eclipse classes which are not part of the JDK.
+     */
+    def rootClassTypes: Traversable[ObjectType] = {
+        knownTypesMap.view filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                (superclassTypeMap(oid) eq null) && !interfaceTypesMap(oid)
+            }
+        }
+    }
+
     val leafTypes: Set[ObjectType] = {
         val leafTypes = knownTypesMap.view filter { objectType ⇒
             (objectType ne null) && {
-                val objectTypeId = objectType.id
-                subclassTypesMap(objectTypeId).isEmpty && subinterfaceTypesMap(objectTypeId).isEmpty
+                val oid = objectType.id
+                subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
             }
         }
         leafTypes.toSet
+    }
+
+    def leafClassTypes: Iterable[ObjectType] = {
+        knownTypesMap.view filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                subclassTypesMap(oid).isEmpty && !interfaceTypesMap(oid)
+            }
+        }
     }
 
     /**
@@ -173,9 +203,10 @@ class ClassHierarchy private (
         if (rootTypes.size > 1)
             OPALLogger.log(Warn(
                 "project configuration",
-                "missing supertype information for: "+
+                "supertype information incomplete:\n\t"+
                     rootTypes.filterNot(_ eq ObjectType.Object).
-                    map(_.toJava).mkString(", ")
+                    map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).
+                    toList.sorted.mkString("\n\t")
             ))
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
@@ -1853,7 +1884,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * The direct subtypes of the given type.
+     * The direct subtypes of the given type (not reflexive).
      */
     def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
         if (isUnknown(objectType))
@@ -1861,6 +1892,20 @@ class ClassHierarchy private (
 
         val oid = objectType.id
         this.subclassTypesMap(oid) ++ this.subinterfaceTypesMap(oid)
+    }
+
+    def directSubclassesOf(objectType: ObjectType): Set[ObjectType] = {
+        if (isUnknown(objectType))
+            return Set.empty;
+
+        this.subclassTypesMap(objectType.id)
+    }
+
+    def directSubinterfacesOf(objectType: ObjectType): Set[ObjectType] = {
+        if (isUnknown(objectType))
+            return Set.empty;
+
+        this.subinterfaceTypesMap(objectType.id)
     }
 
     /**
@@ -2499,6 +2544,14 @@ object ClassHierarchy {
         apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
     }
 
+    def noDefaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List.empty
+
+    def defaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List(
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
+        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
+    )
+
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
      * type declarations, and the specified predefined class hierarchies.
@@ -2524,12 +2577,8 @@ object ClassHierarchy {
      * defines `java.util.List`.
      */
     def apply(
-        classFiles: Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = List(
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
-            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        )
+        classFiles:               Traversable[ClassFile],
+        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = defaultTypeHierarchyDefinitions()
     )(
         implicit
         logContext: LogContext

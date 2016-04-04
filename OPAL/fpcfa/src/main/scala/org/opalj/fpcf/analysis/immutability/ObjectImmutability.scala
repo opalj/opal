@@ -38,22 +38,22 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
 }
 
 /**
- * Specifies the mutability of instances of a class type. The
- * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
- * then "Mutable".
+ * Specifies the mutability of instances of a specific class.
+ * The highest rating is "Immutable", then "Conditionally Immutable", then "Mutable".
  *
- * A class is considered immutable if the state of a class does not change after
- * initialization; this includes all classes referenced by the class (transitive hull).
- * A class is considered conditionally immutable if the state of the class itself
- * cannot be mutated, but objects referenced by the class can be mutated (so called
- * immutable collections are typically rated as "conditionally immutable"). A class is
- * – at the latest – considered mutable if a client can mutate (directly or indirectly)
+ * Immutable means that the state of an instance of the respective class does not change after
+ * initialization in a client visible manner! This includes all classes referenced by the instances
+ * (transitive hull).
+ * Conditionally immutable means that the state of the instance of the respective class
+ * cannot be mutated, but objects referenced by it can be mutated (so called
+ * immutable collections are typically rated as "conditionally immutable").
+ * Mutable means that a client can mutate (directly or indirectly)
  * the state of respective objects. In general the state of a class is determined w.r.t.
  * the declared fields. I.e., a method that has, e.g., a call time dependent behavior,
  * but which does not mutate the state of the class does not affect the mutability rating.
  *
  * The mutability assessment is by default done on a per class basis and only includes
- * the super classes of a class. A rating that includes all usages is only meaningful
+ * the super classes of a class. A rating that is based on all usages is only meaningful
  * if we analyze an application.
  *
  * ==Thread-safe Lazily Initialized Fields==
@@ -67,7 +67,9 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * ==Inheritance==
  *  - Instances of `java.lang.Object` are immutable. However, if a class defines a
  * constructor which has a parameter of type object and which assigns the respective
- * parameter value to a field will at-most be conditionally immutable; in general
+ * parameter value to a field will at-most be conditionally immutable (instances of the
+ * class object are immutable, but instances of the type (which includes all subtypes) are
+ * not immutable; in general
  * we must assume that the referenced object may be (at runtime) some mutable object.
  *  - In general, only classes that inherit from (conditionally) immutable class can be
  * (conditionally) immutable; if a class is mutable, all subclasses are also
@@ -77,11 +79,8 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * as unknown. (Interfaces are generally ignored as they are always immutable.)
  *
  * ==Native Methods==
- * Native methods are ignored.
- *
- * ==Class Instances==
- * The mutability of class instances is determined by analyzing the class instance
- * only.
+ * Unknown native methods are considered as mutating the state unless all state is
+ * explicitly final.
  *
  * ==Interfaces==
  * Are not considered during the analysis as they are always immutable. (All fields are
@@ -90,13 +89,18 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * @author Andre Pacak
  * @author Michael Eichberg
  */
-sealed trait ObjectImmutability extends Property with ObjectImmutabilityPropertyMetaInformation {
+sealed trait ObjectImmutability
+        extends OrderedProperty
+        with ObjectImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `ObjectImmutability` properties.
      */
     final def key = ObjectImmutability.key
 
+    def correspondingTypeImmutability: TypeImmutability
+
+    def isMutable: Answer
 }
 /**
  * Common constants use by all [[ObjectImmutability]] properties associated with methods.
@@ -106,17 +110,51 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
     /**
      * The key associated with every [[ObjectImmutability]] property.
      */
-    final val key =
-        PropertyKey.create[ObjectImmutability](
-            "ObjectImmutability",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MutableObjectDueToUnresolvableDependency,
-            // When we have a cycle all properties are necessarily at least conditionally immutable
-            // hence, we can leverage the "immutability" 
-            ImmutableObject
+    final val key: PropertyKey[ObjectImmutability] = PropertyKey.create(
+        "ObjectImmutability",
+        // The default property that will be used if no analysis is able
+        // to (directly) compute the respective property.
+        MutableObjectDueToUnresolvableDependency,
+        // When we have a cycle all properties are necessarily at least conditionally
+        // immutable hence, we can leverage the "immutability"
+        ImmutableObject
+    )
+}
 
-        )
+case object UnknownObjectImmutability extends ObjectImmutability {
+    final val isRefineable = true
+    final val correspondingTypeImmutability = UnknownTypeImmutability
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other == UnknownObjectImmutability)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+    def isMutable: Answer = Unknown
+}
+
+/**
+ * An instance of the respective class is effectively immutable
+ * and also all reference objects. I.e., after creation it is not
+ * possible for a client to set a field or to call a method that updates the internal state
+ * of the instance or an object
+ * referred to by the instance in such a way that the client can observe the state change.
+ *
+ */
+case object ImmutableObject extends ObjectImmutability {
+    final val isRefineable = false
+    final val correspondingTypeImmutability = ImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+    final def isMutable: Answer = No
 }
 
 /**
@@ -124,21 +162,47 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
  * possible for a client to set a field or to call a method that updates the internal state
  *
  */
-case object ImmutableObject extends ObjectImmutability {
-    final val isRefineable = false
-}
-
 case object ConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = false
+    final val correspondingTypeImmutability = ConditionallyImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+    final def isMutable: Answer = No
 }
 
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = true
+    final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+    final def isMutable: Answer = No
 }
 
 sealed trait MutableObject extends ObjectImmutability {
     final val isRefineable = false
     val reason: String
+    final val correspondingTypeImmutability = MutableType
+
+    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
+        if (other.isRefineable)
+            None
+        else
+            Some(s"impossible refinement of $other to $this")
+    }
+
+    final def isMutable: Answer = Yes
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
@@ -152,4 +216,3 @@ case object MutableObjectDueToUnknownSupertypes extends MutableObject {
 case object MutableObjectDueToUnresolvableDependency extends MutableObject {
     final val reason = "a dependency cannot be resolved"
 }
-

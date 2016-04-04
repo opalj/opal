@@ -83,5 +83,6 @@ trait Attribute {
      *  - 1002 OPAL's SynthesizedClassFiles Attribute
      */
     def kindId: Int
+
 }
 

@@ -24,8 +24,6 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
     // THIS ANALYSS IS ONLY DEFINED FOR LIBRARY ANALYSES
     require(isClosedLibrary || isOpenLibrary)
 
-    private implicit val classHierarchy = project.classHierarchy
-
     def determineCallBySignatureTargets(projectIndex: ProjectIndex)(e: Entity): Property = {
         import org.opalj.util.GlobalPerformanceEvaluation.time
         time('cbst) {

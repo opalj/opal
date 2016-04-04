@@ -52,10 +52,10 @@ trait Property extends PropertyMetaInformation {
     /**
      *  Returns `true` if this property is always final and no refinement is possible.
      */
-    def isFinal = !isRefineable
+    final def isFinal = !isRefineable
 
     /**
-     *
+     * Equality of Properties has to be based on structural equality.
      */
     override def equals(other: Any): Boolean
 
@@ -65,17 +65,57 @@ trait Property extends PropertyMetaInformation {
      */
     // only used in combination with direct property computations
     private[fpcf] def isBeingComputed: Boolean = false
+
+    /**
+     * Returns true if this property inherits from [[OrderedProperty]].
+     */
+    private[fpcf] def isOrdered: Boolean = false
+
+    /**
+     * Returns `this` if this property inherits from [[OrderedProperty]].
+     *
+     * Used by the framework for debugging purposes only!
+     */
+    private[fpcf] def asOrderedProperty: OrderedProperty = throw new UnsupportedOperationException
+
+}
+
+/**
+ * Ordered properties define a definitive order between all properties of a respective kind;
+ * all properties that are of the same kind have to inherit from ordered property or none.
+ *
+ * This information is used by the property store when debugging is turned on to test if an
+ * analysis which derives a new property always derives a more precise property.
+ */
+trait OrderedProperty extends Property {
+
+    final override def isOrdered: Boolean = true
+
+    final override def asOrderedProperty: this.type = this
+
+    /**
+     * Tests if the this property is a potentially valid successor property of the other property
+     * if a computation was performed as the result of an update to a dependency.
+     *
+     * @return None if this property is a valid successor of the other property else
+     * 		Some(description :String) is returned.
+     */
+    def isValidSuccessorOf(other: OrderedProperty): Option[String]
+
 }
 
 private[fpcf] trait PropertyIsBeingComputed extends Property {
+
     final override def key = throw new UnsupportedOperationException
     final override def isRefineable = throw new UnsupportedOperationException
-    final override def isFinal = throw new UnsupportedOperationException
     final override private[fpcf] def isBeingComputed: Boolean = true
+
 }
 
 private[fpcf] object PropertyIsBeingComputed {
+
     def unapply(p: Property): Boolean = (p ne null) && p.isBeingComputed
+
 }
 
 /**
@@ -88,20 +128,20 @@ private[fpcf] object PropertyIsBeingComputed {
  * All other processes just wait until the CountDownLatch is decremented.
  *
  * Recall that a direct property computation is executed by the thread that querys the thread and
- * that a direct property computation is always only allowed to depend on either previously computed
- * properties or properties whose computation must not have a dependency on the currently
+ * that a direct property computation is always only allowed to depend on either previously
+ * computed properties or properties whose computation must not have a dependency on the currently
  * computed property.
  */
 private[fpcf] final class PropertyIsDirectlyComputed
         extends CountDownLatch(1)
         with PropertyIsBeingComputed {
+
     type Self = PropertyIsDirectlyComputed
-}
-private[fpcf] object PropertyIsDirectlyComputed {
-    def apply(p: Property): Boolean = (p ne null) && p.isInstanceOf[PropertyIsDirectlyComputed]
+
 }
 
 private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
-    type Self = PropertyIsLazilyComputed.type
-}
 
+    type Self = PropertyIsLazilyComputed.type
+
+}

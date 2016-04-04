@@ -253,7 +253,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     }
 
     "a graph with two connected sccs which are connected to one cSCC (requires the correct setting of the non-cSCC node)" should "contain one cSCCs" in {
-        val g = org.opalj.graphs.Graph.empty[AnyRef] +=
+        val g = Graph.empty[AnyRef] +=
             ("a", "b") += ("b", "c") += ("c", "d") += ("d", "e") += ("c", "g") += ("g", "a") +=
             ("e", "d") += ("g", "h") += ("h", "j") += ("j", "g")
 
@@ -265,7 +265,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     }
 
     "a graph with two cSCCs which are connected by one SCC" should "contain two cSCCs" in {
-        val g = org.opalj.graphs.Graph.empty[AnyRef] += ("a", "b") += ("b", "c") +=
+        val g = Graph.empty[AnyRef] += ("a", "b") += ("b", "c") +=
             ("c", "d") += ("d", "e") += ("c", "g") += ("g", "a") += ("e", "d") +=
             ("g", "h") += ("h", "j") += ("j", "g") += ("b", "x") += ("y", "x") +=
             ("x", "z") += ("z", "y")

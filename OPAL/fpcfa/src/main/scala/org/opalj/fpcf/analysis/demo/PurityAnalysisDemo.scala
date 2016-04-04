@@ -75,7 +75,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         var t = Seconds.None
         time { manager.runAll(FieldMutabilityAnalysis, PurityAnalysis) } { r ⇒ t = r.toSeconds }
 
-        val effectivelyFinalEntities: Traversable[EP[FieldMutability]] =
+        val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
             projectStore.entities(FieldMutability.key)
 
         val effectivelyFinalFields: Traversable[(Field, Property)] =
@@ -84,7 +84,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         val effectivelyFinalFieldsAsStrings =
             effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
-        val pureEntities: Traversable[EP[Purity]] = projectStore.entities(Purity.key)
+        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
         val pureMethodsAsStrings =

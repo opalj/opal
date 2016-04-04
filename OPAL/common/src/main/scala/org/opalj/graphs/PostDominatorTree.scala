@@ -27,44 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package graphs
 
 /**
- * Defines methods to return common attributes from the attributes table of
- * [[ClassFile]], [[Field]], [[Method]] and [[Code]] declarations.
+ * Factory to compute post [[DominatorTree]]s.
  *
- * @author Michael Eichberg
+ * @author Stephan Neumann
  */
-trait CommonAttributes {
+object PostDominatorTree {
 
-    def attributes: Attributes
+    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
 
-    def runtimeVisibleTypeAnnotations: TypeAnnotations = {
-        attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) ⇒ vas } match {
-            case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ IndexedSeq.empty
+    /**
+     * Computes the post dominator tree for the given graph. The artificial start node of
+     * the post dominator tree will have the id = (maxNodeId+1).
+     */
+    def apply(
+        isExitNode:           Int ⇒ Boolean,
+        foreachExitNode:      (Int ⇒ Unit) ⇒ Unit,
+        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:              Int
+    ): DominatorTree = {
+        // the artificial start node
+        val startNode = maxNode + 1
+
+        // reverse flowgraph
+        val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            n match {
+                case `startNode` ⇒ foreachExitNode
+                case _           ⇒ foreachPredecessorOf(n)
+            }
         }
-    }
-
-    def runtimeInvisibleTypeAnnotations: TypeAnnotations = {
-        attributes collectFirst { case RuntimeInvisibleTypeAnnotationTable(ias) ⇒ ias } match {
-            case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ IndexedSeq.empty
+        val foreachPredecessorOfAnExitNode = (f: (Int ⇒ Unit)) ⇒ { f(startNode) }
+        val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            if (isExitNode(n)) {
+                foreachPredecessorOfAnExitNode
+            } else {
+                foreachSuccessorOf(n)
+            }
         }
-    }
 
-    //    /**
-    //     * The list of all type annotations. In general, if a specific type annotation is
-    //     * searched for, the method [[runtimeVisibleTypeAnnotations]] or
-    //     * [[runtimeInvisibleTypeAnnotations]] should be used.
-    //     */
-    //    def typeAnnotations: TypeAnnotations = {
-    //        runtimeVisibleTypeAnnotations ++ runtimeInvisibleTypeAnnotations
-    //    }
-
-    final def foreachTypeAnnotation[U](f: TypeAnnotation ⇒ U): Unit = {
-        runtimeVisibleTypeAnnotations.foreach(f)
-        runtimeInvisibleTypeAnnotations.foreach(f)
+        DominatorTree(
+            startNode,
+            revFGForeachSuccessorOf, revFGForeachPredecessorOf,
+            maxNode = startNode
+        )
     }
 
 }

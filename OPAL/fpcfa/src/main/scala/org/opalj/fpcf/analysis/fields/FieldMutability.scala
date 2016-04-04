@@ -55,31 +55,41 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
     final def key = FieldMutability.key // All instances have to share the SAME key!
 
     final val isRefineable: Boolean = false
+
+    def isEffectivelyFinal: Boolean
 }
 
 object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
-    final val key = PropertyKey.create("FieldMutability", NonFinalByLackOfInformation)
+    final val key: PropertyKey[FieldMutability] = {
+        PropertyKey.create("FieldMutability", NonFinalFieldByLackOfInformation)
+    }
 
 }
 
 /**
  * The field is only set once to a non-default value and only the updated value is used.
  */
-sealed trait Final extends FieldMutability {
+sealed trait FinalField extends FieldMutability {
 
     val byDefinition: Boolean
+
+    final def isEffectivelyFinal: Boolean = true
 }
 
-case object EffectivelyFinal extends Final { final val byDefinition = false }
+case object EffectivelyFinalField extends FinalField { final val byDefinition = false }
 
-case object DeclaredFinal extends Final { final val byDefinition = true }
+case object DeclaredFinalField extends FinalField { final val byDefinition = true }
 
 /**
  * The field is potentially updated multiple times.
  */
-sealed trait NonFinal extends FieldMutability
+sealed trait NonFinalField extends FieldMutability {
 
-case object NonFinalByAnalysis extends NonFinal
+    final def isEffectivelyFinal: Boolean = false
 
-case object NonFinalByLackOfInformation extends NonFinal
+}
+
+case object NonFinalFieldByAnalysis extends NonFinalField
+
+case object NonFinalFieldByLackOfInformation extends NonFinalField

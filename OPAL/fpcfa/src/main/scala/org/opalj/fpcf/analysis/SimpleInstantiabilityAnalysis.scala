@@ -80,11 +80,11 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
 
     import project.classHierarchy.allSubclassTypes
 
-    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP[Instantiability]] = {
+    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP[ClassFile, Instantiability]] = {
 
         GlobalPerformanceEvaluation.time('inst) {
 
-            val instantiatedClasses = new Array[EP[Instantiability]](classFiles.length)
+            val instantiatedClasses = new Array[EP[ClassFile, Instantiability]](classFiles.length)
             val seenConstructors = mutable.Set.empty[ClassFile]
 
             var pos = 0
@@ -108,7 +108,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
                 } else {
                     classFile.methods foreach { method ⇒
                         if (method.isNative && method.isStatic) {
-                            val instantiatedClasses = mutable.Set.empty[EP[Instantiability]]
+                            val instantiatedClasses = mutable.Set.empty[EP[ClassFile, Instantiability]]
                             classFiles.foreach { classFile ⇒
                                 if (classFile.isAbstract &&
                                     (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible)))
@@ -169,7 +169,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
         }
     }
 
-    def determineClassInstantiability(classFile: ClassFile): EP[Instantiability] = {
+    def determineClassInstantiability(classFile: ClassFile): EP[ClassFile, Instantiability] = {
         import project.classHierarchy.isSubtypeOf
 
         if (classFile.isAbstract || classFile.isInterfaceDeclaration) {

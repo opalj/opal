@@ -51,12 +51,10 @@ object BootstrapMethodTable {
  * @author Michael Eichberg
  */
 case class BootstrapMethod(
-        methodHandle:       MethodHandle,
-        bootstrapArguments: BootstrapArguments
+        handle:    MethodHandle,
+        arguments: BootstrapArguments
 ) {
 
-    def toJava: String =
-        methodHandle.toJava +
-            bootstrapArguments.map(_.toJava).mkString("(", ",", ")")
+    def toJava: String = handle.toJava + arguments.map(_.toJava).mkString("(", ",", ")")
 }
 

@@ -48,7 +48,7 @@ import org.scalatest.BeforeAndAfterEach
 @RunWith(classOf[JUnitRunner])
 class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
-    final val TestDuration /*in minutes*/ = 1d / 60d
+    final val TestDuration /*in minutes*/ = 3.0d / 60.0d
 
     //**********************************************************************************************
     //
@@ -101,7 +101,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         def isRefineable = false
     }
 
-    // HERE: we consider a palindrome to be a super palindrome if the lead is itself a 
+    // HERE: we consider a palindrome to be a super palindrome if the lead is itself a
     //         a palindrom. E.g. aa => Lead: a => Palindrome => aa => SuperPalindrome
     final val SuperPalindromeKey = {
         PropertyKey.create[SuperPalindromeProperty](
@@ -178,6 +178,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         override def toString: String = name
     }
     object Node { def apply(name: String) = new Node(name) }
+
+    // DESCRIPTION OF A GRAPH (WITH CYCLES)
     val nodeA = Node("a")
     val nodeB = Node("b")
     val nodeC = Node("c")
@@ -225,6 +227,38 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     if (NoReachableNodes != NoReachableNodes) fail("comparison of ReachableNodes properties failed")
 
+    // DESCRIPTION OF A TREE
+    val nodeRoot = Node("Root")
+    val nodeLRoot = Node("Root->L")
+    val nodeLLRoot = Node("Root->L->L")
+    val nodeRRoot = Node("Root->R")
+    val nodeLRRoot = Node("Root->R->L")
+    val nodeRRRoot = Node("Root->R->R")
+    nodeRoot.targets += nodeLRoot
+    nodeRoot.targets += nodeRRoot
+    nodeLRoot.targets += nodeLLRoot
+    nodeRRoot.targets += nodeLRRoot
+    nodeRRoot.targets += nodeRRRoot
+    val treeEntities = List[Node](nodeRoot, nodeLRoot, nodeLLRoot, nodeRRoot, nodeLRRoot, nodeRRRoot)
+    var treeNodes: PropertyStore = initTreeNodes
+    def initTreeNodes(): PropertyStore = {
+        treeNodes = PropertyStore(treeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        treeNodes
+    }
+
+    final val TreeLevelKey: PropertyKey[TreeLevel] = {
+        PropertyKey.create(
+            "TreeLevel",
+            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+        )
+    }
+    case class TreeLevel(length: Int) extends Property {
+        final type Self = TreeLevel
+        final def key = TreeLevelKey
+        final def isRefineable = false
+    }
+
     override def afterEach(): Unit = {
         if (psStrings.isShutdown()) {
             info("reinitializing string entities property store")
@@ -235,11 +269,19 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         }
 
         if (psNodes.isShutdown()) {
-            info("reinitializing nodes property store")
+            info("reinitializing graph nodes property store")
             initPSNodes()
         } else {
             psNodes.waitOnPropertyComputationCompletion(false)
             psNodes.reset()
+        }
+
+        if (treeNodes.isShutdown()) {
+            info("reinitializing tree nodes property store")
+            initTreeNodes()
+        } else {
+            treeNodes.waitOnPropertyComputationCompletion(false)
+            treeNodes.reset()
         }
     }
 
@@ -253,7 +295,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             val ps = psStrings
 
             // let's fill the property store with:
-            //  - an entity based property and 
+            //  - an entity based property and
             //  - a set property and
             //  - an on property derivation function
             ps.onPropertyChange(PalindromeKey) { (e, p) ⇒
@@ -601,6 +643,49 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
             }
 
+            it("should be possible to execute an analysis incrementally using the standard scheduling funcation <||<") {
+                import scala.collection.mutable
+                val ps = treeNodes
+
+                var runs = 0
+                val startTime = System.currentTimeMillis()
+                while (System.currentTimeMillis() - startTime < TestDuration * 60 * 1000) {
+                    runs += 1
+                    /* The following analysis only uses the new information given to it and updates
+                 	 * the set of observed dependees.
+                 	 */
+                    def analysis(level: Int)(n: Node): PropertyComputationResult = {
+                        val nextPCs : Traversable[(PropertyComputation[Node], Node)] =
+                            n.targets.map(t => (analysis(level+1) _,t))
+                        IncrementalResult(ImmediateResult(n, TreeLevel(level)), nextPCs)
+                    }
+
+                    ps <||<[Node] ({ case n @ `nodeRoot` ⇒ n.asInstanceOf[Node]}, analysis(0))
+                    ps.waitOnPropertyComputationCompletion(true)
+
+                    try {
+                        ps(nodeRoot, TreeLevelKey) should be(Some(TreeLevel(0)))
+                        ps(nodeRRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
+                        ps(nodeRRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        ps(nodeLRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        ps(nodeLRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
+                        ps(nodeLLRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+
+                    } catch {
+                        case t: Throwable ⇒
+                                                        info(s"test failed on run $runs\n"+ps.toString(true))
+                            try{ps.validate(None)} catch {
+                                case ae:AssertionError =>
+                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                            }
+                            throw t
+                    }
+
+                    ps.reset()
+                }
+                info(s"executed the test $runs times")
+            }
+
             it("should be possible to execute an analysis which at some point stabilizes itself in an intermediate result") {
                 import scala.collection.mutable
 
@@ -651,7 +736,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     store <||< ({ case n: Node ⇒ n }, purityAnalysis)
                     store.waitOnPropertyComputationCompletion(true)
 
-                    // 5. let's evaluate the result                
+                    // 5. let's evaluate the result
                     store.entities(PurityKey) foreach { ep ⇒
                         if (ep.p != Pure) {
                             info(store.toString(true))
@@ -679,8 +764,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         if (nTargets.isEmpty)
                             return ImmediateResult(n, NoReachableNodes);
 
-                        val allDependees: mutable.Set[Node] = nTargets.clone
-                        var dependeePs: Traversable[EOptionP[_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
+                        val allDependees: mutable.Set[Node] = nTargets.clone - n // self-dependencies are ignored!
+                        var dependeePs: Traversable[EOptionP[Entity,_ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
 
                         // incremental computation
                         def c(
@@ -720,7 +805,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                 else
                                     reachableNodes
                             }
-                        val intermediateP = ReachableNodes(reachableNodes)
+                        val intermediateP = ReachableNodes(
+                                if(n.targets contains n)
+                                reachableNodes + n
+                                else
+                                    reachableNodes
+                                )
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
@@ -743,7 +833,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                     } catch {
                         case t: Throwable ⇒
-                            info(s"failed on run $runs\n"+ps.toString(true))
+                                                                                    info(s"test failed on run $runs\n"+ps.toString(true))
+                            try{ps.validate(None)} catch {
+                                case ae:AssertionError =>
+                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                            }
                             throw t
                     }
 
@@ -769,7 +863,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         if (nTargets.isEmpty)
                             return ImmediateResult(n, NoReachableNodes);
 
-                        val remainingDependees: mutable.Set[Node] = nTargets.clone
+                        val remainingDependees: mutable.Set[Node] = nTargets.clone - n
                         def c(
                             dependeeE:  Entity,
                             dependeeP:  Property,
@@ -819,7 +913,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                 else
                                     reachableNodes
                             }
-                        val intermediateP = ReachableNodes(reachableNodes)
+                        val intermediateP = ReachableNodes(
+                                if(n.targets contains n)
+                                reachableNodes + n
+                                else
+                                    reachableNodes
+                                )
                         IntermediateResult(n, intermediateP, dependeePs, c)
                     }
 
@@ -842,9 +941,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                     } catch {
                         case t: Throwable ⇒
-                            info(s"failed on run $runs\n"+ps.toString(true))
-                            throw t
-                    }
+                                                        info(s"test failed on run $runs\n"+ps.toString(true))
+                            try{ps.validate(None)} catch {
+                                case ae:AssertionError =>
+                                    info(s"validation failed on run $runs\n"+ae.getMessage.toString)
+                            }
+                            throw t                    }
 
                     psNodes.reset()
                 }
@@ -906,7 +1008,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         superPalindromeCompleted = true
                         Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
                     }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
 
                 // We can explicitly add results though this is generally not required in a well
                 // written analysis.
@@ -937,7 +1039,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     ) { arePalindromes ⇒
                             Result("aaa", if (arePalindromes) SuperPalindrome else throw new UnknownError)
                         }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -959,7 +1061,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val pcr = ps.require("aaa", SuperPalindromeKey, "a", PalindromeKey) { (e, p) ⇒
                     Result("aaa", if (p == Palindrome) SuperPalindrome else NoSuperPalindrome)
                 }
-                pcr shouldBe a[SuspendedPC[_]]
+                pcr shouldBe (a[SuspendedPC[_]])
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -1086,4 +1188,3 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         }
     }
 }
-

@@ -129,7 +129,7 @@ class Demo {
     }
 
     // The following method is pure, but only if we know the pureness of the target method
-    // which we don't know if do not analyze the JDK!
+    // (Math.abs) which we don't know if do not analyze the JDK!
     //
 
     static int cpure(int i) {
