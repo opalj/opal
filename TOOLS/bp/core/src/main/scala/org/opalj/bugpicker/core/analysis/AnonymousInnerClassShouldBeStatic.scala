@@ -31,10 +31,9 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import br._
-import br.analyses._
-import br.instructions._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind

@@ -34,7 +34,6 @@ import java.io.{FileWriter, BufferedWriter, File}
 import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
-import javafx.scene.input
 import scala.collection.JavaConverters._
 import scala.xml.Node
 import scala.xml.dtd.DocType
@@ -44,7 +43,6 @@ import scala.xml.dtd.ParsedEntityDecl
 import scala.xml.dtd.NoExternalID
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.DiffView
@@ -54,7 +52,6 @@ import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
 import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
-import org.opalj.util.Milliseconds
 import javafx.application.Application
 import javafx.event.EventHandler
 import javafx.scene.control.ScrollBar
@@ -82,7 +79,6 @@ import scalafx.scene.control.TableView.sfxTableView2jfx
 import scalafx.scene.image.ImageView
 import scalafx.scene.input._
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
-import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
 import scalafx.scene.paint.Color
@@ -91,7 +87,6 @@ import scalafx.scene.text.Text.sfxText2jfx
 import scalafx.scene.web.WebView
 import scalafx.scene.web.WebView.sfxWebView2jfx
 import scalafx.stage.FileChooser
-import scalafx.stage.FileChooser.sfxFileChooser2jfx
 import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
@@ -101,7 +96,6 @@ import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigFactory
 import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import scala.collection.parallel.BucketCombiner
 import com.typesafe.config.Config
 import scala.util.control.ControlThrowable
 import org.opalj.issues.Issue

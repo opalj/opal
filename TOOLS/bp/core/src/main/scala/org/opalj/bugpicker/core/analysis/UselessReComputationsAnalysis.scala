@@ -33,20 +33,10 @@ package analysis
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.{ClassFile, Method}
-import org.opalj.ai.Domain
 import org.opalj.ai.collectPCWithOperands
-import org.opalj.br.instructions.BinaryArithmeticInstruction
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.ComputationalTypeLong
-import org.opalj.br.instructions.LNEG
-import org.opalj.br.instructions.INEG
-import org.opalj.br.instructions.IINC
-import org.opalj.br.instructions.ShiftInstruction
-import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
-import org.opalj.ai.domain.l1.ReferenceValues
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
 import org.opalj.ai.domain.TheCode

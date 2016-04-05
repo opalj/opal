@@ -31,44 +31,21 @@ package bugpicker
 package ui
 package dialogs
 
-import org.opalj.bugpicker.core.analysis.AnalysisParameters
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
-import scalafx.Includes.jfxNode2sfx
-import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
-import scalafx.scene.control.Label
-import scalafx.scene.control.TextField
 import scalafx.scene.layout.BorderPane
-import scalafx.scene.layout.GridPane
 import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.stage.Stage
-import org.opalj.util.Milliseconds
-import scalafx.scene.control.ToggleButton
-import scalafx.scene.control.ListView
-import scalafx.collections.ObservableBuffer
-import scalafx.scene.control.MultipleSelectionModel
-import scalafx.scene.control.SelectionMode
-import scalafx.scene.layout.VBox
-import scalafx.scene.control.cell.CheckBoxListCell
-import scalafx.beans.property.BooleanProperty
 import scalafx.scene.control.TextArea
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigRenderOptions
-import scalafx.scene.control.ScrollPane
 import scalafx.scene.web.HTMLEditor
-import scalafx.scene.control.ContextMenu
-import scalafx.scene.control.cell.TextFieldListCell
-import scalafx.scene.web.WebView
-import com.typesafe.config.ConfigParseOptions
-import scala.collection.parallel.BucketCombiner
 
 /**
  * @author Arne Lottmann

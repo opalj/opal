@@ -62,8 +62,6 @@ import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.SelectionMode
 import scalafx.scene.control.ScrollPane
 import com.typesafe.config.Config
-import org.opalj.br.analyses.Project
-import com.typesafe.config.ConfigFactory
 
 class LoadProjectDialog(
         preferences:    Option[LoadedFiles],

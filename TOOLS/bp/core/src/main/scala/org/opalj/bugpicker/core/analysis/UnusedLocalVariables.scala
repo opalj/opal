@@ -48,12 +48,10 @@ import org.opalj.br.instructions.DCONST_0
 import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.FCONST_0
 import org.opalj.br.instructions.StoreLocalVariableInstruction
-import org.opalj.br.LocalVariable
 import org.opalj.br.instructions.ICONST_M1
 import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.BIPUSH
 import org.opalj.br.instructions.SIPUSH
-import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.ICONST_3
@@ -71,10 +69,8 @@ import org.opalj.issues.Issue
 import org.opalj.issues.Relevance
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.IssueLocation
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.MethodLocation
-
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
@@ -83,6 +79,7 @@ import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.analysis.methods.Purity
 import org.opalj.fpcf.analysis.methods.Pure
+
 /**
  * Identifies unused local variables in non-synthetic methods.
  *

@@ -44,7 +44,6 @@ import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
 import org.opalj.br.ClassFile
-import org.opalj.ai.AI
 import org.opalj.ai.mapOperands
 import org.opalj.ai.TheAI
 import org.opalj.ai.domain.l2.CalledMethodsStore

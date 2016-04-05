@@ -34,8 +34,6 @@ import java.io.File
 import java.io.FilenameFilter
 import java.net.URL
 import scala.collection.mutable.Map
-import org.opalj.ai.AIResult
-import org.opalj.ai.AITracer
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DomainRegistry
@@ -50,12 +48,10 @@ import org.opalj.bugpicker.ui.dialogs.ChooseDomainDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.WebViewStage
 import scalafx.Includes._
-import scalafx.application.Platform
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
 import scalafx.scene.control.ContextMenu
 import scalafx.scene.control.MenuItem
-import scalafx.scene.control.TreeCell
 import scalafx.scene.control.TreeView
 import scalafx.scene.image.Image
 import scalafx.scene.image.ImageView
@@ -66,10 +62,6 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.AsQuadruples
 import org.opalj.tac.ToJavaLike
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.bi.VisibilityModifier
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_PRIVATE
-import org.opalj.bi.ACC_PROTECTED
 import org.opalj.fpcf.PropertyKey
 
 /**
