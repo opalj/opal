@@ -104,11 +104,7 @@ class FPCFAnalysesManager private[analysis] (val project: SomeProject) {
         }
     }
 
-    def runWithRecommended(
-        runner: FPCFAnalysisRunner
-    )(
-        waitOnCompletion: Boolean = true
-    ): Unit = {
+    def runWithRecommended(runner: FPCFAnalysisRunner)(waitOnCompletion: Boolean = true): Unit = {
         if (!isDerived(runner.derivedProperties)) {
             val analyses =
                 (runner.recommendations ++ runner.requirements).

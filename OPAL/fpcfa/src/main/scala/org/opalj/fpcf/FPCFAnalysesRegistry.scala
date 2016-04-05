@@ -33,6 +33,7 @@ import org.opalj.fpcf.analysis._
 import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
 import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
+import org.opalj.fpcf.analysis.extensibility.ClassExtensibilityAnalysis
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -136,5 +137,11 @@ object FPCFAnalysesRegistry {
         "PurityAnalysis",
         "Determines if a method is pure (~ has no side effects).",
         PurityAnalysis
+    )
+
+    register(
+        "ClassExtensibilityAnalysis",
+        "Determines which classes may have subclasses (this analysis is particularly relevant when analyzing libraries)",
+        ClassExtensibilityAnalysis
     )
 }
