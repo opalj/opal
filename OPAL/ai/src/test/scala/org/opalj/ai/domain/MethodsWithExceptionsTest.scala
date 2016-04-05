@@ -30,21 +30,14 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.SortedSet
-
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
-
 import org.scalatest.Matchers
-
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-
-import br._
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -164,4 +157,3 @@ private object MethodsWithExceptionsTest {
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithExceptions").get
 }
-

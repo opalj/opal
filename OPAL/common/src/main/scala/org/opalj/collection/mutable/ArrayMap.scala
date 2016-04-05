@@ -30,10 +30,7 @@ package org.opalj
 package collection
 package mutable
 
-import scala.annotation.tailrec
 import scala.reflect.ClassTag
-import scala.collection.immutable.Vector
-import scala.collection.generic.FilterMonadic
 import java.util.Arrays
 
 /**

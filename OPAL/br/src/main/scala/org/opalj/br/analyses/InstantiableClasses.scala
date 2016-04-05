@@ -30,10 +30,7 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Set
-import scala.collection.mutable.HashSet
-import org.opalj.br.instructions.INVOKESPECIAL
 
 /**
  * Stores the information about those classes that are not instantiable. The set of
@@ -56,4 +53,3 @@ class InstantiableClasses(
     override def toString(): String = notInstantiable.mkString("Not instantiable: ", ", ", ".")
 
 }
-

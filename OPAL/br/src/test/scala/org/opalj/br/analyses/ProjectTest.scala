@@ -33,7 +33,6 @@ package analyses
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources

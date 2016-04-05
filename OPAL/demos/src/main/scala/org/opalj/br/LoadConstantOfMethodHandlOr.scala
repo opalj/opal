@@ -34,20 +34,16 @@ package org.opalj
 package br
 
 import java.net.URL
-
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-
-import ObjectType.Class
-import ObjectType.String
-import br.analyses.AnalysisExecutor
-import br.analyses.BasicReport
-import br.analyses.OneStepAnalysis
-import br.analyses.Project
-import br.instructions.LoadMethodHandle
-import br.instructions.LoadMethodHandle_W
-import br.instructions.LoadMethodType
-import br.instructions.LoadMethodType_W
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.LoadMethodHandle
+import org.opalj.br.instructions.LoadMethodHandle_W
+import org.opalj.br.instructions.LoadMethodType
+import org.opalj.br.instructions.LoadMethodType_W
 
 /**
  * @author Michael Eichberg

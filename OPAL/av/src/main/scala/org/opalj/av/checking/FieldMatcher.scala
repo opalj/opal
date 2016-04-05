@@ -36,7 +36,6 @@ import org.opalj.br.FieldType
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
-import org.opalj.br.Annotation
 
 /**
  * Matches fields based on their name, type, annotations and declaring class.

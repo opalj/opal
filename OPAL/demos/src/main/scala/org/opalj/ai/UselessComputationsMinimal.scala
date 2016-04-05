@@ -36,7 +36,6 @@ import scala.collection.JavaConversions._
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -94,4 +93,3 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         BasicReport(results.mkString(s"${results.size} Useless computations:\n", "\n", "\n"))
     }
 }
-

@@ -31,7 +31,6 @@ package br
 package analyses
 
 import org.opalj.br.ObjectType
-import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
 

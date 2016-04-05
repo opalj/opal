@@ -31,7 +31,6 @@ package br
 package reader
 
 import scala.util.parsing.combinator._
-import java.io.InvalidClassException
 
 // IMPROVE consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
@@ -242,4 +241,3 @@ object SignatureParser {
         signatureParsers.get.parseMethodTypeSignature(signature)
     }
 }
-

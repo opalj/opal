@@ -149,7 +149,7 @@ object InterpretMethodsAnalysis {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
 
-        import Console.{BOLD, RED, YELLOW, GREEN, RESET}
+        import Console.{RED, YELLOW, GREEN, RESET}
 
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{time, getTime}

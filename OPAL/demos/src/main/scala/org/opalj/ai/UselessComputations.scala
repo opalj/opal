@@ -37,7 +37,6 @@ import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
@@ -163,4 +162,3 @@ case class UselessComputation(
     }
 
 }
-

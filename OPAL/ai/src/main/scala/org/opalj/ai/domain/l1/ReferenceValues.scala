@@ -34,8 +34,6 @@ package l1
 import scala.reflect.ClassTag
 
 import java.util.IdentityHashMap
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
 import scala.collection.immutable.{SortedSet ⇒ ImmutableSortedSet}

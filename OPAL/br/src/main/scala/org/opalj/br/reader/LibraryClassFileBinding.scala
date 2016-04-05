@@ -30,9 +30,6 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.AttributesReader
-import org.opalj.bi.reader.SkipUnknown_attributeReader
-
 /**
  * Default class file binding where all private fields and methods are not represented.
  *
@@ -65,4 +62,3 @@ trait LibraryClassFileBinding extends ClassFileBinding {
         )
     }
 }
-

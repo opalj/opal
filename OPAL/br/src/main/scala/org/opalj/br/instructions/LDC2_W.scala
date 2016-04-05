@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.language.existentials
-
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**

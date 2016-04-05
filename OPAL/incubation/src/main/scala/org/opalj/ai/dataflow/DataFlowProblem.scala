@@ -31,9 +31,6 @@ package ai
 package dataflow
 
 import scala.collection.{Map, Set}
-
-import bi.AccessFlagsMatcher
-
 import br._
 import br.analyses._
 
@@ -212,4 +209,3 @@ trait DataFlowProblem[Source, P] {
 
     /*abstract*/ def doSolve(): String
 }
-

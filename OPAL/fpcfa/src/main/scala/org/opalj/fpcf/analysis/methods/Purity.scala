@@ -51,22 +51,21 @@ object Purity extends PurityPropertyMetaInformation {
     /**
      * The key associated with every purity property.
      */
-    final val key: PropertyKey[Purity] = {
-        PropertyKey.create(
-            // The unique name of the property.
-            "Purity",
-            // The default property that will be used if no analysis is able
-            // to (directly) compute the respective property.
-            MaybePure,
-            // When we have a cycle all properties are necessarily conditionally pure
-            // hence, we can leverage the "pureness" 
-            Pure
-        // NOTE
-        // We DO NOT increase the pureness of all methods as this will happen automatically
-        // as a sideeffect of setting the pureness of one method!
-        // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
-        )
-    }
+    final val key: PropertyKey[Purity] = PropertyKey.create(
+        // The unique name of the property.
+        "Purity",
+        // The default property that will be used if no analysis is able
+        // to (directly) compute the respective property.
+        MaybePure,
+        // When we have a cycle all properties are necessarily conditionally pure
+        // hence, we can leverage the "pureness" 
+        Pure
+    // NOTE
+    // We DO NOT increase the pureness of all methods as this will happen automatically
+    // as a sideeffect of setting the pureness of one method!
+    // (epks: Iterable[EPK]) ⇒ { epks.map(epk ⇒ Result(epk.e, Pure)) }
+    )
+
 }
 
 /**

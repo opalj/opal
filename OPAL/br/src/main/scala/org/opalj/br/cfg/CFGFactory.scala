@@ -30,8 +30,6 @@ package org.opalj
 package br
 package cfg
 
-import scala.collection.{Set ⇒ SomeSet}
-import scala.collection.immutable.HashSet
 import scala.collection.immutable.HashMap
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.instructions.JSRInstruction
@@ -46,7 +44,6 @@ import org.opalj.br.instructions.JSR_W
 import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -60,10 +57,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  */
 object CFGFactory {
 
-    def apply(
-        method:         Method,
-        classHierarchy: ClassHierarchy
-    ): Option[CFG] = {
+    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG] = {
         method.body.map(code ⇒ apply(code, classHierarchy))
     }
 

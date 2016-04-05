@@ -36,9 +36,6 @@ import java.net.URL
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, SourceElementsPropertyStoreKey}
 import org.opalj.br.analyses.AnalysisModeConfigFactory
-import org.opalj.log.OPALLogger
-import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.Warn
 import org.opalj.util.GlobalPerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation
 

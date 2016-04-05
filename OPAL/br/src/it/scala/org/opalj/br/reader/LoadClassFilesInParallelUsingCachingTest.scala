@@ -31,16 +31,10 @@ package br
 package reader
 
 import java.io.File
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import java.io.DataInputStream
-import java.io.ByteArrayInputStream
-
+import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**

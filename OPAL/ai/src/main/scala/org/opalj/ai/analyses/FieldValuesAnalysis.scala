@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.collection.mutable.AnyRefMap
 
-import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
@@ -122,4 +121,3 @@ object FieldValuesAnalysis {
     }
 
 }
-

@@ -29,12 +29,8 @@
 package org.opalj
 package tac
 
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
-import java.util.Arrays
-
 import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project

@@ -31,17 +31,12 @@ package fpcf
 package analysis
 package immutability
 
-import scala.collection.mutable
-
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.Field
 import org.opalj.fpcf.analysis.fields.FieldMutability
 import org.opalj.fpcf.analysis.fields.NonFinalField
 import org.opalj.fpcf.analysis.fields.FinalField
-import org.opalj.fpcf.analysis.fields.EffectivelyFinalField
 import org.opalj.log.OPALLogger
 
 /**
@@ -57,8 +52,8 @@ import org.opalj.log.OPALLogger
  * class files are not found the sound approximation is done that the respective classes are
  * mutable.
  *
- * This analysis uses the "FieldMutability" property to determine those fields which could
- * be final, but which are not declared as final.
+ * This analysis uses the [[org.opalj.fpcf.analysis.fields.FieldMutability]] property to determine
+ * those fields which could be final, but which are not declared as final.
  *
  * @author Michael Eichberg
  */

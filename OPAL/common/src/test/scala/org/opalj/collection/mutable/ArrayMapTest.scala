@@ -43,8 +43,6 @@ import org.junit.runner.RunWith
 @RunWith(classOf[JUnitRunner])
 class ArrayMapTest extends FlatSpec with Matchers {
 
-    import org.opalj.collection.mutable.Locals
-
     behavior of "an ArrayMap data structure"
 
     it should ("be empty if it is newly created") in {

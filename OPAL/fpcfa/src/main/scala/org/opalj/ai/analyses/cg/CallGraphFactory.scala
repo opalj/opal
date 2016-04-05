@@ -168,7 +168,6 @@ object CallGraphFactory {
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
         import java.util.concurrent.Callable
-        import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
 
         val extractor = configuration.Extractor
@@ -323,4 +322,3 @@ class B extends A {
     }
 }
 */
-

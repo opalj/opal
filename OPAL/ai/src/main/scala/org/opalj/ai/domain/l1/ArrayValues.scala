@@ -36,7 +36,6 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import scala.collection.SortedSet
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.collection.commonPrefix

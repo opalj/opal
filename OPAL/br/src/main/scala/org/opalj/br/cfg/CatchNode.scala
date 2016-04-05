@@ -28,7 +28,6 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.PC
 

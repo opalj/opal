@@ -33,8 +33,6 @@ import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
 import scala.language.existentials
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -257,4 +255,3 @@ case class InfiniteRecursion(
             "{ "+method.toJava+"{ "+operands.mkString(", ")+" }}"
     }
 }
-

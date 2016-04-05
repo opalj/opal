@@ -29,8 +29,8 @@
 package org.opalj
 package de
 
-import br._
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This class (the implementation) demonstrates how to load all class files
@@ -41,7 +41,7 @@ import br.reader.Java8Framework.ClassFiles
  */
 object DependencyMatrix {
 
-    import util.PerformanceEvaluation.{time, ns2ms}
+    import org.opalj.util.PerformanceEvaluation.time
 
     private def printUsage(): Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")

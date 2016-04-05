@@ -31,7 +31,6 @@ package br
 package cfg
 
 import scala.collection.{Set ⇒ SomeSet}
-import org.opalj.collection.mutable.UShortSet
 
 /**
  * Represents the control flow graph of a method.

@@ -33,7 +33,6 @@ import scala.collection.Map
 import scala.collection.Set
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br._
-import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -89,4 +88,3 @@ object DependencyStore {
         apply(classFiles, createDependencyExtractor)
     }
 }
-

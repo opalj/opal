@@ -29,16 +29,6 @@
 package org.opalj
 package br
 
-import org.opalj.ai.InterpretationFailedException
-import org.opalj.ai.analyses.FieldValuesKey
-import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.util.XHTML
-import org.opalj.ai.common.XHTML.dump
-import org.opalj.ai.analyses.cg.CHACallGraphExtractor
-import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.ai.analyses.cg.CallGraphExtractor
-import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
-import org.opalj.ai.analyses.cg.VTACallGraphExtractor
 import org.opalj.br.analyses.Project
 import org.opalj.io.writeAndOpen
 import org.opalj.graphs.toDot
@@ -53,7 +43,6 @@ object PrintBaseCFG {
 
     def main(args: Array[String]): Unit = {
         import Console.{RED, RESET}
-        import language.existentials
 
         if (args.size != 3) {
             println("You have to specify the method that should be analyzed.")

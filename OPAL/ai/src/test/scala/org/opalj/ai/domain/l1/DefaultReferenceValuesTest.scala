@@ -36,9 +36,6 @@ import scala.collection.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.BeforeAndAfterAll
-
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project

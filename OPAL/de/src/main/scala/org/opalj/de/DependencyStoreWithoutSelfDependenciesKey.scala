@@ -32,9 +32,6 @@ package de
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 
-import scala.collection.Map
-import scala.collection.Set
-
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies
  * except self dependencies.
@@ -62,4 +59,3 @@ object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[D
         )
     }
 }
-

@@ -33,7 +33,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Future ⇒ JFuture}
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -277,7 +276,7 @@ package object concurrent {
             while (!workQueue.isEmpty()) {
                 val next = workQueue.poll()
                 // schedule is executed concurrently, hence some other thread
-                // may have grapped the (last remaining) value in between. 
+                // may have grapped the (last remaining) value in between.
                 if (next != null) {
                     futuresCountMutex.synchronized { futuresCount += 1 }
                     val future = Future[Unit] { f(next) }(executionContext)
@@ -309,4 +308,3 @@ package object concurrent {
         exceptionsMutex.synchronized { exceptions }
     }
 }
-

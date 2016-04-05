@@ -31,30 +31,17 @@ package ai
 package domain
 package l1
 
-import scala.language.existentials
-
 import java.net.URL
 import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
 import scala.Console.RESET
-import scala.Iterable
 import scala.collection.{Set, Map}
-
-import org.opalj.collection.mutable.Locals
-import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -192,4 +179,3 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
     }
 
 }
-

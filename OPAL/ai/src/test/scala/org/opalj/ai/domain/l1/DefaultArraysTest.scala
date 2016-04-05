@@ -35,16 +35,13 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
 import org.opalj.br.{LongType, FloatType, DoubleType}
 import org.opalj.br.{BooleanType, CharType}
-import org.opalj.bi.TestSupport.locateTestResources
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.br.instructions.ArrayLoadInstruction
-import org.opalj.br.ComputationalType
 
 /**
  * Tests the ArrayValues domain.

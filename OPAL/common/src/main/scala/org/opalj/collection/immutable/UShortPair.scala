@@ -30,8 +30,6 @@ package org.opalj
 package collection
 package immutable
 
-import org.opalj.UShort.{MinValue, MaxValue}
-
 /**
  * A memory-efficient representation of a pair of UShortValues.
  *
@@ -67,4 +65,3 @@ object UShortPair {
         new UShortPair(a | b << 16)
     }
 }
-

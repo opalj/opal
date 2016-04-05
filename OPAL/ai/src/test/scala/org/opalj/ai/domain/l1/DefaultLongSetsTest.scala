@@ -32,13 +32,11 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
+import scala.collection.immutable.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
-import scala.collection.immutable.SortedSet
-
-import org.opalj.br.{ObjectType, ArrayType}
+import org.opalj.br.ObjectType
 
 /**
  * Tests the LongSets Domain.

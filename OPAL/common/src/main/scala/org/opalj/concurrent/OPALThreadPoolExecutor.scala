@@ -30,21 +30,11 @@ package org
 package opalj
 package concurrent
 
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
-import scala.concurrent.ExecutionContext
-import scala.collection.parallel.ExecutionContextTaskSupport
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.{Future ⇒ JFuture}
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.CancellationException
 
@@ -96,4 +86,3 @@ class OPALThreadPoolExecutor(
         }
     }
 }
-

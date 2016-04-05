@@ -30,11 +30,8 @@ package org.opalj
 package ai
 package debug
 
-import scala.language.existentials
-
 import scala.Console.RED
 import scala.Console.RESET
-
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
@@ -61,8 +58,6 @@ object GetCallees {
      * Prints information about the callees of a method.
      */
     def main(args: Array[String]): Unit = {
-        import Console.{RED, RESET}
-        import language.existentials
 
         if (args.size < 3 || args.size > 4) {
             println("You have to specify the method that should be analyzed.")

@@ -33,9 +33,7 @@ package analyses
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-import org.opalj.graphs.toDot
 import org.opalj.collection.immutable.UIDSet
 import scala.language.implicitConversions
 import org.opalj.log.GlobalLogContext

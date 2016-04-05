@@ -30,7 +30,6 @@ package org.opalj
 package ai
 
 import scala.util.control.ControlThrowable
-import scala.collection.mutable.LinkedHashMap
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain
@@ -40,7 +39,6 @@ import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.graphs.toDot
-import org.opalj.graphs.Graph
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a

@@ -34,7 +34,6 @@ import org.opalj.io.OpeningFileFailedException
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
-import java.util.jar.JarFile
 
 /**
  * Creates the three-address representation and prints it.

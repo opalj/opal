@@ -33,11 +33,9 @@ package cg
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.bi.TestSupport.locateTestResources
-
-import br._
-import br.reader.Java8Framework
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework
 
 /**
  * Tests if the same same call graph is created when we run the call graph
@@ -77,8 +75,6 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
     //
     // TESTS
     //
-
-    import scala.language.existentials
 
     // Validate every method against the callgraph defined by annotations
     it should "always calculate the same call graph" in {

@@ -28,8 +28,6 @@
  */
 package org.opalj
 
-import scala.language.implicitConversions
-
 import java.io.File
 import java.net.URL
 
@@ -79,4 +77,3 @@ package object issues {
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
 
 }
-

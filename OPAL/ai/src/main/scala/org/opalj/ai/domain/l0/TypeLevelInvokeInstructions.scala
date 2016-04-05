@@ -31,11 +31,9 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.{Type, ObjectType, ReferenceType}
+import org.opalj.br.{ObjectType, ReferenceType}
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.Project
-import org.opalj.br.ClassHierarchy
 
 /**
  * Most basic handling of method invocations that determines the value that is

@@ -148,7 +148,6 @@ object CallGraphFactory {
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException], Int /*CBSCount*/ )
 
         import java.util.concurrent.Callable
-        import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
         import org.opalj.util.GlobalPerformanceEvaluation
 
@@ -311,4 +310,3 @@ class B extends A {
     }
 }
 */
-

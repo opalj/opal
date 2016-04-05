@@ -28,7 +28,6 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.mutable
 import org.opalj.br.PC
 import org.opalj.br.Code
 

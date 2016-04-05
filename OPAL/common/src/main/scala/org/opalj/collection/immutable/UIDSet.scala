@@ -30,8 +30,6 @@ package org.opalj
 package collection
 package immutable
 
-import scala.annotation.tailrec
-
 import UIDSet.Relation
 
 /**

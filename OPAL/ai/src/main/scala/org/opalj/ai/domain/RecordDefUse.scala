@@ -37,7 +37,6 @@ import scala.collection.mutable
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.{UShortSet ⇒ OUShortSet}
 import org.opalj.collection.mutable.SmallValuesSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code

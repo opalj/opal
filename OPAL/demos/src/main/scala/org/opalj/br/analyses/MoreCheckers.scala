@@ -30,7 +30,7 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.util.{Counting, PerformanceEvaluation}
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._

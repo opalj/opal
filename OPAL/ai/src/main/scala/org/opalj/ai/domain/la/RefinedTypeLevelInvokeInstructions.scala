@@ -32,11 +32,7 @@ package domain
 package la
 
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.ai.ValuesFactory
-import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.analyses.cg.MethodCallsDomainWithMethodLockup
 
@@ -73,4 +69,3 @@ trait RefinedTypeLevelInvokeInstructions extends MethodCallsDomainWithMethodLock
     }
 
 }
-

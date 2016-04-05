@@ -29,17 +29,17 @@
 package org.opalj
 package br
 package analyses
-import scala.util.control.ControlThrowable
+
 import java.net.URL
 import java.io.File
+import scala.util.control.ControlThrowable
+import com.typesafe.config.ConfigFactory
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
-import org.opalj.io.OpeningFileFailedException
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import com.typesafe.config.ConfigFactory
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that

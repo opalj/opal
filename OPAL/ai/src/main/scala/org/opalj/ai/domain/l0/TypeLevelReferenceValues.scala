@@ -32,7 +32,6 @@ package domain
 package l0
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType

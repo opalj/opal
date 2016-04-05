@@ -35,9 +35,6 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
-import scala.reflect.ClassTag
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -374,8 +371,6 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-
-        import org.opalj.collection.mutable.Locals
         implicit val domainValue = targetDomain.DomainValue
 
         val operandsCount = theOperands.size

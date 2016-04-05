@@ -31,9 +31,7 @@ package fpcf
 package analysis
 package escape
 
-import java.net.URL
 import net.ceedubs.ficus.Ficus._
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
@@ -53,7 +51,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.log.OPALLogger
 
 /**
- * A shallow analysis that determines for each object that is created within a method (new)
+ * A shallow analysis that determines for each new object that is created within a method
  * if it escapes the scope of the method.
  *
  * An object escapes the scope of a method if:
@@ -268,5 +266,5 @@ object EscapeAnalysis {
         val analysis = new EscapeAnalysis(debug.getOrElse(false))
         store <||< (filter, analysis.determineSelfReferenceLeakage)
     }
-}
 
+}

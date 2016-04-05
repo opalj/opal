@@ -30,22 +30,11 @@ package org.opalj
 package av
 package checking
 
-import scala.language.implicitConversions
 import scala.language.existentials
-
-import java.net.URL
-
 import scala.Console.{RED, BLUE, RESET, BOLD}
-import scala.util.matching.Regex
-import scala.collection.{Map ⇒ AMap, Set ⇒ ASet}
-import scala.collection.immutable.SortedSet
-import scala.collection.mutable.{Map ⇒ MutableMap, HashSet}
-
 import org.opalj.br._
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br.analyses.{Project, SomeProject}
-
 import org.opalj.de._
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Used to report deviations between the specified and the implemented architecture.
@@ -142,4 +131,3 @@ case class PropertyViolation(
     }
 
 }
-

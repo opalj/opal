@@ -31,8 +31,6 @@ package fpcf
 package analysis
 package cg
 
-import org.opalj.util.PerformanceEvaluation
-
 import scala.collection.Set
 import org.opalj.br.analyses._
 import org.opalj.br.{Method, MethodDescriptor, ObjectType}

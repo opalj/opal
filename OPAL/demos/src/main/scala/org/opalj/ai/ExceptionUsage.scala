@@ -30,8 +30,6 @@ package org.opalj
 package ai
 
 import java.net.URL
-import java.io.File
-import org.opalj.collection.immutable.{UIDSet, UIDSet1}
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._

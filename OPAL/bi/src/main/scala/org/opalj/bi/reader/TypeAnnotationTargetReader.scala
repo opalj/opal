@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,8 +31,6 @@ package bi
 package reader
 
 import java.io.DataInputStream
-
-import scala.reflect.ClassTag
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
@@ -51,18 +49,12 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 
     //______________________________
     // type_parameter_target
-    def ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int
-    ): TypeAnnotationTarget
-    def ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int
-    ): TypeAnnotationTarget
+    def ParameterDeclarationOfClassOrInterface(type_parameter_index: Int): TypeAnnotationTarget
+    def ParameterDeclarationOfMethodOrConstructor(type_parameter_index: Int): TypeAnnotationTarget
 
     //______________________________
     // supertype_target
-    def SupertypeTarget(
-        supertype_index: Int
-    ): TypeAnnotationTarget
+    def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget
 
     //______________________________
     // type_parameter_bound_target
@@ -171,7 +163,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     }
 
     /* From the Specification
-     * 
+     *
      * <pre>
      * u1 target_type;
      * union {
@@ -234,4 +226,3 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         }
     }
 }
-

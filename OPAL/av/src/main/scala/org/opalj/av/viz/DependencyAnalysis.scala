@@ -34,7 +34,6 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.language.reflectiveCalls
-import scala.collection.mutable.HashMap
 import scala.util.Random
 
 import org.opalj.io.writeAndOpen
@@ -142,7 +141,7 @@ object DependencyAnalysis extends AnalysisExecutor {
             val pm = initProgressManagement(3)
             pm.progress(1, ProgressEvents.Start, Some("setup"))
 
-            import scala.collection.mutable.{HashSet, HashMap}
+            import scala.collection.mutable.HashMap
 
             val rootPackages = project.rootPackages
 

@@ -30,10 +30,8 @@ package org.opalj
 package util
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 /**
