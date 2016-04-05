@@ -164,6 +164,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     case object ConditionallyPure extends Purity { final override def isRefineable = true }
 
     object EvenNumberOfChars extends SetProperty[String]
+        object OddNumberOfChars extends SetProperty[String]
 
     object StringsWithAtLeastTwoChars extends SetProperty[String]
 
@@ -342,13 +343,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
-            ps.onPropertyDerivation(EvenNumberOfChars)(results.add(_))
+            ps.onPropertyDerivation(OddNumberOfChars)(results.add(_))
 
-            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
+            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(OddNumberOfChars)(e) }
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(EvenNumberOfChars).asScala should be(expected)
+            ps.entities(OddNumberOfChars).asScala should be(expected)
+            ps("a",OddNumberOfChars) should be (true)
+            ps("aa", OddNumberOfChars) should be (false)
             results.asScala.toSet should be(expected)
         }
 
@@ -356,14 +359,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
-            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
+            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(OddNumberOfChars)(e) }
 
-            ps.onPropertyDerivation(EvenNumberOfChars)(results.add(_))
+            ps.onPropertyDerivation(OddNumberOfChars)(results.add(_))
 
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(EvenNumberOfChars).asScala should be(expected)
+            ps.entities(OddNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
         }
 
@@ -371,14 +374,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
-            for (e ← stringEntities if e.size == 1) { ps.add(EvenNumberOfChars)(e) }
-            ps.onPropertyDerivation(EvenNumberOfChars)(results.add(_))
-            for (e ← stringEntities if e.size % 2 == 1 && e.size != 1) { ps.add(EvenNumberOfChars)(e) }
+            for (e ← stringEntities if e.size == 1) { ps.add(OddNumberOfChars)(e) }
+            ps.onPropertyDerivation(OddNumberOfChars)(results.add(_))
+            for (e ← stringEntities if e.size % 2 == 1 && e.size != 1) { ps.add(OddNumberOfChars)(e) }
 
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(EvenNumberOfChars).asScala should be(expected)
+            ps.entities(OddNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
         }
 
@@ -386,15 +389,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             val ps = psStrings
             val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
-            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
-            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(EvenNumberOfChars)(e) }
+            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(OddNumberOfChars)(e) }
+            for (e ← stringEntities if (e.size % 2) == 1) { ps.add(OddNumberOfChars)(e) }
 
-            ps.onPropertyDerivation(EvenNumberOfChars)(results.add(_))
+            ps.onPropertyDerivation(OddNumberOfChars)(results.add(_))
 
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(EvenNumberOfChars).asScala should be(expected)
+            ps.entities(OddNumberOfChars).asScala should be(expected)
             results.asScala.toSet should be(expected)
         }
 

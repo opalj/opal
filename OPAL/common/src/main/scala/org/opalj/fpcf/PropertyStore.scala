@@ -524,6 +524,13 @@ class PropertyStore private (
         }
     }
 
+    def apply[E <: Entity](e: E, sp: SetProperty[E]): Boolean = {
+        if (debug) assert(data.containsKey(e), s"$e is not stored in the property store")
+        sp.mutex.synchronized {
+            theSetProperties.get(sp.index).map(_.contains(e)).getOrElse(false)
+        }
+    }
+
     // =============================================================================================
     //
     // PER ENTITY PROPERTIES
