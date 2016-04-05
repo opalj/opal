@@ -29,14 +29,9 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
 import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.Method
-import org.opalj.br.{ReferenceType, ObjectType, IntegerType}
-import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.ai.analyses.cg.VTACallGraphKey
-import org.opalj.ai.domain.l1.DefaultDomain
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.ClassFile
 import org.opalj.br.MethodDescriptor
@@ -142,4 +137,3 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
         BasicReport(s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information.")
     }
 }
-

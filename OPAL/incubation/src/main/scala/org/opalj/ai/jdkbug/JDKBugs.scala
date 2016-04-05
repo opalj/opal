@@ -953,7 +953,7 @@ class CalledTaintAnalysisDomain[Source](
         (this.declaringClass == declaringClass &&
             this.methodName == methodName &&
             this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)
-            ) || (
+        ) || (
                 declaringClass.isObjectType &&
                 previousTaintAnalysisDomain.isRecursiveCall(
                     declaringClass.asObjectType,

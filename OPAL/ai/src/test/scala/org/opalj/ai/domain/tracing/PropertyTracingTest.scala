@@ -32,16 +32,13 @@ package domain
 package tracing
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.concurrent.TimeLimitedTests
-
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import br._
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This test(suite) basically tests OPAL's support for tracing a property.

@@ -28,13 +28,7 @@
  */
 package org.opalj
 
-import scala.reflect.ClassTag
-import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.Stack
-import scala.collection.mutable.Map
-import scala.collection.mutable.HashMap
-import org.opalj.collection.mutable.ArrayMap
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs

@@ -30,7 +30,6 @@ package org.opalj
 package ai
 package analyses
 
-import scala.collection.mutable.{Map ⇒ MutableMap}
 import org.opalj.ai.Computation
 import org.opalj.ai.Domain
 import org.opalj.ai.NoUpdate
@@ -67,8 +66,7 @@ import org.opalj.br.MethodSignature
 class BaseFieldValuesAnalysisDomain(
     override val project: SomeProject,
     val classFile:        ClassFile
-)
-        extends Domain
+) extends Domain
         with domain.TheProject
         with domain.ProjectBasedClassHierarchy
         with domain.TheClassFile
@@ -203,8 +201,6 @@ class FPFieldValuesAnalysisDomain(
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache:                        CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     classFile:                        ClassFile
-)
-        extends BaseFieldValuesAnalysisDomain(project, classFile)
+) extends BaseFieldValuesAnalysisDomain(project, classFile)
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions
-

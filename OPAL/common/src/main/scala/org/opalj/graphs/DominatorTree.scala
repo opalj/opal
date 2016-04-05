@@ -29,7 +29,6 @@
 package org.opalj
 package graphs
 
-import scala.collection.mutable
 import org.opalj.collection.mutable.IntArrayStack
 
 /**

@@ -32,7 +32,6 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.Map
 import scala.collection.mutable.AnyRefMap
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.instructions.FieldReadAccess
@@ -59,10 +58,7 @@ import org.opalj.br.instructions.PUTSTATIC
  */
 object FieldAccessInformationAnalysis {
 
-    def doAnalyze(
-        project:       SomeProject,
-        isInterrupted: () ⇒ Boolean
-    ): FieldAccessInformation = {
+    def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): FieldAccessInformation = {
 
         val classHierarchy = project.classHierarchy
 
@@ -141,4 +137,3 @@ object FieldAccessInformationAnalysis {
         new FieldAccessInformation(project, ra, wa, allUnresolved.asScala.toIndexedSeq)
     }
 }
-

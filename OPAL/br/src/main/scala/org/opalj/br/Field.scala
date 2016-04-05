@@ -34,7 +34,6 @@ import org.opalj.bi.ACC_TRANSIENT
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
-import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single field declaration/definition.

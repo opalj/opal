@@ -30,16 +30,10 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.SortedSet
-
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
-
 import org.scalatest.Matchers
-
 import org.opalj.br._
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
@@ -155,4 +149,3 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
         }
     }
 }
-

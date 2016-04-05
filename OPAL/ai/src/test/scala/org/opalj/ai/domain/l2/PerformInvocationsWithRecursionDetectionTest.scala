@@ -32,19 +32,13 @@ package domain
 package l2
 
 import scala.language.reflectiveCalls
-
 import org.junit.runner.RunWith
-import org.junit.Ignore
-
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.bi.TestSupport.locateTestResources
-
-import br._
-import br.analyses.Project
-import reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.br.analyses.Project
 
 /**
  * Tests that we can detect situations in which a method calls itself.

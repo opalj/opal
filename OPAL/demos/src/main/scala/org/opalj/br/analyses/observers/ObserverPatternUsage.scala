@@ -31,9 +31,7 @@ package br
 package analyses
 package observers
 
-import java.io.File
 import java.net.URL
-
 import org.opalj.br.instructions.FieldReadAccess
 
 /**

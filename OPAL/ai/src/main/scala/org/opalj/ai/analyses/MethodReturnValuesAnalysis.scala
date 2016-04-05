@@ -30,25 +30,15 @@ package org.opalj
 package ai
 package analyses
 
-import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 import scala.collection.mutable.AnyRefMap
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.concurrent.OPALExecutionContextTaskSupport
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.analyses.{Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject}
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
 import org.opalj.ai.Domain
 import org.opalj.ai.domain._
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.SomeUpdate
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -99,4 +89,3 @@ object MethodReturnValuesAnalysis {
     }
 
 }
-

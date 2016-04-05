@@ -41,10 +41,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.StringValue
 import org.opalj.br.BooleanValue
 import org.opalj.br.Annotation
-import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ElementValuePair
-import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 
 /**

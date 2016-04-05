@@ -30,9 +30,7 @@ package org.opalj
 package tac
 
 import scala.collection.mutable.BitSet
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-import org.opalj.collection.mutable.Locals
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -831,4 +829,3 @@ private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categor
  * }}}
  */
 private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.category == 2 }
-

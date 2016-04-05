@@ -34,9 +34,7 @@ package immutability
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.AnalysisException
 import org.opalj.log.OPALLogger
-import org.opalj.br.ClassHierarchy
 import org.opalj.fpcf.analysis.extensibility.IsExtensible
 
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {

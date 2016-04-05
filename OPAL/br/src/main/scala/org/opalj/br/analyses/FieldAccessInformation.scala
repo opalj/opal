@@ -30,17 +30,7 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.Map
-import scala.collection.mutable.AnyRefMap
-import org.opalj.collection.mutable.UShortSet
-import org.opalj.br.instructions.FieldReadAccess
-import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.PUTSTATIC
 
 /**
  * Stores the information where each field is read and written. If the type hierarchy/the project
@@ -95,4 +85,3 @@ class FieldAccessInformation(
         )
 
 }
-

@@ -30,16 +30,10 @@
 package org.opalj.fpcf
 package analysis
 
-import java.net.URL
 import org.opalj.UShort
 import org.opalj.ai.PC
-import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.instructions._
-
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInformation {

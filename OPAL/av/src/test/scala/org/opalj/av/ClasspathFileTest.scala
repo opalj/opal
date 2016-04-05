@@ -31,7 +31,6 @@ package checking
 
 import org.junit.runner.RunWith
 import org.opalj.av.checking.Specification._
-import org.opalj.bi.TestSupport.locateTestResources
 import org.scalatest._
 import org.scalatest.junit.JUnitRunner
 import scala.util.matching.Regex

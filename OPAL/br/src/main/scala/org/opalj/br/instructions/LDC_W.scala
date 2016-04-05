@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.language.existentials
-
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
@@ -39,8 +37,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[@specialized(Int, Float) T]
-        extends LoadConstantInstruction[T] {
+sealed abstract class LDC_W[@specialized(Int, Float) T] extends LoadConstantInstruction[T] {
 
     final def opcode: Opcode = LDC_W.opcode
 
@@ -120,4 +117,3 @@ object LDC_W {
 
     def unapply[T](ldc: LDC_W[T]): Option[T] = Some(ldc.value)
 }
-

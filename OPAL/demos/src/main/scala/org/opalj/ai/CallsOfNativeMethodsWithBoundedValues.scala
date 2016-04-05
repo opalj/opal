@@ -35,7 +35,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project, SomeProject}
 import org.opalj.br.Method
-import org.opalj.br.{ReferenceType, ObjectType, IntegerType}
+import org.opalj.br.{ObjectType, IntegerType}
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 
@@ -216,4 +216,3 @@ case class NativeCallWithBoundedMethodParameter(
             ". parameter a bounded value: ["+lowerBound+","+upperBound+"]."
     }
 }
-

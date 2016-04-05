@@ -35,13 +35,11 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
-import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.zip.{ZipFile, ZipEntry}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.zip.ZipInputStream
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException

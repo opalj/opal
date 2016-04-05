@@ -31,7 +31,6 @@ package da
 
 import scala.xml.Node
 import scala.xml.Text
-import scala.util.Random
 import scala.xml.Unparsed
 
 /**

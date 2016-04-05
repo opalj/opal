@@ -32,14 +32,9 @@ package analysis
 package cg
 
 import scala.collection.{Set, Map}
-import scala.collection.mutable.{Map ⇒ MutableMap}
-
 import org.opalj.collection.mutable.UShortSet
-import org.opalj.collection.UID
-
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-
 import org.opalj.ai.analyses.cg.CallGraph
 
 /**

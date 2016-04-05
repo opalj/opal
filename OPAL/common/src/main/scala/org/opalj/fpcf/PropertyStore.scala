@@ -42,7 +42,6 @@ import java.util.Collections
 import scala.reflect.ClassTag
 import scala.collection.mutable
 import scala.collection.mutable.{HashSet ⇒ HSet}
-import scala.collection.mutable.{HashMap ⇒ HMap}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
@@ -51,15 +50,12 @@ import org.opalj.io.writeAndOpen
 import org.opalj.collection.mutable.ArrayMap
 import org.opalj.concurrent.Locking.{withReadLock, withWriteLock, withWriteLocks}
 import org.opalj.concurrent.ThreadPoolN
-import org.opalj.concurrent.handleUncaughtException
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.OPALLogger.{info ⇒ logInfo}
 import org.opalj.log.OPALLogger.{debug ⇒ logDebug}
 import org.opalj.log.OPALLogger.{error ⇒ logError}
 import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.LogContext
-import org.opalj.graphs.Graph
-import org.opalj.graphs.DefaultMutableMode
 import org.opalj.graphs.DefaultMutableNode
 
 /**

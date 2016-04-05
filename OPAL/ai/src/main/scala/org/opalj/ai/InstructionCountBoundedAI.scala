@@ -31,7 +31,6 @@ package ai
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
-import org.opalj.log.Warn
 import org.opalj.br.Code
 
 /**

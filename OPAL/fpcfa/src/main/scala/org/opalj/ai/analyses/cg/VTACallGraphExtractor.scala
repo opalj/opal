@@ -35,11 +35,7 @@ import scala.collection.Set
 import scala.collection.Map
 import scala.collection.mutable.HashSet
 import org.opalj.collection.immutable.UIDSet
-import br._
-import br.analyses._
-import domain._
-import domain.l0
-import domain.l1
+import org.opalj.br._
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -50,7 +46,6 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import scala.collection.mutable.HashMap
 
 /**
  * The `VTACallGraphExtractor` extracts call edges using the type information at hand.
@@ -433,4 +428,3 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     }
 
 }
-

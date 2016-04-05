@@ -36,9 +36,6 @@ import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.Instruction
-import org.opalj.graphs.Node
-import org.opalj.graphs.MutableNode
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree

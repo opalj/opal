@@ -30,16 +30,11 @@ package org.opalj
 package br
 package instructions
 
-import java.io.File
-
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-
-import org.opalj.br.reader.Java8Framework
-import analyses.{Project, SomeProject}
+import org.opalj.br.analyses.{Project, SomeProject}
 
 /**
  * Test resolution capabilities of the [[INVOKEDYNAMIC]] instruction.

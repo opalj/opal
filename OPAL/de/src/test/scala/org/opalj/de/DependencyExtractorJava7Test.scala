@@ -29,11 +29,7 @@
 package org.opalj
 package de
 
-import java.net.URL
-
 import org.scalatest.FunSuite
-
-import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests that the dependency extractor does not miss some dependencies and
@@ -767,4 +763,3 @@ class DependencyExtractorJava7Test extends FunSuite {
         )
     }
 }
-

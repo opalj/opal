@@ -32,9 +32,6 @@ package dataflow
 package spec
 
 import scala.collection.{Map, Set}
-
-import bi.AccessFlagsMatcher
-
 import br._
 import br.analyses._
 //import br.instructions._
@@ -108,4 +105,3 @@ trait SourcesAndSinks {
         this.theSinkInstructions = sinks.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)
     }
 }
-

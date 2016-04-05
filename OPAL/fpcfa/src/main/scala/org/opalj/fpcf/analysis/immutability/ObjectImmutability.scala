@@ -80,10 +80,11 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  *
  * ==Native Methods==
  * Unknown native methods are considered as mutating the state unless all state is
- * explicitly final.
+ * explicitly final; however, this is already handled by the
+ * [[org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis]].
  *
  * ==Interfaces==
- * Are not considered during the analysis as they are always immutable. (All fields are
+ * Are not considered during the analysis as they are always immutable. (All fields are (implicitly)
  * `static` and `final`.)
  *
  * @author Andre Pacak

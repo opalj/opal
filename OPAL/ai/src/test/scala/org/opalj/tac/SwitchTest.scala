@@ -29,10 +29,7 @@
 package org.opalj
 package tac
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
 import org.junit.runner.RunWith
 
 import org.opalj.br._

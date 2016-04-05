@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import scala.reflect.ClassTag
-
 /**
  * Provides information about the origin of a value.
  *

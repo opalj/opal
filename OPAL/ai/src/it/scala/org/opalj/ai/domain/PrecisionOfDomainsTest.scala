@@ -32,11 +32,8 @@ package domain
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
-import org.opalj.br.MethodWithBody
-import org.opalj.br.Code
 import org.opalj.br.Method
 import org.scalatest.FunSpec
 

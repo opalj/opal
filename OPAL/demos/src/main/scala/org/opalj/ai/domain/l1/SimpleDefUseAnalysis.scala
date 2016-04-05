@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import scala.language.existentials
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
@@ -40,7 +39,6 @@ import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import scala.collection.immutable.ListSet
@@ -94,7 +92,7 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
                                 // for instance methods that can be/are inherited
                                 if (method.isStatic ||
                                     method.isPrivate ||
-                                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...|| 
+                                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
                                     method.name == "<init>") {
                                     if (vo == -1) {
                                         values += "this"

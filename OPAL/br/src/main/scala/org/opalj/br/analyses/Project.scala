@@ -44,11 +44,9 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.log.DefaultLogContext
 import org.opalj.br.instructions.NEW
 import org.opalj.log.Error
@@ -927,7 +925,7 @@ object Project {
         OPALLogger.register(logContext, projectLogger)
 
         try {
-            import scala.collection.mutable.{Set, Map}
+            import scala.collection.mutable.Set
             import scala.concurrent.{Future, Await, ExecutionContext}
             import scala.concurrent.duration.Duration
             import ExecutionContext.Implicits.global

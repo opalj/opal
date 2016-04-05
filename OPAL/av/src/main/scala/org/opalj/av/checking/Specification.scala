@@ -34,10 +34,8 @@ import scala.language.implicitConversions
 import java.net.URL
 import scala.util.matching.Regex
 import scala.collection.{Map ⇒ AMap, Set ⇒ ASet}
-import scala.collection.immutable.SortedSet
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{Map ⇒ MutableMap, HashSet}
-import scala.Console.{GREEN, RED, BLUE, RESET}
+import scala.Console.{GREEN, RED, RESET}
 import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{time, run}
 import org.opalj.br._
@@ -924,4 +922,3 @@ object Specification {
         jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c ++ PathToJARs(paths, n))
     }
 }
-

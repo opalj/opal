@@ -34,7 +34,6 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
-import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 
 /**

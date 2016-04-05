@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
@@ -119,4 +117,3 @@ object CallGraphDiff extends DefaultOneStepAnalysis {
         CallGraphComparison(project, lessPreciseCG, morePreciseCG)
     }
 }
-

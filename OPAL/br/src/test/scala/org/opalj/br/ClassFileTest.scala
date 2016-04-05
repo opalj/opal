@@ -34,9 +34,6 @@ import org.scalatest.FunSuite
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
-import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time.Millis
-import org.scalatest.time.Span
 
 /**
  * @author Michael Eichberg

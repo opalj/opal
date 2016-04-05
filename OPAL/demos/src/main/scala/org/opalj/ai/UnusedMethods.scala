@@ -30,7 +30,6 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project

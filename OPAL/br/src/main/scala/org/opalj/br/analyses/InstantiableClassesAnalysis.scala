@@ -31,7 +31,6 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.Set
 import scala.collection.mutable.HashSet
 import scala.collection.JavaConverters._
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -124,4 +123,3 @@ object InstantiableClassesAnalysis {
         new InstantiableClasses(project, HashSet.empty ++ notInstantiable.asScala)
     }
 }
-

@@ -29,26 +29,10 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import java.net.URL
-
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis}
-import org.opalj.ai.analyses.FieldValuesKey
-import org.opalj.ai.analyses.BaseMethodReturnValuesAnalysisDomain
-import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.br.MethodSignature
-import org.opalj.ai.analyses.FPMethodReturnValuesAnalysisDomain
-import org.opalj.ai.analyses.FPFieldValuesAnalysisDomain
-import org.opalj.ai.analyses.FieldValuesAnalysis
-import org.opalj.ai.domain.RecordReturnedValues
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.Origins
@@ -128,4 +112,3 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
 
     }
 }
-

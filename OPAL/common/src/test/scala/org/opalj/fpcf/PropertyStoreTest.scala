@@ -32,7 +32,6 @@ package fpcf
 import org.junit.runner.RunWith
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.collection.{Set ⇒ SomeSet}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
@@ -469,7 +468,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         describe("default property values") {
 
             it("should be possible to execute an analysis that uses properties for which we have no analysis running and, hence, for which the default property value needs to be used") {
-                import scala.collection.mutable
 
                 val ps = psStrings
 
@@ -500,8 +498,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         describe("computations for groups of entities") {
 
             it("should be executed for each group in parallel") {
-                import scala.collection.mutable
-
                 val ps = psStrings
 
                 ps.execute({ case s: String ⇒ s }, { (s: String) ⇒ s.length }) { (k, es) ⇒
@@ -602,8 +598,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("should be possible to execute a dependent analysis where the dependee is scheduled later") {
-                import scala.collection.mutable
-
                 val ps = psStrings
 
                 // Here, only if data is tainted we check if it is a palindrome...
@@ -644,7 +638,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("should be possible to execute an analysis incrementally using the standard scheduling funcation <||<") {
-                import scala.collection.mutable
                 val ps = treeNodes
 
                 var runs = 0
@@ -958,8 +951,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         describe("lazy computations of an entity's property") {
 
             it("should not be executed immediately") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 @volatile var stringLengthTriggered = false
                 val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
@@ -974,8 +965,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("should be executed (at most once) when the property is requested") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 @volatile var stringLengthTriggered = false
                 val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
@@ -1074,8 +1063,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         describe("direct computations of an entity's property") {
 
             it("should not be executed if they are not explicitly queried") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
@@ -1086,8 +1073,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("should return the cached value") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
@@ -1098,8 +1083,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("should be immediately executed and returned when the property is requested") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
@@ -1135,8 +1118,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("can depend on other direct property computations (chaining of direct property computations)") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
@@ -1161,8 +1142,6 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             }
 
             it("block other computations that request the property until the computation is complete") {
-                import scala.collection.mutable
-
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ {
                     Thread.sleep(250) // to make it "take long"

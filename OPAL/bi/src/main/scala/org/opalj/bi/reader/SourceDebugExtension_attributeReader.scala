@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,7 +31,6 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import java.io.ByteArrayInputStream
 
 /**
  * Template method to read in the SourceDebugExtension attribute.
@@ -61,9 +60,9 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
      * SourceDebugExtension_attribute {
      *  u2 attribute_name_index;
      *  u4 attribute_length;
-     *  u1 debug_extension[attribute_length]; 
+     *  u1 debug_extension[attribute_length];
      *  // <- which is a modified UTF 8 String... but – as stated in the spec –
-     *  // Note that the debug_extension array may denote a string longer than 
+     *  // Note that the debug_extension array may denote a string longer than
      *  // that which can be represented with an instance of class String.
      * }
      * </pre>

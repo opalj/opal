@@ -29,11 +29,7 @@
 package org
 
 import scala.language.experimental.macros
-import scala.reflect.ClassTag
-import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 

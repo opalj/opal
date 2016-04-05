@@ -30,13 +30,11 @@ package org.opalj
 package av
 package checking
 
-import scala.language.existentials
 import scala.collection.Set
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
-import org.opalj.br.Annotation
 
 /**
  * Matches methods based on their attributes, annotations and class.

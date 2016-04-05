@@ -30,7 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import scala.language.implicitConversions
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1

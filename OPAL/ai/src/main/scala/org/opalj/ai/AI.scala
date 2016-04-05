@@ -489,9 +489,7 @@ trait AI[D <: Domain] {
 
         // import reference values related functionality
         import theDomain.{refAreEqual, refAreNotEqual, RefAreEqual, RefAreNotEqual}
-        import theDomain.{refEstablishAreEqual, refEstablishAreNotEqual}
         import theDomain.{refIsNonNull, refIsNull, RefIsNonNull, RefIsNull}
-        import theDomain.{refEstablishIsNonNull, refEstablishIsNull}
 
         // import int values related functionality
         import theDomain.{intAreEqual, intAreNotEqual, IntAreEqual, IntAreNotEqual}
@@ -540,7 +538,7 @@ trait AI[D <: Domain] {
                     // It is possible to have a method that only has jsr instructions, but no
                     // ret instruction(s); e.g. com.sun.mail.imap.IMAPStore compiled with Java 1.4.
                     // In this case the subroutine and the normal functionality are overlapping.
-                    // In this case, the "normal" operands/locals array already contains the 
+                    // In this case, the "normal" operands/locals array already contains the
                     // combined state.
                     if ((operandsArray(pc) eq null) /* && (localsArray(pc) eq null)*/ ) {
                         val subroutineOperands = subroutinesOperandsArray(pc)
@@ -864,7 +862,7 @@ trait AI[D <: Domain] {
                                     // scheduled in the context of the calling parent
                                     // routine, but it may be scheduled in a different
                                     // context!)
-                                    // isTargetScheduled = No if we don't have subroutines.. 
+                                    // isTargetScheduled = No if we don't have subroutines..
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
@@ -2444,7 +2442,6 @@ trait AI[D <: Domain] {
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
-                            import ObjectType.ClassCastException
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
                                     // if objectref is a subtype (or if null == Unknown) => UNCHANGED
@@ -2607,4 +2604,3 @@ object CTC2 {
     def unapply(value: Domain#DomainValue): Boolean =
         value.computationalType.category == 2
 }
-
