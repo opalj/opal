@@ -49,7 +49,7 @@ import org.opalj.issues.Operands
 import org.opalj.issues.InstructionLocation
 
 /**
- * This analysis identifies those instructions (except of ATHROW) 
+ * This analysis identifies those instructions (except of ATHROW)
  * that always lead to an exception.
  *
  * @author Michael Eichberg

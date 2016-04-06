@@ -56,7 +56,7 @@ object UnusedFields {
 
     def apply(
         theProject:                 SomeProject,
-        propertyStore :             PropertyStore,
+        propertyStore:              PropertyStore,
         fieldAccessInformation:     FieldAccessInformation,
         stringConstantsInformation: StringConstantsInformation,
         classFile:                  ClassFile
@@ -107,23 +107,22 @@ object UnusedFields {
         }
 
         val unusedAndUnusableFields = {
-            val analysisMode = theProject.analysisMode 
+            val analysisMode = theProject.analysisMode
             if (AnalysisModes.isApplicationLike(analysisMode)) {
-            unusedAndNotReflectivelyAccessedFields
+                unusedAndNotReflectivelyAccessedFields
             } else if (analysisMode == AnalysisModes.OPA) {
                 // Only private fields cannot be accessed by classes that access the currently
                 // analyzed library.
                 unusedAndNotReflectivelyAccessedFields.filter(_.isPrivate)
-            } else if (analysisMode == AnalysisModes.CPA){
-                unusedAndNotReflectivelyAccessedFields.filter(f => 
+            } else if (analysisMode == AnalysisModes.CPA) {
+                unusedAndNotReflectivelyAccessedFields.filter(f ⇒
                     f.isPrivate || f.isPackagePrivate || {
                         // IMPROVE Test if the "isExtensible" property was computed!
-                        f.isProtected && !propertyStore(classFile,IsExtensible)
-                    }
-                    )
+                        f.isProtected && propertyStore(IsExtensible, classFile).isNo
+                    })
             } else {
                 val message = s"the analysis mode $analysisMode is unknown"
-                OPALLogger.error("unused fields analysis",message)(GlobalLogContext)
+                OPALLogger.error("unused fields analysis", message)(GlobalLogContext)
                 Nil
             }
         }

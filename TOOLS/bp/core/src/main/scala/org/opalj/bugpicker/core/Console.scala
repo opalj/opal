@@ -129,15 +129,16 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     private[this] var libcpFiles: Iterable[File] = null
 
     override def setupProject(
-        cpFiles:    Iterable[File],
-        libcpFiles: Iterable[File],
-        analysisMode : AnalysisMode
+        cpFiles:      Iterable[File],
+        libcpFiles:   Iterable[File],
+        analysisMode: AnalysisMode
     )(
-            implicit initialLogContext: LogContext
-            ): Project[URL] = {
+        implicit
+        initialLogContext: LogContext
+    ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
-        super.setupProject(cpFiles, libcpFiles,analysisMode)(initialLogContext)
+        super.setupProject(cpFiles, libcpFiles, analysisMode)(initialLogContext)
     }
 
     override def analyze(

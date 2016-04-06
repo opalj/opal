@@ -81,9 +81,9 @@ object UselessComputationsAnalysis {
             val operands = result.operandsArray(pc)
             val localVariables = result.localsArray(pc)
             val details = new InstructionLocation(
-                    None, theProject, classFile, method, pc,
-                    List(new Operands(code, pc, operands, localVariables))
-                )
+                None, theProject, classFile, method, pc,
+                List(new Operands(code, pc, operands, localVariables))
+            )
             Issue(
                 "UselessComputationsAnalysis",
                 relevance,
@@ -102,7 +102,7 @@ object UselessComputationsAnalysis {
         collectPCWithOperands(domain)(code, operandsArray) {
 
             // IMPROVE Add support for identifying useless computations related to double and float values.
-            
+
             // HANDLING INT VALUES
             //
             case (
@@ -114,11 +114,11 @@ object UselessComputationsAnalysis {
                 // Instead, compilers generate an "ixor" with "-1" as the
                 // second value.
                 if (instr.operator == "^" && a == -1) {
-                    val message = s"constant computation: ~$b (<=> $b ${instr.operator} $a)." 
-                    createIssue(                        pc,message                        ,                        defaultRelevance                    )
-                }else {
+                    val message = s"constant computation: ~$b (<=> $b ${instr.operator} $a)."
+                    createIssue(pc, message, defaultRelevance)
+                } else {
                     val message = s"constant computation: $b ${instr.operator} $a."
-                    createIssue(                        pc, message, defaultRelevance                    )
+                    createIssue(pc, message, defaultRelevance)
                 }
 
             case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) ⇒
@@ -162,15 +162,15 @@ object UselessComputationsAnalysis {
                 instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                 ) ⇒
-                    val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
-                createIssue(                    pc,message , defaultRelevance                )
+                val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
+                createIssue(pc, message, defaultRelevance)
             case (
                 pc,
                 instr @ ShiftInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
                 ) ⇒
-                    val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
-                createIssue(                    pc, message, defaultRelevance                )
+                val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
+                createIssue(pc, message, defaultRelevance)
 
             case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) ⇒
                 createIssue(pc, s"constant computation: -${a}l", defaultRelevance)
@@ -187,8 +187,8 @@ object UselessComputationsAnalysis {
             ).isDefined ⇒
                 val utb = rv.upperTypeBound.map(_.toJava)
                 val targetType = " instanceof "+referenceType.toJava
-                val message = utb.mkString("useless type test: "," with ",targetType)
-                createIssue(                    pc,message                    ,                    defaultRelevance                )
+                val message = utb.mkString("useless type test: ", " with ", targetType)
+                createIssue(pc, message, defaultRelevance)
 
         }
     }

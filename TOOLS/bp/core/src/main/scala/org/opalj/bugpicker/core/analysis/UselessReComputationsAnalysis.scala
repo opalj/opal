@@ -106,11 +106,11 @@ object UselessReComputationsAnalysis {
             val lv = code.localVariable(pc, index).get
             val details = List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
             val location = new InstructionLocation(
-                    Some("useless (re-)assignment"),
-                    theProject,                    classFile,                    method,                    pc,
-                    details
-                )
-        
+                Some("useless (re-)assignment"),
+                theProject, classFile, method, pc,
+                details
+            )
+
             Issue(
                 "UselessReevaluation",
                 Relevance.Low,

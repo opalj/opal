@@ -121,7 +121,7 @@ object AnonymousInnerClassShouldBeStatic {
     private def hasMethodsReadingField(classFile: ClassFile, field: Field): Boolean = {
         for (MethodWithBody(body) ← classFile.methods) {
             if (body.instructions.exists {
-                case FieldReadAccess(classFile.thisType,field.name,field.fieldType) ⇒ true
+                case FieldReadAccess(classFile.thisType, field.name, field.fieldType) ⇒ true
                 case _ ⇒ false
             }) {
                 return true;
@@ -177,7 +177,7 @@ object AnonymousInnerClassShouldBeStatic {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def apply(        project:   SomeProject,        classFile: ClassFile    ): Iterable[Issue] = {
+    def apply(project: SomeProject, classFile: ClassFile): Iterable[Issue] = {
         if (project.isLibraryType(classFile)) return None;
 
         if (!(isAnonymousInnerClass(classFile) &&

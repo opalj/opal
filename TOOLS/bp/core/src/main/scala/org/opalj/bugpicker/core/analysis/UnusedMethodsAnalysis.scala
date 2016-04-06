@@ -88,7 +88,7 @@ object UnusedMethodsAnalysis {
         def rateMethod(): Relevance = {
 
             import method.{isConstructor, isPrivate, parametersCount, descriptor, name}
-            import descriptor.{returnType, parametersCount => declaredParametersCount}
+            import descriptor.{returnType, parametersCount ⇒ declaredParametersCount}
 
             //
             // Let's handle some technical artifacts related methods...
@@ -129,13 +129,13 @@ object UnusedMethodsAnalysis {
             // class (e.g., java.lang.Math)
             val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
             if (!isDefaultConstructor)
-                return Relevance.DefaultRelevance; 
+                return Relevance.DefaultRelevance;
 
             val constructorsIterator = classFile.constructors
             constructorsIterator.next // <= we always have at least one constructor in bytecode
             if (constructorsIterator.hasNext)
                 // we have (among others) a default constructor that is not used
-                return Relevance.High; 
+                return Relevance.High;
 
             val body = method.body.get
             val instructions = body.instructions
@@ -159,17 +159,17 @@ object UnusedMethodsAnalysis {
         //
 
         def unusedMethodOrConstructor: String = {
-        def access(flags: Int): String =
-            VisibilityModifier.get(flags) match {
-                case Some(visiblity) ⇒ visiblity.javaName.get
-                case _               ⇒ "/*default*/"
-            }
+            def access(flags: Int): String =
+                VisibilityModifier.get(flags) match {
+                    case Some(visiblity) ⇒ visiblity.javaName.get
+                    case _               ⇒ "/*default*/"
+                }
 
-        val isConstructor = method.isConstructor
-        val accessFlags = access(method.accessFlags)
-        s"the $accessFlags ${if (isConstructor) "constructor" else "method"} is not used"
-    }
-        
+            val isConstructor = method.isConstructor
+            val accessFlags = access(method.accessFlags)
+            s"the $accessFlags ${if (isConstructor) "constructor" else "method"} is not used"
+        }
+
         val callers = callgraph.callGraph calledBy method
 
         if (callers.isEmpty) {

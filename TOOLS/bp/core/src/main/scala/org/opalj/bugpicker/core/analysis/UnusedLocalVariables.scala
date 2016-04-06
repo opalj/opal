@@ -190,7 +190,7 @@ object UnusedLocalVariables {
                             case ct: ControlThrowable ⇒ throw ct
                             case t: Throwable ⇒
                                 val message = "assessing analysis result failed; ignoring issue"
-                                OPALLogger.error("error",message,t)(theProject.logContext)
+                                OPALLogger.error("error", message, t)(theProject.logContext)
                         }
 
                     case ACONST_NULL.opcode |

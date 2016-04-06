@@ -416,7 +416,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     addResults(
                         UnusedFields(
                             theProject,
-                            propertyStore, fieldAccessInformation, stringConstantsInformation, 
+                            propertyStore, fieldAccessInformation, stringConstantsInformation,
                             classFile
                         )
                     )

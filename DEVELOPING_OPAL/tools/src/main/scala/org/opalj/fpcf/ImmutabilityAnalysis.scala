@@ -82,8 +82,15 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
 
         val extensibleClasses =
             projectStore.entities(IsExtensible).asScala.
-                map(_.thisType.toJava).
-                toList.sorted
+                groupBy(_._2).
+                map { entry ⇒
+                    (
+                        entry._1,
+                        entry._2.
+                        map(_._1.thisType.toJava).toList.sorted.
+                        mkString("\n\t\t\t", "\n\t\t\t", "\n")
+                    )
+                }
 
         val immutableClasses =
             projectStore.entities(ObjectImmutability.key).

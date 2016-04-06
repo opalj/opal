@@ -26,19 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import scala.language.existentials
 
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
-import java.util.{HashSet ⇒ JHSet}
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
-import java.util.Collections
 import scala.reflect.ClassTag
 import scala.collection.mutable
 import scala.collection.mutable.{HashSet ⇒ HSet}
@@ -169,10 +168,6 @@ class PropertyStore private (
         implicit
         val logContext: LogContext
 ) { store ⇒
-
-    private[this] def createIdentityHashSet(): JSet[AnyRef] = {
-        Collections.newSetFromMap(new JIDMap[AnyRef, java.lang.Boolean]())
-    }
 
     /**
      * The (immutable) set of all entities.
@@ -444,8 +439,9 @@ class PropertyStore private (
 
     private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
     // access to this field needs to be synchronized!
-    private[this] final val theSetPropertyObservers = ArrayMap[List[AnyRef ⇒ Unit]](5)
-    private[this] final val theSetProperties = ArrayMap[JSet[AnyRef]](5)
+    // the key of the following "ArrayMap"s is the id of the SetProperty
+    private[this] final val theSetPropertyObservers = ArrayMap[List[(Entity, Answer) ⇒ Unit]](5)
+    private[this] final val theSetProperties = ArrayMap[JIDMap[Entity, Answer]](5)
 
     private[this] def writeSetPropertyObservers[U](f: ⇒ U): U = {
         withWriteLock(theSetPropertyObserversLock)(f)
@@ -467,17 +463,19 @@ class PropertyStore private (
      * each entity `e` that has the respective property.
      */
     // Locks: Set Property Observers (write), Set Property
-    def onPropertyDerivation[E <: AnyRef](sp: SetProperty[E])(f: (E) ⇒ Unit): Unit = {
+    def onPropertyDerivation[E <: Entity](sp: SetProperty[E])(f: (E, Answer) ⇒ Unit): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
         writeSetPropertyObservers {
             val oldObservers = theSetPropertyObservers.getOrElse(spIndex, Nil)
-            theSetPropertyObservers(spIndex) = f.asInstanceOf[AnyRef ⇒ Unit] :: oldObservers
+            theSetPropertyObservers(spIndex) = f.asInstanceOf[(Entity, Answer) ⇒ Unit] :: oldObservers
             spMutex.synchronized {
                 import scala.collection.JavaConversions._
-                val spSet = theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet())
-                if (!spSet.isEmpty)
-                    spSet.asInstanceOf[JSet[E]] foreach { e ⇒ scheduleFforE(e, f) }
+                val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
+                spData foreach { entry ⇒
+                    val (e, a) = entry
+                    scheduleRunnable { f(e.asInstanceOf[E], a) }
+                }
             }
         }
     }
@@ -490,19 +488,22 @@ class PropertyStore private (
      * are interested in this property.
      */
     // Locks: Set Property Observers (read), Set Property
-    def add[E <: AnyRef](sp: SetProperty[E])(e: E): Unit = {
+    def add[E <: AnyRef](sp: SetProperty[E], e: E, answer: Answer): Unit = {
         val spIndex = sp.index
         val spMutex = sp.mutex
         querySetPropertyObservers {
             val isAdded = spMutex.synchronized {
-                theSetProperties.getOrElseUpdate(spIndex, createIdentityHashSet()).add(e)
+                val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
+                val previousAnswer = spData.put(e, answer)
+                /*user-level*/ assert(previousAnswer == null || answer == previousAnswer)
+                previousAnswer == null
             }
             if (isAdded) {
                 // ATTENTION: We must not hold the lock on the store/a store entity, because
-                // scheduleFforE requires the write lock!
+                // scheduleRunnable requires the write lock!
                 theSetPropertyObservers.getOrElse(spIndex, Nil) foreach { f ⇒
                     propagationCount.incrementAndGet()
-                    scheduleFforE(e, f)
+                    scheduleRunnable(f(e, answer))
                 }
             }
         }
@@ -515,19 +516,20 @@ class PropertyStore private (
      * original set.
      */
     // Locks: Set Property
-    def entities[E <: AnyRef](sp: SetProperty[E]): JSet[E] = {
+    def entities[E <: AnyRef](sp: SetProperty[E]): JIDMap[E, Answer] = {
         sp.mutex.synchronized {
-            val entitiesSet = theSetProperties.getOrElse(sp.index, new JHSet[AnyRef]())
-            val clonedEntitiesSet = new JHSet[E]()
-            clonedEntitiesSet.addAll(entitiesSet.asInstanceOf[JSet[E]])
-            clonedEntitiesSet
+            theSetProperties.getOrElse(sp.index, new JIDMap()).clone().asInstanceOf[JIDMap[E, Answer]]
         }
     }
 
-    def apply[E <: Entity](e: E, sp: SetProperty[E]): Boolean = {
+    /**
+     * Returns whether the entity currently has/does not have a respective property.
+     */
+    def apply[E <: Entity](sp: SetProperty[E], e: E): Answer = {
         if (debug) assert(data.containsKey(e), s"$e is not stored in the property store")
+
         sp.mutex.synchronized {
-            theSetProperties.get(sp.index).map(_.contains(e)).getOrElse(false)
+            theSetProperties.get(sp.index).map(_.get(e)).getOrElse(Unknown)
         }
     }
 
@@ -1583,11 +1585,6 @@ class PropertyStore private (
         pc: SomePropertyComputation
     ): Unit = {
         es foreach { e ⇒ if (!isInterrupted()) scheduleComputation(e, pc) }
-    }
-
-    // requires: TASKS lock
-    private[this] final def scheduleFforE[E <: Entity](e: E, f: (E) ⇒ Unit): Unit = {
-        scheduleRunnable { f(e) }
     }
 
     /**
