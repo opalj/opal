@@ -74,7 +74,7 @@ object UselessReComputationsAnalysis {
             // local variable for a new/different purpose or the situation where
             // the same variable is updated the second time using the same
             // value.
-            return Seq.empty
+            return Seq.empty;
 
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -90,23 +90,6 @@ object UselessReComputationsAnalysis {
                     domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
                     (pc, index, a.toString)
-                //                    val lv = code.localVariable(pc, index).get
-                //
-                //                    Issue(
-                //                        "UselessReevaluation",
-                //                        Relevance.Low,
-                //                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
-                //                        Set(IssueCategory.Comprehensibility),
-                //                        Set(IssueKind.ConstantComputation),
-                //                        List(new InstructionLocation(
-                //                            Some("useless (re-)assignment"),
-                //                            theProject,
-                //                            classFile,
-                //                            method,
-                //                            pc,
-                //                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
-                //                        ))
-                //                    )
 
                 case (
                     pc,
@@ -116,43 +99,25 @@ object UselessReComputationsAnalysis {
                     domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
                     code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
                     (pc, index, a.toString)
-                //                    val lv = code.localVariable(pc, index).get
-                //
-                //                    Issue(
-                //                        "UselessReevaluation",
-                //                        Relevance.Low,
-                //                        s"(re-)assigned the same value ($a) to the same variable (${lv.name})",
-                //                        Set(IssueCategory.Comprehensibility),
-                //                        Set(IssueKind.ConstantComputation),
-                //                        List(new InstructionLocation(
-                //                            Some("useless (re-)assignment"),
-                //                            theProject,
-                //                            classFile,
-                //                            method,
-                //                            pc,
-                //                            List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
-                //                        ))
-                //                    )
             }
 
         methodsWithValueReassignment.map { e ⇒
             val (pc, index, value) = e
             val lv = code.localVariable(pc, index).get
-
+            val details = List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
+            val location = new InstructionLocation(
+                    Some("useless (re-)assignment"),
+                    theProject,                    classFile,                    method,                    pc,
+                    details
+                )
+        
             Issue(
                 "UselessReevaluation",
                 Relevance.Low,
                 s"(re-)assigned the same value ($value) to the same variable (${lv.name})",
                 Set(IssueCategory.Comprehensibility),
                 Set(IssueKind.ConstantComputation),
-                List(new InstructionLocation(
-                    Some("useless (re-)assignment"),
-                    theProject,
-                    classFile,
-                    method,
-                    pc,
-                    List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
-                ))
+                List(location)
             )
 
         }

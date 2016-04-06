@@ -83,11 +83,12 @@ object UnusedMethodsAnalysis {
             return None;
 
         if (callgraphEntryPoints.contains(method))
-            return None; // <=== early return
+            return None;
 
         def rateMethod(): Relevance = {
 
             import method.{isConstructor, isPrivate, parametersCount, descriptor, name}
+            import descriptor.{returnType, parametersCount => declaredParametersCount}
 
             //
             // Let's handle some technical artifacts related methods...
@@ -107,8 +108,8 @@ object UnusedMethodsAnalysis {
             // Let's handle standard getter and setter methods...
             //
             if (name.length() > 3 &&
-                ((name.startsWith("get") && descriptor.returnType != VoidType && descriptor.parametersCount == 0) ||
-                    (name.startsWith("set") && descriptor.returnType == VoidType && descriptor.parametersCount == 1)) &&
+                ((name.startsWith("get") && returnType != VoidType && declaredParametersCount == 0) ||
+                    (name.startsWith("set") && returnType == VoidType && declaredParametersCount == 1)) &&
                     {
                         val fieldNameCandidate = name.substring(3)
                         val fieldName = fieldNameCandidate.charAt(0).toLower + fieldNameCandidate.substring(1)
@@ -128,13 +129,13 @@ object UnusedMethodsAnalysis {
             // class (e.g., java.lang.Math)
             val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
             if (!isDefaultConstructor)
-                return Relevance.DefaultRelevance; // <=== early return
+                return Relevance.DefaultRelevance; 
 
             val constructorsIterator = classFile.constructors
-            constructorsIterator.next // <= we have at least one constructor
+            constructorsIterator.next // <= we always have at least one constructor in bytecode
             if (constructorsIterator.hasNext)
                 // we have (among others) a default constructor that is not used
-                return Relevance.High; // <=== early return
+                return Relevance.High; 
 
             val body = method.body.get
             val instructions = body.instructions
@@ -157,37 +158,36 @@ object UnusedMethodsAnalysis {
         //
         //
 
-        val callers = callgraph.callGraph calledBy method
-
-        if (callers.isEmpty) {
-            val relevance: Relevance = rateMethod()
-            if (relevance != Relevance.Undetermined) {
-
-                return Some(Issue(
-                    "UnusedMethodsAnalysis",
-                    relevance,
-                    methodOrConstructor(method),
-                    Set(IssueCategory.Comprehensibility),
-                    Set(IssueKind.UnusedMethod),
-                    List(new MethodLocation(None, theProject, classFile, method))
-                ));
-            }
-        }
-
-        None
-    }
-
-    def methodOrConstructor(method: Method): String = {
+        def unusedMethodOrConstructor: String = {
         def access(flags: Int): String =
             VisibilityModifier.get(flags) match {
                 case Some(visiblity) ⇒ visiblity.javaName.get
                 case _               ⇒ "/*default*/"
             }
 
-        if (method.isConstructor)
-            s"the ${access(method.accessFlags)} constructor is not used"
-        else
-            s"the ${access(method.accessFlags)} method is not used"
+        val isConstructor = method.isConstructor
+        val accessFlags = access(method.accessFlags)
+        s"the $accessFlags ${if (isConstructor) "constructor" else "method"} is not used"
+    }
+        
+        val callers = callgraph.callGraph calledBy method
+
+        if (callers.isEmpty) {
+            val relevance: Relevance = rateMethod()
+            if (relevance != Relevance.Undetermined) {
+                val issue = Issue(
+                    "UnusedMethodsAnalysis",
+                    relevance,
+                    unusedMethodOrConstructor,
+                    Set(IssueCategory.Comprehensibility),
+                    Set(IssueKind.UnusedMethod),
+                    List(new MethodLocation(None, theProject, classFile, method))
+                )
+                return Some(issue);
+            }
+        }
+
+        None
     }
 
 }

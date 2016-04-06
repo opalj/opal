@@ -50,8 +50,7 @@ import org.opalj.issues.IssueKind
 import org.opalj.log.LogContext
 
 /**
- * A simple wrapper around the BugPicker analysis to make it runnable using the
- * command line.
+ * The command line interface of the bug picker.
  *
  * @author Michael Eichberg
  */
@@ -134,7 +133,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         libcpFiles: Iterable[File],
         analysisMode : AnalysisMode
     )(
-            implicit initialLogContext: LogContext): Project[URL] = {
+            implicit initialLogContext: LogContext
+            ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
         super.setupProject(cpFiles, libcpFiles,analysisMode)(initialLogContext)

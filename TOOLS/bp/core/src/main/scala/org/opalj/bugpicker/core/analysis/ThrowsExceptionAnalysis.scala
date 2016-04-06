@@ -49,8 +49,8 @@ import org.opalj.issues.Operands
 import org.opalj.issues.InstructionLocation
 
 /**
- * This analysis identifies those instructions
- * (except ATHROW of course) that always just throw an exception.
+ * This analysis identifies those instructions (except of ATHROW) 
+ * that always lead to an exception.
  *
  * @author Michael Eichberg
  */

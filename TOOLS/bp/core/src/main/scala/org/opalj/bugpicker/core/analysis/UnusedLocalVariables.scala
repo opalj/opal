@@ -129,19 +129,19 @@ object UnusedLocalVariables {
         var issues = List.empty[Issue]
 
         // It may happen that a user defines a final local constant
-        // which is then used by the compiler whenever we
-        // see a reference in the code; in this case we an unused
-        // local variable...
+        // which is then used by the compiler whenever we have a 
+        // reference in the code; in this case we actually have an unused
+        // local variable in the bytecode...
         // E.g., given the following code:
         //     final int MAGIC = 12012;
         //     ...
         //     if (x == MAGIC) {...}
-        // the value 12012 is then directly used in the comparison
+        // then the value 12012 is then directly used in the comparison
         // which makes the initial declaration (at the bytecode level)
-        // unused
+        // unused.
         lazy val constantValues: Set[Any] = {
-            val allConstantsValues =
-                code.collectInstructions { case LoadConstantInstruction(value) ⇒ value }
+            import code.collectInstructions
+            val allConstantsValues = collectInstructions { case LoadConstantInstruction(v) ⇒ v }
             val constantValuesOnlyUsedOnces = allConstantsValues.groupBy(v ⇒ v).collect {
                 case (k, occurences) if occurences.tail.isEmpty ⇒ k
             }
@@ -156,7 +156,7 @@ object UnusedLocalVariables {
                 // for instance methods that can be/are inherited
                 if (method.isStatic ||
                     method.isPrivate ||
-                    // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
+                    // IMPROVE Check that in all other cases the method parameter is never used across all implementations of the method; only then report it.
                     method.name == "<init>") {
                     relevance = Relevance.High
                     if (vo == -1 && !method.isStatic) {
@@ -178,7 +178,7 @@ object UnusedLocalVariables {
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                         try {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
-                            // TODO Use a more precise method to determine if a method has a side effect "pureness" is actually too strong
+                            // IMPROVE Use a more precise method to determine if a method has a side effect "pureness" is actually too strong.
                             if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == Pure)) {
                                 issue = "the return value of the call of "+invoke.declaringClass.toJava+
                                     "{ "+
@@ -189,11 +189,8 @@ object UnusedLocalVariables {
                         } catch {
                             case ct: ControlThrowable ⇒ throw ct
                             case t: Throwable ⇒
-                                OPALLogger.error(
-                                    "error",
-                                    "assessing analysis result failed; ignoring issue",
-                                    t
-                                )(theProject.logContext)
+                                val message = "assessing analysis result failed; ignoring issue"
+                                OPALLogger.error("error",message,t)(theProject.logContext)
                         }
 
                     case ACONST_NULL.opcode |
@@ -219,7 +216,8 @@ object UnusedLocalVariables {
                                     issue = s"the constant value ${instruction.toString(vo)} is not used"
                                     relevance = Relevance.Low
                                 }
-                            // else... we filter basically all issues unless we are sure that this is real; i.e.,
+                            // else... we filter basically all issues unless we are sure that 
+                            // this is a real issue; i.e.,
                             //  - it is not a default value
                             //  - it is not a final local variable
 
@@ -251,7 +249,8 @@ object UnusedLocalVariables {
                         relevance = Relevance.DefaultRelevance
 
                     case _ ⇒
-                        issue = "the value of "+instruction.toString(vo).replace("\n", "\\n")+" is not used"
+                        val instructionDescription = instruction.toString(vo).replace("\n", "\\n")
+                        issue = "the value of "+instructionDescription+" is not used"
                         relevance = Relevance.VeryHigh
                 }
 

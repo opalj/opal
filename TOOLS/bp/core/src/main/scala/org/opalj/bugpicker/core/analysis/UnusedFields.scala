@@ -42,6 +42,10 @@ import org.opalj.issues.Relevance
 import org.opalj.issues.IssueKind
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.FieldLocation
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.fpcf.analysis.extensibility.IsExtensible
+import org.opalj.fpcf.PropertyStore
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.
@@ -52,6 +56,7 @@ object UnusedFields {
 
     def apply(
         theProject:                 SomeProject,
+        propertyStore :             PropertyStore,
         fieldAccessInformation:     FieldAccessInformation,
         stringConstantsInformation: StringConstantsInformation,
         classFile:                  ClassFile
@@ -70,7 +75,7 @@ object UnusedFields {
             return Nil;
 
         val unusedFields = candidateFields.filterNot { field ⇒
-            // test if the field defines a (probably inlined) constant string             
+            // Test if the field defines a (probably inlined) constant string.             
             field.isFinal && (field.fieldType eq ObjectType.String) &&
                 {
                     field.constantFieldValue match {
@@ -82,7 +87,7 @@ object UnusedFields {
                 }
         }
 
-        val unusedAndNoReflectiveAccessFields = unusedFields.filterNot { field ⇒
+        val unusedAndNotReflectivelyAccessedFields = unusedFields.filterNot { field ⇒
             // Let's test if we can find:
             //  - the field's name,
             //  - or the simpleName followed by the field's name
@@ -101,8 +106,27 @@ object UnusedFields {
             }
         }
 
-        val unusedAndUnusableFields = unusedAndNoReflectiveAccessFields
-        // TODO!!!!
+        val unusedAndUnusableFields = {
+            val analysisMode = theProject.analysisMode 
+            if (AnalysisModes.isApplicationLike(analysisMode)) {
+            unusedAndNotReflectivelyAccessedFields
+            } else if (analysisMode == AnalysisModes.OPA) {
+                // Only private fields cannot be accessed by classes that access the currently
+                // analyzed library.
+                unusedAndNotReflectivelyAccessedFields.filter(_.isPrivate)
+            } else if (analysisMode == AnalysisModes.CPA){
+                unusedAndNotReflectivelyAccessedFields.filter(f => 
+                    f.isPrivate || f.isPackagePrivate || {
+                        // IMPROVE Test if the "isExtensible" property was computed!
+                        f.isProtected && !propertyStore(classFile,IsExtensible)
+                    }
+                    )
+            } else {
+                val message = s"the analysis mode $analysisMode is unknown"
+                OPALLogger.error("unused fields analysis",message)(GlobalLogContext)
+                Nil
+            }
+        }
 
         for (unusedField ← unusedAndUnusableFields) yield {
             Issue(
