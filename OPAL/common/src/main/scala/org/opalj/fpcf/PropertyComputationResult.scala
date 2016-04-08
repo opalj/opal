@@ -37,6 +37,8 @@ sealed trait PropertyComputationResult {
 
 }
 
+sealed trait FinalPropertyComputationResult extends PropertyComputationResult
+
 /**
  * Encapsulates the '''final result''' of the computation of the property.
  *
@@ -44,7 +46,7 @@ sealed trait PropertyComputationResult {
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class Result(e: Entity, p: Property) extends PropertyComputationResult {
+case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = Result.id
 
@@ -59,7 +61,7 @@ private[fpcf] object Result { private[fpcf] final val id = 3 }
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class ImmediateResult(e: Entity, p: Property) extends PropertyComputationResult {
+case class ImmediateResult(e: Entity, p: Property) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = ImmediateResult.id
 
@@ -75,7 +77,7 @@ private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
  *
  * The encapsulated results are not atomically set.
  */
-case class MultiResult(properties: ComputationResults) extends PropertyComputationResult {
+case class MultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = MultiResult.id
 
@@ -90,7 +92,7 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  * or may happen. The framework will then invoke and deregister all
  * dependent computations (observers).
  */
-case class ImmediateMultiResult(properties: ComputationResults) extends PropertyComputationResult {
+case class ImmediateMultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
 
     private[fpcf] final def id = ImmediateMultiResult.id
 
@@ -173,7 +175,9 @@ case class IncrementalResult[E <: Entity](
         result:           PropertyComputationResult,
         nextComputations: Traversable[(PropertyComputation[E], E)]
 ) extends PropertyComputationResult {
+
     private[fpcf] final def id = IncrementalResult.id
+
 }
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 6 }
