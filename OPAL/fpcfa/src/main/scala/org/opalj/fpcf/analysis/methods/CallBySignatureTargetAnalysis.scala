@@ -22,6 +22,7 @@ import scala.collection.mutable
 class CallBySignatureTargetAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     // THIS ANALYSS IS ONLY DEFINED FOR LIBRARY ANALYSES
+    // TODO Why don't we do this check as part of the "start" method and return immediately?
     require(isClosedLibrary || isOpenLibrary)
 
     def determineCallBySignatureTargets(projectIndex: ProjectIndex)(e: Entity): Property = {
@@ -69,7 +70,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
 
                 if (isClosedLibrary &&
                     cbsCalleeDeclaringClass.isPackageVisible &&
-                    (propertyStore(cbsCallee, ClientInheritableKey).get eq NotClientInheritable))
+                    (propertyStore(cbsCallee, ClientInheritableKey).p eq NotClientInheritable))
                     return ;
 
                 cbsTargets += cbsCallee

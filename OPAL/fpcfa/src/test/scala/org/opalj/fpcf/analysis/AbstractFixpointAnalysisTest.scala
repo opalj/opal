@@ -135,7 +135,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
         val computedOProperty = propertyStore(classFile, propertyKey)
 
-        if (computedOProperty.isEmpty) {
+        if (computedOProperty.hasNoProperty) {
             val className = classFile.fqn
             val message =
                 "Class not found in PropertyStore:\n\t"+
@@ -145,7 +145,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.get.toString
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != annotatedProperty) {
             val className = classFile.fqn
@@ -174,7 +174,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
         val computedOProperty = propertyStore(method, propertyKey)
 
-        if (computedOProperty.isEmpty) {
+        if (computedOProperty.hasNoProperty) {
             val className = project.classFile(method).fqn
             val message =
                 "Method not found in PropertyStore:\n\t"+
@@ -186,7 +186,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             fail(message)
         }
 
-        val computedProperty = computedOProperty.get.toString
+        val computedProperty = computedOProperty.p.toString
 
         if (computedProperty != annotatedProperty) {
             val className = project.classFile(method).fqn

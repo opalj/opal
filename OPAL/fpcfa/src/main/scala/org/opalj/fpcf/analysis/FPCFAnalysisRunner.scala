@@ -173,4 +173,8 @@ object FPCFAnalysisRunner {
     final val NonAbstractMethodSelector: PartialFunction[Entity, Method] = {
         case m: Method if !m.isAbstract ⇒ m
     }
+
+    final val MethodsWithBodySelector: PartialFunction[Entity, Method] = {
+        case m: Method if m.body.isDefined ⇒ m
+    }
 }

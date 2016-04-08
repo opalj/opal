@@ -46,14 +46,13 @@ import org.opalj.fpcf.analysis.methods.PurityAnalysis
 import org.opalj.fpcf.analysis.methods.Purity
 
 /**
- * Demonstrates how to run the purity analysis.
+ * Runs the purity analysis including all analyses that may improve the overall result.
  *
  * @author Michael Eichberg
  */
 object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "determines those methods that are pure"
+    override def title: String = "determines those methods that are pure"
 
     override def description: String =
         "identifies method which are pure; i.e. which just operate on the passed parameters"

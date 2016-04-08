@@ -90,9 +90,9 @@ class CallBySignatureResolution private (
 
             val result = propertyStore(method, org.opalj.fpcf.analysis.methods.CallBySignatureKey)
             result match {
-                case Some(NoCBSTargets)              ⇒ Set.empty
-                case Some(CBSTargets(targetMethods)) ⇒ targetMethods
-                case None                            ⇒ throw new AnalysisException("unsupported entity", null)
+                case EP(_, NoCBSTargets)              ⇒ Set.empty
+                case EP(_, CBSTargets(targetMethods)) ⇒ targetMethods
+                case _                                ⇒ throw new AnalysisException("unsupported entity", null)
             }
         }
     }

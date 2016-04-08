@@ -349,7 +349,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(OddNumberOfChars).asScala.filter(_._2 == Yes).keySet should be(expected)
+            ps.entities(OddNumberOfChars).filter(_._2 == Yes).map(_._1).toSet should be(expected)
             ps(OddNumberOfChars,"a") should be (Yes)
             ps( OddNumberOfChars,"aa") should be (No)
             results.asScala.toSet should be(expected)
@@ -366,7 +366,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(OddNumberOfChars).asScala.filter(_._2 == Yes).keySet should be(expected)
+            ps.entities(OddNumberOfChars).filter(_._2 == Yes).map(_._1).toSet should be(expected)
             results.asScala.toSet should be(expected)
         }
 
@@ -381,7 +381,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(OddNumberOfChars).asScala.filter(_._2 == Yes).keySet should be(expected)
+            ps.entities(OddNumberOfChars).filter(_._2 == Yes).map(_._1).toSet should be(expected)
             results.asScala.toSet should be(expected)
         }
 
@@ -397,7 +397,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps.waitOnPropertyComputationCompletion(true)
 
             val expected = Set("aabbcbbaa", "a", "b", "c", "aaa", "aea")
-            ps.entities(OddNumberOfChars).asScala.filter(_._2 == Yes).keySet should be(expected)
+            ps.entities(OddNumberOfChars).filter(_._2 == Yes).map(_._1).toSet should be(expected)
             results.asScala.toSet should be(expected)
         }
 
@@ -466,7 +466,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps.waitOnPropertyComputationCompletion(true)
 
-                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).get.length should be(e.length()) }
+                stringEntities.foreach { e ⇒ ps(e, StringLengthKey).p.length should be(e.length()) }
             }
         }
 
@@ -494,7 +494,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.waitOnPropertyComputationCompletion(true)
 
                 stringEntities.foreach { e ⇒
-                    ps(e, TaintedKey).get should be(Tainted)
+                    ps(e, TaintedKey).p should be(Tainted)
                 }
             }
 
@@ -512,7 +512,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.waitOnPropertyComputationCompletion(true)
 
                 stringEntities.foreach { e ⇒
-                    ps(e, StringLengthKey).get.length should be(e.length())
+                    ps(e, StringLengthKey).p.length should be(e.length())
                 }
             }
 
@@ -635,9 +635,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.waitOnPropertyComputationCompletion(true)
 
                 stringEntities.foreach { e ⇒
-                    ps(e, TaintedKey).get should be(if (e.length % 2 == 0) Tainted else NotTainted)
-                    ps(e, StringLengthKey).get should be(StringLength(e.length))
-                    if (ps(e, TaintedKey).get == NotTainted) ps(e, PalindromeKey) should be(None)
+                    ps(e, TaintedKey).p should be(if (e.length % 2 == 0) Tainted else NotTainted)
+                    ps(e, StringLengthKey).p should be(StringLength(e.length))
+                    if (ps(e, TaintedKey).p == NotTainted) { 
+                        ps(e, PalindromeKey) should be(EPK(e,PalindromeKey))
+                    }
                 }
 
             }
@@ -662,12 +664,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     ps.waitOnPropertyComputationCompletion(true)
 
                     try {
-                        ps(nodeRoot, TreeLevelKey) should be(Some(TreeLevel(0)))
-                        ps(nodeRRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
-                        ps(nodeRRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
-                        ps(nodeLRRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
-                        ps(nodeLRoot, TreeLevelKey) should be(Some(TreeLevel(1)))
-                        ps(nodeLLRoot, TreeLevelKey) should be(Some(TreeLevel(2)))
+                        ps(nodeRoot, TreeLevelKey) should be(EP(nodeRoot,TreeLevel(0)))
+                        ps(nodeRRoot, TreeLevelKey) should be(EP(nodeRRoot,TreeLevel(1)))
+                        ps(nodeRRRoot, TreeLevelKey) should be(EP(nodeRRRoot,TreeLevel(2)))
+                        ps(nodeLRRoot, TreeLevelKey) should be(EP(nodeLRRoot,TreeLevel(2)))
+                        ps(nodeLRoot, TreeLevelKey) should be(EP(nodeLRoot,TreeLevel(1)))
+                        ps(nodeLLRoot, TreeLevelKey) should be(EP(nodeLLRoot,TreeLevel(2)))
 
                     } catch {
                         case t: Throwable ⇒
@@ -711,20 +713,20 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         val nextNode = node.targets.head // HER: we always only have ony successor
                         store(nextNode, PurityKey) match {
-                            case None ⇒
+                            case epk : EPK[_,_] ⇒
                                 IntermediateResult(
                                     node,
                                     ConditionallyPure,
-                                    Iterable(EPK(nextNode, PurityKey)),
+                                    Iterable(epk),
                                     onUpdate(node)
                                 )
-                            case Some(Pure)   ⇒ Result(node, Pure)
-                            case Some(Impure) ⇒ Result(node, Impure)
-                            case Some(ConditionallyPure) ⇒
+                            case EP(_,Pure)   ⇒ Result(node, Pure)
+                            case EP(_,Impure) ⇒ Result(node, Impure)
+                            case ep @ EP(_,ConditionallyPure) ⇒
                                 IntermediateResult(
                                     node,
                                     ConditionallyPure,
-                                    Iterable(EP(nextNode, ConditionallyPure)),
+                                    Iterable(ep),
                                     onUpdate(node)
                                 )
 
@@ -774,8 +776,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             // Get the set of currently reachable nodes:
                             val alreadyReachableNodes: SomeSet[Node] =
                                 ps(n, ReachableNodesKey) match {
-                                    case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                    case None                                 ⇒ Set.empty
+                                    case EP(_,ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                    case _                                 ⇒ Set.empty
                                 }
                             // Get the set of nodes reached by the dependee:
                             val ReachableNodes(depeendeeReachableNodes) = dependeeP
@@ -823,12 +825,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         //           d -> e
                         //                e -> r
                         //       ↖︎----------< r
-                        ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                        ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeA, ReachableNodesKey) should be(EP(nodeA,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeB, ReachableNodesKey) should be(EP(nodeB,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeC, ReachableNodesKey) should be(EP(nodeC,ReachableNodes(Set())))
+                        ps(nodeC, ReachableNodesKey).isPropertyFinal should be (true)
+                        ps(nodeD, ReachableNodesKey) should be(EP(nodeD,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeE, ReachableNodesKey) should be(EP(nodeE,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeR, ReachableNodesKey) should be(EP(nodeR,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                     } catch {
                         case t: Throwable ⇒
                                                                                     info(s"test failed on run $runs\n"+ps.toString(true))
@@ -870,8 +873,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             // Get the set of currently reachable nodes.
                             val alreadyReachableNodes: SomeSet[Node] =
                                 ps(n, ReachableNodesKey) match {
-                                    case Some(ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                    case None                                 ⇒ Set.empty
+                                    case EP(_,ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                    case _                                ⇒ Set.empty
                                 }
                             // Whenever we continue a computation we have have to query
                             // all relevant entities about their "current" properties.
@@ -931,12 +934,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         //           d -> e
                         //                e -> r
                         //       ↖︎----------< r
-                        ps(nodeA, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeB, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeC, ReachableNodesKey) should be(Some(ReachableNodes(Set())))
-                        ps(nodeD, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeE, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-                        ps(nodeR, ReachableNodesKey) should be(Some(ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeA, ReachableNodesKey) should be(EP(nodeA,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeB, ReachableNodesKey) should be(EP(nodeB,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeC, ReachableNodesKey) should be(EP(nodeC,ReachableNodes(Set())))
+                        ps(nodeD, ReachableNodesKey) should be(EP(nodeD,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeE, ReachableNodesKey) should be(EP(nodeE,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+                        ps(nodeR, ReachableNodesKey) should be(EP(nodeR,ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
                     } catch {
                         case t: Throwable ⇒
                                                         info(s"test failed on run $runs\n"+ps.toString(true))
@@ -990,7 +993,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps.properties("a") should be(Nil)
 
-                ps("a", StringLengthKey) should be(None) // this should trigger the computation
+                ps("a", StringLengthKey) should be(EPK("a",StringLengthKey)) // this should trigger the computation
                 ps("a", StringLengthKey) // but hopefully only once (tested using "triggered")
 
                 @volatile var superPalindromeCompleted = false
@@ -1010,9 +1013,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 ps.waitOnPropertyComputationCompletion(true)
 
-                ps("a", StringLengthKey) should be(Some(StringLength(1)))
-                ps("a", PalindromeKey) should be(Some(Palindrome))
-                ps("aa", SuperPalindromeKey) should be(Some(SuperPalindrome))
+                ps("a", StringLengthKey).p should be(StringLength(1))
+                ps("a", PalindromeKey).p should be(Palindrome)
+                ps("aa", SuperPalindromeKey).p should be(SuperPalindrome)
                 superPalindromeCompleted should be(true)
             }
 
@@ -1037,9 +1040,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
-                ps("a", PalindromeKey) should be(Some(Palindrome))
-                ps("aa", PalindromeKey) should be(Some(Palindrome))
-                ps("aaa", SuperPalindromeKey) should be(Some(SuperPalindrome))
+                ps("a", PalindromeKey) should be(EP("a",Palindrome))
+                ps("aa", PalindromeKey) should be(EP("aa", Palindrome))
+                ps("aaa", SuperPalindromeKey) should be(EP("aaa",SuperPalindrome))
             }
 
             it("should be triggered in case of a \"require\" dependency") {
@@ -1059,8 +1062,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.handleResult(pcr)
                 ps.waitOnPropertyComputationCompletion(true)
 
-                ps("a", PalindromeKey) should be(Some(Palindrome))
-                ps("aaa", SuperPalindromeKey) should be(Some(SuperPalindrome))
+                ps("a", PalindromeKey) should be(EP("a",Palindrome))
+                ps("aaa", SuperPalindromeKey) should be(EP("aaa",SuperPalindrome))
             }
 
         }
@@ -1082,8 +1085,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
-                val first = ps("a", StringLengthKey).get
-                val second = ps("a", StringLengthKey).get
+                val first = ps("a", StringLengthKey).p
+                val second = ps("a", StringLengthKey).p
                 first should be theSameInstanceAs (second)
             }
 
@@ -1092,8 +1095,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }
                 ps <<! (StringLengthKey, stringLengthPC)
 
-                ps("a", StringLengthKey) should be(Some(StringLength(1)))
-                ps("aea", StringLengthKey) should be(Some(StringLength(3)))
+                ps("a", StringLengthKey) should be(EP("a",StringLength(1)))
+                ps("a", StringLengthKey).isPropertyFinal should be (true)
+                ps("aea", StringLengthKey) should be(EP("aea",StringLength(3)))
 
                 // test that the other computations are not immediately executed were executed
                 ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
@@ -1117,7 +1121,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 ps.waitOnPropertyComputationCompletion(true)
 
                 ps.properties("bc") should be(List(NoPalindrome))
-                ps("aaa", SuperPalindromeKey) should be(Some(NoSuperPalindrome))
+                ps("aaa", SuperPalindromeKey) should be(EP("aaa",NoSuperPalindrome))
                 ps.properties("a") should be(Nil)
                 ps.properties("aa") should be(Nil)
             }
@@ -1129,7 +1133,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 val palindromePC = (e: Entity) ⇒ {
                     // here we assume that a palindrome must have more than one char
-                    if (ps(e, StringLengthKey).get.length > 1 &&
+                    if (ps(e, StringLengthKey).p.length > 1 &&
                         e.toString == e.toString().reverse)
                         Palindrome
                     else
@@ -1137,10 +1141,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 }
                 ps <<! (PalindromeKey, palindromePC)
 
-                ps("a", StringLengthKey) should be(Some(StringLength(1)))
-                ps("a", PalindromeKey) should be(Some(NoPalindrome))
-                ps("aea", StringLengthKey) should be(Some(StringLength(3)))
-                ps("aea", PalindromeKey) should be(Some(Palindrome))
+                ps("a", StringLengthKey) should be(EP("a",StringLength(1)))
+                ps("a", PalindromeKey) should be(EP("a",NoPalindrome))
+                ps("aea", StringLengthKey) should be(EP("aea",StringLength(3)))
+                ps("aea", PalindromeKey) should be(EP("aea",Palindrome))
 
                 // test that the other computations are not immediately executed/were executed
                 ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
@@ -1158,14 +1162,14 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val t = new Thread(new Runnable {
                     def run: Unit = {
                         Thread.sleep(75)
-                        ps("a", StringLengthKey) should be(Some(StringLength(1)))
+                        ps("a", StringLengthKey).p should be(StringLength(1))
                         executed = true
                     }
                 })
                 t.start()
                 // calling ".get" is safe because the property is computed using a direct
                 // property computation
-                ps("a", StringLengthKey).get should be(StringLength(1))
+                ps("a", StringLengthKey).p should be(StringLength(1))
                 t.join()
                 executed should be(true)
             }

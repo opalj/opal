@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import java.net.URL
-import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
@@ -81,7 +80,7 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         projectStore.validate(None)
 
         val extensibleClasses =
-            projectStore.entities(IsExtensible).asScala.
+            projectStore.entities(IsExtensible).
                 groupBy(_._2).
                 map { entry ⇒
                     (
@@ -124,7 +123,7 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
             }.map { ep ⇒
                 ep.e.asInstanceOf[ClassFile].thisType.toJava+
                     " => "+ep.p+
-                    " => "+projectStore(ep.e, TypeImmutability.key).get
+                    " => "+projectStore(ep.e, TypeImmutability.key).p
             }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(

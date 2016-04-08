@@ -69,7 +69,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             }
 
             ps(cf, ObjectImmutability.key) match {
-                case Some(p) ⇒
+                case ep @ EP(_, p) ⇒
                     p match {
                         case p: MutableObject             ⇒ ImmediateResult(cf, MutableType)
                         case ImmutableObject              ⇒ ImmediateResult(cf, ImmutableType)
@@ -79,11 +79,11 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             // on the immutability of its object OR where the immutability is
                             // not yet determined
                             val typeImmutability: TypeImmutability = p.correspondingTypeImmutability
-                            IntermediateResult(cf, typeImmutability, Traversable(EP(cf, p)), c)
+                            IntermediateResult(cf, typeImmutability, Traversable(ep), c)
                     }
 
-                case None ⇒
-                    val dependees = Traversable(EPK(cf, ObjectImmutability.key))
+                case epk ⇒
+                    val dependees = Traversable(epk)
                     IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
             }
         } else {
@@ -109,22 +109,23 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             directSubclasses foreach { subclassFile ⇒
                 ps(subclassFile, TypeImmutability.key) match {
 
-                    case Some(MutableType)   ⇒ return Result(cf, MutableType);
+                    case EP(_, MutableType)   ⇒ return Result(cf, MutableType);
 
-                    case Some(ImmutableType) ⇒ /*ignore*/
+                    case EP(_, ImmutableType) ⇒ /*ignore*/
 
-                    case Some(next @ ConditionallyImmutableType) ⇒
+                    case EP(_, next @ ConditionallyImmutableType) ⇒
                         joinedImmutability = joinedImmutability.join(next)
                         maxImmutability = next
 
-                    case Some(next @ AtLeastConditionallyImmutableType) ⇒
-                        dependencies = EP(subclassFile, AtLeastConditionallyImmutableType) :: dependencies
+                    case ep @ EP(_, next @ AtLeastConditionallyImmutableType) ⇒
+                        dependencies = ep :: dependencies
                         joinedImmutability = joinedImmutability.join(next)
-                    case Some(UnknownTypeImmutability) ⇒
-                        dependencies = EP(subclassFile, UnknownTypeImmutability) :: dependencies
+                    case ep @ EP(_, UnknownTypeImmutability) ⇒
+                        dependencies = ep :: dependencies
                         joinedImmutability = UnknownTypeImmutability
-                    case None ⇒
-                        dependencies = EPK(subclassFile, TypeImmutability.key) :: dependencies
+                    case epk ⇒
+                        assert(epk == EPK(subclassFile, TypeImmutability.key))
+                        dependencies = epk :: dependencies
                         joinedImmutability = UnknownTypeImmutability
                 }
             }

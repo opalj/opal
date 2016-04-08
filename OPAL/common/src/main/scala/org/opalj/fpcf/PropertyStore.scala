@@ -255,7 +255,8 @@ class PropertyStore private (
     }
 
     /**
-     * Returns a graphviz/dot representation of the current dependencies.
+     * Returns a graphviz/dot representation of the current dependencies between the per-entity
+     * properties.
      */
     def visualizeDependencies(): String = accessStore {
         val epkNodes = mutable.Map.empty[SomeEPK, DefaultMutableNode[SomeEPK]]
@@ -279,7 +280,7 @@ class PropertyStore private (
     }
 
     /**
-     * Returns a snapshot of the stored properties.
+     * Returns a consistent snapshot of the stored properties.
      *
      * @note Some computations may still be running.
      */
@@ -368,8 +369,9 @@ class PropertyStore private (
     /**
      * Checks the consistency of the store.
      *
-     * Only checks related to potentially internal bugs are performed. None of the checks is
-     * relevant to developers of analyses.
+     * @note Only checks related to potentially internal bugs are performed. None of the checks is
+     * 		relevant to developers of analyses. However, even if some checks fail, they can still
+     * 		be caused by failures.
      */
     // REQUIRES: Lock: AccessStore (!)
     @throws[AssertionError]("if the store is inconsistent")
@@ -438,8 +440,8 @@ class PropertyStore private (
     //
 
     private[this] final val theSetPropertyObserversLock = new ReentrantReadWriteLock
-    // access to this field needs to be synchronized!
-    // the key of the following "ArrayMap"s is the id of the SetProperty
+    // Access to the set of property observers needs to be synchronized!
+    // The key of the following "ArrayMap"s is the id of the SetProperty.
     private[this] final val theSetPropertyObservers = ArrayMap[List[(Entity, Answer) ⇒ Unit]](5)
     private[this] final val theSetProperties = ArrayMap[JIDMap[Entity, Answer]](5)
 
@@ -452,12 +454,13 @@ class PropertyStore private (
     }
 
     /**
-     * Registers the callback function `f` that is called if any entity is added to the set
-     * identified by the given [[SetProperty]].
+     * Registers the given callback function `f`. `f` will be called if any entity is added to
+     * the set identified by the given [[SetProperty]].
      *
      * Adds the given function `f` to the set of functions that will be called
      * when an entity `e` gets the [[SetProperty]] `sp`. For those entities that already
-     * have the respective property the function `f` will immediately be scheduled.
+     * have the respective property; i.e., where the answer is either `Yes` or `No`,
+     * the function `f` will immediately be scheduled.
      *
      * I.e., the function `f` has to be thread-safe as it will be executed concurrently for
      * each entity `e` that has the respective property.
@@ -474,7 +477,7 @@ class PropertyStore private (
                 val spData = theSetProperties.getOrElseUpdate(spIndex, new JIDMap())
                 spData foreach { entry ⇒
                     val (e, a) = entry
-                    scheduleRunnable { f(e.asInstanceOf[E], a) }
+                    if (a.isYesOrNo) scheduleRunnable { f(e.asInstanceOf[E], a) }
                 }
             }
         }
@@ -510,15 +513,23 @@ class PropertyStore private (
     }
 
     /**
-     * The current set of all entities which have the given [[SetProperty]].
+     * The current set of all entities which have/do not have the given [[SetProperty]]; i.e.,
+     * where the answer is `Yes` or `No`.
      *
      * This is a blocking operation w.r.t. the set property; the returned set is a copy of the
      * original set.
      */
     // Locks: Set Property
-    def entities[E <: AnyRef](sp: SetProperty[E]): JIDMap[E, Answer] = {
+    def entities[E <: AnyRef](sp: SetProperty[E]): Iterable[(E, Answer)] = {
         sp.mutex.synchronized {
-            theSetProperties.getOrElse(sp.index, new JIDMap()).clone().asInstanceOf[JIDMap[E, Answer]]
+            val entities = theSetProperties.get(sp.index)
+            if (entities.isEmpty)
+                Map.empty
+            else {
+                entities.get.
+                    clone().asInstanceOf[JIDMap[E, Answer]].asScala.
+                    view.filter(_._2.isYesOrNo)
+            }
         }
     }
 
@@ -539,15 +550,15 @@ class PropertyStore private (
     //
     //
 
-    // Access to this field is synchronized using the store's lock
+    // Access to this field is synchronized using the store's lock;
     // the map's keys are the ids of the PropertyKeys.
     private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
 
-    // Access to this field is synchronized using the store's lock
+    // Access to this field is synchronized using the store's lock;
     // the map's keys are the ids of the PropertyKeys.
     private[this] final val theLazyPropertyComputations = ArrayMap[SomePropertyComputation](5)
 
-    // Access to this field is synchronized using the store's lock
+    // Access to this field is synchronized using the store's lock;
     // the map's keys are the ids of the PropertyKeys.
     private[this] final val theOnPropertyComputations = ArrayMap[List[(Entity, Property) ⇒ Unit]](5)
 
@@ -557,8 +568,10 @@ class PropertyStore private (
     //  1. A computation of a property finishes. In this case all observers need to
     //     be notified and removed from this map afterwards.
     //  1. A computation of a property generates an [[IntermediatResult]]
-    type ObserversMap = JCHMap[ /*Depender*/ SomeEPK, Buffer[( /*Dependee*/ SomeEPK, PropertyObserver)]]
-    private[this] final val observers = new ObserversMap()
+    private type DependerEPK = SomeEPK
+    private type DependeeEPK = SomeEPK
+    private type ObserversMap = JCHMap[DependerEPK, Buffer[(DependeeEPK, PropertyObserver)]]
+    private[this] final val observers: ObserversMap = new JCHMap()
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -573,7 +586,7 @@ class PropertyStore private (
         es: Traversable[E],
         pk: PropertyKey[P]
     ): Traversable[EOptionP[E, P]] = {
-        es.map(e ⇒ EOptionP(e, pk, this(e, pk)))
+        es.map(e ⇒ this(e, pk))
     }
 
     /**
@@ -613,21 +626,25 @@ class PropertyStore private (
      *
      * @param e An entity stored in the property store.
      * @param pk The kind of property.
-     * @return `None` if information about the respective property is not (yet) available.
-     *      `Some(Property)` otherwise.
+     * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
+     *      `EP(e,Property)` otherwise; in the later case `EP` may encapsulate a property that
+     *      is the final result of a computation `ep.isPropertyFinal === true` even though the
+     *      property as such is in general refineable. Hence, to determine if the property in
+     *      the current analysis context is final it is necessary to call the `EP` object's
+     *      `isPropertyFinal` method.
      */
     // Locks: accessEntity, Entity (read)
     //                      Entity (write)
-    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): Option[P] = {
+    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): EOptionP[e.type, P] = {
         val pkId = pk.id
         val eps = data.get(e)
         val ps = eps.ps
         val lock = eps.l
 
-        @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): Some[P] = {
+        @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): FinalEP[e.type, P] = {
             // This also establishes the happen before relation!
             p.await()
-            Some(ps(pkId).p.asInstanceOf[P])
+            FinalEP(e, ps(pkId).p.asInstanceOf[P])
         }
 
         accessEntity {
@@ -646,10 +663,15 @@ class PropertyStore private (
                         val pos = new PropertyAndObservers(PropertyIsLazilyComputed, new Buffer)
                         ps(pkId) = pos
                         scheduleComputation(e, lpc)
-                        None
+                        EPK(e, pk)
                     } else {
                         val p = pos.p
-                        if (p.isBeingComputed) None else Some(p.asInstanceOf[P])
+                        if (p.isBeingComputed)
+                            EPK(e, pk)
+                        else if (pos.os eq null)
+                            FinalEP(e, p.asInstanceOf[P])
+                        else
+                            EP(e, p.asInstanceOf[P])
                     }
                 }
                 else {
@@ -672,19 +694,24 @@ class PropertyStore private (
                                 val p = dpc(e).asInstanceOf[P]
                                 handleResult(ImmediateResult(e, p))
                                 computationLatch.countDown()
-                                Some(p)
+                                FinalEP(e, p)
                             case Right(p: PropertyIsDirectlyComputed) ⇒ awaitComputationResult(p)
-                            case Right(p)                             ⇒ Some(p.asInstanceOf[P])
+                            case Right(p)                             ⇒ FinalEP(e, p.asInstanceOf[P])
                         }
                     } else {
-                        None
+                        EPK(e, pk)
                     }
                 }
             } else {
                 pos.p match {
-                    case null | PropertyIsLazilyComputed ⇒ None
+                    case null | PropertyIsLazilyComputed ⇒ EPK(e, pk)
                     case p: PropertyIsDirectlyComputed   ⇒ awaitComputationResult(p)
-                    case p                               ⇒ Some(p.asInstanceOf[P])
+                    case p ⇒
+                        val theP = p.asInstanceOf[P]
+                        if (pos.os eq null)
+                            FinalEP(e, theP)
+                        else
+                            EP(e, theP)
                 }
             }
         }
@@ -728,7 +755,7 @@ class PropertyStore private (
         c: Continuation[DependeeP]
     ): PropertyComputationResult = {
         this(dependeeE, dependeePK) match {
-            case Some(dependeeP) ⇒
+            case SomeProperty(dependeeP) ⇒
                 // dependeeP may be already updated, but it is now on the caller to make
                 // a decision whether it will continue waiting for further updates or not
                 c(dependeeE, dependeeP)
@@ -797,8 +824,8 @@ class PropertyStore private (
             remainingEs = remainingEs.tail
             val p = this(dependeeE, dependeePK)
             p match {
-                case Some(dependeeP) ⇒ if (!expectedP(dependeeP)) return c(false);
-                case None            ⇒ unavailableEs = dependeeE :: unavailableEs
+                case SomeProperty(dependeeP) ⇒ if (!expectedP(dependeeP)) return c(false);
+                case NoProperty()            ⇒ unavailableEs = dependeeE :: unavailableEs
             }
         }
         if (unavailableEs.isEmpty) {
