@@ -40,6 +40,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
+import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * A shallow analysis that tries to identify useless computations.
@@ -75,7 +76,7 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
 
         val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
-            val (_ /*source*/ , classFile, method) = m
+            val BasicMethodInfo(classFile, method) = m
             val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
             import result.domain.ConcreteIntegerValue
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {

@@ -40,6 +40,7 @@ import org.scalatest.FunSpec
 import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.MethodInfo
 
 /**
  * Tests if we are able to collect def/use information for all methods of the JDK and OPAL and if
@@ -78,8 +79,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val comparisonCount = new java.util.concurrent.atomic.AtomicLong(0)
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
 
-        val exceptions = project.parForeachMethodWithBody() { m ⇒
-            val (_, classFile, method) = m
+        val exceptions = project.parForeachMethodWithBody() { methodInfo ⇒
+            val MethodInfo(_, classFile, method) = methodInfo
 
             // DEBUG[If the analysis does not terminate]
             // println("analysis of : "+method.toJava(classFile)+"- started")

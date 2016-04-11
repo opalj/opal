@@ -36,6 +36,7 @@ import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.scalatest.FunSpec
+import org.opalj.br.analyses.MethodInfo
 
 /**
  * This integration test(suite) just loads a very large number of class files and performs
@@ -146,7 +147,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                         s"value $lVD (${lVD.getClass.getName})"+
                                         s" does not abstract over $rVD (${rVD.getClass.getName})"+
                                         s" (original: $lValue join $rValue )"
-                                )
+                                );
                             }
                             // this primarily tests the "isMorePreciseThan" method
                             if (lVD.isMorePreciseThan(rVD)) {
@@ -158,7 +159,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                         s" is more precise than "+
                                         s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
                                         s" (original: $lValue join $rValue )"
-                                )
+                                );
                             }
                             true
                         }
@@ -179,8 +180,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            project.parForeachMethodWithBody() { m ⇒
-                val (_, classFile, method) = m
+            project.parForeachMethodWithBody() { methodInfo ⇒
+                val MethodInfo(_, classFile, method) = methodInfo
                 val a1 = BaseAI
                 val r1 = a1(classFile, method, new TypeLevelDomain(method, project))
                 val a2 = BaseAI

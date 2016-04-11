@@ -35,6 +35,7 @@ import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.ClassFile
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * Analyzes the parameters of called methods to determine if we have more precise type
@@ -123,8 +124,8 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
             }
         }
 
-        parForeachMethodWithBody { isInterrupted } { projectMethod ⇒
-            val (_ /*source*/ , classFile, method) = projectMethod
+        parForeachMethodWithBody { isInterrupted } { projectMethodInfo ⇒
+            val BasicMethodInfo(classFile, method) = projectMethodInfo
             try {
                 // <= THIS IS STRICTLY NECESSARY AS parForeachMethodWithBody
                 // (HAS TO) SWALLOW EXCEPTIONS

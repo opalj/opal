@@ -31,13 +31,12 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.analyses.BasicMethodInfo
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -45,12 +44,9 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
+object InvokedynamicPrinter extends DefaultOneStepAnalysis {
 
-    val analysis = this
-
-    override def description: String =
-        "Prints information about invokedynamic instructions."
+    override def description: String = "Prints information about invokedynamic instructions."
 
     def doAnalyze(
         project:       Project[URL],
@@ -59,8 +55,8 @@ object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, B
     ) = {
         import scala.collection.JavaConversions._
         val invokedynamics = new java.util.concurrent.ConcurrentLinkedQueue[String]
-        project.parForeachMethodWithBody(isInterrupted) { e ⇒
-            val (_, classFile, method) = e
+        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+            val BasicMethodInfo(classFile, method) = methodInfo
             invokedynamics.addAll(
                 method.body.get.collectWithIndex {
                     case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒

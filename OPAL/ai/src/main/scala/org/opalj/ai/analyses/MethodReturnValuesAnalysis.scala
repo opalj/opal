@@ -62,8 +62,9 @@ object MethodReturnValuesAnalysis {
         val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)
 
-        theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
-            val (_ /*Source*/ , classFile, method) = m
+        theProject.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+            val classFile = methodInfo.classFile
+            val method = methodInfo.method
             val originalReturnType = method.returnType
 
             if (originalReturnType.isObjectType &&

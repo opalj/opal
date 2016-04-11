@@ -42,6 +42,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.log.GlobalLogContext
+import org.opalj.br.analyses.MethodInfo
 
 /**
  * Infrastructure to just load a very large number of class files and performs
@@ -103,7 +104,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         val collectedExceptions = time('OVERALL) {
             val exceptions = new java.util.concurrent.ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) ⇒
-                val (source, classFile, method) = m
+                val MethodInfo(source, classFile, method) = m
                 analyzeClassFile(source.toString, classFile, method) foreach {
                     exceptions.add(_)
                 }

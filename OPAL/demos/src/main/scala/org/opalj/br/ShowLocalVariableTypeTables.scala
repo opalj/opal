@@ -30,20 +30,18 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
+import scala.collection.JavaConverters
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import scala.collection.JavaConverters
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * Shows the local variable type tables of given class files.
  *
  * @author Daniel Klauer
  */
-object ShowLocalVariableTypeTables extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object ShowLocalVariableTypeTables extends DefaultOneStepAnalysis {
 
     override def description: String = "Prints out the local variable type tables."
 
@@ -54,8 +52,8 @@ object ShowLocalVariableTypeTables extends AnalysisExecutor with OneStepAnalysis
     ): BasicReport = {
 
         val messages = new java.util.concurrent.ConcurrentLinkedQueue[String]
-        project.parForeachMethodWithBody(() ⇒ false) { e ⇒
-            val (_, cf, m) = e
+        project.parForeachMethodWithBody(isInterrupted) { mi ⇒
+            val BasicMethodInfo(cf, m) = mi
             val lvtt = m.body.get.localVariableTypeTable
             if (lvtt.nonEmpty)
                 messages.add(
