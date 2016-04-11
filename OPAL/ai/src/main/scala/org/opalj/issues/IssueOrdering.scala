@@ -31,8 +31,8 @@ package issues
 
 /**
  * Defines a partial order for issues. The issues are sorted
- * first by the relevance, then by their locations, then by the categories then
- * by the kinds then by the analyses ids and at last by the summary.
+ * first by the relevance, then by their locations, then by the categories, then
+ * by the kinds, then by the analyses' ids and at last by the summary.
  *
  * @author Michael Eichberg
  */
