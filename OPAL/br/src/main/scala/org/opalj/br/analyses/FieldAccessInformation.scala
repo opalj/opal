@@ -33,7 +33,7 @@ package analyses
 import scala.collection.Map
 
 /**
- * Stores the information where each field is read and written. If the type hierarchy/the project
+ * Stores the information where each field is read and written. If the type project
  * is incomplete the results are also necessary incomplete.
  *
  * @author Michael Eichberg

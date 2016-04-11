@@ -34,7 +34,7 @@ import org.opalj.log.Level
 import org.opalj.log.Warn
 
 /**
- * Thrown if we identify that the project is not consistent.
+ * Thrown when the framework determines that the project is not consistent.
  *
  * @author Michael Eichberg
  */

@@ -58,7 +58,6 @@ object TransitiveUsage extends AnalysisExecutor {
     // To extract all usages we reuse the infrastructure that enables us to extract
     // dependencies. In this case we just record referred to types and do not actually
     // record the concrete dependencies.
-
     object TypesCollector extends DependencyProcessorAdapter {
 
         private def processType(t: Type): Unit =
@@ -93,14 +92,16 @@ object TransitiveUsage extends AnalysisExecutor {
 
     val dependencyCollector = new DependencyExtractor(TypesCollector)
 
-    override def analysisSpecificParametersDescription: String =
+    override def analysisSpecificParametersDescription: String = {
         "-class=<The class for which the transitive closure of used classes is determined>"
+    }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] =
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         if (parameters.size == 1 && parameters.head.startsWith("-class="))
             Seq.empty
         else
             parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: "+_)
+    }
 
     override val analysis = new OneStepAnalysis[URL, BasicReport] {
 

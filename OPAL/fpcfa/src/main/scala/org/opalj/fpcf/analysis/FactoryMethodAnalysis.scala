@@ -64,9 +64,7 @@ import org.opalj.fpcf.PropertyKind
  *
  * @note Native methods are considered as factory methods because they might instantiate the class.
  */
-class FactoryMethodAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class FactoryMethodAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Determines if the given method is a factory method.
@@ -121,21 +119,20 @@ class FactoryMethodAnalysis private (
  */
 object FactoryMethodAnalysis extends FPCFAnalysisRunner {
 
-    /**
-     * Selects all non-abstract static methods.
-     */
-    def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
-        case m: Method if !project.isLibraryType(project.classFile(m)) && m.isStatic && !m.isAbstract ⇒ m
-    }
-
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
 
     protected[analysis] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
+        /*
+    		 * Selects all non-abstract static methods.
+    		 */
+        def entitySelector: PartialFunction[Entity, Method] = {
+            case m: Method if m.body.isDefined && m.isStatic && !m.isAbstract ⇒ m
+        }
         val analysis = new FactoryMethodAnalysis(project)
-        propertyStore <||< (entitySelector(project), analysis.determineProperty)
+        propertyStore <||< (entitySelector, analysis.determineProperty)
         analysis
     }
 }
