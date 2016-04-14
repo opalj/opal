@@ -42,7 +42,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 
 /**
- * Converts the bytecode of a method into a three address/quadruples representation.
+ * Converts the bytecode of a method into a three address representation using quadruples.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -50,7 +50,7 @@ import org.opalj.br.analyses.AnalysisException
 object AsQuadruples {
 
     /**
-     * Converts the bytecode of a method into a three address/quadruples representation using
+     * Converts the bytecode of a method into a quadruples based three address representation using
      * the result of a bytecode based abstract interpretation of the method.
      *
      * @param method A method with a body. I.e., a non-native, non-abstract method.
@@ -156,8 +156,9 @@ object AsQuadruples {
             }
 
             def primitiveCastOperation(trgtTpe: BaseType): Unit = {
+                // the value may have computational type category 1 or 2 !
                 val value :: rest = stack
-                val result = OperandVar(trgtTpe.computationalType, stack)
+                val result = OperandVar(trgtTpe.computationalType, rest)
                 val castExpr = PrimitiveTypecastExpr(pc, trgtTpe, value)
                 statements(pc) = List(Assignment(pc, result, castExpr))
                 schedule(pcOfNextInstruction(pc), result :: rest)
