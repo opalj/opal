@@ -187,7 +187,7 @@ object ToJavaLike {
         while (index < max) {
             def qualify(javaLikeStmt: String): String = {
                 if (indented)
-                    f"$index%5d: $javaLikeStmt"
+                    f"$index%5d: ${javaLikeStmt.replace("\n", "\n       ")}"
                 else
                     s"$index: $javaLikeStmt"
             }
