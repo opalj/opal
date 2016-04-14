@@ -43,7 +43,6 @@ import scalafx.scene.control.TabPane
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 import org.opalj.br.analyses.Project
-import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.ui.codeview.AddClickListenersOnLoadListener
 import org.opalj.bugpicker.ui.dialogs.DialogStage

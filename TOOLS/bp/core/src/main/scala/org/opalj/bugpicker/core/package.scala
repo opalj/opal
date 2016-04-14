@@ -40,9 +40,7 @@ import org.opalj.io.process
 package object core {
 
     def getAsset(path: String): String = {
-        process(getClass.getResourceAsStream(path)) {
-            Source.fromInputStream(_).mkString
-        }
+        process(getClass.getResourceAsStream(path)) { in ⇒ Source.fromInputStream(in).mkString }
     }
 
     lazy val HTMLCSS: String = getAsset("html.css")

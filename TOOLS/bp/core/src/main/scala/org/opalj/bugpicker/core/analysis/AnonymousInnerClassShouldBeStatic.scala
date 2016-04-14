@@ -31,10 +31,9 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import br._
-import br.analyses._
-import br.instructions._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
@@ -57,8 +56,7 @@ import org.opalj.issues.Relevance
  */
 object AnonymousInnerClassShouldBeStatic {
 
-    def description: String =
-        "Identifies anonymous inner classes that should be made static."
+    def description: String = "Identifies anonymous inner classes that should be made static."
 
     private val withinAnonymousClass = "[$][0-9].*[$]".r
 
@@ -123,13 +121,10 @@ object AnonymousInnerClassShouldBeStatic {
     private def hasMethodsReadingField(classFile: ClassFile, field: Field): Boolean = {
         for (MethodWithBody(body) ← classFile.methods) {
             if (body.instructions.exists {
-                case FieldReadAccess(
-                    classFile.thisType,
-                    field.name,
-                    field.fieldType) ⇒ true
+                case FieldReadAccess(classFile.thisType, field.name, field.fieldType) ⇒ true
                 case _ ⇒ false
             }) {
-                return true
+                return true;
             }
         }
         false
@@ -145,7 +140,7 @@ object AnonymousInnerClassShouldBeStatic {
                 case ALOAD_1 ⇒
                     count += 1;
                     if (count > 1) {
-                        return true
+                        return true;
                     }
                 case _ ⇒
             }
@@ -182,10 +177,7 @@ object AnonymousInnerClassShouldBeStatic {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def apply(
-        project:   SomeProject,
-        classFile: ClassFile
-    ): Iterable[Issue] = {
+    def apply(project: SomeProject, classFile: ClassFile): Iterable[Issue] = {
         if (project.isLibraryType(classFile)) return None;
 
         if (!(isAnonymousInnerClass(classFile) &&

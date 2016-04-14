@@ -168,9 +168,11 @@ case class Return(pc: PC) extends SimpleStmt
 
 case class Nop(pc: PC) extends SimpleStmt
 
-case class MonitorEnter(pc: PC, objRef: Expr) extends SimpleStmt
+sealed trait SynchronizationStmt extends SimpleStmt
 
-case class MonitorExit(pc: PC, objRef: Expr) extends SimpleStmt
+case class MonitorEnter(pc: PC, objRef: Expr) extends SynchronizationStmt
+
+case class MonitorExit(pc: PC, objRef: Expr) extends SynchronizationStmt
 
 case class ArrayStore(
     pc:       PC,
@@ -181,18 +183,20 @@ case class ArrayStore(
 
 case class Throw(pc: PC, exception: Expr) extends SimpleStmt
 
+sealed trait FieldAccessStmt extends SimpleStmt
+
 case class PutStatic(
     pc:             PC,
     declaringClass: ObjectType, name: String,
     value: Expr
-) extends SimpleStmt
+) extends FieldAccessStmt
 
 case class PutField(
     pc:             PC,
     declaringClass: ObjectType, name: String,
     objRef: Expr,
     value:  Expr
-) extends SimpleStmt
+) extends FieldAccessStmt
 
 sealed trait MethodCall extends Call with SimpleStmt
 

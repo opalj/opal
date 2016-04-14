@@ -37,16 +37,17 @@ import org.opalj.br.ObjectType
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.analysis.extensibility.IsExtensible
 
+/**
+ * Determines the mutability of a specific type.
+ */
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
-
-    final val extensibleClasses = propertyStore.entities(IsExtensible)
 
     /**
      * @param cf A class file which is not the class file of `java.lang.Object`.
      */
     def determineTypeImmutability(cf: ClassFile): PropertyComputationResult = {
 
-        if (extensibleClasses.contains(cf))
+        if (propertyStore(IsExtensible, cf).isYes)
             return ImmediateResult(cf, MutableType);
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
@@ -96,7 +97,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 )
                 // Obviously the type hierarchy is incommplete;
                 // hence, we have to make a safe and sound approximation!
-                return Result(cf, MutableType)
+                return Result(cf, MutableType);
             }
 
             val directSubclasses = directSubtypes map { subtype ⇒ project.classFile(subtype).get }
@@ -107,12 +108,15 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             directSubclasses foreach { subclassFile ⇒
                 ps(subclassFile, TypeImmutability.key) match {
+
+                    case Some(MutableType)   ⇒ return Result(cf, MutableType);
+
                     case Some(ImmutableType) ⇒ /*ignore*/
-                    case Some(MutableType) ⇒
-                        return Result(cf, MutableType);
+
                     case Some(next @ ConditionallyImmutableType) ⇒
                         joinedImmutability = joinedImmutability.join(next)
                         maxImmutability = next
+
                     case Some(next @ AtLeastConditionallyImmutableType) ⇒
                         dependencies = EP(subclassFile, AtLeastConditionallyImmutableType) :: dependencies
                         joinedImmutability = joinedImmutability.join(next)

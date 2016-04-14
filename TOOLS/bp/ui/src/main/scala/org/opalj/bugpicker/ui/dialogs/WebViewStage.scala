@@ -41,7 +41,6 @@ import scalafx.scene.layout.VBox
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
-import scalafx.stage.Window
 
 class WebViewStage extends Stage {
 

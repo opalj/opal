@@ -30,18 +30,12 @@ package org.opalj
 package bugpicker
 package core
 
-import java.net.URL
 import java.lang.Integer.parseInt
+import java.net.URL
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
-
-import scala.collection.SortedMap
 import scala.xml.Node
-
-import com.typesafe.config.ConfigRenderOptions
-
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
@@ -53,10 +47,10 @@ import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 import org.opalj.issues.IssueKind
+import org.opalj.log.LogContext
 
 /**
- * A simple wrapper around the BugPicker analysis to make it runnable using the
- * command line.
+ * The command line interface of the bug picker.
  *
  * @author Michael Eichberg
  */
@@ -135,12 +129,16 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
     private[this] var libcpFiles: Iterable[File] = null
 
     override def setupProject(
-        cpFiles:    Iterable[File],
-        libcpFiles: Iterable[File]
+        cpFiles:      Iterable[File],
+        libcpFiles:   Iterable[File],
+        analysisMode: AnalysisMode
+    )(
+        implicit
+        initialLogContext: LogContext
     ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
-        super.setupProject(cpFiles, libcpFiles)
+        super.setupProject(cpFiles, libcpFiles, analysisMode)(initialLogContext)
     }
 
     override def analyze(

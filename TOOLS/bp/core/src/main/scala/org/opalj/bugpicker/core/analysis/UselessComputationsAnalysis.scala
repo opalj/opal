@@ -80,16 +80,17 @@ object UselessComputationsAnalysis {
         def createIssue(pc: PC, message: String, relevance: Relevance): Issue = {
             val operands = result.operandsArray(pc)
             val localVariables = result.localsArray(pc)
+            val details = new InstructionLocation(
+                None, theProject, classFile, method, pc,
+                List(new Operands(code, pc, operands, localVariables))
+            )
             Issue(
                 "UselessComputationsAnalysis",
                 relevance,
                 s"the expression ($message) always evaluates to the same value",
                 Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                 Set(IssueKind.ConstantComputation),
-                List(new InstructionLocation(
-                    None, theProject, classFile, method, pc,
-                    List(new Operands(code, pc, operands, localVariables))
-                ))
+                List(details)
             )
         }
 
@@ -100,6 +101,8 @@ object UselessComputationsAnalysis {
 
         collectPCWithOperands(domain)(code, operandsArray) {
 
+            // IMPROVE Add support for identifying useless computations related to double and float values.
+
             // HANDLING INT VALUES
             //
             case (
@@ -107,20 +110,16 @@ object UselessComputationsAnalysis {
                 instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                 Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                 ) ⇒
-                // The java "~" operator has no direct representation in bytecode
-                // instead, compilers generate an "ixor" with "-1" as the
+                // The java "~" operator has no direct representation in bytecode.
+                // Instead, compilers generate an "ixor" with "-1" as the
                 // second value.
-                if (instr.operator == "^" && a == -1)
-                    createIssue(
-                        pc,
-                        s"constant computation: ~$b (<=> $b ${instr.operator} $a).",
-                        defaultRelevance
-
-                    )
-                else
-                    createIssue(
-                        pc, s"constant computation: $b ${instr.operator} $a.", defaultRelevance
-                    )
+                if (instr.operator == "^" && a == -1) {
+                    val message = s"constant computation: ~$b (<=> $b ${instr.operator} $a)."
+                    createIssue(pc, message, defaultRelevance)
+                } else {
+                    val message = s"constant computation: $b ${instr.operator} $a."
+                    createIssue(pc, message, defaultRelevance)
+                }
 
             case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) ⇒
                 createIssue(pc, "0 | x will always evaluate to x", Relevance.High)
@@ -163,17 +162,15 @@ object UselessComputationsAnalysis {
                 instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                 ) ⇒
-                createIssue(
-                    pc, s"constant computation: ${b}l ${instr.operator} ${a}l.", defaultRelevance
-                )
+                val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
+                createIssue(pc, message, defaultRelevance)
             case (
                 pc,
                 instr @ ShiftInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
                 ) ⇒
-                createIssue(
-                    pc, s"constant computation: ${b}l ${instr.operator} ${a}l.", defaultRelevance
-                )
+                val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
+                createIssue(pc, message, defaultRelevance)
 
             case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) ⇒
                 createIssue(pc, s"constant computation: -${a}l", defaultRelevance)
@@ -188,15 +185,10 @@ object UselessComputationsAnalysis {
                 ) if domain.intValueOption(
                 operandsArray(pc + INSTANCEOF.length).head
             ).isDefined ⇒
-                createIssue(
-                    pc,
-                    rv.upperTypeBound.map(_.toJava).mkString(
-                        "useless type test:",
-                        " with ",
-                        " instanceof "+referenceType.toJava
-                    ),
-                    defaultRelevance
-                )
+                val utb = rv.upperTypeBound.map(_.toJava)
+                val targetType = " instanceof "+referenceType.toJava
+                val message = utb.mkString("useless type test: ", " with ", targetType)
+                createIssue(pc, message, defaultRelevance)
 
         }
     }

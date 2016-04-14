@@ -32,21 +32,15 @@ package core
 package analysis
 
 import java.net.URL
-import java.lang.Double.parseDouble
-import java.lang.Long.parseLong
-import java.lang.Integer.parseInt
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.JavaConversions
-import scala.collection.SortedMap
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
-import scala.io.Source
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.BoundedInterruptableAI
@@ -54,7 +48,6 @@ import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.ai.collectPCWithOperands
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
@@ -65,9 +58,6 @@ import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.IStoreInstruction
-import org.opalj.br.instructions.LStoreInstruction
-import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
@@ -76,14 +66,10 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesRegistry
-import org.opalj.fpcf.analysis.FPCFAnalysisRunner
 import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.util.Milliseconds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.issues.Issue
 import org.opalj.issues.PackageLocation
 import org.opalj.issues.ProjectLocation
@@ -429,7 +415,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     //
                     addResults(
                         UnusedFields(
-                            theProject, fieldAccessInformation, stringConstantsInformation, classFile
+                            theProject,
+                            propertyStore, fieldAccessInformation, stringConstantsInformation,
+                            classFile
                         )
                     )
 
