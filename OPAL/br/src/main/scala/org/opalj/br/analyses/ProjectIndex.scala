@@ -149,6 +149,8 @@ object ProjectIndex {
                         }
                 }
             }
+            fields.foreachValue(_.repack())
+            fields.repack()
             fields
         }
 
@@ -172,6 +174,8 @@ object ProjectIndex {
                         }
                 }
             }
+            methods.foreachValue(_.repack())
+            methods.repack()
             methods
         }
 
