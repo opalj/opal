@@ -43,6 +43,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 
 import org.opalj.br.MethodSignature
+import org.opalj.ai.cg.CallGraphCache
+import org.opalj.ai.cg.Callees
 
 /**
  * @author Michael Eichberg

@@ -40,7 +40,7 @@ import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**

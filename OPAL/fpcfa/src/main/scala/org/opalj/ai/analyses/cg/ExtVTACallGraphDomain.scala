@@ -53,6 +53,7 @@ import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * Domain object which can used to calculate the call graph using variable type analysis.
@@ -68,8 +69,7 @@ class ExtVTACallGraphDomain[Source](
     val cache:                        CallGraphCache[MethodSignature, Set[Method]],
     val classFile:                    ClassFile,
     val method:                       Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject

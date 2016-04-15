@@ -51,6 +51,7 @@ import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.ai.domain.l0
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * Domain object which is used to calculate the call graph using variable type analysis.

@@ -28,7 +28,6 @@
  */
 package org.opalj
 package ai
-package analyses
 package cg
 
 import org.opalj.br._
