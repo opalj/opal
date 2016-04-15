@@ -258,9 +258,9 @@ trait IdBasedVar extends Var {
 case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
 
 case class DomainValueBasedVar(id: Int, properties: Domain#DomainValue) extends IdBasedVar {
-    
+
     final override def cTpe = properties.computationalType
-    
+
 }
 
 object TempVar {
@@ -270,9 +270,9 @@ object TempVar {
 }
 
 object RegisterVar {
-    
-    def apply(cTpe: ComputationalType, index: UShort): SimpleVar =  SimpleVar(-index - 1, cTpe)
-    
+
+    def apply(cTpe: ComputationalType, index: UShort): SimpleVar = SimpleVar(-index - 1, cTpe)
+
 }
 
 object OperandVar {
