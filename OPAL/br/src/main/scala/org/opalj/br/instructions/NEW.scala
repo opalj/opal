@@ -31,6 +31,7 @@ package br
 package instructions
 
 import org.opalj.collection.mutable.UShortSet
+import org.opalj.br.ObjectType.OutOfMemoryError
 
 /**
  * Create new object.
@@ -73,9 +74,7 @@ case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthIn
         if (regularSuccessorsOnly)
             UShortSet(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.OutOfMemoryError
-            )
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, OutOfMemoryError)
     }
 
     final def expressionResult: Stack.type = Stack

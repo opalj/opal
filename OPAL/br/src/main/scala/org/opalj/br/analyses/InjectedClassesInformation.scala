@@ -60,12 +60,15 @@ object InjectedClassesInformationAnalysis {
         val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
 
         project.parForeachClassFile(isInterrupted) { cf ⇒
-            cf.fields filter { field ⇒ field.fieldType.isObjectType } foreach { field ⇒
+            for {
+                field ← cf.fields
+                fieldType = field.fieldType
+                if fieldType.isObjectType
+                if field.annotations.size > 0
                 // IMPROVE Check for specific annotations that are related to "Injections"
-                if (field.annotations.size > 0) {
-                    val fieldType = field.fieldType.asObjectType
-                    injectedTypes.add(fieldType)
-                }
+            } {
+                injectedTypes.add(fieldType.asObjectType)
+
             }
         }
 

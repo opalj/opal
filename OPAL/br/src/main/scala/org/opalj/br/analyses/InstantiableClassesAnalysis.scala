@@ -31,17 +31,19 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.mutable.HashSet
 import scala.collection.JavaConverters._
-import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.NEW
 
 /**
  * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
- * `java.lang.Math`).
+ * `java.lang.Math`) by user code.
  *
- * A class is not (potentially) instantiable if:
- *  - it only defines private constructors and these constructors are not called
- *    by any static method and the class is also not Serializable.
+ * A class is not instantiable if it only defines private constructors and these constructors
+ * are not called by any static method and the class is also not Serializable. However,
+ * if the static initializer creates an instance of the respective class then it is possible that
+ * this a class is rated as not client instantiable though it is possible that an instance
+ * exists and may even be used.
+ *
  *
  * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
@@ -53,7 +55,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
  *
  * This information is relevant in various contexts, e.g., to determine a
  * precise call graph. For example, instance methods of those objects that cannot be
- * created are always dead.
+ * created are always dead. However, this analysis only provides the information whether the
+ * class is instantiable by client code!
  *
  * ==Usage==
  * Use the [[InstantiableClassesKey]] to query a project about the instantiable classes.
@@ -70,6 +73,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 object InstantiableClassesAnalysis {
 
     def doAnalyze(project: SomeProject, isInterrupted: () ⇒ Boolean): InstantiableClasses = {
+
         import project.classHierarchy.isSubtypeOf
 
         val notInstantiable = new ConcurrentLinkedQueue[ObjectType]()
@@ -90,36 +94,35 @@ object InstantiableClassesAnalysis {
             if (isSubtypeOf(thisClassType, ObjectType.Serializable).isYesOrUnknown)
                 return ;
 
-            for {
-                method ← cf.methods
-                // Check that the method is potentially a factory method...
-                if !method.isConstructor
-                if method.isStatic
-            } {
-                if (method.isNative)
-                    // We don't now what this static method is doing, hence, we assume that
-                    // it may act as a factory method; we can now abort the entire
-                    // analysis.
-                    return ;
+            val hasFactoryMethod =
 
-                method.body.get.foreach { (pc, instruction) ⇒
-                    if (instruction.opcode == INVOKESPECIAL.opcode) {
-                        val call = instruction.asInstanceOf[INVOKESPECIAL]
-                        if ((call.declaringClass eq thisClassType) && call.name == "<init>") {
-                            // We found a static factory method that is responsible
-                            // for creating instances of this class.
-                            return ;
+                cf.methods.exists { method ⇒
+                    // Check that the method is potentially a factory method...
+                    method.isStatic && !method.isStaticInitializer && (
+                        {
+
+                            method.isNative
+                            // If the method is static method we don't know what the method may do, 
+                            // hence, we assume that it may act as a factory method.
+                        } || {
+                            method.body.isEmpty
+                            // We have a static method without a body; this is only possible if the 
+                            // bytecode reader does not read method bodies; otherwise this can't happen;
+                            // such a class file would be invalid.
+                        } || {
+                            method.body.get.exists { (pc, instruction) ⇒
+                                instruction.opcode == NEW.opcode &&
+                                    (instruction.asInstanceOf[NEW].objectType eq thisClassType)
+                            }
                         }
-                    }
+                    )
                 }
-            }
-            // If we reach this point, no static method ever creates an instance
-            // of the respective class
-            notInstantiable.add(thisClassType)
+
+            if (!hasFactoryMethod) notInstantiable.add(thisClassType)
         }
 
         project.parForeachProjectClassFile(isInterrupted)(analyzeClassFile)
 
-        new InstantiableClasses(project, HashSet.empty ++ notInstantiable.asScala)
+        new InstantiableClasses(project, notInstantiable.asScala.toSet)
     }
 }
