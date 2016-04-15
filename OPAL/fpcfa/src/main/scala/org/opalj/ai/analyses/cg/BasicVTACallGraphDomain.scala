@@ -59,8 +59,7 @@ class BasicVTACallGraphDomain[Source](
     val cache:     CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject

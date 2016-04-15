@@ -78,6 +78,9 @@ final case class Relevance(value: Int) extends AnyVal {
 
 }
 
+/**
+ * Collection of pre-configured relevance levels.
+ */
 object Relevance {
 
     final val OfUtmostRelevance = Relevance(99)

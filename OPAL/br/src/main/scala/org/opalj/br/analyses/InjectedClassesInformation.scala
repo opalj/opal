@@ -30,16 +30,16 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.br.ObjectType
-import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.JavaConverters._
+import org.opalj.br.ObjectType
 
 /**
  * Stores the information which types of objects are (potentially) injected based on the
  * annotations that are found in the project. For example, by means of
  * reflection or by a web server or some other comparable framework.
  *
- * This information is used to compute the entry points of a JaveEE application.
+ * This information is used to compute the entry points of JEE applications.
  *
  * @author Michael Reif
  */

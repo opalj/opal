@@ -32,13 +32,13 @@ package analyses
 
 /**
  * An analysis that performs all computations in one step. Only very short-running
- * analyses should use this interface!
+ * analyses should use this interface as reporting progress is not supported.
  *
  * @author Michael Eichberg
  */
 trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
 
-    def doAnalyze(
+    /*abstract*/ def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
         isInterrupted: () ⇒ Boolean
