@@ -30,6 +30,8 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.concurrent.defaultIsInterrupted
+
 /**
  * The ''key'' object to get global field access information.
  *
@@ -50,10 +52,7 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
      * Computes the field access information.
      */
     override protected def compute(project: SomeProject): FieldAccessInformation = {
-
-        FieldAccessInformationAnalysis.doAnalyze(
-            project, () ⇒ Thread.currentThread().isInterrupted()
-        )
+        FieldAccessInformationAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
 

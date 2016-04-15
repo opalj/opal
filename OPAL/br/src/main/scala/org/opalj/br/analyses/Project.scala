@@ -40,6 +40,7 @@ import scala.collection.SortedMap
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
@@ -210,7 +211,7 @@ class Project[Source] private (
     }
 
     def parForeachProjectClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -220,7 +221,7 @@ class Project[Source] private (
     val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
 
     def parForeachLibraryClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -230,7 +231,7 @@ class Project[Source] private (
     val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
     def parForeachClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -293,7 +294,7 @@ class Project[Source] private (
      * methods are analyzed ordered by their length (longest first).
      */
     def parForeachMethodWithBody[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: MethodInfo[Source] ⇒ T
     ): List[Throwable] = {
@@ -489,7 +490,7 @@ class Project[Source] private (
     def projectMethodsLengthDistribution: Map[Int, (Int, Set[Method])] = {
         //        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
         //
-        //        parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { entity ⇒
+        //        parForeachMethodWithBody(() ⇒ defaultIsInterrupted) { entity ⇒
         //            val (_ /*source*/ , _ /*classFile*/ , method) = entity
         //            if (!method.isSynthetic) {
         //                data(method.body.get.instructions.length).incrementAndGet()

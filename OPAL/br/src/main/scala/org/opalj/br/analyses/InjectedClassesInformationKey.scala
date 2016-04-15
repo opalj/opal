@@ -30,6 +30,8 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.concurrent.defaultIsInterrupted
+
 /**
  * The ''key'' object to get information about the types of objects that are potentially injected.
  * For example, by a web framework or a dependency injection framework.
@@ -51,7 +53,7 @@ object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClass
      * Computes the information which types are injected at a field.
      */
     override protected def compute(project: SomeProject): InjectedClassesInformation = {
-        InjectedClassesInformationAnalysis(project, () ⇒ Thread.currentThread().isInterrupted())
+        InjectedClassesInformationAnalysis(project, defaultIsInterrupted)
     }
 }
 

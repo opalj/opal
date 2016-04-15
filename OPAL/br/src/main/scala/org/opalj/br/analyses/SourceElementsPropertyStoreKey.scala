@@ -31,10 +31,14 @@ package br
 package analyses
 
 import net.ceedubs.ficus.Ficus._
+import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
 
 /**
- * The ''key'' object to get access to the properties store.
+ * The ''key'' object to get access to the [[org.opalj.fpcf.PropertyStore]].
+ *
+ * @note It is possible to set the project's `debug` flag using the project's
+ * 		`org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
  *
  * @author Michael Eichberg
  */
@@ -53,8 +57,7 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      * Creates a new empty property store.
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        val isInterrupted = () ⇒ Thread.currentThread.isInterrupted()
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
-        PropertyStore(project.allSourceElements, isInterrupted, debug)(project.logContext)
+        PropertyStore(project.allSourceElements, defaultIsInterrupted, debug)(project.logContext)
     }
 }
