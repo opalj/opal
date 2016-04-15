@@ -1870,6 +1870,8 @@ class PropertyStore private (
         accessEntity {
             (resultId: @scala.annotation.switch) match {
 
+                case NoResult.id ⇒ /* nothing to do */
+
                 case Results.id ⇒
                     val Results(results) = r
                     results.foreach(handleResult(_))

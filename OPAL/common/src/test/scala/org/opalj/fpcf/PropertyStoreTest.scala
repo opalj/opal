@@ -486,7 +486,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             else
                                 ImmediateResult(e, NoPalindrome)
                         } else {
-                            NoEntities
+                            NoResult
                         }
                     }
                 }
@@ -615,7 +615,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             else
                                 ImmediateResult(e, NoPalindrome)
                         } else {
-                            NoEntities // it is technically possible to not associate an entity with a property...
+                            NoResult // it is technically possible to not associate an entity with a property...
                         }
                     }
                 }

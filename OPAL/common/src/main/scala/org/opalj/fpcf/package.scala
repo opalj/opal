@@ -130,7 +130,5 @@ package object fpcf {
      * with a property value for each element.
      */
     private[fpcf]type Properties = OArrayMap[PropertyAndObservers]
-    
-    
-    final val NoResult = NoEntities
+
 }

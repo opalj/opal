@@ -37,14 +37,25 @@ sealed trait PropertyComputationResult {
 
 }
 
+/**
+ * Encapsulates the final result of the computation of a property. I.e., the analysis
+ * determined that the computed property will not be updated because there is no further chance
+ * to do so.
+ *
+ * A final result is only to be used if no further refinement is possible or may happen.
+ *
+ * @note The framework will invoke and deregister all dependent computations (observers). If –
+ * 		after having a result another result w.r.t. the given entity and property is given to
+ * 		the property store – the behavior is undefined and may/will result in immediate but
+ * 		also deferred arbitrary failures!
+ */
 sealed trait FinalPropertyComputationResult extends PropertyComputationResult
 
 /**
- * Encapsulates the '''final result''' of the computation of the property.
+ * Encapsulates the '''final result''' of the computation of the property `p` for the given
+ * entity `e`.
  *
- * A [[Result]] is only to be used if no further refinement is possible
- * or may happen. The framework will then invoke and deregister all
- * dependent computations (observers).
+ * @see [[FinalPropertyComputationResult]] for further information.
  */
 case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult {
 
@@ -55,11 +66,10 @@ private[fpcf] object Result { private[fpcf] final val id = 3 }
 
 /**
  * Encapsulates the '''final result''' of a computation of a property that '''required
- * no intermediate results'''; i.e., if no properties of other entities were queried.
+ * no intermediate results'''; i.e. it can only be used if the analysis has no open dependencies
+ * on other elements.
  *
- * An `ImmediateResult` is only to be used if no further refinement is possible
- * or may happen. The framework will then invoke and deregister all
- * dependent computations (observers).
+ * @see [[FinalPropertyComputationResult]] for further information.
  */
 case class ImmediateResult(e: Entity, p: Property) extends FinalPropertyComputationResult {
 
@@ -71,11 +81,9 @@ private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties.
  *
- * A [[MultiResult]] is only to be used if no further refinement is possible
- * or may happen. The framework will then invoke and deregister all
- * dependent computations (observers).
+ * The encapsulated results are not atomically set; they are set one after another.
  *
- * The encapsulated results are not atomically set.
+ * @see [[FinalPropertyComputationResult]] for further information.
  */
 case class MultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
 
@@ -88,9 +96,7 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
  * Encapsulates the '''final results''' of the computation of a set of properties that
  * required no intermediate steps.
  *
- * An `ImmediateMultiResult` is only to be used if no further refinement is possible
- * or may happen. The framework will then invoke and deregister all
- * dependent computations (observers).
+ * @see [[FinalPropertyComputationResult]] for further information.
  */
 case class ImmediateMultiResult(properties: ComputationResults) extends FinalPropertyComputationResult {
 
@@ -102,7 +108,9 @@ private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
 /**
  * Used if the analysis found no entities for which a property could be computed.
  */
-object NoEntities extends ImmediateMultiResult(Traversable.empty)
+object NoResult extends PropertyComputationResult {
+    private[fpcf] final val id = 5
+}
 
 /**
  * Encapsulates an intermediate result of the computation of a property.
@@ -165,7 +173,7 @@ case class IntermediateResult(
         s"IntermediateResult($e,$p,dependees=${dependees.mkString("{", ",", "}")})"
     }
 }
-private[fpcf] object IntermediateResult { private[fpcf] final val id = 5 }
+private[fpcf] object IntermediateResult { private[fpcf] final val id = 6 }
 
 /**
  * Encapsulates some result and also some computations that should be scheduled after handling the
@@ -180,14 +188,14 @@ case class IncrementalResult[E <: Entity](
 
 }
 
-private[fpcf] object IncrementalResult { private[fpcf] final val id = 6 }
+private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
 
 case class Results(results: List[PropertyComputationResult]) extends PropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
 }
-private[fpcf] object Results { private[fpcf] final val id = 7 }
+private[fpcf] object Results { private[fpcf] final val id = 8 }
 
 //
 //
@@ -228,7 +236,7 @@ abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
  */
 private[fpcf] object SuspendedPC {
 
-    private[fpcf] final val id = 8
+    private[fpcf] final val id = 9
 
     def unapply[DependeeP <: Property](
         c: SuspendedPC[DependeeP]
