@@ -44,6 +44,7 @@ import org.opalj.fpcf.analysis.fields.FieldMutability
 import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
 import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.Pure
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -102,6 +103,12 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 "\n",
                 s"\nTotal: ${pureMethods.size}\n"
             )
-        BasicReport(fieldInfo + methodInfo + projectStore.toString(false)+"\nAnalysis time: "+t)
+        BasicReport(
+            fieldInfo +
+                methodInfo +
+                projectStore.toString(false)+
+                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size+
+                "\nAnalysis time: "+t
+        )
     }
 }
