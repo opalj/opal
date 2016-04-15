@@ -67,7 +67,7 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 
 }
 

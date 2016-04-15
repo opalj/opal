@@ -78,6 +78,6 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
             )
     }
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
 }

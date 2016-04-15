@@ -48,7 +48,7 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
         if (methodDescriptor.returnType.isVoidType) 0 else 1
     }
 
-    final def expressionResult: ExpressionResult = {
+    final def expressionResult: ExpressionResultLocation = {
         if (methodDescriptor.returnType.isVoidType) NoExpression else Stack
     }
 

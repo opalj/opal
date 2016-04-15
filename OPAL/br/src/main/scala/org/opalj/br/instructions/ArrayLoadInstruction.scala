@@ -68,7 +68,7 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
         }
     }
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
 }
 

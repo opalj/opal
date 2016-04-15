@@ -61,7 +61,7 @@ abstract class CreateNewArrayInstruction extends Instruction with ConstantLength
             )
     }
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
 }
 

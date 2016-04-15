@@ -74,7 +74,7 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 
 }
 /**

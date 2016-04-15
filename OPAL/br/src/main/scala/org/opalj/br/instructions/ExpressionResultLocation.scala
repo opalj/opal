@@ -31,15 +31,16 @@ package br
 package instructions
 
 /**
- * Load reference from array.
+ * Characterizes the result of evaluating an expression with respect to the place where
+ * the result is stored.
  *
- * @author Michael Eicberg
+ * @author Michael Eichberg
  */
-sealed trait ExpressionResult
+sealed trait ExpressionResultLocation
 
-case object Stack extends ExpressionResult
+case object Stack extends ExpressionResultLocation
 
-case class Register(index: Int) extends ExpressionResult
+case class Register(index: Int) extends ExpressionResultLocation
 
-case object NoExpression extends ExpressionResult
+case object NoExpression extends ExpressionResultLocation
 
