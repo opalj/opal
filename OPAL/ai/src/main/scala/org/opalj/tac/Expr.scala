@@ -42,11 +42,13 @@ trait Expr {
     def cTpe: ComputationalType
 }
 
+trait ValueExpr extends Expr
+
 /**
  * Parameter expressions must occur at the very beginning of the quadruples code
  * and must perform the initial initialization of the register values.
  */
-case class Param(cTpe: ComputationalType, name: String) extends Expr
+case class Param(cTpe: ComputationalType, name: String) extends ValueExpr
 
 case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeInt
@@ -66,49 +68,49 @@ case class Compare(
     final def cTpe = ComputationalTypeInt
 }
 
-sealed trait Const extends Expr
+sealed trait Const extends ValueExpr
 
-case class IntConst(pc: PC, value: Int) extends Expr {
+case class IntConst(pc: PC, value: Int) extends Const {
     final def tpe = IntegerType
     final def cTpe = ComputationalTypeInt
 }
 
-case class LongConst(pc: PC, value: Long) extends Expr {
+case class LongConst(pc: PC, value: Long) extends Const {
     final def tpe = LongType
     final def cTpe = ComputationalTypeLong
 }
 
-case class FloatConst(pc: PC, value: Float) extends Expr {
+case class FloatConst(pc: PC, value: Float) extends Const {
     final def tpe = FloatType
     final def cTpe = ComputationalTypeFloat
 }
 
-case class DoubleConst(pc: PC, value: Double) extends Expr {
+case class DoubleConst(pc: PC, value: Double) extends Const {
     final def tpe = DoubleType
     final def cTpe = ComputationalTypeDouble
 }
 
-case class StringConst(pc: PC, value: String) extends Expr {
+case class StringConst(pc: PC, value: String) extends Const {
     final def tpe = ObjectType.String
     final def cTpe = ComputationalTypeReference
 }
 
-case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Expr {
+case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
     final def tpe = ObjectType.MethodType
     final def cTpe = ComputationalTypeReference
 }
 
-case class MethodHandleConst(pc: PC, value: MethodHandle) extends Expr {
+case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
     final def tpe = ObjectType.MethodHandle
     final def cTpe = ComputationalTypeReference
 }
 
-case class ClassConst(pc: PC, value: ReferenceType) extends Expr {
+case class ClassConst(pc: PC, value: ReferenceType) extends Const {
     final def tpe = ObjectType.Class
     final def cTpe = ComputationalTypeReference
 }
 
-case class NullExpr(pc: PC) extends Expr {
+case class NullExpr(pc: PC) extends Const {
     final def cTpe = ComputationalTypeReference
 }
 
@@ -219,7 +221,7 @@ case class StaticFunctionCall(
     params:         List[Expr]
 ) extends FunctionCall
 
-trait Var extends Expr {
+trait Var extends ValueExpr {
 
     /**
      * A human readable name of the local variable.
@@ -256,7 +258,9 @@ trait IdBasedVar extends Var {
 case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
 
 case class DomainValueBasedVar(id: Int, properties: Domain#DomainValue) extends IdBasedVar {
+    
     final override def cTpe = properties.computationalType
+    
 }
 
 object TempVar {
@@ -266,9 +270,9 @@ object TempVar {
 }
 
 object RegisterVar {
-    def apply(cTpe: ComputationalType, index: UShort): SimpleVar = {
-        SimpleVar(-index - 1, cTpe)
-    }
+    
+    def apply(cTpe: ComputationalType, index: UShort): SimpleVar =  SimpleVar(-index - 1, cTpe)
+    
 }
 
 object OperandVar {
