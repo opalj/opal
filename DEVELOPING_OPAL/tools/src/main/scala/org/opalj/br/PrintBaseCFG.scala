@@ -32,7 +32,6 @@ package br
 import org.opalj.br.analyses.Project
 import org.opalj.io.writeAndOpen
 import org.opalj.graphs.toDot
-import java.net.URL
 
 /**
  * Prints the CFG of a method using a data-flow independent analysis.
@@ -104,10 +103,10 @@ object PrintBaseCFG {
                         return ;
                 }
 
-        analyzeMethod(project, classFile, method)
+        analyzeMethod(classFile, method)
     }
 
-    def analyzeMethod(project: Project[URL], classFile: ClassFile, method: Method): Unit = {
+    def analyzeMethod(classFile: ClassFile, method: Method): Unit = {
         val controlFlowGraph = cfg.CFGFactory(method.body.get)
         val rootNodes = Set(controlFlowGraph.startBlock) ++ controlFlowGraph.catchNodes
         val graph = toDot(rootNodes)
