@@ -174,6 +174,7 @@ case class CFG(
 
         // update the catch nodes
         val codeSize = code.instructions.length
+
         catchNodes.foreach { cn ⇒
             bbMapping.put(
                 cn,
