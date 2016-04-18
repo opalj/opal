@@ -40,6 +40,7 @@ import org.opalj.graphs.Node
 trait CFGNode extends Node {
 
     def isBasicBlock: Boolean
+    def asBasicBlock: BasicBlock = throw new ClassCastException();
     def isCatchNode: Boolean
     def isExitNode: Boolean
 
