@@ -81,7 +81,7 @@ case class CFG(
      *
      * @note The returned set is recomputed every time this method is called.
      */
-    def allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
+    lazy val allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
 
     /**
      * Iterates over all runtime successors of the instruction with the given pc.
