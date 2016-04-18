@@ -106,4 +106,150 @@ case class CFG(
         }
     }
 
+    /**
+     * Creates a new CFG where the boundaries of the basic blocks are updated given the `pcToIndex`
+     * mapping. The assumption is made that the indexes are continuous.
+     * If the first index (i.e., `pcToIndex(0)` is not 0, then a new basic block for the indexes
+     * in {0,pcToIndex(0)} is created if necessary.
+     *
+     * @param lastIndex The index of the last instruction of the underlying (non-empty) code array.
+     * 		I.e., if the instruction array contains one instruction then the `lastIndex` has to be
+     * 		`0`.
+     */
+    def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
+
+        val bbMapping = new IdentityHashMap[CFGNode, CFGNode]()
+
+        val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
+        var lastNewBB: BasicBlock = null
+        var startIndex = 0
+        val requiresNewStartBlock = pcToIndex(0) > 0
+        if (requiresNewStartBlock) {
+            // we have added instructions at the beginning which belong to a new start bb
+            lastNewBB = new BasicBlock(0)
+            startIndex = pcToIndex(0)
+            lastNewBB.endPC = startIndex - 1
+            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], 0, startIndex, lastNewBB)
+        }
+        var startPC = 0
+        val max = basicBlocks.length
+        do {
+            val oldBB = basicBlocks(startPC)
+            var nextStartPC = oldBB.endPC + 1
+            while (nextStartPC < max && {
+                val nextOldBB = basicBlocks(nextStartPC)
+                (nextOldBB eq null) || (nextOldBB eq oldBB)
+            }) {
+                nextStartPC += 1
+            }
+            startIndex = pcToIndex(startPC)
+            val endIndex = if (nextStartPC < max) pcToIndex(nextStartPC) - 1 else lastIndex
+            lastNewBB = new BasicBlock(startIndex, endIndex)
+            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, endIndex + 1, lastNewBB)
+            bbMapping.put(oldBB, lastNewBB)
+            println(oldBB+"=>"+lastNewBB)
+            startPC = nextStartPC
+            startIndex = endIndex + 1
+        } while (startPC < max)
+        if (startIndex < lastIndex)
+            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, lastIndex, lastNewBB)
+
+        if (requiresNewStartBlock) {
+            newBasicBlocks(0).addSuccessor(newBasicBlocks(pcToIndex(0)))
+        }
+
+        // update the catch nodes
+
+        catchNodes.foreach { cn ⇒
+            bbMapping.put(
+                cn,
+                new CatchNode(
+                    startPC = pcToIndex(cn.startPC),
+                    endPC = pcToIndex(cn.endPC + 1) - 1,
+                    handlerPC = pcToIndex(cn.handlerPC),
+                    cn.catchType
+                )
+            )
+        }
+
+        // rewire the graph
+
+        val newNormalReturnNode = new ExitNode(normalReturn = true)
+        bbMapping.put(normalReturnNode, newNormalReturnNode)
+        normalReturnNode.successors.foreach { bb ⇒
+            newNormalReturnNode.addSuccessor(bbMapping.get(bb))
+        }
+
+        val newAbnormalReturnNode = new ExitNode(normalReturn = false)
+        bbMapping.put(abnormalReturnNode, newAbnormalReturnNode)
+        abnormalReturnNode.successors.foreach { bb ⇒
+            newAbnormalReturnNode.addSuccessor(bbMapping.get(bb))
+        }
+
+        bbMapping.keySet().asScala.foreach { oldBB ⇒
+            val newBB = bbMapping.get(oldBB)
+            oldBB.successors.foreach { oldSuccBB ⇒
+                val newSuccBB = bbMapping.get(oldSuccBB)
+                assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
+                newBB.addSuccessor(newSuccBB)
+            }
+            oldBB.predecessors.foreach { oldPredBB ⇒
+                val newPredBB = bbMapping.get(oldPredBB)
+                assert(newPredBB ne null, s"no mapping for $oldPredBB")
+                newBB.addPredecessor(newPredBB)
+            }
+        }
+
+        val newCatchNodes = catchNodes.map(bbMapping.get(_).asInstanceOf[CatchNode])
+        assert(newCatchNodes.forall { _ ne null })
+        val newCFG = CFG(
+            code,
+            newNormalReturnNode,
+            newAbnormalReturnNode,
+            newCatchNodes,
+            newBasicBlocks
+        )
+
+        // let's see if we can merge the first two basic blocks
+        if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
+            val secondBB = newBasicBlocks(0).successors.head.asBasicBlock
+            val firstBB = newBasicBlocks(0)
+            firstBB.endPC = secondBB.endPC
+            firstBB.setSuccessors(secondBB.successors)
+        }
+
+        newCFG
+    }
+
+    //
+    // Visualization
+
+    override def toString: String = {
+        //        code:                    Code,
+        //        normalReturnNode:        ExitNode,
+        //        abnormalReturnNode:      ExitNode,
+        //        catchNodes:              Seq[CatchNode],
+        //        private val basicBlocks: Array[BasicBlock]
+
+        val bbIds: Map[CFGNode, Int] = (
+            basicBlocks.filter(_ ne null).toSet +
+            normalReturnNode + abnormalReturnNode ++ catchNodes
+        ).zipWithIndex.toMap
+        println(bbIds)
+
+        "CFG("+
+            bbIds.map { bbId ⇒
+                val (bb, id) = bbId
+                s"$id: $bb"+bb.successors.map(bbIds(_)).mkString("=>{", ", ", "}")
+            }.mkString("\n\t", "\n\t", "\n\t") +
+            s"normalReturnNode=${bbIds(normalReturnNode)}:$normalReturnNode\n\t"+
+            s"abnormalReturnNode=${bbIds(abnormalReturnNode)}:$abnormalReturnNode\n\t"+
+            s"catchNodes=${catchNodes.mkString("{", ", ", "}")}\n"+
+            ")"
+    }
+
+    def toDot: String = {
+        val rootNodes = Set(startBlock) ++ catchNodes
+        org.opalj.graphs.toDot(rootNodes)
+    }
 }

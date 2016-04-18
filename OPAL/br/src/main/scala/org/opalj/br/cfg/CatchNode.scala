@@ -30,6 +30,7 @@ package org.opalj.br.cfg
 
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.PC
+import org.opalj.br.ObjectType
 
 /**
  * This node represents an exception handler.
@@ -37,13 +38,16 @@ import org.opalj.br.PC
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class CatchNode(val handler: ExceptionHandler) extends CFGNode {
+class CatchNode(
+        val startPC:   PC,
+        val endPC:     PC,
+        val handlerPC: PC,
+        val catchType: Option[ObjectType]
+) extends CFGNode {
 
-    final def startPC: PC = handler.startPC
-
-    final def endPC: PC = handler.endPC
-
-    final def handlerPC: PC = handler.handlerPC
+    def this(handler: ExceptionHandler) {
+        this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
+    }
 
     final def isBasicBlock: Boolean = false
     final def isCatchNode: Boolean = true
@@ -58,10 +62,10 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
             (endPC.toLong << 16) |
             (handlerPC.toLong << 32) |
             // ObjectTypes have positive ids; Any can hence be associated with -1
-            (handler.catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
+            (catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
 
     override def toHRR: Option[String] = Some(
-        s"try[$startPC,$endPC) ⇒ $handlerPC{${handler.catchType.map(_.toJava).getOrElse("Any")}}"
+        s"try[$startPC,$endPC) ⇒ $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"
     )
 
     override def visualProperties: Map[String, String] = Map(
@@ -72,6 +76,8 @@ class CatchNode(val handler: ExceptionHandler) extends CFGNode {
         "shape" → "rectangle"
     )
 
-    override def toString: String = s"CatchNode($handler)"
+    override def toString: String =
+        s"CatchNode([$startPC,$endPC)⇒$handlerPC,"+
+            s"${catchType.map(_.toJava).getOrElse("<none>")})"
 
 }
