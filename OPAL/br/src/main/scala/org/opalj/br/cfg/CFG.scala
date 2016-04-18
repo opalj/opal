@@ -31,6 +31,9 @@ package br
 package cfg
 
 import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.JavaConverters._
+import java.util.Arrays
+import java.util.IdentityHashMap
 
 /**
  * Represents the control flow graph of a method.
@@ -46,7 +49,7 @@ import scala.collection.{Set ⇒ SomeSet}
  * @param abnormalReturnNode The unique exit node of the control flow graph if the
  * 		method returns abnormally (throws an exception).
  * @param basicBlocks An implicit map between a program counter and its associated
- * 		[[BasicBlock]].
+ * 		[[BasicBlock]]; it may be a sparse array!
  * @param catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
  * 		[[org.opalj.br.ExceptionHandler]].
  *
@@ -57,8 +60,8 @@ case class CFG(
         code:                    Code,
         normalReturnNode:        ExitNode,
         abnormalReturnNode:      ExitNode,
-        private val basicBlocks: Array[BasicBlock],
-        catchNodes:              Seq[CatchNode]
+        catchNodes:              Seq[CatchNode],
+        private val basicBlocks: Array[BasicBlock]
 ) {
 
     final def startBlock: BasicBlock = basicBlocks(0)

@@ -388,9 +388,8 @@ object CFGFactory {
 
         CFG(
             code,
-            normalReturnNode, abnormalReturnNode,
-            bbs,
-            exceptionHandlers.values.toList
+            normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList,
+            bbs
         )
     }
 }

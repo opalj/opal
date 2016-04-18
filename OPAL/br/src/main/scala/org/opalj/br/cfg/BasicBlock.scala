@@ -43,9 +43,15 @@ import org.opalj.br.Code
  */
 class BasicBlock(val startPC: PC) extends CFGNode {
 
-    final def isBasicBlock: Boolean = true
-    final def isCatchNode: Boolean = false
-    final def isExitNode: Boolean = false
+    def this(startPC: PC, endPC: PC) {
+        this(startPC)
+        this.endPC = endPC
+    }
+
+    final override def isBasicBlock: Boolean = true
+    final override def asBasicBlock: this.type = this
+    final override def isCatchNode: Boolean = false
+    final override def isExitNode: Boolean = false
 
     private[this] var _endPC: PC = 0 // will be initialized at construction time
     private[cfg] def endPC_=(pc: PC): Unit = {
