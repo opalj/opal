@@ -52,19 +52,23 @@ class TACJDKTest extends FunSpec with Matchers {
         val jreLibFolder: File = JRELibraryFolder
         val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-        it("should be able to convert all methods of the JDK to three-address code") {
+        def checkFolder(folder: File): Unit = {
             var errors: List[(String, Throwable)] = Nil
             val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
             val mutex = new Object
             for {
-                file ← (jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles())
+                file ← folder.listFiles()
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
             } {
                 reader.Java8Framework.ClassFiles(file).par foreach { cs ⇒
                     val (cf, _) = cs
                     cf.methods.filter(_.body.isDefined) foreach { m ⇒
                         try {
-                            ToJavaLike(AsQuadruples(method = m, aiResult = None))
+                            val quadruples = AsQuadruples(
+                                method = m,
+                                optimizations = AllOptimizations, aiResult = None
+                            )
+                            ToJavaLike(quadruples._1)
                             successfullyCompleted.incrementAndGet()
                         } catch {
                             case e: Throwable ⇒ this.synchronized {
@@ -77,7 +81,7 @@ class TACJDKTest extends FunSpec with Matchers {
                                         e.getCause.printStackTrace()
                                     }
                                     println("\n")
-                                    errors ::= ((methodSignature, e))
+                                    errors ::= ((file+":"+methodSignature, e))
                                 }
                             }
                         }
@@ -96,6 +100,12 @@ class TACJDKTest extends FunSpec with Matchers {
                         )
                 fail(message)
             }
+        }
+        it("should be able to convert all methods of the JDK to three-address code") {
+            checkFolder(jreLibFolder)
+        }
+        it("should be able to convert all methods of the set of collected class files") {
+            checkFolder(biClassfilesFolder)
         }
     }
 }

@@ -69,7 +69,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
 
         describe("using no AI results") {
             it("should correctly reflect pop") {
-                val statements = AsQuadruples(PopMethod, aiResult = None)
+                val statements = AsQuadruples(PopMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -110,7 +110,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect pop2 mode 2") {
-                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = None)
+                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -143,7 +143,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect dup") {
-                val statements = AsQuadruples(method = DupMethod, aiResult = None)
+                val statements = AsQuadruples(method = DupMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -167,7 +167,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect monitorenter and -exit") {
-                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = None)
+                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -207,7 +207,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect invokestatic") {
-                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = None)
+                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -241,7 +241,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect invokeinterface") {
-                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = None)
+                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -292,7 +292,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect pop") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, PopMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, PopMethod, domain)
-                val statements = AsQuadruples(method = PopMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = PopMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -327,7 +327,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect pop2 mode 2") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, Pop2Case2Method)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, Pop2Case2Method, domain)
-                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = Pop2Case2Method, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -362,7 +362,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect dup") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, DupMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, DupMethod, domain)
-                val statements = AsQuadruples(method = DupMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = DupMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -388,7 +388,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect monitorenter and -exit") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, MonitorEnterAndExitMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, MonitorEnterAndExitMethod, domain)
-                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = MonitorEnterAndExitMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -430,7 +430,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect invokestatic") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeStaticMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeStaticMethod, domain)
-                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = InvokeStaticMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -466,7 +466,7 @@ class StackAndSynchronizationTest extends FunSpec with Matchers {
             it("should correctly reflect invokeinterface") {
                 val domain = new DefaultDomain(project, StackAndSynchronizeClassFile, InvokeInterfaceMethod)
                 val aiResult = BaseAI(StackAndSynchronizeClassFile, InvokeInterfaceMethod, domain)
-                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = InvokeInterfaceMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

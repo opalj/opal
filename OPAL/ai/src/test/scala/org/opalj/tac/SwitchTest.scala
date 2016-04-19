@@ -61,7 +61,7 @@ class SwitchTest extends TACTest {
     describe("The quadruples representation of switch instructions") {
         describe("using no AI results") {
             it("should correctly reflect tableswitch case") {
-                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = None)
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -100,7 +100,7 @@ class SwitchTest extends TACTest {
             }
 
             it("should correctly reflect lookupswitch case") {
-                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = None)
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -136,7 +136,7 @@ class SwitchTest extends TACTest {
             it("should correctly reflect tableswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, TableSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, TableSwitchMethod, domain)
-                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = TableSwitchMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -174,7 +174,7 @@ class SwitchTest extends TACTest {
             it("should correctly reflect lookupswitch case") {
                 val domain = new DefaultDomain(project, SwitchStatementsClassFile, LookupSwitchMethod)
                 val aiResult = BaseAI(SwitchStatementsClassFile, LookupSwitchMethod, domain)
-                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = LookupSwitchMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)

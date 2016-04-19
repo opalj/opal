@@ -40,9 +40,12 @@ import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
+import org.opalj.br.cfg.CFG
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
+ * The converted method has an isomorophic CFG when compared to the original method,
+ *  but may contain more instructions.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -59,10 +62,12 @@ object AsQuadruples {
      * @return The array with the generated statements.
      */
     def apply(
-        method:         Method,
-        classHierarchy: ClassHierarchy   = Code.preDefinedClassHierarchy,
-        aiResult:       Option[AIResult]
-    ): Array[Stmt] = {
+        method:           Method,
+        classHierarchy:   ClassHierarchy        = Code.preDefinedClassHierarchy,
+        aiResult:         Option[AIResult]      = None,
+        optimizations:    List[TACOptimization] = NoOptimizations,
+        forceCFGCreation: Boolean               = false
+    ): (Array[Stmt], Option[CFG]) = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -73,8 +78,12 @@ object AsQuadruples {
         val instructions = code.instructions
         val codeSize = instructions.size
 
-        // only needed if we find jsr/ret instructions
-        lazy val cfg = CFGFactory.apply(code, classHierarchy)
+        // only strictly needed if we find jsr/ret instructions or want to do optimiaztions
+        var theCFG: CFG = null
+        def cfg(): CFG = {
+            if (theCFG eq null) { theCFG = CFGFactory.apply(code, classHierarchy) }
+            theCFG
+        }
 
         // Used to determine if we have already transformed the respective instruction.
         val processed = new BitSet(codeSize)
@@ -614,7 +623,7 @@ object AsQuadruples {
 
                 case RET.opcode ⇒
                     val ret = as[RET](instruction)
-                    val returnAddressVar = SimpleVar(ret.lvIndex, ComputationalTypeReturnAddress)
+                    val returnAddressVar = RegisterVar(ComputationalTypeReturnAddress, ret.lvIndex)
                     statements(pc) = List(Ret(pc, returnAddressVar))
                     cfg.bb(pc).successors.foreach { cfgNode ⇒
                         cfgNode match {
@@ -647,7 +656,7 @@ object AsQuadruples {
 
                 case INSTANCEOF.opcode ⇒
                     val value1 :: rest = stack
-                    val resultVar = OperandVar(ComputationalTypeInt, stack)
+                    val resultVar = OperandVar(ComputationalTypeInt, rest)
                     val tpe = as[INSTANCEOF](instruction).referenceType
                     val instanceOf = InstanceOf(pc, value1, tpe)
                     statements(pc) = List(Assignment(pc, resultVar, instanceOf))
@@ -805,8 +814,24 @@ object AsQuadruples {
             }
             currentPC += 1
         }
+
+        if (forceCFGCreation || optimizations.nonEmpty) cfg();
+        var tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
+
         finalStatements.foreach(_.remapIndexes(pcToIndex))
-        finalStatements.toArray
+        var tacCode = finalStatements.toArray
+
+        if (optimizations.nonEmpty) {
+            val initialTAC = TACOptimizationResult(tacCode, tacCFG.get, false)
+            val result =
+                optimizations.foldLeft(initialTAC) {
+                    (currentTAC, optimization) ⇒ optimization.optimize(currentTAC)
+                }
+            tacCode = result.code
+            tacCFG = Some(result.cfg)
+        }
+
+        (tacCode, tacCFG)
     }
 
 }
