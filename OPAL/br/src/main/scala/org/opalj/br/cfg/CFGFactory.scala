@@ -215,7 +215,7 @@ object CFGFactory {
                 case RET.opcode ⇒
                     // We cannot determine the target instructions at the moment;
                     // we first need to be able to connect the ret instruction with
-                    // some jsr instructions.
+                    // its jsr instructions.
                     val currentBB = useRunningBB()
                     currentBB.endPC = pc
                     runningBB = null // <=> the next instruction gets a new bb
@@ -377,12 +377,14 @@ object CFGFactory {
         // Analyze the control flow graphs of all subroutines to connect the ret
         // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
+            subroutineReturnPCs.foreach(subroutine ⇒ bbs(subroutine._1).setIsStartOfSubroutine())
             for ((subroutinePC, returnAddresses) ← subroutineReturnPCs) {
                 val returnBBs = returnAddresses.map(bbs(_)).toSet[CFGNode]
-                val subroutineBBs = bbs(subroutinePC).reachable(true)
-                val retBBs = subroutineBBs.filter(bb ⇒ bb.successors.isEmpty && bb.isBasicBlock)
+                val subroutineBB = bbs(subroutinePC)
+                val subroutineBBs = subroutineBB.reachable(reflexive = true, includeSubroutines = false)
+                val retBBs = subroutineBBs.filter(bb ⇒ bb.successors.isEmpty && bb.isBasicBlock).toSet
                 retBBs.foreach(_.setSuccessors(returnBBs))
-                returnBBs.foreach { returnBB ⇒ returnBB.setPredecessors(retBBs.toSet) }
+                returnBBs.foreach(_.setPredecessors(retBBs))
             }
         }
 
