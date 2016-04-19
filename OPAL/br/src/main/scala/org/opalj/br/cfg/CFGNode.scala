@@ -88,21 +88,29 @@ trait CFGNode extends Node {
     // GENERIC QUERY METHODS
     //
 
-    private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
+    private[cfg] def reachable(
+        reachable:          mutable.Set[CFGNode],
+        includeSubroutines: Boolean
+    ): Unit = {
         _successors.
+            filter { d ⇒ includeSubroutines || !d.isStartOfSubroutine }.
             filterNot { d ⇒ reachable.contains(d) }.
-            foreach { d ⇒ reachable += d; d.reachable(reachable) }
+            foreach { d ⇒ reachable += d; d.reachable(reachable, includeSubroutines) }
     }
 
     /**
      * Computes the set of all [[CFGNode]]s that are reachable from this one.
      *
+     * @param includeSubroutines is only evaluated for successors of this node.
      * @note The result is not cached.
      */
-    def reachable(reflexive: Boolean = false): mutable.Set[CFGNode] = {
+    def reachable(
+        reflexive:          Boolean = false,
+        includeSubroutines: Boolean = true
+    ): mutable.Set[CFGNode] = {
         val reachable = mutable.HashSet.empty[CFGNode]
         if (reflexive) reachable += this
-        this.reachable(reachable)
+        this.reachable(reachable, includeSubroutines)
         reachable
     }
 
