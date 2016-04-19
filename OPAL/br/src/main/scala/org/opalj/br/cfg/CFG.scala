@@ -137,20 +137,31 @@ case class CFG(
         var startPC = 0
         val max = basicBlocks.length
         do {
-            val oldBB = basicBlocks(startPC)
-            var nextStartPC = oldBB.endPC + 1
-            while (nextStartPC < max && {
-                val nextOldBB = basicBlocks(nextStartPC)
-                (nextOldBB eq null) || (nextOldBB eq oldBB)
-            }) {
-                nextStartPC += 1
-            }
+            var oldBB = basicBlocks(startPC)
             startIndex = pcToIndex(startPC)
+            lastNewBB = new BasicBlock(startIndex)
+
+            // find the start pc of the next bb that is ALIVE (!)
+            var nextStartPC = oldBB.endPC
+            do {
+                bbMapping.put(oldBB, lastNewBB)
+                nextStartPC += 1
+                while (nextStartPC < max && {
+                    val nextOldBB = basicBlocks(nextStartPC)
+                    (nextOldBB eq null) || (nextOldBB eq oldBB)
+                }) {
+                    nextStartPC += 1
+                }
+                if (nextStartPC < max)
+                    oldBB = basicBlocks(nextStartPC)
+                // repeat this loop while we see dead basic blocks (i.e., we have actually found
+                // code which cannot be reached on any path; this is a frequent issue with older
+                // compilers or foreign language compilers such as the groovy compiler)
+            } while (nextStartPC < max && pcToIndex(nextStartPC) == 0)
+
             val endIndex = if (nextStartPC < max) pcToIndex(nextStartPC) - 1 else lastIndex
-            lastNewBB = new BasicBlock(startIndex, endIndex)
+            lastNewBB.endPC = endIndex
             Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, endIndex + 1, lastNewBB)
-            bbMapping.put(oldBB, lastNewBB)
-            println(oldBB+"=>"+lastNewBB)
             startPC = nextStartPC
             startIndex = endIndex + 1
         } while (startPC < max)
@@ -238,7 +249,6 @@ case class CFG(
             basicBlocks.filter(_ ne null).toSet +
             normalReturnNode + abnormalReturnNode ++ catchNodes
         ).zipWithIndex.toMap
-        println(bbIds)
 
         "CFG("+
             bbIds.map { bbId ⇒
