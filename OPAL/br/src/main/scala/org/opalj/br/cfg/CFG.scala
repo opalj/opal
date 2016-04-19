@@ -162,13 +162,13 @@ case class CFG(
         }
 
         // update the catch nodes
-
+        val codeSize = code.instructions.length
         catchNodes.foreach { cn ⇒
             bbMapping.put(
                 cn,
                 new CatchNode(
                     startPC = pcToIndex(cn.startPC),
-                    endPC = pcToIndex(cn.endPC + 1) - 1,
+                    endPC = if (cn.endPC == codeSize) lastIndex + 1 else pcToIndex(cn.endPC),
                     handlerPC = pcToIndex(cn.handlerPC),
                     cn.catchType
                 )
