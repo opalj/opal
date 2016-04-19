@@ -134,7 +134,7 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
 case class Switch(
         pc:                        PC,
         private var defaultTarget: PC,
-        index:                     Expr,
+        index:                     Var,
         private var npairs:        IndexedSeq[(Int, PC)]
 ) extends Stmt {
 

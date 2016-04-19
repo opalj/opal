@@ -68,47 +68,49 @@ case class Compare(
 
 sealed trait Const extends Expr
 
-case class IntConst(pc: PC, value: Int) extends Expr {
+sealed trait SimpleValueConst extends Const
+
+case class IntConst(pc: PC, value: Int) extends SimpleValueConst {
     final def tpe = IntegerType
     final def cTpe = ComputationalTypeInt
 }
 
-case class LongConst(pc: PC, value: Long) extends Expr {
+case class LongConst(pc: PC, value: Long) extends SimpleValueConst {
     final def tpe = LongType
     final def cTpe = ComputationalTypeLong
 }
 
-case class FloatConst(pc: PC, value: Float) extends Expr {
+case class FloatConst(pc: PC, value: Float) extends SimpleValueConst {
     final def tpe = FloatType
     final def cTpe = ComputationalTypeFloat
 }
 
-case class DoubleConst(pc: PC, value: Double) extends Expr {
+case class DoubleConst(pc: PC, value: Double) extends SimpleValueConst {
     final def tpe = DoubleType
     final def cTpe = ComputationalTypeDouble
 }
 
-case class StringConst(pc: PC, value: String) extends Expr {
+case class StringConst(pc: PC, value: String) extends SimpleValueConst {
     final def tpe = ObjectType.String
     final def cTpe = ComputationalTypeReference
 }
 
-case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Expr {
+case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
     final def tpe = ObjectType.MethodType
     final def cTpe = ComputationalTypeReference
 }
 
-case class MethodHandleConst(pc: PC, value: MethodHandle) extends Expr {
+case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
     final def tpe = ObjectType.MethodHandle
     final def cTpe = ComputationalTypeReference
 }
 
-case class ClassConst(pc: PC, value: ReferenceType) extends Expr {
+case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
     final def tpe = ObjectType.Class
     final def cTpe = ComputationalTypeReference
 }
 
-case class NullExpr(pc: PC) extends Expr {
+case class NullExpr(pc: PC) extends SimpleValueConst {
     final def cTpe = ComputationalTypeReference
 }
 

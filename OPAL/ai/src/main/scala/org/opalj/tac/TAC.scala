@@ -34,6 +34,8 @@ import org.opalj.io.OpeningFileFailedException
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Creates the three-address representation and prints it.
@@ -49,9 +51,14 @@ object TAC {
             "(3) <method name>\n"+
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
 
-    def processMethod(classFile: ClassFile, method: Method): Unit = {
+    def processMethod(project: SomeProject, classFile: ClassFile, method: Method): Unit = {
         try {
-            val tac = ToJavaLike(method)
+            val ch = project.classHierarchy
+            val (code, cfg) = AsQuadruples(method, ch, optimizations = AllOptimizations, forceCFGCreation = true)
+            val graph = cfg.get.toDot
+            writeAndOpen(graph, method.name, ".tac.cfg.dot")
+
+            val tac = ToJavaLike(code)
             val fileNamePrefix = classFile.thisType.toJava+"."+method.name
             val file = writeAndOpen(tac, fileNamePrefix, ".tac.txt")
             println(s"Generated the tac file $file.")
@@ -70,6 +77,7 @@ object TAC {
 
         val jarName = args(0)
         val classFiles = Java8Framework.ClassFiles(new java.io.File(jarName))
+        val project = Project(classFiles)
         if (classFiles.isEmpty) {
             println(s"No classfiles found in ${args(0)}")
         } else {
@@ -79,7 +87,7 @@ object TAC {
             val classFile = classFiles.find(e ⇒ e._1.thisType.toJava == clazzName).map(_._1).get
             classFile.findMethod(methodName) match {
                 case Some(method) ⇒
-                    processMethod(classFile, method)
+                    processMethod(project, classFile, method)
                 case _ ⇒
                     println(
                         s"cannot find the method: $methodName "+

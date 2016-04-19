@@ -212,7 +212,9 @@ object ToJavaLike {
         classHierarchy: ClassHierarchy   = Code.preDefinedClassHierarchy,
         aiResult:       Option[AIResult] = None
     ): String = {
-        ToJavaLike(AsQuadruples(method, classHierarchy, aiResult))
+        val optimizations = List(SimplePropagation)
+        val quadruples = AsQuadruples(method, classHierarchy, aiResult, optimizations, false)
+        ToJavaLike(quadruples._1)
     }
 
 }

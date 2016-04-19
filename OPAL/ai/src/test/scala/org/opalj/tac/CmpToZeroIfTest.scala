@@ -94,7 +94,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             )
 
             it("should correctly reflect the not-equals case") {
-                val statements = AsQuadruples(method = IfNEMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfNEMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -106,7 +106,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the equals case") {
-                val statements = AsQuadruples(method = IfEQMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfEQMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -118,7 +118,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-equals case") {
-                val statements = AsQuadruples(method = IfGEMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfGEMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -130,7 +130,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-then case") {
-                val statements = AsQuadruples(method = IfLTMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfLTMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -142,7 +142,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the less-equals case") {
-                val statements = AsQuadruples(method = IfLEMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfLEMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -154,7 +154,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             }
 
             it("should correctly reflect the greater-then case") {
-                val statements = AsQuadruples(method = IfGTMethod, aiResult = None)
+                val statements = AsQuadruples(method = IfGTMethod, aiResult = None)._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -193,7 +193,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the not-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfNEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfNEMethod, domain)
-                val statements = AsQuadruples(method = IfNEMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfNEMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -213,7 +213,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfEQMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfEQMethod, domain)
-                val statements = AsQuadruples(method = IfEQMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfEQMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -233,7 +233,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the greater-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGEMethod, domain)
-                val statements = AsQuadruples(method = IfGEMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfGEMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -256,7 +256,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the less-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLTMethod, domain)
-                val statements = AsQuadruples(method = IfLTMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfLTMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -279,7 +279,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the less-equals case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfLEMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfLEMethod, domain)
-                val statements = AsQuadruples(method = IfLEMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfLEMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
@@ -302,7 +302,7 @@ class CmpToZeroIfTest extends FunSpec with Matchers {
             it("should correctly reflect the greater-then case") {
                 val domain = new DefaultDomain(project, ControlSequencesClassFile, IfGTMethod)
                 val aiResult = BaseAI(ControlSequencesClassFile, IfGTMethod, domain)
-                val statements = AsQuadruples(method = IfGTMethod, aiResult = Some(aiResult))
+                val statements = AsQuadruples(method = IfGTMethod, aiResult = Some(aiResult))._1
                 val javaLikeCode = ToJavaLike(statements, false)
 
                 assert(statements.nonEmpty)
