@@ -53,6 +53,8 @@ class CatchNode(
     final def isCatchNode: Boolean = true
     final def isExitNode: Boolean = false
 
+    final def isStartOfSubroutine: Boolean = false
+
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
