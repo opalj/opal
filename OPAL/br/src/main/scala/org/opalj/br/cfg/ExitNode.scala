@@ -42,6 +42,8 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
     final def isCatchNode: Boolean = false
     final def isExitNode: Boolean = true
 
+    def isStartOfSubroutine: Boolean = false
+
     override private[cfg] def addSuccessor(successor: CFGNode): Unit =
         throw new UnsupportedOperationException
 

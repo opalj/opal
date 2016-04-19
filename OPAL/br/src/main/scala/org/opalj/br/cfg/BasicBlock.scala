@@ -63,6 +63,13 @@ class BasicBlock(val startPC: PC) extends CFGNode {
      */
     def endPC: PC = _endPC
 
+    private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
+    private[cfg] def setIsStartOfSubroutine(): Unit = {
+        _isStartOfSubroutine = true
+    }
+
+    def isStartOfSubroutine: Boolean = _isStartOfSubroutine
+
     /**
      * Returns the index of an instruction – identified by its program counter (pc) –
      * in a basic block.

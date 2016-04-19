@@ -44,6 +44,8 @@ trait CFGNode extends Node {
     def isCatchNode: Boolean
     def isExitNode: Boolean
 
+    def isStartOfSubroutine: Boolean
+
     //
     // MANAGING PREDECESSORS
     //
