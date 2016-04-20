@@ -49,8 +49,9 @@ case class CONSTANT_MethodType_info(
             */)
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
-        <span>MethodType({ cp(descriptor_index).asInlineNode })</span>
+    override def asInlineNode(implicit cp: Constant_Pool): Node = {
+        <span>MethodType({ methodDescriptorAsInlineNode("", cp(descriptor_index).toString) })</span>
+    }
 
     override def toString(implicit cp: Constant_Pool): String = {
         s"CONSTANT_MethodType_info ($descriptor_index)"

@@ -185,6 +185,9 @@ div#class_file {
 	color:#AA22FF;
 }
 
+.nested_details {
+	background-color: #f4e8e8;
+}
 
 .method_body {
 	background-color:#F7F7F7;
