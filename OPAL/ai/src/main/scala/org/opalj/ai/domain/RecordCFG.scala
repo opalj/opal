@@ -181,7 +181,7 @@ trait RecordCFG
                         allExitPCs.foreach,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
-                        code.instructions.size - 1
+                        maxNode = code.instructions.size - 1
                     )
                 this.thePostDominatorTree = thePostDominatorTree
             }

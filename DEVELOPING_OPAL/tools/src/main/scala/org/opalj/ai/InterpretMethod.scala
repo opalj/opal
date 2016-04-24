@@ -52,12 +52,13 @@ object InterpretMethod {
 
         override def isInterrupted = Thread.interrupted()
 
-        override val tracer =
+        override val tracer = {
+            val consoleTracer = new ConsoleTracer { override val printOIDs = true }
+            val xHTMLTracer = new XHTMLTracer {}
             //    Some(new ConsoleTracer {})
             //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(
-                new ConsoleTracer { override val printOIDs = true }, new XHTMLTracer {}
-            ))
+            Some(new MultiTracer(consoleTracer, xHTMLTracer))
+        }
     }
 
     /**
@@ -201,10 +202,14 @@ object InterpretMethod {
                     result
                 }
             if (result.domain.isInstanceOf[RecordCFG]) {
+                val evaluatedInstructions = result.evaluatedInstructions
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
-                println("Runtime CFG: "+writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot"))
-                println("Dominator tree: "+writeAndOpen(cfgDomain.dominatorTree.toDot, "DominatorTreeOfTheRuntimeCFGAsDot", ".dot"))
+                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
+                val cfgFile = writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot")
+                println("Runtime CFG: "+cfgFile)
+                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheRuntimeCFGAsDot", ".dot")
+                println("Dominator tree: "+domFile)
             }
             if (result.domain.isInstanceOf[RecordDefUse]) {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
