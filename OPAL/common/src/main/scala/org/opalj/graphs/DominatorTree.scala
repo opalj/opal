@@ -78,13 +78,19 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
 
     def immediateDominators: IndexedSeq[Int] = idom
 
-    def toDot: String = {
+    /**
+     * @param isIndexValid A function that returns true if the an element in the iDom array with a
+     * 		specific array is actually containing some valid data. This is particularly useful/
+     * 		required if the `idom` array given at initialization time is a sparse array.
+     */
+    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e ⇒
             val (t, s) = e
-            g += (s, t)
+            if (isIndexValid(s))
+                g += (s, t)
         }
-        g.toDot
+        g.toDot(dir = "bt", ranksep = "0.3")
     }
 
     // THE FOLLOWING FUNCTION IS REALLY EXPENSIVE (DUE TO (UN)BOXING)
