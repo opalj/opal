@@ -43,3 +43,14 @@ abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
     def condition: RelationalOperator
 
 }
+
+object IF0Instruction {
+
+    def unapply(i: Instruction): Option[(RelationalOperator, Int /*Branchoffset*/ )] = {
+        i match {
+            case i: IF0Instruction ⇒ Some((i.condition, i.branchoffset))
+            case _                 ⇒ None
+        }
+    }
+
+}
