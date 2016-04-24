@@ -231,6 +231,12 @@ trait Var extends ValueExpr {
     def name: String
 
     /**
+     * @return `true` if this variable and the given variable use the same location.
+     * 			Compared to `equals` this test does not consider the computational type.
+     */
+    def hasSameLocation(that: Var): Boolean
+
+    /**
      * Creates a new variable that has the same identifier etc. but an updated
      * type.
      */
@@ -239,9 +245,16 @@ trait Var extends ValueExpr {
 
 object Var { def unapply(variable: Var): Some[String] = Some(variable.name) }
 
-trait IdBasedVar extends Var {
+sealed trait IdBasedVar extends Var {
 
     def id: Int
+
+    final def hasSameLocation(that: Var): Boolean = {
+        that match {
+            case that: IdBasedVar ⇒ this.id == that.id
+            case _                ⇒ false
+        }
+    }
 
     def name =
         if (id == Int.MinValue) "t"
