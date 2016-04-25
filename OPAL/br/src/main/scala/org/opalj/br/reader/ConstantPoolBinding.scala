@@ -37,6 +37,8 @@ import scala.reflect.ClassTag
 import org.opalj.bi.{AttributeParent, AttributesParent}
 import org.opalj.bi.reader.Constant_PoolReader
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * A representation of the constant pool.
@@ -57,8 +59,9 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     )(
         implicit
         cp: Constant_Pool
-    ): Constant_Pool_Entry =
+    ): Constant_Pool_Entry = {
         cp(index)
+    }
 
     trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         def asString: String =
@@ -140,9 +143,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
     case class CONSTANT_Class_info(
-        name_index: Constant_Pool_Index
-    )
-            extends Constant_Pool_Entry {
+            name_index: Constant_Pool_Index
+    ) extends Constant_Pool_Entry {
 
         override def asConstantValue(cp: Constant_Pool) =
             ConstantClass(asReferenceType(cp))
@@ -164,10 +166,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     }
 
-    case class CONSTANT_Double_info(
-        value: ConstantDouble
-    )
-            extends CONSTANT_FieldValue_info {
+    case class CONSTANT_Double_info(value: ConstantDouble) extends CONSTANT_FieldValue_info {
 
         def this(value: Double) { this(ConstantDouble(value)) }
 
@@ -178,10 +177,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         }
     }
 
-    case class CONSTANT_Float_info(
-        value: ConstantFloat
-    )
-            extends CONSTANT_FieldValue_info {
+    case class CONSTANT_Float_info(value: ConstantFloat) extends CONSTANT_FieldValue_info {
 
         def this(value: Float) { this(ConstantFloat(value)) }
 
@@ -192,10 +188,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         }
     }
 
-    case class CONSTANT_Integer_info(
-        value: ConstantInteger
-    )
-            extends CONSTANT_FieldValue_info {
+    case class CONSTANT_Integer_info(value: ConstantInteger) extends CONSTANT_FieldValue_info {
 
         def this(value: Int) { this(ConstantInteger(value)) }
 
@@ -207,10 +200,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     }
 
-    case class CONSTANT_Long_info(
-        value: ConstantLong
-    )
-            extends CONSTANT_FieldValue_info {
+    case class CONSTANT_Long_info(value: ConstantLong) extends CONSTANT_FieldValue_info {
 
         def this(value: Long) { this(ConstantLong(value)) }
 
@@ -221,10 +211,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         }
     }
 
-    case class CONSTANT_Utf8_info(
-        value: String
-    )
-            extends Constant_Pool_Entry {
+    case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
 
         override def asString = value
 
@@ -244,20 +231,31 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             // should be called at most once => caching doesn't make sense
             SignatureParser.parseFieldTypeSignature(value)
 
-        override def asSignature(ap: AttributeParent) =
-            // should be called at most once => caching doesn't make sense
-            ap match {
-                case AttributesParent.Field ⇒
-                    SignatureParser.parseFieldTypeSignature(value)
-                case AttributesParent.ClassFile ⇒
-                    SignatureParser.parseClassSignature(value)
-                case AttributesParent.Method ⇒
-                    SignatureParser.parseMethodTypeSignature(value)
-                case AttributesParent.Code ⇒
-                    throw new BytecodeProcessingFailedException(
-                        "unexpected signature attribute found in a code_attribute's attributes table"
-                    )
+        override def asSignature(ap: AttributeParent): Signature = {
+            try {
+                // should be called at most once => caching doesn't make sense
+                ap match {
+                    case AttributesParent.Field ⇒
+                        SignatureParser.parseFieldTypeSignature(value)
+                    case AttributesParent.ClassFile ⇒
+                        SignatureParser.parseClassSignature(value)
+                    case AttributesParent.Method ⇒
+                        SignatureParser.parseMethodTypeSignature(value)
+                    case AttributesParent.Code ⇒
+                        throw new BytecodeProcessingFailedException(
+                            "unexpected signature attribute found in a code_attribute's attributes table"
+                        )
+                }
+            } catch {
+                case iae: IllegalArgumentException ⇒
+                    // Signatures are comparatively often just broken... let's ignore them!
+                    val message = "while parsing a signature an exception occured: \""+
+                        iae.getMessage+
+                        "\"; the signature is ignored."
+                    OPALLogger.warn("parsing bytecode", message)(GlobalLogContext)
+                    null // this attribute will simply be discarded
             }
+        }
 
         override def asConstantValue(cp: Constant_Pool) =
             // required to support annotations; should be called at most once => caching doesn't make sense
@@ -265,9 +263,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     case class CONSTANT_String_info(
-        string_index: Constant_Pool_Index
-    )
-            extends CONSTANT_FieldValue_info {
+            string_index: Constant_Pool_Index
+    ) extends CONSTANT_FieldValue_info {
 
         override def asConstantFieldValue(cp: Constant_Pool): ConstantString =
             ConstantString(cp(string_index).asString)
