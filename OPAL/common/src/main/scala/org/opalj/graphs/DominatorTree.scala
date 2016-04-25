@@ -152,7 +152,7 @@ object DominatorTree {
      *  		final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
      *  		}}}
      * @param maxNode The largest unique int id that identifies a node. (E.g., in case of
-     * 			the analysis of some code it is equivalent ot the length of the code.)
+     * 			the analysis of some code it is equivalent to the length of the code.)
      *
      * @return The computed dominator tree.
      *
@@ -173,7 +173,6 @@ object DominatorTree {
         val parent = new Array[Int](max)
         val semi = new Array[Int](max)
         val vertex = new Array[Int](max + 1)
-        //val bucket = new Array[mutable.Set[Int]](max)
         val bucket = new Array[Set[Int]](max)
         val dom = new Array[Int](max)
         val ancestor = new Array[Int](max)
@@ -227,7 +226,6 @@ object DominatorTree {
 
             // Step 2
             foreachPredecessorOf(w) { (v: Int) ⇒
-                //for (v ← predecessors(w)) {
                 val u = eval(v)
                 val uSemi = semi(u)
                 if (uSemi < semi(w)) {
@@ -240,11 +238,8 @@ object DominatorTree {
             if (b ne null) {
                 bucket(v) = b + w
             } else {
-                //bucket(v) = mutable.Set(w)
                 bucket(v) = Set(w)
             }
-            // def link(v: Int, w: Int): Unit =    ancestor(w) = v
-            // link(parent(w), w)
             ancestor(w) = parent(w)
 
             // Step 3
