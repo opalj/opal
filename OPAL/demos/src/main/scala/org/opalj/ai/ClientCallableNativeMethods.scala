@@ -26,11 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai
+package org.opalj
+package ai
+
+import java.net.URL
 
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import java.net.URL
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
@@ -42,35 +45,47 @@ import org.opalj.fpcf.analysis.methods.NotClientCallable
 /**
  * Identifies all native methods in a project and checks, which ones can be called outside the
  * project.
+ *
  * @author Mario Trageser
  */
 object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
 
-  override def title: String = "Native Methods Usage"
+    override def title: String = "Native Methods Usage"
 
-  override def description: String = "Identifies all native methods in a project and checks, " +
-    "which ones can be called outside the project."
+    override def description: String = "Identifies all native methods in a project and checks, "+
+        "which ones can be called outside the project."
 
-  override def doAnalyze(project: Project[URL], parameters: Seq[String],
-    isInterrupted: () ⇒ Boolean) = {
-    val callGraph = project.get(VTACallGraphKey).callGraph
-    println(s"The project contains ${project.projectMethodsCount} methods.")
-    println("Identifying native methods...")
-    val nativeMethods = project.allClassFiles.par.flatMap(_.methods.view.filter(_.isNative))
-    println(s"Found ${nativeMethods.size} native methods.")
-    val percentNativeMethods = (nativeMethods.size.toDouble /
-      project.projectMethodsCount.toDouble) * 100.0
-    println(f"$percentNativeMethods%2.2f%% of all methods are native.")
-    println("Identifying public accessible native methods...")
-    val propertyStore = project.get(SourceElementsPropertyStoreKey)
-    val fpcfManager = project.get(FPCFAnalysesManagerKey)
-    fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
-    val notClientCallables = for {
-      method <- nativeMethods
-      callableInformation <- propertyStore(method, IsClientCallable.key) if !(callableInformation eq NotClientCallable) && callGraph.calledBy(method).size > 0
-    } yield method
-    BasicReport(notClientCallables.map(method ⇒ project.classFile(method).thisType.toJava + ": " +
-      method.toJava()).mkString("\n") + s"\nIdentified ${notClientCallables.size} client " +
-      "callable native methods.")
-  }
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ) = {
+
+        val callGraph = project.get(VTACallGraphKey).callGraph
+
+        var statistics = s"Number of all methods: ${project.projectMethodsCount}.\n"
+
+        val nativeMethods = project.allClassFiles.flatMap(_.methods.view.filter(_.isNative))
+        val percentNativeMethods = (nativeMethods.size.toDouble / project.projectMethodsCount) * 100.0d
+        statistics = statistics + s"Number of native methods: ${nativeMethods.size} "
+        statistics = statistics + f"($percentNativeMethods%2.2f%%).\n"
+
+        val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val fpcfManager = project.get(FPCFAnalysesManagerKey)
+        fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
+
+        // TODO In the following the name of the local variable and the text of the report don't fit! 
+        
+        val notClientCallables = for {
+            method ← nativeMethods
+            callableInformation = propertyStore(method, IsClientCallable.key)
+            if !(callableInformation eq NotClientCallable) && callGraph.calledBy(method).size > 0
+        } yield method
+
+        val notClienCallablesDesc = notClientCallables.map(method ⇒ method.toJava(project.classFile(method))).mkString("\n")
+        BasicReport(
+                statistics +
+                notClienCallablesDesc + 
+                s"\nIdentified ${notClientCallables.size} client callable native methods.")
+    }
 }
