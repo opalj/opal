@@ -76,16 +76,18 @@ object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
 
         // TODO In the following the name of the local variable and the text of the report don't fit! 
         
-        val notClientCallables = for {
+        val clientCallableNativeMethods = 
+            for {
             method ← nativeMethods
             callableInformation = propertyStore(method, IsClientCallable.key)
-            if !(callableInformation eq NotClientCallable) && callGraph.calledBy(method).size > 0
+            if (callableInformation ne NotClientCallable)
+                if callGraph.calledBy(method).size > 0
         } yield method
 
-        val notClienCallablesDesc = notClientCallables.map(method ⇒ method.toJava(project.classFile(method))).mkString("\n")
+        val notClienCallablesDesc = clientCallableNativeMethods.map(method ⇒ method.toJava(project.classFile(method))).mkString("\n")
         BasicReport(
                 statistics +
                 notClienCallablesDesc + 
-                s"\nIdentified ${notClientCallables.size} client callable native methods.")
+                s"\nIdentified ${clientCallableNativeMethods.size} client callable native methods.")
     }
 }
