@@ -206,9 +206,9 @@ object InterpretMethod {
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
                 val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val cfgFile = writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot")
+                val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".dot")
                 println("Runtime CFG: "+cfgFile)
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheRuntimeCFGAsDot", ".dot")
+                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFGAsDot", ".dot")
                 println("Dominator tree: "+domFile)
             }
             if (result.domain.isInstanceOf[RecordDefUse]) {
@@ -216,7 +216,7 @@ object InterpretMethod {
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
 
                 val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
-                writeAndOpen(dotGraph, "DefUseGraph", ".dot")
+                writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".dot")
             }
             writeAndOpen(
                 dump(
@@ -229,7 +229,10 @@ object InterpretMethod {
                             XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
-                                    XHTML.instructionsToXHTML("Subroutine instructions", result.subroutineInstructions.iterable)
+                                    XHTML.instructionsToXHTML(
+                                            "Subroutine instructions", 
+                                            result.subroutineInstructions.iterable
+                                            )
                                 else
                                     ""
                             ) +

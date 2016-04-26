@@ -132,15 +132,15 @@ object CallGraphFactory {
                 }
             }
 
-            if ((classIsInstantiable || method.isStatic) &&
+            if ((classIsInstantiable || classFile.isInterfaceDeclaration || method.isStatic) &&
                 (isNonPrivate || isPotentiallySerializationRelated(classFile, method))) {
                 methods.add(method)
             } else if (isImplicitlyUsed) {
                 methods.add(method)
             } else if (isNonPrivate) {
                 OPALLogger.info(
-                    "progress",
-                    "non private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
+                    "analysis result",
+                    "non-private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
                 )(project.logContext)
             }
         }
