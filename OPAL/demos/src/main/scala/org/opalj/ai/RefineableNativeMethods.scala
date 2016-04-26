@@ -45,13 +45,12 @@ import org.opalj.fpcf.analysis.methods.NotClientCallable
 /**
  * @author Mario Trageser
  */
-object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
+object RefineableNativeMethods extends DefaultOneStepAnalysis {
 
-    override def title: String = "Finds all native methods that may be used."
+    override def title: String = "Finds all native methods for which it may be possible to refine the parameter types."
 
     override def description: String =
-        """Identifies all native methods that are either directly client callable  
-          |or which are called by other methods.""".stripMargin
+        """Identifies all native methods that are not directly client callable.""".stripMargin
 
     override def doAnalyze(
         project:       Project[URL],
@@ -72,18 +71,22 @@ object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
 
-        val clientCallableNativeMethods =
+        val refineableNativeMethods =
             for {
                 method ← nativeMethods
                 callableInformation = propertyStore(method, IsClientCallable.key)
-                if (callableInformation ne NotClientCallable) || callGraph.calledBy(method).size > 0
+                if (callableInformation == NotClientCallable) && callGraph.calledBy(method).size > 0
             } yield method
 
-        val notClienCallablesDesc = clientCallableNativeMethods.map(method ⇒ method.toJava(project.classFile(method))).mkString("\n")
+        val refineableNativeMethodsInfo =
+            refineableNativeMethods.
+                map(method ⇒ method.toJava(project.classFile(method))).
+                mkString("\n")
+
         BasicReport(
             statistics +
-                notClienCallablesDesc +
-                s"\nIdentified ${clientCallableNativeMethods.size} client callable native methods."
+                s"\nIdentified ${refineableNativeMethods.size} refineable native methods:"+
+                refineableNativeMethodsInfo
         )
     }
 }
