@@ -43,17 +43,15 @@ import org.opalj.fpcf.analysis.methods.IsClientCallable
 import org.opalj.fpcf.analysis.methods.NotClientCallable
 
 /**
- * Identifies all native methods in a project and checks, which ones can be called outside the
- * project.
- *
  * @author Mario Trageser
  */
 object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
 
-    override def title: String = "Native Methods Usage"
+    override def title: String = "Finds all native methods that may be used."
 
-    override def description: String = "Identifies all native methods in a project and checks, "+
-        "which ones can be called outside the project."
+    override def description: String =
+        """Identifies all native methods that are either directly client callable  
+          |or which are called by other methods.""".stripMargin
 
     override def doAnalyze(
         project:       Project[URL],
@@ -63,31 +61,29 @@ object ClientCallableNativeMethods extends DefaultOneStepAnalysis {
 
         val callGraph = project.get(VTACallGraphKey).callGraph
 
-        var statistics = s"Number of all methods: ${project.projectMethodsCount}.\n"
-
         val nativeMethods = project.allClassFiles.flatMap(_.methods.view.filter(_.isNative))
-        val percentNativeMethods = (nativeMethods.size.toDouble / project.projectMethodsCount) * 100.0d
-        statistics = statistics + s"Number of native methods: ${nativeMethods.size} "
-        statistics = statistics + f"($percentNativeMethods%2.2f%%).\n"
+        val nativeMethodsPercentage = (nativeMethods.size.toDouble / project.projectMethodsCount) * 100.0d
+        val statistics =
+            s"Number of all methods: ${project.projectMethodsCount}.\n"+
+                s"Number of native methods: ${nativeMethods.size} "+
+                f"($nativeMethodsPercentage%2.2f%%).\n"
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
         fpcfManager.run(CallableFromClassesInOtherPackagesAnalysis)
 
-        // TODO In the following the name of the local variable and the text of the report don't fit! 
-        
-        val clientCallableNativeMethods = 
+        val clientCallableNativeMethods =
             for {
-            method ← nativeMethods
-            callableInformation = propertyStore(method, IsClientCallable.key)
-            if (callableInformation ne NotClientCallable)
-                if callGraph.calledBy(method).size > 0
-        } yield method
+                method ← nativeMethods
+                callableInformation = propertyStore(method, IsClientCallable.key)
+                if (callableInformation ne NotClientCallable) || callGraph.calledBy(method).size > 0
+            } yield method
 
         val notClienCallablesDesc = clientCallableNativeMethods.map(method ⇒ method.toJava(project.classFile(method))).mkString("\n")
         BasicReport(
-                statistics +
-                notClienCallablesDesc + 
-                s"\nIdentified ${clientCallableNativeMethods.size} client callable native methods.")
+            statistics +
+                notClienCallablesDesc +
+                s"\nIdentified ${clientCallableNativeMethods.size} client callable native methods."
+        )
     }
 }
