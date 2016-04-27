@@ -201,16 +201,24 @@ object InterpretMethod {
                     println("Finished abstract interpretation.")
                     result
                 }
+
             if (result.domain.isInstanceOf[RecordCFG]) {
                 val evaluatedInstructions = result.evaluatedInstructions
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
+
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
-                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".dot")
-                println("Runtime CFG: "+cfgFile)
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFGAsDot", ".dot")
-                println("Dominator tree: "+domFile)
+                println("AI CFG: "+cfgFile)
+
+                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
+                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".dot")
+                println("AI CFG - Dominator tree: "+domFile)
+
+                val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
+                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".dot")
+                println("AI CFG - Post-Dominator tree: "+postDomFile)
             }
+
             if (result.domain.isInstanceOf[RecordDefUse]) {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
@@ -218,6 +226,7 @@ object InterpretMethod {
                 val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
                 writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".dot")
             }
+
             writeAndOpen(
                 dump(
                     Some(classFile),
@@ -230,9 +239,9 @@ object InterpretMethod {
                             (
                                 if (result.subroutineInstructions.nonEmpty)
                                     XHTML.instructionsToXHTML(
-                                            "Subroutine instructions", 
-                                            result.subroutineInstructions.iterable
-                                            )
+                                    "Subroutine instructions",
+                                    result.subroutineInstructions.iterable
+                                )
                                 else
                                     ""
                             ) +
