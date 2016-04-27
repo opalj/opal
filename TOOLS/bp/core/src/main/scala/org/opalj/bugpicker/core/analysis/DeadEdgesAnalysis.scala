@@ -47,7 +47,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.PC
-import org.opalj.ai.analyses.cg.Callees
+import org.opalj.ai.cg.Callees
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW

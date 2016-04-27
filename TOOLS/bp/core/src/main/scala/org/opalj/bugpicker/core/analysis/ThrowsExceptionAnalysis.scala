@@ -69,11 +69,10 @@ object ThrowsExceptionAnalysis {
         val domain = result.domain
         val code = result.code
 
-        
         //
         // The analysis
         //
-        
+
         val exceptionThrowingInstructions =
             code collectWithIndex {
                 case (pc, i: Instruction) if operandsArray(pc) != null &&
@@ -85,11 +84,10 @@ object ThrowsExceptionAnalysis {
                     (pc, i)
             }
 
-        
         //
         // Post-Processing
         //
-        
+
         val exceptionIssues: Seq[Issue] = {
 
             for { (pc, instruction) ← exceptionThrowingInstructions } yield {

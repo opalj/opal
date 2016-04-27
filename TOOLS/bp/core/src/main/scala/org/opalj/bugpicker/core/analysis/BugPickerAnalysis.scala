@@ -47,7 +47,7 @@ import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.cg.CallGraphCache
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
