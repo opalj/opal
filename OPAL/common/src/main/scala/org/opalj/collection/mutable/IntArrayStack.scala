@@ -31,7 +31,8 @@ package collection
 package mutable
 
 /**
- * An array based implementation of a mutable stack which has a given height.
+ * A very lightweight array based implementation of a mutable stack of `int` values which has a
+ * given initial height.
  *
  * @author Michael Eichberg
  */
@@ -42,17 +43,20 @@ final class IntArrayStack private (private[this] var data: Array[Int]) {
     def this(initialSize: Int) { this(new Array[Int](Math.max(initialSize, 4))) }
 
     def push(i: Int): Unit = {
+        val size = this.size
+        var data = this.data
         if (data.length == size) {
             val newData = new Array[Int](size * 2)
             System.arraycopy(data, 0, newData, 0, size)
             data = newData
+            this.data = newData
         }
 
         data(size) = i
-        size += 1
+        this.size = size + 1
     }
 
-    def pull(): Int = {
+    def pop(): Int = {
         val index = this.size - 1
         val i = data(index)
         this.size = index
@@ -62,4 +66,6 @@ final class IntArrayStack private (private[this] var data: Array[Int]) {
     def isEmpty: Boolean = size == 0
 
     def nonEmpty: Boolean = size > 0
+
+    override def toString: String = s"IntArrayStack(size=$size;data=${data.take(size).mkString("(", ",", ")")})"
 }

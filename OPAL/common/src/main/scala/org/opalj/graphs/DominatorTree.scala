@@ -79,18 +79,18 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
     def immediateDominators: IndexedSeq[Int] = idom
 
     /**
-     * @param isIndexValid A function that returns true if the an element in the iDom array with a
-     * 		specific array is actually containing some valid data. This is particularly useful/
+     * @param isIndexValid A function that returns true if an element in the iDom array with a
+     * 		specific index is actually containing some valid data. This is particularly useful/
      * 		required if the `idom` array given at initialization time is a sparse array.
      */
     def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e ⇒
-            val (t, s) = e
-            if (isIndexValid(s))
-                g += (s, t)
+            val (t, s /*index*/ ) = e
+            if (isIndexValid(s) && s != startNode)
+                g += (t, s)
         }
-        g.toDot(dir = "bt", ranksep = "0.3")
+        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
     }
 
     // THE FOLLOWING FUNCTION IS REALLY EXPENSIVE (DUE TO (UN)BOXING)
@@ -167,33 +167,39 @@ object DominatorTree {
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int
     ): DominatorTree = {
+
         val max = maxNode + 1
 
         var n = 0;
-        val parent = new Array[Int](max)
-        val semi = new Array[Int](max)
-        val vertex = new Array[Int](max + 1)
-        val bucket = new Array[Set[Int]](max)
         val dom = new Array[Int](max)
+
+        val parent = new Array[Int](max)
         val ancestor = new Array[Int](max)
+        val vertex = new Array[Int](max + 1)
         val label = new Array[Int](max)
+        val semi = new Array[Int](max)
+        val bucket = new Array[Set[Int]](max)
 
         // Step 1 (assign dfsnum)
-        val nodes = new IntArrayStack((maxNode + 1) / 4)
+        val nodes = new IntArrayStack(initialSize = java.lang.Math.max(2, (max / 4)))
         nodes.push(startNode)
         while (nodes.nonEmpty) {
-            val v = nodes.pull
+            val v = nodes.pop
+            // The following "if" is necessary, because the recursive dfs impl. in the paper uses 
+            // eager decent which may lead to the initialization and a subsequent
+            // filtering of already visited nodes by the "if(semi(w)==0)" test.
+            if (semi(v) == 0) {
+                n = n + 1
+                semi(v) = n
+                label(v) = v
+                vertex(n) = v
+                dom(v) = v
 
-            label(v) = v
-            dom(v) = v
-
-            n = n + 1
-            semi(v) = n
-            vertex(n) = v
-            foreachSuccessorOf(v) { w ⇒
-                if (semi(w) == 0) {
-                    parent(w) = v
-                    nodes.push(w)
+                foreachSuccessorOf(v) { w ⇒
+                    if (semi(w) == 0) {
+                        parent(w) = v
+                        nodes.push(w)
+                    }
                 }
             }
         }
@@ -209,9 +215,10 @@ object DominatorTree {
         }
 
         def compress(v: Int): Unit = {
-            val theAncestor = ancestor(v)
+            var theAncestor = ancestor(v)
             if (ancestor(theAncestor) != 0) {
                 compress(theAncestor)
+                theAncestor = ancestor(v)
                 val ancestorLabel = label(theAncestor)
                 if (semi(ancestorLabel) < semi(label(v))) {
                     label(v) = ancestorLabel
@@ -235,11 +242,8 @@ object DominatorTree {
 
             val v = vertex(semi(w))
             val b = bucket(v)
-            if (b ne null) {
-                bucket(v) = b + w
-            } else {
-                bucket(v) = Set(w)
-            }
+            bucket(v) = if (b ne null) { b + w } else { Set(w) }
+
             ancestor(w) = parent(w)
 
             // Step 3
@@ -259,8 +263,9 @@ object DominatorTree {
         var j = 2;
         while (j <= n) {
             val w = vertex(j)
-            if (dom(w) != vertex(semi(w))) {
-                dom(w) = dom(dom(w))
+            val domW = dom(w)
+            if (domW != vertex(semi(w))) {
+                dom(w) = dom(domW)
             }
             j = j + 1
         }

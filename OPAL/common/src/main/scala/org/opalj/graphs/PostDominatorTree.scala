@@ -53,25 +53,32 @@ object PostDominatorTree {
         val startNode = maxNode + 1
 
         // reverse flowgraph
+
         val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
             n match {
                 case `startNode` ⇒ foreachExitNode
                 case _           ⇒ foreachPredecessorOf(n)
             }
         }
-        val foreachPredecessorOfAnExitNode = (f: (Int ⇒ Unit)) ⇒ { f(startNode) }
+
         val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
-            if (isExitNode(n)) {
-                foreachPredecessorOfAnExitNode
-            } else {
+            if (n == startNode) {
+                fornone
+            } else if (isExitNode(n)) {
+                // a function that expects a function that will be called for all successors
+                def f(f: Int ⇒ Unit): Unit = {
+                    f(startNode)
+                    foreachSuccessorOf(n)(f)
+                }
+                f
+            } else
                 foreachSuccessorOf(n)
-            }
         }
 
         DominatorTree(
             startNode,
             revFGForeachSuccessorOf, revFGForeachPredecessorOf,
-            maxNode = startNode
+            maxNode = startNode // we have an additional node
         )
     }
 
