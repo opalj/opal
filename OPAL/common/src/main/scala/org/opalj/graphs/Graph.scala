@@ -129,7 +129,8 @@ class Graph[@specialized(Int) N] private (
 
     def toDot(
         dir:     String = "forward",
-        ranksep: String = "1.0"
+        ranksep: String = "1.0",
+        rankdir: String = "TB"
     ): String = {
         org.opalj.graphs.toDot(toNodes.toSet, dir, ranksep)
     }

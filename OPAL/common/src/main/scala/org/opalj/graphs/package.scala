@@ -52,12 +52,17 @@ package object graphs {
         nodes:    Set[_ <: Node],
         dir:      String         = "forward",
         ranksep:  String         = "1.0",
-        fontname: String         = "Helvetica"
+        fontname: String         = "Helvetica",
+        rankdir:  String         = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ nodes
         var processedNodes = Set.empty[Node]
 
-        var s = s"digraph G {\n\tdir=$dir;\n\tranksep=$ranksep;\n\tnode [fontname=$fontname];\n"
+        var s = "digraph G {\n"+
+            s"\tdir=$dir;\n"+
+            s"\tranksep=$ranksep;\n"+
+            s"\trankdir=$rankdir;\n"+
+            s"\tnode [fontname=$fontname];\n"
 
         while (nodesToProcess.nonEmpty) {
             val nextNode = nodesToProcess.head
