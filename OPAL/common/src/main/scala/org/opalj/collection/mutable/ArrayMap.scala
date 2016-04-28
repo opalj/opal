@@ -36,7 +36,7 @@ import java.util.Arrays
 /**
  * Conceptually, a map where the keys are positive `Int` values and the values are
  * non-null. (`null` values are not permitted!)
- * The key values always have to  be larger than or equal to 0 and are ideally continues
+ * The key values always have to be larger than or equal to 0 and are ideally continues
  * (0,1,2,3,...). The values are stored in a plain array to enable true O(1) access.
  * Furthermore, the array is only as large as it has to be to keep the value associated
  * with the largest key.
