@@ -229,34 +229,34 @@ object DominatorTree {
             }
         }
 
-        /* *************** PAPER VERSION USING RECURSION *************** *\ 
-        def compress(v: Int): Unit = {
-            var theAncestor = ancestor(v)
-            if (ancestor(theAncestor) != 0) {
-                compress(theAncestor)
-                theAncestor = ancestor(v)
-                val ancestorLabel = label(theAncestor)
-                if (semi(ancestorLabel) < semi(label(v))) {
-                    label(v) = ancestorLabel
-                }
-                ancestor(v) = ancestor(theAncestor)
-            }
-        }
-        \* *************** PAPER VERSION USING RECURSION *************** */
+        // // PAPER VERSION USING RECURSION  
+        // def compress(v: Int): Unit = {
+        //     var theAncestor = ancestor(v)
+        //     if (ancestor(theAncestor) != 0) {
+        //         compress(theAncestor)
+        //         theAncestor = ancestor(v)
+        //         val ancestorLabel = label(theAncestor)
+        //         if (semi(ancestorLabel) < semi(label(v))) {
+        //             label(v) = ancestorLabel
+        //         }
+        //         ancestor(v) = ancestor(theAncestor)
+        //     }
+        // }
 
         def compress(v: Int): Unit = {
             // 1. walk the path
-            vertexStack.push(v)
-            var theAncestor = ancestor(v)
-            while (ancestor(theAncestor) != 0) {
-                vertexStack.push(theAncestor)
-                theAncestor = ancestor(theAncestor)
+            {
+                var w = v
+                while (ancestor(ancestor(w)) != 0) {
+                    vertexStack.push(w)
+                    w = ancestor(w)
+                }
             }
 
             // 2. compress
             while (vertexStack.nonEmpty) {
                 val w = vertexStack.pop()
-                theAncestor = ancestor(w)
+                val theAncestor = ancestor(w)
                 val ancestorLabel = label(theAncestor)
                 if (semi(ancestorLabel) < semi(label(w))) {
                     label(w) = ancestorLabel
