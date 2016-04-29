@@ -83,7 +83,7 @@ class FactoryMethodAnalysis private (val project: SomeProject) extends FPCFAnaly
         //TODO use escape analysis (still has to be implemented).
 
         if (method.isNative)
-            // We don't now what this method is doing, hence, we assume that
+            // We don't know what this method is doing, hence, we assume that
             // it may act as a factory method; we can now abort the entire
             // analysis.
             return ImmediateResult(method, IsFactoryMethod)
@@ -125,11 +125,9 @@ object FactoryMethodAnalysis extends FPCFAnalysisRunner {
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        /*
-    		 * Selects all non-abstract static methods.
-    		 */
+        /* Selects all non-abstract static methods. */
         def entitySelector: PartialFunction[Entity, Method] = {
-            case m: Method if m.body.isDefined && m.isStatic && !m.isAbstract ⇒ m
+            case m: Method if m.isStatic && !m.isAbstract ⇒ m
         }
         val analysis = new FactoryMethodAnalysis(project)
         propertyStore <||< (entitySelector, analysis.determineProperty)

@@ -48,7 +48,8 @@ import org.opalj.br.ClassFile
  * class file.
  *
  * @note This test supports only property tests where only one annotation field
- * is used. It's not possible to check multiple values.
+ * 		is used. It's not possible to check multiple values.
+ *
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
@@ -66,7 +67,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
 
     /**
      * This method has to be overridden in a subclass to define the analysis that
-     * is going to be tested
+     * is going to be tested.
      */
     def analysisRunner: FPCFAnalysisRunner
 
@@ -139,7 +140,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
             val className = classFile.fqn
             val message =
                 "Class not found in PropertyStore:\n\t"+
-                    s" { $className }\n\t\t has no property mapped to the respecting key: $propertyKey;"+
+                    s" { $className }\n\t\t has no property mapped to the respective key: $propertyKey;"+
                     s"\n\tclass name:      $className"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
@@ -150,8 +151,8 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         if (computedProperty != annotatedProperty) {
             val className = classFile.fqn
             val message =
-                "Wrong property computeted:\n\t"+
-                    s" { $className } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;"+
+                "Wrong property computed:\n\t"+
+                    s" { $className } \n\t\thas the property $computedProperty mapped to the respective key: $propertyKey;"+
                     s"\n\tclass name:        $className"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
@@ -177,11 +178,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         if (computedOProperty.hasNoProperty) {
             val className = project.classFile(method).fqn
             val message =
-                "Method not found in PropertyStore:\n\t"+
-                    className +
-                    s" { ${method.toJava()} }\n\t\t has no property mapped to the respecting key: $propertyKey;"+
-                    s"\n\tclass name:      $className"+
-                    s"\n\tmethod:          ${method.toJava()}"+
+                "Method has no property: "+className + s"  for: $propertyKey;"+
                     s"\nexpected property: $annotatedProperty"
             fail(message)
         }
@@ -191,11 +188,9 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
         if (computedProperty != annotatedProperty) {
             val className = project.classFile(method).fqn
             val message =
-                "Wrong property computeted:\n\t"+
+                "Wrong property computed: "+
                     className +
-                    s" { $method } \n\t\thas the property $computedProperty mapped to the respecting key: $propertyKey;"+
-                    s"\n\tclass name:        $className"+
-                    s"\n\tmethod:            ${method.toJava()}"+
+                    s"has the property $computedProperty for $propertyKey;"+
                     s"\n\tactual property:   $computedProperty"+
                     s"\n\texpected property: $annotatedProperty"
             fail(message)
