@@ -55,10 +55,10 @@ object PostDominatorTree {
         // reverse flowgraph
 
         val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
-            n match {
-                case `startNode` ⇒ foreachExitNode
-                case _           ⇒ foreachPredecessorOf(n)
-            }
+            if (n == startNode)
+                foreachExitNode
+            else
+                foreachPredecessorOf(n)
         }
 
         val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
