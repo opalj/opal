@@ -52,9 +52,9 @@ import org.opalj.br.analyses.MethodInfo
 @RunWith(classOf[JUnitRunner])
 class RecordCFGTest extends FunSpec with Matchers {
 
-    object DominatorsPerformanceEvaluation extends PerformanceEvaluation
+    private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    object PostDominatorsPerformanceEvaluation extends PerformanceEvaluation
+    import DominatorsPerformanceEvaluation.{time ⇒ dTime}
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
@@ -76,7 +76,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
-    def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
+    private def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
         info(s"the loaded project ($name) contains ${project.methodsCount} methods")
 
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
@@ -86,9 +86,8 @@ class RecordCFGTest extends FunSpec with Matchers {
 
             try {
                 val domain = new RecordCFGDomain(method, project)
-                val evaluatedInstructions = DominatorsPerformanceEvaluation.time('AI) {
-                    val r = BaseAI(classFile, method, domain)
-                    r.evaluatedInstructions
+                val evaluatedInstructions = dTime('AI) {
+                    BaseAI(classFile, method, domain).evaluatedInstructions
                 }
                 evaluatedInstructions.foreach { pc ⇒
 
@@ -100,12 +99,11 @@ class RecordCFGTest extends FunSpec with Matchers {
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
                 }
-                val dt = DominatorsPerformanceEvaluation.time('Dominators) {
-                    domain.dominatorTree
-                }
-                val postDT = PostDominatorsPerformanceEvaluation.time('PostDominators) {
-                    domain.postDominatorTree
-                }
+
+                val dt = dTime('Dominators) { domain.dominatorTree }
+
+                val postDT = dTime('PostDominators) { domain.postDominatorTree }
+
                 evaluatedInstructions foreach { pc ⇒
                     if (pc != dt.startNode && !evaluatedInstructions.contains(dt.dom(pc))) {
                         fail(s"the dominator ${dt.dom(pc)} of $pc was not evaluated")
@@ -117,9 +115,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                     }
                 }
             } catch {
-                case t: Throwable ⇒
-                    val methodName = method.toJava(classFile)
-                    failures.add((methodName, t))
+                case t: Throwable ⇒ failures.add((method.toJava(classFile), t))
             }
         }
 
@@ -148,18 +144,15 @@ class RecordCFGTest extends FunSpec with Matchers {
     }
 
     describe("calculating the (post)dominator trees") {
-        def printPerformanceData(): Unit = {
-            {
-                import DominatorsPerformanceEvaluation.getTime
-                info("performing AI took (CPU time) "+getTime('AI).toSeconds)
-                info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
-            }
 
-            {
-                import PostDominatorsPerformanceEvaluation.getTime
-                val duration = getTime('PostDominators).toSeconds
-                info("computing post-dominator information took (CPU time) "+duration)
-            }
+        def printPerformanceData(): Unit = {
+            import DominatorsPerformanceEvaluation.getTime
+
+            info("performing AI took (CPU time) "+getTime('AI).toSeconds)
+            info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
+
+            val postDominatorsTime = getTime('PostDominators).toSeconds
+            info("computing post-dominator information took (CPU time) "+postDominatorsTime)
         }
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
@@ -167,7 +160,6 @@ class RecordCFGTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the (post)dominator trees for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
-            PostDominatorsPerformanceEvaluation.resetAll()
 
             val project = org.opalj.br.TestSupport.createJREProject
 
@@ -178,7 +170,6 @@ class RecordCFGTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the (post)dominator trees for all methods of the OPAL 0.3 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
-            PostDominatorsPerformanceEvaluation.resetAll()
 
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
@@ -190,7 +181,6 @@ class RecordCFGTest extends FunSpec with Matchers {
 
         it("should be possible to calculate the (post)dominator trees for all methods of the OPAL-08-14-2014 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
-            PostDominatorsPerformanceEvaluation.resetAll()
 
             val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
             val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
