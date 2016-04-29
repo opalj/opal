@@ -51,21 +51,27 @@ class ProjectIndex private (
         val methods: Map[String, Map[MethodDescriptor, Iterable[Method]]]
 ) {
 
-    def findFields(name: String, fieldType: FieldType): Iterable[Field] =
+    def findFields(name: String, fieldType: FieldType): Iterable[Field] = {
         fields.get(name).flatMap(_.get(fieldType)).getOrElse(Iterable.empty)
+    }
 
-    def findFields(name: String): Iterable[Field] =
+    def findFields(name: String): Iterable[Field] = {
         fields.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+    }
 
-    def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] =
+    def findMethods(name: String, descriptor: MethodDescriptor): Iterable[Method] = {
         methods.get(name).flatMap(_.get(descriptor)).getOrElse(Iterable.empty)
+    }
 
-    def findMethods(name: String): Iterable[Method] =
+    def findMethods(name: String): Iterable[Method] = {
         methods.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+    }
 
     def statistics(): Map[String, Any] = {
 
-        def getMostOftenUsed(elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]) = {
+        def getMostOftenUsed(
+            elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]
+        ) = {
             elementsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) ⇒
                 val nName = n._1
                 val nSize = n._2.size
@@ -124,7 +130,8 @@ object ProjectIndex {
         import ExecutionContext.Implicits.global
 
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
-            val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](project.fields.size * 2 / 3)
+            val estimatedFieldsCount = project.fields.size * 2 / 3
+            val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
             for (field ← project.fields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
@@ -142,11 +149,14 @@ object ProjectIndex {
                         }
                 }
             }
+            fields.foreachValue(_.repack())
+            fields.repack()
             fields
         }
 
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
-            val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](project.methods.size * 2 / 3)
+            val estimatedMethodsCount = project.methods.size * 2 / 3
+            val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
             for (method ← project.methods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
@@ -164,6 +174,8 @@ object ProjectIndex {
                         }
                 }
             }
+            methods.foreachValue(_.repack())
+            methods.repack()
             methods
         }
 

@@ -44,16 +44,16 @@ import org.opalj.fpcf.analysis.fields.FieldMutability
 import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
 import org.opalj.fpcf.analysis.methods.PurityAnalysis
 import org.opalj.fpcf.analysis.methods.Purity
+import org.opalj.fpcf.analysis.methods.Pure
 
 /**
- * Demonstrates how to run the purity analysis.
+ * Runs the purity analysis including all analyses that may improve the overall result.
  *
  * @author Michael Eichberg
  */
 object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String =
-        "determines those methods that are pure"
+    override def title: String = "determines those methods that are pure"
 
     override def description: String =
         "identifies method which are pure; i.e. which just operate on the passed parameters"
@@ -103,6 +103,12 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 "\n",
                 s"\nTotal: ${pureMethods.size}\n"
             )
-        BasicReport(fieldInfo + methodInfo + projectStore.toString(false)+"\nAnalysis time: "+t)
+        BasicReport(
+            fieldInfo +
+                methodInfo +
+                projectStore.toString(false)+
+                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size+
+                "\nAnalysis time: "+t
+        )
     }
 }

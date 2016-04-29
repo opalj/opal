@@ -80,7 +80,7 @@ case class CHECKCAST(
             )
     }
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
     override def toString: String = "CHECKCAST("+referenceType.toJava+")"
 

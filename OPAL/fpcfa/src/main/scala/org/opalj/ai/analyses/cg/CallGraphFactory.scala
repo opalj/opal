@@ -38,6 +38,7 @@ import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
+import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
@@ -115,8 +116,9 @@ object CallGraphFactory {
          */
         implicit val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
-        project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
-            val (_, classFile, method) = m
+        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+            val classFile = methodInfo.classFile
+            val method = methodInfo.method
 
             val classIsInstantiable = !instantiableClasses.isNotInstantiable(classFile.thisType)
 
@@ -130,15 +132,15 @@ object CallGraphFactory {
                 }
             }
 
-            if ((classIsInstantiable || method.isStatic) &&
+            if ((classIsInstantiable || classFile.isInterfaceDeclaration || method.isStatic) &&
                 (isNonPrivate || isPotentiallySerializationRelated(classFile, method))) {
                 methods.add(method)
             } else if (isImplicitlyUsed) {
                 methods.add(method)
             } else if (isNonPrivate) {
                 OPALLogger.info(
-                    "progress",
-                    "non private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
+                    "analysis result",
+                    "non-private instance method found in a class which cannot be instantiated "+method.toJava(classFile)
                 )(project.logContext)
             }
         }

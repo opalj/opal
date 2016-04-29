@@ -47,6 +47,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
@@ -76,7 +77,7 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
             val ai = new InterruptableAI[Domain]
 
             theProject.parForeachMethodWithBody() { m ⇒
-                val (_, classFile, method) = m
+                val BasicMethodInfo(classFile, method) = m
                 if (!method.isSynthetic) {
 
                     val domain = new DefaultDomainWithCFGAndDefUse(theProject, classFile, method)

@@ -51,8 +51,7 @@ object ProjectIndexKey extends ProjectInformationKey[ProjectIndex] {
     /**
      * Computes the [[ProjectIndex]] for the given project.
      */
-    override protected def compute(project: SomeProject): ProjectIndex = {
-        ProjectIndex(project)
-    }
+    override protected def compute(project: SomeProject): ProjectIndex = ProjectIndex(project)
+
 }
 

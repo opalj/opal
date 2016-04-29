@@ -68,7 +68,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
         UShortSet.empty
     }
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 
 }
 

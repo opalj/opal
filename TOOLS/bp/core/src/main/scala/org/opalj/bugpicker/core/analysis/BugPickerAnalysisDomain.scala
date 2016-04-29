@@ -40,7 +40,7 @@ import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.br.MethodSignature
-import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.cg.CallGraphCache
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
 import org.opalj.br.ClassFile

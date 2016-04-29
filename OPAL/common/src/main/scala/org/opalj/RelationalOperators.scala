@@ -35,6 +35,7 @@ package org.opalj
  * @author Michael Eichberg
  */
 object RelationalOperators extends Enumeration {
+
     final val LT = Value("<")
     final val < = LT
     final val GT = Value(">")

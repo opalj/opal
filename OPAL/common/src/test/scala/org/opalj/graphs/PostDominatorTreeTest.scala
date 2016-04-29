@@ -114,21 +114,57 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
             )
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
 
-        dt.dom(1) should be(3)
-        dt.dom(2) should be(1)
-        dt.dom(0) should be(5)
+        try {
 
-        var ns: List[Int] = null
+            dt.dom(1) should be(3)
+            dt.dom(2) should be(1)
+            dt.dom(3) should be(5)
+            dt.dom(4) should be(5)
+            dt.dom(0) should be(5)
 
-        ns = Nil
-        dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
-        ns should be(List(5, 0))
+            var ns: List[Int] = null
 
-        ns = Nil
-        dt.foreachDom(1, reflexive = false) { n ⇒ ns = n :: ns }
-        ns should be(List(5, 3))
+            ns = Nil
+            dt.foreachDom(0, reflexive = true) { n ⇒ ns = n :: ns }
+            ns should be(List(5, 0))
 
-        //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
+            ns = Nil
+            dt.foreachDom(1, reflexive = false) { n ⇒ ns = n :: ns }
+            ns should be(List(5, 3))
+
+        } catch {
+            case t: Throwable ⇒
+                io.writeAndOpen(g.toDot(), "CFG", ".dot")
+                io.writeAndOpen(dt.toDot(), "PostDominatorTree", ".dot")
+                throw t;
+        }
+    }
+
+    "a path with multiple exit points" should "yield the correct postdominators" in {
+        val g = Graph.empty[Int] += (0 → 1) += (1 → 2)
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val existNodes = Set(1, 2)
+        val dt = time {
+            PostDominatorTree(
+                existNodes.contains, existNodes.foreach,
+                foreachSuccessor, foreachPredecessor,
+                2
+            )
+        } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
+
+        try {
+
+            dt.dom(0) should be(1)
+            dt.dom(1) should be(3)
+            dt.dom(2) should be(3)
+
+        } catch {
+            case t: Throwable ⇒
+                io.writeAndOpen(g.toDot(), "CFG", ".dot")
+                io.writeAndOpen(dt.toDot(), "PostDominatorTree", ".dot")
+                throw t;
+        }
     }
 
 }

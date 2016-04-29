@@ -66,5 +66,5 @@ trait TheProject extends ProjectBasedClassHierarchy with LogContextProvider {
      */
     def project: SomeProject
 
-    implicit def logContext: LogContext = project.logContext
+    final implicit def logContext: LogContext = project.logContext
 }

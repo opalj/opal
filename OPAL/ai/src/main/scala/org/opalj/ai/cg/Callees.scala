@@ -28,7 +28,6 @@
  */
 package org.opalj
 package ai
-package analyses
 package cg
 
 import scala.collection.Set
@@ -40,6 +39,9 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.InstantiableClassesKey
 
+/**
+ *
+ */
 trait Callees {
 
     def project: SomeProject

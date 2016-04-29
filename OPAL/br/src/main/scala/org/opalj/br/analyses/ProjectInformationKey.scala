@@ -131,8 +131,7 @@ private object ProjectInformationKey {
 
     private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
 
-    private[ProjectInformationKey] def nextId: Int = {
-        idGenerator.getAndIncrement()
-    }
+    private[ProjectInformationKey] def nextId: Int = idGenerator.getAndIncrement()
+
 }
 

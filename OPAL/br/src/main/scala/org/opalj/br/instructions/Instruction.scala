@@ -199,7 +199,7 @@ trait Instruction {
      * @note The CHECKCAST instruction is special in the sense that it just inspects the top-most
      * 			value.
      */
-    def expressionResult: ExpressionResult
+    def expressionResult: ExpressionResultLocation
 
     /**
      * Returns a string representation of this instruction. If this instruction is a

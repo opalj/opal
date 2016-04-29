@@ -42,11 +42,13 @@ trait Expr {
     def cTpe: ComputationalType
 }
 
+trait ValueExpr extends Expr
+
 /**
  * Parameter expressions must occur at the very beginning of the quadruples code
  * and must perform the initial initialization of the register values.
  */
-case class Param(cTpe: ComputationalType, name: String) extends Expr
+case class Param(cTpe: ComputationalType, name: String) extends ValueExpr
 
 case class InstanceOf(pc: PC, value: Var, cmpTpe: ReferenceType) extends Expr {
     final def cTpe = ComputationalTypeInt
@@ -66,7 +68,7 @@ case class Compare(
     final def cTpe = ComputationalTypeInt
 }
 
-sealed trait Const extends Expr
+sealed trait Const extends ValueExpr
 
 sealed trait SimpleValueConst extends Const
 
@@ -221,12 +223,18 @@ case class StaticFunctionCall(
     params:         List[Expr]
 ) extends FunctionCall
 
-trait Var extends Expr {
+trait Var extends ValueExpr {
 
     /**
      * A human readable name of the local variable.
      */
     def name: String
+
+    /**
+     * @return `true` if this variable and the given variable use the same location.
+     * 			Compared to `equals` this test does not consider the computational type.
+     */
+    def hasSameLocation(that: Var): Boolean
 
     /**
      * Creates a new variable that has the same identifier etc. but an updated
@@ -237,9 +245,16 @@ trait Var extends Expr {
 
 object Var { def unapply(variable: Var): Some[String] = Some(variable.name) }
 
-trait IdBasedVar extends Var {
+sealed trait IdBasedVar extends Var {
 
     def id: Int
+
+    final def hasSameLocation(that: Var): Boolean = {
+        that match {
+            case that: IdBasedVar ⇒ this.id == that.id
+            case _                ⇒ false
+        }
+    }
 
     def name =
         if (id == Int.MinValue) "t"
@@ -258,7 +273,9 @@ trait IdBasedVar extends Var {
 case class SimpleVar(id: Int, cTpe: ComputationalType) extends IdBasedVar
 
 case class DomainValueBasedVar(id: Int, properties: Domain#DomainValue) extends IdBasedVar {
+
     final override def cTpe = properties.computationalType
+
 }
 
 object TempVar {
@@ -268,9 +285,9 @@ object TempVar {
 }
 
 object RegisterVar {
-    def apply(cTpe: ComputationalType, index: UShort): SimpleVar = {
-        SimpleVar(-index - 1, cTpe)
-    }
+
+    def apply(cTpe: ComputationalType, index: UShort): SimpleVar = SimpleVar(-index - 1, cTpe)
+
 }
 
 object OperandVar {

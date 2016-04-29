@@ -40,16 +40,16 @@ import scala.annotation.switch
  */
 abstract class MethodInvocationInstruction extends InvocationInstruction {
 
-    def declaringClass: ReferenceType
-
-    def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
+    /* abstract */ def declaringClass: ReferenceType
 
     /**
      * Returns `true` if the called method is an instance method and virtual method
      * call resolution has to take place. I.e., if the underlying instruction is an
      * invokevirtual or an invokeinterface instruction.
      */
-    def isVirtualMethodCall: Boolean
+    /* abstract */ def isVirtualMethodCall: Boolean
+
+    def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 
     override def toString: String = {
         this.getClass.getSimpleName+"\n"+
@@ -58,6 +58,10 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
 }
 
+/**
+ * Defines commonly used constants and an extractor method to match [[MethodInvocationInstruction]]
+ * instructions.
+ */
 object MethodInvocationInstruction {
 
     def unapply(instruction: Instruction): Option[(ReferenceType, String, MethodDescriptor)] = {

@@ -30,14 +30,15 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.Map
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.Map
 import scala.collection.JavaConverters._
 import org.opalj.br.instructions.LDCString
+import org.opalj.concurrent.defaultIsInterrupted
 
 /**
- * The ''key'' object to get information about all string constants.
+ * The ''key'' object to get information about all string constants found in code.
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
@@ -54,27 +55,31 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
 
     /**
      * Computes the field access information.
+     *
+     * @note This analysis is internally parallelized. I.e., it is advantageous to run this
+     * 		analysis in isolation.
      */
     override protected def compute(project: SomeProject): Map[String, List[(Method, PC)]] = {
 
-        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](project.methodsCount)
+        val estimatedSize = project.methodsCount
+        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
 
-        project.parForeachMethodWithBody(
-            () ⇒ Thread.currentThread().isInterrupted()
-        ) { methodInfo ⇒
-                val (_ /*source*/ , _ /*classFile*/ , method) = methodInfo
+        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+            val method = methodInfo.method
 
-                method.body.get foreach { (pc, instruction) ⇒
-                    instruction match {
-                        case LDCString(value) ⇒
-                            var list = new ConcurrentLinkedQueue[(Method, PC)]();
-                            val previousList = map.putIfAbsent(value, list)
-                            if (previousList != null) list = previousList
-                            list.add((method, pc))
-                        case _ ⇒ // we don't care
-                    }
+            method.body.get foreach { (pc, instruction) ⇒
+                instruction match {
+
+                    case LDCString(value) ⇒
+                        var list = new ConcurrentLinkedQueue[(Method, PC)]();
+                        val previousList = map.putIfAbsent(value, list)
+                        if (previousList != null) list = previousList
+                        list.add((method, pc))
+
+                    case _ ⇒ // we don't care
                 }
             }
+        }
 
         map.asScala.map(kv ⇒ (kv._1, kv._2.asScala.toList))
     }

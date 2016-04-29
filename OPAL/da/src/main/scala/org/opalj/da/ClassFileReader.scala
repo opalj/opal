@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -46,6 +46,7 @@ object ClassFileReader
         with bi.reader.FieldsReader
         with bi.reader.MethodsReader
         with bi.reader.AttributesReader
+        with bi.reader.BootstrapMethods_attributeReader
         with bi.reader.Code_attributeReader
         with bi.reader.CodeReader
         with bi.reader.SourceFile_attributeReader
@@ -157,6 +158,35 @@ object ClassFileReader
         debug_extension: Array[Byte]
     ): SourceDebugExtension_attribute =
         new SourceDebugExtension_attribute(attribute_name_index, debug_extension)
+
+    type BootstrapMethods_attribute = da.BootstrapMethods_attribute
+
+    type BootstrapMethod = da.BootstrapMethod
+    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
+
+    type BootstrapArgument = da.BootstrapArgument
+    implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
+
+    def BootstrapMethods_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Int,
+        attribute_length:     Int,
+        bootstrap_methods:    BootstrapMethods
+    ): BootstrapMethods_attribute =
+        new BootstrapMethods_attribute(attribute_name_index, bootstrap_methods)
+
+    def BootstrapMethod(
+        cp:         Constant_Pool,
+        method_ref: Int,
+        arguments:  BootstrapArguments
+    ): BootstrapMethod =
+        new BootstrapMethod(method_ref, arguments)
+
+    def BootstrapArgument(
+        cp:     Constant_Pool,
+        cp_ref: Int
+    ): BootstrapArgument =
+        new BootstrapArgument(cp_ref)
 
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 

@@ -54,6 +54,7 @@ import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * Domain object which can used to calculate a context-sensitive call graph.
@@ -71,8 +72,7 @@ class CFACallGraphDomain[Source](
     val classFile:                    ClassFile,
     val method:                       Method,
     val calledMethods:                Set[Method]                                  = Set.empty
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject

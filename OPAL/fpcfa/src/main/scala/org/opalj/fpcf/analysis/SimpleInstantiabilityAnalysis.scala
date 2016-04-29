@@ -80,7 +80,10 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
 
     import project.classHierarchy.allSubclassTypes
 
-    def determineProperty(key: String, classFiles: Seq[ClassFile]): Traversable[EP[ClassFile, Instantiability]] = {
+    def determineProperty(
+        key:        String,
+        classFiles: Seq[ClassFile]
+    ): Traversable[EP[ClassFile, Instantiability]] = {
 
         GlobalPerformanceEvaluation.time('inst) {
 
@@ -203,7 +206,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
                 return EP(classFile, Instantiable);
         }
 
-        return EP(classFile, NotInstantiable)
+        return EP(classFile, NotInstantiable);
     }
 }
 
@@ -212,18 +215,15 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
  */
 object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
 
-    final def groupByPackage: Function[ClassFile, String] = {
-        (cf: ClassFile) ⇒ cf.thisType.packageName
-    }
+    import FPCFAnalysisRunner.ClassFileSelector
+
+    final def definingPackage(cf: ClassFile): String = cf.thisType.packageName
 
     override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
 
-    protected[analysis] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleInstantiabilityAnalysis(project)
-        propertyStore.execute(FPCFAnalysisRunner.ClassFileSelector, groupByPackage)(analysis.determineProperty)
+        propertyStore.execute(ClassFileSelector, groupBy = definingPackage)(analysis.determineProperty)
         analysis
     }
 }

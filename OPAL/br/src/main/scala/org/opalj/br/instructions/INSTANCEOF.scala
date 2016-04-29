@@ -76,7 +76,7 @@ case class INSTANCEOF(
         UShortSet(indexOfNextInstruction(currentPC))
     }
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }

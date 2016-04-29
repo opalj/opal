@@ -69,6 +69,10 @@ object ThrowsExceptionAnalysis {
         val domain = result.domain
         val code = result.code
 
+        //
+        // The analysis
+        //
+
         val exceptionThrowingInstructions =
             code collectWithIndex {
                 case (pc, i: Instruction) if operandsArray(pc) != null &&
@@ -79,6 +83,10 @@ object ThrowsExceptionAnalysis {
                     ) ⇒
                     (pc, i)
             }
+
+        //
+        // Post-Processing
+        //
 
         val exceptionIssues: Seq[Issue] = {
 
@@ -121,7 +129,7 @@ object ThrowsExceptionAnalysis {
                     Set(IssueCategory.Correctness),
                     Set(IssueKind.ThrowsException),
                     List(new InstructionLocation(
-                        Some(s"the evaluation of the instruction always throws the exception(s): $exceptions"),
+                        Some(s"evaluation of $instruction always throws: $exceptions"),
                         theProject,
                         classFile,
                         method,

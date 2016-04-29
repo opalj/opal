@@ -40,14 +40,16 @@ import org.opalj.log.OPALLogger
  * Its main components are:
  *  - a library (`Common`) that defines functionality that is generally useful
  *    in the context of static analyses.
- *  - a library for parsing Java bytecode (`Bytecode Infrastructure`).
+ *  - a framework for parsing Java bytecode (`Bytecode Infrastructure`) that can be used to
+ *    create arbitrary representations.
  *  - a library to create a one-to-one in-memory representation of Java bytecode
  *    (`Bytecode Disassembler`).
  *  - a library to create a representation of Java bytecode that facilitates writing
- *    simple static analyses.
+ *    simple static analyses (`Bytecode Representation` - [[org.opalj.br]]).
  *  - a scalable, easily customizable framework for the abstract interpretation of
- *    Java bytecode.
- *  - a library to extract dependencies between code elements.
+ *    Java bytecode (`Abstract Interpretation Framework` - [[org.opalj.ai]]).
+ *  - a library to extract dependencies between code elements and to facilitate checking
+ *    architecture definitions.
  *
  * ==General Design Decisions==
  *
@@ -82,8 +84,27 @@ import org.opalj.log.OPALLogger
  */
 package object opalj {
 
+    {
+        // Log the information whether a production build or a development build is
+        // used.
+        implicit val logContext = GlobalLogContext
+        import OPALLogger.info
+        try {
+            scala.Predef.assert(false)
+            info("OPAL", "Common - Production Build")
+        } catch {
+            case ae: AssertionError ⇒
+                info("OPAL", "Common - Development Build (Assertions are enabled)")
+        }
+    }
+
     /**
-     * The analysis mode.
+     * The URL of the webpage of the opal project.
+     */
+    final val WEBPAGE = "http://www.opal-project.de"
+
+    /**
+     * The type of a concrete analysis mode.
      */
     type AnalysisMode = AnalysisModes.Value
 
@@ -107,21 +128,6 @@ package object opalj {
      * See [[org.opalj.UnaryArithmeticOperators]] for the list of all defined operators.
      */
     type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
-
-    {
-        // Log the information whether a production build or a development build is
-        // used.
-        implicit val logContext = GlobalLogContext
-        try {
-            scala.Predef.assert(false)
-            OPALLogger.info("OPAL", "Common - Production Build")
-        } catch {
-            case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Common - Development Build (Assertions are enabled)")
-        }
-    }
-
-    final val WEBPAGE = "http://www.opal-project.de"
 
     /**
      * A simple type alias that can be used to communicate that the respective
@@ -194,7 +200,11 @@ package object opalj {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
+    def repeat[T](
+        times: Int
+    )(
+        f: T
+    ): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
     //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
@@ -218,7 +228,11 @@ package object opalj {
      *
      * @note '''This is a macro.'''
      */
-    def iterateTo(from: Int, to: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateTo
+    def iterateTo(
+        from: Int, to: Int
+    )(
+        f: Int ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.iterateTo
 
     /**
      * Iterates over the given range of integer values `[from,until)` and calls the given
@@ -226,7 +240,11 @@ package object opalj {
      *
      * If `from` is smaller than `until`, `f` will not be called.
      */
-    def iterateUntil(from: Int, until: Int)(f: Int ⇒ Unit): Unit = macro ControlAbstractionsImplementation.iterateUntil
+    def iterateUntil(
+        from: Int, until: Int
+    )(
+        f: Int ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.iterateUntil
 }
 
 /**

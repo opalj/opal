@@ -34,7 +34,7 @@ package la
 import org.opalj.br.Method
 import org.opalj.ai.ValuesFactory
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.analyses.cg.MethodCallsDomainWithMethodLockup
+import org.opalj.ai.cg.MethodCallsDomainWithMethodLockup
 
 /**
  *

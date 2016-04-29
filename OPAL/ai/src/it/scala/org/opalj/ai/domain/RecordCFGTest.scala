@@ -30,6 +30,7 @@ package org.opalj
 package ai
 package domain
 
+import java.net.URL
 import org.junit.runner.RunWith
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
@@ -43,17 +44,19 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.MethodInfo
 
 /**
- * Tests if we are able to collect def/use information for all methods of the JDK and OPAL and if
- * the collected def/use information makes sense.
+ * Tests if we are able to computed the CFG as well as the dominator/post-dominator tree for
+ * a larger number of classes.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class RecordDefUseTest extends FunSpec with Matchers {
+class RecordCFGTest extends FunSpec with Matchers {
 
-    object DominatorsPerformanceEvaluation extends PerformanceEvaluation
+    private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    class DefUseDomain[I](val method: Method, val project: Project[java.net.URL])
+    import DominatorsPerformanceEvaluation.{time ⇒ dTime}
+
+    class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
         with TheProject
         with TheMethod
@@ -71,85 +74,51 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelLongValuesShiftOperators
-        with RecordDefUse // <=== we are going to test!
+        with RecordCFG // <=== the domain we are going to test!
 
-    def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
+    private def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
         info(s"the loaded project ($name) contains ${project.methodsCount} methods")
 
-        val comparisonCount = new java.util.concurrent.atomic.AtomicLong(0)
         val failures = new java.util.concurrent.ConcurrentLinkedQueue[(String, Throwable)]
 
-        val exceptions = project.parForeachMethodWithBody() { methodInfo ⇒
+        project.parForeachMethodWithBody() { methodInfo ⇒
             val MethodInfo(_, classFile, method) = methodInfo
 
-            // DEBUG[If the analysis does not terminate]
-            // println("analysis of : "+method.toJava(classFile)+"- started")
-
             try {
-                val domain = new DefUseDomain(method, project)
-                val body = method.body.get
-                val r = BaseAI(classFile, method, domain)
-                val evaluatedInstructions = r.evaluatedInstructions
-                val dt = DominatorsPerformanceEvaluation.time('Dominators) {
-                    domain.dominatorTree
+                val domain = new RecordCFGDomain(method, project)
+                val evaluatedInstructions = dTime('AI) {
+                    BaseAI(classFile, method, domain).evaluatedInstructions
                 }
+                evaluatedInstructions.foreach { pc ⇒
+
+                    domain.foreachSuccessorOf(pc) { succPC ⇒
+                        domain.predecessorsOf(succPC).contains(pc) should be(true)
+                    }
+
+                    domain.foreachPredecessorOf(pc) { predPC ⇒
+                        domain.allSuccessorsOf(predPC).contains(pc) should be(true)
+                    }
+                }
+
+                val dt = dTime('Dominators) { domain.dominatorTree }
+
+                val postDT = dTime('PostDominators) { domain.postDominatorTree }
+
                 evaluatedInstructions foreach { pc ⇒
-                    if (pc != 0) dt.dom(pc) should be < (domain.code.instructions.size)
-                }
-
-                r.operandsArray.zipWithIndex.foreach { opsPC ⇒
-                    val (ops, pc) = opsPC
-                    if ((ops ne null) &&
-                        // Note:
-                        // In case of handlers, the def/use information
-                        // is slightly different when compared with the
-                        // information recorded by the reference values domain.
-                        !body.exceptionHandlers.exists(_.handlerPC == pc)) {
-                        ops.zipWithIndex.foreach { opValueIndex ⇒
-
-                            val (op, valueIndex) = opValueIndex
-                            val domainOrigins = domain.origin(op).toSet
-
-                            val defUseOrigins =
-                                try {
-                                    domain.operandOrigin(pc, valueIndex)
-                                } catch {
-                                    case t: Throwable ⇒
-                                        fail(
-                                            "no def/use information avaiable for "+
-                                                s"pc=$pc and stack index=$valueIndex",
-                                            t
-                                        )
-                                }
-                            def haveSameOrigins: Boolean = {
-                                domainOrigins forall { o ⇒
-                                    defUseOrigins.contains(o) ||
-                                        defUseOrigins.exists(duo ⇒
-                                            body.exceptionHandlers.exists(_.handlerPC == duo))
-                                }
-                            }
-                            if (!haveSameOrigins) {
-                                val message =
-                                    s"{pc=$pc: "+
-                                        s"operands[$valueIndex] == domain: "+
-                                        s"$domainOrigins vs defUse: $defUseOrigins}"
-                                fail(message)
-                            }
-                            comparisonCount.incrementAndGet
-                        }
+                    if (pc != dt.startNode && !evaluatedInstructions.contains(dt.dom(pc))) {
+                        fail(s"the dominator ${dt.dom(pc)} of $pc was not evaluated")
+                    }
+                    if (pc != postDT.startNode &&
+                        postDT.dom(pc) != postDT.startNode &&
+                        !evaluatedInstructions.contains(postDT.dom(pc))) {
+                        fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
                 }
             } catch {
-                case t: Throwable ⇒
-                    val methodName = method.toJava(classFile)
-                    failures.add((methodName, t))
+                case t: Throwable ⇒ failures.add((method.toJava(classFile), t))
             }
-            // DEBUG[If the analysis does not terminate] 
-            // println("analysis of : "+methodName+"- finished")
         }
-        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJava)
 
-        val baseMessage = s"compared origin information of ${comparisonCount.get} values"
         if (failures.size > 0) {
             val failureMessages = for { (failure, exception) ← failures.asScala } yield {
                 var root: Throwable = exception
@@ -157,7 +126,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 val location =
                     if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
                         root.getStackTrace().take(5).map { stackTraceElement ⇒
-                            stackTraceElement.getClassName+" { "+
+                            stackTraceElement.getClassName+
+                                " { "+
                                 stackTraceElement.getMethodName+":"+stackTraceElement.getLineNumber+
                                 " }"
                         }.mkString("; ")
@@ -167,33 +137,51 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 failure+" ["+root.getClass.getSimpleName+": "+root.getMessage+"; location: "+location+"] "
             }
 
-            fail(failures.size + s" exceptions occured ($baseMessage) in: "+
-                failureMessages.mkString("\n", "\n", "\n"))
-        } else
-            info(baseMessage)
+            val failuresHeader = s"${failures.size} exceptions occured in: \n"
+            val failuresInfo = failureMessages.mkString(failuresHeader, "\n", "\n")
+            fail(failuresInfo)
+        }
     }
 
-    describe("getting def/use information") {
+    describe("calculating the (post)dominator trees") {
+
+        def printPerformanceData(): Unit = {
+            import DominatorsPerformanceEvaluation.getTime
+
+            info("performing AI took (CPU time) "+getTime('AI).toSeconds)
+            info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
+
+            val postDominatorsTime = getTime('PostDominators).toSeconds
+            info("computing post-dominator information took (CPU time) "+postDominatorsTime)
+        }
+
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
         import reader.AllClassFiles
 
-        it("should be possible to calculate the def/use information for all methods of the JDK") {
+        it("should be possible to calculate the (post)dominator trees for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
+
             val project = org.opalj.br.TestSupport.createJREProject
+
             time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("computing dominator information took (CPU time) "+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
+
+            printPerformanceData()
         }
 
-        it("should be possible to calculate the def/use information for all methods of the OPAL 0.3 snapshot") {
+        it("should be possible to calculate the (post)dominator trees for all methods of the OPAL 0.3 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
+
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
+
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
+
+            printPerformanceData()
         }
 
-        it("should be possible to calculate the def/use information for all methods of the OPAL-08-14-2014 snapshot") {
+        it("should be possible to calculate the (post)dominator trees for all methods of the OPAL-08-14-2014 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
+
             val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
             val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
                 def accept(dir: java.io.File, name: String) =
@@ -206,7 +194,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)
             } { t ⇒ info("the analysis took (real time) "+t.toSeconds) }
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
+
+            printPerformanceData()
         }
 
     }

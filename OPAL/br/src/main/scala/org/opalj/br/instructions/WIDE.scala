@@ -73,5 +73,5 @@ case object WIDE extends Instruction with ConstantLengthInstruction {
         UShortSet(indexOfNextInstruction(currentPC))
     }
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 }

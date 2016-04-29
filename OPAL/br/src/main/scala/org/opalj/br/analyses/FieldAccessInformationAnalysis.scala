@@ -66,8 +66,8 @@ object FieldAccessInformationAnalysis {
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allUnresolved = new ConcurrentLinkedQueue[(Method, PCs)]()
 
-        project.parForeachMethodWithBody(isInterrupted) { e ⇒
-            val (_ /*source*/ , _ /*classFile*/ , method) = e
+        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+            val method = methodInfo.method
 
             val readAccesses = AnyRefMap.empty[Field, UShortSet]
             val writeAccesses = AnyRefMap.empty[Field, UShortSet]

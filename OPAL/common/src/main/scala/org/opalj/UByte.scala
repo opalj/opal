@@ -29,7 +29,7 @@
 package org.opalj
 
 /**
- * Properties of unsigned short values.
+ * Properties of unsigned byte values.
  *
  * @author Michael Eichberg
  */

@@ -49,6 +49,7 @@ import domain.TheMethod
 import domain.TheProject
 import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * Domain object which is used to calculate the call graph.

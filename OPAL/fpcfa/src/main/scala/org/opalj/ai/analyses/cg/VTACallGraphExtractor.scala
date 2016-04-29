@@ -46,6 +46,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * The `VTACallGraphExtractor` extracts call edges using the type information at hand.

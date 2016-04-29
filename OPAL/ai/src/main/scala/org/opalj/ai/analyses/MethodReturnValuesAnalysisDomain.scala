@@ -37,7 +37,7 @@ import org.opalj.ai.domain._
 import org.opalj.ai.domain.RecordReturnedValueInfrastructure
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
@@ -53,8 +53,7 @@ class BaseMethodReturnValuesAnalysisDomain(
     val fieldValueInformation: FieldValueInformation,
     val ai:                    InterruptableAI[_],
     val method:                Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with TheProject
         with ProjectBasedClassHierarchy
         with TheMethod
@@ -117,6 +116,5 @@ class FPMethodReturnValuesAnalysisDomain(
     override val cache:               CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     ai:                               InterruptableAI[_],
     method:                           Method
-)
-        extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
+) extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
         with la.RefinedTypeLevelInvokeInstructions

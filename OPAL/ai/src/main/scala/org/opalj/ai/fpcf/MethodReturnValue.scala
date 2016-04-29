@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,32 +27,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package ai
+package fpcf
 
-import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKey
+
+sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
+
+    final type Self = MethodReturnValue
+}
 
 /**
- * The ''key'' object to get global field access information.
+ * Stores the information about the value (always) returned by a specific method. '''Overridden
+ * methods are generally not taken into account.'''
  *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ * In the worst case the information about the return value is just the declared type.
  *
- * @author Michael Eichberg
+ * @param returnValue The value returned by the method when the method does not throw an exception.
+ * 		If the method always throws an exception, then the returnValue is `None`.
  */
-object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation] {
+case class MethodReturnValue private (
+        returnValue: Option[Domain#Value]
+) extends Property with MethodReturnValuePropertyMetaInformation {
+
+    assert(returnValue.isEmpty || (returnValue.get ne null), "returnValue must not be null")
+
+    def this(returnValue: Domain#Value) { this(Some(returnValue)) }
+
+    final def key = MethodReturnValue.key
+
+    final def isRefineable = true
+
+}
+
+object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
+
+    final val DeclaredReturnType = MethodReturnValue(None)
 
     /**
-     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
-     *
-     * @return `Nil`.
+     * The key associated with every purity property.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    final val key: PropertyKey[MethodReturnValue] = PropertyKey.create(
+        "MethodReturnValue",
+        /* Default / Fallback  */ DeclaredReturnType,
+        /*  Cyclic Resolution  */ DeclaredReturnType
+    )
 
-    /**
-     * Computes the field access information.
-     */
-    override protected def compute(project: SomeProject): FieldAccessInformation = {
-        FieldAccessInformationAnalysis.doAnalyze(project, defaultIsInterrupted)
-    }
 }
 

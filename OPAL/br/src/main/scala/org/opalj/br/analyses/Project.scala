@@ -40,6 +40,7 @@ import scala.collection.SortedMap
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
@@ -114,7 +115,7 @@ class Project[Source] private (
         private[this] val methodToClassFile:              AnyRefMap[Method, ClassFile],
         private[this] val objectTypeToClassFile:          OpenHashMap[ObjectType, ClassFile],
         private[this] val sources:                        OpenHashMap[ObjectType, Source],
-        private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
+        private[this] val methodsWithClassFilesAndSource: Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
         final val projectClassFilesCount:                 Int,
         final val projectMethodsCount:                    Int,
         final val projectFieldsCount:                     Int,
@@ -210,7 +211,7 @@ class Project[Source] private (
     }
 
     def parForeachProjectClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -220,7 +221,7 @@ class Project[Source] private (
     val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
 
     def parForeachLibraryClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -230,7 +231,7 @@ class Project[Source] private (
     val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
 
     def parForeachClassFile[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
     ): List[Throwable] = {
@@ -293,9 +294,9 @@ class Project[Source] private (
      * methods are analyzed ordered by their length (longest first).
      */
     def parForeachMethodWithBody[T](
-        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
-        f: Function[(Source, ClassFile, Method), T]
+        f: MethodInfo[Source] ⇒ T
     ): List[Throwable] = {
         val methods = this.methodsWithClassFilesAndSource
         val methodCount = methods.length
@@ -489,7 +490,7 @@ class Project[Source] private (
     def projectMethodsLengthDistribution: Map[Int, (Int, Set[Method])] = {
         //        val data = Array.fill(UShort.MaxValue) { new AtomicInteger(0) }
         //
-        //        parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { entity ⇒
+        //        parForeachMethodWithBody(() ⇒ defaultIsInterrupted) { entity ⇒
         //            val (_ /*source*/ , _ /*classFile*/ , method) = entity
         //            if (!method.isSynthetic) {
         //                data(method.body.get.instructions.length).incrementAndGet()
@@ -1063,7 +1064,7 @@ object Project {
             val methodsSortedBySizeWithClassFileAndSource =
                 methodToClassFile.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
                     v1._1.body.get.instructions.size > v2._1.body.get.instructions.size
-                }.map(e ⇒ (sources(e._2.thisType), e._2, e._1)).toArray
+                }.map(e ⇒ MethodInfo(sources(e._2.thisType), e._2, e._1)).toArray
 
             val project = new Project(
                 projectClassFiles.toArray,
@@ -1120,7 +1121,7 @@ object Project {
         }
 
         p.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
-            val (_ /*Source*/ , c: ClassFile, m: Method) = e
+            val BasicMethodInfo(c: ClassFile, m: Method) = e
             m.body.get.foreach { (pc, instruction) ⇒
                 (instruction.opcode: @scala.annotation.switch) match {
 
@@ -1168,5 +1169,18 @@ object Project {
         }
 
         exs
+    }
+}
+
+case class MethodInfo[Source](
+    source:    Source,
+    classFile: ClassFile,
+    method:    Method
+)
+
+object BasicMethodInfo {
+
+    def unapply(methodInfo: MethodInfo[_]): Some[(ClassFile, Method)] = {
+        Some((methodInfo.classFile, methodInfo.method))
     }
 }

@@ -39,6 +39,6 @@ abstract class ControlTransferInstruction extends Instruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 
 }

@@ -187,17 +187,17 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                                 val purity = propertyStore(callee, Purity.key)
 
                                 purity match {
-                                    case Some(Pure) ⇒ /* Nothing to do...*/
+                                    case EP(_, Pure) ⇒ /* Nothing to do...*/
 
-                                    case Some(Impure | MaybePure) ⇒
+                                    case EP(_, Impure | MaybePure) ⇒
                                         return ImmediateResult(method, Impure);
 
                                     // Handling cyclic computations
-                                    case Some(ConditionallyPure) ⇒
-                                        dependees += EP(callee, ConditionallyPure)
+                                    case ep @ EP(_, ConditionallyPure) ⇒
+                                        dependees += ep
 
-                                    case None ⇒
-                                        dependees += EPK(callee, Purity.key)
+                                    case epk ⇒
+                                        dependees += epk
                                 }
                         }
                 }

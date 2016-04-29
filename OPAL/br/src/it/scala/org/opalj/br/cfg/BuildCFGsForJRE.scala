@@ -40,6 +40,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.analyses.MethodInfo
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -56,7 +57,7 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
         project.parForeachMethodWithBody(() ⇒ false) { m ⇒
-            val (_, classFile, method) = m
+            val MethodInfo(_, classFile, method) = m
             implicit val code = method.body.get
             try {
                 val cfg = time {
@@ -106,21 +107,22 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
                     if (nextInstructions != cfgSuccessors) {
                         fail(s"the instruction ($instruction) with pc $pc has the following "+
                             s"instruction successors: $nextInstructions and "+
-                            s"the following cfg successors : $cfgSuccessors (${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                            s"the following cfg successors : $cfgSuccessors "+
+                            s"(${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
                     }
                 }
 
                 methodsCount.incrementAndGet()
             } catch {
-                case t: Throwable ⇒
-                    errors.add(method.toJava(classFile)+":"+t.getMessage)
+                case t: Throwable ⇒   errors.add(method.toJava(classFile)+":"+t.getMessage)
             }
         }
         if (!errors.isEmpty())
             fail(s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
                 s"failed for ${errors.size} methods: ${errors.asScala.mkString("\n")}")
         else
-            info(s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods in ∑ ${Nanoseconds(executionTime.get).toSeconds}")
+            info(s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods "+
+                    s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}")
     }
 
     describe("computing the cfg") {

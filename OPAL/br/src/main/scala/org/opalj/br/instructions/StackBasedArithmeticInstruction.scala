@@ -42,6 +42,6 @@ abstract class StackBasedArithmeticInstruction
 
     final def length: Int = 1
 
-    final def expressionResult: ExpressionResult = Stack
+    final def expressionResult: Stack.type = Stack
 
 }

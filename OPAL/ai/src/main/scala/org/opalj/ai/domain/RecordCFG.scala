@@ -42,14 +42,14 @@ import org.opalj.graphs.PostDominatorTree
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
- * This CFG is always a sound approximation.
+ * This CFG is always (still) a sound approximation of the generally incomputable real CFG.
  *
  * ==Usage (Mixin-Composition Order)==
  * This domain overrides the `flow` method and requires that it is mixed in before every
  * other domain that overrides the `flow` method and which may manipulate the `worklist`.
  * E.g., the mixin order should be:
  * {{{ class MyDomain extends Domain with RecordCFG with FlowManipulatingDomain }}}
- * If the mixin order is not correct, the CFG may not be complete.
+ * If the mixin order is not correct, the CFG may not be complete/concrete.
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''; i.e., the domain can only be used by one
@@ -181,7 +181,7 @@ trait RecordCFG
                         allExitPCs.foreach,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
-                        code.instructions.size - 1
+                        maxNode = code.instructions.size - 1
                     )
                 this.thePostDominatorTree = thePostDominatorTree
             }
@@ -443,7 +443,7 @@ trait RecordCFG
         val exitNode = new DefaultMutableNode[List[PC]](
             Nil,
             (n) ⇒ "Exit",
-            Map("shape" → "box", "shape" → "doubleoctagon", "fillcolor" → "black", "color" → "white", "labelloc" → "l"),
+            Map("shape" → "doubleoctagon", "fillcolor" → "black", "color" → "white", "labelloc" → "l"),
             List.empty[DefaultMutableNode[List[PC]]]
         )
         for (pc ← code.programCounters) {

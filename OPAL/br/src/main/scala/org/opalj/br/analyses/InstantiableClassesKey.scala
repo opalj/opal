@@ -30,6 +30,8 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.concurrent.defaultIsInterrupted
+
 /**
  * The ''key'' object to get information about the classes that can be instantiated
  * (either, directly or indirectly).
@@ -49,11 +51,11 @@ object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses]
 
     /**
      * Computes the information which classes are (not) instantiable.
+     *
+     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
      */
     override protected def compute(project: SomeProject): InstantiableClasses = {
-        InstantiableClassesAnalysis.doAnalyze(
-            project, () ⇒ Thread.currentThread().isInterrupted()
-        )
+        InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
 

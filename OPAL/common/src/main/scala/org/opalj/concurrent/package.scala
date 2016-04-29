@@ -52,6 +52,8 @@ package object concurrent {
 
     private implicit def logContext = GlobalLogContext
 
+    final val defaultIsInterrupted = () ⇒ Thread.currentThread.isInterrupted()
+
     final def handleUncaughtException(t: Throwable): Unit = {
         OPALLogger.error("internal", "uncaught exception", t)
     }

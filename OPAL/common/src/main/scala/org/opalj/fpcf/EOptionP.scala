@@ -48,6 +48,12 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     def toEPK: EPK[E, P]
 
     /**
+     * Returns `true` if and only if we have a property and the property was stored in the
+     * store using (Immediate)(Multi)Result or if the property is final by itself.
+     */
+    def isPropertyFinal: Boolean
+
+    /**
      * @return `true` if the entity is associated with a property.
      */
     def hasProperty: Boolean
@@ -89,13 +95,15 @@ object EOptionP {
  *
  * @author Michael Eichberg
  */
-final class EP[+E <: Entity, +P <: Property](
+sealed class EP[+E <: Entity, +P <: Property](
         val e: E,
         val p: P
 ) extends EOptionP[E, P] with Product2[E, P] {
 
     override def _1: E = e
     override def _2: P = p
+
+    def isPropertyFinal: Boolean = p.isFinal
 
     def hasProperty = true
 
@@ -130,6 +138,24 @@ object EP {
 
 }
 
+final class FinalEP[+E <: Entity, +P <: Property](e: E, p: P) extends EP[E, P](e, p) {
+
+    override def isPropertyFinal: Boolean = true
+
+}
+
+object FinalEP {
+
+    def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
+
+}
+
+object SomeProperty {
+
+    def unapply[P <: Property](ep: EP[_, P]): Option[P] = Some(ep.p)
+
+}
+
 /**
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
@@ -145,6 +171,8 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def _1 = e
     override def _2 = pk
+
+    def isPropertyFinal: Boolean = false
 
     def hasProperty: Boolean = false
 
@@ -178,4 +206,10 @@ object EPK {
     def unapply[E <: Entity, P <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
     }
+}
+
+object NoProperty {
+
+    def unapply(epk: EPK[_, _]): Boolean = true
+
 }

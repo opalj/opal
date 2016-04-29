@@ -79,6 +79,6 @@ case object ATHROW extends Instruction {
             code.handlerInstructionsFor(currentPC)
     }
 
-    final def expressionResult: ExpressionResult = NoExpression
+    final def expressionResult: NoExpression.type = NoExpression
 
 }

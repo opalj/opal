@@ -219,7 +219,7 @@ object InterpretMethodsAnalysis {
         val collectedExceptions = time('OVERALL) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { m ⇒
-                val (source, classFile, method) = m
+                val MethodInfo(source, classFile, method) = m
                 analyzeMethod(source.toString, classFile, method).map(results.add(_))
             }
             import scala.collection.JavaConverters._

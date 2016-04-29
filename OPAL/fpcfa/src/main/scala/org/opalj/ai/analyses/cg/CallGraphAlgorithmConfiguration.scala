@@ -32,6 +32,7 @@ package analyses
 package cg
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.cg.CallGraphCache
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration

@@ -36,9 +36,9 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 
 /**
- * Simple factory that can create a new config by a given analysis mode. This is necessary
- * for test purposes because the analysis mode, which is configured in the configuration file,
- * has to be ignored to implement config file independent tests.
+ * Factory to create `Config` objects with a given analysis mode.
+ * This is particularly useful for testing purposes as it facilitates `Config` file independent
+ * tests.
  */
 object AnalysisModeConfigFactory {
 
@@ -73,8 +73,12 @@ object AnalysisModeConfigFactory {
         )
     }
 
-    def resetAnalysisMode(project: SomeProject, mode: AnalysisMode): SomeProject = {
-        val testConfig = AnalysisModeConfigFactory.createConfig(mode)
-        Project.recreate(project, testConfig)
+    def resetAnalysisMode[Source](
+        project:                Project[Source],
+        newAnalysisMode:        AnalysisMode,
+        useOldConfigAsFallback: Boolean         = true
+    ): Project[Source] = {
+        val testConfig = AnalysisModeConfigFactory.createConfig(newAnalysisMode)
+        Project.recreate(project, testConfig, useOldConfigAsFallback)
     }
 }

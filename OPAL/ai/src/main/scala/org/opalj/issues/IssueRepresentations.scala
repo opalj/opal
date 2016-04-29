@@ -83,6 +83,9 @@ trait IssueRepresentations extends ReportableAnalysisResult {
      */
     def toAnsiColoredString: String
 
+    /**
+     * A basic representation of this issue well suited for console output.
+     */
     def toConsoleString: String = {
         import scala.Console._
         toAnsiColoredString.

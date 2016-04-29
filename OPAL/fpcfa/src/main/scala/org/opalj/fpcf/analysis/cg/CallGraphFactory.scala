@@ -99,7 +99,8 @@ object CallGraphFactory {
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             import org.opalj.ai.analyses.cg.CallGraphFactory.isPotentiallySerializationRelated
 
-            val (_, classFile, method) = m
+            val classFile = m.classFile
+            val method = m.method
             val classIsInstantiable = !instantiableClasses.isNotInstantiable(classFile.thisType)
             val isNonPrivate = !method.isPrivate
 

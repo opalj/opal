@@ -53,8 +53,8 @@ class LibraryEntryPointsAnalysis private (
 
     @inline private[this] def isClientCallable(method: Method): EntryPoint = {
         propertyStore(method, methods.ClientCallableKey) match {
-            case Some(methods.IsClientCallable) | None ⇒ IsEntryPoint
-            case Some(methods.NotClientCallable)       ⇒ NoEntryPoint
+            case EP(_, methods.NotClientCallable)                     ⇒ NoEntryPoint
+            case _ /* <=> EP(_,methods.IsClientCallable) | EPK(_,_)*/ ⇒ IsEntryPoint
         }
     }
 

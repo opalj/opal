@@ -52,12 +52,13 @@ object InterpretMethod {
 
         override def isInterrupted = Thread.interrupted()
 
-        override val tracer =
+        override val tracer = {
+            val consoleTracer = new ConsoleTracer { override val printOIDs = true }
+            val xHTMLTracer = new XHTMLTracer {}
             //    Some(new ConsoleTracer {})
             //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(
-                new ConsoleTracer { override val printOIDs = true }, new XHTMLTracer {}
-            ))
+            Some(new MultiTracer(consoleTracer, xHTMLTracer))
+        }
     }
 
     /**
@@ -200,19 +201,32 @@ object InterpretMethod {
                     println("Finished abstract interpretation.")
                     result
                 }
+
             if (result.domain.isInstanceOf[RecordCFG]) {
+                val evaluatedInstructions = result.evaluatedInstructions
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
+
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
-                println("Runtime CFG: "+writeAndOpen(cfgAsDotGraph, "RuntimeCFG", ".dot"))
-                println("Dominator tree: "+writeAndOpen(cfgDomain.dominatorTree.toDot, "DominatorTreeOfTheRuntimeCFGAsDot", ".dot"))
+                val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".dot")
+                println("AI CFG: "+cfgFile)
+
+                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
+                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".dot")
+                println("AI CFG - Dominator tree: "+domFile)
+
+                val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
+                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".dot")
+                println("AI CFG - Post-Dominator tree: "+postDomFile)
             }
+
             if (result.domain.isInstanceOf[RecordDefUse]) {
                 val duInfo = result.domain.asInstanceOf[RecordDefUse]
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
 
                 val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
-                writeAndOpen(dotGraph, "DefUseGraph", ".dot")
+                writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".dot")
             }
+
             writeAndOpen(
                 dump(
                     Some(classFile),
@@ -224,7 +238,10 @@ object InterpretMethod {
                             XHTML.instructionsToXHTML("Join instructions", result.joinInstructions) +
                             (
                                 if (result.subroutineInstructions.nonEmpty)
-                                    XHTML.instructionsToXHTML("Subroutine instructions", result.subroutineInstructions.iterable)
+                                    XHTML.instructionsToXHTML(
+                                    "Subroutine instructions",
+                                    result.subroutineInstructions.iterable
+                                )
                                 else
                                     ""
                             ) +

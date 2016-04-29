@@ -115,6 +115,9 @@ trait AttributesReader
      * <li>RuntimeVisibleTypeAnnotations_attribute </li>
      * <li>RuntimeInvisibleTypeAnnotations_attribute </li>
      * </ul>
+     *
+     * The returned function is allowed to return null; in this case the attribute
+     * will be discarded.
      */
     private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
