@@ -32,27 +32,30 @@ package graphs
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
- * The (post) dominator tree of a control flow graph. To construct a dominator tree use this
- * class' companion object. To compute a post dominator tree use
- * [[org.opalj.graphs.PostDominatorTree]].
+ * The (post) dominator tree of a control flow graph. To construct a dominator tree use the
+ * companion object's factory method (`apply`). To compute a post dominator tree use the factory
+ * method defined in [[org.opalj.graphs.PostDominatorTree]].
  *
- * @param idom The array contains for each node its immediate dominator.
- * 			If not all unique ids are used then the array is a sparse array and external
+ * @param idom An array that contains for each node its immediate dominator.
+ * 			If not all unique ids are used, then the array is a sparse array and external
  * 			knowledge is necessary to determine which elements of the array contain useful
  * 			information.
  *
  * @author Michael Eichberg
  */
-class DominatorTree private (idom: Array[Int], startNode: Int) {
+final class DominatorTree private (private final val idom: Array[Int], final val startNode: Int) {
 
     /**
      * Returns the immediate dominator of the node with the given id.
      *
      * @note The root node does not have an immediate dominator!
+     *
+     * @param n The id of a valid node which is not the `startNode`.
+     * @return The id of the node which immediately dominates the given node.
      */
     final def dom(n: Int): Int = {
         if (n == startNode) {
-            val errorMessage = "the root node does not have an immediate dominator"
+            val errorMessage = s"the root node ($startNode) does not have an immediate dominator"
             throw new IllegalArgumentException(errorMessage)
         }
 
@@ -60,10 +63,12 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
     }
 
     /**
-     * Iterates over all dominator nodes of the given node. Iteration starts with the immediate
-     * dominator of the given node if reflexive is `false` and starts with the node itself
-     * if reflexive is `true`.
-     * For postdominators, it includes an extra node outside the range of valid nodes.
+     * Iterates over all dominator nodes of the given node and calls the given function f each
+     * dominator node.
+     * Iteration starts with the immediate dominator of the given node if reflexive is `false` and
+     * starts with the node itself if reflexive is `true`.
+     *
+     * @param n The id of a valid node.
      */
     final def foreachDom[U](n: Int, reflexive: Boolean = false)(f: Int ⇒ U): Unit = {
         if (n != startNode || reflexive) {
@@ -76,10 +81,13 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
         }
     }
 
+    /**
+     * The array which stores the immediate dominator for each node.
+     */
     def immediateDominators: IndexedSeq[Int] = idom
 
     /**
-     * @param isIndexValid A function that returns true if an element in the iDom array with a
+     * @param isIndexValid A function that returns `true` if an element in the iDom array with a
      * 		specific index is actually containing some valid data. This is particularly useful/
      * 		required if the `idom` array given at initialization time is a sparse array.
      */
@@ -137,22 +145,23 @@ class DominatorTree private (idom: Array[Int], startNode: Int) {
 object DominatorTree {
 
     /**
-     * Computes the immediate dominators for each node of a given graph where each node
+     * Computes the immediate dominators for each node of a given graph. Each node of the graph
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
      * @param startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
-     * 			computed for some method.
-     * @param foreachSuccessorOf A function that given a node executes the given function for
-     * 			each direct successor.
+     * 			computed for some method or the id of the artificial start node created when
+     * 			computing a reverse CFG.
+     * @param foreachSuccessorOf A function that given a node subsequently executes the given
+     * 			function for each direct successor of the given node.
      * @param foreachPredecessorOf A function that given a node executes the given function for
      * 			each direct predecessor. The signature of a function that can directly passed
      * 			as a parameter is:
      * 			{{{
-     *  		final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
+     *  		def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
      *  		}}}
      * @param maxNode The largest unique int id that identifies a node. (E.g., in case of
-     * 			the analysis of some code it is equivalent to the length of the code.)
+     * 			the analysis of some code it is equivalent to the length of the code-1.)
      *
      * @return The computed dominator tree.
      *
@@ -160,6 +169,10 @@ object DominatorTree {
      * 			presented by T. Lengauaer and R. Tarjan in
      * 			A Fast Algorithm for Finding Dominators in a Flowgraph
      * 			ACM Transactions on Programming Languages and Systems (TOPLAS) 1.1 (1979): 121-141
+     *
+     * 			'''This implementation does not use non-tailrecursive methods anymore and hence
+     * 			also handles very large degenerated graphs (e.g., a graph which consists of a
+     * 			a very long single path.).'''
      */
     def apply(
         startNode:            Int,
@@ -180,14 +193,16 @@ object DominatorTree {
         val semi = new Array[Int](max)
         val bucket = new Array[Set[Int]](max)
 
+        // helper data-structure to resolve recursive methods
+        val vertexStack = new IntArrayStack(initialSize = Math.max(2, (max / 4)))
+
         // Step 1 (assign dfsnum)
-        val nodes = new IntArrayStack(initialSize = java.lang.Math.max(2, (max / 4)))
-        nodes.push(startNode)
-        while (nodes.nonEmpty) {
-            val v = nodes.pop
-            // The following "if" is necessary, because the recursive dfs impl. in the paper uses 
-            // eager decent which may lead to the initialization and a subsequent
-            // filtering of already visited nodes by the "if(semi(w)==0)" test.
+        vertexStack.push(startNode)
+        while (vertexStack.nonEmpty) {
+            val v = vertexStack.pop()
+            // The following "if" is necessary, because the recursive DFS impl. in the paper 
+            // performs an eager decent. This may already initialize a node that also pushed
+            // on the stack and, hence, must not be visited again.
             if (semi(v) == 0) {
                 n = n + 1
                 semi(v) = n
@@ -198,7 +213,7 @@ object DominatorTree {
                 foreachSuccessorOf(v) { w ⇒
                     if (semi(w) == 0) {
                         parent(w) = v
-                        nodes.push(w)
+                        vertexStack.push(w)
                     }
                 }
             }
@@ -214,6 +229,7 @@ object DominatorTree {
             }
         }
 
+        /* *************** PAPER VERSION USING RECURSION *************** *\ 
         def compress(v: Int): Unit = {
             var theAncestor = ancestor(v)
             if (ancestor(theAncestor) != 0) {
@@ -224,6 +240,28 @@ object DominatorTree {
                     label(v) = ancestorLabel
                 }
                 ancestor(v) = ancestor(theAncestor)
+            }
+        }
+        \* *************** PAPER VERSION USING RECURSION *************** */
+
+        def compress(v: Int): Unit = {
+            // 1. walk the path
+            vertexStack.push(v)
+            var theAncestor = ancestor(v)
+            while (ancestor(theAncestor) != 0) {
+                vertexStack.push(theAncestor)
+                theAncestor = ancestor(theAncestor)
+            }
+
+            // 2. compress
+            while (vertexStack.nonEmpty) {
+                val w = vertexStack.pop()
+                theAncestor = ancestor(w)
+                val ancestorLabel = label(theAncestor)
+                if (semi(ancestorLabel) < semi(label(w))) {
+                    label(w) = ancestorLabel
+                }
+                ancestor(w) = ancestor(theAncestor)
             }
         }
 
