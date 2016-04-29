@@ -44,8 +44,8 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.MethodInfo
 
 /**
- * Tests if we are able to collect def/use information for all methods of the JDK and OPAL and if
- * the collected def/use information makes sense.
+ * Tests if we are able to computed the CFG as well as the dominator/post-dominator tree for
+ * a larger number of classes.
  *
  * @author Michael Eichberg
  */
@@ -74,7 +74,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelLongValuesShiftOperators
-        with RecordCFG // <=== we are going to test!
+        with RecordCFG // <=== the domain we are going to test!
 
     def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
         info(s"the loaded project ($name) contains ${project.methodsCount} methods")
@@ -107,8 +107,14 @@ class RecordCFGTest extends FunSpec with Matchers {
                     domain.postDominatorTree
                 }
                 evaluatedInstructions foreach { pc ⇒
-                    if (pc != 0) dt.dom(pc) should be < (domain.code.instructions.size)
-                    if (pc != 0) postDT.dom(pc) should be <= (domain.code.instructions.size)
+                    if (pc != dt.startNode && !evaluatedInstructions.contains(dt.dom(pc))) {
+                        fail(s"the dominator ${dt.dom(pc)} of $pc was not evaluated")
+                    }
+                    if (pc != postDT.startNode &&
+                        postDT.dom(pc) != postDT.startNode &&
+                        !evaluatedInstructions.contains(postDT.dom(pc))) {
+                        fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
+                    }
                 }
             } catch {
                 case t: Throwable ⇒
@@ -142,33 +148,50 @@ class RecordCFGTest extends FunSpec with Matchers {
     }
 
     describe("calculating the (post)dominator trees") {
+        def printPerformanceData(): Unit = {
+            {
+                import DominatorsPerformanceEvaluation.getTime
+                info("performing AI took (CPU time) "+getTime('AI).toSeconds)
+                info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
+            }
+
+            {
+                import PostDominatorsPerformanceEvaluation.getTime
+                val duration = getTime('PostDominators).toSeconds
+                info("computing post-dominator information took (CPU time) "+duration)
+            }
+        }
+
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
         import reader.AllClassFiles
 
         it("should be possible to calculate the (post)dominator trees for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
             PostDominatorsPerformanceEvaluation.resetAll()
+
             val project = org.opalj.br.TestSupport.createJREProject
+
             time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("performing AI took (CPU time) "+DominatorsPerformanceEvaluation.getTime('AI).toSeconds)
-            info("computing dominator information took (CPU time) "+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
-            info("computing post-dominator information took (CPU time) "+PostDominatorsPerformanceEvaluation.getTime('PostDominators).toSeconds)
+
+            printPerformanceData()
         }
 
         it("should be possible to calculate the (post)dominator trees for all methods of the OPAL 0.3 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
             PostDominatorsPerformanceEvaluation.resetAll()
+
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
+
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took (real time)"+t.toSeconds) }
-            info("performing AI took (CPU time) "+DominatorsPerformanceEvaluation.getTime('AI).toSeconds)
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
-            info("computing post-dominator information took (CPU time) "+PostDominatorsPerformanceEvaluation.getTime('PostDominators).toSeconds)
+
+            printPerformanceData()
         }
 
         it("should be possible to calculate the (post)dominator trees for all methods of the OPAL-08-14-2014 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
             PostDominatorsPerformanceEvaluation.resetAll()
+
             val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
             val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
                 def accept(dir: java.io.File, name: String) =
@@ -181,9 +204,8 @@ class RecordCFGTest extends FunSpec with Matchers {
             time {
                 analyzeProject("OPAL-08-14-2014 snapshot", project)
             } { t ⇒ info("the analysis took (real time) "+t.toSeconds) }
-            info("performing AI took (CPU time) "+DominatorsPerformanceEvaluation.getTime('AI).toSeconds)
-            info("computing dominator information took (CPU time)"+DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds)
-            info("computing post-dominator information took (CPU time) "+PostDominatorsPerformanceEvaluation.getTime('PostDominators).toSeconds)
+
+            printPerformanceData()
         }
 
     }
