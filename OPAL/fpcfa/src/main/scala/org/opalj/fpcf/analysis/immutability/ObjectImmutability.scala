@@ -41,9 +41,10 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * Specifies the mutability of instances of a specific class.
  * The highest rating is "Immutable", then "Conditionally Immutable", then "Mutable".
  *
- * Immutable means that the state of an instance of the respective class does not change after
+ * An instance of a class is rated as immutable if the state of does not change after
  * initialization in a client visible manner! This includes all classes referenced by the instances
- * (transitive hull).
+ * (transitive hull). However, fields that are lazily initialized, but don't change after that
+ * do not impede immutability.
  * Conditionally immutable means that the state of the instance of the respective class
  * cannot be mutated, but objects referenced by it can be mutated (so called
  * immutable collections are typically rated as "conditionally immutable").
