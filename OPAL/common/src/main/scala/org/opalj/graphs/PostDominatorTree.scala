@@ -41,6 +41,38 @@ object PostDominatorTree {
     /**
      * Computes the post dominator tree for the given graph. The artificial start node of
      * the post dominator tree will have the id = (maxNodeId+1).
+     *
+     * @example
+     * {{{
+     * scala>//Graph: 0 -> 1->E;  1 -> 2->E
+     * scala>def isExitNode(i: Int) = i == 1 || i == 2
+     * isExitNode: (i: Int)Boolean
+     *
+     * scala>def foreachExitNode(f: Int ⇒ Unit) = { f(1); f(2) }
+     * foreachExitNode: (f: Int => Unit)Unit
+     *
+     * scala>def foreachPredecessorOf(i: Int)(f: Int ⇒ Unit) = i match {
+     *      |    case 0 ⇒
+     *      |    case 1 ⇒ f(0)
+     *      |    case 2 ⇒ f(1)
+     *      |}
+     * foreachPredecessorOf: (i: Int)(f: Int => Unit)Unit
+     * scala>def foreachSuccessorOf(i: Int)(f: Int ⇒ Unit) = i match {
+     *      |    case 0 ⇒ f(1)
+     *      |    case 1 ⇒ f(2)
+     *      |    case 2 ⇒
+     *      |}
+     * foreachSuccessorOf: (i: Int)(f: Int => Unit)Unit
+     * scala>val pdt = org.opalj.graphs.PostDominatorTree.apply(
+     *      |    isExitNode,
+     *      |    foreachExitNode,
+     *      |    foreachSuccessorOf,
+     *      |    foreachPredecessorOf,
+     *      |    2
+     *      |)
+     * pdt: org.opalj.graphs.DominatorTree = org.opalj.graphs.DominatorTree@3a82ac80
+     * scala>pdt.toDot()
+     * }}}
      */
     def apply(
         isExitNode:           Int ⇒ Boolean,
