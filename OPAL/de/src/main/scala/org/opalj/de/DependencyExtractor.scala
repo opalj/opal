@@ -35,8 +35,8 @@ import org.opalj.br.instructions._
 
 /**
  * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element
- * ([[org.opalj.br.ClassFile]], [[org.opalj.br.Field]] or [[org.opalj.br.Method]] declaration) and any element it
- * depends on. The kind of the dependencies that are extracted are defined
+ * ([[org.opalj.br.ClassFile]], [[org.opalj.br.Field]] or [[org.opalj.br.Method]] declaration)
+ * and any element it depends on. The kind of the dependencies that are extracted are defined
  * by the [[DependencyType]] enumeration.
  *
  * ==Concurrency==
@@ -65,9 +65,7 @@ import org.opalj.br.instructions._
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-class DependencyExtractor(
-        protected[this] val dependencyProcessor: DependencyProcessor
-) {
+class DependencyExtractor(protected[this] val dependencyProcessor: DependencyProcessor) {
 
     import DependencyTypes._
 
@@ -171,9 +169,9 @@ class DependencyExtractor(
                 case UnknownAttribute.KindId     ⇒ /*do nothing*/
 
                 case _ ⇒
-                    throw new BytecodeProcessingFailedException(
-                        "Unexpected attribute: "+attribute+" for class declarations."
-                    )
+                    val classInfo = classFile.thisType.toJava
+                    val message = s"unexpected class attribute: $attribute ($classInfo)"
+                    throw BytecodeProcessingFailedException(message)
             }
         }
     }
@@ -238,9 +236,9 @@ class DependencyExtractor(
                 case Deprecated.KindId ⇒ /*do nothing*/
 
                 case _ ⇒
-                    throw new BytecodeProcessingFailedException(
-                        "Unexpected attribute: "+attribute+" for class declarations."
-                    )
+                    val fieldInfo = field.toJava(declaringClass.thisType)
+                    val message = s"unexpected field attribute: $attribute ($fieldInfo)"
+                    throw new BytecodeProcessingFailedException(message)
             }
         }
     }
@@ -322,9 +320,9 @@ class DependencyExtractor(
                     case LineNumberTable.KindId ⇒ /* Do Nothing */
 
                     case _ ⇒
-                        throw new BytecodeProcessingFailedException(
-                            "Unexpected attribute: "+attribute+" for class declarations."
-                        )
+                        val methodInfo = method.toJava(declaringClass.thisType)
+                        val message = s"unexpected code attribute: $attribute ($methodInfo)"
+                        throw BytecodeProcessingFailedException(message)
                 }
             }
         }
@@ -383,13 +381,15 @@ class DependencyExtractor(
                     )
 
                 // Synthetic and Deprecated do not introduce new dependencies
-                case Synthetic.KindId  ⇒ /*do nothing*/
-                case Deprecated.KindId ⇒ /*do nothing*/
+                case Synthetic.KindId            ⇒ /* nothing to do */
+                case Deprecated.KindId           ⇒ /* nothing to do */
+
+                case MethodParameterTable.KindId ⇒ /* nothing to do */
 
                 case _ ⇒
-                    throw new BytecodeProcessingFailedException(
-                        "Unexpected attribute: "+attribute+" for class declarations."
-                    )
+                    val methodInfo = method.toJava(declaringClass.thisType)
+                    val message = s"unexpected method attribute: $attribute ($methodInfo)"
+                    throw BytecodeProcessingFailedException(message)
             }
         }
     }

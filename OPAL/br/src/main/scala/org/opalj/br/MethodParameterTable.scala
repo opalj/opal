@@ -34,14 +34,12 @@ package br
  *
  * @author Michael Eichberg
  */
-case class MethodParameterTable(
-    parameters: MethodParameters
-)
-        extends Attribute {
+case class MethodParameterTable(parameters: MethodParameters) extends Attribute {
 
     override def kindId: Int = MethodParameterTable.KindId
 
 }
+
 object MethodParameterTable {
 
     final val KindId = 43

@@ -37,7 +37,5 @@ package org.opalj.bytecode
  *
  * @author Michael Eichberg
  */
-case class BytecodeProcessingFailedException(
-    message: String
-) extends RuntimeException(message)
+case class BytecodeProcessingFailedException(message: String) extends RuntimeException(message)
 
