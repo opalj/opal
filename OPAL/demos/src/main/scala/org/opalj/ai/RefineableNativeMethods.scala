@@ -75,7 +75,9 @@ object RefineableNativeMethods extends DefaultOneStepAnalysis {
             for {
                 method ← nativeMethods
                 callableInformation = propertyStore(method, IsClientCallable.key)
-                if (callableInformation == NotClientCallable) && callGraph.calledBy(method).size > 0
+                if callableInformation.hasProperty
+                if callableInformation.p == NotClientCallable
+                if callGraph.calledBy(method).size > 0
             } yield method
 
         val refineableNativeMethodsInfo =
