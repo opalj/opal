@@ -47,6 +47,10 @@ import scala.annotation.tailrec
  * analyzed project is a library then the result depends on the concrete assumption about the
  * openess of the library.
  *
+ * However, package visible classes in packages starting with "java." are always treated as not
+ * client extensible as this would require that those classes are defined in the respective
+ * package which is prevented by the default `ClassLoader` in all cases.
+ *
  * @note Since the computed property is a set property, other analyses have to wait till the
  * 		property is computed.
  *
@@ -78,11 +82,17 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
 
                 val isExtensible =
                     hasExtensibleSubtype(oid) ||
-                        ((classFile.isPublic || isOpenLibrary) && !classFile.isEffectivelyFinal)
+                        (
+                            !classFile.isEffectivelyFinal &&
+                            (
+                                classFile.isPublic ||
+                                (isOpenLibrary && !classFile.thisType.packageName.startsWith("java."))
+                            )
+                        )
 
                 if (isExtensible) {
-                    classFile.superclassType.foreach(ot ⇒ hasExtensibleSubtype(ot.id) = true)
-                    classFile.interfaceTypes.foreach { ot ⇒ hasExtensibleSubtype(ot.id) = true }
+                    classFile.superclassType.foreach(st ⇒ hasExtensibleSubtype(st.id) = true)
+                    classFile.interfaceTypes.foreach(it ⇒ hasExtensibleSubtype(it.id) = true)
                     propertyStore.add(IsExtensible, classFile, Yes)
                 } else if (hasUnknownSubtype(oid)) {
                     propertyStore.add(IsExtensible, classFile, Unknown)

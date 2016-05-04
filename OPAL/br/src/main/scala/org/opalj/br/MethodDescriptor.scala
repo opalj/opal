@@ -221,9 +221,9 @@ private final class SingleArgumentMethodDescriptor(
 
     override def parametersCount: Int = 1
 
-    override def equalParameters(other: MethodDescriptor): Boolean =
-        (other.parametersCount == 1) &&
-            (other.parameterType(0) == parameterType)
+    override def equalParameters(other: MethodDescriptor): Boolean = {
+        (other.parametersCount == 1) && (other.parameterType(0) == parameterType)
+    }
 
     override lazy val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
 
@@ -384,8 +384,9 @@ object MethodDescriptor {
      *      (params: Object[]) : Object
      * }}}
      */
-    final val SignaturePolymorphicMethod: MethodDescriptor =
+    final val SignaturePolymorphicMethod: MethodDescriptor = {
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+    }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
 
@@ -412,8 +413,7 @@ object MethodDescriptor {
     final val JustReturnsString: MethodDescriptor =
         new NoArgumentMethodDescriptor(ObjectType.String)
 
-    final val JustTakesObject: MethodDescriptor =
-        apply(ObjectType.Object, VoidType)
+    final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
     final val readObjectDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)

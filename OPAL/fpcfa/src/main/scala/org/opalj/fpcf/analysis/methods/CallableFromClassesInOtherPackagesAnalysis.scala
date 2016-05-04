@@ -196,16 +196,13 @@ class CallableFromClassesInOtherPackagesAnalysis private (
 
 object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
 
-    //    /**
-    //     * Selects all non-static and non-abstract methods.
-    //     */
-    //    final def entitySelector(project: SomeProject): PartialFunction[Entity, Method] = {
-    //        case m: Method if !m.isStatic && !m.isAbstract && !project.isLibraryType(project.classFile(m)) ⇒ m
-    //    }
-
     override def derivedProperties: Set[PropertyKind] = Set(ClientCallableKey)
 
-    protected[analysis] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    protected[analysis] def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis = {
+
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
         propertyStore <<! (ClientCallableKey, analysis.determineProperty)
         analysis
