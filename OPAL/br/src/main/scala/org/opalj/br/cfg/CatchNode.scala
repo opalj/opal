@@ -51,6 +51,7 @@ class CatchNode(
 
     final def isBasicBlock: Boolean = false
     final def isCatchNode: Boolean = true
+    final override def asCatchNode: this.type = this
     final def isExitNode: Boolean = false
 
     final def isStartOfSubroutine: Boolean = false

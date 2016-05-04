@@ -42,6 +42,7 @@ trait CFGNode extends Node {
     def isBasicBlock: Boolean
     def asBasicBlock: BasicBlock = throw new ClassCastException();
     def isCatchNode: Boolean
+    def asCatchNode: CatchNode = throw new ClassCastException();
     def isExitNode: Boolean
 
     def isStartOfSubroutine: Boolean
