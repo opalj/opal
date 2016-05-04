@@ -37,6 +37,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -171,6 +172,13 @@ object UnusedLocalVariables {
                 }
             } else {
                 val instruction = instructions(vo)
+                
+                def defaultUnusedValueHandling() : Unit = {
+                       val instructionDescription = instruction.toString(vo).replace("\n", "\\n")
+                        issue = "the value of "+instructionDescription+" is not used"
+                        relevance = Relevance.VeryHigh
+                }
+                
                 instruction.opcode match {
 
                     case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
@@ -248,10 +256,32 @@ object UnusedLocalVariables {
                         issue = "the incremented value is not used"
                         relevance = Relevance.DefaultRelevance
 
+                    case GETSTATIC.opcode =>
+                        val GETSTATIC(_,_,fieldType) = instruction
+                        if(fieldType.isObjectType) {
+                            val instr = instruction.toString(vo)
+                            
+                            theProject.classFile(fieldType.asObjectType) match {
+                                case Some(cf) =>
+                                    if(cf.isEnumDeclaration) {
+                                        issue = s"the enum value $instr"+
+                            		"is (most likely) used to initialize a local variable"
+                            		relevance = Relevance.TechnicalArtifact
+                                    } else {
+                                        defaultUnusedValueHandling()
+                                    }
+                                case None => 
+                                    // we were not able to find the class 
+                                    issue = s"the field value $instr is not used"
+                            		relevance = Relevance.DefaultRelevance
+                            }
+                        }
+                        else
+                            defaultUnusedValueHandling()
+                                
+                                
                     case _ ⇒
-                        val instructionDescription = instruction.toString(vo).replace("\n", "\\n")
-                        issue = "the value of "+instructionDescription+" is not used"
-                        relevance = Relevance.VeryHigh
+                     defaultUnusedValueHandling()
                 }
 
             }
