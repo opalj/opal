@@ -143,11 +143,13 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ObjectImmutability = ImmutableObject
-        if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType))
+        if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
             // IMPROVE We could analyze if the array is effectively final.
             // I.e., it is only initialized once (at construction time) and no reference to it
             // is passed to another object.
-            ConditionallyImmutableObject
+            val result = ImmediateResult(cf, ConditionallyImmutableObject)
+            return createIncrementalResult(cf, ConditionallyImmutableObject, result);
+        }
 
         var fieldTypesClassFiles: List[ClassFile] = Nil
         if (maxLocalImmutability == ImmutableObject) {
