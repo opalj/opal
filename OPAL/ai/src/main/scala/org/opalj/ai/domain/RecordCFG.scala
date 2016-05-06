@@ -109,7 +109,7 @@ trait RecordCFG
      * Returns the program counter(s) of the instruction(s) that is(are) executed
      * before the instruction with the given pc.
      *
-     * If the instruction with the given `pc` was never executed and empty set is
+     * If the instruction with the given `pc` was never executed an empty set is
      * returned.
      *
      * @param pc A valid program counter.
@@ -122,16 +122,18 @@ trait RecordCFG
             if (predecessors eq null) {
                 // => this.regularPredecessors == null
                 predecessors = new Array[UShortSet](regularSuccessors.length)
-                for (pc ← code.programCounters) {
-                    for (successorPC ← allSuccessorsOf(pc)) {
-                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                        predecessors(successorPC) =
-                            if (oldPredecessorsOfSuccessor == null) {
-                                UShortSet(pc)
-                            } else {
-                                pc +≈: oldPredecessorsOfSuccessor
-                            }
-                    }
+                for {
+                    pc ← code.programCounters
+                    successorPC ← allSuccessorsOf(pc)
+                } {
+                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                    predecessors(successorPC) =
+                        if (oldPredecessorsOfSuccessor == null) {
+                            UShortSet(pc)
+                        } else {
+                            pc +≈: oldPredecessorsOfSuccessor
+                        }
+
                 }
                 this.predecessors = predecessors
             }

@@ -287,7 +287,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     /**
      * Returns the instruction(s) which defined the value used by the instruction with the given `pc`
      * and which is stored at the stack position with the given stackIndex. The first/top value on
-     * the stack has index 0.
+     * the stack has index 0 and the second value - if it exists - has index two; independent of
+     * the category of the value.
      */
     def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
@@ -919,7 +920,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         def checkAndScheduleNextSubroutine(): Boolean = {
             /* we want to evaluate the subroutines only once! */
 
-            // We have to make sure that – before we schedule the evaluation of an 
+            // We have to make sure that – before we schedule the evaluation of an
             // instruction that is the return target of a subroutine - the call
             // of the subroutine from the respective location was already analyzed.
             // Otherwise, the context information may be missing.

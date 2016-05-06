@@ -118,7 +118,7 @@ object ObjectImmutability extends ObjectImmutabilityPropertyMetaInformation {
         // to (directly) compute the respective property.
         MutableObjectDueToUnresolvableDependency,
         // When we have a cycle all properties are necessarily at least conditionally
-        // immutable hence, we can leverage the "immutability"
+        // immutable (type and object wise) hence, we can leverage the "immutability"
         ImmutableObject
     )
 }
