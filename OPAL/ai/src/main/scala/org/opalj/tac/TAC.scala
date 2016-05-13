@@ -39,6 +39,27 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Creates the three-address representation and prints it.
+ * 
+ * @example
+ * 		To convert all files of a project to TAC you can use:
+ * {{{
+ * import org.opalj.io.write
+ * import org.opalj.tac._
+ * import org.opalj.util.PerformanceEvaluation.time
+ * val f = new java.io.File("/Users/eichberg/Downloads/presto-verifier-0.147-executable.zip")
+ * val p = org.opalj.br.analyses.Project(f)
+ * var i = 0
+ * time {
+ * p.parForeachMethodWithBody(parallelizationLevel=32){ mi => 
+ *   val (code,_) = org.opalj.tac.AsQuadruples(mi.method,p.classHierarchy)
+ *   val tac = ToJavaLike(code)
+ *   val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
+ *   val file = write(tac, fileNamePrefix, ".tac.txt")
+ *   i+= 1
+ *   println(i+":"+file)
+ * }
+ * }(t => println("Analysis time: "+t.toSeconds))
+ * }}}
  *
  * @author Michael Eichberg
  */
