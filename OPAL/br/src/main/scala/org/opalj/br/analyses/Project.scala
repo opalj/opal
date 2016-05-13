@@ -294,7 +294,8 @@ class Project[Source] private (
      * methods are analyzed ordered by their length (longest first).
      */
     def parForeachMethodWithBody[T](
-        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
+        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted,
+        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
     )(
         f: MethodInfo[Source] ⇒ T
     ): List[Throwable] = {
@@ -303,7 +304,6 @@ class Project[Source] private (
         if (methodCount == 0)
             return Nil;
 
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, methodCount)
         parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
     }
 
