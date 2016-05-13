@@ -29,15 +29,16 @@
 package org.opalj
 
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.Closeable
 
 import scala.xml.Node
 import scala.util.control.ControlThrowable
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
- * Various helper methods related to creating (temporary) files.
+ * Various helper methods related to creating (temporary) files using Java NIO 2.
  *
  * @author Michael Eichberg
  */
@@ -96,9 +97,13 @@ package object io {
         filenamePrefix: String,
         filenameSuffix: String
     ): File = {
+        
+        val path = Files.createTempFile(filenamePrefix, filenameSuffix)
+        Files.write(path, data.getBytes("UTF-8"))
+        val file = path.toFile()
 
-        val file = File.createTempFile(filenamePrefix, filenameSuffix)
-        process { new FileOutputStream(file) } { fos ⇒ fos.write(data.getBytes("UTF-8")) }
+        //val file = File.createTempFile(filenamePrefix, filenameSuffix)
+        //process { new FileOutputStream(file) } { fos ⇒ fos.write(data.getBytes("UTF-8")) }
 
         try {
             java.awt.Desktop.getDesktop().open(file)
@@ -108,6 +113,16 @@ package object io {
         }
 
         file
+    }
+
+    def write(
+        data:           String,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
+        val path = Files.createTempFile(filenamePrefix, filenameSuffix)
+        Files.write(path, data.getBytes("UTF-8"))
+        path
     }
 
     /**
