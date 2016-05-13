@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  * 
  * @author Andre Pacak
  */
-@Immutable("the mutable object referred is not mutated by the class and is only referred to by the class (no aliases exist)")
+@Immutable("the mutable object referred to is not mutated by the class and is only referred to by the class (no aliases exist)")
 public class ClonePassedObject {
 
     private final MutableClass reference;
