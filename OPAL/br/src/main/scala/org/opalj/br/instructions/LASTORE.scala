@@ -40,4 +40,6 @@ case object LASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
     final val opcode = 80
 
     final val mnemonic = "lastore"
+
+    final val elementTypeComputationalType = ComputationalTypeLong
 }

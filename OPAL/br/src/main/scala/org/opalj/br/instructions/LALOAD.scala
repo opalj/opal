@@ -41,4 +41,5 @@ case object LALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     final val mnemonic = "laload"
 
+    final val elementTypeComputationalType = ComputationalTypeLong
 }

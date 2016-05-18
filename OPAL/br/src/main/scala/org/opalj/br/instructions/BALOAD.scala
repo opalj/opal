@@ -41,4 +41,5 @@ case object BALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     final val mnemonic = "baload"
 
+    final val elementTypeComputationalType = ComputationalTypeInt
 }

@@ -41,4 +41,5 @@ case object AALOAD extends ArrayLoadInstruction {
 
     final val mnemonic = "aaload"
 
+    final val elementTypeComputationalType = ComputationalTypeReference
 }

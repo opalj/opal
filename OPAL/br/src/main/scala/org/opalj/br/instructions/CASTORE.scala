@@ -41,4 +41,5 @@ case object CASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "castore"
 
+    final val elementTypeComputationalType = ComputationalTypeInt
 }

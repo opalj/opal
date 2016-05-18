@@ -44,4 +44,6 @@ abstract class ArrayAccessInstruction extends Instruction with ConstantLengthIns
         (this eq other) || this == other
     }
 
+    def elementTypeComputationalType: ComputationalType
+
 }

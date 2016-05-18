@@ -79,6 +79,10 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
  */
 object ArrayLoadInstruction {
 
+    def unapply(ali: ArrayLoadInstruction): Option[ComputationalType] = {
+        Some(ali.elementTypeComputationalType)
+    }
+
     /**
      * The exceptions that are potentially thrown by instructions that load values
      * stored in an array.
