@@ -78,9 +78,9 @@ case class Calls(
 ) extends ValueLocationMatcher {
 
     def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        import scala.collection.mutable.{HashMap, HashSet}
+        import scala.collection.mutable
 
-        val result = HashMap.empty[Method, HashSet[PC]]
+        val result = mutable.HashMap.empty[Method, mutable.HashSet[PC]]
         for {
             classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
@@ -89,7 +89,7 @@ case class Calls(
                     properties((receiver, name, descriptor)) ⇒ pc
             }
         } {
-            result.getOrElseUpdate(method, HashSet.empty) += pc
+            result.getOrElseUpdate(method, mutable.HashSet.empty) += pc
         }
         result
     }
