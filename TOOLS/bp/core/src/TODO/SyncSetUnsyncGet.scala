@@ -72,8 +72,10 @@ object SyncSetUnsyncGet  {
             classFile ← project.allProjectClassFiles
             if !classFile.isInterfaceDeclaration
             method ← classFile.methods
-            if !method.isAbstract && !method.isStatic && !method.isNative &&
-                !method.isPrivate
+            if !method.isAbstract 
+            if !method.isStatic 
+            if !method.isNative 
+            if !method.isPrivate
         } {
             if (method.name.startsWith("get") &&
                 !method.isSynchronized &&
