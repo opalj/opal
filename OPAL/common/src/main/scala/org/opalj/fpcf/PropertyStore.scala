@@ -901,6 +901,24 @@ class PropertyStore private (
     }
 
     /**
+     * Returns all entities that have a specific property.
+     */
+    // Locks: accessStore
+    def entities[P <: Property](p: P): Traversable[Entity] = {
+            val pkId = p.key.id
+        object PropertyP {
+            def unapply(eps : EntityProperties) : Boolean = {
+                val ps = eps.ps
+                val psPKId = ps(pkId)
+                !isPropertyUnavailable(psPKId) && psPKId.p == p
+            }
+        }
+        accessStore {
+            entries collect {                case (e, PropertyP()) ⇒                    e            }
+        }
+    }
+
+    /**
      * Directly associate the given property `p` with given entity `e` if `e` has no property
      * of the respective kind and no other lazy or direct computation is currently executed.
      *
