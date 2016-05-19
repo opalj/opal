@@ -36,6 +36,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicMethodInfo
+import org.opalj.ai.domain.PerformAI
 
 /**
  * Analyzes the parameters of called methods to determine if we have more precise type
@@ -56,8 +57,6 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ) = {
-        import theProject._
-
         //        val mutex = new Object // JUST USED TO GET A REASONABLE DEBUG OUTPUT
 
         val callsCount = new java.util.concurrent.atomic.AtomicInteger
@@ -66,7 +65,7 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
 
         def analyzeMethod(classFile: ClassFile, method: Method): Unit = {
             val domain = new ai.domain.l1.DefaultDomain(theProject, classFile, method)
-            val result = BaseAI(classFile, method, domain)
+            val result = PerformAI(domain)
 
             val code = method.body.get
             foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) ⇒
@@ -124,7 +123,7 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
             }
         }
 
-        parForeachMethodWithBody { isInterrupted } { projectMethodInfo ⇒
+        theProject.parForeachMethodWithBody { isInterrupted } { projectMethodInfo ⇒
             val BasicMethodInfo(classFile, method) = projectMethodInfo
             try {
                 // <= THIS IS STRICTLY NECESSARY AS parForeachMethodWithBody

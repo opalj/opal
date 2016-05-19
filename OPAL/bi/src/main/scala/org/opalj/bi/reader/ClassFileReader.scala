@@ -243,11 +243,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             major_version >= 45 && // at least JDK 1.1
             (major_version < 52 /* Java 7 = 51.0 */ ||
                 (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))
-        ))
-            throw BytecodeProcessingFailedException(
-                s"unsupported class file version: $major_version.$minor_version"+
-                    " (Supported: 45(Java 1.1) <= version <= 52(Java 8))"
-            )
+        )) throw BytecodeProcessingFailedException(
+            s"unsupported class file version: $major_version.$minor_version"+
+                " (Supported: 45(Java 1.1) <= version <= 52(Java 8))"
+        )
 
         val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort
