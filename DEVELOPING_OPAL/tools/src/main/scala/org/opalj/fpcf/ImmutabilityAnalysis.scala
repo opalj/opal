@@ -47,7 +47,7 @@ import org.opalj.fpcf.analysis.extensibility.ClassExtensibilityAnalysis
 import org.opalj.fpcf.analysis.extensibility.IsExtensible
 
 /**
- * Runs the immutability analysis.
+ * Determines the immutability of the classes of a project.
  *
  * @author Michael Eichberg
  */

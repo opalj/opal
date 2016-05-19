@@ -97,7 +97,7 @@ package object io {
         filenamePrefix: String,
         filenameSuffix: String
     ): File = {
-        
+
         val path = Files.createTempFile(filenamePrefix, filenameSuffix)
         Files.write(path, data.getBytes("UTF-8"))
         val file = path.toFile()

@@ -39,7 +39,7 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Creates the three-address representation and prints it.
- * 
+ *
  * @example
  * 		To convert all files of a project to TAC you can use:
  * {{{
@@ -50,7 +50,7 @@ import org.opalj.br.analyses.SomeProject
  * val p = org.opalj.br.analyses.Project(f)
  * var i = 0
  * time {
- * p.parForeachMethodWithBody(parallelizationLevel=32){ mi => 
+ * p.parForeachMethodWithBody(parallelizationLevel=32){ mi =>
  *   val (code,_) = org.opalj.tac.AsQuadruples(mi.method,p.classHierarchy)
  *   val tac = ToJavaLike(code)
  *   val fileNamePrefix = mi.classFile.thisType.toJava+"."+mi.method.name
