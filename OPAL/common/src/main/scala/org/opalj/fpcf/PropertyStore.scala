@@ -905,16 +905,16 @@ class PropertyStore private (
      */
     // Locks: accessStore
     def entities[P <: Property](p: P): Traversable[Entity] = {
-            val pkId = p.key.id
+        val pkId = p.key.id
         object PropertyP {
-            def unapply(eps : EntityProperties) : Boolean = {
+            def unapply(eps: EntityProperties): Boolean = {
                 val ps = eps.ps
                 val psPKId = ps(pkId)
                 !isPropertyUnavailable(psPKId) && psPKId.p == p
             }
         }
         accessStore {
-            entries collect {                case (e, PropertyP()) ⇒                    e            }
+            entries collect { case (e, PropertyP()) ⇒ e }
         }
     }
 
@@ -2218,7 +2218,7 @@ private[fpcf] object PropertyAndObservers {
 private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObservers, Property] {
 
     def isDefinedAt(pos: PropertyAndObservers): Boolean = {
-        (pos ne null) && {            val p = pos.p;             (p ne null) && !p.isBeingComputed        }
+        (pos ne null) && { val p = pos.p; (p ne null) && !p.isBeingComputed }
     }
 
     def apply(pos: PropertyAndObservers): Property = pos.p
