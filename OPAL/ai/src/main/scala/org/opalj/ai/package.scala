@@ -264,7 +264,7 @@ package object ai {
     }
 
     /**
-     * Calculates the initial "PC" associated with a method's parameter.
+     * Calculates the initial "ValueOrigin" associated with a method's parameter.
      *
      * @param isStaticMethod True if method is static and, hence, has no implicit
      *      parameter for `this`.

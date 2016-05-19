@@ -32,7 +32,7 @@ OPAL uses SBT as its build tool and working with OPAL is particularly easy using
 Make sure that you have Java 8, Scala 2.11.8 and SBT 0.13.x installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder. 
 
-* Call `sbt clean clean-files clean-cache clean-local eclipse copyResources it:compile test:compile unidoc publishLocal copyToEclipsePlugin`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
+* Call `sbt clean cleanFiles cleanCache cleanLocal eclipse copyResources it:compile test:compile unidoc publishLocal copyToEclipsePlugin`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * Go to the `TOOLS/bp` folder and call `sbt compile` to compile the BugPicker. You can run the BugPicker using `sbt run`.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
 -Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5")

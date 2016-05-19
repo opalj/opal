@@ -181,7 +181,7 @@ final class Method private (
 
     final def isStaticInitializer: Boolean = name == "<clinit>"
 
-    final def isInitialzer: Boolean = isConstructor || isStaticInitializer
+    final def isInitializer: Boolean = isConstructor || isStaticInitializer
 
     def returnType = descriptor.returnType
 
@@ -294,21 +294,18 @@ object Method {
             (name == "readObjectNoData" && descriptor == NoArgsAndReturnVoid) ||
             (name == "readResolve" && descriptor == JustReturnsObject) ||
             (name == "writeReplace" && descriptor == JustReturnsObject) ||
-            (
-
+            ((
+                (name == "readObject" && descriptor == readObjectDescriptor) ||
+                (name == "writeObject" && descriptor == writeObjectDescriptor)
+            ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
                 (
-                    (name == "readObject" && descriptor == readObjectDescriptor) ||
-                    (name == "writeObject" && descriptor == writeObjectDescriptor)
-                ) && isInheritedBySerializableOnlyClass.isYesOrUnknown
-            ) ||
+                    method.isPublic /*we are implementing an interface...*/ &&
                     (
-                        method.isPublic /*we are implementing an interface...*/ &&
-                        (
-                            (name == "readExternal" && descriptor == readObjectInputDescriptor) ||
-                            (name == "writeExternal" && descriptor == writeObjectOutputDescriptor)
-                        ) &&
-                            isInheritedByExternalizableClass.isYesOrUnknown
-                    )
+                        (name == "readExternal" && descriptor == readObjectInputDescriptor) ||
+                        (name == "writeExternal" && descriptor == writeObjectOutputDescriptor)
+                    ) &&
+                        isInheritedByExternalizableClass.isYesOrUnknown
+                )
     }
 
     private def isNativeAndVarargs(accessFlags: Int) = {

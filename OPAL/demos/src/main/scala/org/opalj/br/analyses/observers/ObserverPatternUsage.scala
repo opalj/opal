@@ -121,7 +121,7 @@ object ObserverPatternUsage extends DefaultOneStepAnalysis {
 
                         implObsIntfs.nonEmpty && (
                             observerClassFile.methods forall { method ⇒
-                                method.isInitialzer || method.isSynthetic ||
+                                method.isInitializer || method.isSynthetic ||
                                     // one of the implemented observer interfaces defines the method
                                     implObsIntfs.exists(observerInterface ⇒
                                         project.classFile(observerInterface).isDefined &&

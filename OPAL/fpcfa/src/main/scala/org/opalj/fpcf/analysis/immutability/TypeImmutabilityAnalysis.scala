@@ -71,7 +71,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             ps(cf, ObjectImmutability.key) match {
                 case ep @ EP(_, p) ⇒
                     p match {
-                        case p: MutableObject             ⇒ ImmediateResult(cf, MutableType)
+                        case _: MutableObject             ⇒ ImmediateResult(cf, MutableType)
                         case ImmutableObject              ⇒ ImmediateResult(cf, ImmutableType)
                         case ConditionallyImmutableObject ⇒ ImmediateResult(cf, ConditionallyImmutableType)
                         case AtLeastConditionallyImmutableObject | UnknownObjectImmutability ⇒
@@ -95,7 +95,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     "project configuration",
                     s"the type $thisType's subtype $subtype is not available"
                 )
-                // Obviously the type hierarchy is incommplete;
+                // Obviously the type hierarchy is incomplete;
                 // hence, we have to make a safe and sound approximation!
                 return Result(cf, MutableType);
             }

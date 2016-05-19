@@ -133,7 +133,7 @@ trait Instruction {
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
      * one value.
      *
-     * @note In case of some of the [[StackManagementInstruction]] this number is
+     * @note In case of some of the [[StackManagementInstruction]] the number of popped values is
      *      not fixed. In that case the number depends on the concrete layout of the
      *      operand stack. E.g., the [[POP2]] instruction may just pop one
      *      ''categeory 2'' value (of type `long` or `double`) or two ''category 1''
