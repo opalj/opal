@@ -84,6 +84,16 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  * explicitly final; however, this is already handled by the
  * [[org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis]].
  *
+ * ==Identifying Immutable Objects in Practice==
+ * Identifying real world immutable classes as such by means of an analysis is in general a
+ * challenging task. For example, to
+ * identify the well known immutable class "java.lang.String" as such requires:
+ *  - Identifying that the field hash is effectively immutable though the field is only lazily
+ *    initialized (in a thread-safe manner).
+ *  - Determing that all calls to the package-private constructor java.lang.String(byte[] buf,
+ *    Boolean shared) are actually passed an array that is not shared afterwards. I.e., the
+ *    ownership is in all cases effectively transfered to the class java.lang.String.
+ *
  * ==Interfaces==
  * Are not considered during the analysis as they are always immutable. (All fields are (implicitly)
  * `static` and `final`.)

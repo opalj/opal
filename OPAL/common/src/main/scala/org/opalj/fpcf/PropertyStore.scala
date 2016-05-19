@@ -901,6 +901,24 @@ class PropertyStore private (
     }
 
     /**
+     * Returns all entities that have a specific property.
+     */
+    // Locks: accessStore
+    def entities[P <: Property](p: P): Traversable[Entity] = {
+            val pkId = p.key.id
+        object PropertyP {
+            def unapply(eps : EntityProperties) : Boolean = {
+                val ps = eps.ps
+                val psPKId = ps(pkId)
+                !isPropertyUnavailable(psPKId) && psPKId.p == p
+            }
+        }
+        accessStore {
+            entries collect {                case (e, PropertyP()) ⇒                    e            }
+        }
+    }
+
+    /**
      * Directly associate the given property `p` with given entity `e` if `e` has no property
      * of the respective kind and no other lazy or direct computation is currently executed.
      *
@@ -2200,18 +2218,16 @@ private[fpcf] object PropertyAndObservers {
 private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObservers, Property] {
 
     def isDefinedAt(pos: PropertyAndObservers): Boolean = {
-        (pos ne null) && {
-            val p = pos.p
-            (p ne null) && !p.isBeingComputed
-        }
+        (pos ne null) && {            val p = pos.p;             (p ne null) && !p.isBeingComputed        }
     }
 
     def apply(pos: PropertyAndObservers): Property = pos.p
 }
 
 /**
- * @param id A globally unique id that is used to sort entities to acquire locks related to
- * 			multiple entities in a globally consistent order.
+ * @param id A property store wide unique id that is used to sort all entities.
+ * 			This global order is then used to acquire locks related to multiple entities in a
+ * 			'''globally''' consistent order.
  * @param ps A mutable map of the entities properties; the key is the id of the property's kind.
  */
 private[fpcf] final class EntityProperties(

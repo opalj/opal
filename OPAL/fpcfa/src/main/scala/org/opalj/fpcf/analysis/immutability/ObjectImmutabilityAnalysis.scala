@@ -127,7 +127,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
         // Collect all fields for which we need to determine the effective mutability!
         var hasFieldsWithUnknownMutability = false
-        val nonFinalInstanceFields = cf.fields.collect { case f if !f.isStatic && !f.isFinal ⇒ f }
+        val nonFinalInstanceFields = cf.fields.filter { f ⇒ !f.isStatic && !f.isFinal }
         dependees ++= propertyStore(nonFinalInstanceFields, FieldMutability) collect {
             case EP(e, p) if !p.isEffectivelyFinal ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
@@ -147,8 +147,7 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
             // IMPROVE We could analyze if the array is effectively final.
             // I.e., it is only initialized once (at construction time) and no reference to it
             // is passed to another object.
-            val result = ImmediateResult(cf, ConditionallyImmutableObject)
-            return createIncrementalResult(cf, ConditionallyImmutableObject, result);
+            maxLocalImmutability = ConditionallyImmutableObject
         }
 
         var fieldTypesClassFiles: List[ClassFile] = Nil

@@ -36,9 +36,11 @@ import scala.collection.Map
 import scala.collection.JavaConverters._
 import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC_W
 
 /**
- * The ''key'' object to get information about all string constants found in code.
+ * The ''key'' object to get information about all string constants found in the project's code.
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
@@ -68,9 +70,10 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
             val method = methodInfo.method
 
             method.body.get foreach { (pc, instruction) ⇒
-                instruction match {
+                instruction.opcode match {
 
-                    case LDCString(value) ⇒
+                    case LDC.opcode | LDC_W.opcode ⇒
+                        val LDCString(value) = instruction
                         var list = new ConcurrentLinkedQueue[(Method, PC)]();
                         val previousList = map.putIfAbsent(value, list)
                         if (previousList != null) list = previousList
@@ -84,4 +87,3 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
         map.asScala.map(kv ⇒ (kv._1, kv._2.asScala.toList))
     }
 }
-

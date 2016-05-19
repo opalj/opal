@@ -37,7 +37,7 @@ import org.opalj.concurrent.Locking.withWriteLock
  * A value object that identifies a specific kind of properties. Every entity in
  * the [[PropertyStore]] must be associated with at most one property per property kind/key.
  *
- * To create a property key use the companion object's [[PropertyKey$]].`create` method.
+ * To create a property key use one of the companion object's [[PropertyKey$]].`create` method.
  *
  * @author Michael Eichberg
  */
@@ -47,30 +47,60 @@ class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with Pro
 }
 
 /**
- * Factory to create [[PropertyKey]] objects.
+ * Factory to create and manage [[PropertyKey]] objects.
  *
  * @author Michael Eichberg
  */
 object PropertyKey {
 
+    type SomeEPKs = Iterable[SomeEPK]
+    type CycleResolutionStrategy = (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult]
+
     private[this] val keysLock = new ReentrantReadWriteLock
 
-    private[this] val propertyKeyNames =
-        ArrayBuffer.empty[String]
-    private[this] val fallbackProperties =
-        ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
+    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val fallbackProperties = ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
+
+    // Entries in the array can be updated by an analysis!
     private[this] val cycleResolutionStrategies =
         ArrayBuffer.empty[(PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]]
+
     private[this] var lastKeyId: Int = -1
 
+    /**
+     * Updates the (default) cycle resolution strategy associated with a specific kind of
+     * properties.
+     */
+    def updateCycleResolutionStrategy[P <: Property](
+        key:                     PropertyKey[P],
+        cycleResolutionStrategy: CycleResolutionStrategy
+    ): Unit = {
+        withWriteLock(keysLock) {
+            cycleResolutionStrategies(key.id) = cycleResolutionStrategy
+        }
+    }
+
+    /**
+     * Creates a new [[PropertyKey]] object that is to be shared by all properties that belong to
+     * the same category.
+     *
+     * @param name The unique name associated with the property. To ensure
+     * 				uniqueness it is recommended to prepend (parts of) the package name of property.
+     * 				Properties defined by OPAL start with "opalj."
+     * @param fallbackProperty A function that returns the property that will be associated
+     * 				with those entities for which the property is not explicitly computed.
+     * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
+     * 				computations. The strategy can be adapted by an analysis to its own needs.
+     */
     def create[P <: Property](
         name:                    String,
         fallbackProperty:        (PropertyStore, Entity) ⇒ P,
-        cycleResolutionStrategy: (PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]
+        cycleResolutionStrategy: CycleResolutionStrategy
     ): PropertyKey[P] = {
         withWriteLock(keysLock) {
-            if (propertyKeyNames.contains(name))
+            if (propertyKeyNames.contains(name)) {
                 throw new IllegalArgumentException(s"the property kind name $name is already used")
+            }
 
             lastKeyId += 1
             propertyKeyNames += name
@@ -83,7 +113,7 @@ object PropertyKey {
     def create[P <: Property](
         name:                    String,
         fallback:                P,
-        cycleResolutionStrategy: (PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]
+        cycleResolutionStrategy: CycleResolutionStrategy
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
@@ -96,9 +126,7 @@ object PropertyKey {
         create(
             name,
             fallback,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
-                Seq(Result(epks.head.e, cycleResolutionProperty))
-            }
+            (ps: PropertyStore, epks: SomeEPKs) ⇒ Seq(Result(epks.head.e, cycleResolutionProperty))
         )
     }
 
@@ -119,8 +147,14 @@ object PropertyKey {
     // ===============================================
     //
 
+    /**
+     * Returns the unique name of the kind of properties associated with the given key id.
+     */
     def name(id: Int): String = withReadLock(keysLock) { propertyKeyNames(id) }
 
+    /**
+     * @note This method is intended to be called by the framework.
+     */
     def fallbackProperty[P <: Property](
         ps: PropertyStore,
         e:  Entity,
@@ -131,6 +165,9 @@ object PropertyKey {
         }
     }
 
+    /**
+     * @note This method is intended to be called by the framework.
+     */
     def resolveCycle(
         ps:   PropertyStore,
         epks: Iterable[SomeEPK]
@@ -141,6 +178,11 @@ object PropertyKey {
         }
     }
 
+    /**
+     * Returns the id associated with the last created property key.
+     * The id associated with the first property kind is `0`;
+     * `-1` is returned if no property key is created so far.
+     */
     private[fpcf] def maxId = withReadLock(keysLock) { lastKeyId }
 
 }
