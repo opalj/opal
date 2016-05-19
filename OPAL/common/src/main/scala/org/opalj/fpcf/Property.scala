@@ -76,7 +76,9 @@ trait Property extends PropertyMetaInformation {
      *
      * Used by the framework for debugging purposes only!
      */
-    private[fpcf] def asOrderedProperty: OrderedProperty = throw new UnsupportedOperationException
+    private[fpcf] def asOrderedProperty: OrderedProperty = {
+        throw new ClassCastException(s"$this is not an OrderedProperty")
+    }
 
 }
 
@@ -89,8 +91,14 @@ trait Property extends PropertyMetaInformation {
  */
 trait OrderedProperty extends Property {
 
+    /**
+     * Returns `true`.
+     */
     final override def isOrdered: Boolean = true
 
+    /**
+     * Returns `this`.
+     */
     final override def asOrderedProperty: this.type = this
 
     /**
