@@ -25,9 +25,9 @@ javaOptions in run += "-Xmx8G" // BETTER: javaOptions in run += "-Xmx16G"
 
 javaOptions in run += "-Xms4G"
 
-mainClass in "bp" in Compile := (mainClass in "BugPickerUI" in Compile).value
+mainClass in LocalProject("bp") in Compile := (mainClass in LocalProject("BugPickerUI") in Compile).value
 
-fullClasspath in "bp" in Runtime ++= (fullClasspath in "BugPickerUI" in Runtime).value
+fullClasspath in LocalProject("bp") in Runtime ++= (fullClasspath in LocalProject("BugPickerUI") in Runtime).value
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 
