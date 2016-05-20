@@ -32,12 +32,14 @@ package da
 import scala.xml.Node
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class InnerClassesEntry(
         inner_class_info_index:   Int,
@@ -46,6 +48,13 @@ case class InnerClassesEntry(
         inner_class_access_flags: Int
 ) {
 
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(inner_name_index) ++
+            collectReferencedConstantPoolIndices(inner_class_info_index) ++
+            collectReferencedConstantPoolIndices(outer_class_info_index)
+    }
+	
     def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
         val accessFlags =
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)

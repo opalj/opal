@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 trait StackMapFrame {
 
@@ -44,6 +46,9 @@ trait StackMapFrame {
     var initial_offset: Int = 0;
 
     def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = HashSet.empty
 }
 
 case class SameFrame(
@@ -53,12 +58,19 @@ case class SameFrame(
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_fram_Offset + frame_type + 1; initial_offset },frame_type:same]</div>
     }
+    def referencedConstantPoolEntries(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Entry] = HashSet.empty
 }
 
 case class SameLocals1StackItemFrame(
         frame_type:                   Int,
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        verification_type_info_stack.referencedConstantPoolIndices
+    }
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_fram_Offset + frame_type - 64 + 1; initial_offset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
@@ -70,6 +82,11 @@ case class SameLocals1StackItemFrameExtended(
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        verification_type_info_stack.referencedConstantPoolIndices
+    }
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
         <div>
@@ -109,6 +126,14 @@ case class AppendFrame(
         verification_type_info_locals: Seq[VerificationTypeInfo]
 ) extends StackMapFrame {
 
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet.empty ++
+            verification_type_info_locals.flatMap { verification_type_info ⇒
+                verification_type_info.referencedConstantPoolIndices
+            }
+    }
+
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { for (verification_type_info_local ← verification_type_info_locals) yield verification_type_info_local.toXHTML(cp) }</span>
     }
@@ -129,6 +154,17 @@ case class FullFrame(
         verification_type_info_locals: IndexedSeq[VerificationTypeInfo],
         verification_type_info_stack:  IndexedSeq[VerificationTypeInfo]
 ) extends StackMapFrame {
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet.empty ++
+            verification_type_info_locals.flatMap { verification_type_info ⇒
+                verification_type_info.referencedConstantPoolIndices
+            } ++
+            verification_type_info_stack.flatMap { verification_type_info ⇒
+                verification_type_info.referencedConstantPoolIndices
+            }
+    }
 
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { for (verification_type_info_local ← verification_type_info_locals) yield verification_type_info_local.toXHTML(cp) }</span>

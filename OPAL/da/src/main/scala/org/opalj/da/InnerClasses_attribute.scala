@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * <pre>
@@ -48,6 +49,7 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class InnerClasses_attribute(
         attribute_name_index: Int,
@@ -72,6 +74,14 @@ case class InnerClasses_attribute(
                 }
             </details>
         </div>
+    }
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            innerClasses.flatMap { innerClass ⇒
+                innerClass.referencedConstantPoolIndices
+            }
     }
 }
 object InnerClasses_attribute {

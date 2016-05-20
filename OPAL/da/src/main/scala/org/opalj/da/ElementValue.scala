@@ -34,23 +34,32 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 trait ElementValue {
 
     def toXHTML(implicit cp: Constant_Pool): Node
 
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = HashSet.empty
 }
 
 trait BaseElementValue extends ElementValue {
     def const_value_index: Int
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">{ cp(const_value_index).asInlineNode }</span>
+    }
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(const_value_index)
     }
 }
 
@@ -79,6 +88,11 @@ case class BooleanValue(const_value_index: Int) extends BaseElementValue
 object BooleanValue { val tag = 'Z' }
 
 case class StringValue(const_value_index: Int) extends ElementValue {
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        collectReferencedConstantPoolIndices(const_value_index)
+    }
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">"{ cp(const_value_index).toString }"</span>
     }
@@ -87,8 +101,14 @@ case class StringValue(const_value_index: Int) extends ElementValue {
 object StringValue { val tag = 's' }
 
 case class ClassValue(const_value_index: Int) extends ElementValue {
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value type">{ parseReturnType(const_value_index) }.class</span>
+    }
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(const_value_index)
     }
 }
 object ClassValue { val tag = 'c' }
@@ -106,6 +126,11 @@ case class EnumValue(
 
         <span class="constant_value"><span class="type">{ et }</span>.<span class="field_name">{ ec }</span></span>
     }
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(type_name_index, const_name_index)
+    }
 }
 object EnumValue { val tag = 'e' }
 
@@ -113,6 +138,11 @@ case class AnnotationValue(val annotation: Annotation) extends StructuredElement
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">{ annotation.toXHTML }</span>
+    }
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        annotation.referencedConstantPoolIndices
     }
 }
 object AnnotationValue { val tag = '@' }
@@ -123,5 +153,14 @@ case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementVa
         val values = this.values.map(v ⇒ { v.toXHTML })
         <span class="constant_value">[{ values }]</span>
     }
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet.empty ++
+            values.flatMap { value ⇒
+                value.referencedConstantPoolIndices
+            }
+    }
+
 }
 object ArrayValue { val tag = '[' }

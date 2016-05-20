@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Code_attribute(
         attribute_name_index: Constant_Pool_Index,
@@ -56,6 +58,17 @@ case class Code_attribute(
             "the code attribute needs the method's id; "+
                 "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
         )
+    }
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++ code.referencedConstantPoolIndices ++
+            exceptionTable.flatMap { exception ⇒
+                exception.referencedConstantPoolIndices
+            } ++
+            attributes.flatMap { attribute ⇒
+                attribute.referencedConstantPoolIndices
+            }
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {

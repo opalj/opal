@@ -31,6 +31,7 @@ package da
 
 import scala.xml.Node
 import scala.xml.Text
+import scala.collection.immutable.HashSet
 
 /**
  * <pre>
@@ -43,6 +44,7 @@ import scala.xml.Text
  * </pre>
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 case class Exceptions_attribute(
         attribute_name_index:  Int,
@@ -65,6 +67,11 @@ case class Exceptions_attribute(
                 c ++ Seq(Text(", "), cp(i).asInlineNode)
             }
         }</span>
+    }
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            exception_index_table.flatMap { collectReferencedConstantPoolIndices }
     }
 }
 object Exceptions_attribute {

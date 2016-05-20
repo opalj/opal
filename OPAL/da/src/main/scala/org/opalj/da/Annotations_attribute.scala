@@ -30,16 +30,26 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 trait Annotations_attribute extends Attribute {
 
     val annotations: IndexedSeq[Annotation]
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet.empty ++
+            annotations.flatMap { annotation ⇒
+                annotation.referencedConstantPoolIndices
+            }
+    }
 
     def annotationsToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         val annotationNodes =

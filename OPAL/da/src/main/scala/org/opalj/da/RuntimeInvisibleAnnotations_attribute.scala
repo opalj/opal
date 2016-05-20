@@ -30,18 +30,28 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class RuntimeInvisibleAnnotations_attribute(
         attribute_name_index: Int,
         attribute_length:     Int,
         annotations:          IndexedSeq[Annotation]
 ) extends Annotations_attribute {
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            annotations.flatMap { annotation ⇒
+                annotation.referencedConstantPoolIndices
+            }
+    }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotations runtime_invisible tooltip">

@@ -30,16 +30,21 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 trait VerificationTypeInfo {
 
     def toXHTML(implicit cp: Constant_Pool): Node
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = HashSet.empty
 
     def tag: Int
 }
@@ -122,6 +127,11 @@ case class UninitializedThisVariableInfo() extends VerificationTypeInfo {
 case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
     def tag = VerificationTypeInfo.ITEM_Object
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        collectReferencedConstantPoolIndices(cpool_index)
+    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="verification">{ cp(cpool_index).toString(cp) } |</span>

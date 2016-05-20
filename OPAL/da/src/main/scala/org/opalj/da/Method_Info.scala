@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Method_Info(
         access_flags:     Int,
@@ -72,6 +74,14 @@ case class Method_Info(
             </div>
             { attributesToXHTML(methodIndex) }
         </div>
+    }
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(name_index, descriptor_index) ++
+            attributes.flatMap { attribute ⇒
+                attribute.referencedConstantPoolIndices
+            }
     }
 
     private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {

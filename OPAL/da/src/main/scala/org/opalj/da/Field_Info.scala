@@ -32,12 +32,14 @@ package da
 import scala.xml.Node
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Field_Info(
         access_flags:     Int,
@@ -62,6 +64,10 @@ case class Field_Info(
         </tr>
     }
 
+    def referencedConstantPoolIndices(implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(name_index, descriptor_index) ++
+            attributes.flatMap(_.referencedConstantPoolIndices)
+    }
     def attributesToXHTML(implicit cp: Constant_Pool) = {
         if (attributes.nonEmpty)
             for (attribute ← attributes) yield attribute.toXHTML(cp)

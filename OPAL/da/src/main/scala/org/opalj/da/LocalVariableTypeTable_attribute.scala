@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class LocalVariableTypeTable_attribute(
         attribute_name_index:      Int,
@@ -43,6 +45,14 @@ case class LocalVariableTypeTable_attribute(
 ) extends Attribute {
 
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            local_variable_type_table.flatMap { local_variable_type ⇒
+                local_variable_type.referencedConstantPoolIndices
+            }
+    }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>

@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class LocalVariableTypeTableEntry(
         start_pc:        Int,
@@ -45,6 +47,11 @@ case class LocalVariableTypeTableEntry(
         index:           Int
 ) {
 
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(name_index, signature_index)
+
+    }
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val name = cp(name_index).toString(cp)
         val signature = cp(signature_index).asString // TODO "Decipher the signature"

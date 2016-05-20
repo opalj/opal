@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -44,6 +45,14 @@ case class MethodParameters_attribute(
 ) extends Attribute {
 
     def attribute_name = MethodParameters_attribute.name
+
+    override def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            parameters.flatMap { parameter ⇒
+                parameter.referencedConstantPoolIndices
+            }
+    }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>{ cp(attribute_name_index).toString(cp) }({ parametersToXHTML(cp) })</span>
@@ -63,6 +72,11 @@ case class MethodParameter(
         name_index:   Constant_Pool_Index,
         access_flags: Int
 ) {
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(name_index)
+    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>

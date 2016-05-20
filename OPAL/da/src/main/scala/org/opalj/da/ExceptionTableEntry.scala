@@ -30,11 +30,13 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class ExceptionTableEntry(
         val start_pc:   Int,
@@ -43,6 +45,9 @@ case class ExceptionTableEntry(
         val catch_type: Int
 ) {
 
+    def referencedConstantPoolIndices(implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        collectReferencedConstantPoolIndices(catch_type)
+    }
     def toXHTML(implicit cp: Constant_Pool, code: Code): Node = {
 
         if (catch_type != 0) {

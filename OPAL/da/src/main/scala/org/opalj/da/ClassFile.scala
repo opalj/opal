@@ -38,6 +38,7 @@ import org.opalj.bi.AccessFlags
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class ClassFile(
         constant_pool: Constant_Pool,
@@ -119,6 +120,23 @@ case class ClassFile(
 
     protected def accessFlags: Node = {
         <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
+    }
+
+    def referencedConstantPoolEntries: Array[Constant_Pool_Entry] = {
+        val referencedIndices =
+            collectReferencedConstantPoolIndices(this_class) ++
+                collectReferencedConstantPoolIndices(super_class) ++
+                interfaces.flatMap(collectReferencedConstantPoolIndices) ++
+                fields.flatMap(_.referencedConstantPoolIndices) ++
+                methods.flatMap(_.referencedConstantPoolIndices) ++
+                attributes.flatMap(_.referencedConstantPoolIndices)
+        val referencedEntries = constant_pool.indices.map { index ⇒
+            if (referencedIndices.contains(index))
+                constant_pool(index)
+            else
+                null
+        }
+        referencedEntries.toArray
     }
 
     protected def filter: Node = {

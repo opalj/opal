@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class SourceFile_attribute(
         attribute_name_index: Int,
@@ -43,6 +45,11 @@ case class SourceFile_attribute(
 ) extends Attribute {
 
     def attribute_length = 2
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index, sourceFile_index)
+    }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">

@@ -34,7 +34,10 @@ package reader
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
+<<<<<<< HEAD
 import org.opalj.bi.{AttributeParent, AttributesParent}
+=======
+>>>>>>> feature-constant_pool_builder
 import org.opalj.bi.reader.Constant_PoolReader
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.log.OPALLogger
@@ -49,6 +52,7 @@ import org.opalj.log.GlobalLogContext
  *    immutable; the referenced constant pool entry must not change.
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 trait ConstantPoolBinding extends Constant_PoolReader {
 
@@ -63,6 +67,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         cp(index)
     }
 
+<<<<<<< HEAD
     trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         def asString: String =
             throw new BytecodeProcessingFailedException(
@@ -456,6 +461,26 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             cp(nameAndTypeIndex).asNameAndType.methodDescriptor(cp)
 
     }
+=======
+    type Constant_Pool_Entry = cp.Constant_Pool_Entry
+
+    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
+
+    type CONSTANT_Class_info = cp.CONSTANT_Class_info
+    type CONSTANT_Fieldref_info = cp.CONSTANT_Fieldref_info
+    type CONSTANT_Methodref_info = cp.CONSTANT_Methodref_info
+    type CONSTANT_InterfaceMethodref_info = cp.CONSTANT_InterfaceMethodref_info
+    type CONSTANT_String_info = cp.CONSTANT_String_info
+    type CONSTANT_Integer_info = cp.CONSTANT_Integer_info
+    type CONSTANT_Float_info = cp.CONSTANT_Float_info
+    type CONSTANT_Long_info = cp.CONSTANT_Long_info
+    type CONSTANT_Double_info = cp.CONSTANT_Double_info
+    type CONSTANT_NameAndType_info = cp.CONSTANT_NameAndType_info
+    type CONSTANT_Utf8_info = cp.CONSTANT_Utf8_info
+    type CONSTANT_MethodHandle_info = cp.CONSTANT_MethodHandle_info
+    type CONSTANT_MethodType_info = cp.CONSTANT_MethodType_info
+    type CONSTANT_InvokeDynamic_info = cp.CONSTANT_InvokeDynamic_info
+>>>>>>> feature-constant_pool_builder
 
     //
     // IMPLEMENTATION OF THE CONSTANT POOL READER'S FACTORY METHODS
@@ -521,4 +546,3 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
 }
-

@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class RuntimeInvisibleParameterAnnotations_attribute(
         attribute_name_index:  Int,
@@ -45,6 +47,16 @@ case class RuntimeInvisibleParameterAnnotations_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
+    }
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(attribute_name_index) ++
+            parameter_annotations.flatMap { parameter_annotations ⇒
+                parameter_annotations.flatMap {
+                    annotation ⇒ annotation.referencedConstantPoolIndices
+                }
+            }
     }
 
     def annotationstoXHTML(implicit cp: Constant_Pool): Node = {

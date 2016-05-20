@@ -30,14 +30,24 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Annotation(type_index: Int, element_value_pairs: IndexedSeq[ElementValuePair]) {
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(type_index) ++
+            element_value_pairs.flatMap { pair ⇒
+                pair.referencedConstantPoolIndices
+            }
+    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val element_value_pairs =

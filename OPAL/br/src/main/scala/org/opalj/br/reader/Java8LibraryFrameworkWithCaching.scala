@@ -49,7 +49,7 @@ class Java8LibraryFrameworkWithCaching(
         with ClassFileBinding
         with AttributesReader
         /* If you want unknown attributes to be represented uncomment the following: */
-        // with Unknown_attributeBinding 
+        // with Unknown_attributeBinding
         /* and comment out the following line: */
         with SkipUnknown_attributeReader
         with AnnotationAttributesBinding

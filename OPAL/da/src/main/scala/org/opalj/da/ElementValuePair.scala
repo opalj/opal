@@ -34,18 +34,24 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class ElementValuePair(
         element_name_index: Int,
         element_value:      ElementValue
 ) {
 
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        HashSet(element_name_index) ++ element_value.referencedConstantPoolIndices
+    }
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val en = cp(element_name_index).toString(cp)
         <span class="element_value_pair"><span class="element_name">{ en }</span>={ element_value.toXHTML }</span>

@@ -72,3 +72,8 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
         cp(class_index).toString(cp)+"{ "+cp(name_and_type_index).toString(cp)+" }"
 
 }
+
+object CONSTANT_Ref {
+    def unapply(ref: CONSTANT_Ref): Option[(Constant_Pool_Index, Constant_Pool_Index)] =
+        Some((ref.class_index, ref.name_and_type_index))
+}

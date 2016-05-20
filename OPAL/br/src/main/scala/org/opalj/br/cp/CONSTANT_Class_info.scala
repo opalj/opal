@@ -14,6 +14,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,40 +23,34 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
+package br
+package cp
 
 /**
+ * Represents a class or an interface.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
+ * @author Andre Pacak
  */
-case class RuntimeVisibleTypeAnnotations_attribute(
-        attribute_name_index: Int,
-        attribute_length:     Int,
-        annotations:          IndexedSeq[TypeAnnotation]
-) extends Attribute {
+case class CONSTANT_Class_info(
+    name_index: Constant_Pool_Index
+)
+        extends Constant_Pool_Entry {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationstoXHTML(cp) }</div>
-    }
+    override def asConstantValue(cp: Constant_Pool) =
+        ConstantClass(asReferenceType(cp))
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        <span>
-            { for (annotation ← annotations) yield annotation.toXHTML(cp) }
-        </span>
-    }
-}
+    override def asObjectType(cp: Constant_Pool) =
+        ObjectType(cp(name_index).asString)
 
-object RuntimeVisibleTypeAnnotations_attribute {
+    override def asReferenceType(cp: Constant_Pool) =
+        ReferenceType(cp(name_index).asString)
 
-    val name = "RuntimeVisibleTypeAnnotations"
-
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
+        asConstantValue(cp)
 }

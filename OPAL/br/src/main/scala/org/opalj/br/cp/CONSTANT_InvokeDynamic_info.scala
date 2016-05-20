@@ -14,6 +14,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,40 +23,39 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
+package br
+package cp
 
 /**
+ * Is used by the invokedynamic instruction to specify a bootstrap method, the dynamic
+ * invocation name, the argument and return types of the call, and optionally, a
+ * sequence of additional constants called static arguments to the bootstrap method.
+ *
+ * @param bootstrapMethodAttributeIndex This is an index into the bootstrap table.
+ *    Since the bootstrap table is a class level attribute it is only possible
+ *    to resolve this reference after loading the entire class file (class level
+ *    attributes are loaded last).
  *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
+ * @author Andre Pacak
  */
-case class RuntimeInvisibleTypeAnnotations_attribute(
-        attribute_name_index: Int,
-        attribute_length:     Int,
-        annotations:          IndexedSeq[TypeAnnotation]
-) extends Attribute {
+case class CONSTANT_InvokeDynamic_info(
+    bootstrapMethodAttributeIndex: Int,
+    nameAndTypeIndex:              Constant_Pool_Index
+)
+        extends Constant_Pool_Entry {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
-    }
+    override def asInvokeDynamic: CONSTANT_InvokeDynamic_info = this
 
-    def annotationsToXHTML(implicit cp: Constant_Pool): Node = {
-        val annotationNodes = for (annotation ← annotations) yield annotation.toXHTML(cp)
-        <span>{ annotationNodes }</span>
-    }
-}
+    def methodName(cp: Constant_Pool): String =
+        cp(nameAndTypeIndex).asNameAndType.name(cp)
 
-object RuntimeInvisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeInvisibleTypeAnnotations"
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor =
+        cp(nameAndTypeIndex).asNameAndType.methodDescriptor(cp)
 
 }

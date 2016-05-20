@@ -92,7 +92,7 @@ case class PutStaticMethodHandle(
     fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
-trait MethodCallMethodHandle extends MethodHandle {
+sealed trait MethodCallMethodHandle extends MethodHandle {
     def receiverType: ReferenceType
     def name: String
     def methodDescriptor: MethodDescriptor

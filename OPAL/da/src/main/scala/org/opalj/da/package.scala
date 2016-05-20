@@ -29,14 +29,16 @@
 package org.opalj
 
 import scala.xml.Node
-
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import scala.collection.immutable.HashSet
 
 /**
+ *
  * Defines convenience methods related to reading in class files.
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 package object da {
 
@@ -48,6 +50,41 @@ package object da {
     type Fields = IndexedSeq[Field_Info]
 
     type Attributes = Seq[Attribute]
+
+    def collectReferencedConstantPoolIndices(
+        index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        if (index == 0)
+            return HashSet.empty;
+        cp(index) match {
+            case CONSTANT_Class_info(name) ⇒
+                HashSet(index, name)
+            case CONSTANT_Ref(clazz, name_and_type) ⇒
+                HashSet(index) ++ collectReferencedConstantPoolIndices(clazz) ++
+                    collectReferencedConstantPoolIndices(name_and_type)
+            case CONSTANT_InvokeDynamic_info(clazz, name_and_type) ⇒
+                HashSet(index) ++ collectReferencedConstantPoolIndices(clazz) ++
+                    collectReferencedConstantPoolIndices(name_and_type)
+            case CONSTANT_MethodHandle_info(ref_kind, ref_index) ⇒
+                HashSet(index) ++ collectReferencedConstantPoolIndices(ref_index)
+            case CONSTANT_MethodType_info(descriptor_index) ⇒
+                HashSet(index) ++ collectReferencedConstantPoolIndices(descriptor_index)
+            case CONSTANT_NameAndType_info(name, typ) ⇒
+                HashSet(index, name, typ)
+            case CONSTANT_String_info(utf8_index) ⇒
+                HashSet(index, utf8_index)
+            case CONSTANT_Double_info(value) ⇒
+                HashSet(index)
+            case CONSTANT_Float_info(value) ⇒
+                HashSet(index)
+            case CONSTANT_Integer_info(value) ⇒
+                HashSet(index)
+            case CONSTANT_Long_info(value) ⇒
+                HashSet(index)
+            case CONSTANT_Utf8_info(value) ⇒
+                HashSet(index)
+        }
+    }
 
     def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)

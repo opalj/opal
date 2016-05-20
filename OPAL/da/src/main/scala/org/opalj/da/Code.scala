@@ -32,16 +32,341 @@ package da
 import scala.xml.Node
 import scala.xml.Text
 import scala.xml.Unparsed
+import scala.util.Random
+import scala.collection.immutable.HashSet
 
 /**
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
  * @author Tobias Becker
+ * @author Andre Pacak
  */
 case class Code(instructions: Array[Byte]) {
 
     import Code.id
+
+    def referencedConstantPoolIndices(
+        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        val referencedIndices = scala.collection.mutable.HashSet[Constant_Pool_Index]()
+        import java.io.DataInputStream
+        import java.io.ByteArrayInputStream
+        val bas = new ByteArrayInputStream(instructions)
+        val in = new DataInputStream(bas)
+        val codeLength = instructions.size
+        var wide: Boolean = false
+
+        def lvIndex: Int =
+            if (wide) {
+                wide = false
+                in.readUnsignedShort
+            } else {
+                in.readUnsignedByte
+            }
+
+        while (in.available > 0) {
+            val pc = codeLength - in.available
+            (in.readUnsignedByte: @scala.annotation.switch) match {
+                case 189 ⇒ //anewarray
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 192 ⇒ //checkcast
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 180 ⇒ //getfield
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 178 ⇒ //getstatic
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 193 ⇒ //instanceof
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 186 ⇒ //invokedynamic
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                    in.readByte //read and ignore
+                    in.readByte //read and ignore
+                case 185 ⇒ //invokeinterface
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                    in.readByte //read and ignore
+                    in.readByte //read and ignore
+                case 183 ⇒ //invokespecial
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 184 ⇒ //invokestatic
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 182 ⇒ //invokevirtual
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 18 ⇒ //ldc
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedByte)
+                case 19 ⇒ //ldc_w
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 20 ⇒ //ldc_2w
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 197 ⇒ //multinewarray
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                    in.readUnsignedByte //read and ignore
+                case 187 ⇒ //new
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 181 ⇒ //putfield
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 179 ⇒ //putstatic
+                    referencedIndices ++=
+                        collectReferencedConstantPoolIndices(in.readUnsignedShort)
+                case 50 ⇒ //aaload
+                case 83 ⇒ //aastore
+                case 1  ⇒ //aconst_null
+                case 25 ⇒ //aload
+                    lvIndex
+                case 42  ⇒ //aload_0
+                case 43  ⇒ //aload_1
+                case 44  ⇒ //aload_2
+                case 45  ⇒ //aload_3
+                case 176 ⇒ //areturn
+                case 190 ⇒ //arraylength
+                case 58 ⇒ //astore
+                    lvIndex
+                case 75  ⇒ //astore_0
+                case 76  ⇒ //astore_1
+                case 77  ⇒ //astore_2
+                case 78  ⇒ //astore_3
+                case 191 ⇒ //athrow
+                case 51  ⇒ //baload
+                case 84  ⇒ //bastore
+                case 16 ⇒ //bipush
+                    in.readByte
+                case 52  ⇒ //caload
+                case 85  ⇒ //castore
+                case 144 ⇒ //d2f
+                case 142 ⇒ //d2i
+                case 143 ⇒ //d2l
+                case 99  ⇒ //dadd
+                case 49  ⇒ //daload
+                case 82  ⇒ //dastore
+                case 152 ⇒ //dcmpg
+                case 151 ⇒ //dcmpl
+                case 14  ⇒ //dconst_0
+                case 15  ⇒ //dconst_1
+                case 111 ⇒ //ddiv
+                case 24 ⇒ //dload
+                    lvIndex
+                case 38  ⇒ //dload_0
+                case 39  ⇒ //dload_1
+                case 40  ⇒ //dload_2
+                case 41  ⇒ //dload_3
+                case 107 ⇒ //dmul
+                case 119 ⇒ //dneg
+                case 115 ⇒ //drem
+                case 175 ⇒ //dreturn
+                case 57 ⇒ //dstore
+                    lvIndex
+                case 71  ⇒ //dstore_0
+                case 72  ⇒ //dstore_1
+                case 73  ⇒ //dstore_2
+                case 74  ⇒ //dstore_3
+                case 103 ⇒ //dsup
+                case 89  ⇒ //dup
+                case 90  ⇒ //dup_x1
+                case 91  ⇒ //dup2_x2
+                case 92  ⇒ //dup2
+                case 93  ⇒ //dup2_x1
+                case 94  ⇒ //dup2_x2
+                case 141 ⇒ //f2d
+                case 139 ⇒ //f2i
+                case 140 ⇒ //f2l
+                case 98  ⇒ //fadd
+                case 48  ⇒ //faload
+                case 81  ⇒ //fastore
+                case 150 ⇒ //f2cmpg
+                case 149 ⇒ //fcmpl
+                case 11  ⇒ //fconst_0
+                case 12  ⇒ //fconst_1
+                case 13  ⇒ //fconst_2
+                case 110 ⇒ //fdiv
+                case 23 ⇒ //fload
+                    lvIndex
+                case 34  ⇒ //fload_0
+                case 35  ⇒ //fload_1
+                case 36  ⇒ //fload_2
+                case 37  ⇒ //fload_3
+                case 106 ⇒ //fmul
+                case 118 ⇒ //fneg
+                case 114 ⇒ //frem
+                case 174 ⇒ //freturn
+                case 56 ⇒ //fstore
+                    lvIndex
+                case 67  ⇒ //fstore_0
+                case 68  ⇒ //fstore_1
+                case 69  ⇒ //fstore_2
+                case 70  ⇒ //fstore_3
+                case 102 ⇒ //fsub
+                case 167 ⇒ ///goto
+                    in.readShort
+                case 200 ⇒ //goto_w
+                    in.readInt
+                case 145 ⇒ //i2b
+                case 146 ⇒ //i2c
+                case 135 ⇒ //i2d
+                case 134 ⇒ //i2f
+                case 133 ⇒ //i2l
+                case 147 ⇒ //i2s
+                case 96  ⇒ //iadd
+                case 46  ⇒ //iaload
+                case 126 ⇒ //iand
+                case 79  ⇒ //iastore
+                case 2   ⇒ //iconst_m1
+                case 3   ⇒ //iconst_0
+                case 4   ⇒ //iconst_1
+                case 5   ⇒ //iconst_2
+                case 6   ⇒ //iconst_3
+                case 7   ⇒ //iconst_4
+                case 8   ⇒ //iconst_5
+                case 108 ⇒ //idiv
+
+                case 165 ⇒ //if_acmpeg
+                    in.readShort
+                case 166 ⇒ //if_acmpne
+                    in.readShort
+                case 159 ⇒ //if_icmpeq
+                    in.readShort
+                case 160 ⇒ //if_icmpne
+                    in.readShort
+                case 161 ⇒ //if_icmplt
+                    in.readShort
+                case 162 ⇒ //if_icmpge
+                    in.readShort
+                case 163 ⇒ //if_icmpgt
+                    in.readShort
+                case 164 ⇒ //if_icmple
+                    in.readShort
+                case 153 ⇒ //ifeq
+                    in.readShort
+                case 154 ⇒ //ifne
+                    in.readShort
+                case 155 ⇒ //iflt
+                    in.readShort
+                case 156 ⇒ //ifge
+                    in.readShort
+                case 157 ⇒ //ifgt
+                    in.readShort
+                case 158 ⇒ //ifle
+                    in.readShort
+                case 199 ⇒ //ifnonull
+                    in.readShort
+                case 198 ⇒ //ifnull
+                    in.readShort
+                //TODO: check if in master
+                case 132 ⇒ //iinc
+                    if (wide) {
+                        in.readInt
+                        wide = false
+                    } else {
+                        in.readShort
+                        ()
+                    }
+
+                case 21 ⇒ //iload
+                    lvIndex
+                case 26  ⇒ //iload_0
+                case 27  ⇒ //iload_1
+                case 28  ⇒ //iload_2
+                case 29  ⇒ //iload_3
+                case 104 ⇒ //imul
+                case 116 ⇒ //ineg
+                case 128 ⇒ //ior
+                case 112 ⇒ //irem
+                case 172 ⇒ //ireturn
+                case 120 ⇒ //ishl
+                case 122 ⇒ //ishr
+                case 54 ⇒ //istore
+                    lvIndex
+                case 59  ⇒ //istore_0
+                case 60  ⇒ //istore_1
+                case 61  ⇒ //istore_2
+                case 62  ⇒ //istore_3
+                case 100 ⇒ //isub
+                case 124 ⇒ //iushr
+                case 130 ⇒ //ixor
+                case 168 ⇒ //jsr
+                    in.readShort
+                case 201 ⇒ //jsr_w
+                    in.readInt
+                case 138 ⇒ //l2d
+                case 137 ⇒ //l2f
+                case 136 ⇒ //l2i
+                case 97  ⇒ //ladd
+                case 47  ⇒ //laload
+                case 127 ⇒ //land
+                case 80  ⇒ //lastore
+                case 148 ⇒ //lcmp
+                case 9   ⇒ //lconst_0
+                case 10  ⇒ //lconst_1
+                case 109 ⇒ //ldiv
+                case 22 ⇒ //lload
+                    lvIndex
+                case 30  ⇒ //lload_0
+                case 31  ⇒ //lload_1
+                case 32  ⇒ //lload_2
+                case 33  ⇒ //lload_3
+                case 105 ⇒ //lmul
+                case 117 ⇒ //lneg
+                case 171 ⇒ // LOOKUPSWITCH
+                    in.skip((3 - (pc % 4)).toLong) // skip padding bytes
+                    in.readInt //read and ignore
+                    val npairsCount = in.readInt
+                    repeat(npairsCount) { (in.readInt, in.readInt) }
+                case 129 ⇒ //lor
+                case 113 ⇒ //lrem
+                case 173 ⇒ //lreturn
+                case 121 ⇒ //lshl
+                case 123 ⇒ //lshr
+                case 55 ⇒ //lstore
+                    lvIndex
+                case 63  ⇒ //lstore_0
+                case 64  ⇒ //lstore_1
+                case 65  ⇒ //lstore_2
+                case 66  ⇒ //lstore_3
+                case 101 ⇒ //lsub
+                case 125 ⇒ //lushr
+                case 131 ⇒ //lxor
+                case 194 ⇒ //monitorenter
+                case 195 ⇒ //monitorexit
+                case 188 ⇒ //newarray
+                    in.readByte //read and ignore
+                case 0  ⇒ //nop
+                case 87 ⇒ //pop
+                case 88 ⇒ //pop2
+                case 169 ⇒ //ret
+                    lvIndex
+                case 177 ⇒ //return
+                case 53  ⇒ //saload
+                case 86  ⇒ //sastore
+                case 17 ⇒ //sipush
+                    in.readShort //read and ignore
+                case 95 ⇒ //swap
+                case 170 ⇒
+                    in.skip((3 - (pc % 4)).toLong) // skip padding bytes
+                    in.readInt //read and ignore
+                    val low = in.readInt
+                    val high = in.readInt
+                    repeat(high - low + 1) { in.readInt }
+                case 196 ⇒ //wide
+                    wide = true
+                case opcode ⇒ throw new UnknownError("unknown opcode: "+opcode)
+            }
+        }
+        HashSet.empty ++ referencedIndices
+    }
 
     def toXHTML(
         methodIndex:     Int,
