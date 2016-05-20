@@ -43,19 +43,22 @@ sealed trait ObjectImmutabilityPropertyMetaInformation extends PropertyMetaInfor
  *
  * An instance of a class is rated as immutable if the state of does not change after
  * initialization in a client visible manner! This includes all classes referenced by the instances
- * (transitive hull). However, fields that are lazily initialized, but don't change after that
- * do not impede immutability.
+ * (transitive hull). However, fields that are lazily initialized (in a thread-safe manner) and
+ * which  don't change after that do not impede immutability.
  * Conditionally immutable means that the state of the instance of the respective class
  * cannot be mutated, but objects referenced by it can be mutated (so called
  * immutable collections are typically rated as "conditionally immutable").
  * Mutable means that a client can mutate (directly or indirectly)
  * the state of respective objects. In general the state of a class is determined w.r.t.
- * the declared fields. I.e., a method that has, e.g., a call time dependent behavior,
- * but which does not mutate the state of the class does not affect the mutability rating.
+ * the declared fields. I.e., an impure method which has, e.g., a call time dependent behavior
+ * because it uses the current time, but which does not mutate the state of the class does not affect
+ * the mutability rating. The same is true for methods with side-effects related to the state of
+ * other types of object.
  *
- * The mutability assessment is by default done on a per class basis and only includes
- * the super classes of a class. A rating that is based on all usages is only meaningful
- * if we analyze an application.
+ * The mutability assessment is by default done on a per class basis and only directly depends on the
+ * super class of the analyzed class. A rating that is based on all actual usages is only meaningful
+ * if we analyze an application. E.g., imagine a simple mutable data container class where no field
+ * – in the concrete context of a specific application – is ever updated.
  *
  * ==Thread-safe Lazily Initialized Fields==
  * A field that is initialized lazily in a thread-safe manner; i.e.,
