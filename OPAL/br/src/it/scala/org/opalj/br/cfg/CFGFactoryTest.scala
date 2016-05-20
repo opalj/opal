@@ -33,7 +33,12 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+import java.io.File
+import java.io.FilenameFilter
 import scala.collection.JavaConverters._
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.TestSupport.createJREProject
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.SomeProject
@@ -44,25 +49,25 @@ import org.opalj.br.analyses.MethodInfo
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
- * test if no exceptions occur.
+ * test if no exceptions occur and that the different methods return comparable results.
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class BuildCFGsForJRE extends FunSpec with Matchers {
+class CFGFactoryTest extends FunSpec with Matchers {
 
     def analyzeProject(name: String, project: SomeProject): Unit = {
+
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
+
         project.parForeachMethodWithBody(() ⇒ false) { m ⇒
             val MethodInfo(_, classFile, method) = m
             implicit val code = method.body.get
             try {
-                val cfg = time {
-                    CFGFactory(code)
-                } { t ⇒ executionTime.addAndGet(t.timeSpan) }
+                val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
 
                 // check that each instruction is associated with a basic block
                 if (!code.programCounters.forall { cfg.bb(_) ne null }) {
@@ -112,17 +117,50 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
                     }
                 }
 
+                // check that cfg.successors and cfg.foreachSuccessor return the same sets
+                code.foreach { (pc, instruction) ⇒
+                    {
+                        val cfgSuccessors = cfg.successors(pc)
+                        var cfgForeachSuccessors = Set.empty[PC]
+                        var cfgForeachSuccessorCount = 0
+                        cfg.foreachSuccessor(pc) { cfgForeachSuccessor ⇒
+                            cfgForeachSuccessors += cfgForeachSuccessor
+                            cfgForeachSuccessorCount += 1
+                        }
+                        assert(cfgSuccessors == cfgForeachSuccessors)
+                        assert(cfgSuccessors.size == cfgForeachSuccessorCount)
+                    }
+
+                    {
+                        val cfgPredecessors = cfg.predecessors(pc)
+                        var cfgForeachPredecessors = Set.empty[PC]
+                        var cfgForeachPredecessorCount = 0
+                        cfg.foreachPredecessor(pc) { cfgForeachPredecessor ⇒
+                            cfgForeachPredecessors += cfgForeachPredecessor
+                            cfgForeachPredecessorCount += 1
+                        }
+                        assert(cfgPredecessors == cfgForeachPredecessors)
+                        assert(cfgPredecessors.size == cfgForeachPredecessorCount)
+                    }
+                }
+
                 methodsCount.incrementAndGet()
             } catch {
-                case t: Throwable ⇒   errors.add(method.toJava(classFile)+":"+t.getMessage)
+                case t: Throwable ⇒ 
+                    val instructions = code.instructions.size
+                    errors.add(s"[$instructions]${method.toJava(classFile)}:${t.getMessage}")
             }
         }
         if (!errors.isEmpty())
-            fail(s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
-                s"failed for ${errors.size} methods: ${errors.asScala.mkString("\n")}")
+            fail(
+                s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
+                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods","\n","")
+            )
         else
-            info(s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods "+
-                    s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}")
+            info(
+                s"analyzed ${methodsCount.get}(/${project.methodsCount}) methods "+
+                    s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}"
+            )
     }
 
     describe("computing the cfg") {
@@ -130,23 +168,25 @@ class BuildCFGsForJRE extends FunSpec with Matchers {
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
         import reader.AllClassFiles
 
-        it("should be possible for all methods of the JDK") {
-            val project = org.opalj.br.TestSupport.createJREProject
+        it(s"should be possible for all methods of the JDK ($JRELibraryFolder)") {
+            val project = createJREProject
             time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
         it("should be possible for all methods of the OPAL 0.3 snapshot") {
-            val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+            val classFiles = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
             val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
             time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
 
         it("should be possible for all methods of the OPAL-08-14-2014 snapshot") {
-            val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
-            val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
-                def accept(dir: java.io.File, name: String) =
+            val classFilesFolder = locateTestResources("classfiles", "bi")
+            val filter = new FilenameFilter() {
+                def accept(dir: File, name: String) = {
                     name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
-            })
+                }
+            }
+            val opalJARs = classFilesFolder.listFiles(filter)
             info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
             opalJARs.size should not be (0)
             val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)

@@ -34,6 +34,7 @@ import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.JavaConverters._
 import java.util.Arrays
 import java.util.IdentityHashMap
+import org.opalj.collection.mutable.UShortSet
 
 /**
  * Represents the control flow graph of a method.
@@ -43,15 +44,17 @@ import java.util.IdentityHashMap
  * ==Thread-Safety==
  * This class is thread-safe; all data is effectively immutable.
  *
- * @param method The method for which the CFG was build.
+ * @param code The code for which the CFG was build.
  * @param normalReturnNode The unique exit node of the control flow graph if the
- * 		method returns normally.
+ * 		method returns normally. If the method always throws an exception this
+ * 		node will not have any predecessors.
  * @param abnormalReturnNode The unique exit node of the control flow graph if the
- * 		method returns abnormally (throws an exception).
- * @param basicBlocks An implicit map between a program counter and its associated
- * 		[[BasicBlock]]; it may be a sparse array!
+ * 		method returns abnormally (throws an exception). If the method is guaranteed
+ * 		to never throw an exception, this node will not have any predecessors.
  * @param catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
  * 		[[org.opalj.br.ExceptionHandler]].
+ * @param basicBlocks An implicit map between a program counter and its associated
+ * 		[[BasicBlock]]; it may be a sparse array!
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -64,12 +67,17 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) {
 
+    /**
+     * The basic block associated with the very first instruction.
+     */
     final def startBlock: BasicBlock = basicBlocks(0)
 
     /**
      * Returns the basic block to which the instruction with the given `pc` belongs.
      *
      * @param pc A valid pc.
+     * @return The basic block associated with the given `pc`. If the `pc` is not valid
+     * 		`null` is returned or an index out of bounds exception is thrown.
      */
     def bb(pc: PC): BasicBlock = basicBlocks(pc)
 
@@ -93,6 +101,9 @@ case class CFG(
      * instruction that always causes an exception to be thrown that is not handled by
      * a handler of the respective method.
      *
+     * @note If possible the function `foreachSuccessor` should be used as it does not have
+     * 		to create comparatively expensive intermediate data structures.
+     *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
     def successors(pc: PC): Set[PC] = {
@@ -106,6 +117,72 @@ case class CFG(
                 case bb: BasicBlock ⇒ bb.startPC
                 case cb: CatchNode  ⇒ cb.handlerPC
             }
+        }
+    }
+
+    /**
+     * Iterates over the successors of the instruction with the given pc and calls the given
+     * function `f` for each successor.
+     */
+    def foreachSuccessor(pc: PC)(f: PC ⇒ Unit): Unit = {
+        val bb = this.bb(pc)
+        if (bb.endPC > pc) {
+            // it must be - w.r.t. the code array - the next instruction
+            f(code.instructions(pc).indexOfNextInstruction(pc)(code))
+        } else {
+            // the set of successor can be (at the same time) a RegularBB or an ExitNode
+            var visited = UShortSet.empty
+            bb.successors.foreach { bb ⇒
+                val nextPC =
+                    if (bb.isBasicBlock) bb.asBasicBlock.startPC
+                    else if (bb.isCatchNode) bb.asCatchNode.handlerPC
+                    else -1
+                if (nextPC != -1 && !visited.contains(nextPC)) {
+                    visited = nextPC +≈: visited
+                    f(nextPC)
+                }
+                // else if (bb.isExitNode)... is not relevant
+            }
+        }
+    }
+
+    def predecessors(pc: PC)(implicit code: Code): Set[PC] = {
+        if (pc == 0)
+            return Set.empty;
+
+        val bb = this.bb(pc)
+        if (bb.startPC == pc) {
+            bb.predecessors.flatMap {
+                case bb: BasicBlock ⇒ Set(bb.endPC)
+                case cn: CatchNode  ⇒ cn.predecessors.map(_.asBasicBlock.endPC)
+            }
+        } else {
+            Set(code.pcOfPreviousInstruction(pc))
+        }
+    }
+
+    def foreachPredecessor(pc: PC)(f: PC ⇒ Unit)(implicit code: Code): Unit = {
+        if (pc == 0)
+            return ;
+
+        val bb = this.bb(pc)
+        if (bb.startPC == pc) {
+            var visited = UShortSet.empty
+            bb.predecessors.foreach { bb ⇒
+                if (bb.isBasicBlock) {
+                    f(bb.asBasicBlock.endPC)
+                } else if (bb.isCatchNode) {
+                    bb.asCatchNode.predecessors foreach { predBB ⇒
+                        val nextPC = predBB.asBasicBlock.endPC
+                        if (!visited.contains(nextPC)) {
+                            visited = nextPC +≈: visited
+                            f(nextPC)
+                        }
+                    }
+                }
+            }
+        } else {
+            f(code.pcOfPreviousInstruction(pc))
         }
     }
 
