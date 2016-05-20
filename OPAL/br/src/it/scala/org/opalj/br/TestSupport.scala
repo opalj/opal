@@ -30,6 +30,7 @@
 package org.opalj
 package br
 
+import java.net.URL
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
@@ -50,28 +51,29 @@ object TestSupport {
      */
     def readJREClassFiles(
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-    ): Seq[(ClassFile, java.net.URL)] = {
+    ): Seq[(ClassFile, URL)] = {
         val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(JRELibraryFolder)
-        if (classFiles.isEmpty)
+        if (classFiles.isEmpty) {
             sys.error(s"loading the JRE ($JRELibraryFolder) failed")
+        }
 
         classFiles.toSeq
     }
 
     def readRTJarClassFiles(
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-    ): Seq[(ClassFile, java.net.URL)] = {
+    ): Seq[(ClassFile, URL)] = {
         val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(RTJar)
-        if (classFiles.isEmpty)
+        if (classFiles.isEmpty) {
             sys.error(s"loading the JRE ($JRELibraryFolder) failed")
-
+        }
         classFiles.toSeq
     }
 
-    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles(), Traversable.empty, true)
+    def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
 
-    def createRTJarProject: Project[java.net.URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
+    def createRTJarProject(): Project[URL] = Project(readRTJarClassFiles(), Traversable.empty, true)
 
 }
