@@ -62,7 +62,7 @@ final class Code private (
         val attributes:        Attributes
 ) extends Attribute with CommonAttributes with InstructionsContainer {
 
-    override def instructionsOption: Option[Array[Instruction]] = Some(instructions)
+    override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
     /**
      * Returns an iterator to iterate over the program counters of the instructions
@@ -302,6 +302,20 @@ final class Code private (
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
+    /**
+     * Iterates over all instructions and calls the given function `f`
+     * for every instruction.
+     */
+    @inline final def foreachInstruction[U](f: Instruction ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f(instruction)
             pc = pcOfNextInstruction(pc)
         }
     }
