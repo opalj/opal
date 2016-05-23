@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -41,15 +41,12 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * @author Andre Pacak
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
+
     def asString: String =
-        throw new BytecodeProcessingFailedException(
-            "conversion to string is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to string is not supported")
 
     def asFieldType: FieldType =
-        throw new BytecodeProcessingFailedException(
-            "conversion to field type is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to field type is not supported")
 
     def asMethodDescriptor: MethodDescriptor =
         throw new BytecodeProcessingFailedException(
@@ -77,24 +74,16 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         )
 
     def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
-        throw new BytecodeProcessingFailedException(
-            "conversion to field ref is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to field ref is not supported")
 
     def asMethodref(cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
-        throw new BytecodeProcessingFailedException(
-            "conversion to method ref is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
     def asObjectType(cp: Constant_Pool): ObjectType =
-        throw new BytecodeProcessingFailedException(
-            "conversion to object type is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to object type is not supported")
 
     def asReferenceType(cp: Constant_Pool): ReferenceType =
-        throw new BytecodeProcessingFailedException(
-            "conversion to object type is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to object type is not supported")
 
     def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
         throw new BytecodeProcessingFailedException(
@@ -102,9 +91,7 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         )
 
     def asMethodHandle(cp: Constant_Pool): MethodHandle =
-        throw new BytecodeProcessingFailedException(
-            "conversion to method handle is not supported"
-        )
+        throw new BytecodeProcessingFailedException("conversion to method handle is not supported")
 
     def asNameAndType: CONSTANT_NameAndType_info =
         throw new BytecodeProcessingFailedException(

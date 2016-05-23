@@ -37,20 +37,14 @@ package cp
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-case class CONSTANT_Class_info(
-    name_index: Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    override def asConstantValue(cp: Constant_Pool) =
-        ConstantClass(asReferenceType(cp))
+    override def asConstantValue(cp: Constant_Pool) = ConstantClass(asReferenceType(cp))
 
-    override def asObjectType(cp: Constant_Pool) =
-        ObjectType(cp(name_index).asString)
+    override def asObjectType(cp: Constant_Pool) = ObjectType(cp(name_index).asString)
 
-    override def asReferenceType(cp: Constant_Pool) =
-        ReferenceType(cp(name_index).asString)
+    override def asReferenceType(cp: Constant_Pool) = ReferenceType(cp(name_index).asString)
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-        asConstantValue(cp)
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
+
 }

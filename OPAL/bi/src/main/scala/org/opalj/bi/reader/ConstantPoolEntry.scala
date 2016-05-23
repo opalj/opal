@@ -36,5 +36,7 @@ package reader
  * @author Michael Eichberg
  */
 trait ConstantPoolEntry {
+
     def asString: String
+
 }

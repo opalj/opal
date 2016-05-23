@@ -34,7 +34,7 @@ import org.opalj.br.cfg.CFG
 /**
  * Common interface of all code optimizers that operate on the three-address code
  * representation.
- * 
+ *
  * @author Michael Eichberg
  */
 trait TACOptimization {
@@ -47,7 +47,7 @@ trait TACOptimization {
 
 /**
  * Encapsulates the result of an optimization/transformation of some three-address code.
- * 
+ *
  * @author Michael Eichberg
  */
 case class TACOptimizationResult(
@@ -58,7 +58,7 @@ case class TACOptimizationResult(
 
 /**
  * A very simple peephole optimizer which performs intra-basic block constant and copy propagation.
- * 
+ *
  * @author Michael Eichberg
  */
 object SimplePropagation extends TACOptimization {

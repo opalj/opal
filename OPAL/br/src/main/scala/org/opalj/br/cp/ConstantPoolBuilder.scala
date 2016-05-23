@@ -31,64 +31,51 @@ package br
 package cp
 
 import org.opalj.br.instructions._
-import scala.collection.mutable.ArrayBuffer
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
- * Reconstructs the constant_pool of the given classfile.
+ * Factory to compute a constant pool for a given class file.
  *
  * @author Andre Pacak
+ * @author Michael Eichberg
  */
-class ConstantPoolBuilder {
+object ConstantPoolBuilder {
 
     def build(classFile: ClassFile): Array[Constant_Pool_Entry] = {
         val cp = new ConstantPoolBuffer()
         val bootstrapMethods = new BootstrapMethodsBuffer()
 
-        def insertElementValue(
-            elementValue: ElementValue
-        ): Unit = elementValue match {
-            case ByteValue(value) ⇒
-                cp.insertInteger(value.toInt)
-            case CharValue(value) ⇒
-                cp.insertInteger(value.toInt)
-            case DoubleValue(value) ⇒
-                cp.insertDouble(value)
-            case FloatValue(value) ⇒
-                cp.insertFloat(value)
-            case IntValue(value) ⇒
-                cp.insertInteger(value)
-            case LongValue(value) ⇒
-                cp.insertLong(value)
-            case ShortValue(value) ⇒
-                cp.insertInteger(value.toInt)
-            case BooleanValue(value) ⇒
-                cp.insertInteger(if (value) 1 else 0)
-            case StringValue(value) ⇒
-                cp.insertUtf8(value)
+        def insertElementValue(elementValue: ElementValue): Unit = elementValue match {
+            case ByteValue(value)            ⇒ cp.insertInteger(value.toInt)
+            case CharValue(value)            ⇒ cp.insertInteger(value.toInt)
+            case DoubleValue(value)          ⇒ cp.insertDouble(value)
+            case FloatValue(value)           ⇒ cp.insertFloat(value)
+            case IntValue(value)             ⇒ cp.insertInteger(value)
+            case LongValue(value)            ⇒ cp.insertLong(value)
+            case ShortValue(value)           ⇒ cp.insertInteger(value.toInt)
+            case BooleanValue(value)         ⇒ cp.insertInteger(if (value) 1 else 0)
+            case StringValue(value)          ⇒ cp.insertUtf8(value)
+            case ClassValue(value)           ⇒ cp.insertUtf8(value.toJVMTypeName)
+            case AnnotationValue(annotation) ⇒ processAnnotation(annotation)
+            case ArrayValue(values)          ⇒ values.foreach { insertElementValue }
             case EnumValue(enumType, constName) ⇒
                 cp.insertUtf8(enumType.toJVMTypeName)
                 cp.insertUtf8(constName)
-            case ClassValue(value) ⇒
-                cp.insertUtf8(value.toJVMTypeName)
-            case AnnotationValue(annotation) ⇒
-                collectFromAnnotation(annotation)
-            case ArrayValue(values) ⇒
-                values.foreach { insertElementValue }
         }
-        def collectFromAnnotation(annotation: Annotation): Unit = {
+
+        def processAnnotation(annotation: Annotation): Unit = {
             cp.insertUtf8(annotation.annotationType.toJVMTypeName)
-            annotation.elementValuePairs.foreach {
-                case ElementValuePair(name, value) ⇒
-                    cp.insertUtf8(name)
-                    insertElementValue(value)
+            annotation.elementValuePairs.foreach { evp ⇒
+                cp.insertUtf8(evp.name)
+                insertElementValue(evp.value)
             }
         }
+
         def collectFromClassFileAttribute(attribute: Attribute): Unit = attribute match {
             case EnclosingMethod(clazz, name, descriptor) ⇒
                 cp.insertUtf8("EnclosingMethod")
                 cp.insertClass(clazz)
-                for {
+                for { // FIXME This looks very suspicious
                     n ← name
                     d ← descriptor
                 } {
@@ -109,43 +96,39 @@ class ConstantPoolBuilder {
             case BootstrapMethodTable(methods) ⇒
                 cp.insertUtf8("BootstrapMethods")
                 methods.foreach { method ⇒
-                    cp.insertMethodHandle(method.methodHandle)
-                    method.bootstrapArguments.foreach {
-                        collectFromBootstrapArgument
-                    }
+                    cp.insertMethodHandle(method.handle)
+                    method.arguments.foreach { collectFromBootstrapArgument }
                 }
-            case sig @ ClassSignature(_, _, _) ⇒
+            case signature: ClassSignature ⇒
                 cp.insertUtf8("Signature")
-                cp.insertUtf8(sig.toJVMSignature)
+                cp.insertUtf8(signature.toJVMSignature)
+
             case default ⇒ collectFromGeneralAttribute(default)
 
         }
         def collectFromGeneralAttribute(attribute: Attribute): Unit = attribute match {
-            case Synthetic ⇒
-                cp.insertUtf8("Synthetic")
-            case Deprecated ⇒
-                cp.insertUtf8("Deprecated")
+            case Synthetic  ⇒ cp.insertUtf8("Synthetic")
+            case Deprecated ⇒ cp.insertUtf8("Deprecated")
+
             case RuntimeVisibleAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeVisibleAnnotations")
-                annotations.foreach { collectFromAnnotation }
+                annotations.foreach { processAnnotation }
             case RuntimeInvisibleAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeInvisibleAnnotations")
-                annotations.foreach { collectFromAnnotation }
+                annotations.foreach { processAnnotation }
             case RuntimeVisibleTypeAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeVisibleTypeAnnotations")
             case RuntimeInvisibleTypeAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeInvisibleTypeAnnotations")
-            case UnknownAttribute(name, info) ⇒
-                cp.insertUtf8(name)
-            case _ ⇒ new BytecodeProcessingFailedException("Attribute is not known")
+
+            case UnknownAttribute(name, info) ⇒ cp.insertUtf8(name)
+
+            case _                            ⇒ new BytecodeProcessingFailedException(s"unknown attribute: $attribute")
         }
 
         def collectFromMethodAttribute(attribute: Attribute): Unit = attribute match {
-            case Code(_,
-                _,
-                instructions,
-                exceptionHandlers,
-                attributes) ⇒
+            // TODO use KindIds...
+            case Code(_, _, instructions, exceptionHandlers, attributes) ⇒
                 cp.insertUtf8("Code")
                 for {
                     exceptionHandler ← exceptionHandlers
@@ -156,22 +139,22 @@ class ConstantPoolBuilder {
                 attributes.foreach { collectFromCodeAttribute }
             case ExceptionTable(exceptions) ⇒
                 cp.insertUtf8("Exceptions")
-                exceptions.foreach { cp.insertClass }
+                exceptions.foreach(cp.insertClass)
             case RuntimeVisibleParameterAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeVisibleParameterAnnotations")
                 for {
-                    paramAnnotation ← annotations
-                    singleAnnotation ← paramAnnotation
+                    parameterAnnotations ← annotations
+                    annotation ← parameterAnnotations
                 } {
-                    collectFromAnnotation(singleAnnotation)
+                    processAnnotation(annotation)
                 }
             case RuntimeInvisibleParameterAnnotationTable(annotations) ⇒
                 cp.insertUtf8("RuntimeInvisibleParameterAnnotations")
                 for {
-                    paramAnnotation ← annotations
-                    singleAnnotation ← paramAnnotation
+                    parameterAnnotations ← annotations
+                    annotation ← parameterAnnotations
                 } {
-                    collectFromAnnotation(singleAnnotation)
+                    processAnnotation(annotation)
                 }
             case MethodParameterTable(parameters) ⇒
                 cp.insertUtf8("MethodParameters")
@@ -179,203 +162,215 @@ class ConstantPoolBuilder {
                     case MethodParameter(name, _) ⇒
                         cp.insertUtf8(name)
                 }
-            case sig @ MethodTypeSignature(_, _, _, _) ⇒
+            case signature: MethodTypeSignature ⇒
                 cp.insertUtf8("Signature")
-                cp.insertUtf8(sig.toJVMSignature)
-            case UnknownAttribute(name, info) ⇒
-                cp.insertUtf8(name)
-            case default ⇒ collectFromGeneralAttribute(default)
+                cp.insertUtf8(signature.toJVMSignature)
+
+            case UnknownAttribute(name, info) ⇒ cp.insertUtf8(name)
+
+            case generalAttribute             ⇒ collectFromGeneralAttribute(generalAttribute)
 
         }
-        def collectFromCodeAttribute(attribute: Attribute): Unit = attribute match {
-            case UnpackedLineNumberTable(_) ⇒
-                cp.insertUtf8("LineNumberTable")
-            case CompactLineNumberTable(_) ⇒
-                cp.insertUtf8("LineNumberTable")
-            case LocalVariableTable(localVariables) ⇒
+
+        def collectFromCodeAttribute(attribute: Attribute): Unit = attribute.kindId match {
+            case LineNumberTable.KindId ⇒ cp.insertUtf8("LineNumberTable")
+
+            case LocalVariableTable.KindId ⇒
+                val LocalVariableTable(localVariables) = attribute
                 cp.insertUtf8("LocalVariableTable")
-                localVariables.foreach {
-                    case LocalVariable(_, _, name, fieldType, index) ⇒
-                        cp.insertUtf8(name)
-                        cp.insertUtf8(fieldType.toJVMTypeName)
+                localVariables.foreach { lv ⇒
+                    cp.insertUtf8(lv.name)
+                    cp.insertUtf8(lv.fieldType.toJVMTypeName)
                 }
-            case LocalVariableTypeTable(localVariableTypes) ⇒
+            case LocalVariableTypeTable.KindId ⇒
+                val LocalVariableTypeTable(localVariableTypes) = attribute
                 cp.insertUtf8("LocalVariableTypeTable")
-                localVariableTypes.foreach {
-                    case LocalVariableType(_, _, name, signature, _) ⇒
-                        cp.insertUtf8(name)
-                        cp.insertUtf8("Signature")
-                        cp.insertUtf8(signature.toJVMSignature)
+                localVariableTypes.foreach { lvt ⇒
+                    cp.insertUtf8(lvt.name)
+                    cp.insertUtf8("Signature")
+                    cp.insertUtf8(lvt.signature.toJVMSignature)
                 }
-            case StackMapTable(stackMapFrames) ⇒
+            case StackMapTable.KindId ⇒
+                val StackMapTable(stackMapFrames) = attribute
                 cp.insertUtf8("StackMapTable")
-                def insertVerificationTypeInfo(
-                    typ: VerificationTypeInfo
-                ): Unit = typ match {
-                    case ObjectVariableInfo(clazz) ⇒
-                        cp.insertClass(clazz)
-                    case _ ⇒ ()
+
+                def insertVerificationTypeInfo(vti: VerificationTypeInfo): Unit = {
+                    if (vti.isObjectVariableInfo) {
+                        cp.insertClass(vti.asObjectVariableInfo.clazz)
+                    }
                 }
+
                 stackMapFrames.foreach {
                     case SameLocals1StackItemFrame(_, verificationType) ⇒
                         insertVerificationTypeInfo(verificationType)
-                    case SameLocals1StackItemFrameExtended(_, _, verificationType) ⇒
-                        insertVerificationTypeInfo(verificationType)
-                    case AppendFrame(_, _, verificationTypeLocals) ⇒
-                        verificationTypeLocals.foreach { insertVerificationTypeInfo }
+                    case frame: SameLocals1StackItemFrameExtended ⇒
+                        insertVerificationTypeInfo(frame.verificationTypeInfoStackItem)
+                    case frame: AppendFrame ⇒
+                        frame.verificationTypeInfoLocals.foreach { insertVerificationTypeInfo }
                     case FullFrame(_, _, verificationTypeLocals, verificationTypeStack) ⇒
                         verificationTypeLocals.foreach { insertVerificationTypeInfo }
                         verificationTypeStack.foreach { insertVerificationTypeInfo }
-                    case _ ⇒ ()
+
+                    case _ ⇒ /*nothing to do*/
                 }
-            case _ ⇒ new BytecodeProcessingFailedException("Attribute is not known")
+
+            case _ ⇒ new BytecodeProcessingFailedException(s"unsupported attribute: $attribute")
         }
 
-        def collectFromFieldAttribute(attribute: Attribute): Unit = attribute match {
-            case ConstantInteger(value) ⇒
+        def collectFromFieldAttribute(attribute: Attribute): Unit = attribute.kindId match {
+            case ConstantInteger.KindId ⇒
+                val ConstantInteger(value) = attribute
                 cp.insertUtf8("ConstantValue")
                 cp.insertInteger(value)
-            case ConstantFloat(value) ⇒
+            case ConstantFloat.KindId ⇒
+                val ConstantFloat(value) = attribute
                 cp.insertUtf8("ConstantValue")
                 cp.insertFloat(value)
-            case ConstantLong(value) ⇒
+            case ConstantLong.KindId ⇒
+                val ConstantLong(value) = attribute
                 cp.insertUtf8("ConstantValue")
                 cp.insertLong(value)
-            case ConstantDouble(value) ⇒
+            case ConstantDouble.KindId ⇒
+                val ConstantDouble(value) = attribute
                 cp.insertUtf8("ConstantValue")
                 cp.insertDouble(value)
-            case ConstantString(value) ⇒
+            case ConstantString.KindId ⇒
+                val ConstantString(value) = attribute
                 cp.insertUtf8("ConstantValue")
                 cp.insertString(value)
-            case sig @ FieldTypeSignature() ⇒
+
+            case ArrayTypeSignature.KindId | ClassTypeSignature.KindId | TypeVariableSignature.KindId ⇒
+                val FieldTypeJVMSignature(jvmSignature) = attribute
                 cp.insertUtf8("Signature")
-                cp.insertUtf8(sig.toJVMSignature)
-            case default ⇒ collectFromGeneralAttribute(default)
+                cp.insertUtf8(jvmSignature)
+
+            case _ ⇒ collectFromGeneralAttribute(attribute)
         }
 
         def collectFromBootstrapArgument(argument: BootstrapArgument): Unit =
             argument match {
-                case ConstantString(value) ⇒
-                    cp.insertString(value)
-                case ConstantClass(refType) ⇒
-                    cp.insertClass(refType)
-                case ConstantInteger(value) ⇒
-                    cp.insertInteger(value)
-                case ConstantLong(value) ⇒
-                    cp.insertLong(value)
-                case ConstantFloat(value) ⇒
-                    cp.insertFloat(value)
-                case ConstantDouble(value) ⇒
-                    cp.insertDouble(value)
-                case md @ MethodDescriptor(_, _) ⇒
-                    cp.insertMethodType(md.toJVMDescriptor)
-                case mh @ GetFieldMethodHandle(_, _, _) ⇒
-                    cp.insertMethodHandle(mh)
-                case mh @ GetStaticMethodHandle(_, _, _) ⇒
-                    cp.insertMethodHandle(mh)
-                case mh @ PutFieldMethodHandle(_, _, _) ⇒
-                    cp.insertMethodHandle(mh)
-                case mh @ PutStaticMethodHandle(_, _, _) ⇒
-                    cp.insertMethodHandle(mh)
-                case mh @ MethodCallMethodHandle(_, _, _) ⇒
-                    cp.insertMethodHandle(mh)
+                case ConstantString(value)        ⇒ cp.insertString(value)
+                case ConstantClass(refType)       ⇒ cp.insertClass(refType)
+                case ConstantInteger(value)       ⇒ cp.insertInteger(value)
+                case ConstantLong(value)          ⇒ cp.insertLong(value)
+                case ConstantFloat(value)         ⇒ cp.insertFloat(value)
+                case ConstantDouble(value)        ⇒ cp.insertDouble(value)
+                case md: MethodDescriptor         ⇒ cp.insertMethodType(md.toJVMDescriptor)
+                case gfmh: GetFieldMethodHandle   ⇒ cp.insertMethodHandle(gfmh)
+                case gsmh: GetStaticMethodHandle  ⇒ cp.insertMethodHandle(gsmh)
+                case pfmh: PutFieldMethodHandle   ⇒ cp.insertMethodHandle(pfmh)
+                case psmh: PutStaticMethodHandle  ⇒ cp.insertMethodHandle(psmh)
+                case mcmh: MethodCallMethodHandle ⇒ cp.insertMethodHandle(mcmh)
             }
-        def collectFromInstruction(
-            instruction: Instruction
-        ): Unit = instruction match {
-            case FieldReadAccess(objectType, fieldName, fieldType) ⇒
-                cp.insertFieldRef(objectType, fieldName, fieldType.toJVMTypeName)
-            case FieldWriteAccess(objectType, fieldName, fieldType) ⇒
-                cp.insertFieldRef(objectType, fieldName, fieldType.toJVMTypeName)
-            case INVOKEVIRTUAL(refType, methodName, descriptor) ⇒
-                cp.insertMethodRef(
-                    refType,
-                    methodName,
-                    descriptor.toJVMDescriptor
-                )
-            case INVOKESTATIC(objectType, methodName, descriptor) ⇒
-                cp.insertMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
-                cp.insertInterfaceMethodRef(
-                    objectType,
-                    methodName,
-                    descriptor.toJVMDescriptor
-                )
-            case INVOKEINTERFACE(objectType, methodName, descriptor) ⇒
-                cp.insertInterfaceMethodRef(
-                    objectType,
-                    methodName,
-                    descriptor.toJVMDescriptor
-                )
-            case INVOKEDYNAMIC(bootstrapMethod, name, descriptor) ⇒
-                cp.insertMethodHandle(bootstrapMethod.methodHandle)
-                bootstrapMethod.bootstrapArguments.foreach {
-                    collectFromBootstrapArgument
-                }
-                cp.insertInvokeDynamic(
-                    bootstrapMethod,
-                    name,
-                    descriptor.toJVMDescriptor,
-                    bootstrapMethods
-                )
-            case INVOKESPECIAL(objectType, methodName, descriptor) ⇒
-                cp.insertMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
-                cp.insertInterfaceMethodRef(
-                    objectType,
-                    methodName,
-                    descriptor.toJVMDescriptor
-                )
-            case LoadInt(value) ⇒
-                cp.insertInteger(value)
-            case LoadFloat(value) ⇒
-                cp.insertFloat(value)
-            case LoadClass(referenceType) ⇒
-                cp.insertClass(referenceType)
-            case LoadMethodHandle(handle) ⇒
-                cp.insertMethodHandle(handle)
-            case LoadMethodType(descriptor) ⇒
-                cp.insertMethodType(descriptor.toJVMDescriptor)
-            case LoadString(s) ⇒
-                cp.insertString(s)
-            case LoadLong(value) ⇒
-                cp.insertLong(value)
-            case LoadDouble(value) ⇒
-                cp.insertDouble(value)
-            case LoadInt_W(value) ⇒
-                cp.insertInteger(value)
-            case LoadFloat_W(value) ⇒
-                cp.insertFloat(value)
-            case LoadClass_W(referenceType) ⇒
-                cp.insertClass(referenceType)
-            case LoadMethodHandle_W(handle) ⇒
-                cp.insertMethodHandle(handle)
-            case LoadMethodType_W(descriptor) ⇒
-                cp.insertMethodType(descriptor.toJVMDescriptor)
-            case LoadString_W(s) ⇒
-                cp.insertString(s)
-            case CHECKCAST(referenceType) ⇒
-                cp.insertClass(referenceType)
-            case INSTANCEOF(referenceType) ⇒
-                cp.insertClass(referenceType)
-            case NEW(objectType) ⇒
-                cp.insertClass(objectType)
-            case ANEWARRAY(componentType) ⇒
-                cp.insertClass(componentType)
-            case MULTIANEWARRAY(componentType, dim) ⇒
-                cp.insertClass(componentType)
-            case _ ⇒ () //other instructions that don't reference the constant pool
-        }
 
-        val fields = classFile.fields
+        def collectFromInstruction(instruction: Instruction): Unit =
+            instruction.opcode match {
+
+                case GETFIELD.opcode | GETSTATIC.opcode ⇒
+                    val FieldReadAccess(objectType, fieldName, fieldType) = instruction
+                    cp.insertFieldRef(objectType, fieldName, fieldType.toJVMTypeName)
+
+                case PUTFIELD.opcode | PUTSTATIC.opcode ⇒
+                    val FieldWriteAccess(objectType, fieldName, fieldType) = instruction
+                    cp.insertFieldRef(objectType, fieldName, fieldType.toJVMTypeName)
+
+                case INVOKEVIRTUAL.opcode ⇒
+                    val INVOKEVIRTUAL(refType, methodName, descriptor) = instruction
+                    cp.insertMethodRef(
+                        refType,
+                        methodName,
+                        descriptor.toJVMDescriptor
+                    )
+                case INVOKESTATIC.opcode ⇒
+                    val INVOKESTATIC(objectType, methodName, descriptor) = instruction
+                    cp.insertMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    cp.insertInterfaceMethodRef(
+                        objectType,
+                        methodName,
+                        descriptor.toJVMDescriptor
+                    )
+                case INVOKEINTERFACE.opcode ⇒
+                    val INVOKEINTERFACE(objectType, methodName, descriptor) = instruction
+                    cp.insertInterfaceMethodRef(
+                        objectType,
+                        methodName,
+                        descriptor.toJVMDescriptor
+                    )
+                case INVOKESPECIAL.opcode ⇒
+                    val INVOKESPECIAL(objectType, methodName, descriptor) = instruction
+                    cp.insertMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    cp.insertInterfaceMethodRef(
+                        objectType,
+                        methodName,
+                        descriptor.toJVMDescriptor
+                    )
+
+                case INVOKEDYNAMIC.opcode ⇒
+                    val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
+                    cp.insertMethodHandle(bootstrapMethod.handle)
+                    bootstrapMethod.arguments.foreach { collectFromBootstrapArgument }
+                    cp.insertInvokeDynamic(
+                        bootstrapMethod,
+                        name,
+                        descriptor.toJVMDescriptor,
+                        bootstrapMethods
+                    )
+
+                case LDC.opcode | LDC_W.opcode ⇒
+                    instruction match {
+                        case LoadInt(value)               ⇒ cp.insertInteger(value)
+                        case LoadFloat(value)             ⇒ cp.insertFloat(value)
+                        case LoadClass(referenceType)     ⇒ cp.insertClass(referenceType)
+                        case LoadMethodHandle(handle)     ⇒ cp.insertMethodHandle(handle)
+                        case LoadMethodType(descriptor)   ⇒ cp.insertMethodType(descriptor.toJVMDescriptor)
+                        case LoadString(value)            ⇒ cp.insertString(value)
+
+                        case LoadInt_W(value)             ⇒ cp.insertInteger(value)
+                        case LoadFloat_W(value)           ⇒ cp.insertFloat(value)
+                        case LoadClass_W(referenceType)   ⇒ cp.insertClass(referenceType)
+                        case LoadMethodHandle_W(handle)   ⇒ cp.insertMethodHandle(handle)
+                        case LoadMethodType_W(descriptor) ⇒ cp.insertMethodType(descriptor.toJVMDescriptor)
+                        case LoadString_W(value)          ⇒ cp.insertString(value)
+                    }
+
+                case LDC2_W.opcode ⇒
+                    instruction match {
+                        case LoadLong(value)   ⇒ cp.insertLong(value)
+                        case LoadDouble(value) ⇒ cp.insertDouble(value)
+                    }
+
+                case CHECKCAST.opcode ⇒
+                    val CHECKCAST(referenceType) = instruction
+                    cp.insertClass(referenceType)
+
+                case INSTANCEOF.opcode ⇒
+                    val INSTANCEOF(referenceType) = instruction
+                    cp.insertClass(referenceType)
+
+                case NEW.opcode ⇒
+                    val NEW(objectType) = instruction
+                    cp.insertClass(objectType)
+
+                case ANEWARRAY.opcode ⇒
+                    val ANEWARRAY(componentType) = instruction
+                    cp.insertClass(componentType)
+
+                case MULTIANEWARRAY.opcode ⇒
+                    val MULTIANEWARRAY(componentType, _ /*dim*/ ) = instruction
+                    cp.insertClass(componentType)
+
+                case _ ⇒ // the other instructions do not use the constant pool
+            }
+
         val methods = classFile.methods
-        val attributes = classFile.attributes
 
         cp.insertClass(classFile.thisType)
         classFile.superclassType.foreach { cp.insertClass }
-        classFile.interfaceTypes.foreach { typ ⇒
-            cp.insertClass(typ)
-        }
+        classFile.interfaceTypes.foreach { cp.insertClass }
 
-        fields.foreach { field ⇒
+        classFile.attributes.foreach { collectFromClassFileAttribute }
+
+        classFile.fields.foreach { field ⇒
             cp.insertNameAndType(field.name, field.fieldType.toJVMTypeName)
             field.attributes.foreach { collectFromFieldAttribute }
         }
@@ -388,26 +383,15 @@ class ConstantPoolBuilder {
                 cp.insertUtf8("AnnotationDefault")
                 insertElementValue
             }
-        }
-
-        attributes.foreach { collectFromClassFileAttribute }
-
-        for {
-            method ← methods
-            body ← method.body
-            instr ← body.instructions
-
-        } {
-            collectFromInstruction(instr)
+            val methodBody = method.body
+            if (methodBody.isDefined) {
+                methodBody.get.foreachInstruction(collectFromInstruction)
+            }
         }
 
         cp.toArray
     }
-}
 
-object ConstantPoolBuilder {
-    def apply(classFile: ClassFile): Array[Constant_Pool_Entry] = {
-        val builder = new ConstantPoolBuilder()
-        builder.build(classFile)
-    }
+    def apply(classFile: ClassFile): Array[Constant_Pool_Entry] = build(classFile)
+
 }

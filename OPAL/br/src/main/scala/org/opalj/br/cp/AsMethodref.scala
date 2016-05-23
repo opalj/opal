@@ -39,7 +39,7 @@ package cp
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 
-/*private[ConstantPoolBinding] */ trait AsMethodref extends Constant_Pool_Entry {
+trait AsMethodref extends Constant_Pool_Entry {
 
     def class_index: Constant_Pool_Index
 
@@ -47,9 +47,7 @@ import org.opalj.br.MethodDescriptor
 
     // to cache the result
     private[this] var methodref: (ReferenceType, String, MethodDescriptor) = null
-    override def asMethodref(
-        cp: Constant_Pool
-    ): (ReferenceType, String, MethodDescriptor) = {
+    override def asMethodref(cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
         if (methodref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
             methodref =

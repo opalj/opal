@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,16 +37,12 @@ package cp
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-case class CONSTANT_Long_info(
-    value: ConstantLong
-)
-        extends CONSTANT_FieldValue_info {
+case class CONSTANT_Long_info(value: ConstantLong) extends CONSTANT_FieldValue_info {
 
     def this(value: Long) { this(ConstantLong(value)) }
 
     override def asConstantFieldValue(cp: Constant_Pool): ConstantLong = value
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = {
-        asConstantValue(cp)
-    }
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
+
 }

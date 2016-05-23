@@ -38,68 +38,53 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_MethodHandle_info(
-    referenceKind:  Int,
-    referenceIndex: Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+        referenceKind:  Int,
+        referenceIndex: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-        asMethodHandle(cp)
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asMethodHandle(cp)
 
-    override def asConstantValue(cp: Constant_Pool): MethodHandle =
-        asMethodHandle(cp)
+    override def asConstantValue(cp: Constant_Pool): MethodHandle = asMethodHandle(cp)
 
     override def asMethodHandle(cp: Constant_Pool): MethodHandle = {
         (this.referenceKind: @scala.annotation.switch) match {
-            case bi.REF_getField.referenceKind ⇒ {
-                val (declaringType, name, fieldType) =
-                    cp(referenceIndex).asFieldref(cp)
+
+            case bi.REF_getField.referenceKind ⇒
+                val (declaringType, name, fieldType) = cp(referenceIndex).asFieldref(cp)
                 GetFieldMethodHandle(declaringType, name, fieldType)
-            }
-            case bi.REF_getStatic.referenceKind ⇒ {
-                val (declaringType, name, fieldType) =
-                    cp(referenceIndex).asFieldref(cp)
+
+            case bi.REF_getStatic.referenceKind ⇒
+                val (declaringType, name, fieldType) = cp(referenceIndex).asFieldref(cp)
                 GetStaticMethodHandle(declaringType, name, fieldType)
-            }
-            case bi.REF_putField.referenceKind ⇒ {
-                val (declaringType, name, fieldType) =
-                    cp(referenceIndex).asFieldref(cp)
+
+            case bi.REF_putField.referenceKind ⇒
+                val (declaringType, name, fieldType) = cp(referenceIndex).asFieldref(cp)
                 PutFieldMethodHandle(declaringType, name, fieldType)
-            }
-            case bi.REF_putStatic.referenceKind ⇒ {
-                val (declaringType, name, fieldType) =
-                    cp(referenceIndex).asFieldref(cp)
+
+            case bi.REF_putStatic.referenceKind ⇒
+                val (declaringType, name, fieldType) = cp(referenceIndex).asFieldref(cp)
                 PutStaticMethodHandle(declaringType, name, fieldType)
-            }
-            case bi.REF_invokeVirtual.referenceKind ⇒ {
-                val (receiverType, name, methodDescriptor) =
-                    cp(referenceIndex).asMethodref(cp)
+
+            case bi.REF_invokeVirtual.referenceKind ⇒
+                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeVirtualMethodHandle(receiverType, name, methodDescriptor)
-            }
 
-            case bi.REF_invokeStatic.referenceKind ⇒ {
-                val (receiverType, name, methodDescriptor) =
-                    cp(referenceIndex).asMethodref(cp)
+            case bi.REF_invokeStatic.referenceKind ⇒
+                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeStaticMethodHandle(receiverType, name, methodDescriptor)
-            }
 
-            case bi.REF_invokeSpecial.referenceKind ⇒ {
-                val (receiverType, name, methodDescriptor) =
-                    cp(referenceIndex).asMethodref(cp)
+            case bi.REF_invokeSpecial.referenceKind ⇒
+                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
-            }
 
-            case bi.REF_newInvokeSpecial.referenceKind ⇒ {
-                val (receiverType, name, methodDescriptor) =
-                    cp(referenceIndex).asMethodref(cp)
+            case bi.REF_newInvokeSpecial.referenceKind ⇒
+                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 NewInvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
-            }
 
-            case bi.REF_invokeInterface.referenceKind ⇒ {
-                val (receiverType, name, methodDescriptor) =
-                    cp(referenceIndex).asMethodref(cp)
+            case bi.REF_invokeInterface.referenceKind ⇒
+                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeInterfaceMethodHandle(receiverType, name, methodDescriptor)
-            }
+
         }
     }
 }

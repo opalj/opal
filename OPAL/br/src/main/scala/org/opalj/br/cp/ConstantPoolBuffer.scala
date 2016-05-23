@@ -30,7 +30,7 @@ package org.opalj
 package br
 package cp
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 /**
  * This class is used to build up a constant pool.
@@ -38,8 +38,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Andre Pacak
  */
 class ConstantPoolBuffer {
-    private[this] val buffer =
-        new scala.collection.mutable.HashMap[Constant_Pool_Entry, Constant_Pool_Index]
+
+    private[this] val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
     //the first item is null because the constant_pool starts with the index 1
     buffer(null) = 0
 
@@ -58,53 +58,36 @@ class ConstantPoolBuffer {
                 referenceType.asObjectType.fqn
             else
                 referenceType.toJVMTypeName
-        insertUnique(CONSTANT_Class_info(
-            insertUtf8(typeName)
-        ))
+        insertUnique(CONSTANT_Class_info(insertUtf8(typeName)))
+    }
 
-    }
-    def insertDouble(value: Double): Int = {
-        insertUnique(CONSTANT_Double_info(ConstantDouble(value)))
-    }
-    def insertFloat(value: Float): Int = {
-        insertUnique(CONSTANT_Float_info(ConstantFloat(value)))
-    }
-    def insertInteger(value: Int): Int = {
-        insertUnique(CONSTANT_Integer_info(ConstantInteger(value)))
-    }
-    def insertLong(value: Long): Int = {
-        insertUnique(CONSTANT_Long_info(ConstantLong(value)))
-    }
-    def insertString(value: String): Int = {
-        insertUnique(CONSTANT_String_info(
-            insertUtf8(value)
-        ))
-    }
-    def insertUtf8(value: String): Int = {
-        insertUnique(CONSTANT_Utf8_info(value))
-    }
-    def insertNameAndType(
-        nameString: String,
-        typeString: String
-    ): Int = {
+    def insertDouble(value: Double): Int = insertUnique(CONSTANT_Double_info(ConstantDouble(value)))
+
+    def insertFloat(value: Float): Int = insertUnique(CONSTANT_Float_info(ConstantFloat(value)))
+
+    def insertInteger(value: Int): Int = insertUnique(CONSTANT_Integer_info(ConstantInteger(value)))
+
+    def insertLong(value: Long): Int = insertUnique(CONSTANT_Long_info(ConstantLong(value)))
+
+    def insertString(value: String): Int = insertUnique(CONSTANT_String_info(insertUtf8(value)))
+
+    def insertUtf8(value: String): Int = insertUnique(CONSTANT_Utf8_info(value))
+
+    def insertNameAndType(nameString: String, typeString: String): Int = {
         val indexName = insertUtf8(nameString)
         val indexType = insertUtf8(typeString)
-        insertUnique(CONSTANT_NameAndType_info(
-            indexName,
-            indexType
-        ))
+        insertUnique(CONSTANT_NameAndType_info(indexName, indexType))
     }
+
     def insertFieldRef(
         objectType: ObjectType,
         fieldName:  String,
         fieldType:  String
     ): Int = {
         val indexObjectType = insertClass(objectType)
-        insertUnique(CONSTANT_Fieldref_info(
-            indexObjectType,
-            insertNameAndType(fieldName, fieldType)
-        ))
+        insertUnique(CONSTANT_Fieldref_info(indexObjectType, insertNameAndType(fieldName, fieldType)))
     }
+
     def insertMethodRef(
         referenceType: ReferenceType,
         methodName:    String,
@@ -116,6 +99,7 @@ class ConstantPoolBuffer {
             insertNameAndType(methodName, descriptor)
         ))
     }
+
     def insertInterfaceMethodRef(
         objectType: ReferenceType,
         methodName: String,
@@ -127,6 +111,7 @@ class ConstantPoolBuffer {
             insertNameAndType(methodName, descriptor)
         ))
     }
+
     def insertMethodHandle(methodHandle: MethodHandle): Int = methodHandle match {
         case GetFieldMethodHandle(declType, name, fieldType) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
@@ -138,47 +123,56 @@ class ConstantPoolBuffer {
                 2,
                 insertFieldRef(declType, name, fieldType.toJVMTypeName)
             ))
+
         case PutFieldMethodHandle(declType, name, fieldType) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 3,
                 insertFieldRef(declType, name, fieldType.toJVMTypeName)
             ))
+
         case PutStaticMethodHandle(declType, name, fieldType) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 4,
                 insertFieldRef(declType, name, fieldType.toJVMTypeName)
             ))
+
         case InvokeVirtualMethodHandle(recType, name, descriptor) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 5,
                 insertMethodRef(recType, name, descriptor.toJVMDescriptor)
             ))
+
         case InvokeStaticMethodHandle(recType, name, descriptor) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 6,
                 insertMethodRef(recType, name, descriptor.toJVMDescriptor)
             ))
+
         case InvokeSpecialMethodHandle(recType, name, descriptor) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 7,
                 insertMethodRef(recType, name, descriptor.toJVMDescriptor)
             ))
+
         case NewInvokeSpecialMethodHandle(recType, name, descriptor) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 8,
                 insertMethodRef(recType, name, descriptor.toJVMDescriptor)
             ))
+
         case InvokeInterfaceMethodHandle(recType, name, descriptor) ⇒
             insertUnique(CONSTANT_MethodHandle_info(
                 9,
                 insertInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
             ))
     }
+
     def insertMethodType(descriptor: String): Int = {
         insertUnique(CONSTANT_MethodType_info(
             insertUnique(CONSTANT_Utf8_info(descriptor))
         ))
     }
+
     def insertInvokeDynamic(
         bootstrap:  BootstrapMethod,
         name:       String,
@@ -199,5 +193,6 @@ class ConstantPoolBuffer {
             indexOfNameAndType
         ))
     }
-    def toArray = buffer.toList.sortBy { _._2 }.map { _._1 }.toArray
+
+    def toArray = buffer.toList.sortBy(_._2).map(_._1).toArray
 }

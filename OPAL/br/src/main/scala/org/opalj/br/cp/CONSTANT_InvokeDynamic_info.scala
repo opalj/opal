@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,6 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -45,17 +44,16 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_InvokeDynamic_info(
-    bootstrapMethodAttributeIndex: Int,
-    nameAndTypeIndex:              Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+        bootstrapMethodAttributeIndex: Int,
+        nameAndTypeIndex:              Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
-    override def asInvokeDynamic: CONSTANT_InvokeDynamic_info = this
+    override def asInvokeDynamic: this.type = this
 
-    def methodName(cp: Constant_Pool): String =
-        cp(nameAndTypeIndex).asNameAndType.name(cp)
+    def methodName(cp: Constant_Pool): String = cp(nameAndTypeIndex).asNameAndType.name(cp)
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor =
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
         cp(nameAndTypeIndex).asNameAndType.methodDescriptor(cp)
+    }
 
 }

@@ -78,50 +78,44 @@ trait StackMapTable_attributeBinding
         attribute_name_index: Constant_Pool_Index,
         attribute_length:     Int,
         stack_map_frames:     StackMapFrames
-    ) =
-        new StackMapTable(stack_map_frames)
+    ): StackMapTable_attribute = StackMapTable(stack_map_frames)
 
-    def SameFrame(frame_type: Int): StackMapFrame =
-        new SameFrame(frame_type)
+    def SameFrame(frame_type: Int): StackMapFrame = br.SameFrame(frame_type)
 
     def SameLocals1StackItemFrame(
         frame_type:                   Int,
         verification_type_info_stack: VerificationTypeInfo
-    ): StackMapFrame =
-        new SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
+    ): StackMapFrame = br.SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
 
     def SameLocals1StackItemFrameExtended(
         frame_type:                   Int,
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
     ): StackMapFrame =
-        new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
+        br.SameLocals1StackItemFrameExtended(offset_delta, verification_type_info_stack)
 
     def ChopFrame(
         frame_type:   Int,
         offset_delta: Int
-    ): StackMapFrame =
-        new ChopFrame(frame_type, offset_delta)
+    ): ChopFrame = br.ChopFrame(frame_type, offset_delta)
 
     def SameFrameExtended(
         frame_type:   Int,
         offset_delta: Int
-    ): StackMapFrame =
-        new SameFrameExtended(frame_type, offset_delta)
+    ): StackMapFrame = br.SameFrameExtended(offset_delta)
 
     def AppendFrame(
         frame_type:                    Int,
         offset_delta:                  Int,
         verification_type_info_locals: VerificationTypeInfoLocals
-    ): StackMapFrame =
-        new AppendFrame(frame_type, offset_delta, verification_type_info_locals)
+    ): StackMapFrame = br.AppendFrame(frame_type, offset_delta, verification_type_info_locals)
 
     def FullFrame(
         frame_type: Int, offset_delta: Int,
         verification_type_info_locals: VerificationTypeInfoLocals,
         verification_type_info_stack:  VerificationTypeInfoStack
     ): StackMapFrame =
-        new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
+        br.FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
     def TopVariableInfo() = br.TopVariableInfo
 

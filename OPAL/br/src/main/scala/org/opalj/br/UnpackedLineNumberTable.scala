@@ -34,10 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class UnpackedLineNumberTable(
-    lineNumbers: LineNumbers
-)
-        extends LineNumberTable {
+case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberTable {
 
     /**
      * Looks up the line number of the instruction with the given pc.

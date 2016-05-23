@@ -38,16 +38,14 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_MethodType_info(
-    descriptorIndex: Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+        descriptorIndex: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor =
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
         cp(descriptorIndex).asMethodDescriptor
+    }
 
-    override def asConstantValue(cp: Constant_Pool): MethodDescriptor =
-        methodDescriptor(cp)
+    override def asConstantValue(cp: Constant_Pool): MethodDescriptor = methodDescriptor(cp)
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-        methodDescriptor(cp)
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = methodDescriptor(cp)
 }

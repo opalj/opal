@@ -68,9 +68,6 @@ trait Constant_PoolAbstractions {
      * This method is called/needs to be called after the class file was completely
      * loaded to perform class file specific transformations.
      */
-    def applyDeferredActions(
-        cp:        Constant_Pool,
-        classFile: ClassFile
-    ): ClassFile
+    def applyDeferredActions(cp: Constant_Pool, classFile: ClassFile): ClassFile
 
 }

@@ -146,7 +146,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
 
                 methodsCount.incrementAndGet()
             } catch {
-                case t: Throwable ⇒ 
+                case t: Throwable ⇒
                     val instructions = code.instructions.size
                     errors.add(s"[$instructions]${method.toJava(classFile)}:${t.getMessage}")
             }
@@ -154,7 +154,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
         if (!errors.isEmpty())
             fail(
                 s"analyzed ${methodsCount.get}/${project.methodsCount} methods; "+
-                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods","\n","")
+                    errors.asScala.toList.sorted.mkString(s"failed for ${errors.size} methods", "\n", "")
             )
         else
             info(

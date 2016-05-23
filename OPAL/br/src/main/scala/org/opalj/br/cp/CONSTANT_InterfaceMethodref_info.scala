@@ -40,5 +40,4 @@ package cp
 case class CONSTANT_InterfaceMethodref_info(
     class_index:         Constant_Pool_Index,
     name_and_type_index: Constant_Pool_Index
-)
-        extends AsMethodref
+) extends AsMethodref

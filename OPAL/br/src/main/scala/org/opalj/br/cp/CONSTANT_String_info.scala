@@ -38,14 +38,12 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_String_info(
-    string_index: Constant_Pool_Index
-)
-        extends CONSTANT_FieldValue_info {
+        string_index: Constant_Pool_Index
+) extends CONSTANT_FieldValue_info {
 
     override def asConstantFieldValue(cp: Constant_Pool): ConstantString =
         ConstantString(cp(string_index).asString)
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = {
-        asConstantValue(cp)
-    }
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
+
 }

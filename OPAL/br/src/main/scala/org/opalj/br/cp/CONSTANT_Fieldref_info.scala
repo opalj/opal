@@ -32,17 +32,15 @@ package br
 package cp
 
 /**
- *
  * Represents a field.
  *
  * @author Michael Eichberg
  * @author Andre Pacak
  */
 case class CONSTANT_Fieldref_info(
-    class_index:         Constant_Pool_Index,
-    name_and_type_index: Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+        class_index:         Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
     // We don't mind if the field is initialized more than once (if reading the classfile 
     // should be parallelized) as it is just an optimization and the object reference
@@ -52,11 +50,12 @@ case class CONSTANT_Fieldref_info(
     override def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) = {
         if (fieldref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
-            fieldref = (
-                cp(class_index).asObjectType(cp),
-                nameAndType.name(cp),
-                nameAndType.fieldType(cp)
-            )
+            fieldref =
+                (
+                    cp(class_index).asObjectType(cp),
+                    nameAndType.name(cp),
+                    nameAndType.fieldType(cp)
+                )
         }
         fieldref
     }

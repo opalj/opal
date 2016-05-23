@@ -39,20 +39,18 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_NameAndType_info(
-    name_index:       Constant_Pool_Index,
-    descriptor_index: Constant_Pool_Index
-)
-        extends Constant_Pool_Entry {
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index
+) extends Constant_Pool_Entry {
 
-    override def asNameAndType: CONSTANT_NameAndType_info = this
+    override def asNameAndType: this.type = this
 
-    def name(cp: Constant_Pool): String =
-        // this operation is very cheap and hence, it doesn't make sense to cache the result
-        cp(name_index).asString
+    // this operation is very cheap and hence, it doesn't make sense to cache the result
+    def name(cp: Constant_Pool): String = cp(name_index).asString
 
-    def fieldType(cp: Constant_Pool): FieldType =
-        cp(descriptor_index).asFieldType
+    def fieldType(cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
 
-    def methodDescriptor(cp: Constant_Pool): MethodDescriptor =
+    def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
         cp(descriptor_index).asMethodDescriptor
+    }
 }

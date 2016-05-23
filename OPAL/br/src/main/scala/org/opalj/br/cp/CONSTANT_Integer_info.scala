@@ -37,17 +37,12 @@ package cp
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-case class CONSTANT_Integer_info(
-    value: ConstantInteger
-)
-        extends CONSTANT_FieldValue_info {
+case class CONSTANT_Integer_info(value: ConstantInteger) extends CONSTANT_FieldValue_info {
 
     def this(value: Int) { this(ConstantInteger(value)) }
 
     override def asConstantFieldValue(cp: Constant_Pool): ConstantInteger = value
 
-    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = {
-        asConstantValue(cp)
-    }
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 
 }
