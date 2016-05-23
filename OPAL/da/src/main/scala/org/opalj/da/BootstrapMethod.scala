@@ -53,9 +53,7 @@ case class BootstrapMethods_attribute(
         </details>
     }
 
-    def methodsToXHTML(implicit cp: Constant_Pool) = {
-        for (method ← methods) yield method.toXHTML(cp)
-    }
+    def methodsToXHTML(implicit cp: Constant_Pool) = methods.map(_.toXHTML(cp))
 }
 
 object BootstrapMethods_attribute {
@@ -71,15 +69,11 @@ case class BootstrapMethod(method_ref: Int, arguments: Seq[BootstrapArgument]) {
         </details>
     }
 
-    def argumentsToXHTML(implicit cp: Constant_Pool) = {
-        for (argument ← arguments) yield argument.toXHTML(cp)
-    }
+    def argumentsToXHTML(implicit cp: Constant_Pool) = arguments.map(_.toXHTML(cp))
 }
 
 case class BootstrapArgument(cp_ref: Int) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>{ cp(cp_ref).asInlineNode }</div>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node = <div>{ cp(cp_ref).asInlineNode }</div>
 
 }

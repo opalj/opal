@@ -29,22 +29,15 @@
 package org.opalj
 package da
 
-import scala.collection.immutable.HashSet
-
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
- * @author Andre Pacak
  */
 case class Deprecated_attribute(attribute_name_index: Int) extends Attribute {
 
     def attribute_length = 2
-
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] =
-        HashSet(attribute_name_index)
 
 }
 

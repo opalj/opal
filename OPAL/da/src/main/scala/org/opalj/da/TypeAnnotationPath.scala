@@ -89,9 +89,7 @@ case class TypeAnnotationOnBoundOfWildcardType() extends TypeAnnotationPathEleme
     }
 }
 
-case class TypeAnnotationOnTypeArgument(
-        type_argument_index: Int
-) extends TypeAnnotationPathElement {
+case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>

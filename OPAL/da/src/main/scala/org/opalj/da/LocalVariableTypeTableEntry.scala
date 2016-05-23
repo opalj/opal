@@ -48,7 +48,9 @@ case class LocalVariableTypeTableEntry(
 ) {
 
     def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        implicit
+        cp: Constant_Pool
+    ): HashSet[Constant_Pool_Index] = {
         HashSet(name_index, signature_index)
 
     }

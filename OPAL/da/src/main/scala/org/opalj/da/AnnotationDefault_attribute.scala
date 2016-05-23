@@ -30,14 +30,12 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
- * @author Andre Pacak
  */
 case class AnnotationDefault_attribute(
         attribute_name_index: Int,
@@ -45,13 +43,8 @@ case class AnnotationDefault_attribute(
         element_value:        ElementValue
 ) extends Attribute {
 
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++ element_value.referencedConstantPoolIndices
-    }
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">default { element_value.toXHTML }</div>
+        <div class="annotation">default { element_value.toXHTML(cp) }</div>
     }
 }
 

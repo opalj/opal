@@ -44,7 +44,7 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     val name_and_type_index: Constant_Pool_Index
 
-    def asCPNode(implicit cp: Constant_Pool): Node =
+    override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
             { this.getClass().getSimpleName }
             (<div class="cp_ref">
@@ -68,12 +68,16 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
             <span>{{ { cp(name_and_type_index).asInlineNode } }}</span>
         </span>
 
-    override def toString(implicit cp: Constant_Pool): String =
+    override def toString(implicit cp: Constant_Pool): String = {
         cp(class_index).toString(cp)+"{ "+cp(name_and_type_index).toString(cp)+" }"
+    }
 
 }
 
 object CONSTANT_Ref {
-    def unapply(ref: CONSTANT_Ref): Option[(Constant_Pool_Index, Constant_Pool_Index)] =
+
+    def unapply(ref: CONSTANT_Ref): Option[(Constant_Pool_Index, Constant_Pool_Index)] = {
         Some((ref.class_index, ref.name_and_type_index))
+    }
+
 }

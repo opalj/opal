@@ -35,7 +35,7 @@ import scala.xml.Node
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Class_info(        name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Class
 
@@ -52,7 +52,7 @@ case class CONSTANT_Class_info(        name_index: Constant_Pool_Index) extends 
 
     override def toString(implicit cp: Constant_Pool): String = {
         val classInfo = cp(name_index).toString
-        if (classInfo.startsWith("["))
+        if (classInfo.charAt(0) == '[')
             parseFieldType(classInfo)
         else
             classInfo.replace('/', '.')

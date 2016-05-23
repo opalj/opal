@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -54,34 +53,23 @@ case class Code_attribute(
      */
     @throws[UnsupportedOperationException]("always")
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        throw new UnsupportedOperationException(
-            "the code attribute needs the method's id; "+
-                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
-        )
-    }
-
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++ code.referencedConstantPoolIndices ++
-            exceptionTable.flatMap { exception ⇒
-                exception.referencedConstantPoolIndices
-            } ++
-            attributes.flatMap { attribute ⇒
-                attribute.referencedConstantPoolIndices
-            }
+        val message = "the code attribute needs the method's id; "+
+            "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
+        throw new UnsupportedOperationException(message)
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
 
+        val codeSize = code.instructions.size
         val methodBodyHeader =
-            s"Method Body (Size: ${code.instructions.size} bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
+            s"Method Body (Size: $codeSize bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
         <details class="method_body">
             <summary>{ methodBodyHeader }</summary>
             {
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt })
+                    attributes.collectFirst { case LineNumberTable_attribute(_, lnt) ⇒ lnt }
                 )
             }
             { exception_handlersAsXHTML }
@@ -90,9 +78,7 @@ case class Code_attribute(
 
     }
 
-    def attributesAsXHTML(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield attribute.toXHTML(cp)
-    }
+    def attributesAsXHTML(implicit cp: Constant_Pool) = attributes.map(_.toXHTML(cp))
 
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
         if (exceptionTable.length > 0)
@@ -100,7 +86,7 @@ case class Code_attribute(
                 <details>
                     <summary>Exception Table:</summary>
                     <ol class="exception_table">
-                        { for (exception ← exceptionTable) yield exception.toXHTML(cp, code) }
+                        { exceptionTable.map(_.toXHTML(cp, code)) }
                     </ol>
                 </details>
             </div>

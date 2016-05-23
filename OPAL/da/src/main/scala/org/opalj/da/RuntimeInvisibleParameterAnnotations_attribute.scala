@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -43,32 +42,12 @@ case class RuntimeInvisibleParameterAnnotations_attribute(
         attribute_name_index:  Int,
         attribute_length:      Int,
         parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]
-) extends Attribute {
+) extends ParameterAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
     }
 
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++
-            parameter_annotations.flatMap { parameter_annotations ⇒
-                parameter_annotations.flatMap {
-                    annotation ⇒ annotation.referencedConstantPoolIndices
-                }
-            }
-    }
-
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        val ans = {
-            for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                perParameterAnnotations ← parameter_annotations
-                annotation ← perParameterAnnotations
-            } yield annotation.toXHTML(cp)
-        }
-
-        <span>{ ans }</span>
-    }
 }
 
 object RuntimeInvisibleParameterAnnotations_attribute {

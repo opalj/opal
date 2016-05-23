@@ -29,8 +29,11 @@
 package org.opalj
 package da
 
+import java.io.File
 import org.opalj.io.writeAndOpen
 import org.opalj.io.OpeningFileFailedException
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * Disassembles the specified class file(s).
@@ -38,6 +41,8 @@ import org.opalj.io.OpeningFileFailedException
  * @author Michael Eichberg
  */
 object Disassembler {
+
+    implicit val logContext = GlobalLogContext
 
     private final val Usage =
         "Usage: java …Disassembler \n"+
@@ -59,10 +64,12 @@ object Disassembler {
     def processClassFile(classFile: ClassFile): Unit = {
         try {
             val file = writeAndOpen(classFile.toXHTML().toString, classFile.fqn, ".html")
-            println(s"Generated the HTML documentation $file.")
+            OPALLogger.info("progress", s"generated the HTML documentation $file")
         } catch {
-            case OpeningFileFailedException(file, cause) ⇒
-                println(s"Opening the html file $file failed: ${cause.getMessage()}")
+            case OpeningFileFailedException(file, cause) ⇒ {
+                val message = s"Opening the html file $file failed: ${cause.getMessage()}"
+                OPALLogger.error("setup", message)
+            }
         }
     }
 
@@ -75,17 +82,15 @@ object Disassembler {
 
         val jarName = args(0)
         if (args.length == 1) {
-            val classFiles = ClassFileReader.ClassFiles(new java.io.File(jarName))
+            val classFiles = ClassFileReader.ClassFiles(new File(jarName))
             if (classFiles.isEmpty) {
-                println(s"No classfiles found in ${args(0)}")
+                OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
             } else {
-                for ((classFile, _) ← classFiles) {
-                    processClassFile(classFile)
-                }
+                classFiles.foreach(cfi ⇒ processClassFile(cfi._1))
             }
         } else {
             val classFileNames = args.drop(1) /* drop the name of the jar file */
-            for (classFileName ← classFileNames) process(jarName, classFileName)
+            classFileNames.foreach(classFileName ⇒ process(jarName, classFileName))
         }
     }
 }

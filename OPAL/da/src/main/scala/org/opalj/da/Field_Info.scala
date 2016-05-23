@@ -32,7 +32,7 @@ package da
 import scala.xml.Node
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import scala.collection.immutable.HashSet
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -64,14 +64,10 @@ case class Field_Info(
         </tr>
     }
 
-    def referencedConstantPoolIndices(implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(name_index, descriptor_index) ++
-            attributes.flatMap(_.referencedConstantPoolIndices)
-    }
-    def attributesToXHTML(implicit cp: Constant_Pool) = {
+    def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         if (attributes.nonEmpty)
-            for (attribute ← attributes) yield attribute.toXHTML(cp)
+            attributes.map(_.toXHTML(cp))
         else
-            Seq.empty[Node]
+            NodeSeq.Empty
     }
 }

@@ -31,7 +31,6 @@ package da
 
 import scala.xml.Node
 import scala.xml.Text
-import scala.collection.immutable.HashSet
 
 /**
  * <pre>
@@ -44,18 +43,15 @@ import scala.collection.immutable.HashSet
  * </pre>
  *
  * @author Michael Eichberg
- * @author Andre Pacak
  */
 case class Exceptions_attribute(
         attribute_name_index:  Int,
         exception_index_table: IndexedSeq[Constant_Pool_Index]
 ) extends Attribute {
 
-    assert(exception_index_table.nonEmpty)
+    override def attribute_length: Int = 2 + exception_index_table.size * 2
 
-    def attribute_length: Int = 2 + exception_index_table.size * 2
-
-    def attribute_name = Exceptions_attribute.name
+    override def attribute_name(implicit cp: Constant_Pool) = Exceptions_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
@@ -63,16 +59,13 @@ case class Exceptions_attribute(
 
     def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
         <span>{
-            exception_index_table.tail.foldLeft(Seq(cp(exception_index_table.head).asInlineNode)) { (c, i) ⇒
+            val head = Seq(cp(exception_index_table.head).asInlineNode)
+            exception_index_table.tail.foldLeft(head) { (c, i) ⇒
                 c ++ Seq(Text(", "), cp(i).asInlineNode)
             }
         }</span>
     }
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++
-            exception_index_table.flatMap { collectReferencedConstantPoolIndices }
-    }
+
 }
 object Exceptions_attribute {
 

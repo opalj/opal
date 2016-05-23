@@ -47,7 +47,9 @@ case class LocalVariableTypeTable_attribute(
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
     def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
+        implicit
+        cp: Constant_Pool
+    ): HashSet[Constant_Pool_Index] = {
         HashSet(attribute_name_index) ++
             local_variable_type_table.flatMap { local_variable_type ⇒
                 local_variable_type.referencedConstantPoolIndices

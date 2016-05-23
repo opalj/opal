@@ -67,9 +67,7 @@ case class ParameterDeclarationOfMethodOrConstructor(
 
 //______________________________
 // supertype_target
-case class SupertypeTarget(
-        supertype_index: Int
-) extends TypeAnnotationTarget {
+case class SupertypeTarget(supertype_index: Int) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(supertype_index).toString(cp) }</span>

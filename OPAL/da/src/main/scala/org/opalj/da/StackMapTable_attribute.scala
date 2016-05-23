@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -77,13 +76,6 @@ case class StackMapTable_attribute(
         <div> { frames } </div>
     }
 
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++
-            stack_map_frames.flatMap { frame ⇒
-                frame.referencedConstantPoolIndices
-            }
-    }
 }
 
 object StackMapTable_attribute {

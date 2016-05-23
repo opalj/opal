@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * The attribute class defines the common elements of all attributes; i.e., basically
@@ -60,11 +59,6 @@ trait Attribute {
     def attribute_name_index: Constant_Pool_Index
 
     def attribute_name(implicit cp: Constant_Pool) = cp(attribute_name_index).asString
-
-    //TODO: change this method so it does not return the indices but change the values
-    //of an array of booleans that mark if a index gets referenced.
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index]
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="attribute_name">{ attribute_name }</span>

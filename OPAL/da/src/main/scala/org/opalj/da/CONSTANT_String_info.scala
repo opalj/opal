@@ -38,9 +38,7 @@ import scala.xml.Node
 /**
  * @author Michael Eichberg
  */
-case class CONSTANT_String_info(
-        string_index: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+case class CONSTANT_String_info(string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_String
 
@@ -52,9 +50,9 @@ case class CONSTANT_String_info(
             &raquo;)
         </span>
 
-    override def toString(implicit cp: Constant_Pool): String =
-        cp(string_index).toString
+    override def toString(implicit cp: Constant_Pool): String = cp(string_index).toString
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInlineNode(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">{ '"' + cp(string_index).toString + '"' }</span>
+    }
 }

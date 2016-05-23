@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -38,7 +37,6 @@ import scala.collection.immutable.HashSet
  * @author Isbel Isbel
  * @author Noorulla Sharief
  * @author Tobias Becker
- * @author Andre Pacak
  */
 case class LocalVariableTableEntry(
         start_pc:         Int,
@@ -47,11 +45,6 @@ case class LocalVariableTableEntry(
         descriptor_index: Int,
         index:            Int
 ) {
-
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(name_index, descriptor_index)
-    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val name = cp(name_index).toString(cp)

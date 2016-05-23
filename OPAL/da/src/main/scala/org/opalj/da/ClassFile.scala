@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.io.Source
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 
@@ -68,7 +70,7 @@ case class ClassFile(
             if (super_class != 0)
                 <span class="extends">{ "extends " }<span class="super_class">{ cp(super_class).toString }</span></span>
             else
-                scala.xml.NodeSeq.Empty
+                NodeSeq.Empty
         } ++ {
             if (interfaces.nonEmpty)
                 <span class="implements">
@@ -76,7 +78,7 @@ case class ClassFile(
                     { interfaces.tail.map(i ⇒ <span class="interface">{ ", "+cp(i).toString }</span>) }
                 </span>
             else
-                scala.xml.NodeSeq.Empty
+                NodeSeq.Empty
         }
     }
 
@@ -98,9 +100,7 @@ case class ClassFile(
         </ol>
     }
 
-    def attributesToXHTML: Seq[Node] = {
-        for (attribute ← attributes) yield attributeToXHTML(attribute)
-    }
+    def attributesToXHTML: Seq[Node] = attributes.map(attributeToXHTML(_))
 
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
@@ -110,7 +110,7 @@ case class ClassFile(
     }
 
     def fieldsToXHTML: Seq[Node] = {
-        <table class="fields">{ for (field ← fields) yield field.toXHTML(fqn) }</table>
+        <table class="fields">{ fields.map(_.toXHTML(fqn)) }</table>
     }
 
     def methodsToXHTML: Seq[Node] = {
@@ -120,23 +120,6 @@ case class ClassFile(
 
     protected def accessFlags: Node = {
         <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
-    }
-
-    def referencedConstantPoolEntries: Array[Constant_Pool_Entry] = {
-        val referencedIndices =
-            collectReferencedConstantPoolIndices(this_class) ++
-                collectReferencedConstantPoolIndices(super_class) ++
-                interfaces.flatMap(collectReferencedConstantPoolIndices) ++
-                fields.flatMap(_.referencedConstantPoolIndices) ++
-                methods.flatMap(_.referencedConstantPoolIndices) ++
-                attributes.flatMap(_.referencedConstantPoolIndices)
-        val referencedEntries = constant_pool.indices.map { index ⇒
-            if (referencedIndices.contains(index))
-                constant_pool(index)
-            else
-                null
-        }
-        referencedEntries.toArray
     }
 
     protected def filter: Node = {
@@ -220,25 +203,19 @@ case class ClassFile(
 object ClassFile {
 
     final val ResetCSS: String = {
-        process(this.getClass().getResourceAsStream("reset.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        val resource = this.getClass().getResourceAsStream("reset.css")
+        process(resource)(Source.fromInputStream(_).mkString)
     }
 
     final val TheCSS: String = {
-        process(this.getClass().getResourceAsStream("style.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        val resource = this.getClass().getResourceAsStream("style.css")
+        process(resource)(Source.fromInputStream(_).mkString)
     }
 
-    final val FilterJS = {
-        loadJavaScript("filter.js")
-    }
+    final val FilterJS = loadJavaScript("filter.js")
 
     private def loadJavaScript(js: String): String = {
-        process(this.getClass().getResourceAsStream(js))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        process(this.getClass().getResourceAsStream(js))(Source.fromInputStream(_).mkString)
     }
 
 }

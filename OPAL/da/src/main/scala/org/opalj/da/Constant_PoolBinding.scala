@@ -29,12 +29,12 @@
 package org.opalj
 package da
 
-import bi.reader.{Constant_PoolReader, Constant_PoolAbstractions}
-
-import reflect.ClassTag
+import scala.reflect.ClassTag
+import scala.collection.mutable
+import org.opalj.bi.reader.{Constant_PoolReader, Constant_PoolAbstractions}
 
 /**
- * Representation of the constant pool as specified by the JVM Spec.
+ * Representation of the constant pool as specified by the JVM Specification (Java 8).
  * (This representation does not provide any abstraction.)
  *
  * @author Michael Eichberg
@@ -42,8 +42,8 @@ import reflect.ClassTag
 trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstractions {
 
     protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
-        new scala.collection.mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
-            def Constant_Type_Value = throw new UnsupportedOperationException()
+        new mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
+            override def Constant_Type_Value = throw new UnsupportedOperationException()
             override def asCPNode(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
             override def asInlineNode(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
             override def toString(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()

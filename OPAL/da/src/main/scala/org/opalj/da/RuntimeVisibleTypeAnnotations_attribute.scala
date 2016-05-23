@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -47,14 +46,6 @@ case class RuntimeVisibleTypeAnnotations_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationstoXHTML(cp) }</div>
-    }
-
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index) ++
-            annotations.flatMap { annotation ⇒
-                annotation.referencedConstantPoolIndices
-            }
     }
 
     def annotationstoXHTML(implicit cp: Constant_Pool): Node = {

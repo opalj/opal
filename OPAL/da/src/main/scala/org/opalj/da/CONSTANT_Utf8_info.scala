@@ -50,5 +50,5 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
     override def asInlineNode(implicit cp: Constant_Pool): Node =
         throw new UnsupportedOperationException
 
-    def toString(implicit cp: Constant_Pool): String = value
+    override def toString(implicit cp: Constant_Pool): String = value
 }

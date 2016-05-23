@@ -110,18 +110,14 @@ object ClassFileReader
         access_flags: Int, name_index: Int, descriptor_index: Int,
         attributes: Attributes
     ): Field_Info =
-        new Field_Info(
-            access_flags, name_index, descriptor_index, attributes
-        )
+        new Field_Info(access_flags, name_index, descriptor_index, attributes)
 
     def Method_Info(
         cp:          Constant_Pool,
         accessFlags: Int, name_index: Int, descriptor_index: Int,
         attributes: Attributes
     ): Method_Info =
-        new Method_Info(
-            accessFlags, name_index, descriptor_index, attributes
-        )
+        new Method_Info(accessFlags, name_index, descriptor_index, attributes)
 
     type SourceFile_attribute = da.SourceFile_attribute
     def SourceFile_attribute(
@@ -371,28 +367,28 @@ object ClassFileReader
     def AnnotationDefault_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         element_value: ElementValue
-    ) =
+    ): AnnotationDefault_attribute =
         new AnnotationDefault_attribute(attribute_name_index, attribute_length, element_value)
 
     type RuntimeVisibleAnnotations_attribute = da.RuntimeVisibleAnnotations_attribute
     def RuntimeVisibleAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         annotations: Annotations
-    ) =
+    ): RuntimeVisibleAnnotations_attribute =
         new RuntimeVisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeInvisibleAnnotations_attribute = da.RuntimeInvisibleAnnotations_attribute
     def RuntimeInvisibleAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         annotations: Annotations
-    ) =
+    ): RuntimeInvisibleAnnotations_attribute =
         new RuntimeInvisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
     def RuntimeVisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         parameter_annotations: ParameterAnnotations
-    ) =
+    ): RuntimeVisibleParameterAnnotations_attribute =
         new RuntimeVisibleParameterAnnotations_attribute(
             attribute_name_index, attribute_length, parameter_annotations
         )
@@ -401,7 +397,7 @@ object ClassFileReader
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         parameter_annotations: ParameterAnnotations
-    ) =
+    ): RuntimeInvisibleParameterAnnotations_attribute =
         new RuntimeInvisibleParameterAnnotations_attribute(
             attribute_name_index, attribute_length, parameter_annotations
         )

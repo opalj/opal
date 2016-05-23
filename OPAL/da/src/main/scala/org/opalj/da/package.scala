@@ -31,7 +31,6 @@ package org.opalj
 import scala.xml.Node
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import scala.collection.immutable.HashSet
 
 /**
  *
@@ -51,41 +50,6 @@ package object da {
 
     type Attributes = Seq[Attribute]
 
-    def collectReferencedConstantPoolIndices(
-        index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        if (index == 0)
-            return HashSet.empty;
-        cp(index) match {
-            case CONSTANT_Class_info(name) ⇒
-                HashSet(index, name)
-            case CONSTANT_Ref(clazz, name_and_type) ⇒
-                HashSet(index) ++ collectReferencedConstantPoolIndices(clazz) ++
-                    collectReferencedConstantPoolIndices(name_and_type)
-            case CONSTANT_InvokeDynamic_info(clazz, name_and_type) ⇒
-                HashSet(index) ++ collectReferencedConstantPoolIndices(clazz) ++
-                    collectReferencedConstantPoolIndices(name_and_type)
-            case CONSTANT_MethodHandle_info(ref_kind, ref_index) ⇒
-                HashSet(index) ++ collectReferencedConstantPoolIndices(ref_index)
-            case CONSTANT_MethodType_info(descriptor_index) ⇒
-                HashSet(index) ++ collectReferencedConstantPoolIndices(descriptor_index)
-            case CONSTANT_NameAndType_info(name, typ) ⇒
-                HashSet(index, name, typ)
-            case CONSTANT_String_info(utf8_index) ⇒
-                HashSet(index, utf8_index)
-            case CONSTANT_Double_info(value) ⇒
-                HashSet(index)
-            case CONSTANT_Float_info(value) ⇒
-                HashSet(index)
-            case CONSTANT_Integer_info(value) ⇒
-                HashSet(index)
-            case CONSTANT_Long_info(value) ⇒
-                HashSet(index)
-            case CONSTANT_Utf8_info(value) ⇒
-                HashSet(index)
-        }
-    }
-
     def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)
         if (rt.charAt(0) == '[')
@@ -98,9 +62,7 @@ package object da {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
 
-    def asJavaObjectType(t: String): String = {
-        t.replace('/', '.')
-    }
+    def asJavaObjectType(t: String): String = t.replace('/', '.')
 
     def parseReturnType(type_index: Int)(implicit cp: Constant_Pool): String = {
         parseReturnType(cp(type_index).toString)
@@ -129,7 +91,10 @@ package object da {
             case 'Z' ⇒ "boolean"
             case 'L' ⇒ descriptor.substring(1, descriptor.length - 1).replace('/', '.')
             case '[' ⇒ parseFieldType(descriptor.substring(1))+"[]"
-            case _   ⇒ throw new IllegalArgumentException(descriptor+" is not a valid field type descriptor")
+
+            case _ ⇒
+                val message = s"$descriptor is not a valid field type descriptor"
+                throw new IllegalArgumentException(message)
         }
     }
 
@@ -145,8 +110,7 @@ package object da {
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType =
-            parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1))
 
         s"$returnType $methodName(${parameterTypes.mkString(", ")})"
     }
@@ -163,8 +127,7 @@ package object da {
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType =
-            parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1))
 
         <span class="cp_method">
             <span class="method_returntype fqn">{ returnType }</span>

@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
@@ -45,14 +44,6 @@ case class TypeAnnotation(
         type_index:          Constant_Pool_Index,
         element_value_pairs: IndexedSeq[ElementValuePair]
 ) {
-
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet.empty ++
-            element_value_pairs.flatMap { pair ⇒
-                pair.referencedConstantPoolIndices
-            }
-    }
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val evps = element_value_pairs.map(_.toXHTML)

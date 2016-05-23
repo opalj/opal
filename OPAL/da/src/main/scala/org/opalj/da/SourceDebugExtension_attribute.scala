@@ -30,14 +30,12 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
- * @author Andre Pacak
  */
 case class SourceDebugExtension_attribute(
         attribute_name_index: Int,
@@ -46,13 +44,8 @@ case class SourceDebugExtension_attribute(
 
     def attribute_length = 2
 
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index)
-    }
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attribute_name">SourceDebugExtensio</span>: ("Content Not Available")</span>
+        <span><span class="attribute_name">SourceDebugExtension</span>: ("Content Not Available")</span>
     }
 
 }

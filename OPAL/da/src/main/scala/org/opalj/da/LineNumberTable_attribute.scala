@@ -30,14 +30,12 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.collection.immutable.HashSet
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
- * @author Andre Pacak
  */
 case class LineNumberTable_attribute(
         attribute_name_index: Int,
@@ -48,11 +46,6 @@ case class LineNumberTable_attribute(
 
     def attribute_name = LineNumberTable_attribute.name
 
-    def referencedConstantPoolIndices(
-        implicit cp: Constant_Pool): HashSet[Constant_Pool_Index] = {
-        HashSet(attribute_name_index)
-    }
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
             <summary>LineNumberTable</summary>
@@ -60,9 +53,8 @@ case class LineNumberTable_attribute(
         </details>
     }
 
-    def line_number_tableToXHTML(implicit cp: Constant_Pool) = {
-        for (line ← line_number_table) yield line.toXHTML(cp)
-    }
+    def line_number_tableToXHTML(implicit cp: Constant_Pool) = line_number_table.map(_.toXHTML(cp))
+
 }
 object LineNumberTable_attribute {
 
