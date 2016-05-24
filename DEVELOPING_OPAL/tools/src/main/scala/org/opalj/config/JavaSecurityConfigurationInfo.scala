@@ -11,8 +11,17 @@ import scala.collection.JavaConverters._
 
 /**
  * This analysis reports the specified security properties of the used JVM. We are in particular interested
- * in the information about the restricted packages. The analysis relies on the information of the environment
- * variable "JAVA_HOME" which has to be set.
+ * in the information about the restricted packages. These information can only be leveraged if the security manager
+ * is set before starting the program. Setting the SecurityManager in the program's main function is to late since a lot
+ * of classes has been load already. 
+ * 
+ * The analysis relies on the information of the environment variable "JAVA_HOME" which has to be set. This doesn't make
+ * sense when we analyze a program because there is no necessity for the program to run with the JVM specified on the analysis system.
+ * So there are different options that enable consideration of the restricted packages when the SecurityMangager is set:
+ * 	- if the analysis specifies a JRE in the classpath, we can use the security properties of this JRE.
+ *  - if the analysis does not specify an JRE in the classpath, it is save that there are no restricted packages.
+ *  - if the analysis does not specify an JRE in the classpath, we can use the information of JAVA_HOME.
+ *  - if the analysis does not specify an JRE in the classpath, we can try to find a save approximation that is valid for all JVMs.
  *
  *
  * There are two kinds of packages where a "java.lang.SecurityException" is thrown.
