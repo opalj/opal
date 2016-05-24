@@ -36,10 +36,21 @@ import org.opalj.br.Method
 import scala.collection.mutable
 
 /**
- * Determines for each method if it potentially can be inherit by a '''future'''
- * subtype.
+ * Determines for each method if it potentially can be inherit by a '''future''' subtype. This property is in
+ * particular designed to be used by analyses that deal with partial programs.
+ *
+ * When analyzing an application with a closed type hierarchy, no further subtypes can be added to any of them.
+ * Therefore, that implies that any method has to be marked as [[NotClientInheritable]].
+ *
+ * In any case where a program is analyzed with an open type hierarchy w.r.t. to subtyping it is possible that the
+ * unknown code introduces new subtypes of already known types. These unknown types can be passed (after an up-cast to
+ * its super type) to any arbitrary method that accept some superclass as parameter.
+ *
+ *
  *
  * @note This property is computed by a direct property computation.
+ * @note This property is only relevant when analyzing partially known programs.
+ *
  * @author Michael Reif
  */
 sealed trait ClientInheritable extends Property {
@@ -56,8 +67,10 @@ case object IsClientInheritable extends ClientInheritable
 case object NotClientInheritable extends ClientInheritable
 
 /**
- * This analysis computes the ClientCallable property.* I.e., it determines whether a method can directly called by a client. This is in particular
- * important when analyzing libraries.
+ * This analysis computes the ClientInheritable property.* I.e., it determines whether a method can directly be inherited by a client.
+ * This is in particular important when analyzing libraries.
+ *
+ * The analysis assumes that packages that start with "java." are closed, i.e., that no client can put a class into these specific packages.
  *
  * ==Usage==
  * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
@@ -82,6 +95,7 @@ case object NotClientInheritable extends ClientInheritable
  *
  * @note This analysis implements a direct property computation that is only executed when
  * 		required.
+ *
  * @author Michael Reif
  */
 class CallableByClientAnalysis private (
@@ -107,6 +121,9 @@ class CallableByClientAnalysis private (
         if (isClosedLibrary && method.isPackagePrivate)
             return NotClientInheritable;
 
+        if (classFile.thisType.packageName.startsWith("java."))
+            return NotClientInheritable;
+        
         if (classFile.isPublic || isOpenLibrary)
             return IsClientInheritable;
 
