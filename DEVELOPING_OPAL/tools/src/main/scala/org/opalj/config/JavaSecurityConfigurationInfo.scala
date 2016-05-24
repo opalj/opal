@@ -88,7 +88,11 @@ object JavaSecurityConfigurationInfo {
             val javaSecurity = new Properties()
             
             javaSecurity.load(new FileInputStream(secPropPath))
-
+            
+            if(javaSecurity.getProperty("package.access").equals(javaSecurity.getProperty("package.definition"))){
+                OPALLogger.warn("security","pacakge.access and package.defintion define different packages")(GlobalLogContext)
+            }
+            
             javaSecurity.stringPropertyNames().asScala.foreach { property ⇒
                 val entry = javaSecurity.getProperty(property)
                 if (entry.contains(","))
