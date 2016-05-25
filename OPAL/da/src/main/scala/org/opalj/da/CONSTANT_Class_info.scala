@@ -47,13 +47,14 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
             &raquo;)
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInlineNode(implicit cp: Constant_Pool): Node = {
         <span class="fqn">{ toString }</span>
+    }
 
     override def toString(implicit cp: Constant_Pool): String = {
         val classInfo = cp(name_index).toString
         if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo)
+            parseFieldType(classInfo).javaTypeName
         else
             classInfo.replace('/', '.')
     }

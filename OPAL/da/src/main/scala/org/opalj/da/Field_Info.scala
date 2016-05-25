@@ -52,13 +52,17 @@ case class Field_Info(
      * @param definingTypeFQN The FQN of the class defining this field.
      */
     def toXHTML(definingTypeFQN: String)(implicit cp: Constant_Pool): Node = {
-        // val definingType = abbreviateFQN(definingTypeFQN, parseFieldType(cp(descriptor_index).asString)) 
-        val definingType = <span class="fqn">{ definingTypeFQN }</span>
+        val TypeInfo(fieldType, isBaseType) = parseFieldType(cp(descriptor_index).asString)
+        val typeInfo =
+            if (isBaseType)
+                fieldType
+            else
+                abbreviateFQN(definingTypeFQN, fieldType)
 
         // create row which describes the field
         <tr class="field">
             <td class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</td>
-            <td>{ definingType }</td>
+            <td>{ typeInfo }</td>
             <td class="field_name"> { cp(name_index).asString } </td>
             <td>{ attributesToXHTML(cp) }</td>
         </tr>

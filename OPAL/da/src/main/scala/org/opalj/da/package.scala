@@ -72,25 +72,38 @@ package object da {
         if (rt.charAt(0) == 'V')
             "void"
         else
-            parseFieldType(rt)
+            parseFieldType(rt).javaTypeName
     }
 
-    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): String = {
+    /**
+     * Returns a string representation of the type and the information whether the (element) type
+     * is a base type.
+     */
+    // TODO return FieldTypeInfo structure 
+    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
 
-    def parseFieldType(descriptor: String): String = {
+    /**
+     * Returns a string representation of the type and the information whether the (element) type
+     * is a base type.
+     */
+    def parseFieldType(descriptor: String): TypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
-            case 'B' ⇒ "byte"
-            case 'C' ⇒ "char"
-            case 'D' ⇒ "double"
-            case 'F' ⇒ "float"
-            case 'I' ⇒ "int"
-            case 'J' ⇒ "long"
-            case 'S' ⇒ "short"
-            case 'Z' ⇒ "boolean"
-            case 'L' ⇒ descriptor.substring(1, descriptor.length - 1).replace('/', '.')
-            case '[' ⇒ parseFieldType(descriptor.substring(1))+"[]"
+            case 'B' ⇒ ByteTypeInfo
+            case 'C' ⇒ CharTypeInfo
+            case 'D' ⇒ DoubleTypeInfo
+            case 'F' ⇒ FloatTypeInfo
+            case 'I' ⇒ IntTypeInfo
+            case 'J' ⇒ LongTypeInfo
+            case 'S' ⇒ ShortTypeInfo
+            case 'Z' ⇒ BooleanTypeInfo
+            case 'L' ⇒
+                val javaTypeName = descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+                ObjectTypeInfo(javaTypeName)
+            case '[' ⇒
+                val TypeInfo(componentType, elementTypeIsBaseType) = parseFieldType(descriptor.substring(1))
+                ArrayTypeInfo(componentType+"[]", elementTypeIsBaseType)
 
             case _ ⇒
                 val message = s"$descriptor is not a valid field type descriptor"
@@ -160,7 +173,7 @@ package object da {
                 )
             case _ ⇒
                 ( // this is the return tuple
-                    parseFieldType(td.toString),
+                    parseFieldType(td.toString).javaTypeName,
                     startIndex + 1
                 )
         }

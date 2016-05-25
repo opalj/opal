@@ -43,7 +43,7 @@ case class Annotation(type_index: Int, element_value_pairs: IndexedSeq[ElementVa
         val element_value_pairsAsXHTML = this.element_value_pairs.map(_.toXHTML(cp))
 
         <div class="annotation">
-            <span class="type">{ parseFieldType(cp(type_index).toString) }</span>
+            <span class="type">{ parseFieldType(cp(type_index).toString).javaTypeName }</span>
             (
             <span class="element_value_pairs">{ element_value_pairsAsXHTML }</span>
             )

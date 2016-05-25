@@ -29,30 +29,36 @@
 package org.opalj
 package da
 
-import scala.xml.Node
-
 /**
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-case class TypeAnnotation(
-        target:              TypeAnnotationTarget,
-        path:                TypeAnnotationPath,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: IndexedSeq[ElementValuePair]
-) {
+sealed trait TypeInfo {
+    def javaTypeName: String
+    def elementTypeIsBaseType: Boolean
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        val evps = element_value_pairs.map(_.toXHTML)
-        <div class="annotation">
-            TypeAnnotation [target:{ target.toXHTML(cp) }
-            , path:{ path.toXHTML(cp) }
-            ,type{ parseFieldType(type_index).javaTypeName }
-            ]
-            <span class="element_value_pairs">{ evps }</span>
-        </div>
+}
+
+object TypeInfo {
+    def unapply(ti: TypeInfo): Some[(String, Boolean)] = {
+        Some((ti.javaTypeName, ti.elementTypeIsBaseType))
     }
 }
+
+abstract class PrimitiveTypeInfo protected (val javaTypeName: String) extends TypeInfo {
+    final def elementTypeIsBaseType = true
+}
+
+case object BooleanTypeInfo extends PrimitiveTypeInfo("boolean")
+case object ByteTypeInfo extends PrimitiveTypeInfo("byte")
+case object CharTypeInfo extends PrimitiveTypeInfo("char")
+case object ShortTypeInfo extends PrimitiveTypeInfo("short")
+case object IntTypeInfo extends PrimitiveTypeInfo("int")
+case object LongTypeInfo extends PrimitiveTypeInfo("long")
+case object FloatTypeInfo extends PrimitiveTypeInfo("float")
+case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
+
+case class ObjectTypeInfo(javaTypeName: String) extends TypeInfo {
+    def elementTypeIsBaseType = false
+}
+
+case class ArrayTypeInfo(javaTypeName: String, elementTypeIsBaseType: Boolean) extends TypeInfo

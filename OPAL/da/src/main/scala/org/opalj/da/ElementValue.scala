@@ -107,7 +107,7 @@ case class EnumValue(
 ) extends StructuredElementValue {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val et = parseFieldType(type_name_index)
+        val et = parseFieldType(type_name_index).javaTypeName
         val ec = cp(const_name_index).toString
 
         <span class="constant_value"><span class="type">{ et }</span>.<span class="field_name">{ ec }</span></span>

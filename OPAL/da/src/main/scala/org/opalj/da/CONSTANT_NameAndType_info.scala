@@ -62,7 +62,7 @@ case class CONSTANT_NameAndType_info(
             {
                 val descriptor = cp(descriptor_index).toString(cp)
                 if (descriptor.charAt(0) != '(') {
-                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString) } </span>
+                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString).javaTypeName } </span>
                     <span class="identifier">{ cp(name_index).toString(cp) } </span>
                 } else
                     methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
@@ -73,7 +73,7 @@ case class CONSTANT_NameAndType_info(
     override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString)+" "+cp(name_index).toString(cp)
+            parseFieldType(cp(descriptor_index).asString).javaTypeName+" "+cp(name_index).toString(cp)
         else
             parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
     }
