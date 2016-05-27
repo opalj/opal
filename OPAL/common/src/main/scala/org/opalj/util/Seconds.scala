@@ -44,6 +44,8 @@ class Seconds(val timeSpan: Double) extends AnyVal {
             time
     }
 
+    def +(other: Seconds): Seconds = new Seconds(this.timeSpan + other.timeSpan)
+
     override def toString: String = toString(withUnit = true)
 
 }
