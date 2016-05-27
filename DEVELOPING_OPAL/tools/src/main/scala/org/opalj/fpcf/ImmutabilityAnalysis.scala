@@ -63,19 +63,21 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        import project.get
+
+        var t = Seconds.None
+
+        // The following measurements (t) are done such that the results are comparable with the
+        // reactive async approach developed by P. Haller and Simon Gries.
+        val projectStore = time { get(SourceElementsPropertyStoreKey) } { r ⇒ t = r.toSeconds }
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        var t = Seconds.None
+        manager.run(ClassExtensibilityAnalysis)
+        manager.run(FieldMutabilityAnalysis)
         time {
-            manager.run(ClassExtensibilityAnalysis)
-            manager.runAll(
-                FieldMutabilityAnalysis,
-                ObjectImmutabilityAnalysis,
-                TypeImmutabilityAnalysis
-            )
-        } { r ⇒ t = r.toSeconds }
+            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+        } { r ⇒ t += r.toSeconds }
 
         projectStore.validate(None)
 

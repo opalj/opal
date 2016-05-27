@@ -63,17 +63,18 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+        import project.get
+        // The following measurements (t) are done such that the results are comparable with the
+        // reactive async approach developed by P. Haller and Simon Gries.
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        var s = Seconds.None
+        val projectStore = time { get(SourceElementsPropertyStoreKey) } { r ⇒ s = r.toSeconds }
         projectStore.debug = false
 
-        // We immediately also schedule the purity analysis to improve the
-        // parallelization!
-
         val manager = project.get(FPCFAnalysesManagerKey)
-
-        var t = Seconds.None
-        time { manager.runAll(FieldMutabilityAnalysis, PurityAnalysis) } { r ⇒ t = r.toSeconds }
+        manager.runAll(FieldMutabilityAnalysis)
+        var e = Seconds.None
+        time { manager.runAll(PurityAnalysis) } { r ⇒ e += r.toSeconds }
 
         val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
             projectStore.entities(FieldMutability.key)
@@ -107,8 +108,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             fieldInfo +
                 methodInfo +
                 projectStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size+
-                "\nAnalysis time: "+t
+                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size +
+                s"\nSetup time: $s; Analysis time: $e; Combined: ${s + e}"
         )
     }
 }
