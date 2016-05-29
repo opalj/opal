@@ -46,11 +46,11 @@ object ClassFileReader
         with bi.reader.FieldsReader
         with bi.reader.MethodsReader
         with bi.reader.AttributesReader
+        with bi.reader.Unknown_attributeReader
         with bi.reader.BootstrapMethods_attributeReader
         with bi.reader.Code_attributeReader
         with bi.reader.CodeReader
         with bi.reader.SourceFile_attributeReader
-        with bi.reader.SkipUnknown_attributeReader
         with bi.reader.Signature_attributeReader
         with bi.reader.ConstantValue_attributeReader
         with bi.reader.Synthetic_attributeReader
@@ -247,6 +247,15 @@ object ClassFileReader
             exception_table,
             attributes
         )
+
+    type Unknown_attribute = da.Unknown_attribute
+    def Unknown_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        info:                 Array[Byte]
+    ): Unknown_attribute = {
+        new Unknown_attribute(attribute_name_index, info)
+    }
 
     type EnclosingMethod_attribute = da.EnclosingMethod_attribute
     def EnclosingMethod_attribute(
