@@ -36,20 +36,22 @@ import scala.collection.mutable
  * This class is used to build up a constant pool.
  *
  * @author Andre Pacak
+ * @author Michael Eichberg
  */
 class ConstantPoolBuffer {
 
+    private[this] var nextIndex = 1
     private[this] val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
     //the first item is null because the constant_pool starts with the index 1
     buffer(null) = 0
 
-    private def insertUnique(entry: Constant_Pool_Entry): Int = {
-        if (!buffer.contains(entry)) {
-            val index = buffer.size
+    private def insertUnique(entry: Constant_Pool_Entry, entry_size: Int): Int = {
+        buffer.getOrElseUpdate(entry, {
+            val index = nextIndex
             buffer(entry) = index
-            return index;
-        }
-        buffer(entry)
+            nextIndex += entry_size
+            index
+        })
     }
 
     def insertClass(referenceType: ReferenceType): Int = {
@@ -58,25 +60,25 @@ class ConstantPoolBuffer {
                 referenceType.asObjectType.fqn
             else
                 referenceType.toJVMTypeName
-        insertUnique(CONSTANT_Class_info(insertUtf8(typeName)))
+        insertUnique(CONSTANT_Class_info(insertUtf8(typeName)), 1)
     }
 
-    def insertDouble(value: Double): Int = insertUnique(CONSTANT_Double_info(ConstantDouble(value)))
+    def insertDouble(value: Double): Int = insertUnique(CONSTANT_Double_info(ConstantDouble(value)), 2)
 
-    def insertFloat(value: Float): Int = insertUnique(CONSTANT_Float_info(ConstantFloat(value)))
+    def insertFloat(value: Float): Int = insertUnique(CONSTANT_Float_info(ConstantFloat(value)), 1)
 
-    def insertInteger(value: Int): Int = insertUnique(CONSTANT_Integer_info(ConstantInteger(value)))
+    def insertInteger(value: Int): Int = insertUnique(CONSTANT_Integer_info(ConstantInteger(value)), 1)
 
-    def insertLong(value: Long): Int = insertUnique(CONSTANT_Long_info(ConstantLong(value)))
+    def insertLong(value: Long): Int = insertUnique(CONSTANT_Long_info(ConstantLong(value)), 2)
 
-    def insertString(value: String): Int = insertUnique(CONSTANT_String_info(insertUtf8(value)))
+    def insertString(value: String): Int = insertUnique(CONSTANT_String_info(insertUtf8(value)), 1)
 
-    def insertUtf8(value: String): Int = insertUnique(CONSTANT_Utf8_info(value))
+    def insertUtf8(value: String): Int = insertUnique(CONSTANT_Utf8_info(value), 1)
 
     def insertNameAndType(nameString: String, typeString: String): Int = {
         val indexName = insertUtf8(nameString)
         val indexType = insertUtf8(typeString)
-        insertUnique(CONSTANT_NameAndType_info(indexName, indexType))
+        insertUnique(CONSTANT_NameAndType_info(indexName, indexType), 1)
     }
 
     def insertFieldRef(
@@ -85,7 +87,7 @@ class ConstantPoolBuffer {
         fieldType:  String
     ): Int = {
         val indexObjectType = insertClass(objectType)
-        insertUnique(CONSTANT_Fieldref_info(indexObjectType, insertNameAndType(fieldName, fieldType)))
+        insertUnique(CONSTANT_Fieldref_info(indexObjectType, insertNameAndType(fieldName, fieldType)), 1)
     }
 
     def insertMethodRef(
@@ -94,10 +96,13 @@ class ConstantPoolBuffer {
         descriptor:    String
     ): Int = {
         val indexObjectType = insertClass(referenceType)
-        insertUnique(CONSTANT_Methodref_info(
-            indexObjectType,
-            insertNameAndType(methodName, descriptor)
-        ))
+        insertUnique(
+            CONSTANT_Methodref_info(
+                indexObjectType,
+                insertNameAndType(methodName, descriptor)
+            ),
+            1
+        )
     }
 
     def insertInterfaceMethodRef(
@@ -106,71 +111,101 @@ class ConstantPoolBuffer {
         descriptor: String
     ): Int = {
         val indexObjectType = insertClass(objectType)
-        insertUnique(CONSTANT_InterfaceMethodref_info(
-            indexObjectType,
-            insertNameAndType(methodName, descriptor)
-        ))
+        insertUnique(
+            CONSTANT_InterfaceMethodref_info(
+                indexObjectType,
+                insertNameAndType(methodName, descriptor)
+            ),
+            1
+        )
     }
 
     def insertMethodHandle(methodHandle: MethodHandle): Int = methodHandle match {
         case GetFieldMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                1,
-                insertFieldRef(declType, name, fieldType.toJVMTypeName)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    1,
+                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
+                ),
+                1
+            )
         case GetStaticMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                2,
-                insertFieldRef(declType, name, fieldType.toJVMTypeName)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    2,
+                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
+                ),
+                1
+            )
 
         case PutFieldMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                3,
-                insertFieldRef(declType, name, fieldType.toJVMTypeName)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    3,
+                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
+                ),
+                1
+            )
 
         case PutStaticMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                4,
-                insertFieldRef(declType, name, fieldType.toJVMTypeName)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    4,
+                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
+                ), 1
+            )
 
         case InvokeVirtualMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                5,
-                insertMethodRef(recType, name, descriptor.toJVMDescriptor)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    5,
+                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                ),
+                1
+            )
 
         case InvokeStaticMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                6,
-                insertMethodRef(recType, name, descriptor.toJVMDescriptor)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    6,
+                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                ),
+                1
+            )
 
         case InvokeSpecialMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                7,
-                insertMethodRef(recType, name, descriptor.toJVMDescriptor)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    7,
+                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                ),
+                1
+            )
 
         case NewInvokeSpecialMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                8,
-                insertMethodRef(recType, name, descriptor.toJVMDescriptor)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    8,
+                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                ),
+                1
+            )
 
         case InvokeInterfaceMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(CONSTANT_MethodHandle_info(
-                9,
-                insertInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
-            ))
+            insertUnique(
+                CONSTANT_MethodHandle_info(
+                    9,
+                    insertInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
+                ),
+                1
+            )
     }
 
     def insertMethodType(descriptor: String): Int = {
-        insertUnique(CONSTANT_MethodType_info(
-            insertUnique(CONSTANT_Utf8_info(descriptor))
-        ))
+        insertUnique(
+            CONSTANT_MethodType_info(insertUnique(CONSTANT_Utf8_info(descriptor), 1)),
+            1
+        )
     }
 
     def insertInvokeDynamic(
@@ -188,10 +223,13 @@ class ConstantPoolBuffer {
                 bmt.indexOf(bootstrap)
             }
         val indexOfNameAndType = insertNameAndType(name, descriptor)
-        insertUnique(CONSTANT_InvokeDynamic_info(
-            indexOfBootstrapMethod,
-            indexOfNameAndType
-        ))
+        insertUnique(
+            CONSTANT_InvokeDynamic_info(
+                indexOfBootstrapMethod,
+                indexOfNameAndType
+            ),
+            1
+        )
     }
 
     def toArray = buffer.toList.sortBy(_._2).map(_._1).toArray
