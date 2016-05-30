@@ -40,8 +40,8 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index:  Int,
-        attribute_length:      Int,
+        attribute_name_index:  Constant_Pool_Index,
+        attribute_length:      Int, // TODO Compute on demand
         parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]
 ) extends ParameterAnnotations_attribute {
 

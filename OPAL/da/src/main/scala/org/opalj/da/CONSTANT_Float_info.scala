@@ -37,6 +37,8 @@ import scala.xml.Node
  */
 case class CONSTANT_Float_info(value: Float) extends Constant_Pool_Entry {
 
+    override final def size: Int = 1 + 4
+
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Float
 
     override def asCPNode(implicit cp: Constant_Pool): Node =

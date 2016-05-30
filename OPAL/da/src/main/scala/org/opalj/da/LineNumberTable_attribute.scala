@@ -38,7 +38,7 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class LineNumberTable_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         line_number_table:    Seq[LineNumberTableEntry]
 ) extends Attribute {
 

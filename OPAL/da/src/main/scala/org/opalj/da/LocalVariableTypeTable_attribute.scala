@@ -40,7 +40,7 @@ import scala.collection.immutable.HashSet
  * @author Andre Pacak
  */
 case class LocalVariableTypeTable_attribute(
-        attribute_name_index:      Int,
+        attribute_name_index:      Constant_Pool_Index,
         local_variable_type_table: Seq[LocalVariableTypeTableEntry]
 ) extends Attribute {
 

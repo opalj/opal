@@ -37,7 +37,10 @@ import scala.xml.Node
  * @author Isbel Isbel
  * @author Noorulla Sharief
  */
-case class Annotation(type_index: Int, element_value_pairs: IndexedSeq[ElementValuePair]) {
+case class Annotation(
+        type_index:          Constant_Pool_Index,
+        element_value_pairs: IndexedSeq[ElementValuePair]
+) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val element_value_pairsAsXHTML = this.element_value_pairs.map(_.toXHTML(cp))

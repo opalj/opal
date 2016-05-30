@@ -39,19 +39,19 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class Signature_attribute(
-        attribute_name_index: Int,
-        Signature_index:      Int
+        attribute_name_index: Constant_Pool_Index,
+        signature_index:      Constant_Pool_Index
 ) extends Attribute {
 
     /**
-     * The value of the attribute_length item is fixed; it is always 4.
+     * The value of the attribute_length item is fixed; it is always 2.
      */
-    def attribute_length = 2
+    final override def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">Signature</span>
-            { ": "+cp(Signature_index).toString }
+            { ": "+cp(signature_index).toString }
         </div>
     }
 }

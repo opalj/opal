@@ -36,7 +36,7 @@ package da
  * @author Noorulla Sharief
  */
 case class LocalVariableTable_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         local_variable_table: Seq[LocalVariableTableEntry]
 ) extends Attribute {
 

@@ -48,6 +48,8 @@ case class Field_Info(
         attributes:       Attributes
 ) {
 
+    def size: Int = 2 + 2 + 2 + 2 /* attributes_count*/ + attributes.view.map(_.size).sum
+
     /**
      * @param definingTypeFQN The FQN of the class defining this field.
      */

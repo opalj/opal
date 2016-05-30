@@ -43,14 +43,14 @@ import org.opalj.io.writeAndOpen
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DisassemblerTest extends FlatSpec with Matchers {
+class XHTMLRepresentationTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
 
     //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
     val files = org.opalj.bytecode.JRELibraryFolder
 
-    it should (s"be able to process every class of $files") in {
+    it should (s"be able to create the xHTML representation of every class of $files") in {
 
         val Lock = new Object
         var exceptions: List[Throwable] = Nil

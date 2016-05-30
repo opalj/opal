@@ -42,11 +42,11 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class ConstantValue_attribute(
-        attribute_name_index: Int,
-        constantValue_index:  Int
+        attribute_name_index: Constant_Pool_Index,
+        constantValue_index:  Constant_Pool_Index
 ) extends Attribute {
 
-    def attribute_length = 2
+    override final def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>=<span class="constant_value"> { cp(constantValue_index).asInlineNode }</span></span>

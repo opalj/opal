@@ -38,6 +38,8 @@ import scala.xml.Text
  */
 case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
 
+    override final def size: Int = 1 + 4
+
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
 
     override def asCPNode(implicit cp: Constant_Pool): Node =

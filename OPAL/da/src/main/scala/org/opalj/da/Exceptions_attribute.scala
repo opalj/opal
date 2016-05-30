@@ -45,11 +45,11 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class Exceptions_attribute(
-        attribute_name_index:  Int,
+        attribute_name_index:  Constant_Pool_Index,
         exception_index_table: IndexedSeq[Constant_Pool_Index]
 ) extends Attribute {
 
-    override def attribute_length: Int = 2 + exception_index_table.size * 2
+    override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
     override def attribute_name(implicit cp: Constant_Pool) = Exceptions_attribute.name
 

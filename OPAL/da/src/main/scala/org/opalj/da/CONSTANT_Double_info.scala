@@ -37,6 +37,8 @@ import scala.xml.Node
  */
 case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {
 
+    override final def size: Int = { 1 + 4 + 4 }
+
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Double
 
     override def asCPNode(implicit cp: Constant_Pool): Node =

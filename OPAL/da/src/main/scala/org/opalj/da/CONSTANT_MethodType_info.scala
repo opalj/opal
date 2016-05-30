@@ -40,6 +40,8 @@ case class CONSTANT_MethodType_info(
         descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
+    override final def size: Int = 1 + 2
+
     override def Constant_Type_Value = ConstantPoolTags.CONSTANT_MethodType
 
     override def asCPNode(implicit cp: Constant_Pool): Node =

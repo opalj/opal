@@ -39,7 +39,7 @@ import scala.xml.Node
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
+        attribute_length:     Int, // TODO Compute on demand
         parameters:           IndexedSeq[MethodParameter]
 ) extends Attribute {
 

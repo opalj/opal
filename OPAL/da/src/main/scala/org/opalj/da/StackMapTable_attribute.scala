@@ -39,7 +39,7 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class StackMapTable_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         attribute_length:     Int,
         stack_map_frames:     IndexedSeq[StackMapFrame]
 ) extends Attribute {

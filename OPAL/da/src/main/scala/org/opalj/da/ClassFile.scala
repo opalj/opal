@@ -34,6 +34,7 @@ import scala.xml.NodeSeq
 import scala.io.Source
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
+import org.opalj.bi.reader.Constant_PoolAbstractions
 
 /**
  * @author Michael Eichberg
@@ -54,6 +55,37 @@ case class ClassFile(
         methods:       Methods,
         attributes:    Attributes
 ) {
+
+    assert(constant_pool(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
+
+    /**
+     * Size of the class file in bytes.
+     */
+    def size: Int = {
+        4 + // magic
+            2 + // minor_version
+            2 + // major_version
+            2 + // constant_pool_count
+            {
+                val cpIt = constant_pool.iterator
+                cpIt.next // the first entry is always empty in the class file
+                cpIt.
+                    filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
+                    map(_.size).
+                    sum
+            } +
+            2 + // access_flags
+            2 + // this_class
+            2 + // super_class
+            2 + // interfaces count 
+            interfaces.length * 2 + // interfaces[interfaces_count]
+            2 + // fields_count
+            fields.view.map(_.size).sum +
+            2 + // methods_count
+            methods.view.map(_.size).sum +
+            2 + // attributes_count
+            attributes.view.map(_.size).sum
+    }
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
@@ -167,6 +199,10 @@ case class ClassFile(
                     &nbsp;{ superTypeFQNs }
                     <div id="class_file_version">
                         Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
+                    </div>
+                    <div>
+                        Size:&nbsp;{ size }
+                        bytes
                     </div>
                 </div>
                 <div class="constant_pool">

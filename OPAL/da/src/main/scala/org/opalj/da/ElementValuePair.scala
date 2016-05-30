@@ -43,7 +43,7 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class ElementValuePair(
-        element_name_index: Int,
+        element_name_index: Constant_Pool_Index,
         element_value:      ElementValue
 ) {
 

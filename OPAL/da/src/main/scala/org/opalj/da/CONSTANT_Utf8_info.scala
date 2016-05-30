@@ -38,7 +38,15 @@ import scala.xml.Node
 /**
  * @author Michael Eichberg
  */
-case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
+case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_Pool_Entry {
+
+    override final def size: Int = {
+        1 + // tag
+            2 + // to store the length
+            // The length of the string in bytes if the modified UTF-8 encoding is used which
+            // is not equivalent to `value.length`.
+            raw.length
+    }
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 

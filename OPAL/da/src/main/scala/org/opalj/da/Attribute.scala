@@ -52,7 +52,16 @@ import scala.xml.Node
 trait Attribute {
 
     /**
-     * The number of bytes to store the attribute.
+     * The number of bytes required to store this attribute; including the index into the constant
+     * pool for the name (2 bytes) and the length of the attribute (4 bytes).
+     */
+    def size: Int =
+        2 /* attribute_name_index */ +
+            4 /* attribute_length */ + attribute_length /* bytes */
+
+    /**
+     * The number of bytes to store the attribute; excluding the index into the constant
+     * pool for the name (2 bytes) and the length of the attribute (4 bytes).
      */
     def attribute_length: Int
 

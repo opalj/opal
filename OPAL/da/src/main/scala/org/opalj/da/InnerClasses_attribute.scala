@@ -34,16 +34,17 @@ import scala.xml.Node
 /**
  * <pre>
  * InnerClasses_attribute {
- * u2 attribute_name_index;
- * u4 attribute_length;
- * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
- * {	u2 inner_class_info_index;
- * 	u2 outer_class_info_index;
- * 	u2 inner_name_index;
- * 	u2 inner_class_access_flags;
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
+ * 	{	u2 inner_class_info_index;
+ * 		u2 outer_class_info_index;
+ * 		u2 inner_name_index;
+ * 		u2 inner_class_access_flags;
  * 	} classes[number_of_classes];
  * }
  * </pre>
+ *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -68,8 +69,7 @@ case class InnerClasses_attribute(
             <details>
                 <summary class="attribute_name">{ cp(attribute_name_index).toString }</summary>
                 {
-                    for (innerClass ← innerClasses)
-                        yield innerClass.toXHTML(definingClassFQN)(cp)
+                    innerClasses.map(_.toXHTML(definingClassFQN)(cp))
                 }
             </details>
         </div>

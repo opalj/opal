@@ -38,7 +38,7 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class AnnotationDefault_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         attribute_length:     Int,
         element_value:        ElementValue
 ) extends Attribute {

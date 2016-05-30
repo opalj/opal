@@ -40,6 +40,8 @@ import scala.xml.Node
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {
 
+    override final def size: Int = 1 + 2 + 2
+
     val class_index: Constant_Pool_Index
 
     val name_and_type_index: Constant_Pool_Index

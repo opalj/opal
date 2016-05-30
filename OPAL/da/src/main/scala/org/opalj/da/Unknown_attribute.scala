@@ -35,18 +35,18 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class Unknown_attribute(
-        attribute_name_index: Int,
-        data:                 Array[Byte]
+        attribute_name_index: Constant_Pool_Index,
+        info:                 Array[Byte]
 ) extends Attribute {
 
-    def attribute_length: Int = 2 + data.size
+    final override def attribute_length: Int = info.size
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">{ cp(attribute_name_index).toString } (Bytes: { attribute_length })</span>
             :<br/>
             {
-                data.map(b ⇒ f"$b%02x").sliding(4).map(_.mkString(" ")).mkString("   ")
+                info.map(b ⇒ f"$b%02x").sliding(4).map(_.mkString(" ")).mkString("   ")
             }
         </div>
     }

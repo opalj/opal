@@ -94,7 +94,9 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     def CONSTANT_Long_info(l: Long): CONSTANT_Long_info = new CONSTANT_Long_info(l)
 
-    def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info = new CONSTANT_Utf8_info(s)
+    def CONSTANT_Utf8_info(r: Array[Byte], s: String): CONSTANT_Utf8_info = {
+        new CONSTANT_Utf8_info(s)
+    }
 
     def CONSTANT_String_info(i: Int): CONSTANT_String_info = new CONSTANT_String_info(i)
 

@@ -38,8 +38,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class RuntimeVisibleAnnotations_attribute(
-        attribute_name_index: Int,
-        attribute_length:     Int,
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[Annotation]
 ) extends Annotations_attribute {
 
