@@ -47,11 +47,9 @@ import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.cg.CallGraphCache
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
-import org.opalj.br.MethodSignature
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
@@ -66,7 +64,6 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.Milliseconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesRegistry
-import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.util.Milliseconds
@@ -74,6 +71,9 @@ import org.opalj.issues.Issue
 import org.opalj.issues.PackageLocation
 import org.opalj.issues.ProjectLocation
 import org.opalj.issues.IssueOrdering
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.br.MethodSignature
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify

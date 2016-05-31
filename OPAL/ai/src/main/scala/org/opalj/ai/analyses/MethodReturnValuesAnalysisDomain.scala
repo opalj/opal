@@ -37,7 +37,7 @@ import org.opalj.ai.domain._
 import org.opalj.ai.domain.RecordReturnedValueInfrastructure
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.cg.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**

@@ -37,14 +37,13 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.analysis.immutability.ObjectImmutabilityAnalysis
-import org.opalj.fpcf.analysis.immutability.ObjectImmutability
-import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
-import org.opalj.fpcf.analysis.immutability.TypeImmutability
-import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
-import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analysis.extensibility.ClassExtensibilityAnalysis
-import org.opalj.fpcf.analysis.extensibility.IsExtensible
+import org.opalj.fpcf.analysis.ClassExtensibilityAnalysis
+import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
+import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.fpcf.analysis.ObjectImmutabilityAnalysis
+import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.

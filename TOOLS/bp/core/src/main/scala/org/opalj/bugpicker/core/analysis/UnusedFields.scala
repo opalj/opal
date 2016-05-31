@@ -44,8 +44,8 @@ import org.opalj.issues.IssueCategory
 import org.opalj.issues.FieldLocation
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.fpcf.analysis.extensibility.IsExtensible
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.properties.IsExtensible
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.

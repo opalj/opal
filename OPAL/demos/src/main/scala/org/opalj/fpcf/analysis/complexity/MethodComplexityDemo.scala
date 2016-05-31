@@ -38,6 +38,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
+import org.opalj.fpcf.properties.MethodComplexity
 
 /**
  * Demonstrates how to use an analysis that was developed using the FPCF framework.

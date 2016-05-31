@@ -32,7 +32,7 @@ package domain
 package la
 
 import org.opalj.br._
-import org.opalj.ai.cg.Callees
+import org.opalj.ai.analyses.cg.Callees
 import org.opalj.ai.domain.l2.PerformInvocations
 
 /**

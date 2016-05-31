@@ -43,7 +43,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.la.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.domain.la.RefinedTypeLevelInvokeInstructions
-import org.opalj.ai.cg.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
