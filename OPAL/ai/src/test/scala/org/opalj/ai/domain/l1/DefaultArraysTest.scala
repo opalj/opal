@@ -558,10 +558,9 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
                 isValueSubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
 
-                arrayload(returnIndex, IntegerValue(returnIndex, 0), varray) should be(ComputedValueOrException(
-                    null, List(ObjectType.ArrayStoreException)
-                ))
-
+                val returnedValue = arrayload(returnIndex, IntegerValue(returnIndex, 0), varray)
+                val exceptions = List(ObjectType.ArrayStoreException)
+                returnedValue should be(ComputedValueOrException(null, exceptions))
             }
         }
     }
