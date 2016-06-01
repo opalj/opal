@@ -32,6 +32,8 @@ package bc
 import org.opalj.da._
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import org.opalj.bi.{ ConstantPoolTags ⇒ CPTags }
+import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
  * Assembles the specified class file(s).
@@ -39,46 +41,269 @@ import java.io.DataOutputStream
  * @author Michael Eichberg
  */
 object Assembler {
-    //
-    //    implicit def classFileToCFE(classFile :ClassFile) : ClassFileElement[ClassFile] = {
-    //        new ClassFileElement[ClassFile] {
-    //            val source = classFile
-    //            def write(out : DataOutputStream) : Unit={
-    //                out.writeInt(org.opalj.bi.ClassFileMagic)                
-    //            } 
-    //        }
-    //    }
-    //    
+
+    def as[T](x: AnyRef): T = x.asInstanceOf[T]
+
+    implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
+        def write(ci: CONSTANT_Class_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(name_index)
+        }
+    }
+
+    implicit object RichCONSTANT_Ref extends ClassFileElement[CONSTANT_Ref] {
+        def write(cr: CONSTANT_Ref)(implicit out: DataOutputStream): Unit = {
+            import cr._
+            import out._
+            writeByte(tag)
+            writeShort(class_index)
+            writeShort(name_and_type_index)
+        }
+    }
+
+    implicit object RichCONSTANT_String_info extends ClassFileElement[CONSTANT_String_info] {
+        def write(ci: CONSTANT_String_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(string_index)
+        }
+    }
+
+    implicit object RichCONSTANT_Integer_info extends ClassFileElement[CONSTANT_Integer_info] {
+        def write(ci: CONSTANT_Integer_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeInt(value)
+        }
+    }
+
+    implicit object RichCONSTANT_Float_info extends ClassFileElement[CONSTANT_Float_info] {
+        def write(ci: CONSTANT_Float_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeFloat(value)
+        }
+    }
+
+    implicit object RichCONSTANT_Long_info extends ClassFileElement[CONSTANT_Long_info] {
+        def write(ci: CONSTANT_Long_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeLong(value)
+        }
+    }
+
+    implicit object RichCONSTANT_Double_info extends ClassFileElement[CONSTANT_Double_info] {
+        def write(ci: CONSTANT_Double_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeDouble(value)
+        }
+    }
+
+    implicit object RichCONSTANT_NameAndType_info extends ClassFileElement[CONSTANT_NameAndType_info] {
+        def write(ci: CONSTANT_NameAndType_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(name_index)
+            writeShort(descriptor_index)
+
+        }
+    }
+
+    implicit object RichCONSTANT_Utf8_info extends ClassFileElement[CONSTANT_Utf8_info] {
+        def write(ci: CONSTANT_Utf8_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeUTF(value)
+        }
+    }
+
+    implicit object RichCONSTANT_MethodHandle_info extends ClassFileElement[CONSTANT_MethodHandle_info] {
+        def write(ci: CONSTANT_MethodHandle_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(reference_kind)
+            writeShort(reference_index)
+        }
+    }
+
+    implicit object RichCONSTANT_MethodType_info extends ClassFileElement[CONSTANT_MethodType_info] {
+        def write(ci: CONSTANT_MethodType_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(descriptor_index)
+        }
+    }
+
+    implicit object RichCONSTANT_InvokeDynamic_info extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
+        def write(ci: CONSTANT_InvokeDynamic_info)(implicit out: DataOutputStream): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(bootstrap_method_attr_index)
+            writeShort(name_and_type_index)
+        }
+    }
+
+    implicit object RichConstant_Pool_Entry extends ClassFileElement[Constant_Pool_Entry] {
+        def write(cpe: Constant_Pool_Entry)(implicit out: DataOutputStream): Unit = {
+            cpe.Constant_Type_Value.id match {
+                case CPTags.CONSTANT_Class_ID ⇒ serializeAs[CONSTANT_Class_info](cpe)
+                case CPTags.CONSTANT_Fieldref_ID |
+                    CPTags.CONSTANT_Methodref_ID |
+                    CPTags.CONSTANT_InterfaceMethodref_ID ⇒ serializeAs[CONSTANT_Ref](cpe)
+                case CPTags.CONSTANT_String_ID        ⇒ serializeAs[CONSTANT_String_info](cpe)
+                case CPTags.CONSTANT_Integer_ID       ⇒ serializeAs[CONSTANT_Integer_info](cpe)
+                case CPTags.CONSTANT_Float_ID         ⇒ serializeAs[CONSTANT_Float_info](cpe)
+                case CPTags.CONSTANT_Long_ID          ⇒ serializeAs[CONSTANT_Long_info](cpe)
+                case CPTags.CONSTANT_Double_ID        ⇒ serializeAs[CONSTANT_Double_info](cpe)
+                case CPTags.CONSTANT_NameAndType_ID   ⇒ serializeAs[CONSTANT_NameAndType_info](cpe)
+                case CPTags.CONSTANT_Utf8_ID          ⇒ serializeAs[CONSTANT_Utf8_info](cpe)
+                case CPTags.CONSTANT_MethodHandle_ID  ⇒ serializeAs[CONSTANT_MethodHandle_info](cpe)
+                case CPTags.CONSTANT_MethodType_ID    ⇒ serializeAs[CONSTANT_MethodType_info](cpe)
+                case CPTags.CONSTANT_InvokeDynamic_ID ⇒ serializeAs[CONSTANT_InvokeDynamic_info](cpe)
+            }
+        }
+    }
+
+    implicit object RichAttribute extends ClassFileElement[Attribute] {
+        def write(a: Attribute)(implicit out: DataOutputStream): Unit = {
+            import a._
+            import out._
+            writeShort(attribute_name_index)
+            writeInt(attribute_length)
+            a match {
+                case a: AnnotationDefault_attribute ⇒
+                case a: Annotations_attribute       ⇒
+                case a: BootstrapMethods_attribute  ⇒
+
+                case c: Code_attribute ⇒
+                    import c._
+                    writeShort(max_stack)
+                    writeShort(max_locals)
+                    val code_length = code.instructions.length
+                    writeInt(code_length)
+                    out.write(code.instructions, 0, code_length)
+                    writeShort(exceptionTable.length)
+                    exceptionTable.foreach { ex ⇒
+                        import ex._
+                        writeShort(start_pc)
+                        writeShort(end_pc)
+                        writeShort(handler_pc)
+                        writeShort(catch_type)
+                    }
+                    writeShort(attributes.length)
+                    attributes.foreach { serialize(_) }
+
+                case a: ConstantValue_attribute ⇒
+                    writeShort(a.constantValue_index)
+
+                case a: Deprecated_attribute                           ⇒
+                case a: EnclosingMethod_attribute                      ⇒
+                case a: Exceptions_attribute                           ⇒
+                case a: InnerClasses_attribute                         ⇒
+                case a: LineNumberTable_attribute                      ⇒
+                case a: LocalVariableTable_attribute                   ⇒
+                case a: LocalVariableTypeTable_attribute               ⇒
+                case a: MethodParameters_attribute                     ⇒
+                case a: RuntimeVisibleAnnotations_attribute            ⇒
+                case a: RuntimeInvisibleAnnotations_attribute          ⇒
+                case a: RuntimeVisibleParameterAnnotations_attribute   ⇒
+                case a: RuntimeInvisibleParameterAnnotations_attribute ⇒
+                case a: RuntimeVisibleTypeAnnotations_attribute        ⇒
+                case a: RuntimeInvisibleTypeAnnotations_attribute      ⇒
+                case a: Signature_attribute                            ⇒
+                case a: SourceDebugExtension_attribute                 ⇒
+                case a: StackMapTable_attribute                        ⇒
+                case a: Synthetic_attribute                            ⇒
+
+                case a: Unknown_attribute ⇒
+                    out.write(a.info, 0, a.info.length)
+
+            }
+        }
+    }
 
     implicit object RichFieldInfo extends ClassFileElement[Field_Info] {
-        def write(out: DataOutputStream)(method: Field_Info): Unit = {
-            // TODO
+        def write(f: Field_Info)(implicit out: DataOutputStream): Unit = {
+            import f._
+            import out._
+            writeShort(access_flags)
+            writeShort(name_index)
+            writeShort(descriptor_index)
+            writeShort(attributes.size)
+            attributes.foreach(serialize(_))
         }
     }
 
     implicit object RichMethodInfo extends ClassFileElement[Method_Info] {
-        def write(out: DataOutputStream)(method: Method_Info): Unit = {
-            // TODO
+        def write(m: Method_Info)(implicit out: DataOutputStream): Unit = {
+            import m._
+            import out._
+            writeShort(access_flags)
+            writeShort(name_index)
+            writeShort(descriptor_index)
+            writeShort(attributes.size)
+            attributes.foreach(serialize(_))
         }
     }
 
     implicit object RichClassFile extends ClassFileElement[ClassFile] {
 
-        def write(out: DataOutputStream)(classFile: ClassFile): Unit = {
-            out.writeInt(org.opalj.bi.ClassFileMagic)
-            classFile.methods.foreach { serialize(out) }
-            classFile.fields.foreach { serialize(out) }
+        def write(classFile: ClassFile)(implicit out: DataOutputStream): Unit = {
+            import classFile._
+            import out._
+            writeInt(org.opalj.bi.ClassFileMagic)
+            writeShort(minor_version)
+            writeShort(major_version)
+            writeShort(constant_pool.size + 1)
+            constant_pool.tail.filter(_ ne null).foreach { serialize(_) }
+            writeShort(access_flags)
+            writeShort(this_class)
+            writeShort(super_class)
+            writeShort(interfaces.size)
+            interfaces.foreach { writeShort(_) }
+            writeShort(fields.size)
+            fields.foreach { serialize(_) }
+            writeShort(methods.size)
+            methods.foreach { serialize(_) }
+            writeShort(attributes.size)
+            attributes.foreach { serialize(_) }
         }
     }
 
-    def serialize[T](out: DataOutputStream)(t: T)(implicit cfe: ClassFileElement[T]): Unit = {
-        cfe.write(out)(t)
+    /**
+     * `serializeAs` enables you to specify the object type of the given parameter `t` and
+     * that type will be used to pick up the implicit class file element value.
+     */
+    def serializeAs[T](t: AnyRef)(implicit out: DataOutputStream, cfe: ClassFileElement[T]): Unit = {
+        cfe.write(as[T](t))
+    }
+
+    /**
+     * You should use serialize if the concrete/required type of the given parameter is available/can
+     * be automatically inferred by the Scala compiler.
+     */
+    def serialize[T: ClassFileElement](t: T)(implicit out: DataOutputStream): Unit = {
+        implicitly[ClassFileElement[T]].write(t)
     }
 
     def apply(classFile: ClassFile): Array[Byte] = {
         val data = new ByteArrayOutputStream(classFile.size)
-        val out = new DataOutputStream(data)
-        serialize(out)(classFile)
+        implicit val out = new DataOutputStream(data)
+        serialize(classFile)
         out.flush()
         data.toByteArray()
     }
@@ -87,7 +312,7 @@ object Assembler {
 
 trait ClassFileElement[T] {
 
-    def write(out: DataOutputStream)(t: T): Unit
+    def write(t: T)(implicit out: DataOutputStream): Unit
 
 }
 
