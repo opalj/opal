@@ -188,32 +188,8 @@ object Assembler {
                 case a: AnnotationDefault_attribute ⇒
                 case a: Annotations_attribute       ⇒
                 case a: BootstrapMethods_attribute  ⇒
-
-                case c: Code_attribute ⇒
-                    import c._
-                    writeShort(max_stack)
-                    writeShort(max_locals)
-                    val code_length = code.instructions.length
-                    writeInt(code_length)
-                    out.write(code.instructions, 0, code_length)
-                    writeShort(exceptionTable.length)
-                    exceptionTable.foreach { ex ⇒
-                        import ex._
-                        writeShort(start_pc)
-                        writeShort(end_pc)
-                        writeShort(handler_pc)
-                        writeShort(catch_type)
-                    }
-                    writeShort(attributes.length)
-                    attributes.foreach { serialize(_) }
-
-                case a: ConstantValue_attribute ⇒
-                    writeShort(a.constantValue_index)
-
-                case a: Deprecated_attribute                           ⇒
-                case a: EnclosingMethod_attribute                      ⇒
-                case a: Exceptions_attribute                           ⇒
-                case a: InnerClasses_attribute                         ⇒
+                case a: Deprecated_attribute      ⇒
+                case a: EnclosingMethod_attribute ⇒
                 case a: LineNumberTable_attribute                      ⇒
                 case a: LocalVariableTable_attribute                   ⇒
                 case a: LocalVariableTypeTable_attribute               ⇒
@@ -228,9 +204,44 @@ object Assembler {
                 case a: SourceDebugExtension_attribute                 ⇒
                 case a: StackMapTable_attribute                        ⇒
                 case a: Synthetic_attribute                            ⇒
+                    
+                case c: Code_attribute ⇒
+                import c._
+                writeShort(max_stack)
+                writeShort(max_locals)
+                val code_length = code.instructions.length
+                writeInt(code_length)
+                out.write(code.instructions, 0, code_length)
+                writeShort(exceptionTable.length)
+                exceptionTable.foreach { ex ⇒
+                	import ex._
+                	writeShort(start_pc)
+                	writeShort(end_pc)
+                	writeShort(handler_pc)
+                	writeShort(catch_type)
+                }
+                writeShort(attributes.length)
+                attributes.foreach { serialize(_) }
+                                    
+                case e: Exceptions_attribute ⇒
+                import e._
+                writeShort(exception_index_table.size)
+                exception_index_table.foreach { writeShort(_) }
+                
+                case i: InnerClasses_attribute ⇒
+                import i._
+                writeShort(classes.size)
+                classes.foreach { c ⇒
+                	import c._
+                	writeShort(inner_class_info_index)
+                	writeShort(outer_class_info_index)
+                	writeShort(inner_name_index)
+                	writeShort(inner_class_access_flags)
+                }
+                
+                case a: ConstantValue_attribute ⇒               writeShort(a.constantValue_index)
 
-                case a: Unknown_attribute ⇒
-                    out.write(a.info, 0, a.info.length)
+                case a: Unknown_attribute ⇒                    out.write(a.info, 0, a.info.length)
 
             }
         }
