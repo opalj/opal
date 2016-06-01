@@ -38,9 +38,7 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait AttributeReader
-        extends Constant_PoolAbstractions
-        with AttributesAbstractions {
+trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
 
     type Attribute >: Null
 

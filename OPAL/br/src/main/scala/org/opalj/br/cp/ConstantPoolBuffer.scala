@@ -45,170 +45,155 @@ class ConstantPoolBuffer {
     //the first item is null because the constant_pool starts with the index 1
     buffer(null) = 0
 
-    private def insertUnique(entry: Constant_Pool_Entry, entry_size: Int): Int = {
-        buffer.getOrElseUpdate(entry, {
-            val index = nextIndex
-            buffer(entry) = index
-            nextIndex += entry_size
-            index
-        })
+    private def getOrElseUpdate(entry: Constant_Pool_Entry, entry_size: Int): Int = {
+        buffer.getOrElseUpdate(
+            entry,
+            {
+                val index = nextIndex
+                buffer(entry) = index
+                nextIndex += entry_size
+                index
+            }
+        )
     }
 
-    def insertClass(referenceType: ReferenceType): Int = {
+    def CPEClass(referenceType: ReferenceType): Int = {
         val typeName =
             if (referenceType.isObjectType)
                 referenceType.asObjectType.fqn
             else
                 referenceType.toJVMTypeName
-        insertUnique(CONSTANT_Class_info(insertUtf8(typeName)), 1)
+
+        getOrElseUpdate(CONSTANT_Class_info(CPEUtf8(typeName)), 1)
     }
 
-    def insertDouble(value: Double): Int = insertUnique(CONSTANT_Double_info(ConstantDouble(value)), 2)
+    def CPEDouble(value: Double): Int = getOrElseUpdate(CONSTANT_Double_info(ConstantDouble(value)), 2)
 
-    def insertFloat(value: Float): Int = insertUnique(CONSTANT_Float_info(ConstantFloat(value)), 1)
+    def CPEFloat(value: Float): Int = getOrElseUpdate(CONSTANT_Float_info(ConstantFloat(value)), 1)
 
-    def insertInteger(value: Int): Int = insertUnique(CONSTANT_Integer_info(ConstantInteger(value)), 1)
+    def CPEInteger(value: Int): Int = getOrElseUpdate(CONSTANT_Integer_info(ConstantInteger(value)), 1)
 
-    def insertLong(value: Long): Int = insertUnique(CONSTANT_Long_info(ConstantLong(value)), 2)
+    def CPELong(value: Long): Int = getOrElseUpdate(CONSTANT_Long_info(ConstantLong(value)), 2)
 
-    def insertString(value: String): Int = insertUnique(CONSTANT_String_info(insertUtf8(value)), 1)
+    def CPEString(value: String): Int = getOrElseUpdate(CONSTANT_String_info(CPEUtf8(value)), 1)
 
-    def insertUtf8(value: String): Int = insertUnique(CONSTANT_Utf8_info(value), 1)
+    def CPEUtf8(value: String): Int = getOrElseUpdate(CONSTANT_Utf8_info(value), 1)
 
-    def insertNameAndType(nameString: String, typeString: String): Int = {
-        val indexName = insertUtf8(nameString)
-        val indexType = insertUtf8(typeString)
-        insertUnique(CONSTANT_NameAndType_info(indexName, indexType), 1)
+    def CPENameAndType(name: String, tpe: String): Int = {
+        val indexName = CPEUtf8(name)
+        val indexType = CPEUtf8(tpe)
+        getOrElseUpdate(CONSTANT_NameAndType_info(indexName, indexType), 1)
     }
 
-    def insertFieldRef(
+    def CPEFieldRef(
         objectType: ObjectType,
         fieldName:  String,
         fieldType:  String
     ): Int = {
-        val indexObjectType = insertClass(objectType)
-        insertUnique(CONSTANT_Fieldref_info(indexObjectType, insertNameAndType(fieldName, fieldType)), 1)
+        getOrElseUpdate(
+            CONSTANT_Fieldref_info(CPEClass(objectType), CPENameAndType(fieldName, fieldType)),
+            1
+        )
     }
 
-    def insertMethodRef(
+    def CPEMethodRef(
         referenceType: ReferenceType,
         methodName:    String,
         descriptor:    String
     ): Int = {
-        val indexObjectType = insertClass(referenceType)
-        insertUnique(
-            CONSTANT_Methodref_info(
-                indexObjectType,
-                insertNameAndType(methodName, descriptor)
-            ),
+        getOrElseUpdate(
+            CONSTANT_Methodref_info(CPEClass(referenceType), CPENameAndType(methodName, descriptor)),
             1
         )
     }
 
-    def insertInterfaceMethodRef(
+    def CPEInterfaceMethodRef(
         objectType: ReferenceType,
         methodName: String,
         descriptor: String
     ): Int = {
-        val indexObjectType = insertClass(objectType)
-        insertUnique(
+        getOrElseUpdate(
             CONSTANT_InterfaceMethodref_info(
-                indexObjectType,
-                insertNameAndType(methodName, descriptor)
+                CPEClass(objectType),
+                CPENameAndType(methodName, descriptor)
             ),
             1
         )
     }
 
-    def insertMethodHandle(methodHandle: MethodHandle): Int = methodHandle match {
+    def CPEMethodHandle(methodHandle: MethodHandle): Int = methodHandle match {
         case GetFieldMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(
-                CONSTANT_MethodHandle_info(
-                    1,
-                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
-                ),
+            getOrElseUpdate(
+                CONSTANT_MethodHandle_info(1, CPEFieldRef(declType, name, fieldType.toJVMTypeName)),
                 1
             )
         case GetStaticMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(
-                CONSTANT_MethodHandle_info(
-                    2,
-                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
-                ),
+            getOrElseUpdate(
+                CONSTANT_MethodHandle_info(2, CPEFieldRef(declType, name, fieldType.toJVMTypeName)),
                 1
             )
 
         case PutFieldMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(
-                CONSTANT_MethodHandle_info(
-                    3,
-                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
-                ),
+            getOrElseUpdate(
+                CONSTANT_MethodHandle_info(3, CPEFieldRef(declType, name, fieldType.toJVMTypeName)),
                 1
             )
 
         case PutStaticMethodHandle(declType, name, fieldType) ⇒
-            insertUnique(
-                CONSTANT_MethodHandle_info(
-                    4,
-                    insertFieldRef(declType, name, fieldType.toJVMTypeName)
-                ), 1
+            getOrElseUpdate(
+                CONSTANT_MethodHandle_info(4, CPEFieldRef(declType, name, fieldType.toJVMTypeName)),
+                1
             )
 
         case InvokeVirtualMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(
+            getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    5,
-                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    5, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
         case InvokeStaticMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(
+            getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    6,
-                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    6, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
         case InvokeSpecialMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(
+            getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    7,
-                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    7, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
         case NewInvokeSpecialMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(
+            getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    8,
-                    insertMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    8, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
         case InvokeInterfaceMethodHandle(recType, name, descriptor) ⇒
-            insertUnique(
+            getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    9,
-                    insertInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    9, CPEInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
     }
 
-    def insertMethodType(descriptor: String): Int = {
-        insertUnique(
-            CONSTANT_MethodType_info(insertUnique(CONSTANT_Utf8_info(descriptor), 1)),
+    def CPEMethodType(descriptor: String): Int = {
+        getOrElseUpdate(
+            CONSTANT_MethodType_info(getOrElseUpdate(CONSTANT_Utf8_info(descriptor), 1)),
             1
         )
     }
 
-    def insertInvokeDynamic(
+    def CPEInvokeDynamic(
         bootstrap:  BootstrapMethod,
         name:       String,
         descriptor: String,
@@ -222,15 +207,19 @@ class ConstantPoolBuffer {
                 bmt += bootstrap
                 bmt.indexOf(bootstrap)
             }
-        val indexOfNameAndType = insertNameAndType(name, descriptor)
-        insertUnique(
-            CONSTANT_InvokeDynamic_info(
-                indexOfBootstrapMethod,
-                indexOfNameAndType
-            ),
+        val indexOfNameAndType = CPENameAndType(name, descriptor)
+        getOrElseUpdate(
+            CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, indexOfNameAndType),
             1
         )
     }
 
-    def toArray = buffer.toList.sortBy(_._2).map(_._1).toArray
+    def toArray = {
+        val cp = new Array[Constant_Pool_Entry](nextIndex)
+        buffer.foreach { e ⇒
+            val (cpe, index) = e
+            cp(index) = cpe
+        }
+        cp
+    }
 }
