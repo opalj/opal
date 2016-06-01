@@ -42,6 +42,7 @@ import org.opalj.br.Field
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
