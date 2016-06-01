@@ -53,10 +53,10 @@ import scala.xml.Node
  */
 case class InnerClasses_attribute(
         attribute_name_index: Int,
-        innerClasses:         Seq[InnerClassesEntry]
+        classes:         Seq[InnerClassesEntry]
 ) extends Attribute {
 
-    def attribute_length = 2 + (innerClasses.size * 8)
+    def attribute_length = 2 + (classes.size * 8)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(
@@ -69,7 +69,7 @@ case class InnerClasses_attribute(
             <details>
                 <summary class="attribute_name">{ cp(attribute_name_index).toString }</summary>
                 {
-                    innerClasses.map(_.toXHTML(definingClassFQN)(cp))
+                    classes.map(_.toXHTML(definingClassFQN)(cp))
                 }
             </details>
         </div>
