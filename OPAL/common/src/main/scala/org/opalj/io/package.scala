@@ -121,8 +121,15 @@ package object io {
         filenameSuffix: String
     ): Path = {
         val path = Files.createTempFile(filenamePrefix, filenameSuffix)
-        Files.write(path, data.getBytes("UTF-8"))
+        write(data.getBytes("UTF-8"), path)
         path
+    }
+
+    def write(
+        data: Array[Byte],
+        path: Path
+    ): Unit = {
+        Files.write(path, data)
     }
 
     /**
