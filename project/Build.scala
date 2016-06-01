@@ -64,6 +64,7 @@ object OPALBuild extends Build {
 		ai,
 		fpcfa,
 		da,
+		bc,
 		de,
 		av,
 		DeveloperTools,
@@ -103,6 +104,13 @@ object OPALBuild extends Build {
 		settings = buildSettings
 	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
+
+ 	lazy val bc = Project(
+ 		id = "BytecodeCreator",
+ 		base = file("OPAL/bc"),
+ 		settings = buildSettings
+ 	).dependsOn(da % "it->it;it->test;test->test;compile->compile")
+ 	 .configs(IntegrationTest)
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
