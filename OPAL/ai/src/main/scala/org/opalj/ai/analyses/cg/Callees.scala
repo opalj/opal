@@ -39,7 +39,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.InstantiableClassesKey
-//import org.opalj.fpcf.analyses.InstantiableClassesIndexKey
+
 trait Callees {
 
     def project: SomeProject

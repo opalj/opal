@@ -55,8 +55,8 @@ class CHACallGraphAlgorithmConfiguration(
 
     final def initExtractor: CHACallGraphExtractor =
         if (withCallBySignatureResolution)
-            new CHACallGraphExtractor(cache)
-        else
             new CHACallGraphExtractorWithCBS(cache)
+        else
+            new CHACallGraphExtractor(cache)
 }
 
