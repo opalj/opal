@@ -32,7 +32,7 @@ package bc
 import org.opalj.da._
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
-import org.opalj.bi.{ ConstantPoolTags ⇒ CPTags }
+import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
@@ -45,7 +45,7 @@ object Assembler {
     def as[T](x: AnyRef): T = x.asInstanceOf[T]
 
     implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
-        def write(ci: CONSTANT_Class_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Class_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -54,7 +54,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Ref extends ClassFileElement[CONSTANT_Ref] {
-        def write(cr: CONSTANT_Ref)(implicit out: DataOutputStream): Unit = {
+        def write(cr: CONSTANT_Ref)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import cr._
             import out._
             writeByte(tag)
@@ -64,7 +64,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_String_info extends ClassFileElement[CONSTANT_String_info] {
-        def write(ci: CONSTANT_String_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_String_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -73,7 +73,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Integer_info extends ClassFileElement[CONSTANT_Integer_info] {
-        def write(ci: CONSTANT_Integer_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Integer_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -82,7 +82,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Float_info extends ClassFileElement[CONSTANT_Float_info] {
-        def write(ci: CONSTANT_Float_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Float_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -91,7 +91,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Long_info extends ClassFileElement[CONSTANT_Long_info] {
-        def write(ci: CONSTANT_Long_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Long_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -100,7 +100,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Double_info extends ClassFileElement[CONSTANT_Double_info] {
-        def write(ci: CONSTANT_Double_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Double_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -109,7 +109,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_NameAndType_info extends ClassFileElement[CONSTANT_NameAndType_info] {
-        def write(ci: CONSTANT_NameAndType_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_NameAndType_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -120,7 +120,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Utf8_info extends ClassFileElement[CONSTANT_Utf8_info] {
-        def write(ci: CONSTANT_Utf8_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_Utf8_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -129,17 +129,17 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_MethodHandle_info extends ClassFileElement[CONSTANT_MethodHandle_info] {
-        def write(ci: CONSTANT_MethodHandle_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_MethodHandle_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
-            writeShort(reference_kind)
+            writeByte(reference_kind)
             writeShort(reference_index)
         }
     }
 
     implicit object RichCONSTANT_MethodType_info extends ClassFileElement[CONSTANT_MethodType_info] {
-        def write(ci: CONSTANT_MethodType_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_MethodType_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -148,7 +148,7 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_InvokeDynamic_info extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
-        def write(ci: CONSTANT_InvokeDynamic_info)(implicit out: DataOutputStream): Unit = {
+        def write(ci: CONSTANT_InvokeDynamic_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -158,7 +158,7 @@ object Assembler {
     }
 
     implicit object RichConstant_Pool_Entry extends ClassFileElement[Constant_Pool_Entry] {
-        def write(cpe: Constant_Pool_Entry)(implicit out: DataOutputStream): Unit = {
+        def write(cpe: Constant_Pool_Entry)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             cpe.Constant_Type_Value.id match {
                 case CPTags.CONSTANT_Class_ID ⇒ serializeAs[CONSTANT_Class_info](cpe)
                 case CPTags.CONSTANT_Fieldref_ID |
@@ -178,77 +178,252 @@ object Assembler {
         }
     }
 
+    implicit object RichElementValue extends ClassFileElement[ElementValue] {
+        def write(
+            ev: ElementValue
+        )(
+            implicit
+            out:                DataOutputStream,
+            segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
+            import out._
+            val tag = ev.tag
+            writeByte(tag)
+            tag match {
+                case 'B' | 'C' | 'D' | 'F' | 'I' | 'J' | 'S' | 'Z' ⇒
+                    writeShort(as[BaseElementValue](ev).const_value_index)
+                case 's' ⇒
+                    writeShort(as[StringValue](ev).const_value_index)
+                case 'e' ⇒
+                    val e = as[EnumValue](ev)
+                    writeShort(e.type_name_index)
+                    writeShort(e.const_name_index)
+                case 'c' ⇒
+                    writeShort(as[ClassValue](ev).class_info_index)
+                case '@' ⇒
+                    val av = as[AnnotationValue](ev)
+                    serialize(av.annotation)(RichAnnotation, out, segmentInformation)
+                case '[' ⇒
+                    val av = as[ArrayValue](ev)
+                    writeShort(av.values.length)
+                    av.values.foreach { serialize(_) }
+            }
+        }
+    }
+
+    implicit object RichAnnotation extends ClassFileElement[Annotation] {
+        def write(a: Annotation)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+            import a._
+            import out._
+            writeShort(type_index)
+            writeShort(element_value_pairs.length)
+            element_value_pairs.foreach { evp ⇒
+                writeShort(evp.element_name_index)
+                serialize(evp.element_value)
+            }
+        }
+    }
+
+    implicit object RichTypeAnnotation extends ClassFileElement[TypeAnnotation] {
+        def write(ta: TypeAnnotation)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+            //            import ta._
+            //            import out._
+            //                        writeByte(target_type.)
+            //            ta.target_path
+            //            ta.type_index
+            ???
+        }
+    }
+
+    implicit object RichVerificationTypeInfo extends ClassFileElement[VerificationTypeInfo] {
+        def write(vti: VerificationTypeInfo)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+            import out._
+            val tag = vti.tag
+            (tag: @scala.annotation.switch) match {
+                case VerificationTypeInfo.ITEM_Object ⇒
+                    val ovi = as[ObjectVariableInfo](vti)
+                    writeByte(tag)
+                    writeShort(ovi.cpool_index)
+                case VerificationTypeInfo.ITEM_Unitialized ⇒
+                    val uvi = as[UninitializedVariableInfo](vti)
+                    writeByte(tag)
+                    writeShort(uvi.offset)
+                case _ ⇒
+                    writeByte(tag)
+            }
+
+        }
+    }
+
     implicit object RichAttribute extends ClassFileElement[Attribute] {
-        def write(a: Attribute)(implicit out: DataOutputStream): Unit = {
+        def write(a: Attribute)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import a._
             import out._
             writeShort(attribute_name_index)
             writeInt(attribute_length)
             a match {
-                case a: AnnotationDefault_attribute ⇒
-                case a: Annotations_attribute       ⇒
-                case a: BootstrapMethods_attribute  ⇒
-                case a: Deprecated_attribute      ⇒
-                case a: EnclosingMethod_attribute ⇒
-                case a: LineNumberTable_attribute                      ⇒
-                case a: LocalVariableTable_attribute                   ⇒
-                case a: LocalVariableTypeTable_attribute               ⇒
-                case a: MethodParameters_attribute                     ⇒
-                case a: RuntimeVisibleAnnotations_attribute            ⇒
-                case a: RuntimeInvisibleAnnotations_attribute          ⇒
-                case a: RuntimeVisibleParameterAnnotations_attribute   ⇒
-                case a: RuntimeInvisibleParameterAnnotations_attribute ⇒
-                case a: RuntimeVisibleTypeAnnotations_attribute        ⇒
-                case a: RuntimeInvisibleTypeAnnotations_attribute      ⇒
-                case a: Signature_attribute                            ⇒
-                case a: SourceDebugExtension_attribute                 ⇒
-                case a: StackMapTable_attribute                        ⇒
-                case a: Synthetic_attribute                            ⇒
-                    
+
+                case a: TypeAnnotations_attribute ⇒
+                    // Handles:
+                    // RuntimeVisibleTypeAnnotations_attribute   
+                    // RuntimeInvisibleTypeAnnotations_attribute 
+                    writeShort(a.annotations.size)
+                    a.annotations.foreach { serialize(_) }
+
+                case a: StackMapTable_attribute ⇒
+                    writeShort(a.stack_map_frames.length)
+                    a.stack_map_frames.foreach { smf ⇒
+                        val frame_type = smf.frame_type
+                        if (frame_type <= 63) {
+                            writeByte(frame_type)
+                        } else if (frame_type >= 64 && frame_type <= 127) {
+                            val sl1sif = as[SameLocals1StackItemFrame](smf)
+                            writeByte(frame_type)
+                            serialize(sl1sif.verification_type_info_stack)
+                        } else if (frame_type == 247) {
+                            val sl1sife = as[SameLocals1StackItemFrameExtended](smf)
+                            writeByte(frame_type)
+                            writeShort(sl1sife.offset_delta)
+                            serialize(sl1sife.verification_type_info_stack)
+                        } else if (frame_type >= 248 && frame_type <= 250) {
+                            writeByte(frame_type)
+                            writeShort(as[ChopFrame](smf).offset_delta)
+                        } else if (frame_type == 251) {
+                            writeByte(frame_type)
+                            writeShort(as[SameFrameExtended](smf).offset_delta)
+                        } else if (frame_type >= 252 && frame_type <= 254) {
+                            writeByte(frame_type)
+                            val af = as[AppendFrame](smf)
+                            writeShort(af.offset_delta)
+                            af.verification_type_info_locals.foreach { serialize(_) }
+                        } else if (frame_type == 255) {
+                            val ff = as[FullFrame](smf)
+                            writeByte(frame_type)
+                            writeShort(ff.offset_delta)
+                            writeShort(ff.verification_type_info_locals.length)
+                            ff.verification_type_info_locals.foreach { serialize(_) }
+                            writeShort(ff.verification_type_info_stack.length)
+                            ff.verification_type_info_stack.foreach { serialize(_) }
+                        } else {
+                            throw new UnknownError(s"unknown stack map frame: $smf")
+                        }
+
+                    }
+
+                case a: ParameterAnnotations_attribute ⇒
+                    // Handles:
+                    // RuntimeVisibleParameterAnnotations_attribute   
+                    // RuntimeInvisibleParameterAnnotations_attribute
+                    writeByte(a.parameter_annotations.length)
+                    a.parameter_annotations.foreach { pas ⇒
+                        writeShort(pas.size)
+                        pas.foreach { serialize(_) }
+                    }
+
+                case a: MethodParameters_attribute ⇒
+                    writeByte(a.parameters.length)
+                    a.parameters.foreach { p ⇒
+                        writeShort(p.name_index)
+                        writeShort(p.access_flags)
+                    }
+
+                case a: BootstrapMethods_attribute ⇒
+                    val length = a.bootstrap_methods.length
+                    writeShort(length)
+                    a.bootstrap_methods.foreach { bm ⇒
+                        writeShort(bm.method_ref)
+                        writeShort(bm.arguments.length)
+                        bm.arguments.foreach { bma ⇒ writeShort(bma.cp_ref) }
+                    }
+
+                case as: Annotations_attribute ⇒
+                    // Handles: 
+                    // RuntimeVisibleAnnotations_attribute 
+                    // RuntimeInvisibleAnnotations_attribute         
+                    writeShort(as.annotations.size)
+                    as.annotations.foreach { serialize(_) }
+
+                case a: LocalVariableTypeTable_attribute ⇒
+                    val length = a.local_variable_type_table.size
+                    writeShort(length)
+                    a.local_variable_type_table.foreach { lvtte ⇒
+                        writeShort(lvtte.start_pc)
+                        writeShort(lvtte.length)
+                        writeShort(lvtte.name_index)
+                        writeShort(lvtte.signature_index)
+                        writeShort(lvtte.index)
+                    }
+
+                case a: LocalVariableTable_attribute ⇒
+                    val length = a.local_variable_table.size
+                    writeShort(length)
+                    a.local_variable_table.foreach { lvte ⇒
+                        writeShort(lvte.start_pc)
+                        writeShort(lvte.length)
+                        writeShort(lvte.name_index)
+                        writeShort(lvte.descriptor_index)
+                        writeShort(lvte.index)
+                    }
+
+                case a: LineNumberTable_attribute ⇒
+                    val length = a.line_number_table.size
+                    writeShort(length)
+                    a.line_number_table.foreach { lnte ⇒
+                        writeShort(lnte.start_pc)
+                        writeShort(lnte.line_number)
+                    }
+
+                case e: EnclosingMethod_attribute ⇒
+                    writeShort(e.class_index)
+                    writeShort(e.method_index)
+
                 case c: Code_attribute ⇒
-                import c._
-                writeShort(max_stack)
-                writeShort(max_locals)
-                val code_length = code.instructions.length
-                writeInt(code_length)
-                out.write(code.instructions, 0, code_length)
-                writeShort(exceptionTable.length)
-                exceptionTable.foreach { ex ⇒
-                	import ex._
-                	writeShort(start_pc)
-                	writeShort(end_pc)
-                	writeShort(handler_pc)
-                	writeShort(catch_type)
-                }
-                writeShort(attributes.length)
-                attributes.foreach { serialize(_) }
-                                    
+                    import c._
+                    writeShort(max_stack)
+                    writeShort(max_locals)
+                    val code_length = code.instructions.length
+                    writeInt(code_length)
+                    out.write(code.instructions, 0, code_length)
+                    writeShort(exceptionTable.length)
+                    exceptionTable.foreach { ex ⇒
+                        writeShort(ex.start_pc)
+                        writeShort(ex.end_pc)
+                        writeShort(ex.handler_pc)
+                        writeShort(ex.catch_type)
+                    }
+                    writeShort(attributes.length)
+                    attributes.foreach { serialize(_) }
+
                 case e: Exceptions_attribute ⇒
-                import e._
-                writeShort(exception_index_table.size)
-                exception_index_table.foreach { writeShort(_) }
-                
+                    writeShort(e.exception_index_table.size)
+                    e.exception_index_table.foreach { writeShort(_) }
+
                 case i: InnerClasses_attribute ⇒
-                import i._
-                writeShort(classes.size)
-                classes.foreach { c ⇒
-                	import c._
-                	writeShort(inner_class_info_index)
-                	writeShort(outer_class_info_index)
-                	writeShort(inner_name_index)
-                	writeShort(inner_class_access_flags)
-                }
-                
-                case a: ConstantValue_attribute ⇒               writeShort(a.constantValue_index)
+                    import i._
+                    writeShort(classes.size)
+                    classes.foreach { c ⇒
+                        writeShort(c.inner_class_info_index)
+                        writeShort(c.outer_class_info_index)
+                        writeShort(c.inner_name_index)
+                        writeShort(c.inner_class_access_flags)
+                    }
 
-                case a: Unknown_attribute ⇒                    out.write(a.info, 0, a.info.length)
+                case a: SourceDebugExtension_attribute ⇒
+                    out.write(a.debug_extension, 0, attribute_length)
+                case a: AnnotationDefault_attribute ⇒ serialize(a.element_value)
+                case a: SourceFile_attribute        ⇒ writeShort(a.sourceFile_index)
+                case a: Signature_attribute         ⇒ writeShort(a.signature_index)
+                case _: Deprecated_attribute        ⇒ // nothing more to do
+                case _: Synthetic_attribute         ⇒ // nothing more to do
+                case a: ConstantValue_attribute     ⇒ writeShort(a.constantValue_index)
 
+                case a: Unknown_attribute           ⇒ out.write(a.info, 0, a.info.length)
             }
         }
     }
 
     implicit object RichFieldInfo extends ClassFileElement[Field_Info] {
-        def write(f: Field_Info)(implicit out: DataOutputStream): Unit = {
+        def write(f: Field_Info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import f._
             import out._
             writeShort(access_flags)
@@ -260,7 +435,7 @@ object Assembler {
     }
 
     implicit object RichMethodInfo extends ClassFileElement[Method_Info] {
-        def write(m: Method_Info)(implicit out: DataOutputStream): Unit = {
+        def write(m: Method_Info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import m._
             import out._
             writeShort(access_flags)
@@ -273,25 +448,32 @@ object Assembler {
 
     implicit object RichClassFile extends ClassFileElement[ClassFile] {
 
-        def write(classFile: ClassFile)(implicit out: DataOutputStream): Unit = {
+        def write(classFile: ClassFile)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import classFile._
             import out._
             writeInt(org.opalj.bi.ClassFileMagic)
             writeShort(minor_version)
             writeShort(major_version)
-            writeShort(constant_pool.size + 1)
+            segmentInformation("ClassFileMetaInformation", out.size)
+            writeShort(constant_pool.size)
             constant_pool.tail.filter(_ ne null).foreach { serialize(_) }
+            segmentInformation("ConstantPool", out.size)
             writeShort(access_flags)
+            segmentInformation("ClassAccessFlags", out.size)
             writeShort(this_class)
             writeShort(super_class)
             writeShort(interfaces.size)
             interfaces.foreach { writeShort(_) }
+            segmentInformation("TypeInformation", out.size)
             writeShort(fields.size)
             fields.foreach { serialize(_) }
+            segmentInformation("Fields", out.size)
             writeShort(methods.size)
             methods.foreach { serialize(_) }
+            segmentInformation("Methods", out.size)
             writeShort(attributes.size)
             attributes.foreach { serialize(_) }
+            segmentInformation("ClassFileAttributes", out.size)
         }
     }
 
@@ -299,7 +481,13 @@ object Assembler {
      * `serializeAs` enables you to specify the object type of the given parameter `t` and
      * that type will be used to pick up the implicit class file element value.
      */
-    def serializeAs[T](t: AnyRef)(implicit out: DataOutputStream, cfe: ClassFileElement[T]): Unit = {
+    def serializeAs[T](
+        t: AnyRef
+    )(
+        implicit
+        out:                DataOutputStream,
+        segmentInformation: (String, Int) ⇒ Unit, cfe: ClassFileElement[T]
+    ): Unit = {
         cfe.write(as[T](t))
     }
 
@@ -307,14 +495,28 @@ object Assembler {
      * You should use serialize if the concrete/required type of the given parameter is available/can
      * be automatically inferred by the Scala compiler.
      */
-    def serialize[T: ClassFileElement](t: T)(implicit out: DataOutputStream): Unit = {
+    def serialize[T: ClassFileElement](
+        t: T
+    )(
+        implicit
+        out:                DataOutputStream,
+        segmentInformation: (String, Int) ⇒ Unit
+    ): Unit = {
         implicitly[ClassFileElement[T]].write(t)
     }
 
-    def apply(classFile: ClassFile): Array[Byte] = {
+    /**
+     * @param si Function that will be called to provide segment information. This is particularly useful
+     * when debugging the serializer to determine which segments were successfully/completely
+     * written.
+     */
+    def apply(
+        classFile:          ClassFile,
+        segmentInformation: (String, Int) ⇒ Unit = (segmentInformation, bytesWritten) ⇒ ()
+    ): Array[Byte] = {
         val data = new ByteArrayOutputStream(classFile.size)
-        implicit val out = new DataOutputStream(data)
-        serialize(classFile)
+        val out = new DataOutputStream(data)
+        serialize(classFile)(RichClassFile, out, segmentInformation)
         out.flush()
         data.toByteArray()
     }
@@ -323,7 +525,7 @@ object Assembler {
 
 trait ClassFileElement[T] {
 
-    def write(t: T)(implicit out: DataOutputStream): Unit
+    def write(t: T)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit
 
 }
 
