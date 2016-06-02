@@ -416,10 +416,9 @@ object ClassFileReader
     type StackMapFrame = da.StackMapFrame
     type StackMapTable_attribute = da.StackMapTable_attribute
     def StackMapTable_attribute(
-        cp:                   Constant_Pool,
-        attribute_name_index: Int, attribute_length: Int,
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
         stack_map_frames: StackMapFrames
-    ) =
+    ): StackMapTable_attribute =
         new StackMapTable_attribute(attribute_name_index, attribute_length, stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
@@ -461,26 +460,26 @@ object ClassFileReader
     ): StackMapFrame =
         new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
-    type TopVariableInfo = da.TopVariableInfo
-    def TopVariableInfo(): VerificationTypeInfo = new TopVariableInfo()
+    type TopVariableInfo = da.TopVariableInfo.type
+    def TopVariableInfo(): VerificationTypeInfo = da.TopVariableInfo
 
-    type IntegerVariableInfo = da.IntegerVariableInfo
-    def IntegerVariableInfo(): VerificationTypeInfo = new IntegerVariableInfo()
+    type IntegerVariableInfo = da.IntegerVariableInfo.type
+    def IntegerVariableInfo(): VerificationTypeInfo = da.IntegerVariableInfo
 
-    type FloatVariableInfo = da.FloatVariableInfo
-    def FloatVariableInfo(): VerificationTypeInfo = new FloatVariableInfo()
+    type FloatVariableInfo = da.FloatVariableInfo.type
+    def FloatVariableInfo(): VerificationTypeInfo = da.FloatVariableInfo
 
-    type LongVariableInfo = da.LongVariableInfo
-    def LongVariableInfo(): VerificationTypeInfo = new LongVariableInfo()
+    type LongVariableInfo = da.LongVariableInfo.type
+    def LongVariableInfo(): VerificationTypeInfo = da.LongVariableInfo
 
-    type DoubleVariableInfo = da.DoubleVariableInfo
-    def DoubleVariableInfo(): VerificationTypeInfo = new DoubleVariableInfo()
+    type DoubleVariableInfo = da.DoubleVariableInfo.type
+    def DoubleVariableInfo(): VerificationTypeInfo = da.DoubleVariableInfo
 
-    type NullVariableInfo = da.NullVariableInfo
-    def NullVariableInfo(): VerificationTypeInfo = new NullVariableInfo()
+    type NullVariableInfo = da.NullVariableInfo.type
+    def NullVariableInfo(): VerificationTypeInfo = da.NullVariableInfo
 
-    type UninitializedThisVariableInfo = da.UninitializedThisVariableInfo
-    def UninitializedThisVariableInfo(): VerificationTypeInfo = new UninitializedThisVariableInfo()
+    type UninitializedThisVariableInfo = da.UninitializedThisVariableInfo.type
+    def UninitializedThisVariableInfo(): VerificationTypeInfo = da.UninitializedThisVariableInfo
 
     type UninitializedVariableInfo = da.UninitializedVariableInfo
     def UninitializedVariableInfo(offset: Int): VerificationTypeInfo =
@@ -521,10 +520,9 @@ object ClassFileReader
     ): TypeAnnotationTarget =
         new ParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
-    def SupertypeTarget(
-        supertype_index: Int
-    ): TypeAnnotationTarget =
+    def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget = {
         new SupertypeTarget(supertype_index)
+    }
 
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
@@ -538,29 +536,26 @@ object ClassFileReader
     ): TypeAnnotationTarget =
         new TypeBoundOfParameterDeclarationOfMethodOrConstructor(type_parameter_index, bound_index)
 
-    def FieldDeclaration: TypeAnnotationTarget =
-        new FieldDeclaration()
-    def ReturnType: TypeAnnotationTarget =
-        new ReturnType()
-    def ReceiverType: TypeAnnotationTarget =
-        new ReceiverType()
+    def FieldDeclaration: TypeAnnotationTarget = da.FieldDeclaration
+    def ReturnType: TypeAnnotationTarget = da.ReturnType
+    def ReceiverType: TypeAnnotationTarget = da.ReceiverType
 
-    def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget =
+    def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget = {
         new FormalParameter(formal_parameter_index)
+    }
 
-    def Throws(throws_type_index: Int): TypeAnnotationTarget =
-        new Throws(throws_type_index)
+    def Throws(throws_type_index: Int): TypeAnnotationTarget = new Throws(throws_type_index)
 
-    def Catch(exception_table_index: Int): TypeAnnotationTarget =
-        new Catch(exception_table_index)
+    def Catch(exception_table_index: Int): TypeAnnotationTarget = new Catch(exception_table_index)
 
     type LocalvarTableEntry = da.LocalvarTableEntry
     def LocalvarTableEntry(
         start_pc:                   Int,
         length:                     Int,
         local_variable_table_index: Int
-    ): LocalvarTableEntry =
+    ): LocalvarTableEntry = {
         new LocalvarTableEntry(start_pc, length, local_variable_table_index)
+    }
 
     def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget =
         new LocalvarDecl(localVarTable)
@@ -568,33 +563,31 @@ object ClassFileReader
     def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget =
         new ResourcevarDecl(localVarTable)
 
-    def InstanceOf(offset: Int): TypeAnnotationTarget =
-        new InstanceOf(offset)
+    def InstanceOf(offset: Int): TypeAnnotationTarget = new InstanceOf(offset)
 
-    def New(offset: Int): TypeAnnotationTarget =
-        new New(offset)
+    def New(offset: Int): TypeAnnotationTarget = new New(offset)
 
-    def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int
-    ): TypeAnnotationTarget =
+    def MethodReferenceExpressionNew /*::New*/ (offset: Int): TypeAnnotationTarget = {
         new MethodReferenceExpressionNew(offset)
+    }
 
-    def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int
-    ): TypeAnnotationTarget =
+    def MethodReferenceExpressionIdentifier /*::Identifier*/ (offset: Int): TypeAnnotationTarget = {
         new MethodReferenceExpressionIdentifier(offset)
+    }
 
     def CastExpression(
         offset:              Int,
         type_argument_index: Int
-    ): TypeAnnotationTarget =
+    ): TypeAnnotationTarget = {
         new CastExpression(offset, type_argument_index)
+    }
 
     def ConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
-    ): TypeAnnotationTarget =
+    ): TypeAnnotationTarget = {
         new ConstructorInvocation(offset, type_argument_index)
+    }
 
     def MethodInvocation(
         offset:              Int,
