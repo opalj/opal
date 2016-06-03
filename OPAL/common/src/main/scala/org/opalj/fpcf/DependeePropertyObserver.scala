@@ -63,7 +63,7 @@ private[fpcf] abstract class DependeePropertyObserver(
         if (isNotYetExecuted) {
             deregisterObserver(dependerEPK)
             // Note, between now and the point in time where the computation w.r.t. the new
-            // property is actually performed it is possible that further properties may
+            // property is actually performed, it is possible that further properties may
             // have changed. This situation is, however, handled by the property store
             // as it checks - when we have an intermediate result - that the dependee's
             // properties reflect the current state in the property store. Hence, this
