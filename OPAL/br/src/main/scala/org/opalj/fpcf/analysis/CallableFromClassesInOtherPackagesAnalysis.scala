@@ -68,7 +68,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
 ) extends FPCFAnalysis {
 
     /**
-     * Determines the [[ClientCallable]] property of non-static methods.
+     * Determines the [[org.opalj.fpcf.properties.ClientCallable]] property of non-static methods.
      * It is tailored to entry point set computation where we have to consider different kind of
      * program/library usage scenarios.
      * Computational differences regarding static methods are :

@@ -59,13 +59,13 @@ import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
  * defined fields are take into consideration. An interfaces is always considered to be immutable.
  * If you need to know if all possible instances of an interface or some type; i.e., all instances
  * of the classes that implement the respective interface/inherit from some class are immutable,
- * you can query the [[TypeImmutability]] attribute.
+ * you can query the [[org.opalj.fpcf.properties.TypeImmutability]] property.
  *
  * In case of incomplete class hierarchies or if the class hierarchy is complete, but some
  * class files are not found the sound approximation is done that the respective classes are
  * mutable.
  *
- * This analysis uses the [[org.opalj.fpcf.analysis.fields.FieldMutability]] property to determine
+ * This analysis uses the [[org.opalj.fpcf.properties.FieldMutability]] property to determine
  * those fields which could be final, but which are not declared as final.
  *
  * @author Michael Eichberg

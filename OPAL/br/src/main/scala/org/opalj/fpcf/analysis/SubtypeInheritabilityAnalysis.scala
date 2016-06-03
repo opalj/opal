@@ -39,21 +39,19 @@ import scala.collection.mutable
  *
  * == Implementation ==
  *
- * This analysis computes the [[SubtypeInheritable]] property. Since this makes only sense when libraries are analyzed,
- * using the application mode will result in the [[NotSubtypeInheritable]] for every given entity.
+ * This analysis computes the [[org.opalj.fpcf.properties.SubtypeInheritable]] property.
+ * Since this makes only sense when libraries are analyzed, using the application mode will
+ * result in the [[org.opalj.fpcf.properties.NotSubtypeInheritable]] for every given entity.
  *
- * This analysis considers all scenarios that are documented by the [[SubtypeInheritable]] property.
- *
- *
+ * This analysis considers all scenarios that are documented by the
+ * [[org.opalj.fpcf.properties.SubtypeInheritable]] property.
  *
  * @note This analysis implements a direct property computation that is only executed when
  * 		required.
  *
  * @author Michael Reif
  */
-class SubtypeInheritabilityAnalysis private (
-        val project: SomeProject
-) extends FPCFAnalysis {
+class SubtypeInheritabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Determines whether a method can be inherited by a library client.
