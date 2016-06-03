@@ -63,7 +63,7 @@ object ClassFileReader
         with bi.reader.LocalVariableTable_attributeReader
         with bi.reader.LocalVariableTypeTable_attributeReader
         with bi.reader.ElementValuePairsReader
-        with bi.reader.ParameterAnnotationsReader
+        with bi.reader.ParametersAnnotationsReader
         with bi.reader.MethodParameters_attributeReader
         with bi.reader.AnnotationsReader
         with bi.reader.AnnotationDefault_attributeReader
@@ -92,6 +92,8 @@ object ClassFileReader
 
     type Method_Info = da.Method_Info
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+
+    final override def reifyEmptyAttributes = true
 
     def ClassFile(
         cp:            Constant_Pool,
@@ -396,19 +398,19 @@ object ClassFileReader
     type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
     def RuntimeVisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        parameter_annotations: ParameterAnnotations
+        parameters_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute =
         new RuntimeVisibleParameterAnnotations_attribute(
-            attribute_name_index, attribute_length, parameter_annotations
+            attribute_name_index, attribute_length, parameters_annotations
         )
 
     type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
-        parameter_annotations: ParameterAnnotations
+        parameters_annotations: ParametersAnnotations
     ): RuntimeInvisibleParameterAnnotations_attribute =
         new RuntimeInvisibleParameterAnnotations_attribute(
-            attribute_name_index, attribute_length, parameter_annotations
+            attribute_name_index, attribute_length, parameters_annotations
         )
 
     val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
@@ -589,11 +591,9 @@ object ClassFileReader
         new ConstructorInvocation(offset, type_argument_index)
     }
 
-    def MethodInvocation(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget =
+    def MethodInvocation(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
         new MethodInvocation(offset, type_argument_index)
+    }
 
     def ConstructorInMethodReferenceExpression(
         offset:              Int,
@@ -608,8 +608,7 @@ object ClassFileReader
         new MethodInMethodReferenceExpression(offset, type_argument_index)
 
     type TypeAnnotationPath = da.TypeAnnotationPath
-    def TypeAnnotationDirectlyOnType: TypeAnnotationPath =
-        new TypeAnnotationDirectlyOnType()
+    def TypeAnnotationDirectlyOnType = da.TypeAnnotationDirectlyOnType
 
     type TypeAnnotationPathElement = da.TypeAnnotationPathElement
     def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath =
@@ -618,22 +617,19 @@ object ClassFileReader
     /**
      * The `type_path_kind` was `0` (and the type_argument_index was also `0`).
      */
-    def TypeAnnotationDeeperInArrayType: TypeAnnotationPathElement =
-        new TypeAnnotationDeeperInArrayType()
+    def TypeAnnotationDeeperInArrayType = da.TypeAnnotationDeeperInArrayType
 
     /**
      * The `type_path_kind` was `1` (and the type_argument_index was (as defined by the
      * specification) also `0`).
      */
-    def TypeAnnotationDeeperInNestedType: TypeAnnotationPathElement =
-        new TypeAnnotationDeeperInNestedType()
+    def TypeAnnotationDeeperInNestedType = da.TypeAnnotationDeeperInNestedType
 
     /**
      * The `type_path_kind` was `2` (and the type_argument_index was (as defined by the
      * specification) also `0`).
      */
-    def TypeAnnotationOnBoundOfWildcardType: TypeAnnotationPathElement =
-        new TypeAnnotationOnBoundOfWildcardType()
+    def TypeAnnotationOnBoundOfWildcardType = da.TypeAnnotationOnBoundOfWildcardType
 
     def TypeAnnotationOnTypeArgument(type_argument_index: Int): TypeAnnotationPathElement =
         new TypeAnnotationOnTypeArgument(type_argument_index)

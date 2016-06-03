@@ -63,15 +63,9 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
         verification_type_info_stack: VerificationTypeInfo
     ): StackMapFrame
 
-    def ChopFrame(
-        frame_type:   Int,
-        offset_delta: Int
-    ): StackMapFrame
+    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame
 
-    def SameFrameExtended(
-        frame_type:   Int,
-        offset_delta: Int
-    ): StackMapFrame
+    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame
 
     def AppendFrame(
         frame_type:                    Int,

@@ -84,46 +84,48 @@ class AssemberTest extends FlatSpec with Matchers {
 
             try {
                 var segmentInformation: List[(String, Int)] = Nil
-                
+
                 val reassembledClassFile =
                     try {
-                    Assembler(
-                        classFile,
-                        (s, w) ⇒ segmentInformation ::= ((s, w))
-                    )
-                } catch {
-                    case t : Throwable =>
-                        t.printStackTrace()
-                        throw t
-                }
+                        Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
+                    } catch {
+                        case t: Throwable ⇒ t.printStackTrace(); throw t
+                    }
                 segmentInformation = segmentInformation.reverse
+
+                // let's check all bytes for similarity
                 reassembledClassFile.zip(raw).zipWithIndex.foreach { e ⇒
                     val ((c, r), i) = e
                     if (c != r) {
-                        val failedSegment = segmentInformation.dropWhile(_._2 < i).head._1
+                        val (succeededSegments, remainingSegments) = segmentInformation.partition(_._2 < i)
+                        val failedSegment = remainingSegments.head._1
 
                         try {
                             Assembler.serialize(
                                 classFile
                             )(
                                 Assembler.RichClassFile,
-                                new DataOutputStream(new FailWhenByteArrayOutputStream(i+1, raw.size)),
-                                (s, i) ⇒ ()
+                                new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.size)),
+                                (s, i) ⇒ {}
                             )
                         } catch {
                             case ioe: IOException ⇒ ioe.printStackTrace()
                         }
-                        fail(s"the class files differ starting with index $i ($failedSegment) $c(found) <=> $r(expected)")
+                        val message =
+                            s"the class files differ starting with index $i ($failedSegment): "+
+                                s"found $c but expected $r"+
+                                succeededSegments.map(_._1).mkString("; successfully read segments: ", ",", "")
+                        fail(message)
                     }
                 }
-
                 entriesCount.incrementAndGet()
             } catch {
-                case e: Exception ⇒ Lock.synchronized {
-                    val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage()+e.getClass.getSimpleName
-                    val newException = new RuntimeException(message, e)
-                    exceptions = newException :: exceptions
-                }
+                case e: Exception ⇒
+                    Lock.synchronized {
+                        val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage() + e.getClass.getSimpleName
+                        val newException = new RuntimeException(message, e)
+                        exceptions = newException :: exceptions
+                    }
             }
         }
 

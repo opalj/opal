@@ -310,12 +310,12 @@ object Assembler {
 
                     }
 
-                case a: ParameterAnnotations_attribute ⇒
+                case a: ParametersAnnotations_attribute ⇒
                     // Handles:
                     // RuntimeVisibleParameterAnnotations_attribute   
                     // RuntimeInvisibleParameterAnnotations_attribute
-                    writeByte(a.parameter_annotations.length)
-                    a.parameter_annotations.foreach { pas ⇒
+                    writeByte(a.parameters_annotations.length)
+                    a.parameters_annotations.foreach { pas ⇒
                         writeShort(pas.size)
                         pas.foreach { serialize(_) }
                     }
@@ -451,12 +451,13 @@ object Assembler {
         def write(classFile: ClassFile)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
             import classFile._
             import out._
+            implicit val cp = classFile.constant_pool
             writeInt(org.opalj.bi.ClassFileMagic)
             writeShort(minor_version)
             writeShort(major_version)
             segmentInformation("ClassFileMetaInformation", out.size)
-            writeShort(constant_pool.size)
-            constant_pool.tail.filter(_ ne null).foreach { serialize(_) }
+            writeShort(cp.size)
+            cp.tail.filter(_ ne null).foreach { serialize(_) }
             segmentInformation("ConstantPool", out.size)
             writeShort(access_flags)
             segmentInformation("ClassAccessFlags", out.size)
@@ -469,7 +470,10 @@ object Assembler {
             fields.foreach { serialize(_) }
             segmentInformation("Fields", out.size)
             writeShort(methods.size)
-            methods.foreach { serialize(_) }
+            methods.foreach { m ⇒
+                serialize(m)
+                segmentInformation("Method: "+cp(m.name_index).toString, out.size)
+            }
             segmentInformation("Methods", out.size)
             writeShort(attributes.size)
             attributes.foreach { serialize(_) }

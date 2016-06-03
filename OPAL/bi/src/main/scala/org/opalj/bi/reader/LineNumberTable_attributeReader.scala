@@ -78,14 +78,18 @@ trait LineNumberTable_attributeReader extends AttributeReader {
         LineNumberTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                LineNumberTable_attribute(
-                    cp,
-                    attribute_name_index,
-                    attribute_length,
-                    repeat(in.readUnsignedShort) {
-                        LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
-                    }
-                )
+                val line_number_table_length = in.readUnsignedShort
+                if (line_number_table_length > 0 || reifyEmptyAttributes) {
+                    LineNumberTable_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        repeat(line_number_table_length) {
+                            LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
+                        }
+                    )
+                } else
+                    null
             }
         )
     )

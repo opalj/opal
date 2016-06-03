@@ -46,7 +46,7 @@ trait TypeAnnotationPath {
     def toXHTML(implicit cp: Constant_Pool): Node
 }
 
-case class TypeAnnotationDirectlyOnType() extends TypeAnnotationPath {
+case object TypeAnnotationDirectlyOnType extends TypeAnnotationPath {
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DirectlyOnType</span>
     }
@@ -61,35 +61,37 @@ case class TypeAnnotationPathElements(
 ) extends TypeAnnotationPath {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_path">Path:{ for (elem ← path) yield elem.toXHTML(cp) }]</span>
+        <span class="type_annotation_path">Path:{ path.map(_.toXHTML(cp)) }]</span>
     }
 }
 
 /**
  * The `type_path_kind` was `0` (and the type_argument_index was also `0`).
  */
-case class TypeAnnotationDeeperInArrayType() extends TypeAnnotationPathElement {
+case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInArrayType</span>
     }
 }
 
-case class TypeAnnotationDeeperInNestedType() extends TypeAnnotationPathElement {
+case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInNestedType</span>
     }
 }
 
-case class TypeAnnotationOnBoundOfWildcardType() extends TypeAnnotationPathElement {
+case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnBoundOfWildcardType</span>
     }
 }
 
-case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAnnotationPathElement {
+case class TypeAnnotationOnTypeArgument(
+        type_argument_index: Int
+) extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>

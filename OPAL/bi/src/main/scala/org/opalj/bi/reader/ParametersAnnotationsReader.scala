@@ -39,7 +39,7 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait ParameterAnnotationsReader extends AnnotationAbstractions {
+trait ParametersAnnotationsReader extends AnnotationAbstractions {
 
     //
     // ABSTRACT DEFINITIONS
@@ -51,17 +51,12 @@ trait ParameterAnnotationsReader extends AnnotationAbstractions {
     // IMPLEMENTATION
     //
 
-    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
+    type ParameterAnnotations = IndexedSeq[Annotation]
 
-    def ParameterAnnotations(
-        cp: Constant_Pool,
-        in: DataInputStream
-    ): ParameterAnnotations = {
-        repeat(in.readUnsignedByte) {
-            repeat(in.readUnsignedShort) {
-                Annotation(cp, in)
-            }
-        }
+    type ParametersAnnotations = IndexedSeq[ParameterAnnotations]
+
+    def ParametersAnnotations(cp: Constant_Pool, in: DataInputStream): ParametersAnnotations = {
+        repeat(in.readUnsignedByte) { repeat(in.readUnsignedShort) { Annotation(cp, in) } }
     }
 }
 

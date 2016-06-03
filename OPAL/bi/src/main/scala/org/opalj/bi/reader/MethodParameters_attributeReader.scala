@@ -71,10 +71,10 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * MethodParameters_attribute {
      *      u2 attribute_name_index;
      *      u4 attribute_length;
-     *       u1 parameters_count;
-     *       {   u2 name_index;
-     *           u2 access_flags;
-     *       } parameters[parameters_count];
+     *      u1 parameters_count;
+     *      {	u2 name_index;
+     *          u2 access_flags;
+     *      } parameters[parameters_count];
      * }
      * </pre>
      */
@@ -82,14 +82,19 @@ trait MethodParameters_attributeReader extends AttributeReader {
         MethodParameters_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                MethodParameters_attribute(
-                    cp,
-                    attribute_name_index,
-                    attribute_length,
-                    repeat(in.readUnsignedByte) {
-                        MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
-                    }
-                )
+                val parameters_count = in.readUnsignedByte
+                if (parameters_count > 0 || reifyEmptyAttributes) {
+                    MethodParameters_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        repeat(parameters_count) {
+                            MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
+                        }
+                    )
+                } else {
+                    null
+                }
             }
         )
     )
