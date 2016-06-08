@@ -1,0 +1,247 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2016
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package org.opalj
+package bc
+
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_STATIC
+import org.opalj.da.ClassFile
+import org.opalj.da.Method_Info
+import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.SourceFile_attribute
+import org.opalj.da.CONSTANT_Class_info
+import org.opalj.da.CONSTANT_Utf8
+import org.opalj.da.CONSTANT_NameAndType_info
+import org.opalj.da.CONSTANT_Methodref_info
+import org.opalj.da.CONSTANT_Fieldref_info
+import org.opalj.da.CONSTANT_String_info
+import org.opalj.da.Code_attribute
+import org.opalj.da.Code
+import java.nio.file.Files
+import java.nio.file.Paths
+
+/**
+ * Demonstrates how to create a "HelloWorld" class which basically has the following code:
+ * {{{
+ * public class Test {
+ *
+ * public static void main(String[] args) {
+ * System.out.println("Hello World");
+ * }
+ * }}}
+ * {{{
+ * public class Test
+ * minor version: 0
+ * major version: 46
+ * flags: ACC_PUBLIC, ACC_SUPER
+ * Constant pool:
+ * #1 = Class              #2             // Test
+ * #2 = Utf8               Test
+ * #3 = Class              #4             // java/lang/Object
+ * #4 = Utf8               java/lang/Object
+ * #5 = Utf8               <init>
+ * #6 = Utf8               ()V
+ * #7 = Utf8               Code
+ * #8 = Methodref          #3.#9          // java/lang/Object."<init>":()V
+ * #9 = NameAndType        #5:#6          // "<init>":()V
+ * #10 = Utf8               LineNumberTable
+ * #11 = Utf8               LocalVariableTable
+ * #12 = Utf8               this
+ * #13 = Utf8               LTest;
+ * #14 = Utf8               main
+ * #15 = Utf8               ([Ljava/lang/String;)V
+ * #16 = Fieldref           #17.#19        // java/lang/System.out:Ljava/io/PrintStream;
+ * #17 = Class              #18            // java/lang/System
+ * #18 = Utf8               java/lang/System
+ * #19 = NameAndType        #20:#21        // out:Ljava/io/PrintStream;
+ * #20 = Utf8               out
+ * #21 = Utf8               Ljava/io/PrintStream;
+ * #22 = String             #23            // Hello World
+ * #23 = Utf8               Hello World
+ * #24 = Methodref          #25.#27        // java/io/PrintStream.println:(Ljava/lang/String;)V
+ * #25 = Class              #26            // java/io/PrintStream
+ * #26 = Utf8               java/io/PrintStream
+ * #27 = NameAndType        #28:#29        // println:(Ljava/lang/String;)V
+ * #28 = Utf8               println
+ * #29 = Utf8               (Ljava/lang/String;)V
+ * #30 = Utf8               args
+ * #31 = Utf8               [Ljava/lang/String;
+ * #32 = Utf8               SourceFile
+ * #33 = Utf8               Test.java
+ * {
+ * public Test();
+ * descriptor: ()V
+ * flags: ACC_PUBLIC
+ * Code:
+ * stack=1, locals=1, args_size=1
+ * 0: aload_0
+ * 1: invokespecial #8                  // Method java/lang/Object."<init>":()V
+ * 4: return
+ * LineNumberTable:
+ * line 2: 0
+ * LocalVariableTable:
+ * Start  Length  Slot  Name   Signature
+ * 0       5     0  this   LTest;
+ *
+ * public static void main(java.lang.String[]);
+ * descriptor: ([Ljava/lang/String;)V
+ * flags: ACC_PUBLIC, ACC_STATIC
+ * Code:
+ * stack=2, locals=1, args_size=1
+ * 0: getstatic     #16                 // Field java/lang/System.out:Ljava/io/PrintStream;
+ * 3: ldc           #22                 // String Hello World
+ * 5: invokevirtual #24                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+ * 8: return
+ * LineNumberTable:
+ * line 5: 0
+ * line 6: 8
+ * LocalVariableTable:
+ * Start  Length  Slot  Name   Signature
+ * 0       9     0  args   [Ljava/lang/String;
+ * }
+ * SourceFile: "Test.java"
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object HelloWorldClass extends App {
+
+    /* ClassFile
+        constant_pool: Constant_Pool,
+        minor_version: Int,
+        major_version: Int,
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    IndexedSeq[Constant_Pool_Index],
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
+        */
+
+    val cf = ClassFile(
+        Array[Constant_Pool_Entry](
+            /*  0 */ null,
+            /*  1 */ CONSTANT_Class_info(2),
+            /*  2 */ CONSTANT_Utf8("Test"),
+            /*  3 */ CONSTANT_Class_info(4),
+            /*  4 */ CONSTANT_Utf8("java/lang/Object"),
+            /*  5 */ CONSTANT_Utf8("<init>"),
+            /*  6 */ CONSTANT_Utf8("()V"),
+            /*  7 */ CONSTANT_Utf8("Code"),
+            /*  8 */ CONSTANT_Methodref_info(3, 9),
+            /*  9 */ CONSTANT_NameAndType_info(5, 6),
+            /* 10 */ CONSTANT_Utf8("LineNumberTable"),
+            /* 11 */ CONSTANT_Utf8("LocalVariableTable"),
+            /* 12 */ CONSTANT_Utf8("this"),
+            /* 13 */ CONSTANT_Utf8("LTest;"),
+            /* 14 */ CONSTANT_Utf8("main"),
+            /* 15 */ CONSTANT_Utf8("([Ljava/lang/String;)V"),
+            /* 16 */ CONSTANT_Fieldref_info(17, 19),
+            /* 17 */ CONSTANT_Class_info(18),
+            /* 18 */ CONSTANT_Utf8("java/lang/System"),
+            /* 19 */ CONSTANT_NameAndType_info(20, 21),
+            /* 20 */ CONSTANT_Utf8("out"),
+            /* 21 */ CONSTANT_Utf8("Ljava/io/PrintStream;"),
+            /* 22 */ CONSTANT_String_info(23),
+            /* 23 */ CONSTANT_Utf8("Hello World"),
+            /* 24 */ CONSTANT_Methodref_info(25, 27),
+            /* 25 */ CONSTANT_Class_info(26),
+            /* 26 */ CONSTANT_Utf8("java/io/PrintStream"),
+            /* 27 */ CONSTANT_NameAndType_info(28, 29),
+            /* 28 */ CONSTANT_Utf8("println"),
+            /* 29 */ CONSTANT_Utf8("(Ljava/lang/String;)V"),
+            /* 30 */ CONSTANT_Utf8("args"),
+            /* 31 */ CONSTANT_Utf8("[Ljava/lang/String;"),
+            /* 32 */ CONSTANT_Utf8("SourceFile"),
+            /* 33 */ CONSTANT_Utf8("Test.java")
+        ),
+        0,
+        46,
+        ACC_PUBLIC.mask | ACC_SUPER.mask,
+        1 /*Test*/ ,
+        3 /*extends java.lang.Object*/ ,
+        // Interfaces.empty,
+        // Fields.empty,
+        methods = IndexedSeq(
+            Method_Info(
+                access_flags = ACC_PUBLIC.mask,
+                name_index = 5,
+                descriptor_index = 6,
+                attributes = IndexedSeq(
+                    Code_attribute(
+                        attribute_name_index = 7,
+                        max_stack = 1,
+                        max_locals = 1,
+                        code = new Code(
+                        Array[Byte](
+                            42, // aload_0
+                            (0xff & 183).toByte, // invokespecial
+                            0, //                    -> Methodref
+                            8, //                       #8
+                            (0xff & 177).toByte
+                        )
+                    )
+                    )
+                )
+            ),
+            Method_Info(
+                access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
+                name_index = 14,
+                descriptor_index = 15,
+                attributes = IndexedSeq(
+                    Code_attribute(
+                        attribute_name_index = 7,
+                        max_stack = 2,
+                        max_locals = 1,
+                        code = new Code(
+                        Array[Byte](
+                            (0xff & 178).toByte, // getstatic
+                            0,
+                            16,
+                            18, // ldc
+                            22,
+                            (0xff & 182).toByte, // invokevirtual
+                            0,
+                            24,
+                            (0xff & 177).toByte // return
+                        )
+                    )
+
+                    )
+                )
+            )
+        ),
+        attributes = IndexedSeq(SourceFile_attribute(32, 33))
+    )
+
+    println("Created class file: "+Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath())
+}
+
