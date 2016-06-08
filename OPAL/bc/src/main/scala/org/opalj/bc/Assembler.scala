@@ -36,7 +36,7 @@ import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
- * Assembles the specified class file(s).
+ * Factory to create a binary representation of a given class file.
  *
  * @author Michael Eichberg
  */
@@ -45,7 +45,12 @@ object Assembler {
     def as[T](x: AnyRef): T = x.asInstanceOf[T]
 
     implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
-        def write(ci: CONSTANT_Class_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Class_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -54,7 +59,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Ref extends ClassFileElement[CONSTANT_Ref] {
-        def write(cr: CONSTANT_Ref)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            cr: CONSTANT_Ref
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import cr._
             import out._
             writeByte(tag)
@@ -64,7 +74,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_String_info extends ClassFileElement[CONSTANT_String_info] {
-        def write(ci: CONSTANT_String_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_String_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -73,7 +88,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Integer_info extends ClassFileElement[CONSTANT_Integer_info] {
-        def write(ci: CONSTANT_Integer_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Integer_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -82,7 +102,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Float_info extends ClassFileElement[CONSTANT_Float_info] {
-        def write(ci: CONSTANT_Float_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Float_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -91,7 +116,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Long_info extends ClassFileElement[CONSTANT_Long_info] {
-        def write(ci: CONSTANT_Long_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Long_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -100,7 +130,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Double_info extends ClassFileElement[CONSTANT_Double_info] {
-        def write(ci: CONSTANT_Double_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Double_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -109,7 +144,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_NameAndType_info extends ClassFileElement[CONSTANT_NameAndType_info] {
-        def write(ci: CONSTANT_NameAndType_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_NameAndType_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -120,7 +160,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_Utf8_info extends ClassFileElement[CONSTANT_Utf8_info] {
-        def write(ci: CONSTANT_Utf8_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_Utf8_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -129,7 +174,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_MethodHandle_info extends ClassFileElement[CONSTANT_MethodHandle_info] {
-        def write(ci: CONSTANT_MethodHandle_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_MethodHandle_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -139,7 +189,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_MethodType_info extends ClassFileElement[CONSTANT_MethodType_info] {
-        def write(ci: CONSTANT_MethodType_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_MethodType_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -148,7 +203,12 @@ object Assembler {
     }
 
     implicit object RichCONSTANT_InvokeDynamic_info extends ClassFileElement[CONSTANT_InvokeDynamic_info] {
-        def write(ci: CONSTANT_InvokeDynamic_info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ci: CONSTANT_InvokeDynamic_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import ci._
             import out._
             writeByte(tag)
@@ -158,7 +218,12 @@ object Assembler {
     }
 
     implicit object RichConstant_Pool_Entry extends ClassFileElement[Constant_Pool_Entry] {
-        def write(cpe: Constant_Pool_Entry)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            cpe: Constant_Pool_Entry
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             cpe.Constant_Type_Value.id match {
                 case CPTags.CONSTANT_Class_ID ⇒ serializeAs[CONSTANT_Class_info](cpe)
                 case CPTags.CONSTANT_Fieldref_ID |
@@ -212,7 +277,12 @@ object Assembler {
     }
 
     implicit object RichAnnotation extends ClassFileElement[Annotation] {
-        def write(a: Annotation)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            a: Annotation
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import a._
             import out._
             writeShort(type_index)
@@ -225,7 +295,12 @@ object Assembler {
     }
 
     implicit object RichTypeAnnotation extends ClassFileElement[TypeAnnotation] {
-        def write(ta: TypeAnnotation)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            ta: TypeAnnotation
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             //            import ta._
             //            import out._
             //                        writeByte(target_type.)
@@ -236,7 +311,12 @@ object Assembler {
     }
 
     implicit object RichVerificationTypeInfo extends ClassFileElement[VerificationTypeInfo] {
-        def write(vti: VerificationTypeInfo)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            vti: VerificationTypeInfo
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import out._
             val tag = vti.tag
             (tag: @scala.annotation.switch) match {
@@ -256,7 +336,12 @@ object Assembler {
     }
 
     implicit object RichAttribute extends ClassFileElement[Attribute] {
-        def write(a: Attribute)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            a: Attribute
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import a._
             import out._
             writeShort(attribute_name_index)
