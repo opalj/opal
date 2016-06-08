@@ -34,6 +34,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import java.io.DataOutputStream
+import java.io.ByteArrayOutputStream
 
 /**
  * @author Michael Eichberg
@@ -60,3 +62,19 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 
     override def toString(implicit cp: Constant_Pool): String = value
 }
+object CONSTANT_Utf8 {
+
+    def apply(value: String): CONSTANT_Utf8_info = {
+        new CONSTANT_Utf8_info(
+            {
+                val bout = new ByteArrayOutputStream(value.length + 2)
+                val dout = new DataOutputStream(bout)
+                dout.writeUTF(value)
+                dout.flush()
+                bout.toByteArray()
+            },
+            value
+        )
+    }
+}
+

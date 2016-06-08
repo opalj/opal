@@ -243,7 +243,7 @@ object ClassFileReader
         attributes:      Attributes
     ): Code_attribute =
         new Code_attribute(
-            attribute_name_index, attribute_length,
+            attribute_name_index,
             max_stack, max_locals,
             instructions,
             exception_table,

@@ -40,13 +40,19 @@ import scala.xml.Node
  */
 case class Code_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         max_stack:            Int,
         max_locals:           Int,
         code:                 Code,
-        exceptionTable:       IndexedSeq[ExceptionTableEntry],
-        attributes:           Attributes
+        exceptionTable:       ExceptionTable      = IndexedSeq.empty,
+        attributes:           Attributes          = IndexedSeq.empty
 ) extends Attribute {
+
+    override def attribute_length: Int = {
+        2 + 2 +
+            4 /*code_length*/ + code.instructions.length +
+            2 /*exception_table_length*/ + 8 * exceptionTable.length +
+            2 /*attributes_count*/ + attributes.foldLeft(0)(_ + _.attribute_length)
+    }
 
     /**
      * @see `toXHTML(Int)(implicit Constant_Pool)`

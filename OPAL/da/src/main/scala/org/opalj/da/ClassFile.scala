@@ -35,6 +35,8 @@ import scala.io.Source
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
 
 /**
  * @author Michael Eichberg
@@ -47,16 +49,19 @@ case class ClassFile(
         constant_pool: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags:  Int,
+        access_flags:  Int                 = ACC_PUBLIC.mask | ACC_SUPER.mask,
         this_class:    Constant_Pool_Index,
         super_class:   Constant_Pool_Index,
-        interfaces:    IndexedSeq[Constant_Pool_Index],
-        fields:        Fields,
-        methods:       Methods,
-        attributes:    Attributes
+        interfaces:    Interfaces          = IndexedSeq.empty,
+        fields:        Fields              = IndexedSeq.empty,
+        methods:       Methods             = IndexedSeq.empty,
+        attributes:    Attributes          = IndexedSeq.empty
 ) {
 
-    assert(constant_pool(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
+    assert(
+        (constant_pool(0) eq null) ||
+            constant_pool(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore]
+    )
 
     /**
      * Size of the class file in bytes.
