@@ -51,7 +51,7 @@ case class Code_attribute(
         2 + 2 +
             4 /*code_length*/ + code.instructions.length +
             2 /*exception_table_length*/ + 8 * exceptionTable.length +
-            2 /*attributes_count*/ + attributes.foldLeft(0)(_ + _.attribute_length)
+            2 /*attributes_count*/ + attributes.foldLeft(0)(_ + _.size)
     }
 
     /**

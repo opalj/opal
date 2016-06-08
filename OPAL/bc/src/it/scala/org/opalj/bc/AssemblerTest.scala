@@ -114,7 +114,11 @@ class AssemberTest extends FlatSpec with Matchers {
                         val message =
                             s"the class files differ starting with index $i ($failedSegment): "+
                                 s"found $c but expected $r"+
-                                succeededSegments.map(_._1).mkString("; successfully read segments: ", ",", "")
+                                succeededSegments.map(_._1).mkString(
+                                        "; successfully read segments: ", 
+                                        ",",
+                                        s"(i.e., successfully read ${succeededSegments.last._2} bytes)"
+                                        )
                         fail(message)
                     }
                 }
