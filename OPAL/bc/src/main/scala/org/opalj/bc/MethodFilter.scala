@@ -48,7 +48,7 @@ object MethodFilter {
         "Usage: java …MethodFilter \n"+
             "(1) <JAR file containing class files>\n"+
             "(2) <name of the class in binary notation (e.g. java/lang/Object>\n"+
-            "(3) <name of methods to keep>\n"+
+            "(3) (+|-)<name of methods to keep/remove>\n"+
             "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList toString"
 
     def main(args: Array[String]): Unit = {
@@ -60,7 +60,8 @@ object MethodFilter {
 
         val jarName = args(0)
         val className = args(1)
-        val methodName = args(2)
+        val methodName = args(2).substring(1)
+        val keep = args(2).charAt(0) == '+'
         val classFiles = ClassFileReader.ClassFiles(new File(jarName)).map(_._1)
         if (classFiles.isEmpty) {
             OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
@@ -68,7 +69,11 @@ object MethodFilter {
             classFiles.filter(_.fqn == className).map { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
-                    cp(m.name_index).toString == methodName
+                    val matches = cp(m.name_index).toString == methodName
+                    if (keep)
+                        matches
+                    else
+                        !matches
                 }
                 val filteredCF = cf.copy(methods = filteredMethods)
                 val path = new File(cf.fqn+".class").toPath()
