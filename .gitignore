@@ -41,3 +41,4 @@ TOOLS/bdl/org.opalj.bdl/src/org/opalj/bdl/scoping/BDLScopeProvider.xtend
 TOOLS/bdl/org.opalj.bdl/plugin.xml_gen
 TOOLS/bdl/org.opalj.bdl.ui/plugin.xml_gen
 TOOLS/bdl/org.opalj.bdl.tests/org.opalj.bdl.tests.launch
+Test.class
