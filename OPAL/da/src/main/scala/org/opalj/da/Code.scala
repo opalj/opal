@@ -41,6 +41,8 @@ import scala.xml.Unparsed
  */
 case class Code(instructions: Array[Byte]) {
 
+    assert(instructions.length > 0)
+
     import Code.id
 
     def toXHTML(
