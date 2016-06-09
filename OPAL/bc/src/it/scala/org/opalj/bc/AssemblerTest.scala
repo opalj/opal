@@ -39,12 +39,13 @@ import java.io.BufferedInputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
-import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
+import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 import java.io.ByteArrayInputStream
 
 import org.opalj.io.FailWhenByteArrayOutputStream
 import java.io.IOException
 import java.io.DataOutputStream
+import org.opalj.bi.TestSupport
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
@@ -57,92 +58,99 @@ class AssemberTest extends FlatSpec with Matchers {
 
     behavior of "the Assembler"
 
-    val file = org.opalj.bytecode.RTJar // has to be a single JAR file!
+    val jreLibFolder = org.opalj.bytecode.JRELibraryFolder
+    val biClassfilesFolder = TestSupport.locateTestResources("classfiles", "bi")
 
-    it should (s"be able to process every class of $file") in {
+    for {
+        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
+    } {
 
-        val zipFile = new ZipFile(file)
-        val entriesCount = new AtomicInteger(0)
+        it should (s"be able to process every class of $file") in {
 
-        val Lock = new Object
-        var exceptions: List[Throwable] = Nil
+            val zipFile = new ZipFile(file)
+            val entriesCount = new AtomicInteger(0)
 
-        zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
+            val Lock = new Object
+            var exceptions: List[Throwable] = Nil
 
-            val (classFile, raw) = {
-                val file = zipFile.getInputStream(ze)
-                val classFileSize = ze.getSize().toInt
-                val raw = new Array[Byte](classFileSize)
-                val bin = new BufferedInputStream(file, classFileSize)
-                val bytesRead = bin.read(raw, 0, classFileSize)
-                assert(bytesRead == classFileSize, "the class file was not successfully read")
-                (
-                    LoadClassFile { new DataInputStream(new ByteArrayInputStream(raw)) }.head,
-                    raw
-                )
-            }
+            zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
 
-            try {
-                var segmentInformation: List[(String, Int)] = Nil
+                val (classFile, raw) = {
+                    val file = zipFile.getInputStream(ze)
+                    val classFileSize = ze.getSize().toInt
+                    val raw = new Array[Byte](classFileSize)
+                    val bin = new BufferedInputStream(file, classFileSize)
+                    val bytesRead = bin.read(raw, 0, classFileSize)
+                    assert(bytesRead == classFileSize, "the class file was not successfully read")
+                    (
+                        LoadClassFile { new DataInputStream(new ByteArrayInputStream(raw)) }.head,
+                        raw
+                    )
+                }
 
-                val reassembledClassFile =
-                    try {
-                        Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
-                    } catch {
-                        case t: Throwable ⇒ t.printStackTrace(); throw t
-                    }
-                segmentInformation = segmentInformation.reverse
+                try {
+                    var segmentInformation: List[(String, Int)] = Nil
 
-                // let's check all bytes for similarity
-                reassembledClassFile.zip(raw).zipWithIndex.foreach { e ⇒
-                    val ((c, r), i) = e
-                    if (c != r) {
-                        val (succeededSegments, remainingSegments) = segmentInformation.partition(_._2 < i)
-                        val failedSegment = remainingSegments.head._1
-
+                    val reassembledClassFile =
                         try {
-                            Assembler.serialize(
-                                classFile
-                            )(
-                                Assembler.RichClassFile,
-                                new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.size)),
-                                (s, i) ⇒ {}
-                            )
+                            Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
                         } catch {
-                            case ioe: IOException ⇒ ioe.printStackTrace()
+                            case t: Throwable ⇒ t.printStackTrace(); throw t
                         }
-                        val message =
-                            s"the class files differ starting with index $i ($failedSegment): "+
-                                s"found $c but expected $r"+
-                                succeededSegments.map(_._1).mkString(
-                                        "; successfully read segments: ", 
+                    segmentInformation = segmentInformation.reverse
+
+                    // let's check all bytes for similarity
+                    reassembledClassFile.zip(raw).zipWithIndex.foreach { e ⇒
+                        val ((c, r), i) = e
+                        if (c != r) {
+                            val (succeededSegments, remainingSegments) = segmentInformation.partition(_._2 < i)
+                            val failedSegment = remainingSegments.head._1
+
+                            try {
+                                Assembler.serialize(
+                                    classFile
+                                )(
+                                    Assembler.RichClassFile,
+                                    new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.size)),
+                                    (s, i) ⇒ {}
+                                )
+                            } catch {
+                                case ioe: IOException ⇒ ioe.printStackTrace()
+                            }
+                            val message =
+                                s"the class files differ starting with index $i ($failedSegment): "+
+                                    s"found $c but expected $r"+
+                                    succeededSegments.map(_._1).mkString(
+                                        "; successfully read segments: ",
                                         ",",
                                         s"(i.e., successfully read ${succeededSegments.last._2} bytes)"
-                                        )
-                        fail(message)
+                                    )
+                            fail(message)
+                        }
                     }
+                    entriesCount.incrementAndGet()
+                } catch {
+                    case e: Exception ⇒
+                        Lock.synchronized {
+                            val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage() + e.getClass.getSimpleName
+                            val newException = new RuntimeException(message, e)
+                            exceptions = newException :: exceptions
+                        }
                 }
-                entriesCount.incrementAndGet()
-            } catch {
-                case e: Exception ⇒
-                    Lock.synchronized {
-                        val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage() + e.getClass.getSimpleName
-                        val newException = new RuntimeException(message, e)
-                        exceptions = newException :: exceptions
-                    }
             }
-        }
 
-        if (exceptions.nonEmpty) {
-            val message =
-                exceptions.mkString(
-                    s"assembling the class file failed for :\n",
-                    "\n",
-                    s"\n${exceptions.size} class files (and succeeded for: ${entriesCount.get})\n"
-                )
-            fail(message)
-        } else {
-            info(s"sucessfully procesed ${entriesCount.get} class files")
+            if (exceptions.nonEmpty) {
+                val message =
+                    exceptions.mkString(
+                        s"assembling the class file failed for :\n",
+                        "\n",
+                        s"\n${exceptions.size} class files (and succeeded for: ${entriesCount.get})\n"
+                    )
+                fail(message)
+            } else {
+                info(s"sucessfully processed ${entriesCount.get} class files")
+            }
         }
     }
 }

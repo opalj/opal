@@ -40,7 +40,7 @@ import java.io.BufferedInputStream
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
-import org.opalj.da.ClassFileReader.{ ClassFile ⇒ LoadClassFile }
+import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 
 /**
  * Tests the bytecode representation.
@@ -64,8 +64,8 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
 
         zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
 
-            val classFile = LoadClassFile { 
-            new DataInputStream(new BufferedInputStream(zipFile.getInputStream(ze),ze.getSize().toInt)) 
+            val classFile = LoadClassFile {
+                new DataInputStream(new BufferedInputStream(zipFile.getInputStream(ze), ze.getSize().toInt))
             }.head
             try {
                 assert(ze.getSize == classFile.size)
@@ -88,7 +88,7 @@ class BytecodeRepresentationTest extends FlatSpec with Matchers {
                 )
             fail(message)
         } else {
-            info(s"sucessfully procesed ${entriesCount.get} entries") 
+            info(s"sucessfully procesed ${entriesCount.get} entries")
         }
     }
 }
