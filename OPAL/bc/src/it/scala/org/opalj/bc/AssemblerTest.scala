@@ -33,15 +33,15 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.JavaConverters._
 
-import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
+import scala.collection.JavaConverters._
+import org.opalj.da.ClassFileReader.{ClassFile => LoadClassFile}
 import java.io.ByteArrayInputStream
+
 import org.opalj.io.FailWhenByteArrayOutputStream
 import java.io.IOException
 import java.io.DataOutputStream
