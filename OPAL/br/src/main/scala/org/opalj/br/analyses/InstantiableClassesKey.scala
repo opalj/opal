@@ -31,6 +31,7 @@ package br
 package analyses
 
 import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
 
 /**
  * The ''key'' object to get information about the classes that can be instantiated
@@ -55,7 +56,11 @@ object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses]
      * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
      */
     override protected def compute(project: SomeProject): InstantiableClasses = {
-        InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
+        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
+        if (isLibrary)
+            LibraryInstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
+        else
+            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
 

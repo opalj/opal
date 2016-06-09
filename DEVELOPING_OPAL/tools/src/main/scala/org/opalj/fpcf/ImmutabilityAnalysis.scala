@@ -37,14 +37,13 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.analysis.immutability.ObjectImmutabilityAnalysis
-import org.opalj.fpcf.analysis.immutability.ObjectImmutability
-import org.opalj.fpcf.analysis.immutability.TypeImmutabilityAnalysis
-import org.opalj.fpcf.analysis.immutability.TypeImmutability
-import org.opalj.fpcf.analysis.fields.FieldMutabilityAnalysis
-import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analysis.extensibility.ClassExtensibilityAnalysis
-import org.opalj.fpcf.analysis.extensibility.IsExtensible
+import org.opalj.fpcf.analysis.ClassExtensibilityAnalysis
+import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
+import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.fpcf.analysis.ObjectImmutabilityAnalysis
+import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -63,19 +62,21 @@ object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(SourceElementsPropertyStoreKey)
+        import project.get
+
+        var t = Seconds.None
+
+        // The following measurements (t) are done such that the results are comparable with the
+        // reactive async approach developed by P. Haller and Simon Gries.
+        val projectStore = time { get(SourceElementsPropertyStoreKey) } { r ⇒ t = r.toSeconds }
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        var t = Seconds.None
+        manager.run(ClassExtensibilityAnalysis)
+        manager.run(FieldMutabilityAnalysis)
         time {
-            manager.run(ClassExtensibilityAnalysis)
-            manager.runAll(
-                FieldMutabilityAnalysis,
-                ObjectImmutabilityAnalysis,
-                TypeImmutabilityAnalysis
-            )
-        } { r ⇒ t = r.toSeconds }
+            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+        } { r ⇒ t += r.toSeconds }
 
         projectStore.validate(None)
 

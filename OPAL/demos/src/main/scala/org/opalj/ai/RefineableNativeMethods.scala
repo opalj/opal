@@ -37,10 +37,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.fpcf.analysis.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analysis.methods.CallableFromClassesInOtherPackagesAnalysis
-import org.opalj.fpcf.analysis.methods.IsClientCallable
-import org.opalj.fpcf.analysis.methods.NotClientCallable
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.properties.IsClientCallable
+import org.opalj.fpcf.properties.NotClientCallable
+import org.opalj.fpcf.analysis.CallableFromClassesInOtherPackagesAnalysis
 
 /**
  * @author Mario Trageser

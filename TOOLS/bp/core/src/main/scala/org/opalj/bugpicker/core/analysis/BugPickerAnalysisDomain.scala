@@ -40,7 +40,6 @@ import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.br.MethodSignature
-import org.opalj.ai.cg.CallGraphCache
 import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
 import org.opalj.br.ClassFile
@@ -54,6 +53,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.l2.CalledMethodsStore
+import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
  * The base domain that is shared by all domains that are used to perform abstract

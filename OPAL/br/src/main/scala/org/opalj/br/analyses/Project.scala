@@ -283,7 +283,7 @@ class Project[Source] private (
         libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
-    def methodsWithBody: Iterable[Method] = methods
+    def methodsWithBody: Iterable[Method] = this.methodsWithClassFilesAndSource.view.map(_.method)
 
     /**
      * Iterates over all methods with a body in parallel.
@@ -300,8 +300,7 @@ class Project[Source] private (
         f: MethodInfo[Source] ⇒ T
     ): List[Throwable] = {
         val methods = this.methodsWithClassFilesAndSource
-        val methodCount = methods.length
-        if (methodCount == 0)
+        if (methods.length == 0)
             return Nil;
 
         parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)

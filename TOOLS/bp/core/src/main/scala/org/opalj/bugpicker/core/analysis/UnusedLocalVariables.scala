@@ -78,8 +78,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analysis.methods.Purity
-import org.opalj.fpcf.analysis.methods.Pure
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
 
 /**
  * Identifies unused local variables in non-synthetic methods.

@@ -48,7 +48,7 @@ import org.opalj.ai.analyses.FPMethodReturnValuesAnalysisDomain
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.analyses.FPFieldValuesAnalysisDomain
 import org.opalj.ai.analyses.FieldValuesAnalysis
-import org.opalj.ai.cg.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
