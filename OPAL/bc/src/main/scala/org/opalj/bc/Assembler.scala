@@ -36,7 +36,7 @@ import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
- * Factory to create a binary representation of a given class file.
+ * Factory to create the binary representation (i.e., an array of bytes) of a given class file.
  *
  * @author Michael Eichberg
  */
@@ -301,12 +301,80 @@ object Assembler {
             implicit
             out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
         ): Unit = {
-            //            import ta._
-            //            import out._
-            //                        writeByte(target_type.)
-            //            ta.target_path
-            //            ta.type_index
-            ???
+            import out._
+            val target_type = ta.target_type
+            val target_typeTag = target_type.tag
+            writeByte(target_typeTag)
+            (target_typeTag: @scala.annotation.switch) match {
+                case 0x00 | 0x01 ⇒
+                    val tt = as[Type_Parameter_Target](target_type)
+                    writeByte(tt.type_parameter_index)
+
+                case 0x10 ⇒
+                    val tt = as[Supertype_Target](target_type)
+                    writeShort(tt.supertype_index)
+
+                case 0x11 | 0x12 ⇒
+                    val tt = as[Type_Parameter_Bound_Target](target_type)
+                    writeByte(tt.type_parameter_index)
+                    writeByte(tt.bound_index)
+
+                case 0x16 ⇒
+                    val tt = as[Formal_Parameter_Target](target_type)
+                    writeByte(tt.formal_parameter_index)
+
+                case 0x17 ⇒
+                    val tt = as[Throws_Target](target_type)
+                    writeShort(tt.throws_type_index)
+
+                case 0x40 | 0x41 ⇒
+                    val tt = as[Localvar_Target](target_type)
+                    val lvt = tt.localvarTable
+                    writeShort(lvt.length)
+                    lvt.foreach { lvte ⇒
+                        writeShort(lvte.start_pc)
+                        writeShort(lvte.length)
+                        writeShort(lvte.index)
+                    }
+
+                case 0x42 ⇒
+                    val tt = as[Catch_Target](target_type)
+                    writeShort(tt.exception_table_index)
+
+                case 0x43 | 0x44 | 0x45 | 0x46 ⇒
+                    val tt = as[Offset_Target](target_type)
+                    writeShort(tt.offset)
+
+                case 0x47 | 0x48 | 0x49 | 0x4A | 0x4B ⇒
+                    val tt = as[Type_Argument_Target](target_type)
+                    writeShort(tt.offset)
+                    writeByte(tt.type_argument_index)
+
+                case 0x13 | 0x14 | 0x15 ⇒
+                // EMPTY_TARGET <=> Nothing to do
+
+            }
+
+            ta.target_path match {
+                case TypeAnnotationDirectlyOnType ⇒
+                    writeByte(0)
+
+                case TypeAnnotationPathElements(elements) ⇒
+                    writeByte(elements.length)
+                    elements.foreach { tape ⇒
+                        writeByte(tape.type_path_kind)
+                        writeByte(tape.type_argument_index)
+                    }
+            }
+
+            writeShort(ta.type_index)
+            val evps = ta.element_value_pairs
+            writeShort(evps.length)
+            evps.foreach { evp ⇒
+                writeShort(evp.element_name_index)
+                serialize(evp.element_value)
+            }
+
         }
     }
 
