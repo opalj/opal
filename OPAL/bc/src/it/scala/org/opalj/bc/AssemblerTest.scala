@@ -138,11 +138,11 @@ class AssemberTest extends FlatSpec with Matchers {
                 exceptions.mkString(
                     s"assembling the class file failed for :\n",
                     "\n",
-                    s"\n${exceptions.size} entries (and succeeded for: ${entriesCount.get})\n"
+                    s"\n${exceptions.size} class files (and succeeded for: ${entriesCount.get})\n"
                 )
             fail(message)
         } else {
-            info(s"sucessfully procesed ${entriesCount.get} entries")
+            info(s"sucessfully procesed ${entriesCount.get} class files")
         }
     }
 }
