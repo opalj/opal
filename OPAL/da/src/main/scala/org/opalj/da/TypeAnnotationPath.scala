@@ -53,6 +53,11 @@ case object TypeAnnotationDirectlyOnType extends TypeAnnotationPath {
 }
 
 trait TypeAnnotationPathElement {
+
+    def type_path_kind: Int
+
+    def type_argument_index: Int
+
     def toXHTML(implicit cp: Constant_Pool): Node
 }
 
@@ -70,12 +75,20 @@ case class TypeAnnotationPathElements(
  */
 case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
 
+    def type_path_kind: Int = 0
+
+    def type_argument_index: Int = 0
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInArrayType</span>
     }
 }
 
 case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
+
+    def type_path_kind: Int = 1
+
+    def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInNestedType</span>
@@ -84,14 +97,18 @@ case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
 
 case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElement {
 
+    def type_path_kind: Int = 2
+
+    def type_argument_index: Int = 0
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnBoundOfWildcardType</span>
     }
 }
 
-case class TypeAnnotationOnTypeArgument(
-        type_argument_index: Int
-) extends TypeAnnotationPathElement {
+case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAnnotationPathElement {
+
+    def type_path_kind: Int = 3
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>

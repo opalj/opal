@@ -523,7 +523,7 @@ object ClassFileReader
         new ParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
     def SupertypeTarget(supertype_index: Int): TypeAnnotationTarget = {
-        new SupertypeTarget(supertype_index)
+        new Supertype_Target(supertype_index)
     }
 
     def TypeBoundOfParameterDeclarationOfClassOrInterface(
@@ -543,12 +543,12 @@ object ClassFileReader
     def ReceiverType: TypeAnnotationTarget = da.ReceiverType
 
     def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget = {
-        new FormalParameter(formal_parameter_index)
+        new Formal_Parameter_Target(formal_parameter_index)
     }
 
-    def Throws(throws_type_index: Int): TypeAnnotationTarget = new Throws(throws_type_index)
+    def Throws(throws_type_index: Int): TypeAnnotationTarget = new Throws_Target(throws_type_index)
 
-    def Catch(exception_table_index: Int): TypeAnnotationTarget = new Catch(exception_table_index)
+    def Catch(exception_table_index: Int): TypeAnnotationTarget = new Catch_Target(exception_table_index)
 
     type LocalvarTableEntry = da.LocalvarTableEntry
     def LocalvarTableEntry(
@@ -577,17 +577,11 @@ object ClassFileReader
         new MethodReferenceExpressionIdentifier(offset)
     }
 
-    def CastExpression(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget = {
+    def CastExpression(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
         new CastExpression(offset, type_argument_index)
     }
 
-    def ConstructorInvocation(
-        offset:              Int,
-        type_argument_index: Int
-    ): TypeAnnotationTarget = {
+    def ConstructorInvocation(offset: Int, type_argument_index: Int): TypeAnnotationTarget = {
         new ConstructorInvocation(offset, type_argument_index)
     }
 
