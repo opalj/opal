@@ -51,9 +51,9 @@ import java.nio.file.Paths
  * Demonstrates how to create a "HelloWorld" class which basically has the following code:
  * {{{
  * public class Test {
- *
- * public static void main(String[] args) {
- * System.out.println("Hello World");
+ * 	public static void main(String[] args) {
+ * 		System.out.println("Hello World");
+ * 	}
  * }
  * }}}
  * {{{
@@ -104,11 +104,6 @@ import java.nio.file.Paths
  * 0: aload_0
  * 1: invokespecial #8                  // Method java/lang/Object."<init>":()V
  * 4: return
- * LineNumberTable:
- * line 2: 0
- * LocalVariableTable:
- * Start  Length  Slot  Name   Signature
- * 0       5     0  this   LTest;
  *
  * public static void main(java.lang.String[]);
  * descriptor: ([Ljava/lang/String;)V
@@ -119,13 +114,6 @@ import java.nio.file.Paths
  * 3: ldc           #22                 // String Hello World
  * 5: invokevirtual #24                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
  * 8: return
- * LineNumberTable:
- * line 5: 0
- * line 6: 8
- * LocalVariableTable:
- * Start  Length  Slot  Name   Signature
- * 0       9     0  args   [Ljava/lang/String;
- * }
  * SourceFile: "Test.java"
  * }}}
  *
@@ -183,11 +171,11 @@ object HelloWorldClass extends App {
             /* 32 */ CONSTANT_Utf8("SourceFile"),
             /* 33 */ CONSTANT_Utf8("Test.java")
         ),
-        0,
-        46,
-        ACC_PUBLIC.mask | ACC_SUPER.mask,
-        1 /*Test*/ ,
-        3 /*extends java.lang.Object*/ ,
+        minor_version = 0,
+        major_version = 46,
+        access_flags = ACC_PUBLIC.mask | ACC_SUPER.mask,
+        this_class = 1 /*Test*/ ,
+        super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
         methods = IndexedSeq(
@@ -200,7 +188,8 @@ object HelloWorldClass extends App {
                         attribute_name_index = 7,
                         max_stack = 1,
                         max_locals = 1,
-                        code = new Code(
+                        code = 
+                            new Code(
                         Array[Byte](
                             42, // aload_0
                             (0xff & 183).toByte, // invokespecial
@@ -221,7 +210,8 @@ object HelloWorldClass extends App {
                         attribute_name_index = 7,
                         max_stack = 2,
                         max_locals = 1,
-                        code = new Code(
+                        code = 
+                            new Code(
                         Array[Byte](
                             (0xff & 178).toByte, // getstatic
                             0,
@@ -234,7 +224,6 @@ object HelloWorldClass extends App {
                             (0xff & 177).toByte // return
                         )
                     )
-
                     )
                 )
             )
