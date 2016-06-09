@@ -38,20 +38,22 @@ import scala.xml.Node
  * @author Noorulla Sharief
  * @author Andre Pacak
  */
-case class RuntimeVisibleTypeAnnotations_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
-        annotations:          IndexedSeq[TypeAnnotation]
-) extends TypeAnnotations_attribute {
+trait ParametersAnnotations_attribute extends Attribute {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
+    type ParameterAnnotations = IndexedSeq[da.Annotation]
+
+    type ParametersAnnotations = IndexedSeq[ParameterAnnotations]
+
+    def parameters_annotations: ParametersAnnotations
+
+    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
+        val ans = {
+            for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
+                perParameterAnnotations ← parameters_annotations
+                annotation ← perParameterAnnotations
+            } yield annotation.toXHTML(cp)
+        }
+
+        <span>{ ans }</span>
     }
-
-}
-
-object RuntimeVisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeVisibleTypeAnnotations"
-
 }

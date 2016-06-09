@@ -72,13 +72,16 @@ trait Exceptions_attributeReader extends AttributeReader {
         Exceptions_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                Exceptions_attribute(
-                    cp,
-                    attribute_name_index, attribute_length,
-                    repeat(in.readUnsignedShort) {
-                        in.readUnsignedShort
-                    }
-                )
+                val number_of_exceptions = in.readUnsignedShort
+                if (number_of_exceptions > 0 || reifyEmptyAttributes) {
+                    Exceptions_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        repeat(number_of_exceptions) { in.readUnsignedShort }
+                    )
+                } else
+                    null
             }
         )
     )

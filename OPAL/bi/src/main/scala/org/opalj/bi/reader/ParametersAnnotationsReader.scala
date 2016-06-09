@@ -27,31 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package bi
+package reader
 
-import scala.xml.Node
+import scala.reflect.ClassTag
+
+import java.io.DataInputStream
 
 /**
+ * Generic parser for a method parameter's visible or invisible annotations.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-case class RuntimeVisibleTypeAnnotations_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
-        annotations:          IndexedSeq[TypeAnnotation]
-) extends TypeAnnotations_attribute {
+trait ParametersAnnotationsReader extends AnnotationAbstractions {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    implicit val AnnotationManifest: ClassTag[Annotation]
+
+    //
+    // IMPLEMENTATION
+    //
+
+    type ParameterAnnotations = IndexedSeq[Annotation]
+
+    type ParametersAnnotations = IndexedSeq[ParameterAnnotations]
+
+    def ParametersAnnotations(cp: Constant_Pool, in: DataInputStream): ParametersAnnotations = {
+        repeat(in.readUnsignedByte) { repeat(in.readUnsignedShort) { Annotation(cp, in) } }
     }
-
 }
 
-object RuntimeVisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeVisibleTypeAnnotations"
-
-}

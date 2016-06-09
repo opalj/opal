@@ -40,10 +40,10 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int, // TODO Compute on demand
-        parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]
-) extends ParameterAnnotations_attribute {
+        attribute_name_index:   Constant_Pool_Index,
+        attribute_length:       Int, // TODO Compute on demand
+        parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
+) extends ParametersAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>

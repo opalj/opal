@@ -40,8 +40,11 @@ import java.io.DataInputStream
 trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader {
 
     type ParameterAnnotations
-
-    def ParameterAnnotations(cp: Constant_Pool, in: DataInputStream): ParameterAnnotations
+    type ParametersAnnotations <: Traversable[ParameterAnnotations]
+    /**
+     * Method that delegates to another reader to parse the annotations of the parameters.
+     */
+    def ParametersAnnotations(cp: Constant_Pool, in: DataInputStream): ParametersAnnotations
 
     type RuntimeVisibleParameterAnnotations_attribute <: Attribute
 
@@ -49,7 +52,7 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
         attribute_length:      Int,
-        parameter_annotations: ParameterAnnotations
+        parameter_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute
 
     //
@@ -74,9 +77,14 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
         RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                RuntimeVisibleParameterAnnotations_attribute(
-                    cp, attribute_name_index, attribute_length, ParameterAnnotations(cp, in)
-                )
+                val parameter_annotations = ParametersAnnotations(cp, in)
+                if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
+                    RuntimeVisibleParameterAnnotations_attribute(
+                        cp, attribute_name_index, attribute_length, parameter_annotations
+                    )
+                } else {
+                    null
+                }
             })
     )
 }

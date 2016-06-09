@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,46 +22,38 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bi
-package reader
+package io
 
-import scala.reflect.ClassTag
-
-import java.io.DataInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 
 /**
- * Generic parser for a method parameter's visible or invisible annotations.
+ * A ByteArrayOutputStream that will always fail after a given number of written bytes.
  *
  * @author Michael Eichberg
  */
-trait ParameterAnnotationsReader extends AnnotationAbstractions {
+class FailWhenByteArrayOutputStream(
+        failIfByteNIsWritten: Int,
+        initialSize:          Int = 32
+) extends ByteArrayOutputStream(initialSize) {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
-    implicit val AnnotationManifest: ClassTag[Annotation]
-
-    //
-    // IMPLEMENTATION
-    //
-
-    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
-
-    def ParameterAnnotations(
-        cp: Constant_Pool,
-        in: DataInputStream
-    ): ParameterAnnotations = {
-        repeat(in.readUnsignedByte) {
-            repeat(in.readUnsignedShort) {
-                Annotation(cp, in)
-            }
+    override def write(b: Int): Unit = this.synchronized {
+        super.write(b)
+        if (size >= failIfByteNIsWritten) {
+            throw new IOException(s"passed the set boundary of $failIfByteNIsWritten; wrote ${size()} bytes")
         }
     }
-}
 
+    override def write(b: Array[Byte], off: Int, len: Int): Unit = this.synchronized {
+        super.write(b, off, len)
+        if (size >= failIfByteNIsWritten) {
+            throw new IOException(s"passed the set boundary of $failIfByteNIsWritten; wrote ${size()} bytes")
+        }
+
+    }
+}

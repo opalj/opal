@@ -33,23 +33,10 @@ import scala.xml.Node
 
 /**
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-trait ParameterAnnotations_attribute extends Attribute {
+trait TypeAnnotations_attribute extends Attribute {
 
-    def parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]
+    val annotations: IndexedSeq[TypeAnnotation]
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        val ans = {
-            for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                perParameterAnnotations ← parameter_annotations
-                annotation ← perParameterAnnotations
-            } yield annotation.toXHTML(cp)
-        }
-
-        <span>{ ans }</span>
-    }
+    def annotationsToXHTML(implicit cp: Constant_Pool): Seq[Node] = annotations.map(_.toXHTML(cp))
 }

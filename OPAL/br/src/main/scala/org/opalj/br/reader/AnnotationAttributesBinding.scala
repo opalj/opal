@@ -35,7 +35,7 @@ import org.opalj.bi.reader.RuntimeInvisibleAnnotations_attributeReader
 import org.opalj.bi.reader.RuntimeVisibleAnnotations_attributeReader
 import org.opalj.bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
 import org.opalj.bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import org.opalj.bi.reader.ParameterAnnotationsReader
+import org.opalj.bi.reader.ParametersAnnotationsReader
 import org.opalj.bi.reader.AnnotationDefault_attributeReader
 
 /**
@@ -47,7 +47,7 @@ import org.opalj.bi.reader.AnnotationDefault_attributeReader
 trait AnnotationAttributesBinding
         extends AnnotationsBinding
         with AnnotationsReader
-        with ParameterAnnotationsReader
+        with ParametersAnnotationsReader
         with RuntimeInvisibleAnnotations_attributeReader
         with RuntimeVisibleAnnotations_attributeReader
         with RuntimeInvisibleParameterAnnotations_attributeReader
@@ -91,20 +91,20 @@ trait AnnotationAttributesBinding
         new RuntimeInvisibleAnnotations_attribute(annotations)
 
     def RuntimeVisibleParameterAnnotations_attribute(
-        cp:                    Constant_Pool,
-        attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
-        parameter_annotations: ParameterAnnotations
+        cp:                     Constant_Pool,
+        attribute_name_index:   Constant_Pool_Index,
+        attribute_length:       Int,
+        parameters_annotations: ParametersAnnotations
     ) =
-        new RuntimeVisibleParameterAnnotations_attribute(parameter_annotations)
+        new RuntimeVisibleParameterAnnotations_attribute(parameters_annotations)
 
     def RuntimeInvisibleParameterAnnotations_attribute(
-        cp:                    Constant_Pool,
-        attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
-        parameter_annotations: ParameterAnnotations
+        cp:                     Constant_Pool,
+        attribute_name_index:   Constant_Pool_Index,
+        attribute_length:       Int,
+        parameters_annotations: ParametersAnnotations
     ) =
-        new RuntimeInvisibleParameterAnnotations_attribute(parameter_annotations)
+        new RuntimeInvisibleParameterAnnotations_attribute(parameters_annotations)
 
 }
 

@@ -42,15 +42,12 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
         attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[TypeAnnotation]
-) extends Attribute {
+) extends TypeAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
     }
 
-    def annotationsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ annotations.map(_.toXHTML(cp)) }</span>
-    }
 }
 
 object RuntimeInvisibleTypeAnnotations_attribute {

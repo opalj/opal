@@ -39,7 +39,9 @@ import java.io.DataInputStream
  */
 trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
-    type TypeAnnotations
+    type TypeAnnotation
+
+    type TypeAnnotations <: Traversable[TypeAnnotation]
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations
 
     type RuntimeVisibleTypeAnnotations_attribute <: Attribute
@@ -69,9 +71,14 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
         RuntimeVisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME →
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                RuntimeVisibleTypeAnnotations_attribute(
-                    cp, attribute_name_index, attribute_length, TypeAnnotations(cp, in)
-                )
+                val annotations = TypeAnnotations(cp, in)
+                if (annotations.nonEmpty || reifyEmptyAttributes) {
+                    RuntimeVisibleTypeAnnotations_attribute(
+                        cp, attribute_name_index, attribute_length, annotations
+                    )
+                } else {
+                    null
+                }
             })
     )
 }

@@ -126,7 +126,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     ): TypeAnnotationTarget
 
     //______________________________
-    // type_arguement_target
+    // type_argument_target
     def CastExpression(
         offset:              Int,
         type_argument_index: Int

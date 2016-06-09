@@ -50,6 +50,8 @@ package object da {
 
     type Attributes = Seq[Attribute]
 
+    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+
     def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)
         if (rt.charAt(0) == '[')
