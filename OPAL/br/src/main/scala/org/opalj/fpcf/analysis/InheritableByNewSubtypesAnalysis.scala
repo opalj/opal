@@ -4,7 +4,7 @@ package analysis
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import org.opalj.fpcf.properties.InheritableByNewTypes$
+import org.opalj.fpcf.properties.InheritableByNewTypes
 import org.opalj.fpcf.properties.NotInheritableByNewTypes
 import org.opalj.fpcf.properties.IsInheritableByNewTypes
 import scala.collection.mutable
@@ -50,7 +50,7 @@ import scala.collection.mutable
  * 		required.
  * @author Michael Reif
  */
-class InheritableByNewSubtypesAnalysis private(val project: SomeProject) extends FPCFAnalysis {
+class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Determines whether a method can be inherited by a library client.
@@ -67,24 +67,24 @@ class InheritableByNewSubtypesAnalysis private(val project: SomeProject) extends
         if (isApplicationMode)
             return NotInheritableByNewTypes;
 
-      if (method.isPrivate)
+        if (method.isPrivate)
             return NotInheritableByNewTypes;
 
-      val classFile = project.classFile(method)
+        val classFile = project.classFile(method)
         if (classFile.isEffectivelyFinal)
             return NotInheritableByNewTypes;
 
-      //packages that start with "java." are closed, even under the open packages assumption
+        //packages that start with "java." are closed, even under the open packages assumption
         val isJavaPackage = classFile.thisType.packageName.startsWith("java.")
         if ((isClosedLibrary || isJavaPackage)
             && method.isPackagePrivate)
             return NotInheritableByNewTypes;
 
-      if (classFile.isPublic ||
+        if (classFile.isPublic ||
             isOpenLibrary && !isJavaPackage)
             return IsInheritableByNewTypes;
 
-      val classType = classFile.thisType
+        val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
         val methodName = method.name
         val methodDescriptor = method.descriptor

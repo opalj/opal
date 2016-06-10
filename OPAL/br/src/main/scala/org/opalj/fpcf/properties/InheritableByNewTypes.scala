@@ -30,11 +30,9 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.analyses.SomeProject
-
 /**
- * Determines for each method if it potentially can be inherited by a '''future''' subtype. Since
- * this property is defined w.r.t. future subtyping it is only relevant when libraries are analyzed.
+ * Determines for each method if it belongs to the public interface, hence, can be inherited by a '''future''' - yet unknown - subtype. Since
+ * this property is defined w.r.t. future subtyping it is '''only''' relevant when libraries are analyzed.
  *
  * It specifies in particular whether a method can be inherited by a subtype that is created by some client of the library.
  * When a method cannot be inherited by a future subtype is discussed in the following:
@@ -46,18 +44,19 @@ import org.opalj.br.analyses.SomeProject
  *
  * == Inheritance w.r.t. Open Packages Assumption ==
  *
- * No inheritance is possible if:
- * $ - if the method's visibility modifier is private
- * $ - if the method's declaring class is (effectively) final
+ * inheritance is possible if:
+ * $ - if the method's visibility modifier is either public, protected or package visible
+ * $ - if the method's declaring class is not (effectively) final
  * $ - CPA has to be applied to classes which are in the package "java.*"
  *
  * == Inheritance w.r.t. Closed Packages Assumption ==
  *
- * No inheritance is possible if:
- * $ - if the method's visibility modifier is not public
- * $ - if the method's declaring class is (effectively) final
+ * Inheritance is possible if:
+ * $ - if the method's visibility modifier is public or protected
+ * $ - if the method's declaring class not is (effectively) final
  * $ - if the method's declaring class is package visible and does not have a public subtype
- *    within the same package that inherits the method
+ *     within the same package that inherits the method where the method is not overridden on
+ *    the path from the declaring type to the public subtype
  *
  * == Special Cases ==
  *
@@ -102,7 +101,7 @@ object InheritableByNewTypes {
 
     final val Key = {
         PropertyKey.create[InheritableByNewTypes](
-            "SubtypeInheritable",
+            "InheritableByNewTypes",
             fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ AnalysisModeSpecific,
             cycleResolutionStrategy = cycleResolutionStrategy
         )
@@ -111,7 +110,7 @@ object InheritableByNewTypes {
 
 case object AnalysisModeSpecific extends InheritableByNewTypes {
 
-    def inheritability(am: AnalysisMode): PotentialCBSTarget = {
+    def inheritability(am: AnalysisMode): InterfaceForNewSubtypes = {
         import AnalysisModes._
         am match {
             case DesktopApplication                  ⇒ NotInheritableByNewTypes
@@ -127,12 +126,12 @@ case object AnalysisModeSpecific extends InheritableByNewTypes {
     }
 }
 
-sealed trait PotentialCBSTarget extends InheritableByNewTypes
+sealed trait InterfaceForNewSubtypes extends InheritableByNewTypes
 
-case object IsInheritableByNewTypes extends PotentialCBSTarget {
+case object IsInheritableByNewTypes extends InterfaceForNewSubtypes {
     final def isInheritable(analysisMode: AnalysisMode): Boolean = true
 }
 
-case object NotInheritableByNewTypes extends PotentialCBSTarget {
+case object NotInheritableByNewTypes extends InterfaceForNewSubtypes {
     final def isInheritable(analysisMode: AnalysisMode): Boolean = false
 }
