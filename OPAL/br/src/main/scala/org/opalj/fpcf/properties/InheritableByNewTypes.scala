@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.analyses.SomeProject
+
 /**
  * Determines for each method if it potentially can be inherited by a '''future''' subtype. Since
  * this property is defined w.r.t. future subtyping it is only relevant when libraries are analyzed.
@@ -40,7 +42,7 @@ package properties
  * == Inheritance w.r.t. Applications ==
  *
  * If an application is analyzed, this analysis does not make any sense since all used types are already known. Therefore,
- * all applications methods should have the property [[NotSubtypeInheritable]].
+ * all applications methods should have the property [[NotInheritableByNewTypes]].
  *
  * == Inheritance w.r.t. Open Packages Assumption ==
  *
@@ -52,45 +54,44 @@ package properties
  * == Inheritance w.r.t. Closed Packages Assumption ==
  *
  * No inheritance is possible if:
- * $ - if the method's visibility modifier is private
- * $ - if the method's visibility modifier is package private
+ * $ - if the method's visibility modifier is not public
  * $ - if the method's declaring class is (effectively) final
  * $ - if the method's declaring class is package visible and does not have a public subtype
- *    within the same package that does not override the method
+ *    within the same package that inherits the method
  *
  * == Special Cases ==
  *
  * Notice that the packages "java.*" are closed, hence, nobody can contribute to this packages. Therefore, only
  * public or protected methods where the declaring class is either public or the declaring class has a public subtype that does
- * not override the method can have the property [[IsSubtypeInheritable]]. Therefore, the closed packages assumption can always
+ * not override the method can have the property [[IsInheritableByNewTypes]]. Therefore, the closed packages assumption can always
  * be applied to these packages.
  *
  * == Fallback ==
  *
  * 	The sound fallback of this property depends on the actual analysis mode under which the property is computed.
  *
- *  If the analysis mode is some application analysis mode (Desktop, J2EE etc.), the entity [[NotSubtypeInheritable]].
- *  If the analysis mode is some library analysis mode (CPA, OPA), the sound approximation is [[IsSubtypeInheritable]].
+ *  If the analysis mode is some application analysis mode (Desktop, J2EE etc.), the entity [[NotInheritableByNewTypes]].
+ *  If the analysis mode is some library analysis mode (CPA, OPA), the sound approximation is [[IsInheritableByNewTypes]].
  *
  *
- * === Cycle Resolution Strategy ===
+ * == Cycle Resolution Strategy ==
  *
  * None.
  *
  * @author Michael Reif
  */
-sealed trait SubtypeInheritable extends Property {
+sealed trait InheritableByNewTypes extends Property {
 
-    final type Self = SubtypeInheritable
+    final type Self = InheritableByNewTypes
 
-    final def key = SubtypeInheritable.Key
+    final def key = InheritableByNewTypes.Key
 
     final def isRefineable = false
 
     def isInheritable(analysisMode: AnalysisMode): Boolean
 }
 
-object SubtypeInheritable {
+object InheritableByNewTypes {
 
     final val cycleResolutionStrategy: PropertyKey.CycleResolutionStrategy = (
         ps: PropertyStore,
@@ -100,7 +101,7 @@ object SubtypeInheritable {
     }
 
     final val Key = {
-        PropertyKey.create[SubtypeInheritable](
+        PropertyKey.create[InheritableByNewTypes](
             "SubtypeInheritable",
             fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ AnalysisModeSpecific,
             cycleResolutionStrategy = cycleResolutionStrategy
@@ -108,15 +109,15 @@ object SubtypeInheritable {
     }
 }
 
-case object AnalysisModeSpecific extends SubtypeInheritable {
+case object AnalysisModeSpecific extends InheritableByNewTypes {
 
-    def inheritability(am: AnalysisMode): SubtypeInheritability = {
+    def inheritability(am: AnalysisMode): PotentialCBSTarget = {
         import AnalysisModes._
         am match {
-            case DesktopApplication                  ⇒ NotSubtypeInheritable
-            case JEE6WebApplication                  ⇒ NotSubtypeInheritable
-            case LibraryWithClosedPackagesAssumption ⇒ IsSubtypeInheritable
-            case LibraryWithOpenPackagesAssumption   ⇒ IsSubtypeInheritable
+            case DesktopApplication                  ⇒ NotInheritableByNewTypes
+            case JEE6WebApplication                  ⇒ NotInheritableByNewTypes
+            case LibraryWithClosedPackagesAssumption ⇒ IsInheritableByNewTypes
+            case LibraryWithOpenPackagesAssumption   ⇒ IsInheritableByNewTypes
             case _                                   ⇒ throw new UnknownError(s"Not supported AnalysisMode $am. Please make sure that your analysisMode is supported by this property.")
         }
     }
@@ -126,12 +127,12 @@ case object AnalysisModeSpecific extends SubtypeInheritable {
     }
 }
 
-sealed trait SubtypeInheritability extends SubtypeInheritable
+sealed trait PotentialCBSTarget extends InheritableByNewTypes
 
-case object IsSubtypeInheritable extends SubtypeInheritability {
+case object IsInheritableByNewTypes extends PotentialCBSTarget {
     final def isInheritable(analysisMode: AnalysisMode): Boolean = true
 }
 
-case object NotSubtypeInheritable extends SubtypeInheritability {
+case object NotInheritableByNewTypes extends PotentialCBSTarget {
     final def isInheritable(analysisMode: AnalysisMode): Boolean = false
 }

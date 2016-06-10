@@ -2,11 +2,11 @@ package org.opalj
 package fpcf
 package analysis
 
-import org.opalj.fpcf.properties.SubtypeInheritable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import org.opalj.fpcf.properties.NotSubtypeInheritable
-import org.opalj.fpcf.properties.IsSubtypeInheritable
+import org.opalj.fpcf.properties.InheritableByNewTypes$
+import org.opalj.fpcf.properties.NotInheritableByNewTypes
+import org.opalj.fpcf.properties.IsInheritableByNewTypes
 import scala.collection.mutable
 
 /**
@@ -39,26 +39,25 @@ import scala.collection.mutable
  *
  * == Implementation ==
  *
- * This analysis computes the [[org.opalj.fpcf.properties.SubtypeInheritable]] property.
+ * This analysis computes the [[org.opalj.fpcf.properties.InheritableByNewTypes]] property.
  * Since this makes only sense when libraries are analyzed, using the application mode will
- * result in the [[org.opalj.fpcf.properties.NotSubtypeInheritable]] for every given entity.
+ * result in the [[org.opalj.fpcf.properties.NotInheritableByNewTypes]] for every given entity.
  *
  * This analysis considers all scenarios that are documented by the
- * [[org.opalj.fpcf.properties.SubtypeInheritable]] property.
+ * [[org.opalj.fpcf.properties.InheritableByNewTypes]] property.
  *
  * @note This analysis implements a direct property computation that is only executed when
  * 		required.
- *
  * @author Michael Reif
  */
-class SubtypeInheritabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class InheritableByNewSubtypesAnalysis private(val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Determines whether a method can be inherited by a library client.
      * This should not be called if the current analysis mode is application-related.
      *
      */
-    def clientCallability(
+    def subtypeInheritability(
         isApplicationMode: Boolean
     )(
         e: Entity
@@ -66,26 +65,26 @@ class SubtypeInheritabilityAnalysis private (val project: SomeProject) extends F
         val method = e.asInstanceOf[Method]
 
         if (isApplicationMode)
-            return NotSubtypeInheritable;
+            return NotInheritableByNewTypes;
 
-        if (method.isPrivate)
-            return NotSubtypeInheritable;
+      if (method.isPrivate)
+            return NotInheritableByNewTypes;
 
-        val classFile = project.classFile(method)
+      val classFile = project.classFile(method)
         if (classFile.isEffectivelyFinal)
-            return NotSubtypeInheritable;
+            return NotInheritableByNewTypes;
 
-        //packages that start with "java." are closed, even under the open packages assumption
+      //packages that start with "java." are closed, even under the open packages assumption
         val isJavaPackage = classFile.thisType.packageName.startsWith("java.")
         if ((isClosedLibrary || isJavaPackage)
             && method.isPackagePrivate)
-            return NotSubtypeInheritable;
+            return NotInheritableByNewTypes;
 
-        if (classFile.isPublic ||
+      if (classFile.isPublic ||
             isOpenLibrary && !isJavaPackage)
-            return IsSubtypeInheritable;
+            return IsInheritableByNewTypes;
 
-        val classType = classFile.thisType
+      val classType = classFile.thisType
         val classHierarchy = project.classHierarchy
         val methodName = method.name
         val methodDescriptor = method.descriptor
@@ -98,7 +97,7 @@ class SubtypeInheritabilityAnalysis private (val project: SomeProject) extends F
                     if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
                         if (subclass.isPublic)
                             // the original method is now visible (and not shadowed)
-                            return IsSubtypeInheritable;
+                            return IsInheritableByNewTypes;
                     } else
                         subtypes ++= classHierarchy.directSubtypesOf(subtype)
 
@@ -106,26 +105,26 @@ class SubtypeInheritabilityAnalysis private (val project: SomeProject) extends F
                 case None ⇒
                     // The type hierarchy is obviously not downwards closed; i.e.,
                     // the project configuration is rather strange!
-                    return IsSubtypeInheritable;
+                    return IsInheritableByNewTypes;
                 case _ ⇒
             }
         }
 
-        NotSubtypeInheritable
+        NotInheritableByNewTypes
     }
 }
 
-object SubtypeInheritabilityAnalysis extends FPCFAnalysisRunner {
+object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
 
-    override def derivedProperties: Set[PropertyKind] = Set(SubtypeInheritable.Key)
+    override def derivedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
 
     protected[fpcf] def start(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis = {
-        val analysis = new SubtypeInheritabilityAnalysis(project)
+        val analysis = new InheritableByNewSubtypesAnalysis(project)
         val isApplicationMode: Boolean = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore <<! (SubtypeInheritable.Key, analysis.clientCallability(isApplicationMode))
+        propertyStore <<! (InheritableByNewTypes.Key, analysis.subtypeInheritability(isApplicationMode))
         analysis
     }
 }
