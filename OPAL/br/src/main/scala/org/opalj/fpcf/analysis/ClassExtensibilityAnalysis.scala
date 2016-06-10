@@ -32,8 +32,6 @@ package analysis
 
 import scala.collection.mutable.Queue
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
 import scala.annotation.tailrec
 import org.opalj.fpcf.properties.IsExtensible
@@ -43,7 +41,7 @@ import org.opalj.fpcf.properties.IsExtensible
  * depends on the kind of the project. If the project is an application, all classes
  * are considered to be closed; i.e., the class hierarchy is considered to be fixed; if the
  * analyzed project is a library then the result depends on the concrete assumption about the
- * openess of the library.
+ * openness of the library.
  *
  * However, package visible classes in packages starting with "java." are always treated as not
  * client extensible as this would require that those classes are defined in the respective
@@ -116,7 +114,6 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
         } else {
             // do nothing
         }
-
     }
 }
 
