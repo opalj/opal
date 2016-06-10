@@ -103,12 +103,12 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
     def resolveJDK8(repository: ClassFileRepository): Option[Method] = {
         bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
-                ObjectType.LambdaMetafactory,
+                ObjectType.LambdaMetafactory, _,
                 "metafactory",
                 INVOKEDYNAMIC.lambdaMetafactoryDescriptor
                 ) |
                 InvokeStaticMethodHandle(
-                    ObjectType.LambdaMetafactory,
+                    ObjectType.LambdaMetafactory, _,
                     "altMetafactory",
                     INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
                     ) if bootstrapMethod.arguments.size >= 2 ⇒ {

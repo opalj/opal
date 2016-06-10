@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -14,6 +14,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,40 +23,34 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package br
 
-import scala.xml.Node
+import scala.language.implicitConversions
+import scala.collection.mutable
 
 /**
+ * Implementation of classes to represent/recreate a class file's constant pool.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class RuntimeVisibleTypeAnnotations_attribute(
-        attribute_name_index: Int,
-        attribute_length:     Int,
-        annotations:          IndexedSeq[TypeAnnotation]
-) extends Attribute {
+package object cp {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationstoXHTML(cp) }</div>
-    }
+    type Constant_Pool = Array[Constant_Pool_Entry]
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        <span>
-            { for (annotation ← annotations) yield annotation.toXHTML(cp) }
-        </span>
-    }
-}
+    type BootstrapMethodsBuffer = mutable.ArrayBuffer[BootstrapMethod]
 
-object RuntimeVisibleTypeAnnotations_attribute {
+    type Constant_Pool_Index = Int
 
-    val name = "RuntimeVisibleTypeAnnotations"
-
+    implicit def cpIndexTocpEntry(
+        index: Constant_Pool_Index
+    )(
+        implicit
+        cp: Constant_Pool
+    ): Constant_Pool_Entry =
+        cp(index)
 }

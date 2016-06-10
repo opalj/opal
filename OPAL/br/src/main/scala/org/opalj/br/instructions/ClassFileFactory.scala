@@ -204,6 +204,7 @@ object ClassFileFactory {
         methodName:               String,
         methodDescriptor:         MethodDescriptor,
         receiverType:             ObjectType,
+        receiverIsInterface:      Boolean,
         receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
         invocationInstruction:    Opcode,
@@ -250,6 +251,7 @@ object ClassFileFactory {
                 methodDescriptor,
                 additionalFieldsForStaticParameters,
                 receiverType,
+                receiverIsInterface,
                 receiverMethodName,
                 receiverMethodDescriptor,
                 invocationInstruction
@@ -377,7 +379,7 @@ object ClassFileFactory {
         Array(
             ALOAD_0,
             INVOKESPECIAL(
-                theSuperclassType,
+                theSuperclassType, false,
                 "<init>", NoArgumentAndNoReturnValueMethodDescriptor
             ),
             null,
@@ -479,11 +481,11 @@ object ClassFileFactory {
             instructions(currentPC) = instruction
             currentPC = instruction.indexOfNextInstruction(currentPC, false)
         }
-        instructions(currentPC) = INVOKESPECIAL(
-            typeToCreate,
-            "<init>",
-            MethodDescriptor(fieldTypes, VoidType)
-        )
+        instructions(currentPC) =
+            INVOKESPECIAL(
+                typeToCreate, false,
+                "<init>", MethodDescriptor(fieldTypes, VoidType)
+            )
         currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         instructions(currentPC) = ARETURN
         val body = Code(
@@ -504,8 +506,7 @@ object ClassFileFactory {
      * Creates a proxy method with name `methodName` and descriptor `methodDescriptor` and
      * the bytecode instructions to execute the method `receiverMethod` in `receiverType`.
      *
-     * It is expected that `methodDescriptor` and `receiverMethodDescriptor` are identical
-     * in terms of parameter types and return type.
+     * If the `methodDescriptor`s have to be identical in terms of parameter types and return type.
      */
     def proxyMethod(
         definingType:             ObjectType,
@@ -513,6 +514,7 @@ object ClassFileFactory {
         methodDescriptor:         MethodDescriptor,
         staticParameters:         Seq[Field],
         receiverType:             ObjectType,
+        receiverIsInterface:      Boolean,
         receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
         invocationInstruction:    Opcode
@@ -521,7 +523,7 @@ object ClassFileFactory {
         val code =
             createProxyMethodBytecode(
                 definingType, methodName, methodDescriptor, staticParameters,
-                receiverType, receiverMethodName, receiverMethodDescriptor,
+                receiverType, receiverIsInterface, receiverMethodName, receiverMethodDescriptor,
                 invocationInstruction
             )
 
@@ -535,8 +537,7 @@ object ClassFileFactory {
      * `receiverMethod`, perform the appropriate invocation instruction (one of
      * INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL), and return from the proxy method.
      *
-     * It is expected that `methodDescriptor` and `receiverMethodDescriptor` are identical
-     * in terms of parameter types and return type.
+     *
      *
      * @see [[parameterForwardingInstructions]]
      */
@@ -546,6 +547,7 @@ object ClassFileFactory {
         methodDescriptor:         MethodDescriptor,
         staticParameters:         Seq[Field],
         receiverType:             ObjectType,
+        receiverIsInterface:      Boolean,
         receiverMethodName:       String,
         receiverMethodDescriptor: MethodDescriptor,
         invocationInstruction:    Opcode
@@ -581,31 +583,35 @@ object ClassFileFactory {
         // `this` occupies variable 0, since the proxy method is never static
         val variableOffset = 1
 
-        val forwardParametersInstructions = parameterForwardingInstructions(
-            methodDescriptor, receiverMethodDescriptor, variableOffset,
-            staticParameters, definingType
-        )
+        val forwardParametersInstructions =
+            parameterForwardingInstructions(
+                methodDescriptor, receiverMethodDescriptor, variableOffset,
+                staticParameters, definingType
+            )
 
         val forwardingCallInstruction: Array[Instruction] =
             (invocationInstruction: @scala.annotation.switch) match {
                 case INVOKESTATIC.opcode ⇒
                     Array(
-                        INVOKESTATIC(receiverType, receiverMethodName, receiverMethodDescriptor),
+                        INVOKESTATIC(
+                            receiverType, receiverIsInterface,
+                            receiverMethodName, receiverMethodDescriptor
+                        ),
                         null,
                         null
                     )
                 case INVOKESPECIAL.opcode ⇒
                     val methodDescriptor =
                         if (receiverMethodName == "<init>") {
-                            MethodDescriptor(
-                                receiverMethodDescriptor.parameterTypes,
-                                VoidType
-                            )
+                            MethodDescriptor(receiverMethodDescriptor.parameterTypes, VoidType)
                         } else {
                             receiverMethodDescriptor
                         }
                     Array(
-                        INVOKESPECIAL(receiverType, receiverMethodName, methodDescriptor),
+                        INVOKESPECIAL(
+                            receiverType, receiverIsInterface,
+                            receiverMethodName, methodDescriptor
+                        ),
                         null,
                         null
                     )

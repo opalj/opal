@@ -29,7 +29,10 @@
 package org.opalj
 
 /**
- * Enumeration of the modes used by the subsequent analyses.
+ * The analysis mode specifies the type of the project/the kind of sources which will be
+ * analyzed and - in case of libraries – the underlying assumption that should be used.
+ *
+ * Basically an enumeration of the modes that can be used by the subsequent analyses.
  *
  * @author Michael Eichberg
  */

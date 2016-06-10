@@ -38,7 +38,7 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class LineNumberTable_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         line_number_table:    Seq[LineNumberTableEntry]
 ) extends Attribute {
 
@@ -53,9 +53,8 @@ case class LineNumberTable_attribute(
         </details>
     }
 
-    def line_number_tableToXHTML(implicit cp: Constant_Pool) = {
-        for (line ← line_number_table) yield line.toXHTML(cp)
-    }
+    def line_number_tableToXHTML(implicit cp: Constant_Pool) = line_number_table.map(_.toXHTML(cp))
+
 }
 object LineNumberTable_attribute {
 

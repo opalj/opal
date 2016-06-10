@@ -92,7 +92,7 @@ case class PutStaticMethodHandle(
     fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle
 
-trait MethodCallMethodHandle extends MethodHandle {
+sealed trait MethodCallMethodHandle extends MethodHandle {
     def receiverType: ReferenceType
     def name: String
     def methodDescriptor: MethodDescriptor
@@ -125,6 +125,7 @@ case class InvokeVirtualMethodHandle(
 
 case class InvokeStaticMethodHandle(
         receiverType:     ReferenceType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
@@ -134,6 +135,7 @@ case class InvokeStaticMethodHandle(
 
 case class InvokeSpecialMethodHandle(
         receiverType:     ReferenceType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {

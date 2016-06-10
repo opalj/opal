@@ -70,7 +70,7 @@ import org.opalj.graphs.DefaultMutableNode
  * not could be shared across all respective classes. The property which methods are calling a
  * specific method m on the other hand is specific for each method m.
  * In general, if the concrete instance of a property may be shared by all entities it is
- * advantageous to model it as a set property. However, the more general mechanism are
+ * advantageous to model it as a set property. However, the more general mechanism is
  * per entity properties and this is generally needed if the result of a computation may be refined
  * during the computation.
  *
@@ -371,7 +371,7 @@ class PropertyStore private (
      *
      * @note Only checks related to potentially internal bugs are performed. None of the checks is
      * 		relevant to developers of analyses. However, even if some checks fail, they can still
-     * 		be caused by failures.
+     * 		be caused by failures in user code.
      */
     // REQUIRES: Lock: AccessStore (!)
     @throws[AssertionError]("if the store is inconsistent")
@@ -405,7 +405,7 @@ class PropertyStore private (
             (dependeeEPK, po) ← dependeeOss
         } {
             if (!data.get(dependeeEPK.e).ps(dependeeEPK.pk.id).os.contains(po)) {
-                val message = s"observers contains for $dependerEPK -> $dependeeEPK "+
+                val message = s"observers contains for $dependerEPK → $dependeeEPK "+
                     s"a dangling observer: $po "
                 throw new AssertionError(message)
             }

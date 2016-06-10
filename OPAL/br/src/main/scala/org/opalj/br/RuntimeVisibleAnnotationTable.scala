@@ -34,10 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleAnnotationTable(
-    annotations: Annotations
-)
-        extends AnnotationTable {
+case class RuntimeVisibleAnnotationTable(annotations: Annotations) extends AnnotationTable {
 
     final def isRuntimeVisible: Boolean = true
 

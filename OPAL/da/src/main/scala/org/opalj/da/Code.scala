@@ -41,6 +41,8 @@ import scala.xml.Unparsed
  */
 case class Code(instructions: Array[Byte]) {
 
+    assert(instructions.length > 0)
+
     import Code.id
 
     def toXHTML(
@@ -81,8 +83,9 @@ case class Code(instructions: Array[Byte]) {
                     pc ← (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
+                    val exceptionInfo = exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b)
                     createTableRowForInstruction(
-                        methodIndex, instructions(pc), exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b), pc, lineNumberTable
+                        methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable
                     )
                 }
             }

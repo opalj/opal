@@ -54,7 +54,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
     import DefaultArraysTest._
 
-    private def evaluateMethod(name: String, f: DefaultArraysTestDomain ⇒ Unit): Unit = {
+    private def evaluateMethod(name: String)(f: DefaultArraysTestDomain ⇒ Unit): Unit = {
         val domain = new DefaultArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
@@ -67,7 +67,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
     describe("array initializations") {
 
         it("should be able to analyze a simple int array initialization") {
-            evaluateMethod("simpleIntArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleIntArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 21
@@ -84,11 +84,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(21, IntegerValue(12, 2), varray) should be(ComputedValue(IntegerValue(13, 3)))
                 arrayload(21, IntegerValue(16, 3), varray) should be(ComputedValue(IntegerValue(17, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple byte array initialization") {
-            evaluateMethod("simpleByteArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 21
@@ -106,11 +106,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(12, 2), varray) should be(ComputedValue(ByteValue(13, 3)))
                 arrayload(returnIndex, IntegerValue(16, 3), varray) should be(ComputedValue(ByteValue(17, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple short array initialization") {
-            evaluateMethod("simpleShortArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleShortArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 21
@@ -128,11 +128,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(12, 2), varray) should be(ComputedValue(ShortValue(13, 3)))
                 arrayload(returnIndex, IntegerValue(16, 3), varray) should be(ComputedValue(ShortValue(17, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple long array initialization") {
-            evaluateMethod("simpleLongArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleLongArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 27
@@ -150,11 +150,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(14, 2), varray) should be(ComputedValue(LongValue(15, 3)))
                 arrayload(returnIndex, IntegerValue(20, 3), varray) should be(ComputedValue(LongValue(21, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple float array initialization") {
-            evaluateMethod("simpleFloatArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleFloatArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 23
@@ -172,11 +172,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(12, 2), varray) should be(ComputedValue(FloatValue(13, 3)))
                 arrayload(returnIndex, IntegerValue(17, 3), varray) should be(ComputedValue(FloatValue(18, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple double array initialization") {
-            evaluateMethod("simpleDoubleArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleDoubleArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 27
@@ -194,11 +194,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(14, 2), varray) should be(ComputedValue(DoubleValue(15, 3)))
                 arrayload(returnIndex, IntegerValue(20, 3), varray) should be(ComputedValue(DoubleValue(21, 4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple boolean array initialization") {
-            evaluateMethod("simpleBooleanArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleBooleanArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 13
@@ -221,11 +221,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(8, 2), varray) should be(ComputedValue(BooleanValue(9, true)))
                 arrayload(returnIndex, IntegerValue(3, 3), varray) should be(ComputedValue(BooleanValue(3, false)))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple char array initialization") {
-            evaluateMethod("simpleCharArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleCharArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 25
@@ -243,11 +243,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(14, 2), varray) should be(ComputedValue(CharValue(15, 'C')))
                 arrayload(returnIndex, IntegerValue(19, 3), varray) should be(ComputedValue(CharValue(20, 'D')))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple string array initialization") {
-            evaluateMethod("simpleStringArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 26
@@ -265,11 +265,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayload(returnIndex, IntegerValue(15, 2), varray) should be(ComputedValue(StringValue(16, "C3")))
                 arrayload(returnIndex, IntegerValue(20, 3), varray) should be(ComputedValue(StringValue(21, "D4")))
 
-            })
+            }
         }
 
         it("should be able to analyze a simple object array initialization") {
-            evaluateMethod("simpleObjectArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleObjectArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 46
@@ -284,11 +284,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                     returnIndex, varray
                 ) should be(ComputedValue(IntegerRange(4)))
 
-            })
+            }
         }
 
         it("should be able to analyze a an object array initialization with different concrete types") {
-            evaluateMethod("differentTypesInOneArrayInitialization", domain ⇒ {
+            evaluateMethod("differentTypesInOneArrayInitialization") { domain ⇒
                 import domain._
 
                 val returnIndex = 44
@@ -379,11 +379,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                     varray
                 ).result.computationalType.computationalTypeCategory.id should be(1)
 
-            })
+            }
         }
 
         it("should be able to analyze a simple 4-dimensional array initialization") {
-            evaluateMethod("a4DimensionalArray", domain ⇒ {
+            evaluateMethod("a4DimensionalArray") { domain ⇒
                 import domain._
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
                 val fourDimIntArray = ArrayType(ArrayType(twoDimIntArray))
@@ -393,11 +393,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 operandsArray(8).head should be(
                     InitializedArrayValue(4, fourDimIntArray, List(2, 3))
                 )
-            })
+            }
         }
 
         it("should be able to analyze a simple 2-dimensional array initialization") {
-            evaluateMethod("a2DimensionalArray", domain ⇒ {
+            evaluateMethod("a2DimensionalArray") { domain ⇒
                 import domain._
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
                 val operandsArray = domain.operandsArray
@@ -414,11 +414,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                     InitializedArrayValue(2, twoDimIntArray, List(2))
                 )
 
-            })
+            }
         }
 
         it("should be able to analyze a simple 3-dimensional array initialization") {
-            evaluateMethod("a3DimensionalArray", domain ⇒ {
+            evaluateMethod("a3DimensionalArray") { domain ⇒
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
                 val operandsArray = domain.operandsArray
@@ -435,11 +435,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                     InitializedArrayValue(3, threeDimIntArray, List(2))
                 )
 
-            })
+            }
         }
 
         it("should be able to analyze a 3-dimensional array initialization with potential exceptions") {
-            evaluateMethod("a3DimensionalArrayWithPotentialExceptions", domain ⇒ {
+            evaluateMethod("a3DimensionalArrayWithPotentialExceptions") { domain ⇒
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
                 val operandsArray = domain.operandsArray
@@ -467,14 +467,14 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 operandsArray(68).head should be(
                     InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2))
                 )
-            })
+            }
         }
     }
 
     describe("array accesses that lead to exceptions") {
 
         it("if an index is out of bounds a corresponding exception should be thrown even if the store is potentially impossible") {
-            evaluateMethod("simpleByteArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleByteArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 21
@@ -492,11 +492,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arraystore(returnIndex, ByteValue(4), IntegerValue(returnIndex, -1), varray) should be(expectedException)
                 arraystore(returnIndex, LongValue(4), IntegerValue(returnIndex, 4), varray) should be(expectedException)
                 arraystore(returnIndex, LongValue(4), IntegerValue(returnIndex, -1), varray) should be(expectedException)
-            })
+            }
         }
 
         it("should lead to an array store exception if the value cannot be stored in the array") {
-            evaluateMethod("simpleStringArrayInitializationWithLength4", domain ⇒ {
+            evaluateMethod("simpleStringArrayInitializationWithLength4") { domain ⇒
                 import domain._
 
                 val returnIndex = 26
@@ -513,13 +513,13 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val array = InitializedObjectValue(returnIndex, ObjectType.Class)
                 val index = IntegerValue(returnIndex, 3)
                 arraystore(returnIndex, array, index, varray) should be(expectedException)
-            })
+            }
         }
     }
 
     describe("array stores") {
         it("should be able to analyze a method that updates a value stored in an array in a branch") {
-            evaluateMethod("setValInBranch", domain ⇒ {
+            evaluateMethod("setValInBranch") { domain ⇒
                 import domain._
 
                 val returnIndex = 20
@@ -543,13 +543,31 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 arrayRef19.load(19, IntegerValue(origin = 16, 1)) should be(ComputedValue(IntegerRange(origin = 17, 1, 2)))
                 arrayRef19.load(19, IntegerValue(origin = 16, 0)) should be(ComputedValue(IntegerValue(origin = 17, 0)))
 
-            })
+            }
+        }
+
+        it("should be able to detect a possible array store exception and the default array value") {
+            evaluateMethod("arrayStoreException") { domain ⇒
+                import domain._
+
+                val returnIndex = 20
+
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
+
+                val returnedValue = arrayload(returnIndex, IntegerValue(returnIndex, 0), varray)
+                val exceptions = List(ObjectType.ArrayStoreException)
+                returnedValue should be(ComputedValueOrException(null, exceptions))
+            }
         }
     }
 
     describe("complex array operations") {
         it("should be able to analyze that every returned array is null") {
-            evaluateMethod("setArrayNull", domain ⇒ {
+            evaluateMethod("setArrayNull") { domain ⇒
                 import domain._
 
                 val returnIndex = 7
@@ -566,11 +584,11 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
                 arrayload(returnIndex, IntegerValue(1), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
 
-            })
+            }
         }
 
         it("should be able to analyze array initializations of different number types with different length") {
-            evaluateMethod("branchInits", domain ⇒ {
+            evaluateMethod("branchInits") { domain ⇒
                 import domain._
 
                 val returnIndex = 98
@@ -581,7 +599,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
                 isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
-            })
+            }
         }
 
     }

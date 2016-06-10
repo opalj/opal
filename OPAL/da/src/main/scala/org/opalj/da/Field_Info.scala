@@ -32,12 +32,14 @@ package da
 import scala.xml.Node
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Field_Info(
         access_flags:     Int,
@@ -46,26 +48,32 @@ case class Field_Info(
         attributes:       Attributes
 ) {
 
+    def size: Int = 2 + 2 + 2 + 2 /* attributes_count*/ + attributes.view.map(_.size).sum
+
     /**
      * @param definingTypeFQN The FQN of the class defining this field.
      */
     def toXHTML(definingTypeFQN: String)(implicit cp: Constant_Pool): Node = {
-        // val definingType = abbreviateFQN(definingTypeFQN, parseFieldType(cp(descriptor_index).asString)) 
-        val definingType = <span class="fqn">{ definingTypeFQN }</span>
+        val TypeInfo(fieldType, isBaseType) = parseFieldType(cp(descriptor_index).asString)
+        val typeInfo =
+            if (isBaseType)
+                fieldType
+            else
+                abbreviateFQN(definingTypeFQN, fieldType)
 
         // create row which describes the field
         <tr class="field">
             <td class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</td>
-            <td>{ definingType }</td>
+            <td>{ typeInfo }</td>
             <td class="field_name"> { cp(name_index).asString } </td>
             <td>{ attributesToXHTML(cp) }</td>
         </tr>
     }
 
-    def attributesToXHTML(implicit cp: Constant_Pool) = {
+    def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
         if (attributes.nonEmpty)
-            for (attribute ← attributes) yield attribute.toXHTML(cp)
+            attributes.map(_.toXHTML(cp))
         else
-            Seq.empty[Node]
+            NodeSeq.Empty
     }
 }

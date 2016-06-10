@@ -35,9 +35,9 @@ package da
  * @author Isbel Isbel
  * @author Noorulla Sharief
  */
-case class Deprecated_attribute(attribute_name_index: Int) extends Attribute {
+case class Deprecated_attribute(attribute_name_index: Constant_Pool_Index) extends Attribute {
 
-    def attribute_length = 2
+    final override def attribute_length = 0
 
 }
 

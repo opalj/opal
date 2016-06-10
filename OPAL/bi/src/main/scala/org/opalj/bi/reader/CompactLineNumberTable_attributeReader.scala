@@ -70,17 +70,22 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
         LineNumberTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
-                LineNumberTable_attribute(
-                    cp,
-                    attribute_name_index,
-                    attribute_length,
-                    {
-                        val table_length = in.readUnsignedShort()
-                        val data = new Array[Byte](table_length * 4)
-                        in.readFully(data)
-                        data
-                    }
-                )
+                val table_length = in.readUnsignedShort()
+                if (table_length > 0 || reifyEmptyAttributes) {
+                    LineNumberTable_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        {
+                            val data = new Array[Byte](table_length * 4)
+                            in.readFully(data)
+                            data
+                        }
+                    )
+                } else {
+                    null
+                }
+
             }
         )
     )

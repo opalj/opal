@@ -38,6 +38,7 @@ package instructions
  */
 case class INVOKESPECIAL(
         declaringClass:   ObjectType, // an interface or class type to be precise
+        isInterface:      Boolean,
         name:             String, // an interface or class type to be precise
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {

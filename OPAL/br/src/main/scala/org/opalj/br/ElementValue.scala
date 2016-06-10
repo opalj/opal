@@ -64,10 +64,7 @@ sealed trait BaseTypeElementValue extends ElementValue {
     def baseType: BaseType
 }
 
-case class ByteValue(
-    value: Byte
-)
-        extends BaseTypeElementValue {
+case class ByteValue(value: Byte) extends BaseTypeElementValue {
 
     override def baseType: BaseType = ByteType
 
@@ -82,10 +79,7 @@ object ByteValue {
 
 }
 
-case class CharValue(
-    value: Char
-)
-        extends BaseTypeElementValue {
+case class CharValue(value: Char) extends BaseTypeElementValue {
 
     override def baseType: BaseType = CharType
 
@@ -100,10 +94,7 @@ object CharValue {
 
 }
 
-case class DoubleValue(
-    value: Double
-)
-        extends BaseTypeElementValue {
+case class DoubleValue(value: Double) extends BaseTypeElementValue {
 
     override def baseType: BaseType = DoubleType
 
@@ -118,10 +109,7 @@ object DoubleValue {
 
 }
 
-case class FloatValue(
-    value: Float
-)
-        extends BaseTypeElementValue {
+case class FloatValue(value: Float) extends BaseTypeElementValue {
 
     override def baseType: BaseType = FloatType
 
@@ -136,10 +124,7 @@ object FloatValue {
 
 }
 
-case class IntValue(
-    value: Int
-)
-        extends BaseTypeElementValue {
+case class IntValue(value: Int) extends BaseTypeElementValue {
 
     override def baseType: BaseType = IntegerType
 
@@ -154,10 +139,7 @@ object IntValue {
 
 }
 
-case class LongValue(
-    value: Long
-)
-        extends BaseTypeElementValue {
+case class LongValue(value: Long) extends BaseTypeElementValue {
 
     override def baseType: BaseType = LongType
 
@@ -172,10 +154,7 @@ object LongValue {
 
 }
 
-case class ShortValue(
-    value: Short
-)
-        extends BaseTypeElementValue {
+case class ShortValue(value: Short) extends BaseTypeElementValue {
 
     override def baseType: BaseType = ShortType
 
@@ -190,9 +169,7 @@ object ShortValue {
 
 }
 
-case class BooleanValue(
-    value: Boolean
-)
+case class BooleanValue(value: Boolean)
         extends BaseTypeElementValue {
 
     override def baseType: BaseType = BooleanType
@@ -208,10 +185,7 @@ object BooleanValue {
 
 }
 
-case class StringValue(
-    value: String
-)
-        extends ElementValue {
+case class StringValue(value: String) extends ElementValue {
 
     final override def valueType = ObjectType.String
 
@@ -226,10 +200,7 @@ object StringValue {
 
 }
 
-case class ClassValue(
-    value: Type
-)
-        extends ElementValue {
+case class ClassValue(value: Type) extends ElementValue {
 
     final override def valueType = ObjectType.Class
 
@@ -244,11 +215,7 @@ object ClassValue {
 
 }
 
-case class EnumValue(
-    enumType:  ObjectType,
-    constName: String
-)
-        extends ElementValue {
+case class EnumValue(enumType: ObjectType, constName: String) extends ElementValue {
 
     final override def valueType = enumType
 
@@ -263,10 +230,7 @@ object EnumValue {
 
 }
 
-case class ArrayValue(
-    values: IndexedSeq[ElementValue]
-)
-        extends ElementValue {
+case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
 
     // by design/specification the first value determines the type of the Array
     final override def valueType = ArrayType(values(0).valueType)
@@ -282,10 +246,7 @@ object ArrayValue {
 
 }
 
-case class AnnotationValue(
-    annotation: Annotation
-)
-        extends ElementValue {
+case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     final override def valueType = annotation.annotationType
 

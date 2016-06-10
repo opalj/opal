@@ -40,9 +40,10 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class ElementValuePair(
-        element_name_index: Int,
+        element_name_index: Constant_Pool_Index,
         element_value:      ElementValue
 ) {
 
@@ -50,4 +51,5 @@ case class ElementValuePair(
         val en = cp(element_name_index).toString(cp)
         <span class="element_value_pair"><span class="element_name">{ en }</span>={ element_value.toXHTML }</span>
     }
+
 }

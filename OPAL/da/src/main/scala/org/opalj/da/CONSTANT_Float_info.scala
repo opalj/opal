@@ -35,10 +35,9 @@ import scala.xml.Node
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Float_info(
-    value: Float
-)
-        extends Constant_Pool_Entry {
+case class CONSTANT_Float_info(value: Float) extends Constant_Pool_Entry {
+
+    override final def size: Int = 1 + 4
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Float
 

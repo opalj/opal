@@ -35,10 +35,11 @@ package da
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
-case class Synthetic_attribute(attribute_name_index: Int) extends Attribute {
+case class Synthetic_attribute(attribute_name_index: Constant_Pool_Index) extends Attribute {
 
-    def attribute_length = 0
+    final override def attribute_length = 0
 
 }
 

@@ -30,27 +30,67 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.io.Source
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
+import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_SUPER
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class ClassFile(
         constant_pool: Constant_Pool,
         minor_version: Int,
         major_version: Int,
-        access_flags:  Int,
+        access_flags:  Int                 = ACC_PUBLIC.mask | ACC_SUPER.mask,
         this_class:    Constant_Pool_Index,
         super_class:   Constant_Pool_Index,
-        interfaces:    IndexedSeq[Constant_Pool_Index],
-        fields:        Fields,
-        methods:       Methods,
-        attributes:    Attributes
+        interfaces:    Interfaces          = IndexedSeq.empty,
+        fields:        Fields              = IndexedSeq.empty,
+        methods:       Methods             = IndexedSeq.empty,
+        attributes:    Attributes          = IndexedSeq.empty
 ) {
+
+    assert(
+        (constant_pool(0) eq null) ||
+            constant_pool(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore]
+    )
+
+    /**
+     * Size of the class file in bytes.
+     */
+    def size: Int = {
+        4 + // magic
+            2 + // minor_version
+            2 + // major_version
+            2 + // constant_pool_count
+            {
+                val cpIt = constant_pool.iterator
+                cpIt.next // the first entry is always empty in the class file
+                cpIt.
+                    filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
+                    map(_.size).
+                    sum
+            } +
+            2 + // access_flags
+            2 + // this_class
+            2 + // super_class
+            2 + // interfaces count 
+            interfaces.length * 2 + // interfaces[interfaces_count]
+            2 + // fields_count
+            fields.view.map(_.size).sum +
+            2 + // methods_count
+            methods.view.map(_.size).sum +
+            2 + // attributes_count
+            attributes.view.map(_.size).sum
+    }
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
@@ -67,7 +107,7 @@ case class ClassFile(
             if (super_class != 0)
                 <span class="extends">{ "extends " }<span class="super_class">{ cp(super_class).toString }</span></span>
             else
-                scala.xml.NodeSeq.Empty
+                NodeSeq.Empty
         } ++ {
             if (interfaces.nonEmpty)
                 <span class="implements">
@@ -75,7 +115,7 @@ case class ClassFile(
                     { interfaces.tail.map(i ⇒ <span class="interface">{ ", "+cp(i).toString }</span>) }
                 </span>
             else
-                scala.xml.NodeSeq.Empty
+                NodeSeq.Empty
         }
     }
 
@@ -97,9 +137,7 @@ case class ClassFile(
         </ol>
     }
 
-    def attributesToXHTML: Seq[Node] = {
-        for (attribute ← attributes) yield attributeToXHTML(attribute)
-    }
+    def attributesToXHTML: Seq[Node] = attributes.map(attributeToXHTML(_))
 
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
@@ -109,7 +147,7 @@ case class ClassFile(
     }
 
     def fieldsToXHTML: Seq[Node] = {
-        <table class="fields">{ for (field ← fields) yield field.toXHTML(fqn) }</table>
+        <table class="fields">{ fields.map(_.toXHTML(fqn)) }</table>
     }
 
     def methodsToXHTML: Seq[Node] = {
@@ -167,6 +205,10 @@ case class ClassFile(
                     <div id="class_file_version">
                         Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
                     </div>
+                    <div>
+                        Size:&nbsp;{ size }
+                        bytes
+                    </div>
                 </div>
                 <div class="constant_pool">
                     <details>
@@ -202,25 +244,19 @@ case class ClassFile(
 object ClassFile {
 
     final val ResetCSS: String = {
-        process(this.getClass().getResourceAsStream("reset.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        val resource = this.getClass().getResourceAsStream("reset.css")
+        process(resource)(Source.fromInputStream(_).mkString)
     }
 
     final val TheCSS: String = {
-        process(this.getClass().getResourceAsStream("style.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        val resource = this.getClass().getResourceAsStream("style.css")
+        process(resource)(Source.fromInputStream(_).mkString)
     }
 
-    final val FilterJS = {
-        loadJavaScript("filter.js")
-    }
+    final val FilterJS = loadJavaScript("filter.js")
 
     private def loadJavaScript(js: String): String = {
-        process(this.getClass().getResourceAsStream(js))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+        process(this.getClass().getResourceAsStream(js))(Source.fromInputStream(_).mkString)
     }
 
 }

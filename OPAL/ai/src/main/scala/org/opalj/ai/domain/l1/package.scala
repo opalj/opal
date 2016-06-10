@@ -33,7 +33,7 @@ package domain
 import org.opalj.br.Code
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESPECIAL
-
+import org.opalj.ai.collectPCWithOperands
 /**
  * Commonly useful methods.
  *
@@ -73,8 +73,8 @@ package object l1 {
         // as usual in OPAL, we assume that the bytecode is valid; i.e., there will
         // be one constructor call
 
-        (org.opalj.ai.collectPCWithOperands(domain)(code, operandsArray) {
-            case (pc, constructorCall @ INVOKESPECIAL(_, "<init>", md), operands) if operands.length >= md.parametersCount &&
+        (collectPCWithOperands(domain)(code, operandsArray) {
+            case (pc, constructorCall @ INVOKESPECIAL(_, _, "<init>", md), operands) if operands.length >= md.parametersCount &&
                 domain.asObjectValue(operands(md.parametersCount)).origin == receiverOrigin ⇒ pc
         })
     }

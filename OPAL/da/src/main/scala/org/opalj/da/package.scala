@@ -29,14 +29,15 @@
 package org.opalj
 
 import scala.xml.Node
-
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
 /**
+ *
  * Defines convenience methods related to reading in class files.
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 package object da {
 
@@ -48,6 +49,8 @@ package object da {
     type Fields = IndexedSeq[Field_Info]
 
     type Attributes = Seq[Attribute]
+
+    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
     def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
         val rt = cp(cpIndex).toString(cp)
@@ -61,9 +64,7 @@ package object da {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
 
-    def asJavaObjectType(t: String): String = {
-        t.replace('/', '.')
-    }
+    def asJavaObjectType(t: String): String = t.replace('/', '.')
 
     def parseReturnType(type_index: Int)(implicit cp: Constant_Pool): String = {
         parseReturnType(cp(type_index).toString)
@@ -73,26 +74,42 @@ package object da {
         if (rt.charAt(0) == 'V')
             "void"
         else
-            parseFieldType(rt)
+            parseFieldType(rt).javaTypeName
     }
 
-    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): String = {
+    /**
+     * Returns a string representation of the type and the information whether the (element) type
+     * is a base type.
+     */
+    // TODO return FieldTypeInfo structure 
+    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
 
-    def parseFieldType(descriptor: String): String = {
+    /**
+     * Returns a string representation of the type and the information whether the (element) type
+     * is a base type.
+     */
+    def parseFieldType(descriptor: String): TypeInfo = {
         (descriptor.charAt(0): @scala.annotation.switch) match {
-            case 'B' ⇒ "byte"
-            case 'C' ⇒ "char"
-            case 'D' ⇒ "double"
-            case 'F' ⇒ "float"
-            case 'I' ⇒ "int"
-            case 'J' ⇒ "long"
-            case 'S' ⇒ "short"
-            case 'Z' ⇒ "boolean"
-            case 'L' ⇒ descriptor.substring(1, descriptor.length - 1).replace('/', '.')
-            case '[' ⇒ parseFieldType(descriptor.substring(1))+"[]"
-            case _   ⇒ throw new IllegalArgumentException(descriptor+" is not a valid field type descriptor")
+            case 'B' ⇒ ByteTypeInfo
+            case 'C' ⇒ CharTypeInfo
+            case 'D' ⇒ DoubleTypeInfo
+            case 'F' ⇒ FloatTypeInfo
+            case 'I' ⇒ IntTypeInfo
+            case 'J' ⇒ LongTypeInfo
+            case 'S' ⇒ ShortTypeInfo
+            case 'Z' ⇒ BooleanTypeInfo
+            case 'L' ⇒
+                val javaTypeName = descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+                ObjectTypeInfo(javaTypeName)
+            case '[' ⇒
+                val TypeInfo(componentType, elementTypeIsBaseType) = parseFieldType(descriptor.substring(1))
+                ArrayTypeInfo(componentType+"[]", elementTypeIsBaseType)
+
+            case _ ⇒
+                val message = s"$descriptor is not a valid field type descriptor"
+                throw new IllegalArgumentException(message)
         }
     }
 
@@ -108,8 +125,7 @@ package object da {
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType =
-            parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1))
 
         s"$returnType $methodName(${parameterTypes.mkString(", ")})"
     }
@@ -126,8 +142,7 @@ package object da {
             parameterTypes = parameterTypes :+ ft
             index = nextIndex
         }
-        val returnType =
-            parseReturnType(descriptor.substring(index + 1))
+        val returnType = parseReturnType(descriptor.substring(index + 1))
 
         <span class="cp_method">
             <span class="method_returntype fqn">{ returnType }</span>
@@ -160,7 +175,7 @@ package object da {
                 )
             case _ ⇒
                 ( // this is the return tuple
-                    parseFieldType(td.toString),
+                    parseFieldType(td.toString).javaTypeName,
                     startIndex + 1
                 )
         }

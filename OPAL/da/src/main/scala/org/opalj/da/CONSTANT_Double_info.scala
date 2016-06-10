@@ -35,10 +35,9 @@ import scala.xml.Node
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Double_info(
-    value: Double
-)
-        extends Constant_Pool_Entry {
+case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {
+
+    override final def size: Int = { 1 + 4 + 4 }
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Double
 
@@ -50,7 +49,7 @@ case class CONSTANT_Double_info(
         </span>
 
     override def asInlineNode(implicit cp: Constant_Pool): Node =
-        <span class="contant_value">{ value.toString+"d" }</span>
+        <span class="contant_value">{ value.toString + 'd' }</span>
 
     override def toString(implicit cp: Constant_Pool): String = value.toString
 

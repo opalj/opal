@@ -114,12 +114,17 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     registerAttributeReader(
         BootstrapMethods_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                BootstrapMethods_attribute(
-                    cp,
-                    attribute_name_index,
-                    in.readInt /* attribute_length */ ,
-                    repeat(in.readUnsignedShort) { BootstrapMethod(cp, in) }
-                )
+                val attribute_length = in.readInt
+                val num_bootstrap_methods = in.readUnsignedShort
+                if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
+                    BootstrapMethods_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) }
+                    )
+                } else
+                    null
             }
         )
     )

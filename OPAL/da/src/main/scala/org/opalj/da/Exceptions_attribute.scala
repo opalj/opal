@@ -45,15 +45,13 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class Exceptions_attribute(
-        attribute_name_index:  Int,
+        attribute_name_index:  Constant_Pool_Index,
         exception_index_table: IndexedSeq[Constant_Pool_Index]
 ) extends Attribute {
 
-    assert(exception_index_table.nonEmpty)
+    override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
-    def attribute_length: Int = 2 + exception_index_table.size * 2
-
-    def attribute_name = Exceptions_attribute.name
+    override def attribute_name(implicit cp: Constant_Pool) = Exceptions_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
@@ -61,11 +59,13 @@ case class Exceptions_attribute(
 
     def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
         <span>{
-            exception_index_table.tail.foldLeft(Seq(cp(exception_index_table.head).asInlineNode)) { (c, i) ⇒
+            val head = Seq(cp(exception_index_table.head).asInlineNode)
+            exception_index_table.tail.foldLeft(head) { (c, i) ⇒
                 c ++ Seq(Text(", "), cp(i).asInlineNode)
             }
         }</span>
     }
+
 }
 object Exceptions_attribute {
 

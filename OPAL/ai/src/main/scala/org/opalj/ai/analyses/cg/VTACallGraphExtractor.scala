@@ -399,7 +399,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                     }
 
                 case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     val operands = result.operandsArray(pc)
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     if (operands != null) {
@@ -411,7 +411,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                     }
 
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declaringClass, name, descriptor) = instruction
+                    val INVOKESTATIC(declaringClass, _, name, descriptor) = instruction
                     val operands = result.operandsArray(pc)
                     if (operands != null) {
                         context.staticCall(

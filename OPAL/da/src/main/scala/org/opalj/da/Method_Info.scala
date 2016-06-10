@@ -30,12 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import org.opalj.bi.VisibilityModifier
 
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Method_Info(
         access_flags:     Int,
@@ -44,21 +46,22 @@ case class Method_Info(
         attributes:       Attributes
 ) {
 
+    def size: Int = 2 + 2 + 2 + 2 /*attributes_count*/ + attributes.view.map(_.size).sum
+
     /**
      * @param definingTypeFQN The FQN of the class defining this field.
      */
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val flags = methodAccessFlagsToString(access_flags)
         val filter_flags =
-            org.opalj.bi.VisibilityModifier.get(access_flags) match {
+            VisibilityModifier.get(access_flags) match {
                 case None ⇒
                     val ac = flags
                     if (ac.length() == 0)
                         "default"
                     else
                         ac+" default"
-                case _ ⇒
-                    flags
+                case _ ⇒ flags
             }
 
         val name = cp(name_index).toString(cp)
@@ -75,13 +78,9 @@ case class Method_Info(
     }
 
     private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield {
-            attribute match {
-                case codeAttribute: Code_attribute ⇒
-                    codeAttribute.toXHTML(methodIndex)
-                case _ ⇒
-                    attribute.toXHTML(cp)
-            }
-        }
+        attributes map (_ match {
+            case codeAttribute: Code_attribute ⇒ codeAttribute.toXHTML(methodIndex)
+            case attribute                     ⇒ attribute.toXHTML(cp)
+        })
     }
 }

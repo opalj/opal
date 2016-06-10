@@ -200,7 +200,7 @@ class CHACallGraphExtractor(
                     context.virtualCall(pc, declaringClass, name, descriptor, true)
 
                 case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
                     // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     context.nonVirtualCall(
                         pc, declaringClass, name, descriptor,
@@ -208,7 +208,7 @@ class CHACallGraphExtractor(
                     )
 
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declaringClass, name, descriptor) = instruction
+                    val INVOKESTATIC(declaringClass, _, name, descriptor) = instruction
                     context.staticCall(pc, declaringClass, name, descriptor)
 
                 case _ ⇒

@@ -31,6 +31,12 @@ package tac
 
 import org.opalj.br.cfg.CFG
 
+/**
+ * Common interface of all code optimizers that operate on the three-address code
+ * representation.
+ *
+ * @author Michael Eichberg
+ */
 trait TACOptimization {
 
     /**
@@ -39,6 +45,11 @@ trait TACOptimization {
     def optimize(tac: TACOptimizationResult): TACOptimizationResult
 }
 
+/**
+ * Encapsulates the result of an optimization/transformation of some three-address code.
+ *
+ * @author Michael Eichberg
+ */
 case class TACOptimizationResult(
     code:           Array[Stmt],
     cfg:            CFG,
@@ -47,6 +58,8 @@ case class TACOptimizationResult(
 
 /**
  * A very simple peephole optimizer which performs intra-basic block constant and copy propagation.
+ *
+ * @author Michael Eichberg
  */
 object SimplePropagation extends TACOptimization {
 

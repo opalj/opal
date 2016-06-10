@@ -35,9 +35,8 @@ package br
  * @author Michael Eichberg
  */
 case class RuntimeInvisibleTypeAnnotationTable(
-    typeAnnotations: TypeAnnotations
-)
-        extends TypeAnnotationTable {
+        typeAnnotations: TypeAnnotations
+) extends TypeAnnotationTable {
 
     final def isRuntimeVisible: Boolean = false
 

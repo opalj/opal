@@ -73,10 +73,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * u2 attribute_name_index;
      * u4 attribute_length;
      * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
-     * {    u2 inner_class_info_index;
-     *  u2 outer_class_info_index;
-     *  u2 inner_name_index;
-     *  u2 inner_class_access_flags;
+     *  {	u2 inner_class_info_index;
+     *  	u2 outer_class_info_index;
+     *  	u2 inner_name_index;
+     *  	u2 inner_class_access_flags;
      *  } classes[number_of_classes];
      * }
      * </pre>
@@ -85,17 +85,22 @@ trait InnerClasses_attributeReader extends AttributeReader {
         InnerClasses_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 /*val attribute_length =*/ in.readInt()
-                InnerClasses_attribute(
-                    cp,
-                    attribute_name_index,
-                    repeat(in.readUnsignedShort) {
-                        InnerClassesEntry(
-                            cp,
-                            in.readUnsignedShort, in.readUnsignedShort,
-                            in.readUnsignedShort, in.readUnsignedShort
-                        )
-                    }
-                )
+                val number_of_classes = in.readUnsignedShort
+                if (number_of_classes > 0 || reifyEmptyAttributes) {
+                    InnerClasses_attribute(
+                        cp,
+                        attribute_name_index,
+                        repeat(number_of_classes) {
+                            InnerClassesEntry(
+                                cp,
+                                in.readUnsignedShort, in.readUnsignedShort,
+                                in.readUnsignedShort, in.readUnsignedShort
+                            )
+                        }
+                    )
+                } else {
+                    null
+                }
             }
         )
     )

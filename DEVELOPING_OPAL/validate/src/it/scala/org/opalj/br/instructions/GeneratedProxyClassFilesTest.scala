@@ -64,8 +64,9 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         Set.empty
                     )
                 val proxyMethodName = m.name + '$'+"proxy"
+                val tIsInterface = testProject.classFile(t).get.isInterfaceDeclaration
                 val invocationInstruction =
-                    if (testProject.classFile(t).get.isInterfaceDeclaration) {
+                    if (tIsInterface) {
                         INVOKEINTERFACE.opcode
                     } else if (m.isStatic) {
                         INVOKESTATIC.opcode
@@ -79,7 +80,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         definingType,
                         proxyMethodName,
                         m.descriptor,
-                        t,
+                        t, tIsInterface,
                         m.name,
                         m.descriptor,
                         invocationInstruction

@@ -32,30 +32,26 @@ package da
 import scala.xml.Node
 
 /**
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
-case class RuntimeInvisibleTypeAnnotations_attribute(
-        attribute_name_index: Int,
-        attribute_length:     Int,
+case class RuntimeVisibleTypeAnnotations_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[TypeAnnotation]
-) extends Attribute {
+) extends TypeAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
+        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
     }
 
-    def annotationsToXHTML(implicit cp: Constant_Pool): Node = {
-        val annotationNodes = for (annotation ← annotations) yield annotation.toXHTML(cp)
-        <span>{ annotationNodes }</span>
-    }
 }
 
-object RuntimeInvisibleTypeAnnotations_attribute {
+object RuntimeVisibleTypeAnnotations_attribute {
 
-    val name = "RuntimeInvisibleTypeAnnotations"
+    val name = "RuntimeVisibleTypeAnnotations"
 
 }

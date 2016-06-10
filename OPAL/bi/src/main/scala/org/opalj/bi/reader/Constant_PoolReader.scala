@@ -30,10 +30,9 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-
 import scala.reflect.ClassTag
-
+import java.io.DataInputStream
+import java.io.ByteArrayInputStream
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
@@ -78,7 +77,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     protected def CONSTANT_Long_info(l: Long): CONSTANT_Long_info
     protected def CONSTANT_Double_info(d: Double): CONSTANT_Double_info
     protected def CONSTANT_NameAndType_info(name_index: Int, descriptor_index: Int): CONSTANT_NameAndType_info
-    protected def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info
+    protected def CONSTANT_Utf8_info(r: Array[Byte], s: String): CONSTANT_Utf8_info
     // JAVA 7 Constant Pool Entries
     protected def CONSTANT_MethodHandle_info(reference_kind: Int, reference_index: Int): CONSTANT_MethodHandle_info
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
@@ -97,26 +96,15 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    def registerDeferredAction(
-        cp: Constant_Pool
-    )(
-        deferredAction: ClassFile ⇒ ClassFile
-    ): Unit = {
+    def registerDeferredAction(cp: Constant_Pool)(deferredAction: ClassFile ⇒ ClassFile): Unit = {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
-        store.synchronized {
-            store += deferredAction
-        }
+        store.synchronized { store += deferredAction }
     }
 
-    override def applyDeferredActions(
-        cp:        Constant_Pool,
-        classFile: ClassFile
-    ): ClassFile = {
+    override def applyDeferredActions(cp: Constant_Pool, classFile: ClassFile): ClassFile = {
         var transformedClassFile = classFile
         val das = cp(0).asInstanceOf[DeferredActionsStore]
-        das.foreach { deferredAction ⇒
-            transformedClassFile = deferredAction(transformedClassFile)
-        }
+        das.foreach { deferredAction ⇒ transformedClassFile = deferredAction(transformedClassFile) }
         das.clear()
         transformedClassFile
     }
@@ -187,7 +175,25 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_Utf8_ID ⇒
                     i += 1
-                    CONSTANT_Utf8_info(in.readUTF)
+                    if (in.markSupported()) {
+                        in.mark(UShort.MaxValue)
+                        val length = in.readUnsignedShort
+                        val raw = new Array[Byte](length)
+                        in.readFully(raw)
+                        in.reset()
+                        val value = in.readUTF()
+                        CONSTANT_Utf8_info(raw, value)
+                    } else {
+                        val size = in.readUnsignedShort
+                        val raw = new Array[Byte](size)
+                        in.readFully(raw)
+                        val data = new Array[Byte](size + 2)
+                        data(0) = (0xff & (size >> 8)).toByte
+                        data(1) = (0xff & size).toByte
+                        System.arraycopy(raw, 0, data, 2, size)
+                        val tin = new DataInputStream(new ByteArrayInputStream(data))
+                        CONSTANT_Utf8_info(raw, tin.readUTF)
+                    }
                 case CONSTANT_MethodHandle_ID ⇒
                     i += 1
                     CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
@@ -197,10 +203,10 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                 case CONSTANT_InvokeDynamic_ID ⇒
                     i += 1
                     CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+
                 case _ ⇒
-                    throw new BytecodeProcessingFailedException(
-                        s"unsupported constant pool tag id: $tag"
-                    )
+                    val message = s"unsupported constant pool tag id: $tag"
+                    throw new BytecodeProcessingFailedException(message)
             }
         }
         constant_pool_entries

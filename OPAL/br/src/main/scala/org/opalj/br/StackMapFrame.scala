@@ -34,55 +34,75 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait StackMapFrame /*extends org.opalj.bat.StackMapFrame*/ {
+sealed trait StackMapFrame {
     type VerificationTypeInfo = br.VerificationTypeInfo
     // [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     // [DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
     def frameType: Int
 
-    //final def frame_type = frameType 
 }
 
-final case class SameFrame(frameType: Int)
-    extends StackMapFrame
+final case class SameFrame(frameType: Int) extends StackMapFrame
 
 final case class SameLocals1StackItemFrame(
     frameType:                     Int,
     verificationTypeInfoStackItem: VerificationTypeInfo
-)
-        extends StackMapFrame
+) extends StackMapFrame
 
 final case class SameLocals1StackItemFrameExtended(
-    frameType:                     Int,
-    offsetDelta:                   Int,
-    verificationTypeInfoStackItem: VerificationTypeInfo
-)
-        extends StackMapFrame
+        offsetDelta:                   Int,
+        verificationTypeInfoStackItem: VerificationTypeInfo
+) extends StackMapFrame {
 
-final case class ChopFrame(
-    frameType:   Int,
-    offsetDelta: Int
-)
-        extends StackMapFrame
+    final def frameType: Int = 247
 
-final case class SameFrameExtended(
-    frameType:   Int,
-    offsetDelta: Int
-)
-        extends StackMapFrame
+}
+object SameLocals1StackItemFrameExtended {
+
+    def apply(
+        frameType:                     Int,
+        offsetDelta:                   Int,
+        verificationTypeInfoStackItem: VerificationTypeInfo
+    ): SameLocals1StackItemFrameExtended = {
+        assert(frameType == 247)
+        new SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStackItem)
+    }
+
+}
+
+sealed trait ChopFrame extends StackMapFrame {
+    def offsetDelta: Int
+}
+object ChopFrame {
+
+    def apply(frameType: Int, offsetDelta: Int): ChopFrame = {
+        frameType match {
+            case 248 ⇒ new ChopFrame248(offsetDelta)
+            case 249 ⇒ new ChopFrame249(offsetDelta)
+            case 250 ⇒ new ChopFrame250(offsetDelta)
+        }
+    }
+
+    def unapply(cf: ChopFrame): Option[(Int, Int)] = Some((cf.frameType, cf.offsetDelta))
+}
+final case class ChopFrame248(offsetDelta: Int) extends ChopFrame { final def frameType: Int = 248 }
+final case class ChopFrame249(offsetDelta: Int) extends ChopFrame { final def frameType: Int = 249 }
+final case class ChopFrame250(offsetDelta: Int) extends ChopFrame { final def frameType: Int = 250 }
+
+final case class SameFrameExtended(offsetDelta: Int) extends StackMapFrame {
+    final def frameType: Int = 251
+}
 
 final case class AppendFrame(
     frameType:                  Int,
     offsetDelta:                Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals
-)
-        extends StackMapFrame
+) extends StackMapFrame
 
 final case class FullFrame(
     frameType:                  Int,
     offsetDelta:                Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals,
     verificationTypeInfoStack:  VerificationTypeInfoStack
-)
-        extends StackMapFrame
+) extends StackMapFrame

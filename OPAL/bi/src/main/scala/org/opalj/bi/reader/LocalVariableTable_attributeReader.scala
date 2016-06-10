@@ -93,7 +93,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
 
                 val attribute_length = in.readInt()
                 val entriesCount = in.readUnsignedShort()
-                if (entriesCount > 0)
+                if (entriesCount > 0 || reifyEmptyAttributes) {
                     LocalVariableTable_attribute(
                         cp,
                         attribute_name_index,
@@ -111,7 +111,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                             }
                         }
                     )
-                else {
+                } else {
                     null
                 }
             }

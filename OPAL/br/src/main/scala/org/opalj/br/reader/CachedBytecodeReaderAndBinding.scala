@@ -236,15 +236,13 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        deferredInvokedynamicResolution(
-                            classFile, cp, cpEntry, instructions, index
-                        )
+                        deferredInvokedynamicResolution(classFile, cp, cpEntry, instructions, index)
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
                 case 185 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, _, name, methodDescriptor) = methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     INVOKEINTERFACE(
@@ -253,29 +251,23 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                         methodDescriptor
                     )
                 case 183 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp)
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESPECIAL(
-                        declaringClass.asObjectType,
-                        cache.MethodName(name),
-                        methodDescriptor
+                        declaringClass.asObjectType, isInterface,
+                        cache.MethodName(name), methodDescriptor
                     )
                 case 184 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESTATIC(
-                        declaringClass.asObjectType,
-                        cache.MethodName(name),
-                        methodDescriptor
+                        declaringClass.asObjectType, isInterface,
+                        cache.MethodName(name), methodDescriptor
                     )
                 case 182 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-                    INVOKEVIRTUAL(
-                        declaringClass,
-                        cache.MethodName(name),
-                        methodDescriptor
-                    )
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, _, name, methodDescriptor) = methodRef
+                    INVOKEVIRTUAL(declaringClass, cache.MethodName(name), methodDescriptor)
                 case 128 ⇒ IOR
                 case 112 ⇒ IREM
                 case 172 ⇒ IRETURN

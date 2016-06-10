@@ -134,7 +134,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         instructions should be(Array(
                             ALOAD_0,
                             INVOKESPECIAL(
-                                ObjectType.Object,
+                                ObjectType.Object, false,
                                 "<init>",
                                 NoArgumentAndNoReturnValueMethodDescriptor
                             ),
@@ -183,7 +183,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ) ++
                             loadParametersInstructions ++
                             Array(
-                                INVOKESPECIAL(classFile.thisType, "<init>", constructor.descriptor),
+                                INVOKESPECIAL(classFile.thisType, false, "<init>", constructor.descriptor),
                                 null,
                                 null,
                                 ARETURN
@@ -206,7 +206,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val body = method.body.get
                     if (calleeMethod.isStatic) {
                         body.instructions should contain(INVOKESTATIC(
-                            calleeType,
+                            calleeType, false,
                             calleeMethod.name,
                             calleeMethod.descriptor
                         ))
@@ -218,7 +218,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ))
                     } else if (calleeMethod.isPrivate) {
                         body.instructions should contain(INVOKESPECIAL(
-                            calleeType,
+                            calleeType, false,
                             calleeMethod.name,
                             calleeMethod.descriptor
                         ))
@@ -374,7 +374,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ALOAD(12),
                         null,
                         INVOKESTATIC(
-                            calleeType,
+                            calleeType, false,
                             calleeMethod.name,
                             calleeMethod.descriptor
                         ),
@@ -400,7 +400,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ),
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor,
-                        StaticMethods,
+                        StaticMethods, false,
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor,
                         INVOKESTATIC.opcode
@@ -421,7 +421,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     DLOAD(9),
                     null,
                     INVOKESTATIC(
-                        StaticMethods,
+                        StaticMethods, false,
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor
                     ),
@@ -456,6 +456,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             "theProxy",
                             method.descriptor,
                             theType,
+                            false,
                             method.name,
                             MethodDescriptor(
                                 IntegerType +: method.parameterTypes,
@@ -508,6 +509,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             "theProxy",
                             method.descriptor,
                             theType,
+                            false,
                             method.name,
                             MethodDescriptor(
                                 IntegerType +: method.parameterTypes,
@@ -587,6 +589,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             "theProxy",
                             method.descriptor,
                             theType,
+                            false,
                             method.name,
                             MethodDescriptor(
                                 method.parameterTypes,
@@ -699,7 +702,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ),
                     "get",
                     MethodDescriptor(ObjectType.String, SomeType),
-                    SomeType,
+                    SomeType, false,
                     "<init>",
                     MethodDescriptor(ObjectType.String, SomeType),
                     INVOKESPECIAL.opcode
@@ -748,7 +751,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ),
                     "isFull",
                     MethodDescriptor(SomeOtherType, BooleanType),
-                    SomeOtherType,
+                    SomeOtherType, false,
                     "isThisFull",
                     MethodDescriptor.JustReturnsBoolean,
                     INVOKEVIRTUAL.opcode
@@ -780,7 +783,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ),
                         "$newInstance",
                         new NoArgumentMethodDescriptor(theType),
-                        theType,
+                        theType, false,
                         "newInstance",
                         new NoArgumentMethodDescriptor(theType),
                         INVOKESTATIC.opcode
@@ -801,7 +804,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         TypeDeclaration(proxyType, false, Some(ObjectType.Object), Set.empty),
                         "method",
                         methodDescriptor,
-                        receiverType,
+                        receiverType, false,
                         "method",
                         methodDescriptor,
                         INVOKESTATIC.opcode,
@@ -1014,29 +1017,29 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ) should be(
                     Array(
                         ILOAD_0,
-                        INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                        INVOKESTATIC(ObjectType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
                         null,
                         null,
                         ILOAD_1,
-                        INVOKESTATIC(ObjectType.Character, "valueOf", valueOfDescriptor(CharType)),
+                        INVOKESTATIC(ObjectType.Character, false, "valueOf", valueOfDescriptor(CharType)),
                         null,
                         null,
                         ILOAD_2,
-                        INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                        INVOKESTATIC(ObjectType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
                         null,
                         null,
                         ILOAD_3,
-                        INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                        INVOKESTATIC(ObjectType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
                         null,
                         null,
                         FLOAD(4),
                         null,
-                        INVOKESTATIC(ObjectType.Float, "valueOf", valueOfDescriptor(FloatType)),
+                        INVOKESTATIC(ObjectType.Float, false, "valueOf", valueOfDescriptor(FloatType)),
                         null,
                         null,
                         LLOAD(5),
                         null,
-                        INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                        INVOKESTATIC(ObjectType.Long, false, "valueOf", valueOfDescriptor(LongType)),
                         null,
                         null
                     )
@@ -1107,7 +1110,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         DUP,
                         ICONST_0,
                         ILOAD_0,
-                        INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                        INVOKESTATIC(ObjectType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
                         null,
                         null,
                         AASTORE,
@@ -1118,14 +1121,14 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         DUP,
                         ICONST_2,
                         ILOAD_2,
-                        INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                        INVOKESTATIC(ObjectType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
                         null,
                         null,
                         AASTORE,
                         DUP,
                         ICONST_3,
                         ILOAD_3,
-                        INVOKESTATIC(ObjectType.Boolean, "valueOf", valueOfDescriptor(BooleanType)),
+                        INVOKESTATIC(ObjectType.Boolean, false, "valueOf", valueOfDescriptor(BooleanType)),
                         null,
                         null,
                         AASTORE,
@@ -1138,7 +1141,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ICONST_5,
                         LLOAD(5),
                         null,
-                        INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                        INVOKESTATIC(ObjectType.Long, false, "valueOf", valueOfDescriptor(LongType)),
                         null,
                         null,
                         AASTORE,
@@ -1147,7 +1150,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         null,
                         ILOAD(7),
                         null,
-                        INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                        INVOKESTATIC(ObjectType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
                         null,
                         null,
                         AASTORE
@@ -1179,9 +1182,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             }
 
             it("should convert other types if possible, e.g. base types to wrappers") {
-                ClassFileFactory.returnAndConvertInstructions(ObjectType.Byte, ByteType) should be(
+                import ObjectType.Byte
+                ClassFileFactory.returnAndConvertInstructions(Byte, ByteType) should be(
                     Array(
-                        INVOKESTATIC(ObjectType.Byte, "valueOf", MethodDescriptor(ByteType, ObjectType.Byte)),
+                        INVOKESTATIC(Byte, false, "valueOf", MethodDescriptor(ByteType, Byte)),
                         null,
                         null,
                         ARETURN
@@ -1319,8 +1323,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             )
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
+        val calleeIsInterface = repository.classFile(calleeType).get.isInterfaceDeclaration
         val invocationInstruction: Opcode =
-            if (repository.classFile(calleeType).get.isInterfaceDeclaration) {
+            if (calleeIsInterface) {
                 INVOKEINTERFACE.opcode
             } else if (calleeMethod.isStatic) {
                 INVOKESTATIC.opcode
@@ -1332,12 +1337,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         val classFile =
             ClassFileFactory.Proxy(
                 definingType,
-                methodName,
-                methodDescriptor,
-                calleeType,
-                calleeMethodName,
-                calleeMethodDescriptor,
-                invocationInstruction
+                methodName, methodDescriptor,
+                calleeType, calleeIsInterface,
+                calleeMethodName, calleeMethodDescriptor, invocationInstruction
             )
 
         test(classFile, (calleeType, calleeMethod))

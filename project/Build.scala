@@ -64,6 +64,7 @@ object OPALBuild extends Build {
 		ai,
 		fpcfa,
 		da,
+		bc,
 		de,
 		av,
 		DeveloperTools,
@@ -103,6 +104,13 @@ object OPALBuild extends Build {
 		settings = buildSettings
 	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
+
+ 	lazy val bc = Project(
+ 		id = "BytecodeCreator",
+ 		base = file("OPAL/bc"),
+ 		settings = buildSettings
+ 	).dependsOn(da % "it->it;it->test;test->test;compile->compile")
+ 	 .configs(IntegrationTest)
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
@@ -151,15 +159,16 @@ object OPALBuild extends Build {
 		base = file("DEVELOPING_OPAL/validate"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(
-		DeveloperTools % "test->test;compile->compile;it->it",
-		av % "test->test;compile->compile;it->it")
+		DeveloperTools % "compile->compile;test->test;it->it;it->test",
+		av % "compile->compile;test->test;it->it",
+		da % "compile->compile;test->test;it->it")
 	 .configs(IntegrationTest)
 
 	lazy val demos = Project(
 		id = "Demos",
 		base = file("OPAL/demos"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av,fpcfa)
+	).dependsOn(av,fpcfa,bc)
 	 .configs(IntegrationTest)
 
 	/*****************************************************************************

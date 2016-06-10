@@ -34,11 +34,21 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import java.io.DataOutputStream
+import java.io.ByteArrayOutputStream
 
 /**
  * @author Michael Eichberg
  */
-case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
+case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_Pool_Entry {
+
+    override final def size: Int = {
+        1 + // tag
+            2 + // to store the length
+            // The length of the string in bytes if the modified UTF-8 encoding is used which
+            // is not equivalent to `value.length`.
+            raw.length
+    }
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
@@ -50,5 +60,21 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
     override def asInlineNode(implicit cp: Constant_Pool): Node =
         throw new UnsupportedOperationException
 
-    def toString(implicit cp: Constant_Pool): String = value
+    override def toString(implicit cp: Constant_Pool): String = value
 }
+object CONSTANT_Utf8 {
+
+    def apply(value: String): CONSTANT_Utf8_info = {
+        new CONSTANT_Utf8_info(
+            {
+                val bout = new ByteArrayOutputStream(value.length + 2)
+                val dout = new DataOutputStream(bout)
+                dout.writeUTF(value)
+                dout.flush()
+                bout.toByteArray()
+            },
+            value
+        )
+    }
+}
+

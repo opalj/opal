@@ -163,8 +163,8 @@ object MoreCheckers {
                     cloneables ← classHierarchy.allSubtypes(cloneable, false)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
-                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
-                        case _ ⇒ false;
+                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
+                        case _ ⇒ false
                     })
                 } yield classFile.thisType.fqn
             } else
@@ -174,6 +174,7 @@ object MoreCheckers {
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
         val cloneDoesNotCallSuperClone = time {
+            import MethodDescriptor.JustReturnsObject
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
@@ -181,11 +182,8 @@ object MoreCheckers {
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
-                    case INVOKESPECIAL(
-                        `superClass`,
-                        "clone",
-                        MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
-                    case _ ⇒ false;
+                    case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) ⇒ true
+                    case _ ⇒ false
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         } { t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
@@ -194,7 +192,9 @@ object MoreCheckers {
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         val cloneButNotCloneable = time {
             for {
-                classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superclassType.isDefined
+                classFile ← classFiles
+                if !classFile.isAnnotationDeclaration
+                if classFile.superclassType.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !classHierarchy.isSubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isNo
             } yield (classFile.thisType.fqn, method.name)
@@ -221,14 +221,15 @@ object MoreCheckers {
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
         time {
+            import MethodDescriptor.NoArgsAndReturnVoid
             for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
                 classFile ← classFiles if !classFile.thisType.fqn.startsWith("java/lang");
                 method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
                 instruction ← method.body.get.instructions
             ) {
                 instruction match {
-                    case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒
+                    case INVOKESTATIC(ObjectType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
+                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) ⇒
                         garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
                     case _ ⇒
                 }
@@ -239,14 +240,15 @@ object MoreCheckers {
         // FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)
         var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
         time {
+            val JustTakesBoolean = MethodDescriptor(BooleanType, VoidType)
             for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
                 instruction ← method.body.get.instructions
             ) {
                 instruction match {
-                    case INVOKESTATIC(ObjectType("java/lang/System"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) |
-                        INVOKESTATIC(ObjectType("java/lang/Runtime"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ⇒
+                    case INVOKESTATIC(ObjectType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
+                        INVOKESTATIC(ObjectType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) ⇒
                         methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
                     case _ ⇒
                 }

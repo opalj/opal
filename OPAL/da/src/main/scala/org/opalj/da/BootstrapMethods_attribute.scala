@@ -40,11 +40,11 @@ import scala.xml.Node
  */
 
 case class BootstrapMethods_attribute(
-        attribute_name_index: Int,
-        methods:              Seq[BootstrapMethod]
+        attribute_name_index: Constant_Pool_Index,
+        bootstrap_methods:    Seq[BootstrapMethod]
 ) extends Attribute {
 
-    override def attribute_length = 6 + 2 /*the size*/ + methods.size * 6
+    override def attribute_length = 2 /* num_bootstrap_methods */ + bootstrap_methods.view.map(_.size).sum
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
@@ -53,16 +53,21 @@ case class BootstrapMethods_attribute(
         </details>
     }
 
-    def methodsToXHTML(implicit cp: Constant_Pool) = {
-        for (method ← methods) yield method.toXHTML(cp)
-    }
+    def methodsToXHTML(implicit cp: Constant_Pool) = bootstrap_methods.map(_.toXHTML(cp))
 }
 
 object BootstrapMethods_attribute {
     val name = "BootstrapMethods"
 }
 
-case class BootstrapMethod(method_ref: Int, arguments: Seq[BootstrapArgument]) {
+case class BootstrapMethod(method_ref: Constant_Pool_Index, arguments: Seq[BootstrapArgument]) {
+
+    /**
+     * Number of bytes to store the bootstrap method.
+     */
+    def size: Int = 2 /* bootstrap_method_ref */ +
+        2 + /* num_bootstrap_arguments */
+        arguments.length * 2 /* bootstrap_arguments */
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="nested_details">
@@ -71,15 +76,11 @@ case class BootstrapMethod(method_ref: Int, arguments: Seq[BootstrapArgument]) {
         </details>
     }
 
-    def argumentsToXHTML(implicit cp: Constant_Pool) = {
-        for (argument ← arguments) yield argument.toXHTML(cp)
-    }
+    def argumentsToXHTML(implicit cp: Constant_Pool) = arguments.map(_.toXHTML(cp))
 }
 
-case class BootstrapArgument(cp_ref: Int) {
+case class BootstrapArgument(cp_ref: Constant_Pool_Index) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>{ cp(cp_ref).asInlineNode }</div>
-    }
+    def toXHTML(implicit cp: Constant_Pool): Node = <div>{ cp(cp_ref).asInlineNode }</div>
 
 }

@@ -36,7 +36,7 @@ import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * Converts a list of three address instructions into a Java like representation.
+ * Converts a list of three-address instructions into a Java like representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs

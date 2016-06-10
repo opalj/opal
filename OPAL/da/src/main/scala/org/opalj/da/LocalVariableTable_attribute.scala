@@ -36,7 +36,7 @@ package da
  * @author Noorulla Sharief
  */
 case class LocalVariableTable_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         local_variable_table: Seq[LocalVariableTableEntry]
 ) extends Attribute {
 
@@ -45,7 +45,7 @@ case class LocalVariableTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool) = {
         <details>
             <summary>LocalVariableTable</summary>
-            { for (local_variable ← local_variable_table) yield local_variable.toXHTML(cp) }
+            { local_variable_table.map(_.toXHTML(cp)) }
         </details>
     }
 }

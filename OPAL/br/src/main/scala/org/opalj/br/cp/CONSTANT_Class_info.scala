@@ -14,6 +14,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,46 +23,28 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bi
-package reader
-
-import scala.reflect.ClassTag
-
-import java.io.DataInputStream
+package br
+package cp
 
 /**
- * Generic parser for a method parameter's visible or invisible annotations.
+ * Represents a class or an interface.
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
-trait ParameterAnnotationsReader extends AnnotationAbstractions {
+case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    override def asConstantValue(cp: Constant_Pool) = ConstantClass(asReferenceType(cp))
 
-    implicit val AnnotationManifest: ClassTag[Annotation]
+    override def asObjectType(cp: Constant_Pool) = ObjectType(cp(name_index).asString)
 
-    //
-    // IMPLEMENTATION
-    //
+    override def asReferenceType(cp: Constant_Pool) = ReferenceType(cp(name_index).asString)
 
-    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 
-    def ParameterAnnotations(
-        cp: Constant_Pool,
-        in: DataInputStream
-    ): ParameterAnnotations = {
-        repeat(in.readUnsignedByte) {
-            repeat(in.readUnsignedShort) {
-                Annotation(cp, in)
-            }
-        }
-    }
 }
-
