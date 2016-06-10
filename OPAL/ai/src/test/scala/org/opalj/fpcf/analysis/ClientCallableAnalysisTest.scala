@@ -43,7 +43,7 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
 
     override def testFileName = "classfiles/clientCallableTest.jar"
 
-    override def testFilePath = "fpcfa"
+    override def testFilePath = "ai"
 
     override def analysisRunner = CallableFromClassesInOtherPackagesAnalysis
 
