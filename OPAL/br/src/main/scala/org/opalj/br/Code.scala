@@ -1116,8 +1116,8 @@ object Code {
         maxStack:          Int,
         maxLocals:         Int,
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers,
-        attributes:        Attributes
+        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
+        attributes:        Attributes         = IndexedSeq.empty
     ): Code = {
 
         var localVariableTablesCount = 0
