@@ -140,8 +140,8 @@ object OPALBuild extends Build {
 		base = file("DEVELOPING_OPAL/tools"),
 		settings = buildSettings 
 	).dependsOn(
-		de % "test->test;compile->compile",
-		fpcfa % "test->test;compile->compile;it->it")
+		av % "test->test;compile->compile",
+		bc % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	// This project validates OPAL's implemented architecture; hence
@@ -151,9 +151,7 @@ object OPALBuild extends Build {
 		base = file("DEVELOPING_OPAL/validate"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(
-		DeveloperTools % "compile->compile;test->test;it->it;it->test",
-		av % "compile->compile;test->test;it->it",
-		da % "compile->compile;test->test;it->it")
+		DeveloperTools % "compile->compile;test->test;it->it;it->test")
 	 .configs(IntegrationTest)
 
 	lazy val demos = Project(
