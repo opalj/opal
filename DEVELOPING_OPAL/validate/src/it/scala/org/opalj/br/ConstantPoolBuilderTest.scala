@@ -43,6 +43,7 @@ import org.opalj.da.{ClassFile ⇒ DAClassFile}
 import org.opalj.da.{Constant_Pool_Entry ⇒ DAConstant_Pool_Entry}
 import org.opalj.br.cp.{Constant_Pool_Entry ⇒ BRConstant_Pool_Entry}
 import org.scalatest.Matchers
+import org.opalj.bi.reader.Constant_PoolAbstractions
 
 /**
  * Tests that every entry in the rebuild constant pool can also be found in the original
@@ -63,9 +64,11 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
         val classType = ObjectType(fqn.replace('.', '/'))
         val brClassFile = brProject.classFile(classType).get
         val brCP = ConstantPoolBuilder(brClassFile)
+        assert((daCP(0) eq null) || daCP(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
+        assert((brCP(0) eq null) || brCP(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
 
-        val daCPEntries = daCP.tail.filter(_ != null).groupBy { _.getClass.getSimpleName }.map(e ⇒ (e._1, e._2.size))
-        val brCPEntries = brCP.tail.filter(_ != null).groupBy { _.getClass.getSimpleName }.map(e ⇒ (e._1, e._2.size))
+        val daCPEntries = daCP.view.tail.filter(_ != null).groupBy { _.getClass.getSimpleName }.map(e ⇒ (e._1, e._2.size))
+        val brCPEntries = brCP.view.tail.filter(_ != null).groupBy { _.getClass.getSimpleName }.map(e ⇒ (e._1, e._2.size))
         if (!brCPEntries.keySet.subsetOf(daCPEntries.keySet)) {
             fail(s"$fqn: unexpected constant pool entry types: "+(brCPEntries.keySet -- daCPEntries.keySet))
         }
@@ -75,7 +78,8 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
             assert(
                 !brCPEntries.contains(daCPEntryName) || daCPEntryCount >= brCPEntries(daCPEntryName),
                 s"; $fqn:the new constant pool contains more entries of type "+daCPEntryName+"\n"+
-                brCP.filter(cpe => cpe != null && cpe.getClass.getSimpleName == daCPEntryName).mkString("\n")
+                    brCP.filter(cpe ⇒ cpe != null && cpe.getClass.getSimpleName == daCPEntryName).mkString("\n")
+            )
         }
 
         val compressedBRCP = brCP.filter(_ != null)
@@ -92,8 +96,8 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
 
             if (brCP(index).isInstanceOf[br.cp.CONSTANT_Long_info] || brCP(index).isInstanceOf[br.cp.CONSTANT_Double_info])
                 assert(
-                    index +1 == brCP.length  /*the constant long | double entry is the last entry*/ ||
-                    brCP(index + 1) == null,
+                    index + 1 == brCP.length /*the constant long | double entry is the last entry*/ ||
+                        brCP(index + 1) == null,
                     s"$fqn: the constant pool entry ${brCP(index)} does not use two slots"
                 )
             else
@@ -199,16 +203,17 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
     }
 
     test("that the constant pool does not contain unexpected entries") {
-        daClassFiles.par.foreach { case (cf, source) ⇒
-            try {
-            testConstantPoolCreation(cf, source)
-            } catch {
-                case t : Throwable =>
-                    println(t.getMessage)
-                    t.printStackTrace()
-                    throw t
-            }
-            
+        daClassFiles.par.foreach {
+            case (cf, source) ⇒
+                try {
+                    testConstantPoolCreation(cf, source)
+                } catch {
+                    case t: Throwable ⇒
+                        println(t.getMessage)
+                        t.printStackTrace()
+                        throw t
+                }
+
         }
     }
 }

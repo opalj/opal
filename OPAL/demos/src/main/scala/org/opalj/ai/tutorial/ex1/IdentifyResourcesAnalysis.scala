@@ -86,7 +86,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                         case (
                             pc,
                             INVOKESPECIAL(
-                                ObjectType("java/io/File"),
+                                ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
                             ) ⇒ pc

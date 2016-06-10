@@ -66,23 +66,23 @@ case class CONSTANT_MethodHandle_info(
                 PutStaticMethodHandle(declaringType, name, fieldType)
 
             case bi.REF_invokeVirtual.referenceKind ⇒
-                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
+                val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeVirtualMethodHandle(receiverType, name, methodDescriptor)
 
             case bi.REF_invokeStatic.referenceKind ⇒
-                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
-                InvokeStaticMethodHandle(receiverType, name, methodDescriptor)
+                val (receiverType, isInterface, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
+                InvokeStaticMethodHandle(receiverType, isInterface, name, methodDescriptor)
 
             case bi.REF_invokeSpecial.referenceKind ⇒
-                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
-                InvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
+                val (receiverType, isInterface, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
+                InvokeSpecialMethodHandle(receiverType, isInterface, name, methodDescriptor)
 
             case bi.REF_newInvokeSpecial.referenceKind ⇒
-                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
+                val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 NewInvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
 
             case bi.REF_invokeInterface.referenceKind ⇒
-                val (receiverType, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
+                val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 InvokeInterfaceMethodHandle(receiverType, name, methodDescriptor)
 
         }

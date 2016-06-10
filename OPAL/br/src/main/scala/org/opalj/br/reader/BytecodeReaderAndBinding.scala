@@ -233,22 +233,22 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
                 case 185 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, _, name, methodDescriptor) = methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     INVOKEINTERFACE(declaringClass.asObjectType, name, methodDescriptor)
                 case 183 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp)
-                    INVOKESPECIAL(declaringClass.asObjectType, name, methodDescriptor)
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, isInterface, name, methodDescriptor) = methodRef
+                    INVOKESPECIAL(declaringClass.asObjectType, isInterface, name, methodDescriptor)
                 case 184 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-                    INVOKESTATIC(declaringClass.asObjectType, name, methodDescriptor)
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, isInterface, name, methodDescriptor) = methodRef
+                    INVOKESTATIC(declaringClass.asObjectType, isInterface, name, methodDescriptor)
                 case 182 ⇒
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
-                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
+                    val (declaringClass, _, name, methodDescriptor) = methodRef
                     INVOKEVIRTUAL(declaringClass, name, methodDescriptor)
                 case 128 ⇒ IOR
                 case 112 ⇒ IREM

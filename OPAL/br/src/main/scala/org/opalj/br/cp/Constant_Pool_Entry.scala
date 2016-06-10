@@ -76,7 +76,7 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
         throw new BytecodeProcessingFailedException("conversion to field ref is not supported")
 
-    def asMethodref(cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
+    def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) =
         throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
     def asObjectType(cp: Constant_Pool): ObjectType =

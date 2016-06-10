@@ -101,10 +101,9 @@ class ConstantPoolBuffer {
         methodName:    String,
         descriptor:    String
     ): Int = {
-        getOrElseUpdate(
-            CONSTANT_Methodref_info(CPEClass(referenceType), CPENameAndType(methodName, descriptor)),
-            1
-        )
+        val class_index = CPEClass(referenceType)
+        val name_and_type_index = CPENameAndType(methodName, descriptor)
+        getOrElseUpdate(CONSTANT_Methodref_info(class_index, name_and_type_index), 1)
     }
 
     def CPEInterfaceMethodRef(
@@ -145,42 +144,43 @@ class ConstantPoolBuffer {
                 1
             )
 
-        case InvokeVirtualMethodHandle(recType, name, descriptor) ⇒
+        case InvokeVirtualMethodHandle(receiverType, name, descriptor) ⇒
             getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    5, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    5, CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
-        case InvokeStaticMethodHandle(recType, name, descriptor) ⇒
+        case InvokeStaticMethodHandle(receiverType, isInterface, name, descriptor) ⇒
+            val methodRef =
+                if (isInterface)
+                    CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
+                else
+                    CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
+            getOrElseUpdate(CONSTANT_MethodHandle_info(6, methodRef), 1)
+
+        case InvokeSpecialMethodHandle(receiverType, isInterface, name, descriptor) ⇒
+            val methodRef =
+                if (isInterface)
+                    CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
+                else
+                    CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
+
+            getOrElseUpdate(CONSTANT_MethodHandle_info(7, methodRef), 1)
+
+        case NewInvokeSpecialMethodHandle(receiverType, name, descriptor) ⇒
             getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    6, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    8, CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )
 
-        case InvokeSpecialMethodHandle(recType, name, descriptor) ⇒
+        case InvokeInterfaceMethodHandle(receiverType, name, descriptor) ⇒
             getOrElseUpdate(
                 CONSTANT_MethodHandle_info(
-                    7, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
-                ),
-                1
-            )
-
-        case NewInvokeSpecialMethodHandle(recType, name, descriptor) ⇒
-            getOrElseUpdate(
-                CONSTANT_MethodHandle_info(
-                    8, CPEMethodRef(recType, name, descriptor.toJVMDescriptor)
-                ),
-                1
-            )
-
-        case InvokeInterfaceMethodHandle(recType, name, descriptor) ⇒
-            getOrElseUpdate(
-                CONSTANT_MethodHandle_info(
-                    9, CPEInterfaceMethodRef(recType, name, descriptor.toJVMDescriptor)
+                    9, CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
                 ),
                 1
             )

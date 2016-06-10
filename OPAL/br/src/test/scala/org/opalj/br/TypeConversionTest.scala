@@ -146,9 +146,9 @@ class TypeConversionTest extends FunSpec with Matchers {
             BaseType.baseTypes foreach { t ⇒
                 it(s"should convert ${t.toJava} to ${t.WrapperType.toJava}") {
                     val instructions = t.boxValue
+                    val descriptor = MethodDescriptor(t, t.WrapperType)
                     instructions should be(Array(
-                        INVOKESTATIC(t.WrapperType, "valueOf",
-                            MethodDescriptor(t, t.WrapperType)),
+                        INVOKESTATIC(t.WrapperType, false, "valueOf", descriptor),
                         null,
                         null
                     ))

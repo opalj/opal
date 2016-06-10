@@ -45,14 +45,17 @@ trait AsMethodref extends Constant_Pool_Entry {
 
     def name_and_type_index: Constant_Pool_Index
 
+    def isInterfaceMethodRef: Boolean
+
     // to cache the result
-    private[this] var methodref: (ReferenceType, String, MethodDescriptor) = null
-    override def asMethodref(cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
+    private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
+    override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
         if (methodref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
             methodref =
                 (
                     cp(class_index).asReferenceType(cp),
+                    isInterfaceMethodRef,
                     nameAndType.name(cp),
                     nameAndType.methodDescriptor(cp)
                 )

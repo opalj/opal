@@ -136,7 +136,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
                                 val instruction = instructions(pc)
                                 if (instruction.opcode == INVOKESPECIAL.opcode) {
                                     instruction match {
-                                        case INVOKESPECIAL(classType, "<init>", _) if classType.packageName == key ⇒
+                                        case INVOKESPECIAL(classType, _, "<init>", _) if classType.packageName == key ⇒
                                             // We found a constructor call.
                                             val classFile = project.classFile(classType)
                                             if (classFile.nonEmpty) {

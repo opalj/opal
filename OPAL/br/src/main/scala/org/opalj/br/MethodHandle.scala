@@ -125,6 +125,7 @@ case class InvokeVirtualMethodHandle(
 
 case class InvokeStaticMethodHandle(
         receiverType:     ReferenceType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
@@ -134,6 +135,7 @@ case class InvokeStaticMethodHandle(
 
 case class InvokeSpecialMethodHandle(
         receiverType:     ReferenceType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {

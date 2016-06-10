@@ -282,16 +282,22 @@ object ConstantPoolBuilder {
                         descriptor.toJVMDescriptor
                     )
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(objectType, methodName, descriptor) = instruction
-                    cp.CPEMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    val INVOKESTATIC(objectType, isInterface, methodName, descriptor) = instruction
+                    if (isInterface)
+                        cp.CPEInterfaceMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    else
+                        cp.CPEMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
 
                 case INVOKEINTERFACE.opcode ⇒
                     val INVOKEINTERFACE(objectType, methodName, descriptor) = instruction
                     cp.CPEInterfaceMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
 
                 case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(objectType, methodName, descriptor) = instruction
-                    cp.CPEMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    val INVOKESPECIAL(objectType, isInterface, methodName, descriptor) = instruction
+                    if (isInterface)
+                        cp.CPEInterfaceMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
+                    else
+                        cp.CPEMethodRef(objectType, methodName, descriptor.toJVMDescriptor)
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
