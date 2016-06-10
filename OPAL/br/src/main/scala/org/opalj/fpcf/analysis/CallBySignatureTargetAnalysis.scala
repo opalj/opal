@@ -5,8 +5,6 @@ package analysis
 import scala.collection.mutable
 import org.opalj.fpcf.properties.NoCBSTargets
 import org.opalj.fpcf.properties.CBSTargets
-import org.opalj.fpcf.properties.SubtypeInheritable
-import org.opalj.fpcf.properties.NotSubtypeInheritable
 import org.opalj.fpcf.properties.CallBySignature
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectIndex
@@ -14,6 +12,8 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.ProjectIndexKey
+import org.opalj.fpcf.properties.NotInheritableByNewTypes
+import org.opalj.fpcf.properties.InheritableByNewTypes
 
 /**
  * This analysis computes the CallBySignature property.
@@ -28,73 +28,74 @@ import org.opalj.br.analyses.ProjectIndexKey
  */
 class CallBySignatureTargetAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    // THIS ANALYSS IS ONLY DEFINED FOR LIBRARY ANALYSES
-    // TODO Why don't we do this check as part of the "start" method and return immediately?
-    require(isClosedLibrary || isOpenLibrary)
+    def determineCallBySignatureTargets(
+        projectIndex:      ProjectIndex,
+        isApplicationMode: Boolean
+    )(
+        e: Entity
+    ): Property = {
+        if (isApplicationMode)
+            return NoCBSTargets;
 
-    def determineCallBySignatureTargets(projectIndex: ProjectIndex)(e: Entity): Property = {
-        import org.opalj.util.GlobalPerformanceEvaluation.time
-        time('cbst) {
-            val method: Method = e.asInstanceOf[Method]
-            val methodName = method.name
-            val methodDescriptor = method.descriptor
+        val method: Method = e.asInstanceOf[Method]
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
 
-            import projectIndex.findMethods
+        import projectIndex.findMethods
 
-            val interfaceClassFile = project.classFile(method)
-            val interfaceType = interfaceClassFile.thisType
+        val interfaceClassFile = project.classFile(method)
+        val interfaceType = interfaceClassFile.thisType
 
-            val cbsTargets = mutable.Set.empty[Method]
+        val cbsTargets = mutable.Set.empty[Method]
 
-            def analyzePotentialCBSTarget(cbsCallee: Method): Unit = {
-                if (!cbsCallee.isPublic)
-                    return ;
+        def analyzePotentialCBSTarget(cbsCallee: Method): Unit = {
+            if (!cbsCallee.isPublic)
+                return ;
 
-                if (cbsCallee.isAbstract)
-                    return ;
+            if (cbsCallee.isAbstract)
+                return ;
 
-                if (!isInheritableMethod(cbsCallee))
-                    return ;
+            if (!isInheritableMethod(cbsCallee))
+                return ;
 
-                val cbsCalleeDeclaringClass = project.classFile(cbsCallee)
+            val cbsCalleeDeclaringClass = project.classFile(cbsCallee)
 
-                if (!cbsCalleeDeclaringClass.isClassDeclaration)
-                    return ;
+            if (!cbsCalleeDeclaringClass.isClassDeclaration)
+                return ;
 
-                if (cbsCalleeDeclaringClass.isEffectivelyFinal)
-                    return ;
+            if (cbsCalleeDeclaringClass.isEffectivelyFinal)
+                return ;
 
-                val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
+            val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
 
-                if (cbsCalleeDeclaringType eq ObjectType.Object)
-                    return ;
+            if (cbsCalleeDeclaringType eq ObjectType.Object)
+                return ;
 
-                if (classHierarchy.isSubtypeOf(cbsCalleeDeclaringType, interfaceType).isYes /* we want to get a sound overapprox. not: OrUnknown*/ )
-                    return ;
+            if (classHierarchy.isSubtypeOf(cbsCalleeDeclaringType, interfaceType).isYes /* we want to get a sound overapprox. not: OrUnknown*/ )
+                return ;
 
-                if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor).isYes)
-                    return ;
+            if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor).isYes)
+                return ;
 
-                if (isClosedLibrary &&
-                    cbsCalleeDeclaringClass.isPackageVisible &&
-                    (propertyStore(cbsCallee, SubtypeInheritable.Key).p eq NotSubtypeInheritable))
-                    return ;
+            if (isClosedLibrary &&
+                cbsCalleeDeclaringClass.isPackageVisible &&
+                (propertyStore(cbsCallee, InheritableByNewTypes.Key).p eq NotInheritableByNewTypes))
+                return ;
 
-                cbsTargets += cbsCallee
-            }
-            findMethods(methodName, methodDescriptor) foreach analyzePotentialCBSTarget
-
-            if (cbsTargets.isEmpty) NoCBSTargets else CBSTargets(cbsTargets)
+            cbsTargets += cbsCallee
         }
+        findMethods(methodName, methodDescriptor) foreach analyzePotentialCBSTarget
+
+        if (cbsTargets.isEmpty) NoCBSTargets else CBSTargets(cbsTargets)
     }
 
     /**
      * A method is considered inheritable if:
-     * - it is either public or projected
-     * - OPA is applied and the method is package private
+     * $ - it is either public or projected
+     * $ - OPA is applied and the method is package private
      *
      * @note This does not consider the visibility of the method's declaring class.
-     *     Hence, it should be checked separately if the class can be subclassed.
+     *   Hence, it should be checked separately if the class can be subclassed.
      */
     @inline private[this] def isInheritableMethod(method: Method): Boolean = {
 
@@ -140,7 +141,7 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(CallBySignature.Key)
 
-    override def usedProperties: Set[PropertyKind] = Set(SubtypeInheritable.Key)
+    override def usedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
 
     override def requirements: Set[FPCFAnalysisRunner] = Set(CallableFromClassesInOtherPackagesAnalysis)
 
@@ -150,7 +151,8 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
         val analysis = new CallBySignatureTargetAnalysis(project)
         val projectIndex = project.get(ProjectIndexKey)
-        propertyStore <<! (CallBySignature.Key, analysis.determineCallBySignatureTargets(projectIndex))
+        val isApplicationMode = AnalysisModes.isApplicationLike(project.analysisMode)
+        propertyStore <<! (CallBySignature.Key, analysis.determineCallBySignatureTargets(projectIndex, isApplicationMode))
         analysis
     }
 }
