@@ -42,7 +42,7 @@ class FactoryMethodAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFileName = "classfiles/factorymethodTest.jar"
 
-    override def testFilePath = "fpcfa"
+    override def testFilePath = "ai"
 
     override def analysisRunner = FactoryMethodAnalysis
 
