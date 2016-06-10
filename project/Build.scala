@@ -62,7 +62,6 @@ object OPALBuild extends Build {
 		bi,
 		br,
 		ai,
-		fpcfa,
 		da,
 		bc,
 		de,
@@ -119,13 +118,6 @@ object OPALBuild extends Build {
 	).dependsOn(br % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
-  	lazy val fpcfa = Project(
-  		id = "FixpointComputationsFrameworkAnalyses",
-  		base = file("OPAL/fpcfa"),
-  		settings = buildSettings
-  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
-  	 .configs(IntegrationTest)
-
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to
 	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
@@ -168,7 +160,7 @@ object OPALBuild extends Build {
 		id = "Demos",
 		base = file("OPAL/demos"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av,fpcfa,bc)
+	).dependsOn(av,bc)
 	 .configs(IntegrationTest)
 
 	/*****************************************************************************
