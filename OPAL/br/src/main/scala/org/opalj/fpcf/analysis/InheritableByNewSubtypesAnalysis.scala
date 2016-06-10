@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.IsInheritableByNewTypes
 import scala.collection.mutable
 
 /**
- * This analysis computes the SubtypeInheritable property.* I.e., it determines whether a method can directly be inherited by a future subtype.
+ * This analysis computes the [[InheritableByNewTypes]] property.* I.e., it determines whether a method can directly be inherited by a future subtype.
  * This is in particular important when analyzing libraries.
  *
  * The analysis assumes that packages that start with "java." are closed, i.e., that no client can put a class into these specific packages.
@@ -21,7 +21,7 @@ import scala.collection.mutable
  * the analysis afterwards as follows:
  * {{{
  * val analysisManager = project.get(FPCFAnalysisManagerKey)
- * analysisManager.run(InheritableMethodAnalysis)
+ * analysisManager.run(InheritableByNewSubtypesAnalysis)
  * }}}
  * For detailed information see the documentation of the analysis manager.
  *
@@ -29,10 +29,10 @@ import scala.collection.mutable
  * the results as follows:
  * {{{
  * val thePropertyStore = theProject.get(SourceElementsPropertyStoreKey)
- * val property = thePropertyStore(method, ClientCallableKey)
+ * val property = thePropertyStore(method, InheritableByNewTypes.Key)
  * property match {
- *   case Some(IsClientCallable) => ...
- *   case Some(NotClientCallable) => ...
+ *   case Some(IsInheritableByNewTypes) => ...
+ *   case Some(NotInheritableByNewTypes) => ...
  *   case None => ... // this happens only if a not supported entity is passed to the computation.
  * }
  * }}}
