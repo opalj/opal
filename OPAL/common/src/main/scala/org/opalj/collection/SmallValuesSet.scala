@@ -30,9 +30,8 @@ package org.opalj
 package collection
 
 /**
- * A memory-efficient, sorted set of small values that
- * is highly tailored for small(er) sets of small
- * values.
+ * A memory-efficient, sorted set of small values that is highly tailored for small(er) sets of 
+ * small values.
  *
  * @author Michael Eichberg
  */

@@ -96,7 +96,7 @@ object SmallValuesSet {
         else if (max <= UShort.MaxValue)
             EmptyUShortSet
         else
-            new SmallValuesSetBackedByScalaSet(0)
+            new SmallValuesSetBackedByScalaSet()
     }
 
     /**
@@ -112,7 +112,7 @@ object SmallValuesSet {
         else if (max <= UShort.MaxValue)
             UShortSet(value)
         else
-            new SmallValuesSetBackedByScalaSet(0)
+            new SmallValuesSetBackedByScalaSet(value)
     }
 
     /**

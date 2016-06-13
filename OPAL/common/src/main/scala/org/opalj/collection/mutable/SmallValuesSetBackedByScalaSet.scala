@@ -31,9 +31,11 @@ package collection
 package mutable
 
 private[mutable] final class SmallValuesSetBackedByScalaSet(
-        private[this] var set: Set[Int] = Set.empty
+        private[this] var set: Set[Int] 
 ) extends SmallValuesSet {
 
+        def this() { this(Set.empty[Int]) }
+    
     def this(value: Int) { this(Set(value)) }
 
     override def min = set.min
