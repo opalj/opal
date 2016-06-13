@@ -37,11 +37,11 @@ package immutable
  */
 final object EmptySmallValuesSet extends SmallValuesSet {
 
-    type MutableSmallValuesSet = mutable.SmallValuesSet
+    override type MutableSmallValuesSet = mutable.SmallValuesSet
 
     def mutableCopy: MutableSmallValuesSet = mutable.SmallValuesSet.empty(Int.MaxValue)
 
-    def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
+    override def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
 
     def -(value: Int): this.type = this
 
@@ -60,20 +60,20 @@ final object EmptySmallValuesSet extends SmallValuesSet {
     def isSingletonSet: Boolean = false
 
     def isEmpty: Boolean = true
-    
+
     def max: Int = throw new IllegalStateException("the set is empty")
     def min: Int = throw new IllegalStateException("the set is empty")
-    def last: Int = throw new IllegalStateException("the set is empty")
-    def head: Int = throw new IllegalStateException("the set is empty")
+    override def last: Int = throw new IllegalStateException("the set is empty")
+    override def head: Int = throw new IllegalStateException("the set is empty")
 
     protected[collection] def mkString(
         start:  String,
         sep:    String,
         end:    String,
         offset: Int
-    ): String = start+end
+    ): String = start + end
 
-    def mkString(start: String, sep: String, end: String): String = mkString(start,sep,end,0)
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     final override def equals(other: Any): Boolean = {
         other match {
@@ -83,7 +83,6 @@ final object EmptySmallValuesSet extends SmallValuesSet {
     }
 
     final override def hashCode(): Int = -1
-    
 
 }
 
