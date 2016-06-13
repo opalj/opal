@@ -37,11 +37,9 @@ package immutable
  */
 final object EmptySmallValuesSet extends SmallValuesSet {
 
-    type MutableSmallValuesSet = mutable.SmallValuesSet
-
     def mutableCopy: MutableSmallValuesSet = mutable.SmallValuesSet.empty(Int.MaxValue)
 
-    def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
+    override def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
 
     def -(value: Int): this.type = this
 
@@ -63,8 +61,6 @@ final object EmptySmallValuesSet extends SmallValuesSet {
 
     def max: Int = throw new IllegalStateException("the set is empty")
     def min: Int = throw new IllegalStateException("the set is empty")
-    def last: Int = throw new IllegalStateException("the set is empty")
-    def head: Int = throw new IllegalStateException("the set is empty")
 
     protected[collection] def mkString(
         start:  String,
