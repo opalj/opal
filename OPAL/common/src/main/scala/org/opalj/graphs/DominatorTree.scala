@@ -43,7 +43,10 @@ import org.opalj.collection.mutable.IntArrayStack
  *
  * @author Michael Eichberg
  */
-final class DominatorTree private (private final val idom: Array[Int], final val startNode: Int) {
+final class DominatorTree private (
+        private[graphs] final val idom: Array[Int],
+        final val startNode:            Int
+) {
 
     /**
      * Returns the immediate dominator of the node with the given id.
@@ -60,6 +63,19 @@ final class DominatorTree private (private final val idom: Array[Int], final val
         }
 
         idom(n)
+    }
+
+    /**
+     * @param n a valid node of the graph.
+     * @param w a valid node of the graph.
+     * @return `true` if `n` strictly dominates `w`.
+     */
+    final def strictlyDominates(n: Int, w: Int): Boolean = {
+        if (n == w) // a node never strictly dominates itself 
+            return false;
+
+        val wIDom = idom(w)
+        wIDom == n || (wIDom != startNode && strictlyDominates(n, wIDom))
     }
 
     /**
@@ -201,7 +217,7 @@ object DominatorTree {
         while (vertexStack.nonEmpty) {
             val v = vertexStack.pop()
             // The following "if" is necessary, because the recursive DFS impl. in the paper 
-            // performs an eager decent. This may already initialize a node that also pushed
+            // performs an eager decent. This may already initialize a node that is also pushed
             // on the stack and, hence, must not be visited again.
             if (semi(v) == 0) {
                 n = n + 1

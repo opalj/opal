@@ -60,7 +60,7 @@ final object EmptySmallValuesSet extends SmallValuesSet {
     def isSingletonSet: Boolean = false
 
     def isEmpty: Boolean = true
-    
+
     def max: Int = throw new IllegalStateException("the set is empty")
     def min: Int = throw new IllegalStateException("the set is empty")
     def last: Int = throw new IllegalStateException("the set is empty")
@@ -71,19 +71,9 @@ final object EmptySmallValuesSet extends SmallValuesSet {
         sep:    String,
         end:    String,
         offset: Int
-    ): String = start+end
+    ): String = start + end
 
-    def mkString(start: String, sep: String, end: String): String = mkString(start,sep,end,0)
-
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: SmallValuesSet ⇒ that.isEmpty
-            case _                    ⇒ false
-        }
-    }
-
-    final override def hashCode(): Int = -1
-    
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
 }
 
