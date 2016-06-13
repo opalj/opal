@@ -143,7 +143,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
     /**
      * Two SmallValuesSets are equal if they contain the same values.
      */
-    final override def equals(other: Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
             case that: SmallValuesSet ⇒ this.subsetOf(that) && that.subsetOf(this)
             case _                    ⇒ false
@@ -154,7 +154,7 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      * Calculates the `hashCode` based on the values in the set. This is a O(n)
      * operation.s
      */
-    final override def hashCode(): Int = {
+    override def hashCode(): Int = {
         var hashCode = -1
         foreach { v ⇒ hashCode = hashCode * v }
         hashCode

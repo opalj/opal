@@ -37,6 +37,7 @@ package immutable
  */
 final object EmptySmallValuesSet extends SmallValuesSet {
 
+
     def mutableCopy: MutableSmallValuesSet = mutable.SmallValuesSet.empty(Int.MaxValue)
 
     override def ++(values: SmallValuesSet): MutableSmallValuesSet = values.mutableCopy
@@ -70,6 +71,9 @@ final object EmptySmallValuesSet extends SmallValuesSet {
     ): String = start + end
 
     def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
+
+    def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
+
 
 }
 
