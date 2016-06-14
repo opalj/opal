@@ -84,6 +84,11 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
  */
 object SmallValuesSet {
 
+    def apply(set : Set[Int]) : SmallValuesSet = {
+        val safeSet : scala.collection.immutable.Set[Int] = set.toSet
+         new SmallValuesSetBackedByScalaSet(safeSet)
+    }
+    
     /**
      * Creates a new empty set that can store values in the range `[0,max]`.
      *
