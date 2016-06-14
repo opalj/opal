@@ -51,12 +51,12 @@ final class DominanceFrontiers private (private final val dfs: Array[SmallValues
 
     def dominanceFrontiers: IndexedSeq[SmallValuesSet] = dfs
 
-    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
-            if (isIndexValid(s)) {
-                df.foreach { t ⇒ g += (t, s) }
+            if (isNodeValid(s)) {
+                df.foreach { t ⇒ g += (s, t) }
             }
         }
         g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
@@ -70,11 +70,22 @@ final class DominanceFrontiers private (private final val dfs: Array[SmallValues
  */
 object DominanceFrontiers {
 
+    /**
+     * {{{
+     * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 8) += (8 → 20) += (8 → 3) += (0 → 4) += (20 → 8)
+     * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+     * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+     * val dt = org.opalj.graphs.DominatorTree(0, foreachSuccessor, foreachPredecessor, 20)
+     * val isValidNode = (n : Int) => Set(0,3,4,8,20).contains(n)
+     * val df = org.opalj.graphs.DominanceFrontiers(0, foreachSuccessor, foreachPredecessor,20,isValidNode,dt)
+     * }}}
+     */
     def apply(
         startNode:            Int,
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int,
+        isValidNode:          (Int) ⇒ Boolean,
         dt:                   DominatorTree
     ): DominanceFrontiers = {
 
@@ -84,31 +95,44 @@ object DominanceFrontiers {
         val children = new Array[mutable.SmallValuesSet](max)
         var i = 0
         while (i < max) {
-            val d = dt.idom(i)
-            val dChildren = children(d)
-            children(d) =
-                if (dChildren eq null) {
-                    mutable.SmallValuesSet.create(max, i)
-                } else {
-                    i +≈: dChildren
-                }
+            if (isValidNode(i) && i != startNode) {
+                val d = dt.idom(i)
+                val dChildren = children(d)
+                children(d) =
+                    if (dChildren eq null) {
+                        mutable.SmallValuesSet.create(max, i)
+                    } else {
+                        i +≈: dChildren
+                    }
+            }
             i += 1
         }
+
+        println(children.map(c ⇒ if (c eq null) "null" else c.mkString("{", ",", "}")).zipWithIndex.map(_.swap).mkString(" - "))
 
         val dfs = new Array[SmallValuesSet](max)
 
         def computeDF(n: Int): Unit = {
             var s = mutable.SmallValuesSet.empty(max)
             foreachSuccessorOf(n) { y ⇒
-                if (dt.dom(y) != n) s = y +≈: s
-            }
-            children(n).foreach { c ⇒
-                computeDF(c)
-                dfs(c).foreach { w ⇒
-                    if (!dt.strictlyDominates(n, w))
-                        s = w +≈: s
+                if (dt.dom(y) != n) {
+                    s = y +≈: s
+                    println(s"local($n):"+s.mkString("(", ",", ")"))
                 }
             }
+            val nChildren = children(n)
+            if (nChildren ne null) {
+                children(n).foreach { c ⇒
+                    computeDF(c)
+                    dfs(c).foreach { w ⇒
+                        if (!dt.strictlyDominates(n, w)) {
+                            s = w +≈: s
+                            println(s"up($n):"+s.mkString("(", ",", ")"))
+                        }
+                    }
+                }
+            }
+            println(n+"=>"+s.mkString("(", ",", ")"))
             dfs(n) = s
         }
 

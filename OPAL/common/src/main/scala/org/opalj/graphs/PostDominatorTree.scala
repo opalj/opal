@@ -39,7 +39,8 @@ object PostDominatorTree {
     def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
 
     /**
-     * Computes the post dominator tree for the given graph. The artificial start node of
+     * Computes the post dominator tree for the given graph. The artificial start node that
+     * will be created by this algorithm to ensure that we have a unique start node for 
      * the post dominator tree will have the id = (maxNodeId+1).
      *
      * @example
@@ -73,6 +74,11 @@ object PostDominatorTree {
      * pdt: org.opalj.graphs.DominatorTree = org.opalj.graphs.DominatorTree@3a82ac80
      * scala>pdt.toDot()
      * }}}
+     * 
+     * @param isExitNode A function that returns `true` if the given node –  the underlying 
+     * 		(control-flow) graph – is an exit node; that is	the node has no successors.
+     * @param maxNode The largest id used by the underlying (control-flow) graph. 
+     * 
      */
     def apply(
         isExitNode:           Int ⇒ Boolean,
