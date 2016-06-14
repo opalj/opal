@@ -356,26 +356,3 @@ object DominatorTree {
     }
 
 }
-
-/**
- * A small wrapper class that wraps the information required to create a [[DominatorTree]].
- *
- * @author Michael Eichberg
- */
-case class DominatorTreeFactory(
-        startNode:                Int,
-        startNodeHasPredecessors: Boolean,
-        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:                  Int
-) {
-
-    lazy val dt: DominatorTree = {
-        DominatorTree(
-            startNode,
-            startNodeHasPredecessors,
-            foreachSuccessorOf, foreachPredecessorOf,
-            maxNode
-        )
-    }
-}
