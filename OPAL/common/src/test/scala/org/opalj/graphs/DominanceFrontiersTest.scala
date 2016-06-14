@@ -39,13 +39,15 @@ import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Test the [[DominanceFrontiers]] implementation.
+ * Tests the [[DominanceFrontiers]] implementation.
  *
  * Dominance frontiers are defined as follows:
  *
- * Dominance frontier of node w:
- * Node u is in dominance frontier of node w if w dominates a CFG predecessor v of u,
- * but does not strictly dominate u does not strictly dominate u.
+ * The dominance frontier of node w:
+ *     Node u is in the dominance frontier of node w 
+ *     if w dominates a CFG predecessor v of u,
+ *     (hence, v can be w)
+ *     but does not strictly dominate u.
  *
  * @author Michael Reif
  */
@@ -93,8 +95,8 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(mutable.SmallValuesSet.create(1, 4))
-        df.df(3) should be(mutable.SmallValuesSet.create(1, 4))
+        df.df(2) should be(mutable.SmallValuesSet.create(4, 4))
+        df.df(3) should be(mutable.SmallValuesSet.create(4, 4))
         df.df(4) should be(EmptySmallValuesSet)
     }
 
@@ -104,7 +106,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 3)
 
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(createSmallValueSet(Set(3)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(3)))
         df.df(3) should be(EmptySmallValuesSet)
     }
 
@@ -115,11 +117,11 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         df.df(0) should be(EmptySmallValuesSet)
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(mutable.SmallValuesSet.create(1, 7))
-        df.df(3) should be(mutable.SmallValuesSet.create(1, 5))
-        df.df(4) should be(mutable.SmallValuesSet.create(1, 5))
-        df.df(5) should be(mutable.SmallValuesSet.create(1, 7))
-        df.df(6) should be(mutable.SmallValuesSet.create(1, 7))
+        df.df(2) should be(mutable.SmallValuesSet.create(10, 7))
+        df.df(3) should be(mutable.SmallValuesSet.create(10, 5))
+        df.df(4) should be(mutable.SmallValuesSet.create(10, 5))
+        df.df(5) should be(mutable.SmallValuesSet.create(10, 7))
+        df.df(6) should be(mutable.SmallValuesSet.create(10, 7))
         df.df(7) should be(EmptySmallValuesSet)
     }
 
@@ -128,7 +130,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 2, true)
 
-        df.df(2) should be(createSmallValueSet(Set(0)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(0)))
     }
 
     /* refered paper:  Efficiently Computing Static Single Assignment Form and the Control Dependence Graph */
@@ -142,18 +144,18 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
         df.df(0) should be(EmptySmallValuesSet)
-        df.df(1) should be(createSmallValueSet(Set(13)))
-        df.df(2) should be(createSmallValueSet(Set(2, 13)))
-        df.df(3) should be(createSmallValueSet(Set(8)))
-        df.df(4) should be(createSmallValueSet(Set(6)))
-        df.df(5) should be(createSmallValueSet(Set(6)))
-        df.df(6) should be(createSmallValueSet(Set(8)))
-        df.df(7) should be(createSmallValueSet(Set(8)))
-        df.df(8) should be(createSmallValueSet(Set(2, 13)))
-        df.df(9) should be(createSmallValueSet(Set(2, 9, 13)))
-        df.df(10) should be(createSmallValueSet(Set(11)))
-        df.df(11) should be(createSmallValueSet(Set(2, 9, 13)))
-        df.df(12) should be(createSmallValueSet(Set(2, 13)))
+        df.df(1) should be(mutable.SmallValuesSet(Set(13)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(2, 13)))
+        df.df(3) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(4) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(5) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(6) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(7) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(8) should be(mutable.SmallValuesSet(Set(2, 13)))
+        df.df(9) should be(mutable.SmallValuesSet(Set(2, 9, 13)))
+        df.df(10) should be(mutable.SmallValuesSet(Set(11)))
+        df.df(11) should be(mutable.SmallValuesSet(Set(2, 9, 13)))
+        df.df(12) should be(mutable.SmallValuesSet(Set(2, 13)))
         df.df(13) should be(EmptySmallValuesSet)
 
     }
