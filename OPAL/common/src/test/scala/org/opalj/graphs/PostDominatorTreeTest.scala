@@ -150,7 +150,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
                 existNodes.contains, existNodes.foreach,
                 foreachSuccessor, foreachPredecessor,
                 2
-            ).dt    
+            ).dt
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
 
         try {

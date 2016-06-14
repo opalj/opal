@@ -101,7 +101,7 @@ object DominanceFrontiers {
      * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
      * @param isValidNode A function that returns `true` if the given id represents a node of the
      * 			underlying graph. If the underlying graph contains a single, new artificial start
-     * 			node then this node may or may not be reported as a valid node. 		 
+     * 			node then this node may or may not be reported as a valid node.
      */
     def apply(
         dtf:         DominatorTreeFactory,

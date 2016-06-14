@@ -84,11 +84,11 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
  */
 object SmallValuesSet {
 
-    def apply(set : Set[Int]) : SmallValuesSet = {
-        val safeSet : scala.collection.immutable.Set[Int] = set.toSet
-         new SmallValuesSetBackedByScalaSet(safeSet)
+    def apply(set: Set[Int]): SmallValuesSet = {
+        val safeSet: scala.collection.immutable.Set[Int] = set.toSet
+        new SmallValuesSetBackedByScalaSet(safeSet)
     }
-    
+
     /**
      * Creates a new empty set that can store values in the range `[0,max]`.
      *
@@ -112,6 +112,7 @@ object SmallValuesSet {
      * which is outside of the specified range!
      */
     def create(max: Int, value: Int): SmallValuesSet = {
+        assert(value <= max, s"the value ($value) has to be smaller than max ($max)")
         if (max <= UByte.MaxValue)
             UByteSet(value)
         else if (max <= UShort.MaxValue)
@@ -148,6 +149,8 @@ object SmallValuesSet {
      * which is outside of the specified range!
      */
     def create(min: Int, max: Int, value: Int): SmallValuesSet = {
+        assert(value <= max, s"the value ($value) has to be smaller than max ($max)")
+        assert(min <= value, s"the value ($value) has to be larger than min ($min)")
         if (min == 0) {
             create(max, value)
         } else {

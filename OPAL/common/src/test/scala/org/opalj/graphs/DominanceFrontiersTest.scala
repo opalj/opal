@@ -93,8 +93,8 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(mutable.SmallValuesSet.create(1, 4))
-        df.df(3) should be(mutable.SmallValuesSet.create(1, 4))
+        df.df(2) should be(mutable.SmallValuesSet.create(4, 4))
+        df.df(3) should be(mutable.SmallValuesSet.create(4, 4))
         df.df(4) should be(EmptySmallValuesSet)
     }
 
@@ -104,7 +104,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 3)
 
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(createSmallValueSet(Set(3)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(3)))
         df.df(3) should be(EmptySmallValuesSet)
     }
 
@@ -115,11 +115,11 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         df.df(0) should be(EmptySmallValuesSet)
         df.df(1) should be(EmptySmallValuesSet)
-        df.df(2) should be(mutable.SmallValuesSet.create(1, 7))
-        df.df(3) should be(mutable.SmallValuesSet.create(1, 5))
-        df.df(4) should be(mutable.SmallValuesSet.create(1, 5))
-        df.df(5) should be(mutable.SmallValuesSet.create(1, 7))
-        df.df(6) should be(mutable.SmallValuesSet.create(1, 7))
+        df.df(2) should be(mutable.SmallValuesSet.create(10, 7))
+        df.df(3) should be(mutable.SmallValuesSet.create(10, 5))
+        df.df(4) should be(mutable.SmallValuesSet.create(10, 5))
+        df.df(5) should be(mutable.SmallValuesSet.create(10, 7))
+        df.df(6) should be(mutable.SmallValuesSet.create(10, 7))
         df.df(7) should be(EmptySmallValuesSet)
     }
 
@@ -128,7 +128,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 2, true)
 
-        df.df(2) should be(createSmallValueSet(Set(0)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(0)))
     }
 
     /* refered paper:  Efficiently Computing Static Single Assignment Form and the Control Dependence Graph */
@@ -142,29 +142,22 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
         df.df(0) should be(EmptySmallValuesSet)
-        df.df(1) should be(createSmallValueSet(Set(13)))
-        df.df(2) should be(createSmallValueSet(Set(2, 13)))
-        df.df(3) should be(createSmallValueSet(Set(8)))
-        df.df(4) should be(createSmallValueSet(Set(6)))
-        df.df(5) should be(createSmallValueSet(Set(6)))
-        df.df(6) should be(createSmallValueSet(Set(8)))
-        df.df(7) should be(createSmallValueSet(Set(8)))
-        df.df(8) should be(createSmallValueSet(Set(2, 13)))
-        df.df(9) should be(createSmallValueSet(Set(2, 9, 13)))
-        df.df(10) should be(createSmallValueSet(Set(11)))
-        df.df(11) should be(createSmallValueSet(Set(2, 9, 13)))
-        df.df(12) should be(createSmallValueSet(Set(2, 13)))
+        df.df(1) should be(mutable.SmallValuesSet(Set(13)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(2, 13)))
+        df.df(3) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(4) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(5) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(6) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(7) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(8) should be(mutable.SmallValuesSet(Set(2, 13)))
+        df.df(9) should be(mutable.SmallValuesSet(Set(2, 9, 13)))
+        df.df(10) should be(mutable.SmallValuesSet(Set(11)))
+        df.df(11) should be(mutable.SmallValuesSet(Set(2, 9, 13)))
+        df.df(12) should be(mutable.SmallValuesSet(Set(2, 13)))
         df.df(13) should be(EmptySmallValuesSet)
 
     }
 
-
-    def createSmallValueSet(set: Set[Int]): mutable.SmallValuesSet = {
-        var svs = mutable.SmallValuesSet.empty(set.size)
-        for (num ← set)
-            svs = svs.+≈:(num)
-        svs
-    }
 }
 
 object DominanceFrontiersTest {
