@@ -39,13 +39,15 @@ import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Test the [[DominanceFrontiers]] implementation.
+ * Tests the [[DominanceFrontiers]] implementation.
  *
  * Dominance frontiers are defined as follows:
  *
- * Dominance frontier of node w:
- * Node u is in dominance frontier of node w if w dominates a CFG predecessor v of u,
- * but does not strictly dominate u does not strictly dominate u.
+ * The dominance frontier of node w:
+ *     Node u is in the dominance frontier of node w 
+ *     if w dominates a CFG predecessor v of u,
+ *     (hence, v can be w)
+ *     but does not strictly dominate u.
  *
  * @author Michael Reif
  */
@@ -173,9 +175,9 @@ object DominanceFrontiersTest {
         val isValidNode = (n: Int) ⇒ n >= startNode && n <= maxNode
         val dominatorTreeFactory = DominatorTreeFactory(startNode, startNodeHasPredecesssors, foreachSuccessor, foreachPredecessor, maxNode)
 
-        (dominatorTreeFactory.dt, DominanceFrontiers(
-            dominatorTreeFactory,
-            isValidNode
-        ))
+        (
+            dominatorTreeFactory.dt, 
+            DominanceFrontiers(dominatorTreeFactory, isValidNode)
+        )
     }
 }
