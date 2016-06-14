@@ -55,7 +55,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
                 (i: Int) ⇒ i == 0, Set(0).foreach,
                 foreachSuccessor, foreachPredecessor,
                 0
-            )
+            ).dt
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
         var ns: List[Int] = null
 
@@ -80,7 +80,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
                 existNodes.contains, existNodes.foreach,
                 foreachSuccessor, foreachPredecessor,
                 4
-            )
+            ).dt
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
         dt.dom(0) should be(1)
         dt.dom(1) should be(5)
@@ -111,7 +111,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
                 existNodes.contains, existNodes.foreach,
                 foreachSuccessor, foreachPredecessor,
                 4
-            )
+            ).dt
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
 
         try {
@@ -150,7 +150,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
                 existNodes.contains, existNodes.foreach,
                 foreachSuccessor, foreachPredecessor,
                 2
-            )
+            ).dt
         } { t ⇒ info("post dominator tree computed in "+t.toSeconds) }
 
         try {

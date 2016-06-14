@@ -36,11 +36,9 @@ package graphs
  */
 object PostDominatorTree {
 
-    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
-
     /**
      * Computes the post dominator tree for the given graph. The artificial start node that
-     * will be created by this algorithm to ensure that we have a unique start node for 
+     * will be created by this algorithm to ensure that we have a unique start node for
      * the post dominator tree will have the id = (maxNodeId+1).
      *
      * @example
@@ -74,11 +72,11 @@ object PostDominatorTree {
      * pdt: org.opalj.graphs.DominatorTree = org.opalj.graphs.DominatorTree@3a82ac80
      * scala>pdt.toDot()
      * }}}
-     * 
-     * @param isExitNode A function that returns `true` if the given node –  the underlying 
+     *
+     * @param isExitNode A function that returns `true` if the given node –  the underlying
      * 		(control-flow) graph – is an exit node; that is	the node has no successors.
-     * @param maxNode The largest id used by the underlying (control-flow) graph. 
-     * 
+     * @param maxNode The largest id used by the underlying (control-flow) graph.
+     *
      */
     def apply(
         isExitNode:           Int ⇒ Boolean,
@@ -86,7 +84,7 @@ object PostDominatorTree {
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int
-    ): DominatorTree = {
+    ): DominatorTreeFactory = {
         // the artificial start node
         val startNode = maxNode + 1
 
@@ -101,7 +99,7 @@ object PostDominatorTree {
 
         val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
             if (n == startNode) {
-                fornone
+                DominatorTree.fornone
             } else if (isExitNode(n)) {
                 // a function that expects a function that will be called for all successors
                 def f(f: Int ⇒ Unit): Unit = {
@@ -113,11 +111,11 @@ object PostDominatorTree {
                 foreachSuccessorOf(n)
         }
 
-        DominatorTree(
-            startNode,
+        DominatorTreeFactory(
+            startNode, startNodeHasPredecessors = false,
             revFGForeachSuccessorOf, revFGForeachPredecessorOf,
             maxNode = startNode // we have an additional node
         )
     }
-
 }
+

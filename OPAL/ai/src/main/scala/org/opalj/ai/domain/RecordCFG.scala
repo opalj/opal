@@ -162,6 +162,7 @@ trait RecordCFG
                 theDominatorTree =
                     DominatorTree(
                         startNode = 0,
+                        startNodeHasPredecessors = predecessorsOf(0).nonEmpty,
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         maxNode = code.instructions.size - 1
@@ -184,7 +185,7 @@ trait RecordCFG
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         maxNode = code.instructions.size - 1
-                    )
+                    ).dt
                 this.thePostDominatorTree = thePostDominatorTree
             }
         }

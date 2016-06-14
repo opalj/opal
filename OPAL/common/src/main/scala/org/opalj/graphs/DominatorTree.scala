@@ -160,6 +160,8 @@ final class DominatorTree private (
  */
 object DominatorTree {
 
+    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
+
     /**
      * Computes the immediate dominators for each node of a given graph. Each node of the graph
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
@@ -168,10 +170,12 @@ object DominatorTree {
      * @param startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
      * 			computed for some method or the id of the artificial start node created when
      * 			computing a reverse CFG.
+     * @param hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     * 			will be created and added to the graph.
      * @param foreachSuccessorOf A function that given a node subsequently executes the given
      * 			function for each direct successor of the given node.
      * @param foreachPredecessorOf A function that given a node executes the given function for
-     * 			each direct predecessor. The signature of a function that can directly passed
+     * 			each direct predecessor. The signature of a function that can directly be passed
      * 			as a parameter is:
      * 			{{{
      *  		def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
@@ -191,11 +195,35 @@ object DominatorTree {
      * 			a very long single path.).'''
      */
     def apply(
-        startNode:            Int,
-        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:              Int
+        startNode:                Int,
+        startNodeHasPredecessors: Boolean,
+        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:                  Int
     ): DominatorTree = {
+
+        if (startNodeHasPredecessors) {
+            val newStartNode = maxNode + 1
+            return this(
+                newStartNode,
+                false,
+                /* newForeachSuccessorOf */ (n: Int) ⇒ {
+                    if (n == newStartNode)
+                        (f: Int ⇒ Unit) ⇒ { f(startNode) }
+                    else
+                        foreachSuccessorOf(n)
+                },
+                /* newForeachPredecessorOf */ (n: Int) ⇒ {
+                    if (n == newStartNode)
+                        (f: Int ⇒ Unit) ⇒ {}
+                    else if (n == startNode)
+                        (f: Int ⇒ Unit) ⇒ { f(newStartNode) }
+                    else
+                        foreachPredecessorOf(n)
+                },
+                newStartNode
+            );
+        }
 
         val max = maxNode + 1
 
@@ -327,4 +355,27 @@ object DominatorTree {
         new DominatorTree(dom, startNode)
     }
 
+}
+
+/**
+ * A small wrapper class that wraps the information required to create a [[DominatorTree]].
+ *
+ * @author Michael Eichberg
+ */
+case class DominatorTreeFactory(
+        startNode:                Int,
+        startNodeHasPredecessors: Boolean,
+        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:                  Int
+) {
+
+    lazy val dt: DominatorTree = {
+        DominatorTree(
+            startNode,
+            startNodeHasPredecessors,
+            foreachSuccessorOf, foreachPredecessorOf,
+            maxNode = startNode // we have an additional node
+        )
+    }
 }
