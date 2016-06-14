@@ -52,14 +52,14 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class DominanceFrontiersTest extends FlatSpec with Matchers {
 
-    "a dominance tree with just one node" should "result in no dominance frontiers" in {
+    "a dominance tree with a single node" should "result in no dominance frontiers" in {
         val graph = Graph.empty[Int] += 0
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 0)
 
         df.df(0) should be(EmptySmallValuesSet)
     }
 
-    "a dominance tree with a single cyclic node" should "result in no dominance frontiers" in {
+    "a dominance tree with a single cyclic node" should "result in a reflexive dominance frontier" in {
         val graph = Graph.empty[Int] += (0 → 0)
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 0, true)
 
@@ -98,7 +98,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         df.df(4) should be(EmptySmallValuesSet)
     }
 
-    "a domiance tree that caputes a guard" should "reflect the corresponding dominance frontiers" in {
+    "a domiance tree that captures a guard" should "reflect the corresponding dominance frontiers" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (1 → 3)
 
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 3)
@@ -123,7 +123,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         df.df(7) should be(EmptySmallValuesSet)
     }
 
-    " a dominance tree that captures a cycle" should "be handled propertly" in {
+    " a dominance tree that captures a cycle" should "be handled properly" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 0)
 
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 2, true)
@@ -131,7 +131,8 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         df.df(2) should be(createSmallValueSet(Set(0)))
     }
 
-    "a dominance tree derived from the paper" should "result in the correct dominance frontiers" in {
+    /* refered paper:  Efficiently Computing Static Single Assignment Form and the Control Dependence Graph */
+    "a dominance tree derived from the paper's graph" should "result in the correct dominance frontiers" in {
 
         val graph = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) += (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) += (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
 
