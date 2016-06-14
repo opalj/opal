@@ -77,24 +77,25 @@ object DominanceFrontiers {
      * {{{
      * // A graph taken from the paper:
      * // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
-     * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
-     * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-     * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-     * val dt = org.opalj.graphs.DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 13)
-     * val isValidNode = (n : Int) => n>= 0 && n <= 13
-     * org.opalj.io.writeAndOpen(dt.toDot(),"g",".dt.gv")
-     * val df = org.opalj.graphs.DominanceFrontiers(0, foreachSuccessor, foreachPredecessor,13,isValidNode,dt)
-     * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
-     *
-     * // A degenerated graph which consists of a single node that has a self-references.
-     * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 0)
-     * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-     * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-     * val dt = org.opalj.graphs.DominatorTree(0, true, foreachSuccessor, foreachPredecessor, 0)
-     * val isValidNode = (n : Int) => n == 0
-     * org.opalj.io.writeAndOpen(dt.toDot(),"g",".dt.gv")
-     * val df = org.opalj.graphs.DominanceFrontiers(0, foreachSuccessor, foreachPredecessor,0,isValidNode,dt)
-     * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
+val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
+val isValidNode = (n : Int) => n>= 0 && n <= 13
+org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
+val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
+org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
+
+
+// A degenerated graph which consists of a single node that has a self-references.
+val g = org.opalj.graphs.Graph.empty[Int] += (0 → 0) 
+val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+val dtf = org.opalj.graphs.DominatorTreeFactory(0, true, foreachSuccessor, foreachPredecessor, 0)
+val isValidNode = (n : Int) => n == 0
+org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
+val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
+org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
      * @param dt The dominator tree of the specified (flow) graph. In case of the reverse flow
      * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].

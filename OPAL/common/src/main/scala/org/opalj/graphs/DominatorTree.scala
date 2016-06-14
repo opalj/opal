@@ -375,7 +375,7 @@ case class DominatorTreeFactory(
             startNode,
             startNodeHasPredecessors,
             foreachSuccessorOf, foreachPredecessorOf,
-            maxNode = startNode // we have an additional node
+            maxNode
         )
     }
 }
