@@ -38,6 +38,9 @@ import org.opalj.collection.mutable
  */
 final class DominanceFrontiers private (private final val dfs: Array[SmallValuesSet]) {
 
+    final def apply(n: Int): SmallValuesSet = df(n)
+
+    final def maxNode: Int = dfs.length - 1
     /**
      * Returns the of nodes in the dominance frontier of the given node.
      */
@@ -101,7 +104,8 @@ object DominanceFrontiers {
      * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
      * @param isValidNode A function that returns `true` if the given id represents a node of the
      * 			underlying graph. If the underlying graph contains a single, new artificial start
-     * 			node then this node may or may not be reported as a valid node.
+     * 			node then this node may or may not be reported as a valid node; this is not relevant
+     * 			for this algorithm.
      */
     def apply(
         dtf:         DominatorTreeFactory,
@@ -128,24 +132,17 @@ object DominanceFrontiers {
             i += 1
         }
 
-        val dfs = new Array[SmallValuesSet](max)
+        val dfs /* dominanceFrontiers */ = new Array[SmallValuesSet](max)
 
         def computeDF(n: Int): Unit = {
             var s = mutable.SmallValuesSet.empty(max)
-            foreachSuccessorOf(n) { y ⇒
-                if (dt.dom(y) != n) {
-                    s = y +≈: s
-                }
-            }
+            foreachSuccessorOf(n) { y ⇒                if (dt.dom(y) != n)                     s = y +≈: s            }
+            
             val nChildren = children(n)
             if (nChildren ne null) {
                 children(n).foreach { c ⇒
                     computeDF(c)
-                    dfs(c).foreach { w ⇒
-                        if (!dt.strictlyDominates(n, w)) {
-                            s = w +≈: s
-                        }
-                    }
+                    dfs(c).foreach { w ⇒ if (!dt.strictlyDominates(n, w)) s = w +≈: s}
                 }
             }
             dfs(n) = s
