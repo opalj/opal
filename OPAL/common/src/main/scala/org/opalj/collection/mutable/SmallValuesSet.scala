@@ -70,9 +70,9 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
         newSet
     }
 
-    def -(value: Int): MutableSmallValuesSet /* Redefines the return type. */
+    def -(value: Int): MutableSmallValuesSet /* Refines the return type. */
 
-    def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
+    def mutableCopy: MutableSmallValuesSet /* Refines the return type. */
 
     def filter(f: Int ⇒ Boolean): SmallValuesSet
 }
@@ -106,7 +106,8 @@ object SmallValuesSet {
 
     /**
      * Creates a new set that can store values in the range `[0,max]` and which contains
-     * the given `value`.
+     * the given `value`. Hence, `max` does not specify the maximum number of elements of
+     * the set but specifies the maximum value potentially stored in the set.
      *
      * The behavior of the returned set is undefined if a value should be stored in it
      * which is outside of the specified range!
