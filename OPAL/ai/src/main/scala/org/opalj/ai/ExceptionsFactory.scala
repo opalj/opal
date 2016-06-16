@@ -34,7 +34,7 @@ package ai
  * when the evaluation of a specific bytecode instruction fails
  * (e.g., `idiv`, `checkcast`,...).
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait ExceptionsFactory extends ValuesDomain { domain ⇒
 

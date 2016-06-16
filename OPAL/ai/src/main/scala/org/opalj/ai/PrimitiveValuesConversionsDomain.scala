@@ -30,9 +30,10 @@ package org.opalj
 package ai
 
 /**
- * Defines the methods that performs type conversions between primitive values.
+ * Defines the methods that performs type conversions between primitive values with different
+ * computational types.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait PrimitiveValuesConversionsDomain { domain: ValuesDomain ⇒

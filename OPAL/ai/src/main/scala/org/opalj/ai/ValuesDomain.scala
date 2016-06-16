@@ -129,8 +129,9 @@ trait ValuesDomain {
         // This method is only used by the abstract interpretation framework
         // and is only implemented by ReturnAddressValue.
         @throws[DomainException]("This value is not a return address value.")
-        private[ai] def asReturnAddressValue: PC =
+        private[ai] def asReturnAddressValue: PC = {
             throw new DomainException(s"this value ($this) is not a return address")
+        }
 
         /**
          * Joins this value and the given value.
@@ -212,8 +213,7 @@ trait ValuesDomain {
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
             assert(that ne this, "join is only defined for objects that are different")
 
-            if ((that eq TheIllegalValue) ||
-                (this.computationalType ne that.computationalType))
+            if ((that eq TheIllegalValue) || (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
             else
                 doJoin(pc, that)
@@ -221,7 +221,7 @@ trait ValuesDomain {
 
         //
         // METHODS THAT ARE PREDEFINED BECAUSE THEY ARE GENERALLY USEFUL WHEN
-        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY THIS FRAMEWORK.
+        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY THE AI CORE FRAMEWORK.
         // I.E. THESE METHODS ARE USED - IF AT ALL - BY THE DOMAIN.
         //
 
@@ -243,6 +243,8 @@ trait ValuesDomain {
          * The default implementation relies on this domain value's [[join]] method.
          *
          * Overriding this method is, hence, primarily meaningful for performance reasons.
+         *
+         * @see `isMorePreciseThan`
          */
         def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
@@ -250,8 +252,7 @@ trait ValuesDomain {
 
             val result = this.join(Int.MinValue /*Irrelevant*/ , other)
             result.isNoUpdate ||
-                (result.isMetaInformationUpdate &&
-                    (result ne MetaInformationUpdateIllegalValue))
+                (result.isMetaInformationUpdate && (result ne MetaInformationUpdateIllegalValue))
         }
 
         /**
@@ -273,6 +274,8 @@ trait ValuesDomain {
          * 		type as this value.
          * 		(The `IllegalValue` has no computational type and, hence,
          *      a comparison with an IllegalValue is not well defined.)
+         *
+         * @see `abstractsOver`
          */
         def isMorePreciseThan(other: DomainValue): Boolean = {
             assert(this.computationalType eq other.computationalType)
@@ -313,9 +316,7 @@ trait ValuesDomain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note The framework (the classes in the package `org.opalj.a`i) does not
-         *      use/call this method.
-         *      This method is solely predefined to facilitate the development of
+         * @note This method is predefined to facilitate the development of
          *      project-wide analyses.
          */
         def summarize(pc: PC): DomainValue
@@ -339,8 +340,9 @@ trait ValuesDomain {
          *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
             throw new DomainException(s"adaptation of $this to $target is unsupported")
+        }
 
     }
 
@@ -465,9 +467,8 @@ trait ValuesDomain {
      *      implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] = {
-        throw new DomainException(
-            "internal error (see documentation of ValuesDomain.StructuralUpdateIllegalValue())"
-        )
+        val message = "internal error (see ValuesDomain.StructuralUpdateIllegalValue())"
+        throw new DomainException(message)
     }
 
     /**
@@ -480,10 +481,7 @@ trait ValuesDomain {
      *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
      *      as these additional methods will never be called by OPAL-AI.
      */
-    class ReturnAddressValue(
-        val address: PC
-    )
-            extends Value { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(val address: PC) extends Value { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
 
@@ -566,11 +564,12 @@ trait ValuesDomain {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypeInformation =
+    def typeOfValue(value: DomainValue): TypeInformation = {
         value match {
             case ta: TypeInformation ⇒ ta
             case _                   ⇒ TypeUnknown
         }
+    }
 
     /**
      * Merges the given domain value `v1` with the domain value `v2` and returns

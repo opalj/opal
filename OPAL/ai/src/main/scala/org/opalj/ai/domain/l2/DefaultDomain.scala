@@ -55,9 +55,7 @@ trait SharedValuesDomain[Source]
  */
 class CoordinatingValuesDomain[Source](
     val project: Project[Source]
-)
-        extends ValuesCoordinatingDomain
-        with SharedValuesDomain[Source]
+) extends ValuesCoordinatingDomain with SharedValuesDomain[Source]
 
 /**
  * The domain that is used to perform the abstract interpretations.

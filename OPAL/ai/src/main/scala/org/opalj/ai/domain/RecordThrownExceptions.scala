@@ -49,10 +49,8 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
      * For example, if you may want to collect all thrown exceptions, then
      * the type of `ThrownException` could be `Set[ThrownException]`.
      *
-     * @see The implementation of
-     *      [[org.opalj.ai.domain.RecordAllThrownExceptions]].
-     * @see The implementation of
-     *      [[org.opalj.ai.domain.RecordLastReturnedValues]]. It
+     * @see The implementation of [[org.opalj.ai.domain.RecordAllThrownExceptions]].
+     * @see The implementation of [[org.opalj.ai.domain.RecordLastReturnedValues]]. It
      *      follows the same pattern.
      */
     type ThrownException <: AnyRef
