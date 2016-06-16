@@ -129,7 +129,7 @@ private[mutable] object EmptyUByteSet extends UByteSet {
 /**
  * This set always contains at least one value which may be "0".
  */
-private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
+private[mutable] final class UByteSet4(private var value: Int) extends UByteSet {
 
     def this(value1: UByte, value2: UByte) {
         this(value1 | value2 << 8)
@@ -380,7 +380,7 @@ private object UByteSet4 {
     final val Value2_3_4Mask = Value2Mask | Value3_4Mask
 }
 
-private class UByteSetNode(
+private final class UByteSetNode(
         private val set1: UByteSet,
         private val set2: UByteSet
 ) extends UByteSet {

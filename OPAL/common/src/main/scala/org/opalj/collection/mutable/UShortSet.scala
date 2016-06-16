@@ -83,7 +83,7 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
 /**
  * This set uses a single `Int` value to store one or two unsigned short values.
  */
-private class UShortSet2(private var value: Int) extends UShortSet {
+private final class UShortSet2(private var value: Int) extends UShortSet {
 
     def this(value1: UShort, value2: UShort) {
         this(value1 | value2 << 16)
@@ -241,7 +241,7 @@ private object UShortSet2 {
 /**
  * This set uses a single long value to store three or four unsigned short values.
  */
-private class UShortSet4(private var value: Long) extends UShortSet {
+private final class UShortSet4(private var value: Long) extends UShortSet {
 
     def this(value1: Long, value2: Long, value3: Long, value4: Long) {
         this(value1 | (value2 << 16) | (value3 << 32) | (value4 << 48))
@@ -461,7 +461,7 @@ private object UShortSet4 {
     final val Value1_2Mask = (Value1Mask | Value2Mask)
 }
 
-private class UShortSetNode(
+private final class UShortSetNode(
         private val set1: UShortSet,
         private val set2: UShortSet
 ) extends UShortSet {
