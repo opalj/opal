@@ -169,27 +169,21 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
 
         df.df(0) should be(EmptySmallValuesSet)
-        df.df(1) should be(createSmallValueSet(Set(22)))
-        df.df(2) should be(createSmallValueSet(Set(2, 22)))
-        df.df(77) should be(createSmallValueSet(Set(8)))
-        df.df(4) should be(createSmallValueSet(Set(6)))
-        df.df(55) should be(createSmallValueSet(Set(6)))
-        df.df(6) should be(createSmallValueSet(Set(8)))
-        df.df(7) should be(createSmallValueSet(Set(8)))
-        df.df(8) should be(createSmallValueSet(Set(2, 22)))
-        df.df(9) should be(createSmallValueSet(Set(2, 9, 22)))
-        df.df(10) should be(createSmallValueSet(Set(11)))
-        df.df(11) should be(createSmallValueSet(Set(2, 9, 22)))
-        df.df(12) should be(createSmallValueSet(Set(2, 22)))
+        df.df(1) should be(mutable.SmallValuesSet(Set(22)))
+        df.df(2) should be(mutable.SmallValuesSet(Set(2, 22)))
+        df.df(77) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(4) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(55) should be(mutable.SmallValuesSet(Set(6)))
+        df.df(6) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(7) should be(mutable.SmallValuesSet(Set(8)))
+        df.df(8) should be(mutable.SmallValuesSet(Set(2, 22)))
+        df.df(9) should be(mutable.SmallValuesSet(Set(2, 9, 22)))
+        df.df(10) should be(mutable.SmallValuesSet(Set(11)))
+        df.df(11) should be(mutable.SmallValuesSet(Set(2, 9, 22)))
+        df.df(12) should be(mutable.SmallValuesSet(Set(2, 22)))
         df.df(22) should be(EmptySmallValuesSet)
     }
 
-    def createSmallValueSet(set: Set[Int]): mutable.SmallValuesSet = {
-        var svs = mutable.SmallValuesSet.empty(set.size)
-        for (num ← set)
-            svs = svs.+≈:(num)
-        svs
-    }
 }
 
 object DominanceFrontiersTest {
