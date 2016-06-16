@@ -452,6 +452,8 @@ package object ai {
         }
     }
 
+    type ExceptionsRaisedByCalledMethod = ExceptionsRaisedByCalledMethods.Value
+
     //    /**
     //     * Returns those values `V` that are used by the instruction to perform a
     //     * computation that may have an effect outside of the scope of the current method.

@@ -63,12 +63,21 @@ trait MethodCallsHandling extends MethodCallsDomain {
             }
         }
 
-        code.handlersFor(pc) foreach { h ⇒
-            h.catchType match {
-                case None     ⇒ add(ObjectType.Throwable)
-                case Some(ex) ⇒ add(ex)
-            }
+        throwExceptionsOnMethodCall match {
+            case ExceptionsRaisedByCalledMethods.Any ⇒
+                add(ObjectType.Throwable)
+
+            case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled ⇒
+                code.handlersFor(pc) foreach { h ⇒
+                    h.catchType match {
+                        case None     ⇒ add(ObjectType.Throwable)
+                        case Some(ex) ⇒ add(ex)
+                    }
+                }
+            case ExceptionsRaisedByCalledMethods.Known ⇒
+            // we basically know nothing..
         }
+
         // The list of exception values is in reverse order when compared to the handlers!
         // This is by purpose to foster a faster overall evaluation. (I.e., we want
         // to perform the abstract interpretation using more abstract values first (<=>
