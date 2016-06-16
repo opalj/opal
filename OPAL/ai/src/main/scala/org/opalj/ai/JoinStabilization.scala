@@ -53,14 +53,15 @@ import org.opalj.collection.immutable.IdentityPair
  * Using join stabilization is necessary if constraints are propagated
  * or (makes sense) if the merge of domain values is expensive.
  *
- * @note Join stabilization is always done for all domain values once this trait
- *      is mixed in.
+ * @note Join stabilization is always done for all domain values once this trait is mixed in.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait JoinStabilization extends CoreDomainFunctionality {
 
     // THE FOLLOWING IS AN ALTERNATIVE IMPLEMENTATION
+    // WHICH IS LESS EFFICIENT (BUT WAS EXPECTED TO BE MORE EFFICIENT)
+    //
     //    import java.util.{ IdentityHashMap ⇒ IDMap }
     //
     //    private[this] val leftValues =

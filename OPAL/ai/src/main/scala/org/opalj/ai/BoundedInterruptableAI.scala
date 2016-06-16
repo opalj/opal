@@ -51,11 +51,10 @@ import org.opalj.util.Milliseconds
  * @author Michael Eichberg
  */
 class BoundedInterruptableAI[D <: Domain](
-    maxEvaluationCount:    Int,
-    val maxEvaluationTime: Nanoseconds,
-    val doInterrupt:       () ⇒ Boolean
-)
-        extends InstructionCountBoundedAI[D](maxEvaluationCount) {
+        maxEvaluationCount:    Int,
+        val maxEvaluationTime: Nanoseconds,
+        val doInterrupt:       () ⇒ Boolean
+) extends InstructionCountBoundedAI[D](maxEvaluationCount) {
 
     private[this] var startTime: Long = -1l;
 
@@ -67,12 +66,13 @@ class BoundedInterruptableAI[D <: Domain](
     )(
         implicit
         logContext: LogContext
-    ) =
+    ) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
             maxEvaluationTime.toNanoseconds,
             doInterrupt
         )
+    }
 
     override def isInterrupted: Boolean = {
         if (super.isInterrupted || doInterrupt())

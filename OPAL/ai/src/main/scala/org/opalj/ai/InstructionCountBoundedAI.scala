@@ -71,8 +71,7 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
     override def isInterrupted = {
         var count = evaluationCount.get()
         var newCount = count + 1
-        while (count < maxEvaluationCount &&
-            !evaluationCount.compareAndSet(count, newCount)) {
+        while (count < maxEvaluationCount && !evaluationCount.compareAndSet(count, newCount)) {
             count = evaluationCount.get()
             newCount = count + 1
         }

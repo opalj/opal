@@ -39,10 +39,9 @@ import org.opalj.br.{ObjectType, FieldType}
  *      and, hence, this trait has for Java projects in general no effect.''' If we analyze
  *      other languages that compile to the JVM platform, the effect might be different.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
-trait ConstantFieldValuesResolution extends Domain {
-    domain: TheProject with ClassHierarchy ⇒
+trait ConstantFieldValuesResolution extends Domain { domain: TheProject with ClassHierarchy ⇒
 
     abstract override def getstatic(
         pc:        PC,

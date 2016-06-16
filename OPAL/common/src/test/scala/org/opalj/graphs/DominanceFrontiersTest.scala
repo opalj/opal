@@ -54,16 +54,52 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class DominanceFrontiersTest extends FlatSpec with Matchers {
 
+    private def setUpDominanceFrontiers(
+        startNode:                 Int,
+        g:                         Graph[Int],
+        maxNode:                   Int,
+        startNodeHasPredecesssors: Boolean    = false
+    ): DominanceFrontiers = {
+        setUpDominanceFrontiers(
+            startNode,
+            g,
+            maxNode,
+            (n: Int) ⇒ n >= startNode && n <= maxNode,
+            startNodeHasPredecesssors
+        )
+    }
+
+    private def setUpDominanceFrontiers(
+        startNode:                 Int,
+        g:                         Graph[Int],
+        maxNode:                   Int,
+        isValidNode:               Int ⇒ Boolean,
+        startNodeHasPredecesssors: Boolean
+    ): DominanceFrontiers = {
+        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val isValidNode = (n: Int) ⇒ n >= startNode && n <= maxNode
+        val dominatorTreeFactory =
+            DominatorTreeFactory(
+                startNode, startNodeHasPredecesssors,
+                foreachSuccessor, foreachPredecessor,
+                maxNode
+            )
+
+        DominanceFrontiers(dominatorTreeFactory, isValidNode)
+
+    }
+
     "a dominance tree with a single node" should "result in no dominance frontiers" in {
         val graph = Graph.empty[Int] += 0
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 0)
+        val df = setUpDominanceFrontiers(0, graph, 0)
 
         df.df(0) should be(EmptySmallValuesSet)
     }
 
     "a dominance tree with a single cyclic node" should "result in a reflexive dominance frontier" in {
         val graph = Graph.empty[Int] += (0 → 0)
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 0, true)
+        val df = setUpDominanceFrontiers(0, graph, 0, true)
 
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
@@ -74,7 +110,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     "a degenerated dominance tree (path)" should "result in no dominance frontiers" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (3 → 4)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 4)
+        val df = setUpDominanceFrontiers(0, graph, 4)
 
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
@@ -89,7 +125,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     "a dominance tree from an if-statement" should "be handled properly" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4) += (3 → 4)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 4)
+        val df = setUpDominanceFrontiers(0, graph, 4)
 
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
@@ -103,7 +139,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     "a domiance tree that captures a guard" should "reflect the corresponding dominance frontiers" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (1 → 3)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 3)
+        val df = setUpDominanceFrontiers(0, graph, 3)
 
         df.df(1) should be(EmptySmallValuesSet)
         df.df(2) should be(mutable.SmallValuesSet(Set(3)))
@@ -111,9 +147,12 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     }
 
     "a dominance tree from an nested if-statement" should "be handled properly" in {
-        val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 6) += (2 → 3) += (2 → 4) += (3 → 5) += (4 → 5) += (5 → 7) += (6 → 7)
+        val graph =
+            Graph.empty[Int] +=
+                (0 → 1) += (1 → 2) += (1 → 6) += (2 → 3) += (2 → 4) += (3 → 5) +=
+                (4 → 5) += (5 → 7) += (6 → 7)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 7)
+        val df = setUpDominanceFrontiers(0, graph, 7)
 
         df.df(0) should be(EmptySmallValuesSet)
         df.df(1) should be(EmptySmallValuesSet)
@@ -128,7 +167,7 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     " a dominance tree that captures a cycle" should "be handled properly" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 0)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 2, true)
+        val df = setUpDominanceFrontiers(0, graph, 2, true)
 
         df.df(2) should be(mutable.SmallValuesSet(Set(0)))
     }
@@ -136,9 +175,13 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
     /* refered paper:  Efficiently Computing Static Single Assignment Form and the Control Dependence Graph */
     "a dominance tree derived from the paper's graph" should "result in the correct dominance frontiers" in {
 
-        val graph = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) += (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) += (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
+        val graph =
+            org.opalj.graphs.Graph.empty[Int] +=
+                (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) +=
+                (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
+                (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 13)
+        val df = setUpDominanceFrontiers(0, graph, 13)
 
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
@@ -162,11 +205,15 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
     "a dominance tree with randomly named nodes" should "result in the correct dominance frontiers" in {
 
-        val graph = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 77) += (2 → 7) += (77 → 4) += (77 → 55) += (55 → 6) += (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) += (11 → 9) += (11 → 12) += (12 → 22) += (12 → 2) += (0 → 22)
+        val graph =
+            org.opalj.graphs.Graph.empty[Int] +=
+                (0 → 1) += (1 → 2) += (2 → 77) += (2 → 7) += (77 → 4) += (77 → 55) += (55 → 6) +=
+                (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
+                (11 → 9) += (11 → 12) += (12 → 22) += (12 → 2) += (0 → 22)
 
         val isValidNode = (n: Int) ⇒ Set(0, 1, 2, 77, 4, 55, 6, 7, 8, 9, 10, 11, 12, 22).contains(n)
 
-        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
+        val df = setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
 
         df.df(0) should be(EmptySmallValuesSet)
         df.df(1) should be(mutable.SmallValuesSet(Set(22)))
@@ -184,40 +231,4 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         df.df(22) should be(EmptySmallValuesSet)
     }
 
-}
-
-object DominanceFrontiersTest {
-
-    def setUpDominanceFrontiers(
-        startNode:                 Int,
-        g:                         Graph[Int],
-        maxNode:                   Int,
-        startNodeHasPredecesssors: Boolean    = false
-    ): (DominatorTree, DominanceFrontiers) = {
-        setUpDominanceFrontiers(
-            startNode,
-            g,
-            maxNode,
-            (n: Int) ⇒ n >= startNode && n <= maxNode,
-            startNodeHasPredecesssors
-        )
-    }
-
-    def setUpDominanceFrontiers(
-        startNode:                 Int,
-        g:                         Graph[Int],
-        maxNode:                   Int,
-        isValidNode:               Int ⇒ Boolean,
-        startNodeHasPredecesssors: Boolean
-    ): (DominatorTree, DominanceFrontiers) = {
-        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-        val isValidNode = (n: Int) ⇒ n >= startNode && n <= maxNode
-        val dominatorTreeFactory = DominatorTreeFactory(startNode, startNodeHasPredecesssors, foreachSuccessor, foreachPredecessor, maxNode)
-
-        (dominatorTreeFactory.dt, DominanceFrontiers(
-            dominatorTreeFactory,
-            isValidNode
-        ))
-    }
 }

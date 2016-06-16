@@ -52,7 +52,9 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    /*implements(not override!)*/ def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+        ExceptionsRaisedByCalledMethods.Any
+    }
 
     /**
      * @inheritdoc

@@ -44,7 +44,7 @@ import org.opalj.br.Code
 sealed abstract class AIResult {
 
     /**
-     * If `true` then then code was evaluated using `strict` semantics (in Java
+     * If `true` then the code was evaluated using `strict` semantics (in Java
      * the `strictfp` modifier was used), otherwise
      * it was evaluated using the standard JVM semantics.
      *

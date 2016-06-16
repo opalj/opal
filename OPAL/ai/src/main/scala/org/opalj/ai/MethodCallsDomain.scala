@@ -37,7 +37,7 @@ import org.opalj.br.ReferenceType
 /**
  * Defines all methods related to the invocation of other methods.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait MethodCallsDomain { this: ValuesDomain ⇒
 

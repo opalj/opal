@@ -46,13 +46,12 @@ import org.opalj.br.{Method, ClassFile}
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, S](
+class BaseConfigurableDomain[I, Source](
     val id:        I,
-    val project:   Project[S],
+    val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends TypeLevelDomain
+) extends TypeLevelDomain
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -75,11 +74,10 @@ class BaseDomain[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
+) extends BaseConfigurableDomain[String, Source](
+    method.toJava(classFile),
+    project,
+    classFile,
+    method
 )
-        extends BaseConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method
-        )
 
