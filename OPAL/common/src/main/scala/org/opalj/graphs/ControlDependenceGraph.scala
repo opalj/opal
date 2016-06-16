@@ -30,7 +30,8 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.SmallValuesSet
-import scala.collection.mutable
+import scala.collection.mutable.BitSet
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Represents the control-dependence information.
@@ -64,20 +65,31 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
         dominanceFrontiers(x)
     }
 
+    /**
+     * Calls the function `f` with those nodes on which the given node `x` is control
+     * dependent on.
+     */
     def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
-        val seen = new mutable.BitSet(dominanceFrontiers.maxNode)
+        val maxNodeId = dominanceFrontiers.maxNode
 
-        var worklist = List(x)
+        val seen = new BitSet(dominanceFrontiers.maxNode)
+        //var seen = mutable.SmallValuesSet.empty(maxNodeId)
+        val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
+        worklist.push(x)
+
+        //var worklist = List(x)
         while (worklist.nonEmpty) {
-            val x = worklist.head
-            worklist = worklist.tail
+            //  val x = worklist.head
+            //worklist = worklist.tail
+            val x = worklist.pop
 
             dominanceFrontiers(x).foreach { y ⇒
                 if (!seen.contains(y)) {
-                    //            seen = y +≈: seen
+                    //seen = y +≈: seen
                     seen += y
                     //worklist = y +≈: worklist
-                    worklist ::= y
+                    //worklist ::= y
+                    worklist.push(y)
                     f(y)
                 }
             }
@@ -92,8 +104,12 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
  * using the dominator tree for the reverse control-flow graph (aka post dominator tree).
  * The following example demonstrates this.
  * {{{
- * // A graph taken from the paper: Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
- * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+ * // A graph taken from the paper:
+ * // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
+ * val g = org.opalj.graphs.Graph.empty[Int] +=
+ * 			(0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) +=
+ * 			(6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) +=
+ * 			(11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
  * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
  * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
  * val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
