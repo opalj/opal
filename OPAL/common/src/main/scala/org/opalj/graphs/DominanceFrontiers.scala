@@ -134,21 +134,56 @@ object DominanceFrontiers {
 
         val dfs /* dominanceFrontiers */ = new Array[SmallValuesSet](max)
 
-        def computeDF(n: Int): Unit = {
+        // Textbook/Paper based implementation (using recursion):
+        //
+        //        def computeDF(n: Int): Unit = {
+        //            var s = mutable.SmallValuesSet.empty(max)
+        //            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = y +≈: s }
+        //            
+        //            val nChildren = children(n)
+        //            if (nChildren ne null) {
+        //                children(n).foreach { c ⇒
+        //                    computeDF(c)
+        //                    dfs(c).foreach { w ⇒ if (!dt.strictlyDominates(n, w)) s = w +≈: s}
+        //                }
+        //            }
+        //            dfs(n) = s
+        //        }
+        //
+        //        computeDF(startNode)
+
+        @inline def dfLocal(n: Int): mutable.SmallValuesSet = {
             var s = mutable.SmallValuesSet.empty(max)
-            foreachSuccessorOf(n) { y ⇒                if (dt.dom(y) != n)                     s = y +≈: s            }
-            
+            foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = y +≈: s }
+            s
+        }
+
+        // traverse in DFS order
+        var inDFSOrder: List[Int] = Nil
+        var nodes: List[Int] = List(startNode)
+        while (nodes.nonEmpty) {
+            val n = nodes.head
+            nodes = nodes.tail
             val nChildren = children(n)
             if (nChildren ne null) {
-                children(n).foreach { c ⇒
-                    computeDF(c)
-                    dfs(c).foreach { w ⇒ if (!dt.strictlyDominates(n, w)) s = w +≈: s}
+                inDFSOrder ::= n
+                nChildren.foreach { nodes ::= _ }
+            } else {
+                // we immediately compute the dfs_local information 
+                dfs(n) = dfLocal(n)
+            }
+        }
+
+        inDFSOrder.foreach { n ⇒
+            var s = dfLocal(n)
+            children(n).foreach { c ⇒
+                dfs(c).foreach { w ⇒
+                    if (!dt.strictlyDominates(n, w))
+                        s = w +≈: s
                 }
             }
             dfs(n) = s
         }
-
-        computeDF(startNode)
 
         new DominanceFrontiers(dfs)
 
