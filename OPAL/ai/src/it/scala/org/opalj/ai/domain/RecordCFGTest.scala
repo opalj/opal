@@ -79,11 +79,7 @@ class RecordCFGTest extends FunSpec with Matchers {
 
     def terminateAfter[T >: Null <: AnyRef](millis: Long)(f: ⇒ T): T = {
         @volatile var result: T = null
-        val t = new Thread(new Runnable {
-            def run(): Unit = {
-                result = f
-            }
-        })
+        val t = new Thread(new Runnable { def run(): Unit = { result = f } })
         t.start
         t.join(millis)
         t.interrupt()
@@ -124,9 +120,10 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val postDT = dTime('PostDominators) { domain.postDominatorTree }
 
-                val cdg = dTime('ControlDependencies) {
-                    terminateAfter[ControlDependencies](1000l) { domain.controlDependencies }
-                }
+                val cdg =
+                    terminateAfter[ControlDependencies](1000l) {
+                        dTime('ControlDependencies) { domain.controlDependencies }
+                    }
 
                 evaluatedInstructions foreach { pc ⇒
                     if (pc != dt.startNode &&

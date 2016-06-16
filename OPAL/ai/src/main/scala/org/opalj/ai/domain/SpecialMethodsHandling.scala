@@ -91,11 +91,9 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
 
 object SpecialMethodsHandling {
 
-    import org.opalj.br.ObjectType.Object
-
     final val arraycopyDescriptor = {
         MethodDescriptor(
-            IndexedSeq(Object, IntegerType, Object, IntegerType, IntegerType),
+            IndexedSeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     }
