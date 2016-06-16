@@ -39,13 +39,15 @@ import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Test the [[DominanceFrontiers]] implementation.
+ * Tests the [[DominanceFrontiers]] implementation.
  *
  * Dominance frontiers are defined as follows:
  *
- * Dominance frontier of node w:
- * Node u is in dominance frontier of node w if w dominates a CFG predecessor v of u,
- * but does not strictly dominate u does not strictly dominate u.
+ * The dominance frontier of node w:
+ *     Node u is in the dominance frontier of node w
+ *     if w dominates a CFG predecessor v of u,
+ *     (hence, v can be w)
+ *     but does not strictly dominate u.
  *
  * @author Michael Reif
  */
@@ -158,6 +160,36 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
     }
 
+    "a dominance tree with randomly named nodes" should "result in the correct dominance frontiers" in {
+
+        val graph = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 77) += (2 → 7) += (77 → 4) += (77 → 55) += (55 → 6) += (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) += (11 → 9) += (11 → 12) += (12 → 22) += (12 → 2) += (0 → 22)
+
+        val isValidNode = (n: Int) ⇒ Set(0, 1, 2, 77, 4, 55, 6, 7, 8, 9, 10, 11, 12, 22).contains(n)
+
+        val (_ /*dt*/ , df) = DominanceFrontiersTest.setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
+
+        df.df(0) should be(EmptySmallValuesSet)
+        df.df(1) should be(createSmallValueSet(Set(22)))
+        df.df(2) should be(createSmallValueSet(Set(2, 22)))
+        df.df(77) should be(createSmallValueSet(Set(8)))
+        df.df(4) should be(createSmallValueSet(Set(6)))
+        df.df(55) should be(createSmallValueSet(Set(6)))
+        df.df(6) should be(createSmallValueSet(Set(8)))
+        df.df(7) should be(createSmallValueSet(Set(8)))
+        df.df(8) should be(createSmallValueSet(Set(2, 22)))
+        df.df(9) should be(createSmallValueSet(Set(2, 9, 22)))
+        df.df(10) should be(createSmallValueSet(Set(11)))
+        df.df(11) should be(createSmallValueSet(Set(2, 9, 22)))
+        df.df(12) should be(createSmallValueSet(Set(2, 22)))
+        df.df(22) should be(EmptySmallValuesSet)
+    }
+
+    def createSmallValueSet(set: Set[Int]): mutable.SmallValuesSet = {
+        var svs = mutable.SmallValuesSet.empty(set.size)
+        for (num ← set)
+            svs = svs.+≈:(num)
+        svs
+    }
 }
 
 object DominanceFrontiersTest {
@@ -167,6 +199,22 @@ object DominanceFrontiersTest {
         g:                         Graph[Int],
         maxNode:                   Int,
         startNodeHasPredecesssors: Boolean    = false
+    ): (DominatorTree, DominanceFrontiers) = {
+        setUpDominanceFrontiers(
+            startNode,
+            g,
+            maxNode,
+            (n: Int) ⇒ n >= startNode && n <= maxNode,
+            startNodeHasPredecesssors
+        )
+    }
+
+    def setUpDominanceFrontiers(
+        startNode:                 Int,
+        g:                         Graph[Int],
+        maxNode:                   Int,
+        isValidNode:               Int ⇒ Boolean,
+        startNodeHasPredecesssors: Boolean
     ): (DominatorTree, DominanceFrontiers) = {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _

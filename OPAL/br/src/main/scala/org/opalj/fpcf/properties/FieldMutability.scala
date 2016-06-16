@@ -30,10 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-
 sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     type Self = FieldMutability
@@ -43,15 +39,31 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
 /**
  * Specifies how often a field is potentially updated.
  *
- * A field is considered as ''effectively'' final if the field is:
- *  - actually final or
- *  - if the private field is only set by a constructor or a private helper method that is only
- *    called by a constructor.
- *  - if the field is set at most once to a value that is not the default value (`0`, `0l`, `0f`,
- *    `0d`, `null`) (lazy initialization) and the value is NOT depending on mutable information
- *    (in particular method parameters).
+ * == Property manifestations ==
+ *
+ * 1. declared final
+ *   - actually directly declared as final
+ *
+ * 1. lazy initialized
+ *   - all field writes and reads have to be known
+ *     - OPA: all private fields
+ *     - CPA: all private and package private fields and all protected and public fields that are not accessible by a client
+ *     - APP: all fields
+ *   - all writes have to be guarded by a test if the field still has the default value
+ *   - all reads happen after initialization of the field and are either also guarded by test or happen directly after a field write
+ *   - the field is set at most once to a value that is not the default value (`0`, `0l`, `0f`, `0d`, `null`)
+ *
+ * 1. effectively final
+ *   - all criteria of the lazy initialized field have to hold (see previous section)
+ *   - all reads and writes have to be guarded by the same (synchronization) lock.
+ *
+ * 1. non-final
+ *   - a field is non final if non of the the previous cases holds
+ *   - e.g. not all reads and writes of the field are known
+ *
  *
  * @author Michael Eichberg
+ * @author Michael Reif
  */
 sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaInformation {
 
@@ -79,6 +91,8 @@ sealed trait FinalField extends FieldMutability {
 
     final def isEffectivelyFinal: Boolean = true
 }
+
+case object LazyInitializedField extends FinalField { final val byDefinition = false }
 
 case object EffectivelyFinalField extends FinalField { final val byDefinition = false }
 
