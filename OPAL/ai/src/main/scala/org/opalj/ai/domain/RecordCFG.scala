@@ -39,6 +39,9 @@ import org.opalj.br.instructions.ATHROW
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
+import org.opalj.graphs.DominatorTreeFactory
+import org.opalj.graphs.ControlDependencies
+import org.opalj.graphs.ControlDependenceGraph
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -74,7 +77,8 @@ trait RecordCFG
     private[this] var predecessors: Array[UShortSet] = _
     private[this] var exitPCs: UShortSet = _
     private[this] var theDominatorTree: DominatorTree = _
-    private[this] var thePostDominatorTree: DominatorTree = _
+    private[this] var thePostDominatorTree: DominatorTreeFactory = _
+    private[this] var theControlDependencies: ControlDependencies = _
 
     abstract override def initProperties(
         code:             Code,
@@ -91,6 +95,7 @@ trait RecordCFG
         predecessors = null
         theDominatorTree = null
         thePostDominatorTree = null
+        theControlDependencies = null
 
         super.initProperties(code, joinInstructions, initialLocals)
     }
@@ -173,7 +178,7 @@ trait RecordCFG
         theDominatorTree
     }
 
-    def postDominatorTree: DominatorTree = {
+    def postDominatorTreeFactory: DominatorTreeFactory = {
         var thePostDominatorTree = this.thePostDominatorTree
         if (thePostDominatorTree eq null) synchronized {
             thePostDominatorTree = this.thePostDominatorTree
@@ -185,12 +190,26 @@ trait RecordCFG
                         foreachSuccessorOf,
                         foreachPredecessorOf,
                         maxNode = code.instructions.size - 1
-                    ).dt
+                    )
                 this.thePostDominatorTree = thePostDominatorTree
             }
         }
         thePostDominatorTree
+    }
 
+    def postDominatorTree: DominatorTree = postDominatorTreeFactory.dt
+
+    def controlDependencies: ControlDependencies = {
+        var theControlDependencies = this.theControlDependencies
+        if (theControlDependencies eq null) synchronized {
+            theControlDependencies = this.theControlDependencies
+            if (theControlDependencies eq null) {
+                val pdtf = postDominatorTreeFactory
+                theControlDependencies = ControlDependenceGraph(pdtf, wasExecuted)
+                this.theControlDependencies = theControlDependencies
+            }
+        }
+        theControlDependencies
     }
 
     /**
@@ -285,6 +304,13 @@ trait RecordCFG
      * predecessors (more than one).
      */
     def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
+
+    def wasExecuted(pc: PC): Boolean = {
+        pc < code.instructions.size && (
+            (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
+            exitPCs.contains(pc)
+        )
+    }
 
     /**
      * Tests if the instruction with the given pc is a direct or
