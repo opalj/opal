@@ -48,6 +48,10 @@ final class DominatorTree private (
         final val startNode:            Int
 ) {
 
+    final def maxNode = idom.length - 1
+
+    assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
+
     /**
      * Returns the immediate dominator of the node with the given id.
      *
@@ -71,7 +75,8 @@ final class DominatorTree private (
      * @return `true` if `n` strictly dominates `w`.
      */
     @scala.annotation.tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
-        if (n == w) // a node never strictly dominates itself 
+        if (n == w)
+            // a node never strictly dominates itself 
             return false;
 
         val wIDom = idom(w)
