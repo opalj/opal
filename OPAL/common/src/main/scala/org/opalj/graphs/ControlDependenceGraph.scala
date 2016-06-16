@@ -29,6 +29,9 @@
 package org.opalj
 package graphs
 
+import org.opalj.collection.SmallValuesSet
+import scala.collection.mutable
+
 /**
  * Represents the control-dependence information.
  *
@@ -47,33 +50,64 @@ package graphs
  * 			the instruction is not control dependent on any other node.
  * @author Michael Eichberg
  */
-final class ControlDependencies private[graphs] (private val controlDependentOn: Array[Int]) {
+final class ControlDependencies private[graphs] (val dominanceFrontiers: DominanceFrontiers) {
 
     /**
-     * @return `true` if `y` is directly or indirectly control dependent on `x`, `false` otherwise.
+     * @returns The of nodes/basic block on which the given node/basic block is '''directly'''
+     * 			control dependent on. That is, the set of node which directly control whether x is
+     * 			executed or not.
+     * 			'''Directly''' means that there is at least one path  between a node Y in
+     * 			`Control(X)/*the returned set*/` and X, whose selection is controlled by Y and
+     * 			which contains no nodes that may prevent the execution of X.
      */
-    @scala.annotation.tailrec def isYControlDependentOnX(y: Int, x: Int): Boolean = {
-        controlDependentOn(y) match {
-            case `x` ⇒ true
-            case -1  ⇒ false
-            case v   ⇒ isYControlDependentOnX(y, v)
+    def xIsDirectlyControlDependentOn(x: Int): SmallValuesSet = {
+        dominanceFrontiers(x)
+    }
+
+    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
+        val seen = new mutable.BitSet(dominanceFrontiers.maxNode)
+
+        var worklist = List(x)
+        while (worklist.nonEmpty) {
+            val x = worklist.head
+            worklist = worklist.tail
+
+            dominanceFrontiers(x).foreach { y ⇒
+                if (!seen.contains(y)) {
+                    //            seen = y +≈: seen
+                    seen += y
+                    //worklist = y +≈: worklist
+                    worklist ::= y
+                    f(y)
+                }
+            }
         }
     }
-
-    /**
-     * @param y A node of the underlying graph.
-     * @param x A node of the underlying graph.
-     *
-     * @return `true` if `y` is directly control dependent on `x`, `false` otherwise.
-     */
-    def isYDirectlyControlDependentOnX(y: Int, x: Int): Boolean = {
-        controlDependentOn(y) == x
-    }
-
 }
 
 /**
  * Factory to compute the control-dependence graph (based on the [[PostDominatorTree]]).
+ *
+ * The control dependence graph is effectively directly based on the dominance frontiers computed
+ * using the dominator tree for the reverse control-flow graph (aka post dominator tree).
+ * The following example demonstrates this.
+ * {{{
+ * // A graph taken from the paper: Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
+ * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+ * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+ * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+ * val dtf = org.opalj.graphs.DominatorTreeFactory(0, false, foreachSuccessor, foreachPredecessor, 13)
+ * val isValidNode = (n : Int) => n>= 0 && n <= 13
+ * org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
+ * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
+ * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
+ * val pdtf = org.opalj.graphs.PostDominatorTree(
+ * (i : Int) => i == 13, (f : Int => Unit) => f(13),
+ * foreachSuccessor,foreachPredecessor,
+ * 13)
+ * val rdf =  org.opalj.graphs.DominanceFrontiers(pdtf, isValidNode)
+ * org.opalj.io.writeAndOpen(rdf.toDot(isValidNode),"g",".rdf.gv")
+ * }}}
  *
  * @author Michael Eichberg
  */
@@ -89,38 +123,6 @@ object ControlDependenceGraph {
      * 		post-dominated by Y
      * 	-	X is not post-dominated by Y
      *
-     * @example
-     * {{{
-     * scala>//Graph: 0 -> 1->E;  1 -> 2->E
-     * scala>def isExitNode(i: Int) = i == 1 || i == 2
-     * isExitNode: (i: Int)Boolean
-     *
-     * scala>def foreachExitNode(f: Int ⇒ Unit) = { f(1); f(2) }
-     * foreachExitNode: (f: Int => Unit)Unit
-     *
-     * scala>def foreachPredecessorOf(i: Int)(f: Int ⇒ Unit) = i match {
-     *      |    case 0 ⇒
-     *      |    case 1 ⇒ f(0)
-     *      |    case 2 ⇒ f(1)
-     *      |}
-     * foreachPredecessorOf: (i: Int)(f: Int => Unit)Unit
-     * scala>def foreachSuccessorOf(i: Int)(f: Int ⇒ Unit) = i match {
-     *      |    case 0 ⇒ f(1)
-     *      |    case 1 ⇒ f(2)
-     *      |    case 2 ⇒
-     *      |}
-     * foreachSuccessorOf: (i: Int)(f: Int => Unit)Unit
-     * scala>val cdg = org.opalj.graphs.ControlDependenceGraph.apply(
-     *      |    isExitNode,
-     *      |    foreachExitNode,
-     *      |    foreachSuccessorOf,
-     *      |    foreachPredecessorOf,
-     *      |    2
-     *      |)
-     * cdg: org.opalj.graphs.ControlDependenceGraph = ...
-     * scala>cdg.toDot()
-     * }}}
-     *
      * @return The triple `(`(Post)`[[DominatorTree]], [[DominanceFrontiers]], [[ControlDependencies]])`
      */
     def apply(
@@ -130,7 +132,7 @@ object ControlDependenceGraph {
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int,
         isValidNode:          (Int) ⇒ Boolean
-    ): (DominatorTree, DominanceFrontiers, ControlDependencies) = {
+    ): (DominatorTree, ControlDependencies) = {
 
         val pdtf =
             PostDominatorTree(
@@ -139,12 +141,35 @@ object ControlDependenceGraph {
                 foreachPredecessorOf,
                 maxNode
             )
+
+        this(pdtf, DominanceFrontiers(pdtf, isValidNode))
+    }
+
+    /**
+     * @param pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     * 		the post dominator tree computed by the `pdtf`.
+     * @see [[PostDominatorTree$]] and [[DominanceFrontiers]]
+     */
+    def apply(
+        pdtf:        DominatorTreeFactory,
+        isValidNode: (Int) ⇒ Boolean
+    ): ControlDependencies = {
+        new ControlDependencies(DominanceFrontiers(pdtf, isValidNode))
+    }
+
+    /**
+     * @param pdtf A DominatorTreeFactory that creates the post dominator tree.
+     * @param rdf The reverse dominance frontiers. I.e., the dominance frontiers computed using
+     * 		the post dominator tree computed by the `pdtf`.
+     * @see [[PostDominatorTree$]] and [[DominanceFrontiers]]
+     */
+    def apply(
+        pdtf: DominatorTreeFactory,
+        rdf:  DominanceFrontiers
+    ): (DominatorTree, ControlDependencies) = {
         val pdt = pdtf.dt
-        val rdf = DominanceFrontiers(pdtf, isValidNode)
-
-        val controlDependentOn = new Array[Int](maxNode + 1)
-
-        (pdt, rdf, new ControlDependencies(controlDependentOn))
+        (pdt, new ControlDependencies(rdf))
     }
 
 }
