@@ -32,6 +32,8 @@ package graphs
 import org.opalj.collection.SmallValuesSet
 import org.opalj.collection.immutable
 import org.opalj.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * @author Michael Eichberg
@@ -116,7 +118,9 @@ object DominanceFrontiers {
         val max = maxNode + 1
 
         // pre-collect the child nodes (in the DT) for each node
-        val children = new Array[mutable.SmallValuesSet](max)
+        //val children = new Array[mutable.SmallValuesSet](max)
+        //val children = new Array[List[Int]](max)
+        val children = new Array[ArrayBuffer[Int]](max)
         var i = 0
         while (i < max) {
             if (isValidNode(i) && i != startNode) {
@@ -124,13 +128,20 @@ object DominanceFrontiers {
                 val dChildren = children(d)
                 children(d) =
                     if (dChildren eq null) {
-                        mutable.SmallValuesSet.create(max, i)
+                        //mutable.SmallValuesSet.create(max, i)
+                        // List(i)
+                        ArrayBuffer(i)
                     } else {
-                        i +≈: dChildren
+                        //i +≈: dChildren
+                        // i :: dChildren
+                        dChildren += i
                     }
             }
             i += 1
         }
+
+        //        val nodesWithChildren = children.filter(_ ne null).map(_.size)
+        //      println((nodesWithChildren.sum.toDouble / nodesWithChildren.size)+"(max="+nodesWithChildren.max+";elems="+nodesWithChildren.size+")")
 
         val dfs /* dominanceFrontiers */ = new Array[SmallValuesSet](max)
 
@@ -159,14 +170,17 @@ object DominanceFrontiers {
         }
 
         // traverse in DFS order
-        var inDFSOrder: List[Int] = Nil
+        //var inDFSOrder: List[Int] = Nil
+        val inDFSOrder = new IntArrayStack(max)
         var nodes: List[Int] = List(startNode)
         while (nodes.nonEmpty) {
             val n = nodes.head
             nodes = nodes.tail
             val nChildren = children(n)
             if (nChildren ne null) {
-                inDFSOrder ::= n
+                //inDFSOrder ::= n
+                inDFSOrder.push(n)
+                // TODO Use an IntArrayStack so that we can copy the children to the IntArrayStack
                 nChildren.foreach { nodes ::= _ }
             } else {
                 // we immediately compute the dfs_local information 
@@ -174,7 +188,9 @@ object DominanceFrontiers {
             }
         }
 
-        inDFSOrder.foreach { n ⇒
+        while (inDFSOrder.nonEmpty) {
+            val n = inDFSOrder.pop()
+            //inDFSOrder.foreach { n ⇒
             var s = dfLocal(n)
             children(n).foreach { c ⇒
                 dfs(c).foreach { w ⇒

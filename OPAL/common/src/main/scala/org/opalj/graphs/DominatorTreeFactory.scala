@@ -30,7 +30,7 @@ package org.opalj
 package graphs
 
 /**
- * A small wrapper class that wraps the information required to create a [[DominatorTree]].
+ * Wraps the information required to create a [[DominatorTree]] or related data structures.
  *
  * @author Michael Eichberg
  */
