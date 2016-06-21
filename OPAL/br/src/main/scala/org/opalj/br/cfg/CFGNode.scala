@@ -53,7 +53,7 @@ trait CFGNode extends Node {
 
     private[this] var _predecessors: Set[CFGNode] = Set.empty
 
-    private[cfg] def addPredecessor(predecessor: CFGNode): Unit = {
+    def addPredecessor(predecessor: CFGNode): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors = _predecessors + predecessor
     }
@@ -77,7 +77,7 @@ trait CFGNode extends Node {
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 
-    private[cfg] def addSuccessor(successor: CFGNode): Unit = {
+    def addSuccessor(successor: CFGNode): Unit = {
         //  if (successor eq this) throw new IllegalArgumentException(s"$this => $successor")
         _successors = _successors + successor
     }

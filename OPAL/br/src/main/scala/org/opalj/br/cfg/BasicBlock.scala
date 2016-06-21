@@ -48,13 +48,18 @@ class BasicBlock(val startPC: PC) extends CFGNode {
         this.endPC = endPC
     }
 
+    def this(startPC: PC, successors: Set[CFGNode]) {
+        this(startPC)
+        setSuccessors(successors)
+    }
+
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = false
 
     private[this] var _endPC: PC = 0 // will be initialized at construction time
-    private[cfg] def endPC_=(pc: PC): Unit = {
+    def endPC_=(pc: PC): Unit = {
         assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
         _endPC = pc
     }
