@@ -31,6 +31,7 @@ package ai
 package domain
 
 import scala.collection.BitSet
+import scala.collection.mutable
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.br.Code
@@ -42,6 +43,10 @@ import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominatorTreeFactory
 import org.opalj.graphs.ControlDependencies
 import org.opalj.graphs.ControlDependenceGraph
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.ExitNode
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CatchNode
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -75,10 +80,11 @@ trait RecordCFG
     private[this] var regularSuccessors: Array[UShortSet] = _
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
     private[this] var predecessors: Array[UShortSet] = _
-    private[this] var exitPCs: UShortSet = _
+    private[this] var exitPCs: mutable.BitSet = _
     private[this] var theDominatorTree: DominatorTree = _
     private[this] var thePostDominatorTree: DominatorTreeFactory = _
     private[this] var theControlDependencies: ControlDependencies = _
+    private[this] var theBBCFG: CFG = _
 
     abstract override def initProperties(
         code:             Code,
@@ -88,7 +94,7 @@ trait RecordCFG
         val codeSize = code.instructions.size
         regularSuccessors = new Array[UShortSet](codeSize)
         exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
-        exitPCs = UShortSet.empty;
+        exitPCs = new mutable.BitSet(codeSize)
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
@@ -96,6 +102,7 @@ trait RecordCFG
         theDominatorTree = null
         thePostDominatorTree = null
         theControlDependencies = null
+        theBBCFG = null
 
         super.initProperties(code, joinInstructions, initialLocals)
     }
@@ -108,7 +115,7 @@ trait RecordCFG
      *
      * @note This information is lazily computed.
      */
-    def allExitPCs: PCs = exitPCs
+    def allExitPCs: BitSet = exitPCs
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed
@@ -133,7 +140,7 @@ trait RecordCFG
                 } {
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
-                        if (oldPredecessorsOfSuccessor == null) {
+                        if (oldPredecessorsOfSuccessor eq null) {
                             UShortSet(pc)
                         } else {
                             pc +≈: oldPredecessorsOfSuccessor
@@ -144,7 +151,7 @@ trait RecordCFG
             }
         }
         val s = predecessors(pc)
-        if (s != null) s else NoPCs
+        if (s ne null) s else NoPCs
     }
 
     /**
@@ -225,7 +232,7 @@ trait RecordCFG
      */
     def regularSuccessorsOf(pc: PC): PCs = {
         val s = regularSuccessors(pc)
-        if (s != null) s else NoPCs
+        if (s ne null) s else NoPCs
     }
 
     /**
@@ -240,7 +247,7 @@ trait RecordCFG
      */
     def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
         val s = exceptionHandlerSuccessors(pc)
-        if (s != null) s else NoPCs
+        if (s ne null) s else NoPCs
     }
 
     /**
@@ -290,6 +297,12 @@ trait RecordCFG
             allSuccessorsOf(pc)
     }
 
+    final def hasMultipleSuccessors(pc: PC): Boolean = {
+        val regularSuccessorsCount = regularSuccessorsOf(pc).size
+        regularSuccessorsCount > 1 ||
+            (regularSuccessorsCount + exceptionHandlerSuccessorsOf(pc).size) > 1
+    }
+
     final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
         predecessorsOf(pc).foreach { f }
     }
@@ -303,9 +316,9 @@ trait RecordCFG
      * Returns `true` if the instruction with the given pc has multiple direct
      * predecessors (more than one).
      */
-    def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
+    final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
 
-    def wasExecuted(pc: PC): Boolean = {
+    final def wasExecuted(pc: PC): Boolean = {
         pc < code.instructions.size && (
             (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             exitPCs.contains(pc)
@@ -334,7 +347,130 @@ trait RecordCFG
         false
     }
 
-    // METHODS CALLED BY THE ABSTRACT INTERPRETATION FRAMEWORK
+    def bbCFG: CFG = {
+        var theBBCFG = this.theBBCFG
+        if (theBBCFG eq null) synchronized {
+            theBBCFG = this.theBBCFG
+            if (theBBCFG eq null) {
+                theBBCFG = computeBBCFG
+                this.theBBCFG = theBBCFG
+            }
+        }
+        theBBCFG
+    }
+
+    /**
+     * Returns the basic block based representation of the cfg.
+     */
+    private[this] def computeBBCFG: CFG = {
+
+        val instructions = code.instructions
+        val codeSize = instructions.length
+
+        val normalReturnNode = new ExitNode(normalReturn = true)
+        val abnormalReturnNode = new ExitNode(normalReturn = false)
+
+        // 1. basic initialization
+        // BBs is a sparse array; only those fields are used that are related to an instruction
+        // that was actually executed!
+        val bbs = new Array[BasicBlock](codeSize)
+
+        val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
+        for {
+            exceptionHandler ← code.exceptionHandlers
+            if wasExecuted(exceptionHandler.handlerPC)
+        } {
+            val catchNode = new CatchNode(exceptionHandler)
+            val handlerPC = exceptionHandler.handlerPC
+            exceptionHandlers += (handlerPC → catchNode)
+            var handlerBB = bbs(handlerPC)
+            if (handlerBB eq null) {
+                handlerBB = new BasicBlock(handlerPC, successors = Set(catchNode))
+                bbs(handlerPC) = handlerBB
+            } else {
+                handlerBB.addPredecessor(catchNode)
+            }
+            catchNode.addSuccessor(handlerBB)
+        }
+        // 2. iterate over the code to determine the basic block boundaries
+        var runningBB: BasicBlock = null
+        code.programCounters.foreach { pc ⇒
+            if (runningBB eq null) {
+                runningBB = bbs(pc)
+                if (runningBB eq null) {
+                    runningBB = new BasicBlock(pc)
+                    bbs(pc) = runningBB
+                }
+            }
+
+            var endRunningBB: Boolean = false
+
+            if (exitPCs.contains(pc)) {
+                val successorNode = code.instructions(pc) match {
+                    case r: ReturnInstruction ⇒ normalReturnNode
+                    case _                    ⇒ abnormalReturnNode
+                }
+                runningBB.addSuccessor(successorNode)
+                successorNode.addPredecessor(runningBB)
+                endRunningBB = true
+            }
+
+            // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
+            // INCOMING AND OUTGOING DEPENDENCIES!
+            def connect(sourceBB: BasicBlock, targetBBStartPC: PC): Unit = {
+                var targetBB = bbs(targetBBStartPC)
+                if (targetBB eq null) {
+                    targetBB = new BasicBlock(targetBBStartPC)
+                    bbs(targetBBStartPC) = targetBB
+                }
+                targetBB.addPredecessor(sourceBB)
+                sourceBB.addSuccessor(targetBB)
+            }
+
+            var successorsCount = 0
+            val nextInstructionPC = code.pcOfNextInstruction(pc)
+            val theRegularSuccessors = regularSuccessorsOf(pc)
+            val theExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(pc)
+            if (theRegularSuccessors.nonEmpty) {
+                val bb = runningBB
+                successorsCount = theRegularSuccessors.foldLeft(successorsCount) { (count, nextPC) ⇒
+                    connect(bb, nextPC)
+                    if (nextInstructionPC != nextPC) endRunningBB = true
+                    count + 1
+                }
+            }
+            if (theExceptionHandlerSuccessors.nonEmpty) {
+                endRunningBB = true
+                val bb = runningBB
+                successorsCount = theExceptionHandlerSuccessors.foldLeft(successorsCount) { (count, handlerPC) ⇒
+                    val catchNode = exceptionHandlers(handlerPC)
+                    catchNode.addPredecessor(bb)
+                    bb.addSuccessor(catchNode)
+                    count + 1
+                }
+            }
+            endRunningBB =
+                endRunningBB ||
+                    successorsCount > 1 ||
+                    nextInstructionPC == codeSize || // if the last instruction is, e.g., a goto instruction
+                    hasMultiplePredecessors(nextInstructionPC)
+
+            if (endRunningBB) {
+                runningBB.endPC = pc
+                runningBB = null
+            } else {
+                bbs(nextInstructionPC) = runningBB
+            }
+        }
+
+        // 3. create CFG class
+        CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
+    }
+
+    //
+    // METHODS CALLED BY THE ABSTRACT INTERPRETATION FRAMEWORK WHICH RECORD THE AI TIME
+    // CFG
+    //
 
     /**
      * @inheritdoc
@@ -388,7 +524,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def returnVoid(pc: PC): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.returnVoid(pc)
     }
 
@@ -398,7 +534,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def ireturn(pc: PC, value: DomainValue): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.ireturn(pc, value)
     }
 
@@ -408,7 +544,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def lreturn(pc: PC, value: DomainValue): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.lreturn(pc, value)
     }
 
@@ -418,7 +554,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def freturn(pc: PC, value: DomainValue): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.freturn(pc, value)
     }
 
@@ -428,7 +564,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def dreturn(pc: PC, value: DomainValue): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.dreturn(pc, value)
     }
 
@@ -438,7 +574,7 @@ trait RecordCFG
      * @note This method is only intended to be called by the AI framework.
      */
     abstract override def areturn(pc: PC, value: DomainValue): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.areturn(pc, value)
     }
 
@@ -451,7 +587,7 @@ trait RecordCFG
         pc:             PC,
         exceptionValue: ExceptionValue
     ): Unit = {
-        exitPCs = pc +≈: exitPCs
+        exitPCs += pc
         super.abruptMethodExecution(pc, exceptionValue)
     }
 
