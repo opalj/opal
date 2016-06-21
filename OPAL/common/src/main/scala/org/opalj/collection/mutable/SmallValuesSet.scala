@@ -75,6 +75,8 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
     def mutableCopy: MutableSmallValuesSet /* Refines the return type. */
 
     def filter(f: Int ⇒ Boolean): SmallValuesSet
+
+    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
 }
 
 /**

@@ -51,6 +51,8 @@ final object EmptySmallValuesSet extends SmallValuesSet {
 
     def foreach[U](f: Int ⇒ U): Unit = {}
 
+    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
+
     def forall(f: Int ⇒ Boolean): Boolean = true
 
     def size: Int = 0

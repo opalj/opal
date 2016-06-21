@@ -84,6 +84,8 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
      */
     def foreach[U](f: Int ⇒ U): Unit
 
+    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
+
     /**
      * Returns `true` if `f` is true for all values of this set.
      */
