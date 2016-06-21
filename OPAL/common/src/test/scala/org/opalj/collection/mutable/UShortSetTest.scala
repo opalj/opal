@@ -236,7 +236,9 @@ class UShortSetTest extends FunSpec with Matchers {
         it("it should be possible to add the elements of two singleton sets") {
             {
                 val r = UShortSet(47) ++ UShortSet(51)
-                r.size should be(2)
+                if (r.size != 2) {
+                    fail(s"the size should be 2: $r")
+                }
                 r.contains(47) should be(true)
                 r.contains(51) should be(true)
             }
