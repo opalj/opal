@@ -62,7 +62,8 @@ class PerformanceEvaluation extends Locking {
             f
         } finally {
             val endTime = System.nanoTime
-            withWriteLock { doUpdateTimes(s, new Nanoseconds(endTime - startTime)) }
+            val timeSpan = new Nanoseconds(endTime - startTime)
+            withWriteLock { doUpdateTimes(s, timeSpan) }
         }
     }
 
