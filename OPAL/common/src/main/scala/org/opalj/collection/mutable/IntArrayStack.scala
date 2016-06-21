@@ -36,9 +36,9 @@ package mutable
  *
  * @author Michael Eichberg
  */
-final class IntArrayStack private (private[this] var data: Array[Int]) {
+final class IntArrayStack private (private var data: Array[Int]) {
 
-    private[this] var size = 0
+    private var size = 0
 
     def this(initialSize: Int) { this(new Array[Int](Math.max(initialSize, 4))) }
 
@@ -56,11 +56,50 @@ final class IntArrayStack private (private[this] var data: Array[Int]) {
         this.size = size + 1
     }
 
+    def push(that: IntArrayStack): Unit = {
+        val thatSize = that.size
+
+        if (thatSize == 0)
+            return ;
+
+        val thisSize = this.size
+        var data = this.data
+		val combinedSize = thisSize + thatSize
+        if (combinedSize > data.length) {
+            val newData = new Array[Int](combinedSize + 10)
+            System.arraycopy(data, 0, newData, 0, thisSize)
+            data = newData
+            this.data = newData
+        }
+
+        System.arraycopy(that.data, 0, data, thisSize, thatSize)
+
+        this.size = combinedSize
+    }
+
     def pop(): Int = {
         val index = this.size - 1
         val i = data(index)
         this.size = index
         i
+    }
+
+    def foreach[U](f: Int ⇒ U): Unit = {
+        var i = size - 1
+        while (i >= 0) {
+            f(data(i))
+            i -= 1
+        }
+    }
+
+    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        var v = z
+        var i = size - 1
+        while (i >= 0) {
+            v = f(v, data(i))
+            i -= 1
+        }
+        v
     }
 
     def isEmpty: Boolean = size == 0
