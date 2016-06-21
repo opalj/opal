@@ -64,7 +64,7 @@ final class IntArrayStack private (private var data: Array[Int]) {
 
         val thisSize = this.size
         var data = this.data
-		val combinedSize = thisSize + thatSize
+        val combinedSize = thisSize + thatSize
         if (combinedSize > data.length) {
             val newData = new Array[Int](combinedSize + 10)
             System.arraycopy(data, 0, newData, 0, thisSize)
