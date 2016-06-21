@@ -105,6 +105,9 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val evaluatedInstructions = dTime('AI) {
                     BaseAI(classFile, method, domain).evaluatedInstructions
                 }
+                
+                val bbCFG = dTime('BasicBlocksBasedCFG) { domain.bbCFG }
+                
                 evaluatedInstructions.foreach { pc ⇒
 
                     domain.foreachSuccessorOf(pc) { succPC ⇒
@@ -114,6 +117,13 @@ class RecordCFGTest extends FunSpec with Matchers {
                     domain.foreachPredecessorOf(pc) { predPC ⇒
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
+                    
+                    val bb = bbCFG.bb(pc)
+                    if(bb eq null) {
+                        fail(s"the evluated instruction $pc is not associated with a basic block")
+                    }
+                    bb.startPC should be <= (pc)
+                    bb.endPC should be >= (pc)
                 }
 
                 val dt = dTime('Dominators) { domain.dominatorTree }
@@ -124,7 +134,8 @@ class RecordCFGTest extends FunSpec with Matchers {
                     terminateAfter[ControlDependencies](1000l) {
                         dTime('ControlDependencies) { domain.controlDependencies }
                     }
-
+                
+                
                 evaluatedInstructions foreach { pc ⇒
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
@@ -195,6 +206,9 @@ class RecordCFGTest extends FunSpec with Matchers {
             info("computing control dependency information took (CPU time) "+cdgTime)
             val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
             info("querying control dependency information took (CPU time) "+cdgQueryTime)
+            
+            val bbCFGTime = getTime('BasicBlocksBasedCFG).toSeconds
+            info("constructing the CFGs took (CPU time) "+bbCFGTime)
         }
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
