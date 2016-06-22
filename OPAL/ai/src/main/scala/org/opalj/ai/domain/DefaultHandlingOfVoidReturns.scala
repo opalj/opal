@@ -35,8 +35,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait DefaultHandlingOfVoidReturns extends ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+trait DefaultHandlingOfVoidReturns extends ReturnInstructionsDomain { domain: ValuesDomain ⇒
 
     /*base impl.*/ def returnVoid(pc: PC): Unit = {
         /* Nothing to do. */

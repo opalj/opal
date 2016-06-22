@@ -108,8 +108,9 @@ final case class StructuralUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
-    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] =
+    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] = {
         StructuralUpdate(newValue)
+    }
 }
 /**
  * Characterizes an update that did not affect the abstract state but instead just
@@ -140,8 +141,9 @@ final case class MetaInformationUpdate[V](value: V) extends SomeUpdate[V] {
             MetaInformationUpdateType
     }
 
-    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] =
+    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] = {
         MetaInformationUpdate(newValue)
+    }
 }
 
 /**
