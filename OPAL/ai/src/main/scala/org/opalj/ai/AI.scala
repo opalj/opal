@@ -1483,6 +1483,8 @@ trait AI[D <: Domain] {
                             newOperands, locals
                         )
 
+                        theDomain.jumpToSubroutine(pc, branchTarget, returnTarget)
+
                         if (tracer.isDefined) {
                             tracer.get.jumpToSubroutine(theDomain)(
                                 pc, branchTarget, memoryLayoutBeforeSubroutineCall.size
@@ -1524,6 +1526,8 @@ trait AI[D <: Domain] {
                                     (SUBROUTINE_START :: pc :: dynamicSubroutineInformation.reverse) :::
                                     tail
                         }
+
+                        theDomain.returnFromSubroutine(pc, lvIndex)
 
                         if (tracer.isDefined) {
                             tracer.get.ret(theDomain)(

@@ -46,7 +46,7 @@ import org.opalj.ai.util.containsInPrefix
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
+trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒
 
     /**
      * Replaces all occurrences of `oldValue` (using
