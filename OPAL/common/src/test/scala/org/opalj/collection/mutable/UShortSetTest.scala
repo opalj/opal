@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests UShortSet.
@@ -74,10 +75,18 @@ class UShortSetTest extends FunSpec with Matchers {
             set.iterator.toSet should be(Set(232))
         }
 
-        it("it should be possible to iterate over a set with just two values") {
+        it("it should be possible to iterate over a set with just two values - added in descending order") {
             var set = UShortSet.empty
             set = 232 +≈: set
             set = 23 +≈: set
+
+            set.iterator.toSet should be(Set(23, 232))
+        }
+
+        it("it should be possible to iterate over a set with just two values - added in ascending order") {
+            var set = UShortSet.empty
+            set = 23 +≈: set
+            set = 232 +≈: set
 
             set.iterator.toSet should be(Set(23, 232))
         }
@@ -87,17 +96,51 @@ class UShortSetTest extends FunSpec with Matchers {
             set = 232 +≈: set
             set = 3 +≈: set
             set = 23 +≈: set
-
             set.iterator.toSet should be(Set(3, 23, 232))
         }
 
-        it("it should be possible to iterate over a set with just four values") {
+        it("it should be possible to iterate over a set with just four values - last added value smallest") {
             var set = UShortSet.empty
             set = 232 +≈: set
             set = 3 +≈: set
             set = 23 +≈: set
             set = 2 +≈: set
+            set.iterator.toSet should be(Set(2, 3, 23, 232))
+        }
 
+        it("it should be possible to iterate over a set with just four values - last added value second smallest.") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set.iterator.toSet should be(Set(232))
+            set = 23 +≈: set
+            set.iterator.toSet should be(Set(23, 232))
+            set = 2 +≈: set
+            set.iterator.toSet should be(Set(2, 23, 232))
+            set = 3 +≈: set
+            set.iterator.toSet should be(Set(2, 3, 23, 232))
+        }
+
+        it("it should be possible to iterate over a set with just four values - last added value second largest") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set.iterator.toSet should be(Set(232))
+            set = 3 +≈: set
+            set.iterator.toSet should be(Set(3, 232))
+            set = 2 +≈: set
+            set.iterator.toSet should be(Set(2, 3, 232))
+            set = 23 +≈: set
+            set.iterator.toSet should be(Set(2, 3, 23, 232))
+        }
+
+        it("it should be possible to iterate over a set with just four values - last added value largest") {
+            var set = UShortSet.empty
+            set = 3 +≈: set
+            set.iterator.toSet should be(Set(3))
+            set = 23 +≈: set
+            set.iterator.toSet should be(Set(3, 23))
+            set = 2 +≈: set
+            set.iterator.toSet should be(Set(2, 3, 23))
+            set = 232 +≈: set
             set.iterator.toSet should be(Set(2, 3, 23, 232))
         }
 
@@ -119,7 +162,13 @@ class UShortSetTest extends FunSpec with Matchers {
         it("it should be possible to foldLeft over a set with nine values") {
             val values = (Array[UShort](3, 40033, 23433, 11233, 2, 233, 23, 1233, 55555))
             var set = UShortSet.empty
-            values.foreach { v ⇒ set = v +≈: set }
+            values.foreach { v ⇒
+                set = v +≈: set
+                if (!set.contains(v)) {
+                    fail(s"adding the value $v failed: $set")
+                }
+            }
+
             values.sum should be(set.foldLeft(0)(_ + _))
         }
 
@@ -128,10 +177,17 @@ class UShortSetTest extends FunSpec with Matchers {
             val ValuesCount = 100000
             val rnd = new java.util.Random
             var uShortSet = UShortSet.empty
+            var max = -1
 
             rnd.setSeed(seed)
-            for (i ← (0 until ValuesCount))
-                uShortSet = rnd.nextInt(0xFFFF + 1) +≈: uShortSet
+            for (i ← (0 until ValuesCount)) {
+                val nextValue = rnd.nextInt(0xFFFF + 1)
+                if (nextValue > max) {
+                    max = nextValue
+                }
+                uShortSet = nextValue +≈: uShortSet
+                assert(max === uShortSet.max)
+            }
 
             var scalaSet = Set.empty[Int]
             rnd.setSeed(seed)
@@ -140,16 +196,18 @@ class UShortSetTest extends FunSpec with Matchers {
 
             uShortSet.size should equal(scalaSet.size) // we use a random number generator...
             info(s"stored ${scalaSet.size} elemets - using 100000 insertions and ${uShortSet.nodeCount} nodes - in the set")
-            scalaSet.forall(uShortSet.contains(_)) should be(true)
+            PerformanceEvaluation.time {
+                scalaSet.forall(uShortSet.contains(_)) should be(true)
 
-            rnd.setSeed(seed)
-            for (i ← (0 until ValuesCount)) {
-                val value = rnd.nextInt(0xFFFF + 1)
-                if (!uShortSet.contains(value)) fail(s"the $i. value ($value) was not stored in the set")
-            }
+                rnd.setSeed(seed)
+                for (i ← (0 until ValuesCount)) {
+                    val value = rnd.nextInt(0xFFFF + 1)
+                    if (!uShortSet.contains(value)) fail(s"the $i. value ($value) was not stored in the set")
+                }
+            } { t ⇒ info(s"the contains tests took ${t.toSeconds}") }
         }
 
-        it("the number of leaf nodes should be 3 if we add nine distinct value") {
+        it("the number of leaf nodes should be 3 if we add nine distinct values") {
 
             var uShortSet = UShortSet.empty
 
