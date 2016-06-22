@@ -128,7 +128,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
 
     override def nodeId: Long = startPC.toLong
 
-    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]")
+    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 
     override def visualProperties: Map[String, String] = {
         var visualProperties = Map("shape" → "box", "labelloc" → "l")
