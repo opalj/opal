@@ -254,9 +254,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val super_class = in.readUnsignedShort
         val interfaces = {
             val interfaces_count = in.readUnsignedShort
-            repeat(interfaces_count) {
-                in.readUnsignedShort
-            }
+            repeat(interfaces_count) { in.readUnsignedShort }
         }
         val fields = Fields(cp, in)
         val methods = Methods(cp, in)

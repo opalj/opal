@@ -43,7 +43,7 @@ import org.opalj.ai.ReferenceValuesDomain
  *  This method should be mixed in after those domains that provide the
  *  basic handling of unresolved methods (e.g., using "just" type information).
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait SpecialMethodsHandling extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode ⇒
@@ -61,8 +61,9 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         if (!(
             (declaringClassType eq ObjectType.System) &&
             name == "arraycopy" && methodDescriptor == arraycopyDescriptor
-        ))
+        )) {
             return super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands);
+        }
 
         val List(length, destPos, dest, sourcePos, source) = operands
         val sourceIsNull = refIsNull(pc, source)
@@ -90,11 +91,9 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
 
 object SpecialMethodsHandling {
 
-    import org.opalj.br.ObjectType.Object
-
     final val arraycopyDescriptor = {
         MethodDescriptor(
-            IndexedSeq(Object, IntegerType, Object, IntegerType, IntegerType),
+            IndexedSeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
             VoidType
         )
     }

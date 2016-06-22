@@ -70,11 +70,13 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
         newSet
     }
 
-    def -(value: Int): MutableSmallValuesSet /* Redefines the return type. */
+    def -(value: Int): MutableSmallValuesSet /* Refines the return type. */
 
-    def mutableCopy: MutableSmallValuesSet /* Redefines the return type. */
+    def mutableCopy: MutableSmallValuesSet /* Refines the return type. */
 
     def filter(f: Int ⇒ Boolean): SmallValuesSet
+
+    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
 }
 
 /**
@@ -83,6 +85,11 @@ trait SmallValuesSet extends org.opalj.collection.SmallValuesSet {
  * @author Michael Eichberg
  */
 object SmallValuesSet {
+
+    def apply(set: Set[Int]): SmallValuesSet = {
+        val safeSet: scala.collection.immutable.Set[Int] = set.toSet
+        new SmallValuesSetBackedByScalaSet(safeSet)
+    }
 
     /**
      * Creates a new empty set that can store values in the range `[0,max]`.
@@ -96,23 +103,25 @@ object SmallValuesSet {
         else if (max <= UShort.MaxValue)
             EmptyUShortSet
         else
-            new SmallValuesSetBackedByScalaSet(0)
+            new SmallValuesSetBackedByScalaSet()
     }
 
     /**
      * Creates a new set that can store values in the range `[0,max]` and which contains
-     * the given `value`.
+     * the given `value`. Hence, `max` does not specify the maximum number of elements of
+     * the set but specifies the maximum value potentially stored in the set.
      *
      * The behavior of the returned set is undefined if a value should be stored in it
      * which is outside of the specified range!
      */
     def create(max: Int, value: Int): SmallValuesSet = {
+        assert(value <= max, s"the value ($value) has to be smaller than max ($max)")
         if (max <= UByte.MaxValue)
             UByteSet(value)
         else if (max <= UShort.MaxValue)
             UShortSet(value)
         else
-            new SmallValuesSetBackedByScalaSet(0)
+            new SmallValuesSetBackedByScalaSet(value)
     }
 
     /**
@@ -143,6 +152,8 @@ object SmallValuesSet {
      * which is outside of the specified range!
      */
     def create(min: Int, max: Int, value: Int): SmallValuesSet = {
+        assert(value <= max, s"the value ($value) has to be smaller than max ($max)")
+        assert(min <= value, s"the value ($value) has to be larger than min ($min)")
         if (min == 0) {
             create(max, value)
         } else {

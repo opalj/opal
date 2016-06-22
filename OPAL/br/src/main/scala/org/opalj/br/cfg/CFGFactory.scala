@@ -378,11 +378,11 @@ object CFGFactory {
         // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
             subroutineReturnPCs.foreach(subroutine ⇒ bbs(subroutine._1).setIsStartOfSubroutine())
-            for ((subroutinePC, returnAddresses) ← subroutineReturnPCs) {
-                val returnBBs = returnAddresses.map(bbs(_)).toSet[CFGNode]
+            for ((subroutinePC, returnToAddresses) ← subroutineReturnPCs) {
+                val returnBBs = returnToAddresses.map(bbs(_)).toSet[CFGNode]
                 val subroutineBB = bbs(subroutinePC)
-                val subroutineBBs = subroutineBB.reachable(reflexive = true, includeSubroutines = false)
-                val retBBs = subroutineBBs.filter(bb ⇒ bb.successors.isEmpty && bb.isBasicBlock).toSet
+                val subroutineBBs: List[BasicBlock] = subroutineBB.subroutineFrontier(code, bbs)
+                val retBBs = subroutineBBs.toSet[CFGNode]
                 retBBs.foreach(_.setSuccessors(returnBBs))
                 returnBBs.foreach(_.setPredecessors(retBBs))
             }

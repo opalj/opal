@@ -41,6 +41,7 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.domain.RecordCFG
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
@@ -78,10 +79,16 @@ object AsQuadruples {
         val instructions = code.instructions
         val codeSize = instructions.size
 
-        // only strictly needed if we find jsr/ret instructions or want to do optimiaztions
+        // only strictly needed if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
         def cfg(): CFG = {
-            if (theCFG eq null) { theCFG = CFGFactory.apply(code, classHierarchy) }
+            if (theCFG eq null) {
+                if (aiResult.isDefined && aiResult.get.domain.isInstanceOf[RecordCFG]) {
+                    theCFG = aiResult.get.domain.asInstanceOf[RecordCFG].bbCFG
+                } else {
+                    theCFG = CFGFactory(code, classHierarchy)
+                }
+            }
             theCFG
         }
 

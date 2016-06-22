@@ -38,14 +38,14 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class SourceDebugExtension_attribute(
-        attribute_name_index: Int,
+        attribute_name_index: Constant_Pool_Index,
         debug_extension:      Array[Byte]
 ) extends Attribute {
 
-    def attribute_length = 2
+    final override def attribute_length = debug_extension.length
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attribute_name">SourceDebugExtensio</span>: ("Content Not Available")</span>
+        <span><span class="attribute_name">SourceDebugExtension</span>: ("Content Not Available")</span>
     }
 
 }

@@ -85,7 +85,7 @@ package ai
  * @note Mixing in this trait is strictly necessary when aliases are traced using a
  *      a DomainValue's reference.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 

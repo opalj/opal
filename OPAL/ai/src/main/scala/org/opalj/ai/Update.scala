@@ -100,10 +100,7 @@ object SomeUpdate {
  * Characterizes updates where the abstract state was updated such that it is required to
  * continue the abstract interpretation.
  */
-final case class StructuralUpdate[V](
-    value: V
-)
-        extends SomeUpdate[V] {
+final case class StructuralUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def isStructuralUpdate: Boolean = true
 
@@ -111,8 +108,9 @@ final case class StructuralUpdate[V](
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
-    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] =
+    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] = {
         StructuralUpdate(newValue)
+    }
 }
 /**
  * Characterizes an update that did not affect the abstract state but instead just
@@ -130,10 +128,7 @@ final case class StructuralUpdate[V](
  * the information about the origin of a value is considered to be part of the abstract
  * state is a decision of the domain.''
  */
-final case class MetaInformationUpdate[V](
-    value: V
-)
-        extends SomeUpdate[V] {
+final case class MetaInformationUpdate[V](value: V) extends SomeUpdate[V] {
 
     override def isMetaInformationUpdate: Boolean = true
 
@@ -146,8 +141,9 @@ final case class MetaInformationUpdate[V](
             MetaInformationUpdateType
     }
 
-    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] =
+    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] = {
         MetaInformationUpdate(newValue)
+    }
 }
 
 /**
@@ -169,9 +165,8 @@ case object NoUpdate extends Update[Nothing] {
 
     override def &:(updateType: UpdateType): UpdateType = updateType
 
-    override def value =
-        throw new IllegalStateException("a NoUpdate contains no value")
+    override def value: Nothing = throw new IllegalStateException("a NoUpdate contains no value")
 
-    override def updateValue[NewV](newValue: NewV): NoUpdate.type =
+    override def updateValue[NewV](newValue: NewV): Nothing =
         throw new IllegalStateException("updating the value of a NoUpdate is not supported")
 }

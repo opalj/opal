@@ -42,6 +42,8 @@ import org.opalj.graphs.DefaultMutableNode
  */
 sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSet {
 
+    private[mutable] def isFull: Boolean
+
     /**
      * Adds the given value to this set if it is not already contained in this set.
      * If this set has enough space to hold the additional value, a reference to this
@@ -56,11 +58,7 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
 
     override def filter(f: UShort ⇒ Boolean): UShortSet = super[UShortSet].filter(f)
 
-    def ++(values: UShortSet): UShortSet = {
-        var newSet = this.mutableCopy
-        values foreach { v ⇒ newSet = v +≈: newSet }
-        newSet
-    }
+    def ++(values: UShortSet): UShortSet = values.foldLeft(this.mutableCopy)((s, v) ⇒ v +≈: s)
 
     def mutableCopy: UShortSet /* Redefined to refine the return type. */
 
@@ -73,6 +71,15 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
         mapToList(_ + offset).reverse.mkString(pre, sep, pos)
     }
 
+    // FOR "BALANCING" THE TREE
+    private[mutable] def isLeafNode: Boolean
+    private[mutable] final def isUNode: Boolean = !isLeafNode
+    private[mutable] def isU2Set: Boolean
+    private[mutable] def isU4Set: Boolean
+    private[mutable] def asUNode: UShortSetNode = {
+        throw new ClassCastException(s"${this.getClass.getSimpleName} cannot be cast to UShortNode")
+    }
+
     def mkString(start: String, sep: String, end: String): String = mkString(start, sep, end, 0)
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
@@ -83,7 +90,7 @@ sealed trait UShortSet extends org.opalj.collection.UShortSet with SmallValuesSe
 /**
  * This set uses a single `Int` value to store one or two unsigned short values.
  */
-private class UShortSet2(private var value: Int) extends UShortSet {
+private final class UShortSet2(private var value: Int) extends UShortSet {
 
     def this(value1: UShort, value2: UShort) {
         this(value1 | value2 << 16)
@@ -92,16 +99,17 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     import UShortSet2._
 
     @inline protected final def value1 = (value & Value1Mask)
-    @inline protected final def value2 = (value & Value2Mask) >>> 16
+    @inline protected final def value2 = (value /*& Value2Mask*/ ) >>> 16
     @inline protected final def notFull = (value & Value2Mask) == 0
+    @inline private[mutable] final def isFull: Boolean = (value & Value2Mask) != 0
 
     def mutableCopy: mutable.UShortSet = {
-        if (notFull)
+        if (notFull) {
             new UShortSet2(value)
-        else
-            // When this set is full it is never manipulated again;
-            // there is NO remove method.
+        } else {
+            // When this set is full it is never manipulated again; there is NO remove method.
             this
+        }
     }
 
     def max: UShort = if (notFull) value1 else value2
@@ -136,11 +144,18 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         if (value2 > 0) f(value2)
     }
 
-    override def forall(f: UShort ⇒ Boolean): Boolean = {
-        f(value1) && {
-            val value2 = this.value2
-            ((value2 == 0) || f(value2))
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        val b = f(z, value1)
+        val value2 = this.value2
+        if (value2 > 0) {
+            f(b, value2)
+        } else {
+            b
         }
+    }
+
+    override def forall(f: UShort ⇒ Boolean): Boolean = {
+        f(value1) && { val value2 = this.value2; (value2 == 0) || f(value2) }
     }
 
     def +≈:(newValue: UShort): UShortSet = {
@@ -169,16 +184,13 @@ private class UShortSet2(private var value: Int) extends UShortSet {
                 val value2 = this.value2
                 if (newValue < value2) {
                     // the new value is smaller than the second value
-                    new UShortSet4(
-                        value1.toLong | (newValue.toLong << 16) | (value2.toLong << 32)
-                    )
+                    new UShortSet4(value1.toLong | (newValue.toLong << 16) | (value2.toLong << 32))
                 } else if (newValue == value2)
                     // the new value is equal to the second value
                     this
                 else /*uShortValue > value2*/ {
-                    new UShortSet4(
-                        i2lBitMask(value) | (i2lBitMask(newValue) << 32)
-                    )
+                    //new UShortSet4(i2lBitMask(value) | (i2lBitMask(newValue) << 32))
+                    new UShortSet4(i2lBitMask(value) | (newValue.toLong << 32))
                 }
             }
         }
@@ -194,43 +206,43 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def -(value: UShort): UShortSet = {
-        val index = indexOf(value)
-        index match {
-            case 0 ⇒
-                if (size == 1)
-                    EmptyUShortSet
-                else
-                    new UShortSet2(value2)
-            case 1 ⇒
-                if (size == 1)
-                    EmptyUShortSet
-                else
-                    new UShortSet2(value1)
-
-            case -1 ⇒
-                this
-        }
+        val value1 = this.value1
+        val value2 = this.value2
+        if (value == value1) {
+            if (value2 == 0)
+                EmptyUShortSet
+            else
+                new UShortSet2(value2)
+        } else if (value == value2) {
+            new UShortSet2(value1)
+        } else
+            this
     }
 
     override def isEmpty = false
 
-    def iterator: Iterator[UShort] =
+    def iterator: Iterator[UShort] = {
         if (notFull)
             Iterator.single(value1)
         else
             new Iterator[UShort] {
                 private var i = 0
-                def hasNext = i == 0 || (i == 1 && !notFull)
+                def hasNext = i == 0 || (i == 1 && isFull)
                 def next = { i += 1; if (i == 1) value1 else value2 }
             }
+    }
 
-    def iterable: Iterable[UShort] =
-        if (notFull) Iterable(value1) else Iterable(value1, value2)
+    def iterable: Iterable[UShort] = if (notFull) Iterable(value1) else Iterable(value1, value2)
+
+    private[mutable] def isLeafNode: Boolean = true
+    private[mutable] def isU2Set: Boolean = true
+    private[mutable] def isU4Set: Boolean = false
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: DefaultMutableNode[Int] =
+    private[mutable] def asGraph: DefaultMutableNode[Int] = {
         new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
+    }
 }
 
 private object UShortSet2 {
@@ -241,7 +253,7 @@ private object UShortSet2 {
 /**
  * This set uses a single long value to store three or four unsigned short values.
  */
-private class UShortSet4(private var value: Long) extends UShortSet {
+private final class UShortSet4(private var value: Long) extends UShortSet { self ⇒
 
     def this(value1: Long, value2: Long, value3: Long, value4: Long) {
         this(value1 | (value2 << 16) | (value3 << 32) | (value4 << 48))
@@ -252,8 +264,10 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     @inline protected final def value1: Long = (value & Value1Mask)
     @inline protected final def value2: Long = ((value & Value2Mask) >>> 16)
     @inline protected final def value3: Long = ((value & Value3Mask) >>> 32)
-    @inline protected final def value4: Long = ((value & Value4Mask) >>> 48)
+    @inline protected final def value4: Long = ((value /*& Value4Mask*/ ) >>> 48)
     @inline protected final def notFull: Boolean = (value & Value4Mask) == 0
+
+    @inline private[mutable] final def isFull: Boolean = (value & Value4Mask) != 0
 
     def max: UShort = (if (notFull) value3 else value4).toInt
 
@@ -279,63 +293,65 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         )
 
         val newValue: Long = uShortValue.toLong
-        val value1 = this.value1
         val value3 = this.value3
         if (newValue < value3) {
-            val value2 = this.value2
+            val value1 = this.value1
             if (newValue < value1) {
+                val set1Value = newValue | value << 16
                 if (notFull) {
-                    value = value << 16 | newValue
+                    value = set1Value
                     this
                 } else {
-                    new UShortSetNode(
-                        new UShortSet4(newValue, value1, value2, value3),
-                        new UShortSet2(value4.toInt)
-                    )
+                    val iValue4 = value4.toInt
+                    new UShortSetNode(new UShortSet4(set1Value), new UShortSet2(iValue4), iValue4)
                 }
             } else if (newValue == value1) {
                 this
-            } else if (newValue < value2) {
-                if (notFull) {
-                    value = (value1 | (newValue << 16)) | (value2 << 32) | (value3 << 48)
+            } else {
+                val value2 = this.value2
+                if (newValue < value2) {
+                    val set1Value = value1 | (newValue << 16) | (value & Value2_3_4Mask) << 16
+                    if (notFull) {
+                        value = set1Value
+                        this
+                    } else {
+                        val iValue4 = value4.toInt
+                        new UShortSetNode(new UShortSet4(set1Value), new UShortSet2(iValue4), iValue4)
+                    }
+                } else if (newValue == value2) {
                     this
-                } else {
-                    new UShortSetNode(
-                        new UShortSet4(value1, newValue, value2, value3),
-                        new UShortSet2(value4.toInt)
-                    )
-                }
-            } else if (newValue == value2) {
-                this
-            } else /*newValue > value2 && newValue < value3*/ {
-                if (notFull) {
-                    value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
-                    this
-                } else {
-                    new UShortSetNode(
-                        new UShortSet4(value1, value2, newValue, value3),
-                        new UShortSet2(value4.toInt)
-                    )
+                } else /*newValue > value2 && newValue < value3*/ {
+                    val set1Value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
+                    if (notFull) {
+                        value = set1Value
+                        this
+                    } else {
+                        val iValue4 = value4.toInt
+                        new UShortSetNode(new UShortSet4(set1Value), new UShortSet2(iValue4), iValue4)
+                    }
                 }
             }
         } else /*newValue >= value3*/ {
             val value4 = this.value4
             if (newValue == value3) {
                 this
-            } else if (newValue < value4) {
-                if (notFull) {
-                    value = (value1 | (value2 << 16)) | (value3 << 32) | (newValue << 48)
-                    this
-                } else {
-                    new UShortSetNode(
-                        new UShortSet4(value1, value2, value3, newValue),
-                        new UShortSet2(value4.toInt)
-                    )
-                }
+            } else if (newValue < value4 /*=> this set is full*/ ) {
+                val iValue4 = value4.toInt
+                new UShortSetNode(
+                    /*new UShortSet4(value1, value2, value3, newValue)*/
+                    new UShortSet4((value & ~Value4Mask) | (newValue << 48)),
+                    new UShortSet2(iValue4),
+                    iValue4
+                )
             } else if (newValue == value4) {
                 this
-            } else /*newValue > value4 */ {
-                new UShortSetNode(this, new UShortSet2(uShortValue))
+            } else /*newValue > value4 : i.e., this set may not be full(!)*/ {
+                if (notFull) {
+                    value = value | (newValue << 48)
+                    this
+                } else {
+                    new UShortSetNode(this, new UShortSet2(uShortValue), uShortValue)
+                }
             }
         }
     }
@@ -414,12 +430,17 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         if (value4 > 0l) f(value4.toInt)
     }
 
-    override def forall(f: UShort ⇒ Boolean): Boolean = {
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        val b = f(f(f(z, value1.toInt), value2.toInt), value3.toInt)
         val value4 = this.value4
-        f(value1.toInt) &&
-            f(value2.toInt) &&
-            f(value3.toInt) &&
+        if (value4 > 0l) f(b, value4.toInt) else b
+    }
+
+    override def forall(f: UShort ⇒ Boolean): Boolean = {
+        f(value1.toInt) && f(value2.toInt) && f(value3.toInt) && {
+            val value4 = this.value4
             ((value4 == 0l) || f(value4.toInt))
+        }
     }
 
     override def isEmpty = false
@@ -440,16 +461,17 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         }
     }
 
-    def iterable: Iterable[UShort] =
-        if (notFull)
-            Iterable(value1.toInt, value2.toInt, value3.toInt)
-        else
-            Iterable(value1.toInt, value2.toInt, value3.toInt, value4.toInt)
+    def iterable: Iterable[UShort] = new Iterable[UShort] { def iterator = self.iterator }
+
+    private[mutable] def isLeafNode: Boolean = true
+    private[mutable] def isU2Set: Boolean = false
+    private[mutable] def isU4Set: Boolean = true
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: DefaultMutableNode[Int] =
+    private[mutable] def asGraph: DefaultMutableNode[Int] = {
         new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
+    }
 }
 
 private object UShortSet4 {
@@ -457,30 +479,37 @@ private object UShortSet4 {
     final val Value2Mask /*: Long*/ = Value1Mask << 16
     final val Value3Mask /*: Long*/ = Value2Mask << 16
     final val Value4Mask /*: Long*/ = Value3Mask << 16
-    final val Value3_4Mask = (Value3Mask | Value4Mask)
     final val Value1_2Mask = (Value1Mask | Value2Mask)
+    final val Value3_4Mask = (Value3Mask | Value4Mask)
+    final val Value2_3_4Mask = (Value2Mask | Value3Mask | Value4Mask)
 }
 
-private class UShortSetNode(
-        private val set1: UShortSet,
-        private val set2: UShortSet
+private final class UShortSetNode(
+        private val set1:             UShortSet,
+        private val set2:             UShortSet,
+        private[this] var currentMax: Int
 ) extends UShortSet {
 
-    private[this] var currentMax = (set2: SmallValuesSet).max
+    def this(set1: UShortSet, set2: UShortSet) { this(set1, set2, set2.max) }
+
+    private[mutable] def isFull: Boolean = set1.isFull && set2.isFull
+
     def max = currentMax
 
     def min = (set1: SmallValuesSet).min
 
     def mutableCopy: mutable.UShortSet = {
+        val set1 = this.set1
+        val set2 = this.set2
         val set1Copy = set1.mutableCopy
         if (set1Copy eq set1) {
             val set2Copy = set2.mutableCopy
             if (set2Copy eq set2)
                 this
             else
-                new UShortSetNode(set1Copy, set2Copy)
+                new UShortSetNode(set1, set2Copy, currentMax)
         } else {
-            new UShortSetNode(set1Copy, set2.mutableCopy)
+            new UShortSetNode(set1Copy, set2.mutableCopy, currentMax)
         }
     }
 
@@ -507,13 +536,15 @@ private class UShortSetNode(
 
     override def size: Int = set1.size + set2.size
 
-    def contains(value: UShort): Boolean =
-        if ((set1: SmallValuesSet).max > value)
+    def contains(value: UShort): Boolean = {
+        val set1Max = (set1: SmallValuesSet).max
+        if (set1Max > value)
             set1.contains(value)
-        else if ((set1: SmallValuesSet).max == value)
+        else if (set1Max == value)
             true
         else
             set2.contains(value)
+    }
 
     def exists(f: UShort ⇒ Boolean): Boolean = {
         set1.exists(f) || set2.exists(f)
@@ -530,6 +561,10 @@ private class UShortSetNode(
 
     def foreach[U](f: UShort ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
 
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        set2.foldLeft(set1.foldLeft(z)(f))(f)
+    }
+
     override def forall(f: UShort ⇒ Boolean): Boolean = set1.forall(f) && set2.forall(f)
 
     def +≈:(uShortValue: UShort): UShortSet = {
@@ -537,31 +572,66 @@ private class UShortSetNode(
             uShortValue >= MinValue && uShortValue <= MaxValue,
             s"no ushort value: $uShortValue"
         )
+        // SOME OF THE FOLLOWNG CASES ARE THERE TO ACHIEVE SOME BALANCING OF THE TREE TO
+        // IMPROVE QUERYING TIMES
+        val set1 = this.set1
+        val set1Max = set1.max
 
-        val set1Max = (set1: SmallValuesSet).max
-        if (set1Max > uShortValue ||
-            (uShortValue < (set2: SmallValuesSet).min &&
-                uShortValue > set1Max &&
-                set1.isInstanceOf[UShortSet2])) {
-            val newSet1 = uShortValue +≈: set1
-            if (newSet1 eq set1)
+        /*if (set1.isUNode && set2.isLeafNode && { val s1 = set1.asUNode; uShortValue < s1.set1.max && s1.set2.isLeafNode }) {
+            val s1 = set1.asUNode
+            val s1s2 = s1.set2
+            new UShortSetNode(
+                uShortValue +≈: s1.set1,
+                s1s2 ++ set2,
+                currentMax
+            )
+        } else*/ {
+
+            val set2 = this.set2
+
+            if (set1Max > uShortValue) {
+                val newSet1 = uShortValue +≈: set1
+                if (newSet1 eq set1)
+                    this
+                else if (set2.isU2Set && !newSet1.isLeafNode) {
+                    // ESTABLISH INVARIANT: AS LONG AS THE RIGHT NODE DOES NOT CONTAIN AT LEAST FOUR VALUES
+                    // THE LEFT SET MUST NOT BE AN UShortSetNode
+                    val tempNode = newSet1.asInstanceOf[UShortSetNode]
+                    val v = tempNode.set2. /*asInstanceOf[UShortSet2].*/ min
+                    new UShortSetNode(tempNode.set1, v +≈: set2, currentMax)
+                } else
+                    new UShortSetNode(newSet1, set2, currentMax)
+            } else if (set1Max == uShortValue) {
                 this
-            //else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
-            else if ((set2.getClass eq classOf[UShortSet2]) && (newSet1.getClass eq classOf[UShortSetNode])) {
-                val tempNode = newSet1.asInstanceOf[UShortSetNode]
-                val v = tempNode.set2. /*asInstanceOf[UShortSet2].*/ min
-                new UShortSetNode(tempNode.set1, v +≈: set2)
-            } else
-                new UShortSetNode(newSet1, set2)
-        } else if (set1Max == uShortValue)
-            this
-        else {
-            val newSet2 = uShortValue +≈: set2
-            if (newSet2 eq set2) {
-                currentMax = (newSet2: SmallValuesSet).max
-                this
-            } else
-                new UShortSetNode(set1, newSet2)
+            } else if (uShortValue < set2.min && set1.isUNode && set1.asUNode.set2.isU2Set) {
+                val tempNode = set1.asInstanceOf[UShortSetNode]
+                val newTempNodeSet2 = uShortValue +≈: tempNode.set2
+                new UShortSetNode(
+                    new UShortSetNode(tempNode.set1, newTempNodeSet2),
+                    set2,
+                    currentMax
+                )
+            } /* else if (uShortValue < set2.min && !set2.isLeafNode && set1.isU4Set) {
+                new UShortSetNode(
+                    new UShortSetNode(set1, new UShortSet2(uShortValue), uShortValue),
+                    set2,
+                    currentMax
+                )
+            } else if (uShortValue > currentMax && set1.isU4Set && !set2.isLeafNode && set2.isFull) {
+                val tempNode = set2.asInstanceOf[UShortSetNode]
+                new UShortSetNode(
+                    new UShortSetNode(set1, tempNode.set1),
+                    uShortValue +≈: tempNode.set2,
+                    uShortValue
+                )
+            } */ else {
+                val newSet2 = uShortValue +≈: set2
+                if (newSet2 eq set2) {
+                    currentMax = newSet2.max
+                    this
+                } else
+                    new UShortSetNode(set1, newSet2)
+            }
         }
     }
 
@@ -592,6 +662,11 @@ private class UShortSetNode(
 
     def isSingletonSet: Boolean = false
 
+    private[mutable] def isLeafNode: Boolean = false
+    override private[mutable] def asUNode: this.type = this
+    private[mutable] def isU2Set: Boolean = false
+    private[mutable] def isU4Set: Boolean = false
+
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
     private[mutable] def asGraph: DefaultMutableNode[Int] =
@@ -605,6 +680,7 @@ private class UShortSetNode(
 
 private object EmptyUShortSet extends UShortSet {
     override def isEmpty = true
+    def isFull: Boolean = true
     def isSingletonSet: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
@@ -613,12 +689,18 @@ private object EmptyUShortSet extends UShortSet {
     def contains(uShortValue: UShort): Boolean = false
     def exists(f: UShort ⇒ Boolean): Boolean = false
     def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
+
     override def forall(f: UShort ⇒ Boolean): Boolean = true
     def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def max = throw new NoSuchElementException("the set is empty")
     def min = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
     def -(value: UByte): UShortSet = this
+
+    private[mutable] def isLeafNode: Boolean = true
+    private[mutable] def isU2Set: Boolean = false
+    private[mutable] def isU4Set: Boolean = false
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1

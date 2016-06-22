@@ -108,8 +108,9 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
      */
-    def refAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
+    def refAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         refAreEqual(pc, value1, value2).negate
+    }
 
     // -----------------------------------------------------------------------------------
     //

@@ -37,7 +37,14 @@ import scala.xml.Node
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
+    /**
+     * Size of this constant pool entry in bytes.
+     */
+    def size: Int
+
     def Constant_Type_Value: bi.ConstantPoolTags.Value
+
+    final def tag: Int = Constant_Type_Value.id
 
     def asString: String = throw new UnsupportedOperationException()
 

@@ -65,22 +65,31 @@ trait StackMapTable_attributeReader extends AttributeReader {
         stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute
 
+    /*
+     * <pre>
+     * StackMapTable_attribute {
+     *  	u2              attribute_name_index;
+     *      u4              attribute_length;
+     *      u2              number_of_entries;
+     *      stack_map_frame entries[number_of_entries];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         StackMapTable_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val length = in.readInt()
-                val entries = in.readUnsignedShort()
-                if (entries > 0)
+                val attribute_length = in.readInt()
+                val number_of_entries = in.readUnsignedShort()
+                if (number_of_entries > 0 || reifyEmptyAttributes) {
                     StackMapTable_attribute(
                         cp,
                         attribute_name_index,
-                        length, // attribute_length
-                        repeat(entries) {
-                            StackMapFrame(cp, in)
-                        }
+                        attribute_length,
+                        repeat(number_of_entries) { StackMapFrame(cp, in) }
                     )
-                else
+                } else {
                     null
+                }
             }
         )
     )

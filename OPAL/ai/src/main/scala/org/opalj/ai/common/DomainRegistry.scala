@@ -30,12 +30,11 @@ package org.opalj
 package ai
 package common
 
-import br._
-import br.analyses.SomeProject
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 /**
- * The domain registry is a registry for all domains that can be instantiated given
- * a `Project`, `ClassFile` and `Method` object.
+ * Registry for all domains that can be instantiated given a `Project`, `ClassFile` and `Method` object.
  *
  * The registry was developed to support tools for debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,
@@ -138,7 +137,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultIntervalValuesDomain] A classical abstract domain that uses intervals to represent the values of variables.",
+        "[l1.DefaultIntervalValuesDomain] A domain that uses intervals to represent the values of primitive values/variables.",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultIntervalValuesDomain(project, classFile, method)
@@ -146,7 +145,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultSetValuesDomain] A classical abstract domain that represents reference values at the type level and represents int/long values using sets.",
+        "[l1.DefaultSetValuesDomain] A domain that represents reference values at the type level and represents int/long values using sets.",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultSetValuesDomain(project, classFile, method)
@@ -154,7 +153,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultReferenceValuesDomain] A classical abstract domain that tracks various properties related to references values.",
+        "[l1.DefaultReferenceValuesDomain] A domain that tracks various properties related to references values.",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultReferenceValuesDomain(project, classFile, method)
@@ -162,7 +161,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] A classical abstract domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
+        "[l1.DefaultDomain] A domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
         classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, classFile, method)

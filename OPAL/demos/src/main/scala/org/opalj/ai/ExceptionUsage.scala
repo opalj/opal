@@ -215,7 +215,7 @@ class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val metho
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy {
 
-    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    def throwExceptionsOnMethodCall = ExceptionsRaisedByCalledMethods.Any
 
     def throwArithmeticExceptions: Boolean = false
 

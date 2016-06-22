@@ -31,6 +31,35 @@ package fpcf
 package properties
 
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.SetProperty
 
+/**
+ * This set property describes if a class is further extensible by yet unknown types (i.e., can be (transitively) inherited from).
+ * This property generally depends on the kind of the project. If the project is an application, all classes
+ * are considered to be closed; i.e., the class hierarchy is considered to be fixed; if the
+ * analyzed project is a library then the result depends on the concrete assumption about the
+ * openness of the library.
+ *
+ * == Extensibility w.r.t. the open-packages assumption ==
+ *
+ * A class is extensible if:
+ *  $ - the class is not (effectively) final
+ *  $ - one of its subclasses is extensible
+ *
+ * == Extensibility w.r.t. the closed-packages assumption ==
+ *
+ * A class is extensible if:
+ *  $ - the class is public and not (effectively) final
+ *  $ - one of its subclasses is extensible
+ *
+ * == Special cases ==
+ *
+ * If a class is defined in a package starting with '''java.*''', it has to be treated like classes that are
+ * analyzed w.r.t. to closed-packages assumption. This is necessary because the default `ClassLoader` prevents
+ * the definition of further classes within these packages, hence, they are closed by definition.
+ *
+ * If the analyzed codebase has an incomplete type hierarchy which leads to unknown subtype relationships, it is
+ * necessary to add these particular classes to the computed set of extensible classes.
+ *
+ * @author Michael Reif
+ */
 case object IsExtensible extends SetProperty[ClassFile]

@@ -36,10 +36,11 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class SourceFile_attribute(
-        attribute_name_index: Int,
-        sourceFile_index:     Int
+        attribute_name_index: Constant_Pool_Index,
+        sourceFile_index:     Constant_Pool_Index
 ) extends Attribute {
 
     def attribute_length = 2

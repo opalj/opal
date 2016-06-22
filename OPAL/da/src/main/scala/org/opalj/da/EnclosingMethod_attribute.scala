@@ -38,12 +38,12 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class EnclosingMethod_attribute(
-        attribute_name_index: Int,
-        class_index:          Int,
-        method_index:         Int
+        attribute_name_index: Constant_Pool_Index,
+        class_index:          Constant_Pool_Index,
+        method_index:         Constant_Pool_Index
 ) extends Attribute {
 
-    def attribute_length = 4
+    def attribute_length = 2 + 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>

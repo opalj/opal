@@ -31,8 +31,10 @@ package collection
 package mutable
 
 private[mutable] final class SmallValuesSetBackedByScalaSet(
-        private[this] var set: Set[Int] = Set.empty
+        private[this] var set: Set[Int]
 ) extends SmallValuesSet {
+
+    def this() { this(Set.empty[Int]) }
 
     def this(value: Int) { this(Set(value)) }
 
@@ -49,10 +51,14 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
     override def +≈:(value: Int): SmallValuesSetBackedByScalaSet = {
         val set = this.set
         val newSet = set + value
-        if (newSet eq set /* <=> the value was already stored in the set */ )
-            this
-        else
-            return new SmallValuesSetBackedByScalaSet(newSet)
+        if (newSet ne set) {
+            this.set = newSet
+        }
+        this
+        //        if (newSet eq set /* <=> the value was already stored in the set */ )
+        //            this
+        //        else
+        //            return new SmallValuesSetBackedByScalaSet(newSet)
     }
 
     override def -(value: Int): SmallValuesSet = {
@@ -64,8 +70,9 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             new SmallValuesSetBackedByScalaSet()
     }
 
-    override def mutableCopy: SmallValuesSetBackedByScalaSet =
-        this // every subsequent mutation results in a new set object anyway
+    override def mutableCopy: SmallValuesSetBackedByScalaSet = {
+        new SmallValuesSetBackedByScalaSet(set)
+    }
 
     override def contains(value: Int): Boolean = set.contains(value)
 
@@ -78,9 +85,11 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
             set.forall(v ⇒ other.contains(v))
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv))
+    override def foreach[U](f: Int ⇒ U): Unit = set.foreach(f)
 
-    override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v))
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = set.foldLeft(z)(f)
+
+    override def forall(f: Int ⇒ Boolean): Boolean = set.forall(f)
 
     override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
         new SmallValuesSetBackedByScalaSet(set.filter(f))
@@ -89,19 +98,16 @@ private[mutable] final class SmallValuesSetBackedByScalaSet(
     override protected[collection] def mkString(
         pre: String, sep: String, pos: String,
         offset: Int
-    ): String =
+    ): String = {
         set.view.map(_ + offset).mkString(pre, sep, pos)
+    }
 
-    override def mkString(start: String, sep: String, end: String): String =
+    override def mkString(start: String, sep: String, end: String): String = {
         mkString(start, sep, end, 0)
+    }
 
     override def toString(): String = {
-        mkString(
-            s"SmallValuesSetBackedByScalaSet(",
-            ", ",
-            ")",
-            0
-        )
+        mkString(s"SmallValuesSetBackedByScalaSet(", ", ", ")", 0)
     }
 }
 

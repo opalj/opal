@@ -57,7 +57,7 @@ import org.opalj.br.BootstrapMethod
  */
 trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
 
-    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = ExceptionsRaisedByCalledMethods.Any
     def throwNullPointerExceptionOnThrow: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnFieldAccess: Boolean = true

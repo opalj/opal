@@ -62,8 +62,8 @@ object OPALBuild extends Build {
 		bi,
 		br,
 		ai,
-		fpcfa,
 		da,
+		bc,
 		de,
 		av,
 		DeveloperTools,
@@ -104,19 +104,19 @@ object OPALBuild extends Build {
 	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
+ 	lazy val bc = Project(
+ 		id = "BytecodeCreator",
+ 		base = file("OPAL/bc"),
+ 		settings = buildSettings
+ 	).dependsOn(da % "it->it;it->test;test->test;compile->compile")
+ 	 .configs(IntegrationTest)
+
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai"),
 		settings = buildSettings
 	).dependsOn(br % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
-
-  	lazy val fpcfa = Project(
-  		id = "FixpointComputationsFrameworkAnalyses",
-  		base = file("OPAL/fpcfa"),
-  		settings = buildSettings
-  	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
-  	 .configs(IntegrationTest)
 
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to
@@ -140,8 +140,8 @@ object OPALBuild extends Build {
 		base = file("DEVELOPING_OPAL/tools"),
 		settings = buildSettings 
 	).dependsOn(
-		de % "test->test;compile->compile",
-		fpcfa % "test->test;compile->compile;it->it")
+		av % "test->test;compile->compile",
+		bc % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	// This project validates OPAL's implemented architecture; hence
@@ -151,15 +151,14 @@ object OPALBuild extends Build {
 		base = file("DEVELOPING_OPAL/validate"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(
-		DeveloperTools % "test->test;compile->compile;it->it",
-		av % "test->test;compile->compile;it->it")
+		DeveloperTools % "compile->compile;test->test;it->it;it->test")
 	 .configs(IntegrationTest)
 
 	lazy val demos = Project(
 		id = "Demos",
 		base = file("OPAL/demos"),
 		settings = buildSettings ++ Seq(publishArtifact := false)
-	).dependsOn(av,fpcfa)
+	).dependsOn(av,bc)
 	 .configs(IntegrationTest)
 
 	/*****************************************************************************

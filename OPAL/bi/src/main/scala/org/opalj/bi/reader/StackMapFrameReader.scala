@@ -63,15 +63,9 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
         verification_type_info_stack: VerificationTypeInfo
     ): StackMapFrame
 
-    def ChopFrame(
-        frame_type:   Int,
-        offset_delta: Int
-    ): StackMapFrame
+    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame
 
-    def SameFrameExtended(
-        frame_type:   Int,
-        offset_delta: Int
-    ): StackMapFrame
+    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame
 
     def AppendFrame(
         frame_type:                    Int,
@@ -95,45 +89,34 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame = {
         val frame_type = in.readUnsignedByte
-        frame_type match {
-            /*Same_Frame*/
-            case t if (t < 64) ⇒ SameFrame(t);
-
-            /*Same_Locals_1_Stack_Item_Frame*/
-            case t if (t < 128) ⇒
-                SameLocals1StackItemFrame(
-                    t,
-                    VerificationTypeInfo(cp, in)
-                );
-
-            /*RESERVED FOR FUTURE USE*/
-            case t if (t < 247) ⇒ sys.error("Unknonwn frame type.");
-
-            /*Same_Locals_1_Stack_Item_Frame_Extended*/
-            case 247 ⇒
-                SameLocals1StackItemFrameExtended(
-                    247,
-                    in.readUnsignedShort,
-                    VerificationTypeInfo(cp, in)
-                );
-
-            /*Chop_Frame*/
-            case t if (t < 251) ⇒ ChopFrame(t, in.readUnsignedShort)
-
-            /*Same_Frame_Extended*/
-            case 251            ⇒ SameFrameExtended(251, in.readUnsignedShort)
-
-            /*Append_Frame*/
-            case t if (t < 255) ⇒ AppendFrame(
-                t,
-                in.readUnsignedShort,
-                repeat(t - 251 /*number of entries*/ ) {
-                    VerificationTypeInfo(cp, in)
-                }
+        /*Same_Frame*/
+        if (frame_type < 64) {
+            SameFrame(frame_type)
+        } /*Same_Locals_1_Stack_Item_Frame*/ else if (frame_type < 128) {
+            SameLocals1StackItemFrame(
+                frame_type,
+                VerificationTypeInfo(cp, in)
             )
-
-            /*Full_Frame*/
-            case 255 ⇒ FullFrame(
+        } /*RESERVED FOR FUTURE USE*/ else if (frame_type < 247) { sys.error("Unknonwn frame type.") }
+        /*Same_Locals_1_Stack_Item_Frame_Extended*/
+        else if (frame_type == 247) {
+            SameLocals1StackItemFrameExtended(
+                247,
+                in.readUnsignedShort,
+                VerificationTypeInfo(cp, in)
+            )
+        } /*Chop_Frame*/ else if (frame_type < 251) ChopFrame(frame_type, in.readUnsignedShort)
+        /*Same_Frame_Extended*/
+        else if (frame_type == 251) SameFrameExtended(251, in.readUnsignedShort)
+        /*Append_Frame*/
+        else if (frame_type < 255) {
+            AppendFrame(
+                frame_type,
+                in.readUnsignedShort,
+                repeat(frame_type - 251 /*number of entries*/ ) { VerificationTypeInfo(cp, in) }
+            )
+        } /*Full_Frame*/ else /*if (frame_type == 255)*/ {
+            FullFrame(
                 255,
                 in.readUnsignedShort,
                 repeat(in.readUnsignedShort /*number of entries*/ ) {

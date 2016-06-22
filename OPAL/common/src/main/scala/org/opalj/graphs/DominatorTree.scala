@@ -43,7 +43,14 @@ import org.opalj.collection.mutable.IntArrayStack
  *
  * @author Michael Eichberg
  */
-final class DominatorTree private (private final val idom: Array[Int], final val startNode: Int) {
+final class DominatorTree private (
+        private[graphs] final val idom: Array[Int],
+        final val startNode:            Int
+) {
+
+    final def maxNode = idom.length - 1
+
+    assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
 
     /**
      * Returns the immediate dominator of the node with the given id.
@@ -60,6 +67,20 @@ final class DominatorTree private (private final val idom: Array[Int], final val
         }
 
         idom(n)
+    }
+
+    /**
+     * @param n a valid node of the graph.
+     * @param w a valid node of the graph.
+     * @return `true` if `n` strictly dominates `w`.
+     */
+    @scala.annotation.tailrec final def strictlyDominates(n: Int, w: Int): Boolean = {
+        if (n == w)
+            // a node never strictly dominates itself 
+            return false;
+
+        val wIDom = idom(w)
+        wIDom == n || (wIDom != startNode && strictlyDominates(n, wIDom))
     }
 
     /**
@@ -144,6 +165,8 @@ final class DominatorTree private (private final val idom: Array[Int], final val
  */
 object DominatorTree {
 
+    def fornone(g: Int ⇒ Unit): Unit = { (f: (Int ⇒ Unit)) ⇒ { /*nothing to to*/ } }
+
     /**
      * Computes the immediate dominators for each node of a given graph. Each node of the graph
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
@@ -152,10 +175,12 @@ object DominatorTree {
      * @param startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
      * 			computed for some method or the id of the artificial start node created when
      * 			computing a reverse CFG.
+     * @param hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     * 			will be created and added to the graph.
      * @param foreachSuccessorOf A function that given a node subsequently executes the given
      * 			function for each direct successor of the given node.
      * @param foreachPredecessorOf A function that given a node executes the given function for
-     * 			each direct predecessor. The signature of a function that can directly passed
+     * 			each direct predecessor. The signature of a function that can directly be passed
      * 			as a parameter is:
      * 			{{{
      *  		def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
@@ -175,11 +200,35 @@ object DominatorTree {
      * 			a very long single path.).'''
      */
     def apply(
-        startNode:            Int,
-        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:              Int
+        startNode:                Int,
+        startNodeHasPredecessors: Boolean,
+        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        maxNode:                  Int
     ): DominatorTree = {
+
+        if (startNodeHasPredecessors) {
+            val newStartNode = maxNode + 1
+            return this(
+                newStartNode,
+                false,
+                /* newForeachSuccessorOf */ (n: Int) ⇒ {
+                    if (n == newStartNode)
+                        (f: Int ⇒ Unit) ⇒ { f(startNode) }
+                    else
+                        foreachSuccessorOf(n)
+                },
+                /* newForeachPredecessorOf */ (n: Int) ⇒ {
+                    if (n == newStartNode)
+                        (f: Int ⇒ Unit) ⇒ {}
+                    else if (n == startNode)
+                        (f: Int ⇒ Unit) ⇒ { f(newStartNode) }
+                    else
+                        foreachPredecessorOf(n)
+                },
+                newStartNode
+            );
+        }
 
         val max = maxNode + 1
 
@@ -201,7 +250,7 @@ object DominatorTree {
         while (vertexStack.nonEmpty) {
             val v = vertexStack.pop()
             // The following "if" is necessary, because the recursive DFS impl. in the paper 
-            // performs an eager decent. This may already initialize a node that also pushed
+            // performs an eager decent. This may already initialize a node that is also pushed
             // on the stack and, hence, must not be visited again.
             if (semi(v) == 0) {
                 n = n + 1

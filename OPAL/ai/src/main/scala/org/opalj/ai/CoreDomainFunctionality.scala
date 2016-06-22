@@ -46,7 +46,7 @@ import org.opalj.ai.util.containsInPrefix
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
+trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒
 
     /**
      * Replaces all occurrences of `oldValue` (using
@@ -60,7 +60,6 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
-
         (
             operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
             locals.mapConserve(l ⇒ if (l eq oldValue) newValue else l)
@@ -328,7 +327,7 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      I.e., `Yes` is returned if the worklist contains `successorPC`, `No` if the
      *      worklist does not contain `successorPC`. `Unknown` is returned if the AI
      *      framework did not process the worklist and doesn't know anything about
-     *      the scheduled successors. Please note, that the value is independent of the
+     *      the scheduled successors. Note that this value is independent of the
      *      subroutine in which the value may be scheduled.
      *
      * @param isExceptionalControlFlow `true` if and only if the evaluation of
@@ -406,7 +405,8 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      *      create a shallow copy before updating it.
      *      If this is not done, it may happen that the locals associated
      *      with other instructions are also updated.
-     *      '''A method that overrides this method must always call the super method
+     *
+     * @note '''A method that overrides this method must always call the super method
      *      to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
@@ -438,7 +438,7 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
         operandsArray: OperandsArray,
         localsArray:   LocalsArray,
         tracer:        Option[AITracer]
-    ): Unit = { /*Nothing*/ }
+    ): Unit = { /* does nothing by default */ }
 
     /**
      * Called by the abstract interpreter when the abstract interpretation of a method
@@ -450,17 +450,15 @@ trait CoreDomainFunctionality extends ValuesDomain { coreDomain ⇒
      * Domains that override this method are expected to do so by means of an abstract override
      * where they '''always''' also call `super.abstractInterpretationEnded(aiResult)`.
      */
-    def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: coreDomain.type }
-    ): Unit = {
-        /* Nothing */
+    def abstractInterpretationEnded(aiResult: AIResult { val domain: coreDomain.type }): Unit = {
+        /* does nothing by default */
     }
 
     /**
      * This function can be called when the instruction `successorPC` needs to be
      * scheduled. The function will test if the instruction is already scheduled and
      * – if so – returns the given worklist. Otherwise the instruction
-     * is scheduled in the correct context.
+     * is scheduled in the correct (subroutine-)context.
      */
     protected[this] def schedule(
         successorPC:                      PC,

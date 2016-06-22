@@ -103,7 +103,7 @@ class FactoryMethodAnalysis private (val project: SomeProject) extends FPCFAnaly
             val instruction = instructions(pc)
             if (instruction.opcode == INVOKESPECIAL.opcode) {
                 instruction match {
-                    case INVOKESPECIAL(`classType`, "<init>", _) ⇒
+                    case INVOKESPECIAL(`classType`, _, "<init>", _) ⇒
                         // We found a static factory method that is responsible
                         // for creating instances of this class.
                         return ImmediateResult(method, IsFactoryMethod)

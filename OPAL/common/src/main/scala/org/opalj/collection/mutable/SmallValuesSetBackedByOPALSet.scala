@@ -38,8 +38,8 @@ package mutable
  *          is added again before the value is returned.
  */
 private[mutable] final class SmallValuesSetBackedByOPALSet(
-        final val offset: Int,
-        private val set:  SmallValuesSet
+        final val offset:      Int,
+        private[this] var set: SmallValuesSet
 ) extends SmallValuesSet {
 
     override def min = set.min + offset
@@ -58,11 +58,17 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override def +≈:(value: Int): SmallValuesSetBackedByOPALSet = {
         val shiftedValue = value - offset
-        val set = this.set
-        if (set.contains(shiftedValue))
-            this
-        else
-            new SmallValuesSetBackedByOPALSet(offset, (shiftedValue) +≈: set)
+        //        val set = this.set
+        //        if (set.contains(shiftedValue))
+        //            this
+        //        else
+        //            new SmallValuesSetBackedByOPALSet(offset, (shiftedValue) +≈: set)
+        val thisSet = this.set
+        val newSet = shiftedValue +≈: thisSet
+        if (newSet ne thisSet) {
+            this.set = newSet
+        }
+        this
     }
 
     override def -(value: Int): SmallValuesSet = {
@@ -88,6 +94,8 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
     override def foreach[U](f: Int ⇒ U): Unit = set.foreach(rv ⇒ f(rv + offset))
 
     override def forall(f: Int ⇒ Boolean): Boolean = set.forall(v ⇒ f(v + offset))
+
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = set.foldLeft(z)((b, v) ⇒ f(b, v + offset))
 
     override def filter(f: Int ⇒ Boolean): SmallValuesSet = {
         var newSet = this.set

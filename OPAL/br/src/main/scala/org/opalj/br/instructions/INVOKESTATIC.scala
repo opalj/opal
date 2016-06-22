@@ -37,6 +37,7 @@ package instructions
  */
 case class INVOKESTATIC(
         declaringClass:   ObjectType, // a class type to be precise
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {

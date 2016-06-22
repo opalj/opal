@@ -40,7 +40,8 @@ import scala.collection.BitSet
  * The abstract interpreter will then perform the initialization.
  *
  * This information is set immediately before the abstract interpretation is
- * started/continued.
+ * started/continued. I.e., this makes it potentially possible to reuse a [[Domain]] object
+ * for the interpretation of multiple methods.
  *
  * @author Michael Eichberg
  */

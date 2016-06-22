@@ -84,10 +84,10 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 classType = classFile.thisType
                 name = method.name
                 pcs = body.collectWithIndex {
-                    case (pc, INVOKEVIRTUAL(`classType`, `name`, `descriptor`))   ⇒ pc
-                    case (pc, INVOKESTATIC(`classType`, `name`, `descriptor`))    ⇒ pc
-                    case (pc, INVOKESPECIAL(`classType`, `name`, `descriptor`))   ⇒ pc
-                    case (pc, INVOKEINTERFACE(`classType`, `name`, `descriptor`)) ⇒ pc
+                    case (pc, INVOKEVIRTUAL(`classType`, `name`, `descriptor`))    ⇒ pc
+                    case (pc, INVOKESTATIC(`classType`, _, `name`, `descriptor`))  ⇒ pc
+                    case (pc, INVOKESPECIAL(`classType`, _, `name`, `descriptor`)) ⇒ pc
+                    case (pc, INVOKEINTERFACE(`classType`, `name`, `descriptor`))  ⇒ pc
                 }
                 if pcs.nonEmpty
                 result ← inifiniteRecursions(

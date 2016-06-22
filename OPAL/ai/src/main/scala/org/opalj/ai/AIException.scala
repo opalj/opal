@@ -43,6 +43,5 @@ class AIException(
     cause:              Throwable = null,
     enableSuppression:  Boolean   = false,
     writableStackTrace: Boolean   = true
-)
-        extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
+) extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
 

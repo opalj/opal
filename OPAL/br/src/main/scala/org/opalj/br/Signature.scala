@@ -243,9 +243,7 @@ sealed trait Signature extends SignatureElement with Attribute
 
 private[br] object Signature {
 
-    def formalTypeParametersToJVMSignature(
-        formalTypeParameters: List[FormalTypeParameter]
-    ): String = {
+    def formalTypeParametersToJVMSignature(formalTypeParameters: List[FormalTypeParameter]): String = {
         if (formalTypeParameters.isEmpty) {
             ""
         } else {
@@ -260,11 +258,10 @@ import Signature.formalTypeParametersToJVMSignature
  * @see For matching signatures see [[Signature]].
  */
 case class ClassSignature(
-    formalTypeParameters:     List[FormalTypeParameter],
-    superClassSignature:      ClassTypeSignature,
-    superInterfacesSignature: List[ClassTypeSignature]
-)
-        extends Signature {
+        formalTypeParameters:     List[FormalTypeParameter],
+        superClassSignature:      ClassTypeSignature,
+        superInterfacesSignature: List[ClassTypeSignature]
+) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -293,12 +290,11 @@ object ClassSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class MethodTypeSignature(
-    formalTypeParameters:     List[FormalTypeParameter],
-    parametersTypeSignatures: List[TypeSignature],
-    returnTypeSignature:      ReturnTypeSignature,
-    throwsSignature:          List[ThrowsSignature]
-)
-        extends Signature {
+        formalTypeParameters:     List[FormalTypeParameter],
+        parametersTypeSignatures: List[TypeSignature],
+        returnTypeSignature:      ReturnTypeSignature,
+        throwsSignature:          List[ThrowsSignature]
+) extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -327,6 +323,12 @@ object FieldTypeSignature {
 
 }
 
+object FieldTypeJVMSignature {
+
+    def unapply(signature: FieldTypeSignature): Some[String] = Some(signature.toJVMSignature)
+
+}
+
 /**
  * @see For matching signatures see [[Signature]].
  */
@@ -348,12 +350,10 @@ object ArrayTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class ClassTypeSignature(
-    packageIdentifier:        Option[String],
-    simpleClassTypeSignature: SimpleClassTypeSignature,
-    classTypeSignatureSuffix: List[SimpleClassTypeSignature]
-)
-        extends FieldTypeSignature
-        with ThrowsSignature {
+        packageIdentifier:        Option[String],
+        simpleClassTypeSignature: SimpleClassTypeSignature,
+        classTypeSignatureSuffix: List[SimpleClassTypeSignature]
+) extends FieldTypeSignature with ThrowsSignature {
 
     def objectType: ObjectType = {
         val className =
@@ -402,10 +402,8 @@ object ClassTypeSignature {
  * @see For matching signatures see [[Signature]].
  */
 case class TypeVariableSignature(
-    identifier: String
-)
-        extends FieldTypeSignature
-        with ThrowsSignature {
+        identifier: String
+) extends FieldTypeSignature with ThrowsSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
@@ -472,10 +470,9 @@ sealed trait TypeArgument extends SignatureElement
  * @see For matching signatures see [[Signature]].
  */
 case class ProperTypeArgument(
-    varianceIndicator:  Option[VarianceIndicator],
-    fieldTypeSignature: FieldTypeSignature
-)
-        extends TypeArgument {
+        varianceIndicator:  Option[VarianceIndicator],
+        fieldTypeSignature: FieldTypeSignature
+) extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 

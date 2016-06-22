@@ -27,7 +27,7 @@ object BugPickerBuild extends Build {
 			EclipseKeys.withSource := true
 		) ++
 		Seq(libraryDependencies ++= Seq(
-			"de.opal-project" %% "fixpoint-computations-framework-analyses" % "0.9.0-SNAPSHOT",
+			"de.opal-project" %% "abstract-interpretation-framework" % "0.9.0-SNAPSHOT",
 			"de.opal-project" %% "bytecode-disassembler" % "0.9.0-SNAPSHOT"
 		)) ++
 		Seq(resolvers ++= Seq(

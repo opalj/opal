@@ -30,7 +30,8 @@ package org.opalj
 package ai
 
 /**
- * An abstract interpreter that can be interrupted by calling the `interrupt` method.
+ * An abstract interpreter that can be interrupted by calling the AI's `interrupt` method
+ * or by calling the executing thread's interrupt method.
  *
  * @author Michael Eichberg
  */

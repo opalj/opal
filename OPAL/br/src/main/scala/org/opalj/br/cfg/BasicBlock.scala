@@ -48,13 +48,18 @@ class BasicBlock(val startPC: PC) extends CFGNode {
         this.endPC = endPC
     }
 
+    def this(startPC: PC, successors: Set[CFGNode]) {
+        this(startPC)
+        setSuccessors(successors)
+    }
+
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = false
 
     private[this] var _endPC: PC = 0 // will be initialized at construction time
-    private[cfg] def endPC_=(pc: PC): Unit = {
+    def endPC_=(pc: PC): Unit = {
         assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
         _endPC = pc
     }
@@ -64,7 +69,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     def endPC: PC = _endPC
 
     private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
-    private[cfg] def setIsStartOfSubroutine(): Unit = {
+    def setIsStartOfSubroutine(): Unit = {
         _isStartOfSubroutine = true
     }
 
@@ -123,7 +128,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
 
     override def nodeId: Long = startPC.toLong
 
-    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]")
+    override def toHRR: Option[String] = Some(s"[$startPC,$endPC]#=${endPC - startPC + 1}")
 
     override def visualProperties: Map[String, String] = {
         var visualProperties = Map("shape" → "box", "labelloc" → "l")

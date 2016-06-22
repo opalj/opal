@@ -51,7 +51,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
 
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 0)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 0)
         } { t ⇒ info("dominators computed in "+t.toSeconds) }
         var ns: List[Int] = null
 
@@ -66,13 +66,13 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         //io.writeAndOpen(dt.toDot, "DominatorTree", ".dot")
     }
 
-    "a graph with just one custom node" should "result in a dominator tree with a single node" in {
+    "a graph with one custom node" should "result in a dominator tree with a single node" in {
         val g = Graph.empty[Int] += 7
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
 
         val dt = time {
-            DominatorTree(7, foreachSuccessor, foreachPredecessor, 7)
+            DominatorTree(7, false, foreachSuccessor, foreachPredecessor, 7)
         } { t ⇒ info("dominators computed in "+t.toSeconds) }
         var ns: List[Int] = null
 
@@ -92,7 +92,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
@@ -105,7 +105,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
         dt.dom(1) should be(0)
         dt.dom(2) should be(1)
@@ -120,7 +120,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
+            DominatorTree(5, false, foreachSuccessor, foreachPredecessor, 5)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
         dt.dom(0) should be(5)
         dt.dom(1) should be(0)
@@ -140,7 +140,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
@@ -156,7 +156,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(5, foreachSuccessor, foreachPredecessor, 5)
+            DominatorTree(5, false, foreachSuccessor, foreachPredecessor, 5)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(5)
@@ -172,7 +172,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 4)
+            DominatorTree(0, true, foreachSuccessor, foreachPredecessor, 4)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(0)
@@ -185,7 +185,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(2, foreachSuccessor, foreachPredecessor, 2)
+            DominatorTree(2, true, foreachSuccessor, foreachPredecessor, 2)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(1) should be(2)
@@ -198,7 +198,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 20)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 20)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         dt.dom(3) should be(8)
@@ -220,7 +220,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
         val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 128)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 128)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
 
         var ns: List[Int] = Nil
@@ -240,7 +240,7 @@ class DominatorTreeTest extends FlatSpec with Matchers {
             lastI = i
         }
         val dt = time {
-            DominatorTree(0, foreachSuccessor, foreachPredecessor, 65000)
+            DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 65000)
         } { t ⇒ info("dominator tree computed in "+t.toSeconds) }
         var ns: List[Int] = null
 

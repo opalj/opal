@@ -44,11 +44,11 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
 
     def isStartOfSubroutine: Boolean = false
 
-    override private[cfg] def addSuccessor(successor: CFGNode): Unit =
-        throw new UnsupportedOperationException
+    override def addSuccessor(successor: CFGNode): Unit = throw new UnsupportedOperationException
 
-    override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit =
+    override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = {
         throw new UnsupportedOperationException()
+    }
 
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES

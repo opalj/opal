@@ -37,8 +37,7 @@ import org.opalj.br.{ClassHierarchy ⇒ TheClassHierarchy}
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy extends ClassHierarchy {
-    domain: TheProject ⇒
+trait ProjectBasedClassHierarchy extends ClassHierarchy { domain: TheProject ⇒
 
     /**
      * Returns the project's class hierarchy.

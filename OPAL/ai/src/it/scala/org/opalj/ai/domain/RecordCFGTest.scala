@@ -32,16 +32,22 @@ package domain
 
 import java.net.URL
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
+import org.scalatest.FunSpec
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.scalatest.FunSpec
-import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.graphs.ControlDependencies
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.cfg.BasicBlock
 
 /**
  * Tests if we are able to computed the CFG as well as the dominator/post-dominator tree for
@@ -76,6 +82,21 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 
+    def terminateAfter[T >: Null <: AnyRef](millis: Long)(f: ⇒ T): T = {
+        @volatile var result: T = null
+        val t = new Thread(new Runnable { def run(): Unit = { result = f } })
+        t.start
+        t.join(millis)
+        t.interrupt()
+        t.join(10)
+        if (t.isAlive()) {
+            // this way it is no longer deprecated...
+            t.getClass.getMethod("stop").invoke(t)
+            throw new InterruptedException(s"didn't terminate in $millis milliseconds")
+        }
+        result
+    }
+
     private def analyzeProject(name: String, project: Project[java.net.URL]): Unit = {
         info(s"the loaded project ($name) contains ${project.methodsCount} methods")
 
@@ -89,6 +110,38 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val evaluatedInstructions = dTime('AI) {
                     BaseAI(classFile, method, domain).evaluatedInstructions
                 }
+
+                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) { CFGFactory(method.body.get, project.classHierarchy) }
+                val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
+                
+                val pcs = new mutable.BitSet(method.body.size)
+                bbAICFG.allBBs.foreach { bbAI ⇒
+                    if (!pcs.add(bbAI.startPC))
+                        fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
+                    if (bbAI.endPC!= bbAI.startPC) {
+                        if( !pcs.add(bbAI.endPC))
+                        fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) was already used by some other basic block")
+                    }
+
+                    val bbBR = bbBRCFG.bb(bbAI.startPC)
+                    if(bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
+                        fail(
+                                s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine}) and "+
+                                s"bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
+                        )
+                    }
+                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
+                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock ⇒ bb }
+                    allAIPredecessors.foreach { predecessorBB ⇒
+                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC }) 
+                            fail(
+                                    s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
+                                    allAIPredecessors.mkString("ai:{",",","} vs. ")+
+                                    allBRPredecessors.mkString("br:{",",","}")
+                                    )
+                    }
+                }
+
                 evaluatedInstructions.foreach { pc ⇒
 
                     domain.foreachSuccessorOf(pc) { succPC ⇒
@@ -98,24 +151,52 @@ class RecordCFGTest extends FunSpec with Matchers {
                     domain.foreachPredecessorOf(pc) { predPC ⇒
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
+
+                    val bb = bbAICFG.bb(pc)
+                    if (bb eq null) {
+                        fail(s"the evaluated instruction $pc is not associated with a basic block")
+                    }
+                    bb.startPC should be <= (pc)
+                    bb.endPC should be >= (pc)
                 }
 
                 val dt = dTime('Dominators) { domain.dominatorTree }
 
                 val postDT = dTime('PostDominators) { domain.postDominatorTree }
 
-                evaluatedInstructions foreach { pc ⇒
-                    if (pc != dt.startNode && !evaluatedInstructions.contains(dt.dom(pc))) {
-                        fail(s"the dominator ${dt.dom(pc)} of $pc was not evaluated")
+                val cdg =
+                    terminateAfter[ControlDependencies](1000l) {
+                        dTime('ControlDependencies) { domain.controlDependencies }
                     }
-                    if (pc != postDT.startNode &&
+
+                evaluatedInstructions foreach { pc ⇒
+                    if (pc != dt.startNode &&
+                        (dt.dom(pc) != dt.startNode) &&
+                        !evaluatedInstructions.contains(dt.dom(pc))) {
+                        fail(
+                            s"the dominator instruction ${dt.dom(pc)} of instruction $pc "+
+                                s"was not evaluated (dominator tree start node: ${dt.startNode}); "+
+                                s"code size=${method.body.get.instructions.length}."
+                        )
+                    }
+                    if (pc != postDT.startNode && // this should be always if we have an artifical start node
                         postDT.dom(pc) != postDT.startNode &&
                         !evaluatedInstructions.contains(postDT.dom(pc))) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")
                     }
+                    try {
+                        dTime('QueryingControlDependencies) {
+                            cdg.xIsControlDependentOn(pc)(i ⇒ { /*let's just test that everything is fine*/ })
+                        }
+                    } catch {
+                        case t: Throwable ⇒
+                            fail(s"it is not possible to get the control dependency information for $pc", t)
+                    }
                 }
             } catch {
-                case t: Throwable ⇒ failures.add((method.toJava(classFile), t))
+                case t: Throwable ⇒
+                    t.printStackTrace()
+                    failures.add((method.toJava(classFile), t))
             }
         }
 
@@ -143,7 +224,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         }
     }
 
-    describe("calculating the (post)dominator trees") {
+    describe("calculating the (post)dominator trees and the control dependence information") {
 
         def printPerformanceData(): Unit = {
             import DominatorsPerformanceEvaluation.getTime
@@ -153,12 +234,24 @@ class RecordCFGTest extends FunSpec with Matchers {
 
             val postDominatorsTime = getTime('PostDominators).toSeconds
             info("computing post-dominator information took (CPU time) "+postDominatorsTime)
+
+            val cdgTime = getTime('ControlDependencies).toSeconds
+            info("computing control dependency information took (CPU time) "+cdgTime)
+            val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
+            info("querying control dependency information took (CPU time) "+cdgQueryTime)
+
+            val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
+            info("constructing the AI based CFGs took (CPU time) "+bbAICFGTime)
+
+            val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
+            info("constructing the BR based CFGs took (CPU time) "+bbBRCFGTime)
+
         }
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
         import reader.AllClassFiles
 
-        it("should be possible to calculate the (post)dominator trees for all methods of the JDK") {
+        it("should be possible to calculate the information for all methods of the JDK") {
             DominatorsPerformanceEvaluation.resetAll()
 
             val project = org.opalj.br.TestSupport.createJREProject
@@ -168,7 +261,7 @@ class RecordCFGTest extends FunSpec with Matchers {
             printPerformanceData()
         }
 
-        it("should be possible to calculate the (post)dominator trees for all methods of the OPAL 0.3 snapshot") {
+        it("should be possible to calculate the information for all methods of the OPAL 0.3 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
 
             val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
@@ -179,7 +272,7 @@ class RecordCFGTest extends FunSpec with Matchers {
             printPerformanceData()
         }
 
-        it("should be possible to calculate the (post)dominator trees for all methods of the OPAL-08-14-2014 snapshot") {
+        it("should be possible to calculate the information for all methods of the OPAL-08-14-2014 snapshot") {
             DominatorsPerformanceEvaluation.resetAll()
 
             val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")

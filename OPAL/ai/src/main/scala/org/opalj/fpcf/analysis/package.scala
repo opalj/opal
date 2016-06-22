@@ -38,7 +38,7 @@ package object analysis {
 
     ///=== register all fpcf analyses that are defined in the ai package === 
     FPCFAnalysesRegistry.register(
-        "LibraryEntryPointAnalysis",
+        "LibraryEntryPointsAnalysis",
         "Computes the entry points of a library.",
         LibraryEntryPointsAnalysis
     )

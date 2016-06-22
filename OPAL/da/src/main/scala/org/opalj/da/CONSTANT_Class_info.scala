@@ -35,9 +35,9 @@ import scala.xml.Node
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Class_info(
-        name_index: Constant_Pool_Index
-) extends Constant_Pool_Entry {
+case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+
+    override def size: Int = 1 + 2
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Class
 
@@ -49,13 +49,14 @@ case class CONSTANT_Class_info(
             &raquo;)
         </span>
 
-    override def asInlineNode(implicit cp: Constant_Pool): Node =
+    override def asInlineNode(implicit cp: Constant_Pool): Node = {
         <span class="fqn">{ toString }</span>
+    }
 
     override def toString(implicit cp: Constant_Pool): String = {
         val classInfo = cp(name_index).toString
-        if (classInfo.startsWith("["))
-            parseFieldType(classInfo)
+        if (classInfo.charAt(0) == '[')
+            parseFieldType(classInfo).javaTypeName
         else
             classInfo.replace('/', '.')
     }

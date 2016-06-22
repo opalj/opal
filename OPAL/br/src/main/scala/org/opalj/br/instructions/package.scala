@@ -83,6 +83,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Boolean,
+                    false,
                     "valueOf",
                     MethodDescriptor(BooleanType, ObjectType.Boolean)
                 ),
@@ -105,6 +106,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Long,
+                    false,
                     "valueOf",
                     MethodDescriptor(LongType, ObjectType.Long)
                 ),
@@ -127,6 +129,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Byte,
+                    false,
                     "valueOf",
                     MethodDescriptor(ByteType, ObjectType.Byte)
                 ),
@@ -149,6 +152,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Integer,
+                    false,
                     "valueOf",
                     MethodDescriptor(IntegerType, ObjectType.Integer)
                 ),
@@ -171,6 +175,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Short,
+                    false,
                     "valueOf",
                     MethodDescriptor(ShortType, ObjectType.Short)
                 ),
@@ -193,6 +198,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Float,
+                    false,
                     "valueOf",
                     MethodDescriptor(FloatType, ObjectType.Float)
                 ),
@@ -215,6 +221,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Character,
+                    false,
                     "valueOf",
                     MethodDescriptor(CharType, ObjectType.Character)
                 ),
@@ -237,6 +244,7 @@ package object instructions {
             Array(
                 INVOKESTATIC(
                     ObjectType.Double,
+                    false,
                     "valueOf",
                     MethodDescriptor(DoubleType, ObjectType.Double)
                 ),

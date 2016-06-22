@@ -36,39 +36,46 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class Code_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         max_stack:            Int,
         max_locals:           Int,
         code:                 Code,
-        exceptionTable:       IndexedSeq[ExceptionTableEntry],
-        attributes:           Attributes
+        exceptionTable:       ExceptionTable      = IndexedSeq.empty,
+        attributes:           Attributes          = IndexedSeq.empty
 ) extends Attribute {
+
+    override def attribute_length: Int = {
+        2 + 2 +
+            4 /*code_length*/ + code.instructions.length +
+            2 /*exception_table_length*/ + 8 * exceptionTable.length +
+            2 /*attributes_count*/ + attributes.foldLeft(0)(_ + _.size)
+    }
 
     /**
      * @see `toXHTML(Int)(implicit Constant_Pool)`
      */
     @throws[UnsupportedOperationException]("always")
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        throw new UnsupportedOperationException(
-            "the code attribute needs the method's id; "+
-                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
-        )
+        val message = "the code attribute needs the method's id; "+
+            "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method"
+        throw new UnsupportedOperationException(message)
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
 
+        val codeSize = code.instructions.size
         val methodBodyHeader =
-            s"Method Body (Size: ${code.instructions.size} bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
+            s"Method Body (Size: $codeSize bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
         <details class="method_body">
             <summary>{ methodBodyHeader }</summary>
             {
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt })
+                    attributes.collectFirst { case LineNumberTable_attribute(_, lnt) ⇒ lnt }
                 )
             }
             { exception_handlersAsXHTML }
@@ -77,9 +84,7 @@ case class Code_attribute(
 
     }
 
-    def attributesAsXHTML(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield attribute.toXHTML(cp)
-    }
+    def attributesAsXHTML(implicit cp: Constant_Pool) = attributes.map(_.toXHTML(cp))
 
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
         if (exceptionTable.length > 0)
@@ -87,7 +92,7 @@ case class Code_attribute(
                 <details>
                     <summary>Exception Table:</summary>
                     <ol class="exception_table">
-                        { for (exception ← exceptionTable) yield exception.toXHTML(cp, code) }
+                        { exceptionTable.map(_.toXHTML(cp, code)) }
                     </ol>
                 </details>
             </div>

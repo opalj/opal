@@ -73,7 +73,10 @@ class Graph[@specialized(Int) N] private (
      *
      * @example
      * {{{
-     * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] += ("a" → "b") += ("b" → "c") += ("b" → "d") += ("a" → "e") += ("f" -> "e") += ("y" -> "y")  += ("a" -> "f")
+     * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] +=
+     * 			("a" → "b") += ("b" → "c") += ("b" → "d") +=
+     * 			("a" → "e") += ("f" -> "e") += ("y" -> "y") +=
+     * 			("a" -> "f")
      * g: org.opalj.graphs.Graph[AnyRef] =
      * Graph{
      * d => {}

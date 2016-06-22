@@ -280,8 +280,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     /**
      * A reference value with a single (upper) type (bound).
      */
-    protected[this] trait SReferenceValue[T <: ReferenceType] {
-        this: AReferenceValue ⇒
+    protected[this] trait SReferenceValue[T <: ReferenceType] { this: AReferenceValue ⇒
 
         val theUpperTypeBound: T
 
@@ -479,14 +478,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * a type cast and is intended to be used to communicate that the value has
      * to be a reference value (if the underlying byte code is valid.)
      */
-    def asReferenceValue(value: DomainValue): AReferenceValue =
-        value.asInstanceOf[AReferenceValue]
+    def asReferenceValue(value: DomainValue): AReferenceValue = value.asInstanceOf[AReferenceValue]
 
-    def asObjectValue(value: DomainValue): DomainObjectValue =
-        value.asInstanceOf[DomainObjectValue]
+    def asObjectValue(value: DomainValue): DomainObjectValue = value.asInstanceOf[DomainObjectValue]
 
-    def asArrayAbstraction(value: DomainValue): ArrayAbstraction =
+    def asArrayAbstraction(value: DomainValue): ArrayAbstraction = {
         value.asInstanceOf[ArrayAbstraction]
+    }
 
     // -----------------------------------------------------------------------------------
     //

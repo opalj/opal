@@ -49,11 +49,10 @@ package ai
 trait Configuration {
 
     /**
-     * A method call throws all exceptions that are potentially handled. This is
-     * a sound over approximation. A domain that has precise information about the
-     * potentially thrown exceptions is free to ignore this setting.
+     * Determines the behavior how method calls are handled where the exceptions that the
+     * called method may throw are unknown.
      */
-    def throwAllHandledExceptionsOnMethodCall: Boolean
+    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod
 
     /**
      * If `true` a `NullPointerExceptions` is thrown if the exception that is to be

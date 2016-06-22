@@ -34,7 +34,12 @@ package br
  *
  * @author Michael Eichberg
  */
-sealed trait VerificationTypeInfo
+sealed trait VerificationTypeInfo {
+    def isObjectVariableInfo: Boolean = false
+    def asObjectVariableInfo: ObjectVariableInfo = {
+        throw new ClassCastException(s"$this cannot be case to ObjectVariableInfo")
+    }
+}
 
 case object TopVariableInfo extends VerificationTypeInfo
 
@@ -52,4 +57,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo
 
 case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo
 
-case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo
+case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo {
+    override def isObjectVariableInfo: Boolean = true
+    override def asObjectVariableInfo: this.type = this
+}

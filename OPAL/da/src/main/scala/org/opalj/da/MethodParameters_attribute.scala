@@ -39,7 +39,7 @@ import scala.xml.Node
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
+        attribute_length:     Int, // TODO Compute on demand
         parameters:           IndexedSeq[MethodParameter]
 ) extends Attribute {
 
@@ -49,9 +49,8 @@ case class MethodParameters_attribute(
         <span>{ cp(attribute_name_index).toString(cp) }({ parametersToXHTML(cp) })</span>
     }
 
-    def parametersToXHTML(implicit cp: Constant_Pool) = {
-        for (parameter ← parameters) yield parameter.toXHTML(cp)
-    }
+    def parametersToXHTML(implicit cp: Constant_Pool) = parameters.map(_.toXHTML(cp))
+
 }
 object MethodParameters_attribute {
 

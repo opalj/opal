@@ -103,15 +103,15 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
     def resolveJDK8(repository: ClassFileRepository): Option[Method] = {
         bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
-                ObjectType.LambdaMetafactory,
+                ObjectType.LambdaMetafactory, _,
                 "metafactory",
                 INVOKEDYNAMIC.lambdaMetafactoryDescriptor
                 ) |
                 InvokeStaticMethodHandle(
-                    ObjectType.LambdaMetafactory,
+                    ObjectType.LambdaMetafactory, _,
                     "altMetafactory",
                     INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
-                    ) if bootstrapMethod.arguments.size >= 2 ⇒ {
+                    ) if bootstrapMethod.arguments.size >= 2 ⇒
                 bootstrapMethod.arguments(1) match {
                     // Oracle's JDK 8 doesn't make use of invokedynamic
                     // instructions in combination with arraytypes.
@@ -124,8 +124,9 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
                     }
                     case _ ⇒ None
                 }
-            }
-            case _ ⇒ None
+
+            case _ ⇒
+                None
         }
     }
 }

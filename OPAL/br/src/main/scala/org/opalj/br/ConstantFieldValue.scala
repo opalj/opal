@@ -98,6 +98,17 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
 
     override def kindId: Int = ConstantDouble.KindId
 
+    override def equals(other: Any): Boolean = {
+        other match {
+
+            case ConstantDouble(thatValue) ⇒
+                (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
+
+            case _ ⇒
+                false
+        }
+    }
+
 }
 object ConstantDouble {
 
@@ -116,6 +127,17 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
     override def valueType = FloatType
 
     override def kindId: Int = ConstantFloat.KindId
+
+    override def equals(other: Any): Boolean = {
+        other match {
+
+            case ConstantFloat(thatValue) ⇒
+                (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
+
+            case _ ⇒
+                false
+        }
+    }
 
 }
 object ConstantFloat {

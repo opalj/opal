@@ -113,6 +113,8 @@ private[mutable] object EmptyUByteSet extends UByteSet {
     def exists(f: Int ⇒ Boolean): Boolean = false
     def subsetOf(other: org.opalj.collection.SmallValuesSet): Boolean = true
     def foreach[U](f: UShort ⇒ U): Unit = {}
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
+
     def forall(f: Int ⇒ Boolean): Boolean = true
     override def filter(f: Int ⇒ Boolean): SmallValuesSet = this
 
@@ -129,7 +131,7 @@ private[mutable] object EmptyUByteSet extends UByteSet {
 /**
  * This set always contains at least one value which may be "0".
  */
-private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
+private[mutable] final class UByteSet4(private var value: Int) extends UByteSet {
 
     def this(value1: UByte, value2: UByte) {
         this(value1 | value2 << 8)
@@ -148,7 +150,7 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
     @inline private[mutable] final def value1: Int = (value & Value1Mask)
     @inline private[mutable] final def value2: Int = ((value & Value2Mask) >>> 8)
     @inline private[mutable] final def value3: Int = ((value & Value3Mask) >>> 16)
-    @inline private[mutable] final def value4: Int = ((value & Value4Mask) >>> 24)
+    @inline private[mutable] final def value4: Int = ((value /*& Value4Mask*/ ) >>> 24)
     @inline private[mutable] final def notFull: Boolean = (value & Value4Mask) == 0
     @inline private[mutable] final def atLeastTwoValues: Boolean = (value & Value2Mask) != 0
 
@@ -321,6 +323,23 @@ private[mutable] class UByteSet4(private var value: Int) extends UByteSet {
         }
     }
 
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        var b = f(z, value1)
+        val value2 = this.value2
+        if (value2 > 0) {
+            b = f(b, value2)
+            val value3 = this.value3
+            if (value3 > 0) {
+                b = f(b, value3)
+                val value4 = this.value4
+                if (value4 > 0) {
+                    b = f(b, value4)
+                }
+            }
+        }
+        b
+    }
+
     def forall(f: UByte ⇒ Boolean): Boolean = {
         if (!f(value1))
             return false;
@@ -380,7 +399,7 @@ private object UByteSet4 {
     final val Value2_3_4Mask = Value2Mask | Value3_4Mask
 }
 
-private class UByteSetNode(
+private final class UByteSetNode(
         private val set1: UByteSet,
         private val set2: UByteSet
 ) extends UByteSet {
@@ -400,6 +419,8 @@ private class UByteSetNode(
     private[mutable] def asNonEmptyLeafNode: UByteSet4 = throw new ClassCastException()
 
     def mutableCopy: UByteSet = {
+        val set1 = this.set1
+        val set2 = this.set2
         val set1Copy = set1.mutableCopy
         if (set1Copy eq set1) {
             val set2Copy = set2.mutableCopy
@@ -414,12 +435,7 @@ private class UByteSetNode(
 
     def contains(value: UByte): Boolean = {
         val set1Max = set1.max
-        if (set1Max > value)
-            set1.contains(value)
-        else if (set1.max == value)
-            true
-        else
-            set2.contains(value)
+        set1Max == value || (set1Max > value && set1.contains(value)) || set2.contains(value)
     }
 
     def exists(f: Int ⇒ Boolean): Boolean = {
@@ -437,6 +453,11 @@ private class UByteSetNode(
     }
 
     def foreach[U](f: UByte ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
+
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        set2.foldLeft(set1.foldLeft(z)(f))(f)
+    }
+
     def forall(f: UByte ⇒ Boolean): Boolean = set1.forall(f) && set2.forall(f)
 
     def +≈:(uByteValue: UByte): UByteSet = {

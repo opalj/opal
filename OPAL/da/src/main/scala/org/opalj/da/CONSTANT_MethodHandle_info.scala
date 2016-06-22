@@ -40,6 +40,8 @@ case class CONSTANT_MethodHandle_info(
         reference_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
+    override final def size: Int = 1 + 1 + 2
+
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
 
     def refrenceKindAsNode(implicit cp: Constant_Pool): Node = {
@@ -79,6 +81,7 @@ case class CONSTANT_MethodHandle_info(
         })</span>
 
     override def toString(implicit cp: Constant_Pool): String = {
-        s"CONSTANT_MethodHandle_info($reference_kind ,${cp(reference_index).toString(cp)}/*$reference_index */)"
+        val reference_indexAsString = cp(reference_index).toString(cp)
+        s"CONSTANT_MethodHandle_info($reference_kind, $reference_indexAsString/*$reference_index */)"
     }
 }

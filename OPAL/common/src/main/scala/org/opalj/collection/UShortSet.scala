@@ -73,32 +73,20 @@ trait UShortSet extends SmallValuesSet {
     def contains(value: UShort): Boolean
 
     def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
-        val set = scala.collection.mutable.Set.empty[T]
-        foreach(v ⇒ set += f(v))
-        set
+        foldLeft(scala.collection.mutable.Set.empty[T])((s, v) ⇒ s += f(v))
     }
 
     /**
      * Maps all values to a list, reversing the order in which the elements occurred
      * in the (sorted) set.
      */
-    def mapToList[T](f: UShort ⇒ T): List[T] = {
-        var result = List.empty[T]
-        foreach(v ⇒ result = f(v) :: result)
-        result
-    }
+    def mapToList[T](f: UShort ⇒ T): List[T] = foldLeft(Nil: List[T])((l, v) ⇒ f(v) :: l)
 
     def filter(f: UShort ⇒ Boolean): mutable.UShortSet = {
-        var result: mutable.UShortSet = mutable.UShortSet.empty
-        foreach(v ⇒ if (f(v)) result = v +≈: result)
-        result
+        foldLeft(mutable.UShortSet.empty)((s, v) ⇒ if (f(v)) v +≈: s else s)
     }
 
-    def foldLeft[T](i: T)(f: (T, UShort) ⇒ T): T = {
-        var value = i;
-        foreach { v ⇒ value = f(value, v) }
-        value
-    }
+    def foldLeft[T](i: T)(f: (T, UShort) ⇒ T): T
 
     /**
      * Returns a new `Iterator`. The iterator is primarily defined to facilitate

@@ -30,6 +30,7 @@ package org.opalj.br.cfg
 
 import scala.collection.mutable
 import org.opalj.graphs.Node
+import org.opalj.br.Code
 
 /**
  * The common super trait of all nodes belonging to a method's control flow graph.
@@ -53,7 +54,7 @@ trait CFGNode extends Node {
 
     private[this] var _predecessors: Set[CFGNode] = Set.empty
 
-    private[cfg] def addPredecessor(predecessor: CFGNode): Unit = {
+    def addPredecessor(predecessor: CFGNode): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors = _predecessors + predecessor
     }
@@ -77,7 +78,7 @@ trait CFGNode extends Node {
 
     private[this] var _successors: Set[CFGNode] = Set.empty
 
-    private[cfg] def addSuccessor(successor: CFGNode): Unit = {
+    def addSuccessor(successor: CFGNode): Unit = {
         //  if (successor eq this) throw new IllegalArgumentException(s"$this => $successor")
         _successors = _successors + successor
     }
@@ -92,13 +93,11 @@ trait CFGNode extends Node {
     //
 
     private[cfg] def reachable(
-        reachable:          mutable.Set[CFGNode],
-        includeSubroutines: Boolean
+        reachable: mutable.Set[CFGNode]
     ): Unit = {
         _successors.
-            filter { d ⇒ includeSubroutines || !d.isStartOfSubroutine }.
             filterNot { d ⇒ reachable.contains(d) }.
-            foreach { d ⇒ reachable += d; d.reachable(reachable, includeSubroutines) }
+            foreach { d ⇒ reachable += d; d.reachable(reachable) }
     }
 
     /**
@@ -108,13 +107,54 @@ trait CFGNode extends Node {
      * @note The result is not cached.
      */
     def reachable(
-        reflexive:          Boolean = false,
-        includeSubroutines: Boolean = true
+        reflexive: Boolean = false
     ): mutable.Set[CFGNode] = {
         val reachable = mutable.HashSet.empty[CFGNode]
         if (reflexive) reachable += this
-        this.reachable(reachable, includeSubroutines)
+        this.reachable(reachable)
         reachable
+    }
+
+    /**
+     * Computes the (current) set of all [[BasicBlock]]s that belong to this current subroutine and
+     * which have no successors.
+     *
+     * @note The result is not cached.
+     * @note This method is primarily (exclusively?) intended to be used to complete a call
+     * 		graph containing subroutines.
+     */
+    private[cfg] def subroutineFrontier(code: Code, bbs: Array[BasicBlock]): List[BasicBlock] = {
+        assert(this.isStartOfSubroutine)
+
+        var frontier = List.empty[BasicBlock]
+
+        val seen = mutable.HashSet[CFGNode](this)
+        var worklist: List[CFGNode] = List(this)
+        while (worklist.nonEmpty) {
+            val bb = worklist.head
+            worklist = worklist.tail
+
+            val successors = bb.successors
+            if (successors.isEmpty) {
+                if (bb.isBasicBlock) frontier = bb.asBasicBlock :: frontier
+            } else {
+                successors.foreach { succBB ⇒
+                    var nextBB = succBB
+                    // The basic block to which a subroutine returns to cannot be the start
+                    // of a subroutine because a subroutine's code is never reached via a
+                    // normal control flow...(it may however contain a call to a subroutine!)
+                    if (nextBB.isStartOfSubroutine) {
+                        nextBB = bbs(code.pcOfNextInstruction(bb.asBasicBlock.endPC /*the jsr instruction...*/ ))
+                    }
+                    if (!seen.contains(nextBB)) {
+                        seen += nextBB
+                        worklist = nextBB :: worklist
+                    }
+                }
+            }
+        }
+
+        frontier
     }
 
 }

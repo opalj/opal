@@ -83,7 +83,7 @@ object CollectionsUsage {
         code.foreach { (pc, instruction) ⇒
             instruction match {
 
-                case INVOKESTATIC(Collections, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒
+                case INVOKESTATIC(Collections, false, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒
                     val origins = domain.operandOrigin(pc, 0)
                     if ((origins ne null) && // the instruction is not dead
                         origins.size == 1 &&
@@ -96,7 +96,7 @@ object CollectionsUsage {
                             instructions(usages.filter { _ != pc }.head) match {
 
                                 // TODO Support the matching of other constructors... (e.g., which take a size hint)
-                                case INVOKESPECIAL(_, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
+                                case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                     issues ::= Issue(
                                         "CollectionsUsage",
                                         Relevance.DefaultRelevance,
@@ -127,7 +127,7 @@ object CollectionsUsage {
                                 instructions(pc) match {
 
                                     // TODO Support the matching of other constructors... (e.g., which take a size hint)
-                                    case INVOKESPECIAL(_, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
+                                    case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                         foundConstructorCall = true
 
                                     case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) |

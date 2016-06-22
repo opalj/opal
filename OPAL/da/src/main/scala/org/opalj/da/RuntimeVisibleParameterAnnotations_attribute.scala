@@ -37,26 +37,18 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index:  Int,
-        attribute_length:      Int,
-        parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]
-) extends Attribute {
+        attribute_name_index:   Constant_Pool_Index,
+        attribute_length:       Int, // TODO Compute on demand
+        parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
+) extends ParametersAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
     }
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        val annotations =
-            for {
-                // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                parameter_annotation ← parameter_annotations
-                annotation ← parameter_annotation
-            } yield annotation.toXHTML(cp)
-        <span>{ annotations }</span>
-    }
 }
 
 object RuntimeVisibleParameterAnnotations_attribute {

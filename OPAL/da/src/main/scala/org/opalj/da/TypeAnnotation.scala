@@ -36,10 +36,11 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Andre Pacak
  */
 case class TypeAnnotation(
-        target:              TypeAnnotationTarget,
-        path:                TypeAnnotationPath,
+        target_type:         TypeAnnotationTarget,
+        target_path:         TypeAnnotationPath,
         type_index:          Constant_Pool_Index,
         element_value_pairs: IndexedSeq[ElementValuePair]
 ) {
@@ -47,9 +48,9 @@ case class TypeAnnotation(
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val evps = element_value_pairs.map(_.toXHTML)
         <div class="annotation">
-            TypeAnnotation [target:{ target.toXHTML(cp) }
-            , path:{ path.toXHTML(cp) }
-            ,type{ parseFieldType(type_index) }
+            TypeAnnotation [target:{ target_type.toXHTML(cp) }
+            , path:{ target_path.toXHTML(cp) }
+            ,type{ parseFieldType(type_index).javaTypeName }
             ]
             <span class="element_value_pairs">{ evps }</span>
         </div>

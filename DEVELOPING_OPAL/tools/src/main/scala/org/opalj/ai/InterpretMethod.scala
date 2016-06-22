@@ -207,16 +207,21 @@ object InterpretMethod {
                 val cfgDomain = result.domain.asInstanceOf[RecordCFG]
 
                 val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
-                val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".dot")
+                val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
                 println("AI CFG: "+cfgFile)
 
                 val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".dot")
+                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Dominator tree: "+domFile)
 
                 val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".dot")
+                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Post-Dominator tree: "+postDomFile)
+
+                val cdg = cfgDomain.controlDependencies
+                val rdfAsDotGraph = cdg.dominanceFrontiers.toDot(evaluatedInstructions.contains(_))
+                val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
+                println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
             }
 
             if (result.domain.isInstanceOf[RecordDefUse]) {
@@ -224,7 +229,7 @@ object InterpretMethod {
                 writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
 
                 val dotGraph = toDot(duInfo.createDefUseGraph(method.body.get)).toString()
-                writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".dot")
+                writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".gv")
             }
 
             writeAndOpen(
