@@ -79,7 +79,7 @@ object ManualGarbageCollection {
         for {
             method @ MethodWithBody(body) ← classFile.methods
             (pc, gcCall) ← body.collectWithIndex {
-                case (pc, INVOKESTATIC(ObjectType.System, "gc", NoArgsAndReturnVoid)) ⇒
+                case (pc, INVOKESTATIC(ObjectType.System, false, "gc", NoArgsAndReturnVoid)) ⇒
                     (pc, "System.gc()")
                 case (pc, INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) ⇒
                     (pc, "Runtime.gc()")
