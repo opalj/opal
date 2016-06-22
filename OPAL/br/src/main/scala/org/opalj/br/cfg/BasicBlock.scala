@@ -69,7 +69,7 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     def endPC: PC = _endPC
 
     private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
-    private[cfg] def setIsStartOfSubroutine(): Unit = {
+    def setIsStartOfSubroutine(): Unit = {
         _isStartOfSubroutine = true
     }
 
