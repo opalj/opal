@@ -81,6 +81,7 @@ trait RecordCFG
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
     private[this] var predecessors: Array[UShortSet] = _
     private[this] var exitPCs: mutable.BitSet = _
+    private[this] var subroutineStartPCs: UShortSet = _
     private[this] var theDominatorTree: DominatorTree = _
     private[this] var thePostDominatorTree: DominatorTreeFactory = _
     private[this] var theControlDependencies: ControlDependencies = _
@@ -95,6 +96,7 @@ trait RecordCFG
         regularSuccessors = new Array[UShortSet](codeSize)
         exceptionHandlerSuccessors = new Array[UShortSet](codeSize)
         exitPCs = new mutable.BitSet(codeSize)
+        subroutineStartPCs = UShortSet.empty
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
@@ -116,6 +118,11 @@ trait RecordCFG
      * @note This information is lazily computed.
      */
     def allExitPCs: BitSet = exitPCs
+
+    /**
+     * Returns the PCs of the first instruction of all subroutines.
+     */
+    def allSubroutineStartPCs: UShortSet = subroutineStartPCs
 
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed
@@ -463,6 +470,10 @@ trait RecordCFG
             }
         }
 
+        if (subroutineStartPCs.nonEmpty) {
+            subroutineStartPCs.foreach { pc ⇒ bbs(pc).setIsStartOfSubroutine() }
+        }
+
         // 3. create CFG class
         CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
     }
@@ -516,6 +527,11 @@ trait RecordCFG
             operandsArray, localsArray,
             tracer
         )
+    }
+
+    abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
+        subroutineStartPCs = branchTarget +≈: subroutineStartPCs
+        super.jumpToSubroutine(pc, branchTarget, returnTarget)
     }
 
     /**

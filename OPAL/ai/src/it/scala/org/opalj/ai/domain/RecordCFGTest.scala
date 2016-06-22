@@ -32,17 +32,22 @@ package domain
 
 import java.net.URL
 import org.junit.runner.RunWith
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
+import org.scalatest.FunSpec
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.scalatest.FunSpec
-import scala.collection.JavaConverters._
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.graphs.ControlDependencies
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.cfg.BasicBlock
 
 /**
  * Tests if we are able to computed the CFG as well as the dominator/post-dominator tree for
@@ -105,9 +110,38 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val evaluatedInstructions = dTime('AI) {
                     BaseAI(classFile, method, domain).evaluatedInstructions
                 }
+
+                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) { CFGFactory(method.body.get, project.classHierarchy) }
+                val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
                 
-                val bbCFG = dTime('BasicBlocksBasedCFG) { domain.bbCFG }
-                
+                val pcs = new mutable.BitSet(method.body.size)
+                bbAICFG.allBBs.foreach { bbAI ⇒
+                    if (!pcs.add(bbAI.startPC))
+                        fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
+                    if (bbAI.endPC!= bbAI.startPC) {
+                        if( !pcs.add(bbAI.endPC))
+                        fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) was already used by some other basic block")
+                    }
+
+                    val bbBR = bbBRCFG.bb(bbAI.startPC)
+                    if(bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
+                        fail(
+                                s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine}) and "+
+                                s"bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
+                        )
+                    }
+                    val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
+                    val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock ⇒ bb }
+                    allAIPredecessors.foreach { predecessorBB ⇒
+                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC }) 
+                            fail(
+                                    s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
+                                    allAIPredecessors.mkString("ai:{",",","} vs. ")+
+                                    allBRPredecessors.mkString("br:{",",","}")
+                                    )
+                    }
+                }
+
                 evaluatedInstructions.foreach { pc ⇒
 
                     domain.foreachSuccessorOf(pc) { succPC ⇒
@@ -117,10 +151,10 @@ class RecordCFGTest extends FunSpec with Matchers {
                     domain.foreachPredecessorOf(pc) { predPC ⇒
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)
                     }
-                    
-                    val bb = bbCFG.bb(pc)
-                    if(bb eq null) {
-                        fail(s"the evluated instruction $pc is not associated with a basic block")
+
+                    val bb = bbAICFG.bb(pc)
+                    if (bb eq null) {
+                        fail(s"the evaluated instruction $pc is not associated with a basic block")
                     }
                     bb.startPC should be <= (pc)
                     bb.endPC should be >= (pc)
@@ -134,8 +168,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                     terminateAfter[ControlDependencies](1000l) {
                         dTime('ControlDependencies) { domain.controlDependencies }
                     }
-                
-                
+
                 evaluatedInstructions foreach { pc ⇒
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
@@ -206,9 +239,13 @@ class RecordCFGTest extends FunSpec with Matchers {
             info("computing control dependency information took (CPU time) "+cdgTime)
             val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
             info("querying control dependency information took (CPU time) "+cdgQueryTime)
-            
-            val bbCFGTime = getTime('BasicBlocksBasedCFG).toSeconds
-            info("constructing the CFGs took (CPU time) "+bbCFGTime)
+
+            val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
+            info("constructing the AI based CFGs took (CPU time) "+bbAICFGTime)
+
+            val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
+            info("constructing the BR based CFGs took (CPU time) "+bbBRCFGTime)
+
         }
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
