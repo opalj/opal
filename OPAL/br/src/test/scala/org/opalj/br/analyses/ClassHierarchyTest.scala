@@ -85,7 +85,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)
 
-    // Commonly used pacakge names
+    // Commonly used package names
     val pgk = Some("classhierarchy/")
 
     val SimpleCTS = SimpleClassTypeSignature
