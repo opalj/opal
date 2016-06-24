@@ -108,8 +108,6 @@ class CallBySignatureResolution private (
 object CallBySignatureResolution {
 
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
-        implicit val analysisMode = project.analysisMode
-
         val analysisManager = project.get(FPCFAnalysesManagerKey)
         analysisManager.runWithRecommended(CallBySignatureTargetAnalysis)(waitOnCompletion = false)
 
