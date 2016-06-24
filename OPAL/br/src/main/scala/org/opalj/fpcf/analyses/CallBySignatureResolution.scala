@@ -39,6 +39,7 @@ import org.opalj.fpcf.properties.CallBySignature
 import org.opalj.fpcf.properties.NoCBSTargets
 import org.opalj.fpcf.properties.CBSTargets
 import org.opalj.fpcf.analysis.CallBySignatureTargetAnalysis
+import org.opalj.log.OPALLogger
 
 /**
  * An index that enables the efficient lookup of potential
@@ -112,9 +113,7 @@ object CallBySignatureResolution {
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
         implicit val analysisMode = project.analysisMode
         if (AnalysisModes.isApplicationLike(analysisMode))
-            throw new IllegalArgumentException(
-                "call-by-signature resolution for application (like) is not supported"
-            )
+            OPALLogger.warn("info", "CallBySignatureResolution is queried in an applicaiton analysis scenario. The resolution call-by-signature will result in an empty set.")
 
         val analysisManager = project.get(FPCFAnalysesManagerKey)
         analysisManager.runWithRecommended(CallBySignatureTargetAnalysis)(waitOnCompletion = false)
