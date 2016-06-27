@@ -37,7 +37,18 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
 }
 
 /**
- * Specifies how often a field is potentially updated.
+ * Identifies those fields that are immutable from the perspective of a client of a class/object -
+ * that is, whenever a field is (directly or indirectly (for example via a method call)) 
+ * accessed after initialization it will see the same value. 
+ * From this description it follows that direct field read 
+ * accesses are possible as long as the value is already finally initialized. In general it is 
+ * even possible that the initializing field write is not done by the class itself but done by 
+ * a specific caller that is guaranteed to be always executed before the field is (read) 
+ * accessed elsewhere. 
+ * Here, the initialization phase for a specific field always starts with the call of a 
+ * constructor and ends when the field is set to some value (in a thread-safe manner)
+ * or the field is potentially read.
+ * 
  *
  * == Property manifestations ==
  *
