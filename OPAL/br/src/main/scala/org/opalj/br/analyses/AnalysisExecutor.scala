@@ -266,7 +266,7 @@ trait AnalysisExecutor {
         //
         // 3. execute analysis
         //
-        println("[info] executing analysis: "+analysis.title+".")
+        OPALLogger.info("","executing analysis: "+analysis.title+".")(GlobalLogContext)
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
         println(result.toConsoleString)
