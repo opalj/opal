@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
-
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -38,11 +37,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
+
 import scala.reflect.ClassTag
 import scala.collection.mutable
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
-import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
 import org.opalj.graphs.closedSCCs
 import org.opalj.io.writeAndOpen
@@ -54,7 +53,7 @@ import org.opalj.log.OPALLogger.{info ⇒ logInfo}
 import org.opalj.log.OPALLogger.{debug ⇒ logDebug}
 import org.opalj.log.OPALLogger.{error ⇒ logError}
 import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
-import org.opalj.log.LogContext
+import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 
 /**
@@ -162,6 +161,7 @@ class PropertyStore private (
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
         private[this] val data:  JIDMap[Entity, EntityProperties],
+        private[this] val ctx : Map[Class[_],AnyRef],
         final val isInterrupted: () ⇒ Boolean,
         @volatile var debug:     Boolean
 )(
@@ -169,6 +169,10 @@ class PropertyStore private (
         val logContext: LogContext
 ) { store ⇒
 
+    def context[T](ctxId : Class[T]) : T = {
+    ctx(ctxId).getOrElse(throw new ContextNotAvailableException() ).asInstanceOf[T]
+    }
+    
     /**
      * The (immutable) set of all entities.
      */
@@ -242,14 +246,14 @@ class PropertyStore private (
 
                 // reset set property related information
                 theSetPropertyObservers.clear()
-                theSetProperties.clear();
+                theSetProperties.clear()
 
                 // reset entity related information
                 theDirectPropertyComputations.clear()
                 theLazyPropertyComputations.clear()
                 theOnPropertyComputations.clear()
                 observers.clear()
-                entitiesProperties foreach { eps ⇒ eps.ps.clear /*delete properties*/ }
+                entitiesProperties foreach { eps ⇒ eps.ps.clear() /*delete properties*/ }
             }
         }
     }
@@ -269,8 +273,8 @@ class PropertyStore private (
         }
 
         observers.entrySet().asScala foreach { e ⇒
-            val dependerEPK = e.getKey()
-            val dependeeEPKs = e.getValue().map(_._1)
+            val dependerEPK = e.getKey
+            val dependeeEPKs = e.getValue.map(_._1)
             val dependerNode = getNode(dependerEPK)
             val dependeeNodes = dependeeEPKs.map(getNode(_))
             dependerNode.addChildren(dependeeNodes.toList)
@@ -302,7 +306,7 @@ class PropertyStore private (
         var perEntityPropertiesCount = 0
         var unsatisfiedPropertyDependencies = 0
         var registeredObservers = 0
-        val properties = new StringBuilder
+        val properties = new java.lang.StringBuilder()
         for { (e, eps) ← entries } {
             val ps = eps.ps.entries.filter(pk ⇒ pk._2 ne null).map { e ⇒
                 val (pkId, pos) = e
@@ -1259,7 +1263,7 @@ class PropertyStore private (
      * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
      * 		new computations.
      */
-    def isShutdown(): Boolean = threadPool.isShutdown()
+    def isShutdown: Boolean = threadPool.isShutdown
 
     /**
      * General handling of the tasks that are executed.
@@ -1427,7 +1431,7 @@ class PropertyStore private (
                             if (debug) {
                                 def registeredObservers: Int = {
                                     val pss = entitiesProperties.map(_.ps)
-                                    val poss = pss.map(_.values).flatten
+                                    val poss = pss.flatMap(_.values)
                                     poss.map { pos ⇒
                                         val os = pos.os
                                         if (os eq null) 0 else os.count(_ ne null)
@@ -2149,9 +2153,11 @@ object PropertyStore {
      * @return The newly created [[PropertyStore]].
      */
     def apply(
+        //  HList[Context],
         entities:      Traversable[Entity],
-        isInterrupted: () ⇒ Boolean,
-        debug:         Boolean
+isInterrupted: () ⇒ Boolean,
+        debug:         Boolean,
+        ctx : AnyRef*
     )(
         implicit
         logContext: LogContext
@@ -2162,25 +2168,27 @@ object PropertyStore {
         var entityId = 0
         entities foreach { e ⇒
             if (data.put(e, new EntityProperties(entityId)) ne null) {
-                throw new IllegalArgumentException(
-                    s"the list of entities contains duplicates; e.g. $e"
-                )
+                OPALLogger.error("[internal - recoverable]", s"duplicate entity: $e")
             }
             entityId += 1
         }
-        new PropertyStore(data, isInterrupted, debug)
+        
+        new PropertyStore(data,ctx.map(c => (c.getClass,c)).toMap, isInterrupted, debug)
     }
 
     /**
      * Creates an entity selector for a specific type of entities.
+     *
+     * Usage:
+     * {{{
+     *   entitySelector[Method]
+     * }}}
      */
     def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = {
         new PartialFunction[Entity, T] {
+
             def apply(v1: Entity): T = {
-                if (isDefinedAt(v1))
-                    v1.asInstanceOf[T]
-                else
-                    throw new IllegalArgumentException
+                if (isDefinedAt(v1)) v1.asInstanceOf[T] else throw new IllegalArgumentException()
             }
 
             def isDefinedAt(x: Entity): Boolean = {
