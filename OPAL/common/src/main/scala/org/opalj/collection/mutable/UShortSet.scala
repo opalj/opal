@@ -98,8 +98,8 @@ private final class UShortSet2(private var value: Int) extends UShortSet {
 
     import UShortSet2._
 
-    @inline protected final def value1 = (value & Value1Mask)
-    @inline protected final def value2 = (value /*& Value2Mask*/ ) >>> 16
+    @inline protected final def value1 = value & Value1Mask
+    @inline protected final def value2 = value /*& Value2Mask*/ >>> 16
     @inline protected final def notFull = (value & Value2Mask) == 0
     @inline private[mutable] final def isFull: Boolean = (value & Value2Mask) != 0
 
@@ -439,14 +439,14 @@ private final class UShortSet4(private var value: Long) extends UShortSet { self
     override def forall(f: UShort ⇒ Boolean): Boolean = {
         f(value1.toInt) && f(value2.toInt) && f(value3.toInt) && {
             val value4 = this.value4
-            ((value4 == 0l) || f(value4.toInt))
+            value4 == 0l || f(value4.toInt)
         }
     }
 
     override def isEmpty = false
 
     def iterator: Iterator[UShort] = new Iterator[UShort] {
-        private var i = 0;
+        private var i = 0
         private final val maxI = if (notFull) 3 else 4
         def hasNext: Boolean = i < maxI
         def next: UShort = {
@@ -479,9 +479,9 @@ private object UShortSet4 {
     final val Value2Mask /*: Long*/ = Value1Mask << 16
     final val Value3Mask /*: Long*/ = Value2Mask << 16
     final val Value4Mask /*: Long*/ = Value3Mask << 16
-    final val Value1_2Mask = (Value1Mask | Value2Mask)
-    final val Value3_4Mask = (Value3Mask | Value4Mask)
-    final val Value2_3_4Mask = (Value2Mask | Value3Mask | Value4Mask)
+    final val Value1_2Mask = Value1Mask | Value2Mask
+    final val Value3_4Mask = Value3Mask | Value4Mask
+    final val Value2_3_4Mask = Value2Mask | Value3Mask | Value4Mask
 }
 
 private final class UShortSetNode(
@@ -736,8 +736,8 @@ object UShortSet {
     /**
      * Creates a new sorted set of unsigned short values of the given values.
      *
-     * @param uShortValue1 An integer value in the range [0,0xFFFF).
-     * @param uShortValue2 An integer value in the range [0,0xFFFF).
+     * @param value1 An integer value in the range [0,0xFFFF).
+     * @param value2 An integer value in the range [0,0xFFFF).
      */
     @inline def apply(value1: UShort, value2: UShort): UShortSet = {
         assert(value1 >= MinValue && value1 <= MaxValue, s"value out of range: $value1")

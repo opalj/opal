@@ -72,7 +72,7 @@ sealed trait UByteSet extends SmallValuesSet {
     private[mutable] def asTreeNode: UByteSetNode
     private[mutable] def asNonEmptyLeafNode: UByteSet4
 
-    override def toString() = mkString("UByteSet(", ",", ")", 0)
+    override def toString = mkString("UByteSet(", ",", ")", 0)
 
     /*FOR DEBUGGING AND OPTIMIZATION PURPOSES*/
     /**
@@ -147,10 +147,10 @@ private[mutable] final class UByteSet4(private var value: Int) extends UByteSet 
 
     import UByteSet4._
 
-    @inline private[mutable] final def value1: Int = (value & Value1Mask)
-    @inline private[mutable] final def value2: Int = ((value & Value2Mask) >>> 8)
-    @inline private[mutable] final def value3: Int = ((value & Value3Mask) >>> 16)
-    @inline private[mutable] final def value4: Int = ((value /*& Value4Mask*/ ) >>> 24)
+    @inline private[mutable] final def value1: Int = value & Value1Mask
+    @inline private[mutable] final def value2: Int = (value & Value2Mask) >>> 8
+    @inline private[mutable] final def value3: Int = (value & Value3Mask) >>> 16
+    @inline private[mutable] final def value4: Int = (value /*& Value4Mask*/ ) >>> 24
     @inline private[mutable] final def notFull: Boolean = (value & Value4Mask) == 0
     @inline private[mutable] final def atLeastTwoValues: Boolean = (value & Value2Mask) != 0
 
@@ -277,7 +277,8 @@ private[mutable] final class UByteSet4(private var value: Int) extends UByteSet 
     }
 
     def exists(f: Int ⇒ Boolean): Boolean = {
-        if (f(value1)) return true;
+        if (f(value1))
+            return true;
 
         val value2 = this.value2
         if (value2 == 0)
