@@ -30,6 +30,9 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Field
+
 sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     type Self = FieldMutability
@@ -77,7 +80,20 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
 object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
     final val key: PropertyKey[FieldMutability] = {
-        PropertyKey.create("FieldMutability", NonFinalFieldByLackOfInformation)
+        PropertyKey.create(
+                "FieldMutability", 
+                (p : PropertyStore, e : Entity) ⇒ {
+                    e match {
+                        case f : Field => 
+                            if(f.isFinal) 
+                                DeclaredFinalField 
+                            else 
+                                NonFinalFieldByAnalysis
+                        case x => error(x.getClass.getSimpleName+" is not an org.opalj.br.Field") 
+                    }
+                },
+                NonFinalFieldByLackOfInformation
+                )
     }
 
 }
