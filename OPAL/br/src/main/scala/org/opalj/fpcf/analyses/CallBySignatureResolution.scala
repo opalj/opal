@@ -33,8 +33,6 @@ package analyses
 import scala.collection.Set
 import org.opalj.br.analyses._
 import org.opalj.br.{Method, MethodDescriptor, ObjectType}
-import org.opalj.fpcf.EP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.CallBySignature
 import org.opalj.fpcf.properties.NoCBSTargets
 import org.opalj.fpcf.properties.CBSTargets
@@ -110,12 +108,6 @@ class CallBySignatureResolution private (
 object CallBySignatureResolution {
 
     def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
-        implicit val analysisMode = project.analysisMode
-        if (AnalysisModes.isApplicationLike(analysisMode))
-            throw new IllegalArgumentException(
-                "call-by-signature resolution for application (like) is not supported"
-            )
-
         val analysisManager = project.get(FPCFAnalysesManagerKey)
         analysisManager.runWithRecommended(CallBySignatureTargetAnalysis)(waitOnCompletion = false)
 
