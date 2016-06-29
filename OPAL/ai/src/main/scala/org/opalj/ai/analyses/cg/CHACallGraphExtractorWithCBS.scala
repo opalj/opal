@@ -32,7 +32,6 @@ package analyses
 package cg
 
 import scala.collection.Set
-
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -40,6 +39,7 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
+import org.opalj.util.GlobalIntStatistics
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -66,8 +66,6 @@ class CHACallGraphExtractorWithCBS(
     ) extends super.AnalysisContext(project, classFile, method) {
 
         val cbsIndex = project.get(CallBySignatureResolutionKey)
-        var cbsCount = 0
-
         /**
          * @note A virtual method call is always an instance based call and never a call to
          *      a static method. However, the receiver may be `null` unless it is the
@@ -121,7 +119,8 @@ class CHACallGraphExtractorWithCBS(
                 declaringClassType
             )
 
-            this.cbsCount += cbsMethods.size
+
+            GlobalIntStatistics.increase('cbs, cbsMethods.size)
             cbsMethods
         }
     }
