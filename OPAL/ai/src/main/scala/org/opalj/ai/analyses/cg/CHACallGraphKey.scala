@@ -71,7 +71,7 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
     override protected def compute(project: SomeProject): ComputedCallGraph = {
 
         val analysisMode = project.analysisMode
-        val isLibrary = AnalysisModes.isLibraryLike(analysisMode)
+        val isLibrary = analysisMode == AnalysisModes.CPA || analysisMode == AnalysisModes.OPA
         val entryPoints = analysisMode match {
             case AnalysisModes.DesktopApplication ⇒
                 // This entry point set can be used but it is unnecessary imprecise...

@@ -53,7 +53,7 @@ class CHACallGraphAlgorithmConfiguration(
 
     final val Extractor = initExtractor
 
-    final def initExtractor: CHACallGraphExtractor =
+    final def initExtractor: CallGraphExtractor =
         if (withCallBySignatureResolution)
             new CHACallGraphExtractorWithCBS(cache)
         else

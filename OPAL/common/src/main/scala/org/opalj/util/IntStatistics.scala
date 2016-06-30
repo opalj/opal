@@ -34,39 +34,35 @@ import scala.collection.mutable
 import org.opalj.concurrent.Locking
 
 /**
-  * ==Thread Safety==
-  * This class is thread safe.
-  *
-  * @author Michael Reif
-  */
+ * ==Thread Safety==
+ * This class is thread safe.
+ *
+ * @author Michael Reif
+ */
 class IntStatistics extends Locking {
 
-  private[this] val count = mutable.Map.empty[Symbol, Int]
+    private[this] val count = mutable.Map.empty[Symbol, Int]
 
-  final def increase(s: Symbol, value: Int) : Unit = {
-    withWriteLock { doUpdateTimes(s, value) }
-  }
+    final def increase(s: Symbol, value: Int): Unit = {
+        withWriteLock { doUpdateCounts(s, value) }
+    }
 
-  protected[this] def doUpdateTimes(s: Symbol, value: Int): Unit = {
-    val oldValue = count.getOrElseUpdate(s, 0)
-    count.update(s, oldValue + value)
-  }
+    protected[this] def doUpdateCounts(s: Symbol, value: Int): Unit = {
+        val oldValue = count.getOrElseUpdate(s, 0)
+        count.update(s, oldValue + value)
+    }
 
-  def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
+    def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
 
-  protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
+    protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
 
+    final def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
 
-  final def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
+    protected[this] def doReset(s: Symbol): Unit = count.remove(s)
 
+    final def resetAll(): Unit = withWriteLock { doResetAll() }
 
-  protected[this] def doReset(s: Symbol): Unit = count.remove(s)
-
-
-  final def resetAll(): Unit = withWriteLock { doResetAll() }
-
-
-  protected[this] def doResetAll(): Unit = count.clear()
+    protected[this] def doResetAll(): Unit = count.clear()
 }
 
 object GlobalIntStatistics extends IntStatistics
