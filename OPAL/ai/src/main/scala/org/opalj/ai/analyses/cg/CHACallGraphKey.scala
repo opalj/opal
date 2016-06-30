@@ -39,10 +39,7 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.analyses.InstantiableClassesKey
+import org.opalj.br.analyses._
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
@@ -63,7 +60,7 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      *
      * @return `Nil`.
      */
-    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey)
+    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey, IntStatisticsKey)
 
     /**
      * Computes the `CallGraph` for the given project.
