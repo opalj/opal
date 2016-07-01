@@ -1816,8 +1816,8 @@ class PropertyStore private (
                     // property => intermediate result => final result
                     val oldP = pos.p
                     if (debug && (oldP ne null) && p.isOrdered) {
-                        p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty).foreach(s ⇒
-                            throw new AssertionError(s"$e: $s"))
+                        val isValid = p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty)
+                        isValid.foreach(s ⇒ throw new AssertionError(s"$e: $s"))
                     }
                     /*internal*/ /* assert(
                         (oldP eq null) || oldP.isBeingComputed || oldP.key == pk,
