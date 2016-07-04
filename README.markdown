@@ -6,11 +6,11 @@ OPAL was designed from the ground up with *extensibility*, *adaptability* and *s
 # Project Structure
 OPAL consists of several projects which are found in the folder OPAL:
 
-* **Common**(OPAL/common): Contains common helper classes usefull when analyzing (byte) code such as generic data structures and graph algorithms (e.g., to compute the DominatorTree).
+* **Common**(OPAL/common): Contains common helper classes useful when analyzing (byte) code such as generic data structures and graph algorithms (e.g., to compute the DominatorTree).
 
 * **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 8 bytecode.  
 
-* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create a beautiful HTML representatoin of Java class files. An Eclipse plug-in that uses the Bytecode Disassembler is found in (OPAL/TOOLS/ep).
+* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create a beautiful HTML representation of Java class files. An Eclipse plug-in that uses the Bytecode Disassembler is found in (OPAL/TOOLS/ep).
 
 * **Bytecode Creator**(OPAL/bc): Infrastructure that facilitates the engineering of bytecode.
 
@@ -20,7 +20,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
 
-* **Architecture Valiation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
+* **Architecture Validation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
 * **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
 
@@ -45,7 +45,7 @@ Go to OPAL's root folder.
 You are ready to go.
 
 # Using OPAL #
-To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
+To get started, go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.
 
 # Example Usage #
 
@@ -61,13 +61,13 @@ Additionally, the pull request has to meet the following conditions:
 
 * the copyright information (BSD License) was added to the file
 * author information was added where appropriate
-* all existing unit and integration tests succeed
+* all existing unit and integration tests were successfully executed
 * the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis)
 * the code is reasonably documented
 * the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations))
-* sufficient tests are included (use Scalatest for the development and use scoverage for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
+* sufficient tests are included (use `Scalatest` for the development and use `scoverage` for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
 
-A recommended read (to spead up the process of getting your Pull Request pulled):
+A recommended read (to speed up the process of getting your pull request pulled):
  [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
 
 * Our Jenkins can be found [here](http://opal.st.informatik.tu-darmstadt.de:8080)
