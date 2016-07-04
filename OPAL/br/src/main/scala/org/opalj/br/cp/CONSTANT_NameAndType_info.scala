@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents a field or a method without indicating which class or interface it belongs
  * to.
@@ -53,4 +55,6 @@ case class CONSTANT_NameAndType_info(
     def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
         cp(descriptor_index).asMethodDescriptor
     }
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_NameAndType_ID
 }

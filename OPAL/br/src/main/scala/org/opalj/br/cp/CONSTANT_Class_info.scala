@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents a class or an interface.
  *
@@ -38,6 +40,8 @@ package cp
  * @author Andre Pacak
  */
 case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_Class_ID
 
     override def asConstantValue(cp: Constant_Pool) = ConstantClass(asReferenceType(cp))
 

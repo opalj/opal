@@ -35,6 +35,7 @@ import org.opalj.bi.AttributeParent
 import org.opalj.bi.AttributesParent
 import org.opalj.br.reader.SignatureParser
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.bi.ConstantPoolTags
 
 /**
  * Represents a constant string value.
@@ -43,6 +44,8 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * @author Andre Pacak
  */
 case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_Utf8_ID
 
     override def asString = value
 
