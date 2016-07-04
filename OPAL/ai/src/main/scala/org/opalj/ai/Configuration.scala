@@ -103,9 +103,9 @@ trait Configuration {
     def throwNullPointerExceptionOnMonitorAccess: Boolean
 
     /**
-     * @return `false` since it is extremely unlikely that this exception will ever
-     *      be thrown. Basically, this exception can only be thrown if a compiler creates
-     *      invalid bytecode.
+     * If `true` then `monitorexit` and the `(XXX)return` instructions will throw 
+     * `IllegalMonitorStateException`s unless the analysis is able to determine that 
+     * the exception is guaranteed to be raised. 
      */
     def throwIllegalMonitorStateException: Boolean
 
