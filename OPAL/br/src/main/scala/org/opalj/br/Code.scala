@@ -306,6 +306,19 @@ final class Code private (
         }
     }
 
+    @inline final def forall(f: (PC, Instruction) ⇒ Boolean): Boolean = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (!f(pc, instruction))
+                return false;
+
+            pc = pcOfNextInstruction(pc)
+        }
+        true
+    }
+
     /**
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
@@ -640,6 +653,31 @@ final class Code private (
             pc = pcOfNextInstruction(pc)
         }
         result.reverse
+    }
+
+    /**
+     * Collects the results of the evaluation of the partial function until the partial function
+     * is not defined.
+     *
+     * @return The program counter of the instruction for which the given partial function was
+     * 		not defined along with the list of previous results. '''The results are sorted in
+     * 		descending order w.r.t. the PC'''.
+     */
+    def collectUntil[B](f: PartialFunction[(PC, Instruction), B]): (PC, Seq[B]) = {
+        val max_pc = instructions.size
+        var pc = 0
+        var result: List[B] = List.empty
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val value = (pc, instruction)
+            if (f.isDefinedAt(value)) {
+                result = f(value) :: result
+            } else {
+                return (pc, result);
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        (pc, result)
     }
 
     /**
