@@ -30,9 +30,14 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ClassFile
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+
 /**
  * This is a common trait for all ProjectAccessibility properties which can be emitted to the
- * PropertyStore. It describes the accessibility of a given entity.
+ * PropertyStore. It describes the scope where the given entity can be accessed.
  */
 sealed trait ProjectAccessibility extends Property {
 
@@ -45,23 +50,36 @@ sealed trait ProjectAccessibility extends Property {
 
 object ProjectAccessibility {
 
+    final val fallback: (PropertyStore, Entity) => ProjectAccessibility = (ps, e) => {
+      import AnalysisModes._
+      val analysisMode = ps.context[SomeProject].analysisMode
+
+      e match {
+        case m: Method =>
+          if(m.isPrivate) ClassLocal
+          else if(m.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
+          else Global
+        case cf: ClassFile =>
+          if(cf.isPackageVisible && !(analysisMode eq OPA)) PackageLocal
+          else Global
+        case f: Field =>
+          if(f.isPrivate) ClassLocal
+          else if(f.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
+          else Global
+      }
+    }
+
     final val cycleResolutionStrategy: PropertyKey.CycleResolutionStrategy = (
         ps: PropertyStore,
         epks: PropertyKey.SomeEPKs
     ) ⇒ {
-        //TODO fill in cycle resolution strategy
         throw new Error("there should be no cycles")
     }
 
     final val Key = {
         PropertyKey.create[ProjectAccessibility](
             "ProjectAccessibility",
-            fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ Global //              e match {
-            //                case m: Method                  ⇒ if (m.isPrivate) ClassLocal else Global
-            //                case cf: org.opalj.br.ClassFile ⇒ if (cf.isPublic) Global else PackageLocal
-            //                case _                          ⇒ Global
-            //            },
-            ,
+            fallbackProperty = fallback,
             cycleResolutionStrategy = cycleResolutionStrategy
         )
     }
