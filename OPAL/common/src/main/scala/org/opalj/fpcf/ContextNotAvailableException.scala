@@ -28,10 +28,9 @@
  */
 package org.opalj.fpcf
 
-
 /**
  * @author Michael Eichberg
  */
 class ContextNotAvailableException(
     val context: Class[_]
-    ) extends RuntimeException(s"the context information ${context.getClass.getSimpleName} is not available")
+) extends RuntimeException(s"the context information ${context.getClass.getSimpleName} is not available")

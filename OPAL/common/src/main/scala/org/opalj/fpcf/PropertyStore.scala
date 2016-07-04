@@ -161,7 +161,7 @@ class PropertyStore private (
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
         private[this] val data:  JIDMap[Entity, EntityProperties],
-        private[this] val ctx : Map[Class[_],AnyRef],
+        private[this] val ctx:   Map[Class[_], AnyRef],
         final val isInterrupted: () ⇒ Boolean,
         @volatile var debug:     Boolean
 )(
@@ -169,10 +169,11 @@ class PropertyStore private (
         val logContext: LogContext
 ) { store ⇒
 
-    def context[T](ctxId : Class[T]) : T = {
-    ctx(ctxId).getOrElse(throw new ContextNotAvailableException() ).asInstanceOf[T]
+    def context[T <: AnyRef: ClassTag]: T = {
+        val ctxId = implicitly[ClassTag[T]].runtimeClass
+        ctx.getOrElse(ctxId, { throw new ContextNotAvailableException(ctxId) }).asInstanceOf[T]
     }
-    
+
     /**
      * The (immutable) set of all entities.
      */
@@ -1182,6 +1183,9 @@ class PropertyStore private (
      */
     def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
         val es = keysList.collect(pf)
+        if (es.isEmpty) {
+            logWarn("project", s"an entity selector function $pf did not select any entity")
+        }
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
@@ -1232,7 +1236,7 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is independent of the store.
      *
-     * @note This method will not trigger lazy property computations.
+     * @note This method will not trigger lazy or direct property computations.
      */
     def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
@@ -1679,7 +1683,9 @@ class PropertyStore private (
                 try {
                     if (!isInterrupted()) f
                 } catch {
-                    case t: Throwable ⇒ logError("analysis progress", s"an analysis failed", t)
+                    case t: Throwable ⇒
+                        t.printStackTrace()
+                        logError("analysis progress", s"an analysis failed", t)
                 } finally {
                     // We have finished processing the task!
                     taskCompleted()
@@ -2153,11 +2159,10 @@ object PropertyStore {
      * @return The newly created [[PropertyStore]].
      */
     def apply(
-        //  HList[Context],
         entities:      Traversable[Entity],
-isInterrupted: () ⇒ Boolean,
+        isInterrupted: () ⇒ Boolean,
         debug:         Boolean,
-        ctx : AnyRef*
+        context:       AnyRef*
     )(
         implicit
         logContext: LogContext
@@ -2172,8 +2177,8 @@ isInterrupted: () ⇒ Boolean,
             }
             entityId += 1
         }
-        
-        new PropertyStore(data,ctx.map(c => (c.getClass,c)).toMap, isInterrupted, debug)
+
+        new PropertyStore(data, context.map(c ⇒ (c.getClass, c)).toMap, isInterrupted, debug)
     }
 
     /**
@@ -2184,16 +2189,18 @@ isInterrupted: () ⇒ Boolean,
      *   entitySelector[Method]
      * }}}
      */
-    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = {
+    def entitySelector[T <: Entity: ClassTag]: PartialFunction[Entity, T] = {
         new PartialFunction[Entity, T] {
 
-            def apply(v1: Entity): T = {
-                if (isDefinedAt(v1)) v1.asInstanceOf[T] else throw new IllegalArgumentException()
-            }
+            def apply(x: Entity): T = x.asInstanceOf[T]
 
             def isDefinedAt(x: Entity): Boolean = {
                 val ct = implicitly[ClassTag[T]]
-                x.getClass.isInstance(ct.runtimeClass)
+                ct.runtimeClass.isAssignableFrom(x.getClass)
+            }
+
+            override def toString: String = {
+                s"EntitySelector(${implicitly[ClassTag[T]].runtimeClass.getName})"
             }
         }
     }

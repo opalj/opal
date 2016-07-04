@@ -65,7 +65,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     )
     var psStrings: PropertyStore = initPSStrings()
     def initPSStrings(): PropertyStore = {
-        PropertyStore(stringEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        val contextObject = "StringEntities"
+        implicit val logContext = GlobalLogContext
+        val ps = PropertyStore(stringEntities, () ⇒ false, debug = false,context=contextObject)
+        assert(ps.context[String] === contextObject)
+        ps
     }
 
     final val PalindromeKey = {
@@ -260,7 +264,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     }
 
     override def afterEach(): Unit = {
-        if (psStrings.isShutdown()) {
+        if (psStrings.isShutdown) {
             info("reinitializing string entities property store")
             initPSStrings()
         } else {
@@ -268,7 +272,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             psStrings.reset()
         }
 
-        if (psNodes.isShutdown()) {
+        if (psNodes.isShutdown) {
             info("reinitializing graph nodes property store")
             initPSNodes()
         } else {
@@ -276,7 +280,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             psNodes.reset()
         }
 
-        if (treeNodes.isShutdown()) {
+        if (treeNodes.isShutdown) {
             info("reinitializing tree nodes property store")
             initTreeNodes()
         } else {
