@@ -117,7 +117,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context(classOf[SomeProject]).classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
         var result: ThrownExceptionsAreUnknown = null
 
