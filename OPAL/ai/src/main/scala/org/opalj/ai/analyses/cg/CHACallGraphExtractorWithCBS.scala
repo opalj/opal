@@ -173,7 +173,7 @@ class CHACallGraphExtractorWithCBS(
                 else
                     Set.empty[Method]
 
-            statistics.increase('cbs, cbsCalls.size)
+            statistics.updateStatistics('cbs, cbsCalls.size)
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
 

@@ -34,6 +34,9 @@ import scala.collection.mutable
 import org.opalj.concurrent.Locking
 
 /**
+ *
+ * Enable simple counting statistics, e.g. how often a specific case occurs during runtime.
+ *
  * ==Thread Safety==
  * This class is thread safe.
  *
@@ -43,25 +46,66 @@ class IntStatistics extends Locking {
 
     private[this] val count = mutable.Map.empty[Symbol, Int]
 
-    final def increase(s: Symbol, value: Int): Unit = {
-        withWriteLock { doUpdateCounts(s, value) }
+    /**
+     * Increases or decreases the count of the current statistics which is defined over the passed `symbol`.
+     * If the passed `value` is positive the count will be increases whereas it will decreases when a negative number is passed.
+     *
+     * @param s Symbol used to put multiple statistics into relation.
+     * @param value The value that will be added to the statistics. A negative number will reduce the current count.
+     */
+    final def updateStatistics(s: Symbol, value: Int): Unit = {
+        withWriteLock { doUpdateStatistics(s, value) }
     }
 
-    protected[this] def doUpdateCounts(s: Symbol, value: Int): Unit = {
+    /**
+     * Called by the `updateStatistics(Symbol, Int)` method.
+     *
+     * ==Thread Safety==
+     * The `updateStatistics` method takes care of the synchronization.
+     */
+    protected[this] def doUpdateStatistics(s: Symbol, value: Int): Unit = {
         val oldValue = count.getOrElseUpdate(s, 0)
         count.update(s, oldValue + value)
     }
 
+    /**
+     * Returns the overall count that has been summed up with the given symbol `s`.
+     */
     def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
 
+    /**
+     * Called by the `getCount(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `getTime` method takes care of the synchronization.
+     */
     protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
 
+    /**
+     * Resets the overall count of the given symbol.
+     */
     final def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
 
+    /**
+     * Called by the `reset(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `reset` method takes care of the synchronization.
+     */
     protected[this] def doReset(s: Symbol): Unit = count.remove(s)
 
+    /**
+     * Resets everything. The effect is comparable to creating a new
+     * `IntStatistics` object, but is a bit more efficient.
+     */
     final def resetAll(): Unit = withWriteLock { doResetAll() }
 
+    /**
+     * Called by the `resetAll` method.
+     *
+     * ==Thread Safety==
+     * The `resetAll` method takes care of the synchronization.
+     */
     protected[this] def doResetAll(): Unit = count.clear()
 }
 

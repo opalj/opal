@@ -32,6 +32,11 @@ package analyses
 
 import org.opalj.util.IntStatistics
 
+/**
+ * This project information key offers the possibility to gather simple counting statistics.
+ *
+ * @author Michael Reif
+ */
 object IntStatisticsKey extends ProjectInformationKey[IntStatistics] {
 
     override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
