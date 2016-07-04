@@ -32,13 +32,18 @@ package analyses
 package cg
 
 import scala.collection.Set
-
+import scala.collection.mutable.HashSet
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.IntStatisticsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
 
 /**
@@ -56,24 +61,103 @@ import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
  * @author Michael Reif
  */
 class CHACallGraphExtractorWithCBS(
-        cache: CallGraphCache[MethodSignature, Set[Method]]
-) extends CHACallGraphExtractor(cache) {
+        val cache: CallGraphCache[MethodSignature, Set[Method]]
+) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(
-            project:   SomeProject,
-            classFile: ClassFile,
-            method:    Method
-    ) extends super.AnalysisContext(project, classFile, method) {
+            val project:   SomeProject,
+            val classFile: ClassFile,
+            val method:    Method
+    ) extends super.AnalysisContext {
+
+        val classHierarchy = project.classHierarchy
+
+        def staticCall(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            name:               String,
+            descriptor:         MethodDescriptor
+        ) = {
+
+            def handleUnresolvedMethodCall() = {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor
+                )
+            }
+
+            if (classHierarchy.isKnown(declaringClassType)) {
+                classHierarchy.lookupMethodDefinition(
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
+            } else {
+                handleUnresolvedMethodCall()
+            }
+        }
+
+        def doNonVirtualCall(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            name:               String,
+            descriptor:         MethodDescriptor
+        ): Unit = {
+
+            def handleUnresolvedMethodCall(): Unit = {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor
+                )
+            }
+
+            if (classHierarchy.isKnown(declaringClassType)) {
+                classHierarchy.lookupMethodDefinition(
+                    declaringClassType, name, descriptor, project
+                ) match {
+                    case Some(callee) ⇒
+                        val callees = HashSet(callee)
+                        addCallEdge(pc, callees)
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
+            } else {
+                handleUnresolvedMethodCall()
+            }
+        }
+
+        /**
+         * @param receiverMayBeNull The parameter is `false` if:
+         *      - a static method is called,
+         *      - this is an invokespecial call (in this case the receiver is `this`),
+         *      - the receiver is known not to be null and the type is known to be precise.
+         */
+        def nonVirtualCall(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            name:               String,
+            descriptor:         MethodDescriptor,
+            receiverIsNull:     Answer
+        ): Unit = {
+
+            if (receiverIsNull.isYesOrUnknown)
+                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+
+            doNonVirtualCall(pc, declaringClassType, name, descriptor)
+        }
 
         val cbsIndex = project.get(CallBySignatureResolutionKey)
-        var cbsCount = 0
+        val statistics = project.get(IntStatisticsKey)
 
         /**
          * @note A virtual method call is always an instance based call and never a call to
          *      a static method. However, the receiver may be `null` unless it is the
          *      self reference (`this`).
          */
-        override def virtualCall(
+        def virtualCall(
             pc:                    PC,
             declaringClassType:    ObjectType,
             name:                  String,
@@ -85,9 +169,11 @@ class CHACallGraphExtractorWithCBS(
 
             val cbsCalls =
                 if (isInterfaceInvocation)
-                    callBySignature(pc, declaringClassType, name, descriptor)
+                    callBySignature(declaringClassType, name, descriptor)
                 else
                     Set.empty[Method]
+
+            statistics.updateStatistics('cbs, cbsCalls.size)
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
 
@@ -110,7 +196,6 @@ class CHACallGraphExtractorWithCBS(
         }
 
         private[AnalysisContext] def callBySignature(
-            pc:                 PC,
             declaringClassType: ObjectType,
             name:               String,
             descriptor:         MethodDescriptor
@@ -121,8 +206,51 @@ class CHACallGraphExtractorWithCBS(
                 declaringClassType
             )
 
-            this.cbsCount += cbsMethods.size
             cbsMethods
         }
+    }
+
+    def extract(
+        project:   SomeProject,
+        classFile: ClassFile,
+        method:    Method
+    ): CallGraphExtractor.LocalCallGraphInformation = {
+        val context = new AnalysisContext(project, classFile, method)
+
+        method.body.get.foreach { (pc, instruction) ⇒
+            instruction.opcode match {
+                case INVOKEVIRTUAL.opcode ⇒
+                    val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
+                    if (declaringClass.isArrayType) {
+                        context.nonVirtualCall(
+                            pc, ObjectType.Object, name, descriptor, Unknown
+                        )
+                    } else {
+                        context.virtualCall(
+                            pc, declaringClass.asObjectType, name, descriptor
+                        )
+                    }
+                case INVOKEINTERFACE.opcode ⇒
+                    val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
+                    context.virtualCall(pc, declaringClass, name, descriptor, true)
+
+                case INVOKESPECIAL.opcode ⇒
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                    // for invokespecial the dynamic type is not "relevant" (even for Java 8)
+                    context.nonVirtualCall(
+                        pc, declaringClass, name, descriptor,
+                        receiverIsNull = No /*the receiver is "this"*/
+                    )
+
+                case INVOKESTATIC.opcode ⇒
+                    val INVOKESTATIC(declaringClass, _, name, descriptor) = instruction
+                    context.staticCall(pc, declaringClass, name, descriptor)
+
+                case _ ⇒
+                // Nothing to do...
+            }
+        }
+
+        (context.allCallEdges, context.unresolvableMethodCalls)
     }
 }
