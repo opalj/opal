@@ -32,6 +32,8 @@ package properties
 
 import scala.collection.Set
 import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import AnalysisModes._
 
 /**
  * This property encapsulates for each interface method those method that are potentially called by call-by-signature
@@ -98,16 +100,24 @@ sealed trait CallBySignature extends Property {
     final def key = CallBySignature.Key
 }
 
-case object AnalysisModeSpecificCBS extends CallBySignature {
-    def getCBSTargets(am: AnalysisMode): CallBySignature = {
-        if (AnalysisModes.isApplicationLike(am))
-            NoCBSTargets
-        else
-            UnknownCBSTargets
-    }
-}
-
 object CallBySignature {
+
+    val fallback: (PropertyStore, Entity) => CallBySignature = (ps, e) => {
+      val method = e.asInstanceOf[Method]
+      val project = ps.context[SomeProject]
+      val classFile = project.classFile(method)
+
+      if(classFile.isClassDeclaration)
+        NoCBSTargets;
+      else {
+        val analysisMode = project.analysisMode
+        analysisMode match {
+          case CPA => UnknownCBSTargets
+          case OPA => UnknownCBSTargets
+          case DesktopApplication | JEE6WebApplication => NoCBSTargets
+        }
+      }
+    }
 
     final val Key = {
         PropertyKey.create[CallBySignature](
@@ -115,7 +125,7 @@ object CallBySignature {
             "CallBySignatureTargets",
             // The default property that will be used if no analysis is able
             // to (directly) compute the respective property.
-            (ps: PropertyStore, e: Entity) ⇒ AnalysisModeSpecificCBS,
+            fallbackProperty = fallback,
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ throw new UnknownError("internal error")
         )
     }
