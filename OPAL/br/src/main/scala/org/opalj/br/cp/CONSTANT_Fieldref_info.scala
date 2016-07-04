@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents a field.
  *
@@ -41,6 +43,8 @@ case class CONSTANT_Fieldref_info(
         class_index:         Constant_Pool_Index,
         name_and_type_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_Fieldref_ID
 
     // We don't mind if the field is initialized more than once (if reading the classfile 
     // should be parallelized) as it is just an optimization and the object reference

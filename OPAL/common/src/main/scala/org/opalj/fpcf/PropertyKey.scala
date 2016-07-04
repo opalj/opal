@@ -41,13 +41,13 @@ import org.opalj.concurrent.Locking.withWriteLock
  *
  * @author Michael Eichberg
  */
-class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with PropertyKind {
+final class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with PropertyKind {
 
     override def toString: String = s"PK(${PropertyKey.name(id)},id=$id)"
 }
 
 /**
- * Factory to create and manage [[PropertyKey]] objects.
+ * Factory and registry for [[PropertyKey]] objects.
  *
  * @author Michael Eichberg
  */
@@ -62,8 +62,7 @@ object PropertyKey {
     private[this] val fallbackProperties = ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
 
     // Entries in the array can be updated by an analysis!
-    private[this] val cycleResolutionStrategies =
-        ArrayBuffer.empty[(PropertyStore, Iterable[SomeEPK]) ⇒ Iterable[PropertyComputationResult]]
+    private[this] val cycleResolutionStrategies = ArrayBuffer.empty[CycleResolutionStrategy]
 
     private[this] var lastKeyId: Int = -1
 

@@ -26,42 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
-
-import net.ceedubs.ficus.Ficus._
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
 
 /**
- * The ''key'' object to get access to the [[org.opalj.fpcf.PropertyStore]].
- *
- * @note It is possible to set the project's `debug` flag using the project's
- * 		`org.opalj.br.analyses.SourceElementsPropertyStore.debug` config key.
- *
  * @author Michael Eichberg
  */
-object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStore] {
-
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.SourceElementsPropertyStore."
-
-    /**
-     * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
-
-    /**
-     * Creates a new empty property store.
-     */
-    override protected def compute(project: SomeProject): PropertyStore = {
-        val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
-        implicit val logContext = project.logContext
-        PropertyStore(
-            project.allSourceElements, defaultIsInterrupted, debug,
-            context = project
-        )
-    }
-}
+class ContextNotAvailableException(
+    val context: Class[_]
+) extends RuntimeException(s"the context information ${context.getClass.getSimpleName} is not available")

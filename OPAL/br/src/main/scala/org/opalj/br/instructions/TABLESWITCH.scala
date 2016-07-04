@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Access jump table by index and jump.
  *
@@ -73,7 +75,7 @@ case class TABLESWITCH(
         implicit
         code: Code
     ): PCs = {
-        var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
+        var pcs = UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { pcs = (currentPC + offset) +≈: pcs })
         pcs
     }

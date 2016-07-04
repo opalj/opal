@@ -28,6 +28,8 @@
  */
 package org.opalj
 package br
+package collection
+package mutable
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

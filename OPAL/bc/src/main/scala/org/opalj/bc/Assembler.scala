@@ -663,9 +663,9 @@ object Assembler {
     }
 
     /**
-     * @param si Function that will be called to provide segment information. This is particularly useful
-     * when debugging the serializer to determine which segments were successfully/completely
-     * written.
+     * @param segmentInformation A function that will be called to provide segment information.
+     * 		This is particularly useful when debugging the serializer to determine which segments
+     * 		were successfully/completely written.
      */
     def apply(
         classFile:          ClassFile,

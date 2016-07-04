@@ -37,8 +37,6 @@ import org.opalj.fpcf.Property
 /**
  * Determines for each interface based call site those methods that are potentially called by
  * call-by-signature means '''only'''.
- *
- * @note This property is computed by a direct property computation.
  */
 sealed trait CallBySignature extends Property {
 
@@ -60,7 +58,8 @@ object CallBySignature {
             "CallBySignatureTargets",
             // The default property that will be used if no analysis is able
             // to (directly) compute the respective property.
-            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError("internal error"),
+            // TODO
+            (ps: PropertyStore, e: Entity) ⇒ throw new RuntimeException("Preliminary Version"),
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ throw new UnknownError("internal error")
         )
     }
