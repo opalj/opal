@@ -30,7 +30,6 @@ package org.opalj
 package br
 package analyses
 
-
 import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
@@ -61,8 +60,8 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
         PropertyStore(
-                project.allSourceElements, defaultIsInterrupted, debug, 
-                context = project
-                )
+            project.allSourceElements, defaultIsInterrupted, debug,
+            context = project
+        )
     }
 }

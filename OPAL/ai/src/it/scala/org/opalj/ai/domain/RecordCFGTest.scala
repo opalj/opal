@@ -113,32 +113,32 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val bbBRCFG = dTime('BasicBlocksBasedBRCFG) { CFGFactory(method.body.get, project.classHierarchy) }
                 val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
-                
+
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI ⇒
                     if (!pcs.add(bbAI.startPC))
                         fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
-                    if (bbAI.endPC!= bbAI.startPC) {
-                        if( !pcs.add(bbAI.endPC))
-                        fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) was already used by some other basic block")
+                    if (bbAI.endPC != bbAI.startPC) {
+                        if (!pcs.add(bbAI.endPC))
+                            fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) was already used by some other basic block")
                     }
 
                     val bbBR = bbBRCFG.bb(bbAI.startPC)
-                    if(bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
+                    if (bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
                         fail(
-                                s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine}) and "+
+                            s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine}) and "+
                                 s"bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
                         )
                     }
                     val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
                     val allAIPredecessors = bbAI.predecessors.collect { case bb: BasicBlock ⇒ bb }
                     allAIPredecessors.foreach { predecessorBB ⇒
-                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC }) 
+                        if (!allBRPredecessors.exists { p ⇒ p.endPC == predecessorBB.endPC })
                             fail(
-                                    s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
-                                    allAIPredecessors.mkString("ai:{",",","} vs. ")+
-                                    allBRPredecessors.mkString("br:{",",","}")
-                                    )
+                                s"the aibb ($bbAI) has different predecessors than the brbb ($bbBR):"+
+                                    allAIPredecessors.mkString("ai:{", ",", "} vs. ") +
+                                    allBRPredecessors.mkString("br:{", ",", "}")
+                            )
                     }
                 }
 
