@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,41 +22,27 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package br
 package analyses
-package cg
 
-import org.opalj.br.analyses.SomeProject
+import org.opalj.util.IntStatistics
 
 /**
- * Configuration of a call graph algorithm that uses CHA.
+ * This project information key offers the possibility to gather simple counting statistics.
  *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
- *
- * @author Michael Eichberg
  * @author Michael Reif
  */
-class CHACallGraphAlgorithmConfiguration(
-    project:                       SomeProject,
-    withCallBySignatureResolution: Boolean     = false
-)
-        extends DefaultCallGraphAlgorithmConfiguration(project) {
+object IntStatisticsKey extends ProjectInformationKey[IntStatistics] {
 
-    final val Extractor = initExtractor
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    final def initExtractor: CallGraphExtractor =
-        if (withCallBySignatureResolution)
-            new CHACallGraphExtractorWithCBS(cache)
-        else
-            new CHACallGraphExtractor(cache)
+    override protected def compute(project: SomeProject): IntStatistics = {
+        new IntStatistics
+    }
 }
 

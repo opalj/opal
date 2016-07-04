@@ -143,7 +143,7 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
 
     override def usedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
 
-    override def requirements: Set[FPCFAnalysisRunner] = Set(CallableFromClassesInOtherPackagesAnalysis)
+    override def requirements: Set[FPCFAnalysisRunner] = Set(InheritableByNewSubtypesAnalysis)
 
     protected[fpcf] def start(
         project:       SomeProject,
