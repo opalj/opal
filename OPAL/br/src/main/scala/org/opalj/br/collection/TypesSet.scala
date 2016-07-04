@@ -28,22 +28,20 @@
  */
 package org.opalj
 package br
+package collection
+
+import org.opalj.br.ObjectType
 
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
  * and hence already represent sets of types.
  *
- * ==Thread Safety==
- * This class is not thread safe.
- *
  * @author Michael Eichberg
  */
-class TypesSet( final val classHierarchy: ClassHierarchy) {
+abstract class TypesSet {
 
-    import classHierarchy.isSubtypeOf
-
-    protected[this] var concreteTypes: Set[ObjectType] = Set.empty
-    protected[this] var upperTypeBounds: Set[ObjectType] = Set.empty
+    def concreteTypes: Set[ObjectType]
+    def upperTypeBounds: Set[ObjectType]
 
     /**
      * Returns `true` if this set is empty.
@@ -64,32 +62,6 @@ class TypesSet( final val classHierarchy: ClassHierarchy) {
      */
     def size: Int = concreteTypes.size + upperTypeBounds.size
 
-    def +=(tpe: ObjectType): Unit = {
-        if (!concreteTypes.contains(tpe) &&
-            !upperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb).isYes)) {
-            concreteTypes += tpe
-        }
-    }
-
-    def +<:=(tpe: ObjectType): Unit = {
-        if (concreteTypes.contains(tpe)) {
-            concreteTypes -= tpe
-            upperTypeBounds = upperTypeBounds.filter(utb ⇒ isSubtypeOf(utb, tpe).isNoOrUnknown) + tpe
-        } else {
-            var doNotAddTPE: Boolean = false
-            var newUpperTypeBounds = upperTypeBounds.filter { utb ⇒
-                val keepExistingUTB = isSubtypeOf(utb, tpe).isNoOrUnknown
-                if (keepExistingUTB && !doNotAddTPE && isSubtypeOf(tpe, utb).isYes) {
-                    doNotAddTPE = true
-                }
-                keepExistingUTB
-            }
-            concreteTypes = concreteTypes.filter { ct ⇒ isSubtypeOf(ct, tpe).isNoOrUnknown }
-            if (!doNotAddTPE) newUpperTypeBounds += tpe
-            upperTypeBounds = newUpperTypeBounds
-        }
-    }
-
     /**
      * @param f A call back function will be called for each type stored in the set along with
      * 		the information if type represents an upper type bound (`true`) or refers to a
@@ -105,4 +77,41 @@ class TypesSet( final val classHierarchy: ClassHierarchy) {
      * contains all upper type bounds.
      */
     def types: (Set[ObjectType], Set[ObjectType]) = (concreteTypes, upperTypeBounds)
+
+    final override def equals(other: Any): Boolean = {
+
+        other match {
+            case that: TypesSet ⇒
+                concreteTypes == that.concreteTypes && upperTypeBounds == that.upperTypeBounds
+            case _ ⇒ false
+        }
+    }
+
+    final override lazy val hashCode: Int = {
+        concreteTypes.hashCode() * 111 + upperTypeBounds.hashCode()
+    }
+
+    override def toString: String = {
+        upperTypeBounds.map(_.toJava).mkString(
+            concreteTypes.map(_.toJava).mkString(
+                "TypesSet(concreteTypes={",
+                ",",
+                "},upperTypeBounds={"
+            ),
+            ",",
+            "})"
+        )
+    }
+}
+
+object TypesSet {
+
+    def empty: EmptyTypesSet.type = EmptyTypesSet
+}
+
+case object EmptyTypesSet extends TypesSet {
+
+    def concreteTypes: Set[ObjectType] = Set.empty
+    def upperTypeBounds: Set[ObjectType] = Set.empty
+
 }
