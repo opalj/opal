@@ -36,11 +36,11 @@ package properties
  */
 sealed trait ProjectAccessibility extends Property {
 
-    type Self = ProjectAccessibility
+    final type Self = ProjectAccessibility
+
+    final def isRefineable = false
 
     final def key = ProjectAccessibility.Key
-
-    final def isRefinable = false
 }
 
 object ProjectAccessibility {
@@ -56,7 +56,12 @@ object ProjectAccessibility {
     final val Key = {
         PropertyKey.create[ProjectAccessibility](
             "ProjectAccessibility",
-            fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ Global,
+            fallbackProperty = (ps: PropertyStore, e: Entity) ⇒ Global //              e match {
+            //                case m: Method                  ⇒ if (m.isPrivate) ClassLocal else Global
+            //                case cf: org.opalj.br.ClassFile ⇒ if (cf.isPublic) Global else PackageLocal
+            //                case _                          ⇒ Global
+            //            },
+            ,
             cycleResolutionStrategy = cycleResolutionStrategy
         )
     }
@@ -65,16 +70,17 @@ object ProjectAccessibility {
 /**
  * Entities with `Global` project accessibility can be accessed by every entity within the project.
  */
-case object Global extends ProjectAccessibility { final val isRefineable: Boolean = false }
+case object Global extends ProjectAccessibility
 
 /**
  * Entities with `PackageLocal` project accessibility can be accessed by every entity within
  * the package where the entity is defined.
  */
-case object PackageLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
+case object PackageLocal extends ProjectAccessibility
 
 /**
  * Entities with `PackageLocal` project accessibility can be accessed by every entity within
  * the class where the entity is defined.
  */
-case object ClassLocal extends ProjectAccessibility { final val isRefineable: Boolean = false }
+case object ClassLocal extends ProjectAccessibility
+
