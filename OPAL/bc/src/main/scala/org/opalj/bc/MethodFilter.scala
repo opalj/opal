@@ -36,7 +36,7 @@ import org.opalj.da._
 import org.opalj.io.write
 
 /**
- * Assembles the specified class file(s).
+ * Writes out some class files where some methods are filtered.
  *
  * @author Michael Eichberg
  */

@@ -43,13 +43,16 @@ import org.opalj.br.instructions._
 /**
  * Determines for each method the exceptions that are potentially thrown by the respective method.
  * This includes the set of exceptions thrown by called methods (if any). The property does not
- * take overriding methods into consideration.
+ * take the exceptions which are potentially thrown by the methods which override the respective
+ * method into account. Nevertheless, in case of a method call all potental receiver methods are
+ * taken into consideration.
  *
  * Note that it may be possible to compute some meaningful upper type bound for the set of
  * thrown exceptions even if methods are called for which the set of thrown exceptions is unknown.
  * This is generally the case if those calls are all done in a try block but the catch/finally
- * blocks don't call such methods. An example is shown next and even if we assume that we don't know
- * the exceptions potentially thrown by `Class.forName`, we could still determine that this method
+ * blocks only call known methods - if any. 
+ * An example is shown next and even if we assume that we don't know
+ * the exceptions potentially thrown by `Class.forName` we could still determine that this method
  * will never throw an exception.
  * {{{
  * object Validator {
