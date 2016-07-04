@@ -37,7 +37,6 @@ import org.opalj.fpcf.Property
 /**
  * Determines for each interface based call site those methods that are potentially called by
  * call-by-signature means '''only'''.
- *
  */
 sealed trait CallBySignature extends Property {
 
