@@ -41,12 +41,13 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDomain ⇒
+trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
+    domain: ValuesDomain ⇒
 
     /**
      * This type determines in which way thrown exceptions are recorded.
      *
-     * For example, if you may want to collect all thrown exceptions, then
+     * For example, if you want to collect all thrown exceptions, then
      * the type of `ThrownException` could be `Set[ThrownException]`.
      *
      * @see The implementation of [[org.opalj.ai.domain.RecordAllThrownExceptions]].
@@ -71,7 +72,7 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
     ): ThrownException
 
     /**
-     * Joins the previously thrown exception and the newly thrown exception. Both
+     * Joins the previously thrown exception(s) and the newly thrown exception. Both
      * exceptions are thrown by the same instruction (same `pc`).
      *
      * @note The instruction might be an `athrow` instruction or some other instruction

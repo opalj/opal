@@ -50,8 +50,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
     class AnalysisDomain(
         override val project: Project[java.net.URL],
         val method:           Method
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l1.DefaultIntegerRangeValues
@@ -66,8 +65,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject
-            with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy {
+            with domain.TheMethod {
 
         override def maxCardinalityOfIntegerRanges: Long = 128l
     }

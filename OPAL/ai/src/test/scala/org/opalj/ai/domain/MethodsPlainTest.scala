@@ -1097,6 +1097,8 @@ private object MethodsPlainTest {
     class RecordingDomain
             extends Domain
             with DefaultDomainValueBinding
+            with DefaultHandlingForReturnInstructions
+            with DefaultHandlingOfVoidReturns
             with DefaultReferenceValuesBinding
             with DefaultTypeLevelIntegerValues
             with DefaultTypeLevelLongValues
@@ -1117,28 +1119,34 @@ private object MethodsPlainTest {
 
         var returnedValue: Option[DomainValue] = _
 
-        override def areturn(pc: Int, value: DomainValue): Unit = {
+        override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
+            super.areturn(pc, value)
         }
 
-        override def dreturn(pc: Int, value: DomainValue): Unit = {
+        override def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
+            super.dreturn(pc, value)
         }
 
-        override def freturn(pc: Int, value: DomainValue): Unit = {
+        override def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
+            super.freturn(pc, value)
         }
 
-        override def ireturn(pc: Int, value: DomainValue): Unit = {
+        override def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
+            super.ireturn(pc, value)
         }
 
-        override def lreturn(pc: Int, value: DomainValue): Unit = {
+        override def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
+            super.lreturn(pc, value)
         }
 
-        override def returnVoid(pc: Int): Unit = {
+        override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
             returnedValue = None
+            super.returnVoid(pc)
         }
     }
 

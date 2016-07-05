@@ -44,15 +44,14 @@ class DefaultConfigurableDomain[I, Source](
     val project:   Project[Source],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends CorrelationalDomain
+) extends CorrelationalDomain
         with DomainId
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
+        with l0.DefaultTypeLevelHandlingOfMethodResults
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions

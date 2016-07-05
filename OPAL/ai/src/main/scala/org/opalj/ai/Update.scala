@@ -165,8 +165,11 @@ case object NoUpdate extends Update[Nothing] {
 
     override def &:(updateType: UpdateType): UpdateType = updateType
 
-    override def value: Nothing = throw new IllegalStateException("a NoUpdate contains no value")
+    override def value: Nothing = {
+        throw new IllegalStateException("a NoUpdate contains no value")
+    }
 
-    override def updateValue[NewV](newValue: NewV): Nothing =
+    override def updateValue[NewV](newValue: NewV): Nothing = {
         throw new IllegalStateException("updating the value of a NoUpdate is not supported")
+    }
 }

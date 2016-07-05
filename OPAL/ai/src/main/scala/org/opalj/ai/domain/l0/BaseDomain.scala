@@ -53,8 +53,8 @@ class BaseConfigurableDomain[I, Source](
     val method:    Method
 ) extends TypeLevelDomain
         with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
+        with DefaultTypeLevelHandlingOfMethodResults
         with TheProject
         with TheMethod
         with DomainId {

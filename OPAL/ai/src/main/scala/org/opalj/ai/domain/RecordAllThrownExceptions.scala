@@ -45,7 +45,8 @@ import scala.collection.Set
  *
  * @author Michael Eichberg
  */
-trait RecordAllThrownExceptions extends RecordThrownExceptions { domain: ValuesDomain ⇒
+trait RecordAllThrownExceptions extends RecordThrownExceptions {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
     type ThrownException = Set[ExceptionValue]
 

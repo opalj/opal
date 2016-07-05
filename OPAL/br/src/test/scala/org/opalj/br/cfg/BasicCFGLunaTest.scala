@@ -50,6 +50,16 @@ class BasicCFGLunaTest extends FunSpec with Matchers {
     val testFolder = TestSupport.locateTestResources(testJAR, "br")
     val testProject = Project(testFolder)
 
+    private def test(methodName: String, cfg: CFG)(f: ⇒ Unit): Unit = {
+        try {
+            f
+        } catch {
+            case t: Throwable ⇒
+                org.opalj.io.writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv")
+                throw t
+        }
+    }
+
     describe("cfgs with very simple control flow") {
 
         val testClass = testProject.classFile(ObjectType("controlflow/BoringCode")).get
@@ -59,21 +69,25 @@ class BasicCFGLunaTest extends FunSpec with Matchers {
             val cfg = CFGFactory(testClass.findMethod("singleBlock").get.body.get)
             val bbs = cfg.allBBs
 
-            bbs.size should be(1)
-            cfg.startBlock.successors.size should be(1)
-            cfg.normalReturnNode.predecessors.size should be(1)
-            cfg.abnormalReturnNode.predecessors.size should be(0)
+            test("singleBlock", cfg) {
+                bbs.size should be(1)
+                cfg.startBlock.successors.size should be(2)
+                cfg.normalReturnNode.predecessors.size should be(1)
+                cfg.abnormalReturnNode.predecessors.size should be(1)
+            }
         }
 
-        it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
+        it("a cfg with some simple control flow statemts should consists of respective basic blocks") {
 
             val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").get.body.get)
             val bbs = cfg.allBBs
 
-            bbs.size should be(11)
-            cfg.startBlock.successors.size should be(2)
-            cfg.normalReturnNode.predecessors.size should be(1)
-            cfg.abnormalReturnNode.predecessors.size should be(1)
+            test("conditionalOneReturn", cfg) {
+                bbs.size should be(11)
+                cfg.startBlock.successors.size should be(2)
+                cfg.normalReturnNode.predecessors.size should be(1)
+                cfg.abnormalReturnNode.predecessors.size should be(2)
+            }
         }
 
         it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
@@ -81,10 +95,12 @@ class BasicCFGLunaTest extends FunSpec with Matchers {
             val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").get.body.get)
             val bbs = cfg.allBBs
 
-            bbs.size should be(6)
-            cfg.startBlock.successors.size should be(2)
-            cfg.normalReturnNode.predecessors.size should be(3)
-            cfg.abnormalReturnNode.predecessors.size should be(1)
+            test("conditionalTwoReturns", cfg) {
+                bbs.size should be(6)
+                cfg.startBlock.successors.size should be(2)
+                cfg.normalReturnNode.predecessors.size should be(3)
+                cfg.abnormalReturnNode.predecessors.size should be(4)
+            }
         }
     }
 }

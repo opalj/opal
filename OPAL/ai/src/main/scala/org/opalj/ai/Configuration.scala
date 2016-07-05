@@ -31,7 +31,7 @@ package ai
 
 /**
  * Centralizes all configuration options related to how a domain should handle
- * situations in which the information about a value is not completely available and
+ * situations in which the information about a value is (often) not completely available and
  * which could lead to some kind of exception.
  *
  * Basically all domains that perform some kind of abstraction should mix in this trait
@@ -103,9 +103,9 @@ trait Configuration {
     def throwNullPointerExceptionOnMonitorAccess: Boolean
 
     /**
-     * If `true` then `monitorexit` and the `(XXX)return` instructions will throw 
-     * `IllegalMonitorStateException`s unless the analysis is able to determine that 
-     * the exception is guaranteed to be raised. 
+     * If `true` then `monitorexit` and the `(XXX)return` instructions will throw
+     * `IllegalMonitorStateException`s unless the analysis is able to determine that
+     * the exception is guaranteed to be raised.
      */
     def throwIllegalMonitorStateException: Boolean
 

@@ -49,9 +49,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
-    class DefaultRecordingDomain(
-        val id: String
-    ) extends CorrelationalDomain
+    class DefaultRecordingDomain(val id: String) extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy
@@ -71,6 +69,12 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
             with l0.TypeLevelLongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 16l
+
+        override def throwIllegalMonitorStateException: Boolean = false
+
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+            ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
+        }
     }
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {

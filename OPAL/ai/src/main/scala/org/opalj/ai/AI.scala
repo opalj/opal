@@ -1349,6 +1349,11 @@ trait AI[D <: Domain] {
                     )
                 }
 
+                def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
+                    if (computation.throwsException)
+                        handleException(computation.exceptions)
+                }
+
                 def computationWithException(
                     computation: Computation[Nothing, ExceptionValue],
                     rest:        Operands
@@ -1991,17 +1996,17 @@ trait AI[D <: Domain] {
 
                     case 195 /*monitorexit*/ ⇒
                         val computation = theDomain.monitorexit(pc, operands.head)
-                        computationWithException(computation, operands.tail)
+                        computationWithExceptions(computation, operands.tail)
 
                     //
                     // RETURN FROM METHOD
                     //
-                    case 176 /*areturn*/ ⇒ theDomain.areturn(pc, operands.head)
-                    case 175 /*dreturn*/ ⇒ theDomain.dreturn(pc, operands.head)
-                    case 174 /*freturn*/ ⇒ theDomain.freturn(pc, operands.head)
-                    case 172 /*ireturn*/ ⇒ theDomain.ireturn(pc, operands.head)
-                    case 173 /*lreturn*/ ⇒ theDomain.lreturn(pc, operands.head)
-                    case 177 /*return*/  ⇒ theDomain.returnVoid(pc)
+                    case 176 /*areturn*/ ⇒ handleReturn(theDomain.areturn(pc, operands.head))
+                    case 175 /*dreturn*/ ⇒ handleReturn(theDomain.dreturn(pc, operands.head))
+                    case 174 /*freturn*/ ⇒ handleReturn(theDomain.freturn(pc, operands.head))
+                    case 172 /*ireturn*/ ⇒ handleReturn(theDomain.ireturn(pc, operands.head))
+                    case 173 /*lreturn*/ ⇒ handleReturn(theDomain.lreturn(pc, operands.head))
+                    case 177 /*return*/  ⇒ handleReturn(theDomain.returnVoid(pc))
 
                     // -----------------------------------------------------------------------
                     //

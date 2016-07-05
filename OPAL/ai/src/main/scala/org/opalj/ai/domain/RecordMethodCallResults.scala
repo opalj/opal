@@ -55,7 +55,7 @@ trait RecordMethodCallResults
 
     private[this] var hasReturnedNormally: Boolean = false
 
-    abstract override def returnVoid(pc: PC): Unit = {
+    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
         hasReturnedNormally = true
         super.returnVoid(pc)
     }

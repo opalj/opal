@@ -36,9 +36,8 @@ import org.opalj.br.{ClassHierarchy ⇒ DefaultClassHierarchy}
 /**
  * Makes a project's class hierarchy available to a `Domain`.
  *
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined in
- * [[org.opalj.br.ClassHierarchy]].
+ * Implements a Domain's `isSubtypeOf(...)` by delegating to
+ * the corresponding method defined in [[org.opalj.br.ClassHierarchy]].
  *
  * @author Michael Eichberg
  */

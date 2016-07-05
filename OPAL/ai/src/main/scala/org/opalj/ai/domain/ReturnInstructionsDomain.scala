@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,36 +31,19 @@ package ai
 package domain
 
 /**
- * Provides default implementations for a `Domain`'s return methods that always throw
- * an `IllegalMonitorStateExceptoin`.
+ * Adds support for handling return instructions in a generic manner.
  *
- * You can mix in this trait if you are not interested in a method's return values or if
- * you need some default implementations.
- *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
+trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
-    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-
-    }
-
-    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
+    protected[this] def handleReturn(pc: PC): Computation[Nothing, ExceptionValue] = {
+        if (throwIllegalMonitorStateException) {
+            val exception = VMIllegalMonitorStateException(pc)
+            ComputationWithSideEffectOrException(exception)
+        } else
+            ComputationWithSideEffectOnly
     }
 
 }

@@ -56,9 +56,8 @@ package ai
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[ProjectBasedClassHierarchy]] default implementation of the [[ClassHierarchy]]
- *      trait that uses the project's class hierarchy. Requires that the project is
- *      made available using the standard functionality as defined by [[TheProject]].
+ *      - [[TheProject]] default implementation of the [[ClassHierarchy]]
+ *      trait that uses the project's class hierarchy.
  *      - [[DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
  *      - ...

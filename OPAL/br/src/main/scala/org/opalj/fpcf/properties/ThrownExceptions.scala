@@ -50,7 +50,7 @@ import org.opalj.br.instructions._
  * Note that it may be possible to compute some meaningful upper type bound for the set of
  * thrown exceptions even if methods are called for which the set of thrown exceptions is unknown.
  * This is generally the case if those calls are all done in a try block but the catch/finally
- * blocks only call known methods - if any. 
+ * blocks only call known methods - if any.
  * An example is shown next and even if we assume that we don't know
  * the exceptions potentially thrown by `Class.forName` we could still determine that this method
  * will never throw an exception.
@@ -96,9 +96,10 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
      * The analysis has limited support for the following cases to be more precise in case of
      * common code patterns (e.g., a standard getter):
      *  - If all instance based field reads are using the self reference "this" and
-     *    "this" is used in the expected manner the [[GETFIELD]]
-     *  - If no [[MONITORENTER]]/[[MONITOREXIST]] instructions are found, the return instructions
-     *    will not throw `IllegalMonitorStateExceptions`.
+     *    "this" is used in the expected manner the [[org.opalj.br.instructions.GETFIELD]]
+     *  - If no [[org.opalj.br.instructions.MONITORENTER]]/[[org.opalj.br.instructions.MONITOREXIT]]
+     *    instructions are found, the return instructions will not throw
+     *    `IllegalMonitorStateException`s.
      *
      * Hence, the primary use case of this method is to identify those methods that are guaranteed
      * to never throw exceptions which dramatically helps other analysis.

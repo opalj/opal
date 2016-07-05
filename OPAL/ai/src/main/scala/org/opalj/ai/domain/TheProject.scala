@@ -32,6 +32,7 @@ package domain
 
 import org.opalj.log.LogContext
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 /**
  * Provides information about the underlying project.
@@ -59,7 +60,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-trait TheProject extends ProjectBasedClassHierarchy with LogContextProvider {
+trait TheProject extends ClassHierarchy with LogContextProvider with ThePropertyStore {
 
     /**
      * Returns the project that is currently analyzed.
@@ -67,4 +68,11 @@ trait TheProject extends ProjectBasedClassHierarchy with LogContextProvider {
     def project: SomeProject
 
     final implicit def logContext: LogContext = project.logContext
+
+    /**
+     * Returns the project's class hierarchy.
+     */
+    @inline final override def classHierarchy = project.classHierarchy
+
+    final override lazy val propertyStore = project.get(SourceElementsPropertyStoreKey)
 }

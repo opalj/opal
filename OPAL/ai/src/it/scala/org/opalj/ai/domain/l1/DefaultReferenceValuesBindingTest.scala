@@ -41,7 +41,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport
-import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain
 
@@ -52,20 +51,16 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
-    private object ValuesDomain
-            extends {
-                final val project: Project[java.net.URL] = TestSupport.createJREProject
-            } with ValuesCoordinatingDomain
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l1.DefaultReferenceValuesBinding
-            with TheProject
-            with ProjectBasedClassHierarchy {
-
-    }
+    private object ValuesDomain extends {
+        final val project: Project[java.net.URL] = TestSupport.createJREProject
+    } with ValuesCoordinatingDomain
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l1.DefaultReferenceValuesBinding
+        with TheProject
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 

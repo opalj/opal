@@ -43,10 +43,15 @@ import org.opalj.br.{FloatType, DoubleType}
  */
 sealed trait TypeInformation {
 
+    /**
+     * Returns `true` if no type information is available.
+     */
     def unknown: Boolean
 
+    @throws[DomainException]("if no type information is available")
     def isReferenceValue: Boolean
 
+    @throws[DomainException]("if no type information is available")
     def isPrimitiveValue: Boolean
 
 }
@@ -165,15 +170,15 @@ trait IsAReferenceValue {
      * This default implementation always returns `Unknown`; this is a sound
      * over-approximation.
      *
-     * @note This method is expected to be overridden by subtypes.
+     * @note '''This method is expected to be overridden by subtypes.'''
      *
      * @return `Unknown`.
      */
     def isNull: Answer = Unknown
 
     /**
-     * Returns `true` if the type information is precise. I.e., the upper type bound
-     * precisely models the runtime type of the value.
+     * Returns `true` if the type information is precise. I.e., the type returned by
+     * `upperTypeBound` precisely models the runtime type of the value.
      *  If, `isPrecise` returns true, the type of this value can
      * generally be assumed to represent a class type (not an interface type) or
      * an array type. However, this domain also supports the case that `isPrecise`
@@ -184,7 +189,8 @@ trait IsAReferenceValue {
      * This default implementation always returns `false`.
      *
      * @note `isPrecise` is always `true` if this value is known to be `null`.
-     * @note This method is expected to be overridden by subtypes.
+     *
+     * @note '''This method is expected to be overridden by subtypes.'''
      *
      * @return `false`
      */

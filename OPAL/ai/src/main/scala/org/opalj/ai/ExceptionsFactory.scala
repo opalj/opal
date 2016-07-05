@@ -32,7 +32,7 @@ package ai
 /**
  * Defines factory methods for those exceptions that are (also) created by the JVM
  * when the evaluation of a specific bytecode instruction fails
- * (e.g., `idiv`, `checkcast`,...).
+ * (e.g., `idiv`, `checkcast`, `monitorexit`, `return`...).
  *
  * @author Michael Eichberg
  */
@@ -81,6 +81,19 @@ trait ExceptionsFactory extends ValuesDomain { domain ⇒
 
     final def VMNullPointerException(pc: PC): ExceptionValue = {
         NullPointerException(ValueOriginForVMLevelValue(pc))
+    }
+
+    /**
+     * Creates a non-null object that represent an `IllegalMonitorStateException` and that has the
+     * given `origin`.
+     * If the `IllegalMonitorStateException` was created by the VM while evaluating an instruction
+     * with the program counter `pc` you should use the method [[ValueOriginForVMLevelValue]] to
+     * translate that `pc` to the appropriate [[ValueOrigin]].
+     */
+    def IllegalMonitorStateException(origin: ValueOrigin): ExceptionValue
+
+    final def VMIllegalMonitorStateException(pc: PC): ExceptionValue = {
+        IllegalMonitorStateException(ValueOriginForVMLevelValue(pc))
     }
 
     /**

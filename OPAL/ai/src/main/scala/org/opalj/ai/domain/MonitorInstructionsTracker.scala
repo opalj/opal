@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,37 +30,51 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.br.Code
+import scala.collection.BitSet
+
 /**
- * Provides default implementations for a `Domain`'s return methods that always throw
- * an `IllegalMonitorStateExceptoin`.
+ * Tracks if a monitor(enter|exit) instruction was executed.
  *
- * You can mix in this trait if you are not interested in a method's return values or if
- * you need some default implementations.
+ * This knowledge is of interest to decide, e.g., whether a return instruction
+ * may throw an `IllegalMonitorStateException` or not.
  *
  * @author Michael Eichberg
  */
-trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
+trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomInitialization {
+    this: ValuesDomain with ExceptionsFactory with Configuration ⇒
 
-    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
+    protected[this] var usesMonitorInstruction: Boolean = _
 
+    def isMonitorInstructionUsed: Boolean = usesMonitorInstruction
+
+    abstract override def initProperties(
+        code:             Code,
+        joinInstructions: BitSet,
+        initialLocals:    Locals
+    ): Unit = {
+        super.initProperties(code, joinInstructions, initialLocals)
+
+        this.usesMonitorInstruction = false
     }
 
-    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
+    abstract override def monitorenter(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
+        usesMonitorInstruction = true
+
+        super.monitorenter(pc, value)
     }
 
-    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
+    abstract override def monitorexit(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValues] = {
+        usesMonitorInstruction = true
 
-    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
+        super.monitorexit(pc, value)
     }
 
 }
+

@@ -46,7 +46,8 @@ import org.opalj.util.Milliseconds
  *
  * @param doInterrupt This function is called by the abstract interpreter to check if
  *      the abstract interpretation should be aborted. Given that this function is called
- *      very often (before the evaluation of each instruction) , it is important that it is efficient.
+ *      very often (before the evaluation of each instruction), it is important that it
+ *      is efficient.
  *
  * @author Michael Eichberg
  */

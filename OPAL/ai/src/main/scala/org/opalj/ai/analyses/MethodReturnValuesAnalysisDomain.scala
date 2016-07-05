@@ -55,7 +55,6 @@ class BaseMethodReturnValuesAnalysisDomain(
     val method:                Method
 ) extends CorrelationalDomain
         with TheProject
-        with ProjectBasedClassHierarchy
         with TheMethod
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

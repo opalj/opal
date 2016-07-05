@@ -46,10 +46,9 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  */
 class CHACallGraphAlgorithmConfiguration(
-    project:                       SomeProject,
-    withCallBySignatureResolution: Boolean     = false
-)
-        extends DefaultCallGraphAlgorithmConfiguration(project) {
+        project:                       SomeProject,
+        withCallBySignatureResolution: Boolean     = false
+) extends DefaultCallGraphAlgorithmConfiguration(project) {
 
     final val Extractor = initExtractor
 

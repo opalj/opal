@@ -66,7 +66,6 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         with domain.l1.LongValuesShiftOperators
         with domain.TheProject
         with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
 
     def doAnalyze(
         theProject:    Project[URL],

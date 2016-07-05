@@ -31,8 +31,8 @@ package ai
 
 /**
  * Identifies situations (based on a '''reference comparison of the domain values''')
- * in which the memory layout changes such that an correlation between two values that
- * existed before a join was performed no longer exists.
+ * in which the memory layout changes such that a correlation between two values, which
+ * existed before a join was performed, no longer exists.
  * In this case the [[UpdateType]] is lifted from [[MetaInformationUpdate]] to
  * [[StructuralUpdateType]].
  * For example, imagine that the old stack layout (before the join was executed)
