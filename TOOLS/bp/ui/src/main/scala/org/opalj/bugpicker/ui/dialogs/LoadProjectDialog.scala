@@ -87,21 +87,21 @@ class LoadProjectDialog(
     val jarListview = new ListView[String] {
         items() ++= jars.map(_.toString)
         hgrow = Priority.Always
-        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        selectionModel().selectionMode = SelectionMode.Multiple
         onDragOver = onDragOverBehaviour
         onDragDropped = onDragDroppedBehaviour(jars, this)
     }
     val sourceListview = new ListView[String] {
         items() ++= sources.map(_.toString)
         hgrow = Priority.Always
-        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        selectionModel().selectionMode = SelectionMode.Multiple
         onDragOver = onDragOverBehaviour
         onDragDropped = onDragDroppedBehaviour(sources, this, false)
     }
     val libsListview = new ListView[String] {
         items() ++= libs.map(_.toString)
         hgrow = Priority.Always
-        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        selectionModel().selectionMode = SelectionMode.Multiple
         onDragOver = onDragOverBehaviour
         onDragDropped = onDragDroppedBehaviour(libs, this)
     }
@@ -457,7 +457,7 @@ class LoadProjectDialog(
         stylesheets += BugPicker.defaultAppCSSURL
 
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
-            if (e.code.equals(KeyCode.ESCAPE)) {
+            if (e.code.equals(KeyCode.Escape)) {
                 cancelled = true
                 self.close()
             }
@@ -471,7 +471,7 @@ class LoadProjectDialog(
     def onDragOverBehaviour(): DragEvent ⇒ Unit = { e: DragEvent ⇒
         val db: Dragboard = e.getDragboard()
         if (db.hasFiles())
-            e.acceptTransferModes(TransferMode.COPY)
+            e.acceptTransferModes(TransferMode.Copy)
         else
             e.consume()
     }
@@ -539,9 +539,9 @@ class LoadProjectDialog(
     }
 
     def show(owner: Stage): Option[LoadedFiles] = {
-        initModality(Modality.WINDOW_MODAL)
+        initModality(Modality.WindowModal)
         initOwner(owner)
-        initStyle(StageStyle.DECORATED)
+        initStyle(StageStyle.Decorated)
         centerOnScreen
         showAndWait
         if (cancelled) {

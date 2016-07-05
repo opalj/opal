@@ -45,12 +45,12 @@ import scalafx.stage.StageStyle
 class WebViewStage extends Stage {
 
     filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
-        if (e.code == KeyCode.ESCAPE) {
+        if (e.code == KeyCode.Escape) {
             close()
         }
     }
 
-    initStyle(StageStyle.DECORATED)
+    initStyle(StageStyle.Decorated)
 }
 
 object WebViewStage {

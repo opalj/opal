@@ -330,9 +330,9 @@ class DiffView(currentName: String, currentIssues: Iterable[Node], currentParame
         </html>
 
     def show(owner: Stage): Unit = {
-        initModality(Modality.WINDOW_MODAL)
+        initModality(Modality.WindowModal)
         initOwner(owner)
-        initStyle(StageStyle.DECORATED)
+        initStyle(StageStyle.Decorated)
         centerOnScreen
         showAndWait
     }

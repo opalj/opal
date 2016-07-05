@@ -58,7 +58,7 @@ object HelpBrowser extends Stage {
         root = new SplitPane {
             val list = new ListView[HelpTopic] {
                 items() ++= Messages.helpTopics
-                selectionModel.delegate().selectionMode = SelectionMode.SINGLE
+                selectionModel.delegate().selectionMode = SelectionMode.Single
             }
             val browser = new WebView
             browser.contextMenuEnabled = false
@@ -75,7 +75,7 @@ object HelpBrowser extends Stage {
         stylesheets += BugPicker.defaultAppCSSURL
     }
 
-    initStyle(StageStyle.DECORATED)
+    initStyle(StageStyle.Decorated)
 
     private def updateView(topic: HelpTopic, browser: WebView): Unit = {
         browser.engine.loadContent(topic.content)
