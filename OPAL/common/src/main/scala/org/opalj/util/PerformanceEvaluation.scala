@@ -96,7 +96,7 @@ class PerformanceEvaluation extends Locking {
     /**
      * Resets the overall time spent by computations with the given symbol.
      */
-    final def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
+    def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
 
     /**
      * Called by the `reset(Symbol)` method.
@@ -104,13 +104,13 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `reset` method takes care of the synchronization.
      */
-    protected[this] def doReset(s: Symbol): Unit = timeSpans.remove(s)
+    private[this] def doReset(s: Symbol): Unit = timeSpans.remove(s)
 
     /**
      * Resets everything. The effect is comparable to creating a new
      * `PerformanceEvaluation` object, but is a bit more efficient.
      */
-    final def resetAll(): Unit = withWriteLock { doResetAll() }
+    def resetAll(): Unit = withWriteLock { doResetAll() }
 
     /**
      * Called by the `resetAll` method.
@@ -118,7 +118,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `resetAll` method takes care of the synchronization.
      */
-    protected[this] def doResetAll(): Unit = timeSpans.clear()
+    private[this] def doResetAll(): Unit = timeSpans.clear()
 
 }
 

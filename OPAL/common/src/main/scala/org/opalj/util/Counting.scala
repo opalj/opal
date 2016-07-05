@@ -29,9 +29,94 @@
 package org.opalj
 package util
 
+import org.opalj.concurrent.Locking
+
 import scala.collection.mutable
 
 /**
+ * Enables a simple counting mechanism that sum up several integer in a given context.
+ *
+ * Examples:
+ *   - How often is a function called during runtime?
+ *   - How often runs the program in a specific case?
+ *
+ * ==Thread Safety==
+ * This class is thread safe.
+ *
+ * @note The sum relies on integers, it is therefore not suitable to get higher sums than the integer range provides.
+ *
+ * @author Michael Reif
+ */
+trait Counting extends Locking {
+
+    private[this] val count = mutable.Map.empty[Symbol, Int]
+
+    /**
+     * Increases or decreases the count of the current statistics which is defined over the passed `symbol`.
+     * If the passed `value` is positive the count will be increases whereas it will decreases when a negative number is passed.
+     *
+     * @param s Symbol used to put multiple statistics into relation.
+     * @param value The value that will be added to the statistics. A negative number will reduce the current count.
+     */
+    final def updateStatistics(s: Symbol, value: Int): Unit = {
+        withWriteLock { doUpdateStatistics(s, value) }
+    }
+
+    /**
+     * Called by the `updateStatistics(Symbol, Int)` method.
+     *
+     * ==Thread Safety==
+     * The `updateStatistics` method takes care of the synchronization.
+     */
+    protected[this] def doUpdateStatistics(s: Symbol, value: Int): Unit = {
+        val oldValue = count.getOrElseUpdate(s, 0)
+        count.update(s, oldValue + value)
+    }
+
+    /**
+     * Returns the overall count that has been summed up with the given symbol `s`.
+     */
+    def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
+
+    /**
+     * Called by the `getCount(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `getTime` method takes care of the synchronization.
+     */
+    protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
+
+    /**
+     * Resets the overall count of the given symbol.
+     */
+    def reset(s: Symbol): Unit = withWriteLock { doReset(s) }
+
+    /**
+     * Called by the `reset(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `reset` method takes care of the synchronization.
+     */
+    private[this] def doReset(s: Symbol): Unit = count.remove(s)
+
+    /**
+     * Resets everything. The effect is comparable to creating a new
+     * `IntStatistics` object, but is a bit more efficient.
+     */
+    def resetAll(): Unit = withWriteLock { doResetAll() }
+
+    /**
+     * Called by the `resetAll` method.
+     *
+     * ==Thread Safety==
+     * The `resetAll` method takes care of the synchronization.
+     */
+    private[this] def doResetAll(): Unit = count.clear()
+
+}
+
+/**
+ *
  * Counts how often some piece of code is executed. Usually it is sufficient
  * to create an instance of this object and to execute some piece of code using
  * the function `time(Symbol)(=>T)`. Afterwards it is possible to query this object
@@ -42,10 +127,9 @@ import scala.collection.mutable
  * This class is thread safe.
  *
  * @author Michael Eichberg
+ * @author Michael Reif
  */
-class Counting extends PerformanceEvaluation {
-
-    private[this] val count = mutable.Map.empty[Symbol, Int]
+class PerformanceCounting extends PerformanceEvaluation with Counting {
 
     /**
      * Times and counts the execution of `f` and associates the information with the
@@ -53,25 +137,18 @@ class Counting extends PerformanceEvaluation {
      */
     override protected[this] def doUpdateTimes(s: Symbol, duration: Nanoseconds): Unit = {
         super.doUpdateTimes(s, duration)
-        count.update(s, count.getOrElseUpdate(s, 0) + 1)
+        super.updateStatistics(s, super.getCount(s) + 1)
     }
 
-    override protected[this] def doReset(sym: Symbol): Unit = {
-        super.reset(sym)
-        count.update(sym, 0)
+    final override def reset(symbol: Symbol): Unit = {
+        super[PerformanceEvaluation].reset(symbol)
+        super[Counting].reset(symbol)
     }
 
-    override protected[this] def doResetAll(): Unit = {
-        super.resetAll()
-        count.clear()
+    final override def resetAll(): Unit = {
+        super[PerformanceEvaluation].resetAll()
+        super[Counting].resetAll()
     }
-
-    /**
-     * Returns how often some function `f` that was tagged using the given symbol `s`
-     * was executed.
-     */
-    def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
-
-    protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
-
 }
+
+class IntStatistics extends Counting
