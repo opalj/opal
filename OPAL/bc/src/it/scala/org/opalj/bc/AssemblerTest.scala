@@ -78,7 +78,7 @@ class AssemberTest extends FlatSpec with Matchers {
 
                 val (classFile, raw) = {
                     val file = zipFile.getInputStream(ze)
-                    val classFileSize = ze.getSize().toInt
+                    val classFileSize = ze.getSize.toInt
                     val raw = new Array[Byte](classFileSize)
                     val bin = new BufferedInputStream(file, classFileSize)
                     val bytesRead = bin.read(raw, 0, classFileSize)
@@ -112,7 +112,7 @@ class AssemberTest extends FlatSpec with Matchers {
                                     classFile
                                 )(
                                     Assembler.RichClassFile,
-                                    new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.size)),
+                                    new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.length)),
                                     (s, i) ⇒ {}
                                 )
                             } catch {
@@ -133,7 +133,7 @@ class AssemberTest extends FlatSpec with Matchers {
                 } catch {
                     case e: Exception ⇒
                         Lock.synchronized {
-                            val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage() + e.getClass.getSimpleName
+                            val message = s"failed: $ze(${classFile.fqn}); message:"+e.getMessage + e.getClass.getSimpleName
                             val newException = new RuntimeException(message, e)
                             exceptions = newException :: exceptions
                         }

@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents a method handle.
  *
@@ -41,6 +43,8 @@ case class CONSTANT_MethodHandle_info(
         referenceKind:  Int,
         referenceIndex: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_MethodHandle_ID
 
     override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asMethodHandle(cp)
 

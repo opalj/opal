@@ -40,8 +40,7 @@ import org.opalj.br.analyses.StringConstantsInformationKey
  */
 object StringConstants extends DefaultOneStepAnalysis {
 
-    override def description: String =
-        "Collects all string constants in the program"
+    override def description: String = "collects all constant strings in the program"
 
     def doAnalyze(
         project:       Project[URL],

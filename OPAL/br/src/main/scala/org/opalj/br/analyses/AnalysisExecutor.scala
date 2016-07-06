@@ -114,8 +114,8 @@ trait AnalysisExecutor {
                 "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
                 analysisSpecificParametersDescription
         )
-        OPALLogger.info("info", "description: "+analysis.description)
-        OPALLogger.info("info", "copyright: "+analysis.copyright)
+        OPALLogger.info("general", "description: "+analysis.description)
+        OPALLogger.info("general", "copyright: "+analysis.copyright)
     }
 
     def main(unparsedArgs: Array[String]): Unit = {
@@ -142,7 +142,7 @@ trait AnalysisExecutor {
             sys.exit(0)
         }
 
-        def showError(message: String): Unit = OPALLogger.error("setup", message)
+        def showError(message: String): Unit = OPALLogger.error("project configuration", message)
 
         //
         // 1. check arguments
@@ -194,12 +194,11 @@ trait AnalysisExecutor {
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
-                println(Console.RED+"[error] failed parsing the classpath:"+Console.RESET)
-                t.printStackTrace()
+                OPALLogger.error("fatal", "failed parsing the classpath", t)
                 sys.exit(2)
         }
 
-        OPALLogger.info("setup", s"the classpath is ${cp.mkString}")
+        OPALLogger.info("project configuration", s"the classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
@@ -233,18 +232,17 @@ trait AnalysisExecutor {
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
-                println(Console.RED+"[error] failed parsing the analysis mode:"+Console.RESET)
-                t.printStackTrace()
+                OPALLogger.error("project configuration", "failed parsing the analysis mode", t)
                 printUsage
                 sys.exit(2)
         }
-        OPALLogger.info("setup", s"the analysis mode is $analysisMode")
+        OPALLogger.info("project configuration", s"the analysis mode is $analysisMode")
 
         if (args3.nonEmpty)
-            OPALLogger.info("setup", "analysis specific paramters: "+args3.mkString(","))
+            OPALLogger.info("project configuration", "analysis specific paramters: "+args3.mkString(","))
         val issues = checkAnalysisSpecificParameters(args3)
         if (issues.nonEmpty) {
-            issues.foreach { i ⇒ println(Console.RED+"[error] "+Console.RESET + i) }
+            issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
             printUsage
             sys.exit(2)
         }
@@ -257,8 +255,7 @@ trait AnalysisExecutor {
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
-                println(Console.RED+"[error] setting up the project failed:"+Console.RESET)
-                t.printStackTrace()
+                OPALLogger.error("fatal", "setting up the project failed", t)
                 printUsage
                 sys.exit(2)
         }
@@ -266,10 +263,10 @@ trait AnalysisExecutor {
         //
         // 3. execute analysis
         //
-        println("[info] executing analysis: "+analysis.title+".")
+        OPALLogger.info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        println(result.toConsoleString)
+        OPALLogger.progress("Result:\n"+result.toConsoleString)
     }
 
     protected def handleParsingExceptions(

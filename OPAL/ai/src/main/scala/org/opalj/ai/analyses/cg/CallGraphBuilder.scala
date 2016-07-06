@@ -50,7 +50,7 @@ import org.opalj.br.analyses.SomeProject
  */
 class CallGraphBuilder(val project: SomeProject) {
 
-    type PCs = collection.mutable.UShortSet
+    type PCs = UShortSet
 
     private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
 

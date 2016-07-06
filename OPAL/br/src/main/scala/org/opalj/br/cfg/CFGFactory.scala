@@ -210,6 +210,41 @@ object CFGFactory {
                 }
             }
 
+            def linkWithExceptionHandler(currentBB: BasicBlock, eh: ExceptionHandler): Unit = {
+                val catchNode = exceptionHandlers(eh)
+                currentBB.addSuccessor(catchNode)
+                catchNode.addPredecessor(currentBB)
+            }
+
+            def handleExceptions(currentBB: BasicBlock, jvmExceptions: List[ObjectType]): Unit = {
+                var areHandled = true
+                jvmExceptions.foreach { thrownException ⇒
+                    areHandled &= code.handlersFor(pc).exists { eh ⇒
+                        val catchType = eh.catchType
+                        if (catchType.isEmpty) {
+                            linkWithExceptionHandler(currentBB, eh)
+                            true // also aborts the evaluation
+                        } else {
+                            val isCaught = isSubtypeOf(thrownException, catchType.get)
+                            if (isCaught.isYes) {
+                                linkWithExceptionHandler(currentBB, eh)
+                                true // also aborts the evaluation
+                            } else if (isCaught.isUnknown) {
+                                linkWithExceptionHandler(currentBB, eh)
+                                false
+                            } else {
+                                false
+                            }
+                        }
+                    }
+                }
+                if (!areHandled) {
+                    // also connect with exit unless all exceptions are handled
+                    currentBB.addSuccessor(abnormalReturnNode)
+                    abnormalReturnNode.addPredecessor(currentBB)
+                }
+            }
+
             (instruction.opcode: @scala.annotation.switch) match {
 
                 case RET.opcode ⇒
@@ -293,6 +328,7 @@ object CFGFactory {
 
                 case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
                     val currentBB = useRunningBB()
+                    handleExceptions(currentBB, instruction.jvmExceptions)
                     currentBB.endPC = pc
                     currentBB.addSuccessor(normalReturnNode)
                     normalReturnNode.addPredecessor(currentBB)
@@ -302,12 +338,6 @@ object CFGFactory {
                     assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
-
-                    def linkWithExceptionHandler(eh: ExceptionHandler): Unit = {
-                        val catchNode = exceptionHandlers(eh)
-                        currentBB.addSuccessor(catchNode)
-                        catchNode.addPredecessor(currentBB)
-                    }
 
                     def endBasicBlock(): Unit = {
                         // this instruction may throw an exception; hence it ends this
@@ -324,10 +354,10 @@ object CFGFactory {
                             // just treat every exception handler as a potential target
                             val isHandled = code.handlersFor(pc).exists { eh ⇒
                                 if (eh.catchType.isEmpty) {
-                                    linkWithExceptionHandler(eh)
+                                    linkWithExceptionHandler(currentBB, eh)
                                     true // also aborts the evaluation
                                 } else {
-                                    linkWithExceptionHandler(eh)
+                                    linkWithExceptionHandler(currentBB, eh)
                                     false
                                 }
                             }
@@ -340,32 +370,7 @@ object CFGFactory {
 
                         case _ ⇒
                             val jvmExceptions = instruction.jvmExceptions
-                            var areHandled = true
-                            jvmExceptions.foreach { thrownException ⇒
-                                areHandled &= code.handlersFor(pc).exists { eh ⇒
-                                    val catchType = eh.catchType
-                                    if (catchType.isEmpty) {
-                                        linkWithExceptionHandler(eh)
-                                        true // also aborts the evaluation
-                                    } else {
-                                        val isCaught = isSubtypeOf(thrownException, catchType.get)
-                                        if (isCaught.isYes) {
-                                            linkWithExceptionHandler(eh)
-                                            true // also aborts the evaluation
-                                        } else if (isCaught.isUnknown) {
-                                            linkWithExceptionHandler(eh)
-                                            false
-                                        } else {
-                                            false
-                                        }
-                                    }
-                                }
-                            }
-                            if (!areHandled) {
-                                // also connect with exit unless all exceptions are handled
-                                currentBB.addSuccessor(abnormalReturnNode)
-                                abnormalReturnNode.addPredecessor(currentBB)
-                            }
+                            handleExceptions(currentBB, jvmExceptions)
                             if (jvmExceptions.nonEmpty) {
                                 endBasicBlock()
                             }

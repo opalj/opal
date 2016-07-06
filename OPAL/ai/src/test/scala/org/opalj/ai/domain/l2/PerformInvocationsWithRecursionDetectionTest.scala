@@ -67,8 +67,8 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
-                domain.allReturnedValues)
+            fail("the method never returns, but the following exceptions were thrown: "+
+                domain.allThrownExceptions)
     }
 
     it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
@@ -79,8 +79,8 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
-                domain.allReturnedValues)
+            fail("the method never returns, but the following exceptions were thrown: "+
+                domain.allThrownExceptions)
     }
 
     it should ("be able to analyze some methods with mutual recursion") in {
@@ -124,7 +124,6 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with ValuesDomain
             with DefaultDomainValueBinding
             with TheProject
-            with ProjectBasedClassHierarchy
             with TypedValuesFactory
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
@@ -145,10 +144,15 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelPrimitiveValuesConversions
             with l0.TypeLevelLongValuesShiftOperators
-            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
+            //with DefaultHandlingOfMethodResults
+            with l0.DefaultTypeLevelHandlingOfMethodResults
             with PerformInvocationsWithRecursionDetection
             with DefaultRecordMethodCallResults {
+
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+            ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
+        }
 
         def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean = true
 

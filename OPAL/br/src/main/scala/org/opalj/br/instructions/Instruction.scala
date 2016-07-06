@@ -54,8 +54,15 @@ trait Instruction {
      * The exceptions that may be thrown by the JVM at runtime if the execution of
      * this instruction fails.
      * I.e., these are neither exceptions that are explicitly created and then thrown
-     * by user code nor errors that may arise due to an invalid code base (e.g.
-     * `LinkageError`s). However, OutOfMemoryErrors are possible.
+     * by user code nor errors that may arise due to an invalid code base (in particular
+     * `LinkageError`s). However, `OutOfMemoryError`s are possible.
+     *
+     * The returned types always precisely describe the thrown
+     * exception; they are not upper bounds.
+     *
+     * All instructions – except of the [[InvocationInstruction]]s and the [[ATHROW$]] instruction –
+     * will always either succeed, throw a linkage time related exception or throw one of the
+     * specified exceptions.
      */
     def jvmExceptions: List[ObjectType]
 

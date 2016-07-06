@@ -30,7 +30,9 @@ package org.opalj
 package ai
 
 /**
- * Defines the methods that lead to a return from a method.
+ * Defines the methods that lead to a return from a method. In general, a return instruction
+ * can throw an `IllegalMonitorStateException`. If, e.g., the method is synchronized and
+ * the method body contains a `Monitorexit` instruction, but no `Monitorenter` instruction.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
@@ -41,37 +43,37 @@ trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
      * Called when a return instruction with the given `pc` is reached.
      * In other words, when the method returns normally.
      */
-    def returnVoid(pc: PC): Unit
+    def returnVoid(pc: PC): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type integer'', is returned
      * by the return instruction with the given `pc`.
      */
-    def ireturn(pc: PC, value: DomainValue): Unit
+    def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type long'', is returned
      * by the return instruction with the given `pc`.
      */
-    def lreturn(pc: PC, value: DomainValue): Unit
+    def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type float'', is returned
      * by the return instruction with the given `pc`.
      */
-    def freturn(pc: PC, value: DomainValue): Unit
+    def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type double'', is returned
      * by the return instruction with the given `pc`.
      */
-    def dreturn(pc: PC, value: DomainValue): Unit
+    def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type reference'', is returned
      * by the return instruction with the given `pc`.
      */
-    def areturn(pc: PC, value: DomainValue): Unit
+    def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * Called by the abstract interpreter when an exception is thrown that is not

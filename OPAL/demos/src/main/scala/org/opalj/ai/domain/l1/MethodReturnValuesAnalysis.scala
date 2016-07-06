@@ -79,7 +79,6 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
             with domain.IgnoreSynchronization
             with domain.TheProject
             with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {
 
         type ReturnedValue = DomainValue

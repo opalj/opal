@@ -38,7 +38,7 @@ package domain
 trait IgnoreSynchronization extends MonitorInstructionsDomain {
     this: ValuesDomain with ReferenceValuesDomain with ExceptionsFactory with Configuration ⇒
 
-    protected[this] def sideEffectOnlyOrNullPointerException(
+    protected[this] def sideEffectOnlyOrExceptions(
         pc:    PC,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
@@ -48,7 +48,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
             case Unknown if throwNullPointerExceptionOnMonitorAccess ⇒
                 val npe = NullPointerException(ValueOriginForVMLevelValue(pc))
                 ComputationWithSideEffectOrException(npe)
-            case _ ⇒
+            case No ⇒
                 ComputationWithSideEffectOnly
         }
     }
@@ -57,30 +57,38 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      * Handles a `monitorenter` instruction.
      *
      * @note The default implementation checks if the given value is `null` and raises
-     * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned as this
-     * computation's results.
+     * 		an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorenter(
         pc:    PC,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        sideEffectOnlyOrNullPointerException(pc, value)
+        sideEffectOnlyOrExceptions(pc, value)
     }
 
     /**
-     * Handles a `monitorenter` instruction.
+     * Handles a `monitorexit` instruction.
      *
      * @note The default implementation checks if the given value is `null` and raises
-     * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned as this
-     * computation's results.
+     * 		an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorexit(
         pc:    PC,
         value: DomainValue
-    ): Computation[Nothing, ExceptionValue] = {
-        sideEffectOnlyOrNullPointerException(pc, value)
+    ): Computation[Nothing, ExceptionValues] = {
+        val result = sideEffectOnlyOrExceptions(pc, value)
+        if (result.returnsNormally /* <=> the value maybe non-null*/ &&
+            throwIllegalMonitorStateException) {
+
+            val imsException = VMIllegalMonitorStateException(pc)
+            if (result.throwsException) {
+                ComputationWithSideEffectOrException(Set(result.exceptions, imsException))
+            } else {
+                ComputationWithSideEffectOrException(Set(imsException))
+            }
+        } else { // the receiver is null
+            ComputationWithSideEffectOrException(Set(result.exceptions))
+        }
     }
 }
 

@@ -36,7 +36,7 @@ import org.opalj.da._
 import org.opalj.io.write
 
 /**
- * Assembles the specified class file(s).
+ * Writes out some class files where some methods are filtered.
  *
  * @author Michael Eichberg
  */
@@ -76,7 +76,7 @@ object MethodFilter {
                         !matches
                 }
                 val filteredCF = cf.copy(methods = filteredMethods)
-                val path = new File(cf.fqn+".class").toPath()
+                val path = new File(cf.fqn+".class").toPath
                 write(Assembler(filteredCF), path)
                 OPALLogger.info("info", s"created new class file: $path")
             }

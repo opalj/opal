@@ -58,6 +58,10 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
      */
     override protected def compute(project: SomeProject): PropertyStore = {
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
-        PropertyStore(project.allSourceElements, defaultIsInterrupted, debug)(project.logContext)
+        implicit val logContext = project.logContext
+        PropertyStore(
+            project.allSourceElements, defaultIsInterrupted, debug,
+            context = project
+        )
     }
 }

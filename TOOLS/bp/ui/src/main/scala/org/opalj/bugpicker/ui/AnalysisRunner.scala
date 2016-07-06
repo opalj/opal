@@ -114,7 +114,7 @@ object AnalysisRunner extends BugPickerAnalysis {
 
         override def apply(event: WorkerStateEvent): Unit = {
             event.eventType match {
-                case WorkerStateEvent.WORKER_STATE_SUCCEEDED ⇒ {
+                case WorkerStateEvent.WorkerStateSucceeded ⇒ {
                     reportView.engine.loadContent(doc().toString)
                     new AddClickListenersOnLoadListener(
                         project, sources, reportView, byteView, sourceView,
@@ -126,7 +126,7 @@ object AnalysisRunner extends BugPickerAnalysis {
                     byteView.engine.loadContent(Messages.ANALYSIS_FINISHED)
                     sourceView.engine.loadContent(Messages.ANALYSIS_FINISHED)
                 }
-                case WorkerStateEvent.WORKER_STATE_RUNNING ⇒ {
+                case WorkerStateEvent.WorkerStateRunning ⇒ {
                     reportView.engine.loadContent(Messages.ANALYSIS_RUNNING)
                 }
                 case _default ⇒ {

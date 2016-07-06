@@ -30,6 +30,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Is used by the invokedynamic instruction to specify a bootstrap method, the dynamic
  * invocation name, the argument and return types of the call, and optionally, a
@@ -49,6 +51,8 @@ case class CONSTANT_InvokeDynamic_info(
 ) extends Constant_Pool_Entry {
 
     override def asInvokeDynamic: this.type = this
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 
     def methodName(cp: Constant_Pool): String = cp(nameAndTypeIndex).asNameAndType.name(cp)
 

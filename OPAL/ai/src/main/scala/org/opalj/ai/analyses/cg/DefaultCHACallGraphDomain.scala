@@ -41,7 +41,6 @@ import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.DefaultDomainValueBinding
-import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.l0
@@ -55,12 +54,10 @@ class DefaultCHACallGraphDomain[Source](
     val cache:     CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method:    Method
-)
-        extends Domain
+) extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
-        with ProjectBasedClassHierarchy
         with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults

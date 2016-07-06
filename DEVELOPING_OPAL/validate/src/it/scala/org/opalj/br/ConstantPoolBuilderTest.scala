@@ -31,10 +31,11 @@ package br
 
 import scala.language.implicitConversions
 
-import org.scalatest.FunSuite
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import java.net.URL
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.Matchers
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.cp.ConstantPoolBuilder
@@ -42,8 +43,9 @@ import org.opalj.da.ClassFileReader
 import org.opalj.da.{ClassFile ⇒ DAClassFile}
 import org.opalj.da.{Constant_Pool_Entry ⇒ DAConstant_Pool_Entry}
 import org.opalj.br.cp.{Constant_Pool_Entry ⇒ BRConstant_Pool_Entry}
-import org.scalatest.Matchers
 import org.opalj.bi.reader.Constant_PoolAbstractions
+import org.opalj.bi.ConstantPoolTags
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests that every entry in the rebuild constant pool can also be found in the original
@@ -58,12 +60,15 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
     import ConstantPoolBuilderTest.brProject
     import ConstantPoolBuilderTest.daClassFiles
 
+    private val timer = new PerformanceEvaluation
+
     def testConstantPoolCreation(daClassFile: DAClassFile, source: URL): Unit = {
+        import timer.time
         val daCP = daClassFile.constant_pool
         val fqn = daClassFile.fqn
         val classType = ObjectType(fqn.replace('.', '/'))
         val brClassFile = brProject.classFile(classType).get
-        val brCP = ConstantPoolBuilder(brClassFile)
+        val brCP = time('ConstantPoolCreation) { ConstantPoolBuilder(brClassFile) }
         assert((daCP(0) eq null) || daCP(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
         assert((brCP(0) eq null) || brCP(0).isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore])
 
@@ -111,98 +116,132 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
         def isEqual(
             daCPE: DAConstant_Pool_Entry,
             brCPE: BRConstant_Pool_Entry
-        ): Boolean = daCPE match {
-            case e: da.CONSTANT_Integer_info ⇒
-                brCPE match {
-                    case br.cp.CONSTANT_Integer_info(value) ⇒ e.value == value.value
-                    case _                                  ⇒ false
-                }
-            case e: da.CONSTANT_Float_info ⇒
-                brCPE match {
-                    case br.cp.CONSTANT_Float_info(value) ⇒
-                        (e.value.isNaN && value.value.isNaN) || e.value == value.value
-                    case _ ⇒ false
-                }
-            case e: da.CONSTANT_Long_info ⇒
-                brCPE match {
-                    case br.cp.CONSTANT_Long_info(value) ⇒ e.value == value.value
-                    case _                               ⇒ false
-                }
-            case e: da.CONSTANT_Double_info ⇒ brCPE match {
-                case br.cp.CONSTANT_Double_info(value) ⇒
-                    (e.value.isNaN && value.value.isNaN) || e.value == value.value
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_Utf8_info ⇒
-                brCPE match {
-                    case br.cp.CONSTANT_Utf8_info(value) ⇒ e.value == value
-                    case _                               ⇒ false
-                }
+        ): Boolean = {
+            (daCPE.tag: @scala.annotation.switch) match {
+                case ConstantPoolTags.CONSTANT_Integer_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Integer_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Integer_info(value) ⇒ e.value == value.value
+                        case _                                  ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Float_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Float_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Float_info(value) ⇒
+                            (e.value.isNaN && value.value.isNaN) || e.value == value.value
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Long_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Long_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Long_info(value) ⇒ e.value == value.value
+                        case _                               ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Double_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Double_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Double_info(value) ⇒
+                            (e.value.isNaN && value.value.isNaN) || e.value == value.value
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Utf8_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Utf8_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Utf8_info(value) ⇒ e.value == value
+                        case _                               ⇒ false
+                    }
 
-            case e: da.CONSTANT_String_info ⇒ brCPE match {
-                case br.cp.CONSTANT_String_info(string_index) ⇒ isEqual(e.string_index, string_index)
-                case _                                        ⇒ false
-            }
-            case e: da.CONSTANT_Class_info ⇒ brCPE match {
-                case br.cp.CONSTANT_Class_info(name_index) ⇒ isEqual(e.name_index, name_index)
-                case _                                     ⇒ false
-            }
-            case e: da.CONSTANT_NameAndType_info ⇒ brCPE match {
-                case br.cp.CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒
-                    isEqual(e.name_index, name_index) && isEqual(e.descriptor_index, descriptor_index)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_MethodType_info ⇒ brCPE match {
-                case br.cp.CONSTANT_MethodType_info(descriptorIndex) ⇒
-                    isEqual(e.descriptor_index, descriptorIndex)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_MethodHandle_info ⇒ brCPE match {
-                case br.cp.CONSTANT_MethodHandle_info(refKind, refIndex) ⇒
-                    e.reference_kind == refKind &&
-                        isEqual(e.reference_index, refIndex)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_Fieldref_info ⇒ brCPE match {
-                case br.cp.CONSTANT_Fieldref_info(class_index, name_and_type_index) ⇒
-                    isEqual(e.class_index, class_index) &&
-                        isEqual(e.name_and_type_index, name_and_type_index)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_Methodref_info ⇒ brCPE match {
-                case br.cp.CONSTANT_Methodref_info(class_index, name_and_type_index) ⇒
-                    isEqual(e.class_index, class_index) &&
-                        isEqual(e.name_and_type_index, name_and_type_index)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_InterfaceMethodref_info ⇒ brCPE match {
-                case br.cp.CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) ⇒
-                    isEqual(e.class_index, class_index) &&
-                        isEqual(e.name_and_type_index, name_and_type_index)
-                case _ ⇒ false
-            }
-            case e: da.CONSTANT_InvokeDynamic_info ⇒ brCPE match {
-                case br.cp.CONSTANT_InvokeDynamic_info(bootstrap_index, name_and_type_index) ⇒
-                    isEqual(e.name_and_type_index, name_and_type_index)
-                case _ ⇒ false
-            }
+                case ConstantPoolTags.CONSTANT_String_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_String_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_String_info(string_index) ⇒ isEqual(e.string_index, string_index)
+                        case _                                        ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Class_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Class_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Class_info(name_index) ⇒ isEqual(e.name_index, name_index)
+                        case _                                     ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_NameAndType_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_NameAndType_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_NameAndType_info(name_index, descriptor_index) ⇒
+                            isEqual(e.name_index, name_index) && isEqual(e.descriptor_index, descriptor_index)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_MethodType_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_MethodType_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_MethodType_info(descriptorIndex) ⇒
+                            isEqual(e.descriptor_index, descriptorIndex)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_MethodHandle_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_MethodHandle_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_MethodHandle_info(refKind, refIndex) ⇒
+                            e.reference_kind == refKind &&
+                                isEqual(e.reference_index, refIndex)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Fieldref_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Fieldref_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Fieldref_info(class_index, name_and_type_index) ⇒
+                            isEqual(e.class_index, class_index) &&
+                                isEqual(e.name_and_type_index, name_and_type_index)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_Methodref_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_Methodref_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_Methodref_info(class_index, name_and_type_index) ⇒
+                            isEqual(e.class_index, class_index) &&
+                                isEqual(e.name_and_type_index, name_and_type_index)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_InterfaceMethodref_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_InterfaceMethodref_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) ⇒
+                            isEqual(e.class_index, class_index) &&
+                                isEqual(e.name_and_type_index, name_and_type_index)
+                        case _ ⇒ false
+                    }
+                case ConstantPoolTags.CONSTANT_InvokeDynamic_ID ⇒
+                    val e = daCPE.asInstanceOf[da.CONSTANT_InvokeDynamic_info]
+                    brCPE match {
+                        case br.cp.CONSTANT_InvokeDynamic_info(bootstrap_index, name_and_type_index) ⇒
+                            isEqual(e.name_and_type_index, name_and_type_index)
+                        case _ ⇒ false
+                    }
 
-            case _ ⇒ false
+                case _ ⇒ false
 
+            }
         }
 
-        brCP.foreach { brCPE ⇒
-            assert(
-                brCPE == null || daCP.exists(daCPE ⇒ isEqual(daCPE, brCPE)),
-                s"$fqn: the bytecode entry $brCPE has no equivalent; "+
-                    brCP.zipWithIndex.map(_.swap).mkString("computed constant pool:\n", "\n", "\n") +
-                    daCP.zipWithIndex.map(_.swap).mkString("original constant pool:\n", "\n", "\n")
-            )
+        time('ConstantPoolComparison) {
+            val theDACPs = daCP.view.tail.filter(_ ne null).seq.groupBy { _.tag }
+            brCP.foreach { brCPE ⇒
+                if (!(brCPE == null || {
+                    val cpTag = brCPE.tag
+                    theDACPs(cpTag).exists(daCPE ⇒ daCPE != null && isEqual(daCPE, brCPE))
+                })) {
+                    fail(
+                        s"$fqn: the bytecode entry $brCPE has no equivalent; "+
+                            brCP.zipWithIndex.map(_.swap).mkString("computed constant pool:\n", "\n", "\n") +
+                            daCP.zipWithIndex.map(_.swap).mkString("original constant pool:\n", "\n", "\n")
+                    )
+                }
+            }
         }
 
     }
 
     test("that the constant pool does not contain unexpected entries") {
+        info(s"recreating the constant pool for ${daClassFiles.size} class files")
         daClassFiles.par.foreach {
             case (cf, source) ⇒
                 try {
@@ -215,6 +254,8 @@ class ConstantPoolBuilderTest extends FunSuite with Matchers {
                 }
 
         }
+        info(s"recreating the constant pool took ${timer.getTime('ConstantPoolCreation).toSeconds} (CPU time)")
+        info(s"comparing the constant pools took ${timer.getTime('ConstantPoolComparison).toSeconds} (CPU time)")
     }
 }
 

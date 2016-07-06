@@ -73,8 +73,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         class AnalysisDomain(
             override val project: Project[URL],
             val method:           Method
-        )
-                extends CorrelationalDomain
+        ) extends CorrelationalDomain
                 with domain.TheProject
                 with domain.TheMethod
                 with domain.DefaultDomainValueBinding
@@ -90,7 +89,6 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                 with domain.l1.DefaultStringValuesBinding
                 with domain.DefaultHandlingOfMethodResults
                 with domain.IgnoreSynchronization
-                with domain.ProjectBasedClassHierarchy
 
         val callSitesWithConstantStringParameter =
             for {

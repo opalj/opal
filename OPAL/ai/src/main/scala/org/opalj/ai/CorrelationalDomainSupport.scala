@@ -30,7 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Provides support for tracking the correlation between values.
+ * Provides basic support for tracking the correlation between domain values stored in
+ * different registers/in different stack slots.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

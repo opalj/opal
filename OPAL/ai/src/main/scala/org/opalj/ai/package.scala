@@ -89,7 +89,7 @@ package object ai {
 
     type PC = org.opalj.br.PC
     type PCs = org.opalj.br.PCs
-    def NoPCs = org.opalj.br.NoPCs
+    final def NoPCs = org.opalj.br.NoPCs
 
     /**
      * A value of type `ValueOrigin` identifies the origin of a value. In most cases the
@@ -453,32 +453,4 @@ package object ai {
     }
 
     type ExceptionsRaisedByCalledMethod = ExceptionsRaisedByCalledMethods.Value
-
-    //    /**
-    //     * Returns those values `V` that are used by the instruction to perform a
-    //     * computation that may have an effect outside of the scope of the current method.
-    //     * In particular the following computations are considered:
-    //     *  - performing tests
-    //     *  - passing a value to a method
-    //     *  - performing an arithmetic computation
-    //     *  - value conversions
-    //     *  - assigning the value to a field/reading a field's value
-    //     *  - throwing an exception
-    //     *  - using the value as a monitor
-    //     *  - creating an object
-    //     *
-    //     * Hence, instructions which just move values between the locals and the operands stack
-    //     * (laod, store) or just manipulate (dup..., pop, swap) the operand stack are
-    //     * ''not'' considered as performing computations related to those values.
-    //     *
-    //     * @param operands The current operand stack used by the instruction. Note that
-    //     *      this methods assumes that all values – independent of their computational
-    //     *      type category – just use one operand value. E.g. a long div instruction will
-    //     *      only pop the two top most operand values – as in case of the integer div
-    //     *      instruction.
-    //     */
-    //    def usesForComputation[V >: Null <: AnyRef](
-    //    instruction : Instruction,
-    //    operands: List[V],
-    //    locals: Locals[V]): List[V]
 }

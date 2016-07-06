@@ -51,7 +51,6 @@ class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with TheProject
-        with ProjectBasedClassHierarchy
         with ThrowAllPotentialExceptionsConfiguration
         with l1.DefaultIntegerRangeValues
         with l0.DefaultTypeLevelLongValues

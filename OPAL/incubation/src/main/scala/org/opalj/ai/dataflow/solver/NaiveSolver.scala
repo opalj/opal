@@ -50,7 +50,6 @@ trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] 
 trait BaseDomain[Source]
         extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
-        with domain.ProjectBasedClassHierarchy
         with domain.TheProject
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues

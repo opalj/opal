@@ -75,7 +75,8 @@ import org.opalj.br.cfg.CatchNode
 trait RecordCFG
         extends CoreDomainFunctionality
         with CustomInitialization
-        with ReturnInstructionsDomain { domain: TheCode with ValuesDomain ⇒
+        with ai.ReturnInstructionsDomain {
+    domain: ValuesDomain with TheCode ⇒
 
     private[this] var regularSuccessors: Array[UShortSet] = _
     private[this] var exceptionHandlerSuccessors: Array[UShortSet] = _
@@ -539,7 +540,9 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def returnVoid(pc: PC): Unit = {
+    abstract override def returnVoid(
+        pc: PC
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.returnVoid(pc)
     }
@@ -549,7 +552,10 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def ireturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def ireturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.ireturn(pc, value)
     }
@@ -559,7 +565,10 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def lreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def lreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.lreturn(pc, value)
     }
@@ -569,7 +578,10 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def freturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def freturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.freturn(pc, value)
     }
@@ -579,7 +591,10 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def dreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def dreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.dreturn(pc, value)
     }
@@ -589,7 +604,10 @@ trait RecordCFG
      *
      * @note This method is only intended to be called by the AI framework.
      */
-    abstract override def areturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def areturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         exitPCs += pc
         super.areturn(pc, value)
     }

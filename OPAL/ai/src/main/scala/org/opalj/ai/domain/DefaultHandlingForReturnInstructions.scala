@@ -31,7 +31,8 @@ package ai
 package domain
 
 /**
- * Provides default implementations for a `Domain`'s return methods that do nothing.
+ * Provides default implementations for a `Domain`'s return methods that always throw
+ * an `IllegalMonitorStateExceptoin`.
  *
  * You can mix in this trait if you are not interested in a method's return values or if
  * you need some default implementations.
@@ -39,26 +40,27 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
 
-    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Unit = {
-        /* Nothing to do. */
+    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        handleReturn(pc)
+
     }
 
-    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Unit = {
-        /* Nothing to do. */
+    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        handleReturn(pc)
     }
 
-    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Unit = {
-        /* Nothing to do. */
+    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        handleReturn(pc)
     }
 
-    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Unit = {
-        /* Nothing to do. */
+    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        handleReturn(pc)
     }
 
-    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Unit = {
-        /* Nothing to do. */
+    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        handleReturn(pc)
     }
 
 }

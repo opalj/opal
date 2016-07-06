@@ -40,10 +40,10 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingOfMethodResults
-        extends DefaultHandlingOfVoidReturns
-        with DefaultHandlingForThrownExceptions
+        extends DefaultHandlingForThrownExceptions
+        with DefaultHandlingOfVoidReturns
         with DefaultHandlingForReturnInstructions {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
 
 }
 

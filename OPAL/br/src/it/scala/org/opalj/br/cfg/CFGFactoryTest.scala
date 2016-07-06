@@ -108,12 +108,20 @@ class CFGFactoryTest extends FunSpec with Matchers {
                 // contained in the cfg
                 code.foreach { (pc, instruction) ⇒
                     val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
-                    val cfgSuccessors = cfg.successors(pc)
-                    if (nextInstructions != cfgSuccessors) {
-                        fail(s"the instruction ($instruction) with pc $pc has the following "+
-                            s"instruction successors: $nextInstructions and "+
-                            s"the following cfg successors : $cfgSuccessors "+
-                            s"(${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                    if (nextInstructions.isEmpty) {
+                        if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
+                            fail(
+                                s"the successor nodes of a return instruction $pc:($instruction)"+
+                                    s"have to be catch nodes, but we found: ${cfg.bb(pc).successors}"
+                            )
+                    } else {
+                        val cfgSuccessors = cfg.successors(pc)
+                        if (nextInstructions != cfgSuccessors) {
+                            fail(s"the instruction ($instruction) with pc $pc has the following "+
+                                s"instruction successors: $nextInstructions and "+
+                                s"the following cfg successors : $cfgSuccessors "+
+                                s"(${cfg.bb(pc)} => ${cfg.bb(pc).successors})")
+                        }
                     }
                 }
 

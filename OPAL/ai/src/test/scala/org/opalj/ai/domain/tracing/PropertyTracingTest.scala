@@ -71,6 +71,12 @@ class PropertyTracingTest extends FlatSpec with Matchers {
 
         override def maxCardinalityOfIntegerRanges: Long = 16l
 
+        override def throwIllegalMonitorStateException: Boolean = false
+
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+            ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
+        }
+
         override def propertyName = "isSanitized"
 
         override def invokestatic(

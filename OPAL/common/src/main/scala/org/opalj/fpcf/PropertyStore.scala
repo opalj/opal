@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
-
 import java.util.{IdentityHashMap ⇒ JIDMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -38,11 +37,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.{ConcurrentHashMap ⇒ JCHMap}
+
 import scala.reflect.ClassTag
 import scala.collection.mutable
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
-import scala.collection.mutable.StringBuilder
 import scala.collection.JavaConverters._
 import org.opalj.graphs.closedSCCs
 import org.opalj.io.writeAndOpen
@@ -54,7 +53,7 @@ import org.opalj.log.OPALLogger.{info ⇒ logInfo}
 import org.opalj.log.OPALLogger.{debug ⇒ logDebug}
 import org.opalj.log.OPALLogger.{error ⇒ logError}
 import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
-import org.opalj.log.LogContext
+import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
 
 /**
@@ -162,12 +161,18 @@ class PropertyStore private (
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
         private[this] val data:  JIDMap[Entity, EntityProperties],
+        private[this] val ctx:   Map[Class[_], AnyRef],
         final val isInterrupted: () ⇒ Boolean,
         @volatile var debug:     Boolean
 )(
         implicit
         val logContext: LogContext
 ) { store ⇒
+
+    def context[T <: AnyRef: ClassTag]: T = {
+        val ctxId = implicitly[ClassTag[T]].runtimeClass
+        ctx.getOrElse(ctxId, { throw new ContextNotAvailableException(ctxId) }).asInstanceOf[T]
+    }
 
     /**
      * The (immutable) set of all entities.
@@ -242,14 +247,14 @@ class PropertyStore private (
 
                 // reset set property related information
                 theSetPropertyObservers.clear()
-                theSetProperties.clear();
+                theSetProperties.clear()
 
                 // reset entity related information
                 theDirectPropertyComputations.clear()
                 theLazyPropertyComputations.clear()
                 theOnPropertyComputations.clear()
                 observers.clear()
-                entitiesProperties foreach { eps ⇒ eps.ps.clear /*delete properties*/ }
+                entitiesProperties foreach { eps ⇒ eps.ps.clear() /*delete properties*/ }
             }
         }
     }
@@ -269,8 +274,8 @@ class PropertyStore private (
         }
 
         observers.entrySet().asScala foreach { e ⇒
-            val dependerEPK = e.getKey()
-            val dependeeEPKs = e.getValue().map(_._1)
+            val dependerEPK = e.getKey
+            val dependeeEPKs = e.getValue.map(_._1)
             val dependerNode = getNode(dependerEPK)
             val dependeeNodes = dependeeEPKs.map(getNode(_))
             dependerNode.addChildren(dependeeNodes.toList)
@@ -302,7 +307,7 @@ class PropertyStore private (
         var perEntityPropertiesCount = 0
         var unsatisfiedPropertyDependencies = 0
         var registeredObservers = 0
-        val properties = new StringBuilder
+        val properties = new java.lang.StringBuilder()
         for { (e, eps) ← entries } {
             val ps = eps.ps.entries.filter(pk ⇒ pk._2 ne null).map { e ⇒
                 val (pkId, pos) = e
@@ -1178,6 +1183,9 @@ class PropertyStore private (
      */
     def <||<[E <: Entity](pf: PartialFunction[Entity, E], c: PropertyComputation[E]): Unit = {
         val es = keysList.collect(pf)
+        if (es.isEmpty) {
+            logWarn("project", s"an entity selector function $pf did not select any entity")
+        }
         bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
     }
 
@@ -1228,7 +1236,7 @@ class PropertyStore private (
      *
      * This is a blocking operation; the returned set is independent of the store.
      *
-     * @note This method will not trigger lazy property computations.
+     * @note This method will not trigger lazy or direct property computations.
      */
     def collect[T](collect: PartialFunction[(Entity, Property), T]): Traversable[T] = {
         accessStore {
@@ -1259,7 +1267,7 @@ class PropertyStore private (
      * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
      * 		new computations.
      */
-    def isShutdown(): Boolean = threadPool.isShutdown()
+    def isShutdown: Boolean = threadPool.isShutdown
 
     /**
      * General handling of the tasks that are executed.
@@ -1427,7 +1435,7 @@ class PropertyStore private (
                             if (debug) {
                                 def registeredObservers: Int = {
                                     val pss = entitiesProperties.map(_.ps)
-                                    val poss = pss.map(_.values).flatten
+                                    val poss = pss.flatMap(_.values)
                                     poss.map { pos ⇒
                                         val os = pos.os
                                         if (os eq null) 0 else os.count(_ ne null)
@@ -1675,7 +1683,9 @@ class PropertyStore private (
                 try {
                     if (!isInterrupted()) f
                 } catch {
-                    case t: Throwable ⇒ logError("analysis progress", s"an analysis failed", t)
+                    case t: Throwable ⇒
+                        t.printStackTrace()
+                        logError("analysis progress", s"an analysis failed", t)
                 } finally {
                     // We have finished processing the task!
                     taskCompleted()
@@ -1806,8 +1816,8 @@ class PropertyStore private (
                     // property => intermediate result => final result
                     val oldP = pos.p
                     if (debug && (oldP ne null) && p.isOrdered) {
-                        p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty).foreach(s ⇒
-                            throw new AssertionError(s"$e: $s"))
+                        val isValid = p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty)
+                        isValid.foreach(s ⇒ throw new AssertionError(s"$e: $s"))
                     }
                     /*internal*/ /* assert(
                         (oldP eq null) || oldP.isBeingComputed || oldP.key == pk,
@@ -2151,7 +2161,8 @@ object PropertyStore {
     def apply(
         entities:      Traversable[Entity],
         isInterrupted: () ⇒ Boolean,
-        debug:         Boolean
+        debug:         Boolean,
+        context:       AnyRef*
     )(
         implicit
         logContext: LogContext
@@ -2162,30 +2173,34 @@ object PropertyStore {
         var entityId = 0
         entities foreach { e ⇒
             if (data.put(e, new EntityProperties(entityId)) ne null) {
-                throw new IllegalArgumentException(
-                    s"the list of entities contains duplicates; e.g. $e"
-                )
+                OPALLogger.error("[internal - recoverable]", s"duplicate entity: $e")
             }
             entityId += 1
         }
-        new PropertyStore(data, isInterrupted, debug)
+
+        new PropertyStore(data, context.map(c ⇒ (c.getClass, c)).toMap, isInterrupted, debug)
     }
 
     /**
      * Creates an entity selector for a specific type of entities.
+     *
+     * Usage:
+     * {{{
+     *   entitySelector[Method]
+     * }}}
      */
-    def entitySelector[T <: Entity: ClassTag](): PartialFunction[Entity, T] = {
+    def entitySelector[T <: Entity: ClassTag]: PartialFunction[Entity, T] = {
         new PartialFunction[Entity, T] {
-            def apply(v1: Entity): T = {
-                if (isDefinedAt(v1))
-                    v1.asInstanceOf[T]
-                else
-                    throw new IllegalArgumentException
-            }
+
+            def apply(x: Entity): T = x.asInstanceOf[T]
 
             def isDefinedAt(x: Entity): Boolean = {
                 val ct = implicitly[ClassTag[T]]
-                x.getClass.isInstance(ct.runtimeClass)
+                ct.runtimeClass.isAssignableFrom(x.getClass)
+            }
+
+            override def toString: String = {
+                s"EntitySelector(${implicitly[ClassTag[T]].runtimeClass.getName})"
             }
         }
     }

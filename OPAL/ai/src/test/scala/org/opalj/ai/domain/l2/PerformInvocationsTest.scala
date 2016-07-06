@@ -206,7 +206,6 @@ object PerformInvocationsTestFixture {
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with TheProject
-        with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
@@ -215,15 +214,12 @@ object PerformInvocationsTestFixture {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
-        with ProjectBasedClassHierarchy
-        with IgnoreSynchronization
         with TheMethod
 
     trait LiDomain
             extends CorrelationalDomain
             with DefaultDomainValueBinding
             with TheProject
-            with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
@@ -232,10 +228,10 @@ object PerformInvocationsTestFixture {
             with l1.ConcretePrimitiveValuesConversions
             with l1.LongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
-            with ProjectBasedClassHierarchy
-            with IgnoreSynchronization
             with TheMethod {
+
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
+
     }
 
     abstract class InvocationDomain(
@@ -244,9 +240,17 @@ object PerformInvocationsTestFixture {
     ) extends Domain
             with l0.TypeLevelInvokeInstructions
             with PerformInvocations
-            with DefaultHandlingOfMethodResults
+            with ThrowAllPotentialExceptionsConfiguration
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelHandlingOfMethodResults
             with DefaultRecordMethodCallResults {
         domain: ValuesFactory with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
+
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+            ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
+        }
+
+        override def throwIllegalMonitorStateException: Boolean = false
 
         def isRecursive(
             definingClass: ClassFile,
@@ -279,10 +283,9 @@ object PerformInvocationsTestFixture {
     }
 
     class LiInvocationDomain(
-        project: Project[java.net.URL],
-        method:  Method
-    )
-            extends InvocationDomain(project, method) with LiDomain {
+            project: Project[java.net.URL],
+            method:  Method
+    ) extends InvocationDomain(project, method) with LiDomain {
 
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],

@@ -79,7 +79,8 @@ import org.opalj.ai.util.XHTML
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
+trait RecordDefUse extends RecordCFG {
+    defUseDomain: Domain with TheCode ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -501,11 +502,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 if (o eq null) {
                                     if ((n ne null) &&
                                         isSubroutineInstruction(successorPC)) {
-                                        //                                        joinInstructions.contains(successorPC) &&
-                                        //                                        (
-                                        //                                            instruction.isInstanceOf[JSRInstruction] ||
-                                        //                                            instructions(successorPC).opcode == RET.opcode
-                                        //                                        )) {
                                         newUsage = true
                                         n
                                     } else {
@@ -514,11 +510,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else if (n eq null) {
                                     if ((o ne null) &&
                                         isSubroutineInstruction(successorPC)) {
-                                        //                                        joinInstructions.contains(successorPC) &&
-                                        //                                        (
-                                        //                                            instruction.isInstanceOf[JSRInstruction] ||
-                                        //                                            instructions(successorPC).opcode == RET.opcode
-                                        //                                        )) {
                                         newUsage = true
                                         o
                                     } else {
@@ -562,10 +553,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
          * Specifies that the given number of stack values is used and also popped from
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
+         * 
+         * Usage is independent of the question whether the usage resulted in an
+         * exceptional control flow.
          */
         def stackOp(usedValues: Int, pushesValue: Boolean): Boolean = {
-            // Usage is independent of the question whether the usage resulted in an
-            // exceptional control flow.
             val currentDefOps = defOps(currentPC)
             forFirstN(currentDefOps, usedValues) { op ⇒
                 updateUsageInformation(op, currentPC)
@@ -877,11 +869,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             case 176 /*areturn*/ |
                 175 /*dreturn*/ | 174 /*freturn*/ |
                 172 /*ireturn*/ | 173 /*lreturn*/ ⇒
-                val message = s"a return instruction ($instruction) cannot be the source of a flow"
-                throw BytecodeProcessingFailedException(message)
+                if (isExceptionalControlFlow) {
+                    stackOp(1, pushesValue = false)
+                } else {
+                    val message = s"return instructions ($instruction) do not have regular successors"
+                    throw BytecodeProcessingFailedException(message)
+                }
 
-            case opcode ⇒
-                throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
+            case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
         }
 
         (successorInstruction.opcode: @annotation.switch) match {

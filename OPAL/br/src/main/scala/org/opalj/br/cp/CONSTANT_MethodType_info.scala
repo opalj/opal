@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents a method type.
  *
@@ -44,6 +46,8 @@ case class CONSTANT_MethodType_info(
     def methodDescriptor(cp: Constant_Pool): MethodDescriptor = {
         cp(descriptorIndex).asMethodDescriptor
     }
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_MethodType_ID
 
     override def asConstantValue(cp: Constant_Pool): MethodDescriptor = methodDescriptor(cp)
 

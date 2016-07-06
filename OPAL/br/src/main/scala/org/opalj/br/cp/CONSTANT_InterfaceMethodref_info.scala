@@ -31,6 +31,8 @@ package org.opalj
 package br
 package cp
 
+import org.opalj.bi.ConstantPoolTags
+
 /**
  * Represents an interface method.
  *
@@ -41,6 +43,8 @@ case class CONSTANT_InterfaceMethodref_info(
         class_index:         Constant_Pool_Index,
         name_and_type_index: Constant_Pool_Index
 ) extends AsMethodref {
+
+    override def tag: Int = ConstantPoolTags.CONSTANT_InterfaceMethodref_ID
 
     final def isInterfaceMethodRef: Boolean = true
 

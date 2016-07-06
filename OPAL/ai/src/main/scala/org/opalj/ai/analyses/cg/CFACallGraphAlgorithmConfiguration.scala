@@ -48,10 +48,9 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CFACallGraphAlgorithmConfiguration(
-    project: SomeProject,
-    val k:   Int         = 2
-)
-        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject,
+        val k:   Int         = 2
+) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     import project.logContext
 
