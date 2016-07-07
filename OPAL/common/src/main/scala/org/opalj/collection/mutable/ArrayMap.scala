@@ -248,9 +248,15 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 }
 object ArrayMap {
 
-    def empty[T >: Null <: AnyRef: ClassTag] =
-        new ArrayMap(new Array[T](2))
+    /**
+     * Creates an empty map which initially can store 2 values.
+     */
+    def empty[T >: Null <: AnyRef: ClassTag] = new ArrayMap(new Array[T](2))
 
-    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int) =
+    /**
+     * Creates an empty map which initially can store up to sizeHint values.
+     */
+    def apply[T >: Null <: AnyRef: ClassTag](sizeHint: Int) = {
         new ArrayMap(new Array[T](sizeHint))
+    }
 }
