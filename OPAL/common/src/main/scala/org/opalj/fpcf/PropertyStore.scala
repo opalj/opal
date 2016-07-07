@@ -1952,7 +1952,7 @@ class PropertyStore private (
                     npcs foreach { npc ⇒ val (pc, e) = npc; scheduleComputation(e, pc) }
 
                 case IntermediateResult.id ⇒
-                    val IntermediateResult(dependerE, dependerP, dependees: Traversable[SomeEOptionP], c) = r
+                    val IntermediateResult(dependerE, dependerP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
                     if (debug) assert(
                         dependees.nonEmpty,
                         s"the intermediate result $r has no dependencies"
@@ -2161,7 +2161,7 @@ object PropertyStore {
             isInterrupted,
             Math.max(NumberOfThreadsForCPUBoundTasks, 2),
             debug,
-            context
+            context: _*
         )
     }
 
@@ -2201,7 +2201,7 @@ object PropertyStore {
             entityId += 1
         }
 
-        val contextMap: Map[Class[_], AnyRef] = context.map(c ⇒ (c.getClass, c)).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map { c ⇒ (c.getClass, c) }.toMap
         new PropertyStore(data, contextMap, parallelismLevel, isInterrupted, debug)
     }
 
