@@ -160,10 +160,11 @@ class PropertyStore private (
         // class PropertyAndObservers(p: Property, os: Observers)
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
-        private[this] val data:  JIDMap[Entity, EntityProperties],
-        private[this] val ctx:   Map[Class[_], AnyRef],
-        final val isInterrupted: () ⇒ Boolean,
-        @volatile var debug:     Boolean
+        private[this] val data:     JIDMap[Entity, EntityProperties],
+        private[this] val ctx:      Map[Class[_], AnyRef],
+        final val ParallelismLevel: Int,
+        final val isInterrupted:    () ⇒ Boolean,
+        @volatile var debug:        Boolean
 )(
         implicit
         val logContext: LogContext
@@ -262,6 +263,8 @@ class PropertyStore private (
     /**
      * Returns a graphviz/dot representation of the current dependencies between the per-entity
      * properties.
+     *
+     * @note This is generally only useful if the number of dependencies is small!
      */
     def visualizeDependencies(): String = accessStore {
         val epkNodes = mutable.Map.empty[SomeEPK, DefaultMutableNode[SomeEPK]]
@@ -1049,7 +1052,7 @@ class PropertyStore private (
         @volatile var remainingEntities = keysList
         var i = 0
         // We use exactly ThreadCount number of threads that process all entities.
-        val max = ThreadCount
+        val max = ParallelismLevel
         while (i < max) {
             i += 1
             scheduleRunnable {
@@ -1260,8 +1263,7 @@ class PropertyStore private (
     //
     //
 
-    val ThreadCount = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
-    private[this] final val threadPool = ThreadPoolN(ThreadCount)
+    private[this] final val threadPool = ThreadPoolN(ParallelismLevel)
 
     /**
      * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
@@ -2145,6 +2147,24 @@ class PropertyStore private (
  */
 object PropertyStore {
 
+    def apply(
+        entities:      Traversable[Entity],
+        isInterrupted: () ⇒ Boolean,
+        debug:         Boolean,
+        context:       AnyRef*
+    )(
+        implicit
+        logContext: LogContext
+    ): PropertyStore = {
+        apply(
+            entities,
+            isInterrupted,
+            Math.max(NumberOfThreadsForCPUBoundTasks, 2),
+            debug,
+            context
+        )
+    }
+
     /**
      * Creates a new [[PropertyStore]] for the given set of entities.
      *
@@ -2159,14 +2179,17 @@ object PropertyStore {
      * @return The newly created [[PropertyStore]].
      */
     def apply(
-        entities:      Traversable[Entity],
-        isInterrupted: () ⇒ Boolean,
-        debug:         Boolean,
-        context:       AnyRef*
+        entities:         Traversable[Entity],
+        isInterrupted:    () ⇒ Boolean,
+        parallelismLevel: Int,
+        debug:            Boolean,
+        context:          AnyRef*
     )(
         implicit
         logContext: LogContext
     ): PropertyStore = {
+
+        assert(parallelismLevel > 0)
 
         val entitiesCount = entities.size
         val data = new JIDMap[Entity, EntityProperties](entitiesCount)
@@ -2178,7 +2201,8 @@ object PropertyStore {
             entityId += 1
         }
 
-        new PropertyStore(data, context.map(c ⇒ (c.getClass, c)).toMap, isInterrupted, debug)
+        val contextMap: Map[Class[_], AnyRef] = context.map(c ⇒ (c.getClass, c)).toMap
+        new PropertyStore(data, contextMap, parallelismLevel, isInterrupted, debug)
     }
 
     /**
@@ -2248,7 +2272,7 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
 private[fpcf] final class EntityProperties(
     final val id: Int,
     final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
-    final val ps: Properties             = ArrayMap.empty
+    final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
 )
 
 private[fpcf] object PropertiesOfEntity {
