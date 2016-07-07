@@ -51,8 +51,8 @@ import org.opalj.br.analyses.BasicMethodInfo
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
- * and returns all its children,
- * i.e. definitions and assignments that are not used again locally.
+ * and returns all its children, that is definitions and assignments that are not used again
+ * locally.
  *
  * @author Stephan Neumann
  */
