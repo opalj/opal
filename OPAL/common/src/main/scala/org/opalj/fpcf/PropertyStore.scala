@@ -228,9 +228,10 @@ class PropertyStore private (
      * @param entities Conceptually a set of entities for which we will acquire the locks in order
      * 		of the locks' ids.
      */
-    @inline final private[this] def withEntitiesWriteLocks[T](entities: Traversable[Entity])(f: ⇒ T): T = {
-        val sortedEntities = entities.toList.sortWith((e1, e2) ⇒ data.get(e1).id < data.get(e2).id)
-        withWriteLocks(sortedEntities.map(e ⇒ data.get(e).l))(f)
+    @inline final private[this] def withEntitiesWriteLocks[T](entityProperties: List[EntityProperties])(f: ⇒ T): T = {
+        val sortedEntities = entityProperties.sortWith((e1, e2) ⇒ e1.id < e2.id)
+        val entityLocks = sortedEntities.view.map(e ⇒ e.l)
+        withWriteLocks(entityLocks)(f)
     }
 
     /**
@@ -1953,11 +1954,8 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(dependerE, dependerP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
-                    if (debug) assert(
-                        dependees.nonEmpty,
-                        s"the intermediate result $r has no dependencies"
-                    )
-                    if (debug) assert(
+                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
+                    assert(
                         dependerP.isRefineable,
                         s"intermediate result $r used to store final property $dependerP"
                     )
@@ -1970,7 +1968,8 @@ class PropertyStore private (
                         s"$dependerE: self-recursive computation of $dependerPK"
                     )
 
-                    val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
+                    // val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
+                    val accessedEntities = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList // make dependees a Seq
                     withEntitiesWriteLocks(accessedEntities) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
