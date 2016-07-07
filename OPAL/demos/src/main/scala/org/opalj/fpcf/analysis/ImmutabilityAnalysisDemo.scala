@@ -31,26 +31,24 @@ package fpcf
 package analysis
 
 import java.net.URL
-
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.Method
-import org.opalj.br.Field
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.Purity
+import org.opalj.br.ClassFile
+import org.opalj.fpcf.properties.ObjectImmutability
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.IsExtensible
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation
 
 /**
- * Runs the purity analysis including all analyses that may improve the overall result.
+ * Determines the immutability of the classes of a project.
  *
  * @author Michael Eichberg
  */
-object PurityAnalysisDemo extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
     //                                                                                            //
@@ -58,10 +56,9 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
     //                                                                                            //
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
 
-    override def title: String = "determines those methods that are pure"
+    override def title: String = "determines the immutability of objects and types"
 
-    override def description: String =
-        "identifies methods which are pure; i.e. which just operate on the passed parameters"
+    override def description: String = "determines the immutability of objects and types"
 
     private[this] var setupTime = Nanoseconds.None
     private[this] var analysisTime = Nanoseconds.None
@@ -72,7 +69,6 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-
         var r: () ⇒ String = null
 
         def handleResults(t: Nanoseconds, ts: Seq[Nanoseconds]) = {
@@ -96,7 +92,6 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
             PerformanceEvaluation.gc()
         }
-
         BasicReport(r())
     }
 
@@ -104,57 +99,83 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         val project = Project.recreate(theProject) // We need an empty project(!)
 
         import project.get
+
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
-
         val projectStore = time {
             SourceElementsPropertyStoreKey.parallelismLevel = parallelismLevel
             get(SourceElementsPropertyStoreKey)
         } { r ⇒ setupTime = r }
-        projectStore.debug = false
+        //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(FieldMutabilityAnalysis)
+        manager.runAll(ClassExtensibilityAnalysis, FieldMutabilityAnalysis)
 
         time {
-            manager.runAll(PurityAnalysis);
-            projectStore.waitOnPropertyComputationCompletion(true)
+            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ analysisTime = r }
 
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
         () ⇒ {
-            val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
-                projectStore.entities(FieldMutability.key)
+            projectStore.validate(None)
 
-            val effectivelyFinalFields: Traversable[(Field, Property)] =
-                effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
+            val extensibleClasses =
+                projectStore.entities(IsExtensible).
+                    groupBy(_._2).
+                    map { entry ⇒
+                        (
+                            entry._1,
+                            entry._2.
+                            map(_._1.thisType.toJava).toList.sorted.
+                            mkString("\n\t\t\t", "\n\t\t\t", "\n")
+                        )
+                    }
 
-            val effectivelyFinalFieldsAsStrings =
-                effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
+            val immutableClasses =
+                projectStore.entities(ObjectImmutability.key).
+                    filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                    groupBy { _.p }.map { kv ⇒
+                        (
+                            kv._1,
+                            kv._2.toList.sortWith { (a, b) ⇒
+                                val cfA = a.e.asInstanceOf[ClassFile]
+                                val cfB = b.e.asInstanceOf[ClassFile]
+                                cfA.thisType.toJava < cfB.thisType.toJava
+                            }
+                        )
+                    }
 
-            val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
-            val pureMethods: Traversable[(Method, Property)] =
-                pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-            val pureMethodsAsStrings =
-                pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+            val immutableClassesPerCategory =
+                immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toList.sorted.mkString("\n")
 
-            val fieldInfo =
-                effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
-                    "\nMutability of private static non-final fields:\n",
-                    "\n",
-                    s"\nTotal: ${effectivelyFinalFields.size}\n"
-                )
+            val immutableTypes =
+                projectStore.entities(TypeImmutability.key).
+                    filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                    groupBy { _.p }.map { kv ⇒
+                        (kv._1, kv._2.size)
+                    }
+            val immutableTypesPerCategory =
+                immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
 
-            val methodInfo =
-                pureMethodsAsStrings.toList.sorted.mkString(
-                    "\nPure methods:\n",
-                    "\n",
-                    s"\nTotal: ${pureMethods.size}\n"
-                )
+            val immutableClassesInfo =
+                immutableClasses.values.flatten.filter { ep ⇒
+                    !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
+                }.map { ep ⇒
+                    ep.e.asInstanceOf[ClassFile].thisType.toJava+
+                        " => "+ep.p+
+                        " => "+projectStore(ep.e, TypeImmutability.key).p
+                }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
-            fieldInfo + methodInfo + projectStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+            "Details:\n"+
+                extensibleClasses.mkString("\tExtensible Classes:\n\t\t", "\n\t\t", "\n") +
+                immutableClassesInfo+
+                "\nSummary (w.r.t classes):\n"+
+                "\tObject Immutability:\n"+
+                immutableClassesPerCategory+"\n"+
+                "\tType Immutability:\n"+
+                immutableTypesPerCategory+"\n"+
+                "\n"+projectStore.toString(false)
         }
     }
 }
