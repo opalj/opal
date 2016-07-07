@@ -82,6 +82,8 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
+import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
 
 /**
  * This analysis determines whether a method is pure. I.e., whether the method
@@ -180,13 +182,24 @@ class PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                     case MethodInvocationInstruction(declaringClassType, methodName, methodDescriptor) ⇒
                         import project.classHierarchy.lookupMethodDefinition
+
                         val calleeOption =
-                            lookupMethodDefinition(
-                                declaringClassType.asObjectType /* this is safe...*/ ,
-                                methodName,
-                                methodDescriptor,
-                                project
-                            )
+                            try {
+                                lookupMethodDefinition(
+                                    declaringClassType.asObjectType /* this is safe...*/ ,
+                                    methodName,
+                                    methodDescriptor,
+                                    project
+                                )
+                            } catch {
+                                case ct: ControlThrowable ⇒ throw ct
+                                case t: Throwable ⇒
+                                    OPALLogger.error(
+                                        "internal - recoverable", "method lookup failed",
+                                        t
+                                    )(project.logContext)
+                                    None
+                            }
                         calleeOption match {
                             case None ⇒
                                 // We know nothing about the target method (it is not
