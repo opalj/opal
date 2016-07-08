@@ -42,7 +42,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.VoidType
 
 /**
- * Defines additional, generally useful factory methods to create`DomainValue`s.
+ * Defines additional, generally useful factory methods to create `DomainValue`s.
  *
  * @author Michael Eichberg
  */

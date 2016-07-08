@@ -54,7 +54,6 @@ import org.opalj.ai.domain.l0.TypeLevelInvokeInstructions
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.domain.l0.DefaultTypeLevelLongValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
-import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
@@ -249,7 +248,6 @@ trait TaintAnalysisDomain[Source]
         with TypeLevelReferenceValues
         with TheProject
         with TheCode
-        with ProjectBasedClassHierarchy
         with OptionalReport { thisDomain ⇒
 
     type Id = CallStackEntry
@@ -399,12 +397,13 @@ trait TaintAnalysisDomain[Source]
         )
     }
 
-    override def areturn(pc: Int, value: DomainValue): Unit = {
+    override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         // in case a relevant parameter is returned by the method
         if (origin(value).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
             relevantValuesOrigins = (-1, new CallerNode("return of a relevant Parameter")) :: relevantValuesOrigins
         }
         returnedValues = (pc, value) :: returnedValues
+        super.areturn(pc, value)
     }
 
     //TODO check compatibility with Java8 Extension Methods

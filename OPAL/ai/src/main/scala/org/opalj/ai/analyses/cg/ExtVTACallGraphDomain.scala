@@ -41,7 +41,6 @@ import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.DefaultDomainValueBinding
-import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.SpecialMethodsHandling
@@ -67,7 +66,6 @@ class ExtVTACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
-        with ProjectBasedClassHierarchy
         with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults

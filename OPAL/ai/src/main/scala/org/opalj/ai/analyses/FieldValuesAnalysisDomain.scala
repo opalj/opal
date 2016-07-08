@@ -68,7 +68,6 @@ class BaseFieldValuesAnalysisDomain(
     val classFile:        ClassFile
 ) extends Domain
         with domain.TheProject
-        with domain.ProjectBasedClassHierarchy
         with domain.TheClassFile
         with domain.TheCode
         with domain.DefaultDomainValueBinding

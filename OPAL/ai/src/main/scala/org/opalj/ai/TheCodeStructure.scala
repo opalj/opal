@@ -40,8 +40,7 @@ import org.opalj.br.instructions.Instruction
  * It is sufficient to mixin this trait in a [[Domain]] that needs to get access to
  * the code array. The abstract interpreter will then perform the initialization.
  *
- * This information is set immediately before the abstract interpretation is
- * started/continued.
+ * This information is set immediately before the abstract interpretation is started/continued.
  *
  * @author Michael Eichberg
  */

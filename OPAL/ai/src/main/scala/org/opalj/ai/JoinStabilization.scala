@@ -118,19 +118,17 @@ trait JoinStabilization extends CoreDomainFunctionality {
     //        joinedValues.clear()
     //    }
 
-    protected[this] val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] =
+    protected[this] val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
         AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
+    }
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */
     override protected[this] def joinValues(
         pc:   PC,
         left: DomainValue, right: DomainValue
     ): Update[DomainValue] = {
-
-        joinedValues.getOrElseUpdate(
-            new IdentityPair(left, right),
-            super.joinValues(pc, left, right)
-        )
+        val key = new IdentityPair(left, right)
+        joinedValues.getOrElseUpdate(key, super.joinValues(pc, left, right))
     }
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */

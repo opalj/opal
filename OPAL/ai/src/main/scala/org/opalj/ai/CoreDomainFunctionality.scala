@@ -37,7 +37,7 @@ import org.opalj.ai.util.containsInPrefix
  * the operations related to different kinds of values and instructions. It primarily
  * defines the abstraction for DomainValues.
  *
- * @note This domain only defines concrete methods to facilitate the unit testing of
+ * @note This trait defines concrete methods that facilitate unit testing of
  *      partial domains that build on top of this `CoreDomain` such as the
  *      [[IntegerValuesDomain]].
  *
@@ -49,9 +49,8 @@ import org.opalj.ai.util.containsInPrefix
 trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒
 
     /**
-     * Replaces all occurrences of `oldValue` (using
-     * reference-quality) with `newValue`. If no
-     * occurrences are found the original operands and locals data structures
+     * Replaces all occurrences of `oldValue` (using reference-quality) with `newValue`. If no
+     * occurrences are found, the original operands and locals data structures
      * are returned.
      */
     def updateMemoryLayout(
@@ -75,7 +74,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *
      * @note During the evaluation of the instruction it is possible that this method
      *      is called multiple times with different `targetPC`s. The latter is not only
-     *      true for control flow instructions, but also for standard instructions
+     *      true for control flow instructions, but also for those instructions
      *      that may raise an exception.
      *
      * This method can and is intended to be overridden to further refine the operand
@@ -277,11 +276,12 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
 
     /**
      * Called by the framework after performing a computation to inform the domain
-     * about the result. That is, after
-     * evaluating the effect of the instruction with `currentPC` on the current stack and
-     * register and (if necessary) joining the updated stack and registers with the stack
+     * about the result.
+     * That is, after evaluating the effect of the instruction with `currentPC` on the current
+     * stack and register and (if necessary) joining the updated stack and registers with the stack
      * and registers associated with the instruction `successorPC`. (Hence, this method
-     * is NOT called for `return` instructions.)
+     * is ONLY called for `return` instructions if the return instruction throws an
+     * `IllegalMonitorStateException`.)
      * This function basically informs the domain about the instruction that
      * ''may be'' evaluated next. The flow function is called for ''every possible
      * successor'' of the instruction with `currentPC`. This includes all branch

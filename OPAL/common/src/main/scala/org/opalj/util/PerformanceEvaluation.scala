@@ -33,6 +33,8 @@ import org.opalj.concurrent.Locking
 import scala.collection.mutable.Map
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import java.lang.management.MemoryMXBean
+import java.lang.management.ManagementFactory
 
 /**
  * Measures the execution time of some code.
@@ -151,6 +153,12 @@ object PerformanceEvaluation {
     final def ns2ms(nanoseconds: Long): Double =
         nanoseconds.toDouble / 1000.0d / 1000.0d
 
+    /** Tries it best to run the garbage collector. */
+    final def gc(memoryMXBean: MemoryMXBean = ManagementFactory.getMemoryMXBean): Unit = {
+        memoryMXBean.gc()
+        System.gc()
+    }
+
     /**
      * Measures the amount of memory that is used as a side-effect
      * of executing the given function `f`. I.e., the amount of memory is measured that is
@@ -162,11 +170,11 @@ object PerformanceEvaluation {
      * 		is negative.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
-        val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
-        memoryMXBean.gc(); System.gc()
+        val memoryMXBean = ManagementFactory.getMemoryMXBean
+        gc(memoryMXBean)
         val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
         val r = f
-        memoryMXBean.gc(); System.gc()
+        gc(memoryMXBean)
         val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
         mu(usedAfter - usedBefore)
         r
@@ -259,7 +267,10 @@ object PerformanceEvaluation {
     ): T = {
 
         require(minimalNumberOfRelevantRuns >= 3)
-        require(consideredRunsEpsilon > epsilon)
+        require(
+            consideredRunsEpsilon > epsilon,
+            s"consideredRunsEpsilon ($consideredRunsEpsilon) has to be larger than epsilon ($epsilon)"
+        )
 
         var result: T = null
 

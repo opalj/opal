@@ -84,7 +84,6 @@ class DefaultDomain(
         with domain.IgnoreSynchronization
         with domain.TheProject
         with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
         // always fails etc.)

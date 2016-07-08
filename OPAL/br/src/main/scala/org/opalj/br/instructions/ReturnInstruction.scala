@@ -40,6 +40,9 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction {
 
+    /**
+     * @see [[ReturnInstruction$.jvmExceptions]]
+     */
     final def jvmExceptions: List[ObjectType] = ReturnInstruction.jvmExceptions
 
     final def length: Int = 1

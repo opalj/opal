@@ -128,7 +128,7 @@ class ChooseDomainDialog extends Stage {
         stylesheets += BugPicker.defaultAppCSSURL
 
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
-            if (e.code.equals(KeyCode.ESCAPE)) {
+            if (e.code.equals(KeyCode.Escape)) {
                 cancelled = true
                 self.close()
             }
@@ -140,9 +140,9 @@ class ChooseDomainDialog extends Stage {
     }
 
     def show(owner: Stage): Option[String] = {
-        initModality(Modality.WINDOW_MODAL)
+        initModality(Modality.WindowModal)
         initOwner(owner)
-        initStyle(StageStyle.DECORATED)
+        initStyle(StageStyle.Decorated)
         centerOnScreen
         showAndWait
         if (cancelled) {

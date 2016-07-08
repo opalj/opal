@@ -66,7 +66,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
-                with ProjectBasedClassHierarchy
                 with TheProject
 
             class TypeLevelDomain(val method: Method, val project: Project[java.net.URL])
@@ -86,13 +85,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelLongValuesShiftOperators
-                with ProjectBasedClassHierarchy
 
             class L1RangesDomain[I](val method: Method, val project: Project[java.net.URL])
                 extends CorrelationalDomain
                 with TheProject
                 with TheMethod
-                with ProjectBasedClassHierarchy
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
@@ -125,7 +122,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
-                with ProjectBasedClassHierarchy
 
             val ValuesDomain = new TheValuesDomain(project)
 

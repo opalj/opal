@@ -54,24 +54,31 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     import org.opalj.collection.mutable.UShortSet
 
     class DefaultRecordingDomain(val id: String)
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with PredefinedClassHierarchy
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding
-        /* => */ with RecordLastReturnedValues
-        /* => */ with RecordAllThrownExceptions
-        /* => */ with RecordVoidReturns
+            extends CorrelationalDomain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l1.DefaultReferenceValuesBinding
+            /* => */ with RecordLastReturnedValues
+            /* => */ with RecordAllThrownExceptions
+            /* => */ with RecordVoidReturns {
+
+        override def throwIllegalMonitorStateException: Boolean = false
+
+        override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+            ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
+        }
+    }
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
@@ -125,7 +132,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
             allReturnVoidInstructions should be(UShortSet(38)) // <= void return
-            allThrownExceptions should be(Map.empty)
+            allThrownExceptions should be(Map())
             // Due to the simplicity of the domain (the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception
             // (among others?) may also be thrown:

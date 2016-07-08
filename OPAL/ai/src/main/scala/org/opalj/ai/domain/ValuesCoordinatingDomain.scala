@@ -161,28 +161,28 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def monitorexit(
         pc:    PC,
         value: DomainValue
-    ): Computation[Nothing, ExceptionValue] =
+    ): Computation[Nothing, ExceptionValues] =
         throw new UnsupportedOperationException
 
-    /*override*/ def returnVoid(pc: PC): Unit =
+    /*override*/ def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit =
         throw new UnsupportedOperationException
 
-    /*override*/ def areturn(pc: PC, value: DomainValue): Unit =
+    /*override*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def dreturn(pc: PC, value: DomainValue): Unit =
+    /*override*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def freturn(pc: PC, value: DomainValue): Unit =
+    /*override*/ def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def ireturn(pc: PC, value: DomainValue): Unit =
+    /*override*/ def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
-    /*override*/ def lreturn(pc: PC, value: DomainValue): Unit =
+    /*override*/ def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] =
         throw new UnsupportedOperationException
 
     /*override*/ def l2d(pc: PC, value: DomainValue): DomainValue =

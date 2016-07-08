@@ -36,7 +36,7 @@ import org.opalj.bi.{ConstantPoolTags ⇒ CPTags}
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 
 /**
- * Factory to create the binary representation (i.e., an array of bytes) of a given class file.
+ * Factory to create the binary representation (that is, an array of bytes) of a given class file.
  *
  * @author Michael Eichberg
  */
@@ -576,7 +576,12 @@ object Assembler {
     }
 
     implicit object RichFieldInfo extends ClassFileElement[Field_Info] {
-        def write(f: Field_Info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            f: Field_Info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import f._
             import out._
             writeShort(access_flags)
@@ -588,7 +593,12 @@ object Assembler {
     }
 
     implicit object RichMethodInfo extends ClassFileElement[Method_Info] {
-        def write(m: Method_Info)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            m: Method_Info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import m._
             import out._
             writeShort(access_flags)
@@ -601,7 +611,12 @@ object Assembler {
 
     implicit object RichClassFile extends ClassFileElement[ClassFile] {
 
-        def write(classFile: ClassFile)(implicit out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit): Unit = {
+        def write(
+            classFile: ClassFile
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
             import classFile._
             import out._
             implicit val cp = classFile.constant_pool
@@ -635,8 +650,8 @@ object Assembler {
     }
 
     /**
-     * `serializeAs` enables you to specify the object type of the given parameter `t` and
-     * that type will be used to pick up the implicit class file element value.
+     * `serializeAs` makes it possible to specify the object type of the given parameter `t` and
+     * that type will then be used to pick up the implicit class file element value.
      */
     def serializeAs[T](
         t: AnyRef
@@ -649,8 +664,8 @@ object Assembler {
     }
 
     /**
-     * You should use serialize if the concrete/required type of the given parameter is available/can
-     * be automatically inferred by the Scala compiler.
+     * @note  You should use serialize if the concrete/required type of the given parameter is
+     * 		available/can be automatically inferred by the Scala compiler.
      */
     def serialize[T: ClassFileElement](
         t: T
@@ -663,7 +678,8 @@ object Assembler {
     }
 
     /**
-     * @param segmentInformation A function that will be called to provide segment information.
+     * @param segmentInformation A function that will be called back to provide information about
+     * 		the segment that was just written.
      * 		This is particularly useful when debugging the serializer to determine which segments
      * 		were successfully/completely written.
      */

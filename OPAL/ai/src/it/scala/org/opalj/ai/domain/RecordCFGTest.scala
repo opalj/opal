@@ -66,7 +66,6 @@ class RecordCFGTest extends FunSpec with Matchers {
         extends CorrelationalDomain
         with TheProject
         with TheMethod
-        with ProjectBasedClassHierarchy
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization

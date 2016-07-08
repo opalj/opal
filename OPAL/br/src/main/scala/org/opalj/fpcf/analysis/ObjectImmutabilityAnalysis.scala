@@ -51,6 +51,7 @@ import org.opalj.fpcf.properties.MutableObject
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
+import org.opalj.br.Field
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -255,49 +256,64 @@ class ObjectImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis 
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             //[DEBUG]             val oldDependees = dependees
-            p match {
-
+            e match {
                 // Field Mutability related dependencies.
                 //
-                case _: NonFinalField ⇒ return Result(cf, MutableObjectByAnalysis);
+                case _: Field ⇒
+                    p match {
 
-                case _: FinalField ⇒
-                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == FieldMutability.key)
+                        case _: NonFinalField ⇒ return Result(cf, MutableObjectByAnalysis);
 
-                // Superclass related dependencies.
-                //
-                case _: MutableObject ⇒ return Result(cf, MutableObjectByAnalysis);
-
-                case ImmutableObject /* the super class */ ⇒
-                    currentSuperClassMutability = ImmutableObject
-                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == ObjectImmutability.key)
-
-                case ConditionallyImmutableObject /* the super class */ ⇒
-                    currentSuperClassMutability = ConditionallyImmutableObject
-                    maxLocalImmutability = ConditionallyImmutableObject
-                    dependees = dependees.filterNot { d ⇒
-                        val pk = d.pk
-                        pk == TypeImmutability.key || pk == ObjectImmutability.key
+                        case _: FinalField ⇒
+                            dependees = dependees.filterNot { d ⇒
+                                (d.e eq e) && d.pk == FieldMutability.key
+                            }
                     }
+                case _ ⇒
+                    p match {
+                        // Superclass related dependencies.
+                        //
+                        case _: MutableObject ⇒ return Result(cf, MutableObjectByAnalysis);
 
-                case AtLeastConditionallyImmutableObject ⇒
-                    currentSuperClassMutability = AtLeastConditionallyImmutableObject
-                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == ObjectImmutability.key)
-                    dependees = EP(e, p) :: dependees
+                        case ImmutableObject /* the super class */ ⇒
+                            currentSuperClassMutability = ImmutableObject
+                            dependees = dependees.filterNot { d ⇒
+                                (d.e eq e) && d.pk == ObjectImmutability.key
+                            }
 
-                // Properties related to the type of the classes fields.
-                //
-                case ConditionallyImmutableType | MutableType ⇒
-                    maxLocalImmutability = ConditionallyImmutableObject
-                    dependees = dependees.filterNot { d ⇒ d.pk == TypeImmutability.key }
+                        case ConditionallyImmutableObject /* the super class */ ⇒
+                            currentSuperClassMutability = ConditionallyImmutableObject
+                            maxLocalImmutability = ConditionallyImmutableObject
+                            dependees = dependees.filterNot { d ⇒
+                                val pk = d.pk
+                                pk == TypeImmutability.key || pk == ObjectImmutability.key
+                            }
 
-                case ImmutableType ⇒
-                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == TypeImmutability.key)
+                        case AtLeastConditionallyImmutableObject ⇒
+                            currentSuperClassMutability = AtLeastConditionallyImmutableObject
+                            dependees = dependees.filterNot { d ⇒
+                                (d.e eq e) && d.pk == ObjectImmutability.key
+                            }
+                            dependees = EP(e, p) :: dependees
 
-                case UnknownTypeImmutability | AtLeastConditionallyImmutableType ⇒
-                    dependees = dependees.filterNot(d ⇒ (d.e eq e) && d.pk == TypeImmutability.key)
-                    dependees = EP(e, p) :: dependees
+                        // Properties related to the type of the classes fields.
+                        //
+                        case ConditionallyImmutableType | MutableType ⇒
+                            maxLocalImmutability = ConditionallyImmutableObject
+                            dependees = dependees.filterNot { d ⇒ d.pk == TypeImmutability.key }
 
+                        case ImmutableType ⇒
+                            dependees = dependees.filterNot { d ⇒
+                                (d.e eq e) && d.pk == TypeImmutability.key
+                            }
+
+                        case UnknownTypeImmutability | AtLeastConditionallyImmutableType ⇒
+                            dependees = dependees.filterNot { d ⇒
+                                (d.e eq e) && d.pk == TypeImmutability.key
+                            }
+                            dependees = EP(e, p) :: dependees
+
+                    }
             }
 
             /*[DEBUG]

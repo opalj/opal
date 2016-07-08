@@ -844,11 +844,11 @@ object Project {
     /**
      * Creates a new `Project` that consists of the source files of the previous
      * project and uses the (new) configuration. The old project
-     * configuration is by default used as fallback, so not all values have to be updated.
+     * configuration is by default used as a fallback, so not all values have to be updated.
      */
     def recreate[Source](
         project:                Project[Source],
-        config:                 Config,
+        config:                 Config          = ConfigFactory.empty(),
         useOldConfigAsFallback: Boolean         = true
     ) = {
         apply(

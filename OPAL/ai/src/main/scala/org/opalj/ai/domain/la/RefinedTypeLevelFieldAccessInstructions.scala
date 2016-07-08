@@ -34,7 +34,6 @@ package la
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
@@ -44,7 +43,7 @@ import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstructions {
-    domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject with ProjectBasedClassHierarchy ⇒
+    domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject ⇒
 
     val fieldValueInformation: FieldValueInformation
 

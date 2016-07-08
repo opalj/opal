@@ -53,13 +53,13 @@ import scalafx.stage.Window
 class DialogStage(owner: Window) extends Stage {
 
     filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
-        if (e.code == KeyCode.ESCAPE) {
+        if (e.code == KeyCode.Escape) {
             close()
         }
     }
 
-    initModality(Modality.APPLICATION_MODAL)
-    initStyle(StageStyle.DECORATED)
+    initModality(Modality.ApplicationModal)
+    initStyle(StageStyle.Decorated)
     initOwner(owner)
 }
 

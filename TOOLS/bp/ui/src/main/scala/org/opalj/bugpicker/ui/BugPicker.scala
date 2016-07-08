@@ -153,7 +153,7 @@ class BugPicker extends Application {
 
             val contextMenu = new ContextMenu(saveHTMLItem)
             onMouseClicked = { e: MouseEvent ⇒
-                if ((e.getButton eq MouseButton.sfxEnum2jfx(MouseButton.SECONDARY))
+                if ((e.getButton eq MouseButton.sfxEnum2jfx(MouseButton.Secondary))
                     && (currentAnalysis ne null)) {
                     contextMenu.show(this, e.getScreenX(), e.getScreenY())
                 } else {
@@ -261,12 +261,12 @@ class BugPicker extends Application {
         def logMessagesOnChangeBehaviour(
             sortOrder: ObservableBuffer[javafx.scene.control.TableColumn[BugPickerLogMessage, _]],
             tv:        TableView[BugPickerLogMessage], scrollBar: Option[ScrollBar]
-        ): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
+        ): (ObservableBuffer[BugPickerLogMessage], Seq[Change[_]]) ⇒ Unit = {
             (_, changes) ⇒
                 {
                     for (change ← changes)
                         change match {
-                            case _: Reorder ⇒ {
+                            case _: Reorder[_] ⇒ {
                                 // sortOrder changed, store it
                                 sortOrder.clear()
                                 sortOrder ++= tv.sortOrder
@@ -336,7 +336,7 @@ class BugPicker extends Application {
             padding = Insets(5, 7, 0, 4)
         }
         val contentPane = new SplitPane {
-            orientation = Orientation.VERTICAL
+            orientation = Orientation.Vertical
             vgrow = Priority.Always
             hgrow = Priority.Always
             dividerPositions = 0.45d
@@ -344,7 +344,7 @@ class BugPicker extends Application {
             items ++= Seq(reportView, tabPane)
         }
         val bugPickerPane = new SplitPane {
-            orientation = Orientation.HORIZONTAL
+            orientation = Orientation.Horizontal
             vgrow = Priority.Always
             hgrow = Priority.Always
             dividerPositions = 0.20d
@@ -831,7 +831,7 @@ class BugPicker extends Application {
 
         stage.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, new EventHandler[javafx.scene.input.MouseEvent]() {
             def handle(e: javafx.scene.input.MouseEvent): Unit = {
-                if (e.button == MouseButton.SECONDARY) {
+                if (e.button == MouseButton.Secondary) {
                     stage.toFront()
                 }
             }

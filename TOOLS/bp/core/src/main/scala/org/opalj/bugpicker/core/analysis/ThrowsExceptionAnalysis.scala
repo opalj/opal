@@ -47,10 +47,10 @@ import org.opalj.issues.IssueKind
 import org.opalj.issues.LocalVariables
 import org.opalj.issues.Operands
 import org.opalj.issues.InstructionLocation
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
- * This analysis identifies those instructions (except of ATHROW)
- * that always lead to an exception.
+ * This analysis identifies those instructions (except of ATHROW) that always lead to an exception.
  *
  * @author Michael Eichberg
  */
@@ -75,8 +75,9 @@ object ThrowsExceptionAnalysis {
 
         val exceptionThrowingInstructions =
             code collectWithIndex {
-                case (pc, i: Instruction) if operandsArray(pc) != null &&
-                    i != ATHROW && domain.regularSuccessorsOf(pc).isEmpty &&
+                case (pc, i: Instruction) if operandsArray(pc) != null /* <=> i was executed */ &&
+                    i != ATHROW && !i.isInstanceOf[ReturnInstruction] /* <=> i may have regular successors  */ &&
+                    domain.regularSuccessorsOf(pc).isEmpty /* <=> but i actually does not have a regular successor */ &&
                     (
                         domain.exceptionHandlerSuccessorsOf(pc).nonEmpty ||
                         domain.allThrownExceptions.get(pc).nonEmpty

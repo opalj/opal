@@ -160,10 +160,11 @@ class PropertyStore private (
         // class PropertyAndObservers(p: Property, os: Observers)
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
-        private[this] val data:  JIDMap[Entity, EntityProperties],
-        private[this] val ctx:   Map[Class[_], AnyRef],
-        final val isInterrupted: () ⇒ Boolean,
-        @volatile var debug:     Boolean
+        private[this] val data:     JIDMap[Entity, EntityProperties],
+        private[this] val ctx:      Map[Class[_], AnyRef],
+        final val ParallelismLevel: Int,
+        final val isInterrupted:    () ⇒ Boolean,
+        @volatile var debug:        Boolean
 )(
         implicit
         val logContext: LogContext
@@ -227,9 +228,10 @@ class PropertyStore private (
      * @param entities Conceptually a set of entities for which we will acquire the locks in order
      * 		of the locks' ids.
      */
-    @inline final private[this] def withEntitiesWriteLocks[T](entities: Traversable[Entity])(f: ⇒ T): T = {
-        val sortedEntities = entities.toList.sortWith((e1, e2) ⇒ data.get(e1).id < data.get(e2).id)
-        withWriteLocks(sortedEntities.map(e ⇒ data.get(e).l))(f)
+    @inline final private[this] def withEntitiesWriteLocks[T](entityProperties: List[EntityProperties])(f: ⇒ T): T = {
+        val sortedEntities = entityProperties.sortWith((e1, e2) ⇒ e1.id < e2.id)
+        val entityLocks = sortedEntities.view.map(e ⇒ e.l)
+        withWriteLocks(entityLocks)(f)
     }
 
     /**
@@ -262,6 +264,8 @@ class PropertyStore private (
     /**
      * Returns a graphviz/dot representation of the current dependencies between the per-entity
      * properties.
+     *
+     * @note This is generally only useful if the number of dependencies is small!
      */
     def visualizeDependencies(): String = accessStore {
         val epkNodes = mutable.Map.empty[SomeEPK, DefaultMutableNode[SomeEPK]]
@@ -1049,7 +1053,7 @@ class PropertyStore private (
         @volatile var remainingEntities = keysList
         var i = 0
         // We use exactly ThreadCount number of threads that process all entities.
-        val max = ThreadCount
+        val max = ParallelismLevel
         while (i < max) {
             i += 1
             scheduleRunnable {
@@ -1260,8 +1264,7 @@ class PropertyStore private (
     //
     //
 
-    val ThreadCount = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
-    private[this] final val threadPool = ThreadPoolN(ThreadCount)
+    private[this] final val threadPool = ThreadPoolN(ParallelismLevel)
 
     /**
      * @return `true` if the pool is shutdown. In this case it is no longer possible to submit
@@ -1816,8 +1819,8 @@ class PropertyStore private (
                     // property => intermediate result => final result
                     val oldP = pos.p
                     if (debug && (oldP ne null) && p.isOrdered) {
-                        p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty).foreach(s ⇒
-                            throw new AssertionError(s"$e: $s"))
+                        val isValid = p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty)
+                        isValid.foreach(s ⇒ throw new AssertionError(s"$e: $s"))
                     }
                     /*internal*/ /* assert(
                         (oldP eq null) || oldP.isBeingComputed || oldP.key == pk,
@@ -1950,12 +1953,9 @@ class PropertyStore private (
                     npcs foreach { npc ⇒ val (pc, e) = npc; scheduleComputation(e, pc) }
 
                 case IntermediateResult.id ⇒
-                    val IntermediateResult(dependerE, dependerP, dependees: Traversable[SomeEOptionP], c) = r
-                    if (debug) assert(
-                        dependees.nonEmpty,
-                        s"the intermediate result $r has no dependencies"
-                    )
-                    if (debug) assert(
+                    val IntermediateResult(dependerE, dependerP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
+                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
+                    assert(
                         dependerP.isRefineable,
                         s"intermediate result $r used to store final property $dependerP"
                     )
@@ -1968,7 +1968,8 @@ class PropertyStore private (
                         s"$dependerE: self-recursive computation of $dependerPK"
                     )
 
-                    val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
+                    // val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
+                    val accessedEntities = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList // make dependees a Seq
                     withEntitiesWriteLocks(accessedEntities) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
@@ -2145,6 +2146,24 @@ class PropertyStore private (
  */
 object PropertyStore {
 
+    def apply(
+        entities:      Traversable[Entity],
+        isInterrupted: () ⇒ Boolean,
+        debug:         Boolean,
+        context:       AnyRef*
+    )(
+        implicit
+        logContext: LogContext
+    ): PropertyStore = {
+        apply(
+            entities,
+            isInterrupted,
+            Math.max(NumberOfThreadsForCPUBoundTasks, 2),
+            debug,
+            context: _*
+        )
+    }
+
     /**
      * Creates a new [[PropertyStore]] for the given set of entities.
      *
@@ -2159,14 +2178,17 @@ object PropertyStore {
      * @return The newly created [[PropertyStore]].
      */
     def apply(
-        entities:      Traversable[Entity],
-        isInterrupted: () ⇒ Boolean,
-        debug:         Boolean,
-        context:       AnyRef*
+        entities:         Traversable[Entity],
+        isInterrupted:    () ⇒ Boolean,
+        parallelismLevel: Int,
+        debug:            Boolean,
+        context:          AnyRef*
     )(
         implicit
         logContext: LogContext
     ): PropertyStore = {
+
+        assert(parallelismLevel > 0)
 
         val entitiesCount = entities.size
         val data = new JIDMap[Entity, EntityProperties](entitiesCount)
@@ -2178,7 +2200,8 @@ object PropertyStore {
             entityId += 1
         }
 
-        new PropertyStore(data, context.map(c ⇒ (c.getClass, c)).toMap, isInterrupted, debug)
+        val contextMap: Map[Class[_], AnyRef] = context.map { c ⇒ (c.getClass, c) }.toMap
+        new PropertyStore(data, contextMap, parallelismLevel, isInterrupted, debug)
     }
 
     /**
@@ -2248,7 +2271,7 @@ private[fpcf] object ComputedProperty extends PartialFunction[PropertyAndObserve
 private[fpcf] final class EntityProperties(
     final val id: Int,
     final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
-    final val ps: Properties             = ArrayMap.empty
+    final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
 )
 
 private[fpcf] object PropertiesOfEntity {

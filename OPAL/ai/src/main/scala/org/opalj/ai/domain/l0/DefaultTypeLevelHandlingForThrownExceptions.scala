@@ -29,38 +29,20 @@
 package org.opalj
 package ai
 package domain
+package l0
 
 /**
- * Provides default implementations for a `Domain`'s return methods that always throw
- * an `IllegalMonitorStateExceptoin`.
+ * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
+ * nothing.
  *
- * You can mix in this trait if you are not interested in a method's return values or if
- * you need some default implementations.
  *
  * @author Michael Eichberg
  */
-trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
+trait DefaultTypeLevelHandlingForThrownExceptions extends ReturnInstructionsDomain {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
-    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-
+    /*base impl.*/ def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
+        /* Nothing to do. */
     }
-
-    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
-    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        handleReturn(pc)
-    }
-
 }
+

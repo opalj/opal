@@ -44,8 +44,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
     override def title: String =
         "Intraprocedural Usage of Exceptions"
 
-    override def description: String =
-        "Analyses the usage of exceptions within the scope of a method."
+    override def description: String = "Analyses the usage of exceptions."
 
     override def doAnalyze(
         theProject:    Project[URL],
@@ -212,8 +211,7 @@ class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val metho
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
         with domain.TheProject
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy {
+        with domain.TheMethod {
 
     def throwExceptionsOnMethodCall = ExceptionsRaisedByCalledMethods.Any
 

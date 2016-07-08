@@ -39,9 +39,13 @@ import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
 
 /**
+ * Hard-codes some part of the semantics of some very high-profile (native) methods of the JDK
+ * (for example, `System.arraycopy`).
+ *
  * ==Mixin Order==
- *  This method should be mixed in after those domains that provide the
- *  basic handling of unresolved methods (e.g., using "just" type information).
+ *  This method should be mixed in (lexically) after those domains that provide the
+ *  basic handling of unresolved methods (e.g., using "just" type information) but before
+ *  those that actually invoke a method!
  *
  * @author Michael Eichberg
  */

@@ -49,7 +49,7 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingForThrownExceptions extends ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
     /*base impl.*/ def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
         /* Nothing to do. */

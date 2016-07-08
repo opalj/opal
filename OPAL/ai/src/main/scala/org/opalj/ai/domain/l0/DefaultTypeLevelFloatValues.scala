@@ -38,9 +38,7 @@ package l0
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelFloatValues
-        extends DefaultDomainValueBinding
-        with TypeLevelFloatValues {
+trait DefaultTypeLevelFloatValues extends DefaultDomainValueBinding with TypeLevelFloatValues {
     domain: IntegerValuesFactory ⇒
 
     case object AFloatValue extends super.FloatValue {

@@ -68,8 +68,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
             with domain.l1.DefaultIntegerRangeValues
             with domain.l1.DefaultLongValues
             with domain.l1.ConcretePrimitiveValuesConversions
-            with domain.l1.LongValuesShiftOperators
-            with domain.ProjectBasedClassHierarchy {
+            with domain.l1.LongValuesShiftOperators {
 
         override def maxCardinalityOfIntegerRanges: Long = 4l
     }

@@ -28,43 +28,29 @@
  */
 package org.opalj
 package ai
+package domain
+package l0
 
-//import java.net.URL
-//
-//import org.opalj.ai.analyses.MutabilityRating.Unknown
-//import org.opalj.ai.analyses.ImmutabilityAnalysis
-//import org.opalj.br.analyses.AnalysisExecutor
-//import org.opalj.br.analyses.BasicReport
-//import org.opalj.br.analyses.DefaultOneStepAnalysis
-//import org.opalj.br.analyses.Project
-//
-///**
-// * A analysis that collects all classes that are immutable inside a jar.
-// *
-// * @author Andre Pacak
-// */
-//object MutabilityAssessment extends DefaultOneStepAnalysis {
-//
-//    override def doAnalyze(
-//        theProject:    Project[URL],
-//        parameters:    Seq[String],
-//        isInterrupted: () ⇒ Boolean
-//    ): BasicReport = {
-//
-//        import org.opalj.util.PerformanceEvaluation.time
-//
-//        var message = ""
-//        val result =
-//            time {
-//                ImmutabilityAnalysis.doAnalyze(theProject, isInterrupted)
-//            } { t ⇒ message += s"Analysis time: $t\n" }
-//        val classesWithMutabilityRating = result //.filter(_._2 != Unknown)
-//        val classesPerMutabilityRating =
-//            classesWithMutabilityRating.groupBy(_._2). // grouped by mutability rating
-//                map(e ⇒ e._2.keys.map(_.toJava).mkString(e._1.toString+" ("+(e._2.size)+") :\n\t", ",\n\t", "\n"))
-//
-//        message += classesPerMutabilityRating.mkString("\n")
-//        BasicReport(message)
-//    }
-//
-//}
+/**
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ */
+trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorInstructionsTracker {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+
+    /**
+     * Creates a computation object that encapsulates the result of a computation that
+     * may throw an `IllegalMonitorStateException` if a monitor is (potentially) used.
+     * The primary example are the `(XXX)return` instructions.
+     *
+     * @param pc The program counter of a return instruction.
+     */
+    protected[this] def handleReturn(pc: PC): Computation[Nothing, ExceptionValue] = {
+        if (isMonitorInstructionUsed && throwIllegalMonitorStateException) {
+            val exception = IllegalMonitorStateException(ValueOriginForVMLevelValue(pc))
+            ComputationWithSideEffectOrException(exception)
+        } else {
+            ComputationWithSideEffectOnly
+        }
+    }
+
+}

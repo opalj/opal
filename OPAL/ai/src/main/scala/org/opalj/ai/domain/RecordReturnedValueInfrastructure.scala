@@ -44,7 +44,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordReturnedValueInfrastructure extends RecordReturnedValuesInfrastructure {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
     /**
      *  A method that always throws an exception or returns "void" will never return a value.

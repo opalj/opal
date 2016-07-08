@@ -50,39 +50,47 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordReturnFromMethodInstructions extends ReturnInstructionsDomain { domain: ValuesDomain ⇒
+trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
+    domain: ValuesDomain ⇒
 
     @volatile private[this] var returnFromMethodInstructions: UShortSet = UShortSet.empty
 
     def allReturnFromMethodInstructions: PCs = returnFromMethodInstructions
 
-    override def areturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.areturn(pc, value)
     }
 
-    override def dreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.dreturn(pc, value)
     }
 
-    override def freturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.freturn(pc, value)
     }
 
-    override def ireturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.ireturn(pc, value)
     }
 
-    override def lreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.lreturn(pc, value)
     }
 
-    override def returnVoid(pc: PC): Unit = {
+    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.returnVoid(pc)
     }
 
     // handles all kinds of abrupt method returns 
-    override def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
+    abstract override def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        super.abruptMethodExecution(pc, exception)
     }
 }
 

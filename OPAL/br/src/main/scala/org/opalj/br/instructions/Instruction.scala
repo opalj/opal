@@ -60,7 +60,7 @@ trait Instruction {
      * The returned types always precisely describe the thrown
      * exception; they are not upper bounds.
      *
-     * All instructions – except of the [[InvokeInstruction]]s and the [[ATHROW$]] instruction –
+     * All instructions – except of the [[InvocationInstruction]]s and the [[ATHROW$]] instruction –
      * will always either succeed, throw a linkage time related exception or throw one of the
      * specified exceptions.
      */

@@ -125,11 +125,11 @@ class ProgressManagementDialog(
         }
         stylesheets += BugPicker.defaultAppCSSURL
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
-            if (e.code.equals(KeyCode.ESCAPE)) cancelAnalysisAndCloseWindow()
+            if (e.code.equals(KeyCode.Escape)) cancelAnalysisAndCloseWindow()
         }
     }
 
-    initModality(Modality.WINDOW_MODAL)
+    initModality(Modality.WindowModal)
     initOwner(owner)
-    initStyle(StageStyle.DECORATED)
+    initStyle(StageStyle.Decorated)
 }

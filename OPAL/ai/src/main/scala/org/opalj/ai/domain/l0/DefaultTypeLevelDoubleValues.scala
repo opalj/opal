@@ -38,9 +38,7 @@ package l0
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelDoubleValues
-        extends DefaultDomainValueBinding
-        with TypeLevelDoubleValues {
+trait DefaultTypeLevelDoubleValues extends DefaultDomainValueBinding with TypeLevelDoubleValues {
     domain: IntegerValuesFactory ⇒
 
     /**

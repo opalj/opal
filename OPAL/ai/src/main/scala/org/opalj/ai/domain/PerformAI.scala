@@ -32,8 +32,11 @@ package domain
 
 /**
  * A base abstract interpreter that can be used with any domain that has
- * no special requirements on the abstract interpreter. The base
- * interpreter can be interrupted by calling the `interrupt` method of the
+ * no special requirements on the abstract interpreter and which provides some convenience
+ * factory methods to run the abstract interpretation if the domain provide the necessary
+ * information.
+ *
+ * The base interpreter can be interrupted by calling the `interrupt` method of the
  * AI's thread.
  *
  * @see [[BoundedInterruptableAI]] for an abstract interpreter that can easily be

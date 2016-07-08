@@ -43,8 +43,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
     class AnalysisDomain(
         override val project: Project[URL],
         val method:           Method
-    )
-            extends CorrelationalDomain
+    ) extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultTypeLevelIntegerValues
@@ -61,7 +60,6 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
             with domain.IgnoreSynchronization
             with domain.TheProject
             with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy
 
     override def title: String = "Creation of Resources Using Constant Strings"
 

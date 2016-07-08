@@ -30,6 +30,9 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.BitSet
+import org.opalj.br.Code
+
 /**
  * Generic infrastructure to record the values returned by the method.
  * (Note that the computational type
@@ -46,8 +49,8 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
-    domain: ValuesDomain ⇒
+trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with CustomInitialization {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
     /**
      * Wraps the given value into a `ReturnedValue`.
@@ -78,8 +81,20 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
         value:                   DomainValue
     ): ReturnedValue
 
-    private[this] var returnedValues: Map[PC, ReturnedValue] = Map.empty
+    private[this] var returnedValues: Map[PC, ReturnedValue] = _
 
+    abstract override def initProperties(
+        code:             Code,
+        joinInstructions: BitSet,
+        initialLocals:    Locals
+    ): Unit = {
+        returnedValues = Map.empty
+        super.initProperties(code, joinInstructions, initialLocals)
+    }
+
+    /**
+     * Returns the set of all returned values.
+     */
     def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
 
     protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {

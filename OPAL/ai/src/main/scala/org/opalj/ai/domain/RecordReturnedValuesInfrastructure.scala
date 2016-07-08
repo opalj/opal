@@ -35,7 +35,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
+trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     domain: ValuesDomain ⇒
 
     /**
@@ -53,27 +53,42 @@ trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
 
     protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit
 
-    abstract override def areturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def areturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.areturn(pc, value)
     }
 
-    abstract override def dreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def dreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.dreturn(pc, value)
     }
 
-    abstract override def freturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def freturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.freturn(pc, value)
     }
 
-    abstract override def ireturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def ireturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.ireturn(pc, value)
     }
 
-    abstract override def lreturn(pc: PC, value: DomainValue): Unit = {
+    abstract override def lreturn(
+        pc:    PC,
+        value: DomainValue
+    ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
         super.lreturn(pc, value)
     }

@@ -54,9 +54,8 @@ import org.opalj.ai.domain.TheMethod
  * @author Michael Eichberg
  */
 abstract class VTACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends DefaultCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends DefaultCallGraphAlgorithmConfiguration(project) {
 
     type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with TheClassFile with TheMethod
 
@@ -66,9 +65,8 @@ abstract class VTACallGraphAlgorithmConfiguration(
 }
 
 class BasicVTACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends VTACallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends VTACallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,
@@ -89,9 +87,8 @@ abstract class VTAWithPreAnalysisCallGraphAlgorithmConfiguration(
 }
 
 class BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,
@@ -105,9 +102,8 @@ class BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(
 }
 
 class DefaultVTACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,
@@ -121,9 +117,8 @@ class DefaultVTACallGraphAlgorithmConfiguration(
 }
 
 class ExtVTACallGraphAlgorithmConfiguration(
-    project: SomeProject
-)
-        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+        project: SomeProject
+) extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,

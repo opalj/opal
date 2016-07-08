@@ -52,13 +52,14 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordVoidReturns extends ReturnInstructionsDomain { domain: ValuesDomain ⇒
+trait RecordVoidReturns extends ReturnInstructionsDomain {
+    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
 
     private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
 
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 
-    abstract override def returnVoid(pc: PC): Unit = {
+    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
         returnVoidInstructions = pc +≈: returnVoidInstructions
         super.returnVoid(pc)
     }

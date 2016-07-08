@@ -47,6 +47,17 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
     final val ConfigKeyPrefix = "org.opalj.br.analyses.SourceElementsPropertyStore."
 
     /**
+     * Used to specify the number of threads the property store should use. This
+     * value is read only once when the property store is created.
+     *
+     * The value must be larger than 0 and should be smaller or equal to the number
+     * of (hyperthreaded) cores.
+     */
+    @volatile var parallelismLevel: Int = {
+        Math.max(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks, 2)
+    }
+
+    /**
      * The [[SourceElementsPropertyStoreKey]] has no special prerequisites.
      *
      * @return `Nil`.
@@ -60,7 +71,10 @@ object SourceElementsPropertyStoreKey extends ProjectInformationKey[PropertyStor
         val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
         PropertyStore(
-            project.allSourceElements, defaultIsInterrupted, debug,
+            project.allSourceElements,
+            defaultIsInterrupted,
+            parallelismLevel,
+            debug,
             context = project
         )
     }
