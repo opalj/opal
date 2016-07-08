@@ -55,6 +55,8 @@ import org.opalj.log.OPALLogger.{error ⇒ logError}
 import org.opalj.log.OPALLogger.{warn ⇒ logWarn}
 import org.opalj.log.{LogContext, OPALLogger}
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.collection.UID
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * The property store manages the execution of computations of properties related to specific
@@ -228,9 +230,25 @@ class PropertyStore private (
      * @param entities Conceptually a set of entities for which we will acquire the locks in order
      * 		of the locks' ids.
      */
-    @inline final private[this] def withEntitiesWriteLocks[T](entityProperties: List[EntityProperties])(f: ⇒ T): T = {
-        val sortedEntities = entityProperties.sortWith((e1, e2) ⇒ e1.id < e2.id)
-        val entityLocks = sortedEntities.view.map(e ⇒ e.l)
+    //     @inline final private[this] def withEntitiesWriteLocks[T](entityProperties: List[EntityProperties])(f: ⇒ T): T = {
+    //         val sortedEntities = entityProperties.sortWith((e1, e2) ⇒ e1.id < e2.id)
+    //         val entityLocks = sortedEntities.view.map(e ⇒ e.l)
+    //         withWriteLocks(entityLocks)(f)
+    //     }
+    //    @inline final private[this] def withEntitiesWriteLocks[T](
+    //        sortedEntityProperties: SortedSet[EntityProperties]
+    //    )(
+    //        f: ⇒ T
+    //    ): T = {
+    //        val entityLocks = sortedEntityProperties.view.map(e ⇒ e.l)
+    //        withWriteLocks(entityLocks)(f)
+    //    }
+    @inline final private[this] def withEntitiesWriteLocks[T](
+        sortedEntityProperties: UIDSet[EntityProperties]
+    )(
+        f: ⇒ T
+    ): T = {
+        val entityLocks = sortedEntityProperties.mapToList(e ⇒ e.l)
         withWriteLocks(entityLocks)(f)
     }
 
@@ -1969,7 +1987,13 @@ class PropertyStore private (
                     )
 
                     // val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
-                    val accessedEntities = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList // make dependees a Seq
+                    // val accessedEntities = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList
+                    //val accessedEntities =
+                    //    SortedSet(data.get(dependerE))(EntityPropertiesOrdering) ++
+                    //        dependees.view.map(d ⇒ data.get(d.e))
+                    val accessedEntities =
+                        UIDSet(data.get(dependerE)) ++ dependees.view.map(d ⇒ data.get(d.e))
+
                     withEntitiesWriteLocks(accessedEntities) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
@@ -2272,10 +2296,14 @@ private[fpcf] final class EntityProperties(
     final val id: Int,
     final val l:  ReentrantReadWriteLock = new ReentrantReadWriteLock,
     final val ps: Properties             = ArrayMap(sizeHint = Math.max(3, PropertyKey.maxId))
-)
+) extends UID
 
 private[fpcf] object PropertiesOfEntity {
 
     def unapply(eps: EntityProperties): Some[Properties] = Some(eps.ps)
 
+}
+
+object EntityPropertiesOrdering extends Ordering[EntityProperties] {
+    def compare(x: EntityProperties, y: EntityProperties): Int = x.id - y.id
 }
