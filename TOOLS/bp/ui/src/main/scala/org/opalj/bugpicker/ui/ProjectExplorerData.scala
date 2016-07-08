@@ -30,8 +30,8 @@ package org.opalj
 package bugpicker
 package ui
 
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
+import org.opalj.br.{ClassFile, Field, Method}
+
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.property.StringProperty
 
@@ -144,19 +144,25 @@ object ProjectExplorerMethodData {
  * @author David Becker
  */
 class ProjectExplorerFieldData(
-        name:         StringProperty,
-        val isStatic: BooleanProperty
+        name:          StringProperty,
+        val classFile: ClassFile,
+        val field:     Field,
+        val isStatic:  BooleanProperty
 ) extends ProjectExplorerData(name) {
 }
 
 object ProjectExplorerFieldData {
 
     def apply(
-        name:     String,
-        isStatic: Boolean
+        name:      String,
+        classFile: ClassFile,
+        field:     Field,
+        isStatic:  Boolean
     ): ProjectExplorerFieldData = {
         new ProjectExplorerFieldData(
             new StringProperty(this, "name", name),
+            classFile,
+            field,
             new BooleanProperty(this, "isStatic", isStatic)
         )
     }

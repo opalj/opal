@@ -82,7 +82,7 @@ class ClassExtensibilityAnalysis private (val project: SomeProject) extends FPCF
                             !classFile.isEffectivelyFinal &&
                             (
                                 classFile.isPublic ||
-                                (isOpenLibrary) //&& !classFile.thisType.packageName.startsWith("java."))
+                                (isOpenLibrary && !classFile.thisType.packageName.startsWith("java."))
                             )
                         )
 
