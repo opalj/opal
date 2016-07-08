@@ -81,7 +81,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             PerformanceEvaluation.gc()
 
             println(s"\nRunning analysis with $parallelismLevel thread(s):")
-            r = time[() ⇒ String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
+            r = time[() ⇒ String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
             println(
                 s"Results with $parallelismLevel threads:\n"+
                     performanceData.values.
