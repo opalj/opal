@@ -80,7 +80,7 @@ object Locking {
         }
     }
 
-    @inline final def withWriteLocks[T](rwLocks: Seq[ReentrantReadWriteLock])(f: ⇒ T): T = {
+    @inline final def withWriteLocks[T](rwLocks: Traversable[ReentrantReadWriteLock])(f: ⇒ T): T = {
         var acquiredRWLocks: List[WriteLock] = Nil
         var error: Throwable = null
         val allLocked =
@@ -90,7 +90,11 @@ object Locking {
                     l.lock
                     acquiredRWLocks = l :: acquiredRWLocks
                     true
-                } catch { case t: Throwable ⇒ error = t; false }
+                } catch {
+                    case t: Throwable ⇒
+                        error = t
+                        false
+                }
             }
 
         assert(allLocked || (error ne null))
