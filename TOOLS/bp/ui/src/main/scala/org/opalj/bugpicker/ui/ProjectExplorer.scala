@@ -33,20 +33,20 @@ package ui
 import java.io.File
 import java.io.FilenameFilter
 import java.net.URL
+
 import scala.collection.mutable.Map
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DomainRegistry
 import org.opalj.ai.common.XHTML
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
+import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.ui.codeview.JumpToProblemListener
 import org.opalj.bugpicker.ui.codeview.SourceFileWrapper
 import org.opalj.bugpicker.ui.dialogs.ChooseDomainDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.WebViewStage
+
 import scalafx.Includes._
 import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
@@ -139,6 +139,17 @@ class ProjectExplorer(
                         )
                         else
                             new ContextMenu(sc, bc))
+                    }
+                    case f: ProjectExplorerFieldData ⇒ {
+                        val field = f.field
+                        val classFile = f.classFile
+                        val prop = new MenuItem("Show Properties") {
+                            onAction = showProperties(classFile, Some(field))
+                        }
+
+                        setContextMenu(
+                            new ContextMenu(prop)
+                        )
                     }
                     case _ ⇒
                 }
@@ -357,12 +368,9 @@ class ProjectExplorer(
         val methodId: Option[String] =
             method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
         val classFile = decompileClassFile(project, cf.thisType)
-        if (classFile.isDefined) {
-            val content = classFile.get.toXHTML().toString
-            byteView.engine.loadContent(content)
-        } else {
-            byteView.engine.loadContent(Messages.NO_BYTECODE_FOUND)
-        }
+
+        val content = classFile.map(_.toXHTML().toString).getOrElse(Messages.NO_BYTECODE_FOUND)
+        byteView.engine.loadContent(content)
 
         new JumpToProblemListener(
             webview = byteView,
@@ -406,8 +414,8 @@ class ProjectExplorer(
     }
 
     private def showProperties(
-        cf:     ClassFile,
-        method: Option[Method]
+        cf:          ClassFile,
+        classMember: Option[ClassMember]
     ): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
         val propView: WebView = new WebView {
             contextMenuEnabled = false
@@ -416,44 +424,42 @@ class ProjectExplorer(
         }
 
         val propertyStore = project.get(SourceElementsPropertyStoreKey)
+        val properties = propertyStore.properties(classMember.getOrElse(cf))
 
-        @inline def propertiesNotFound() = propView.engine.loadContent(Messages.NO_PROPERTIES_FOUND)
-
-        if (method.isEmpty) {
-            val properties = propertyStore.properties(cf)
-            if (properties.size == 0)
-                propertiesNotFound
-            else
-                propView.engine.loadContent(
-                    s"class <b>${cf.thisType.toJava}</b> {<br/>"+
-                        properties.map { p ⇒
-                            val property = scala.xml.Text(p.toString())
-                            s" <pre> ${property.toString()} </pre>"
-                        }.mkString("<br/>")+
-                        "\n}"
-                )
+        if (properties.isEmpty) {
+            propView.engine.loadContent(Messages.NO_PROPERTIES_FOUND)
         } else {
-            val properties = propertyStore.properties(method.get)
-            if (properties.isEmpty)
-                propertiesNotFound
-            else {
-                val lineSep = System.getProperty("line.separator")
-                val methodAsJava = scala.xml.Text(method.get.toJava())
-                propView.engine.loadContent(
-                    s"class <b>${cf.thisType.toJava}</b> <i>${methodAsJava}</i>{<br/>"+
-                        "<ul>"+
-                        properties.map { p ⇒
-                            val property = scala.xml.Text(p.toString())
-                            s" <li> <b> ${PropertyKey.name(p.key.id)}:</b> ${property.toString()} </li>"
-                        }.mkString(lineSep)+
-                        "</ul>\n}"
-                )
+            val header = classMember match {
+                case Some(method: Method) ⇒
+                    val methodAsJava = scala.xml.Text(method.toJava)
+                    s"class <b>${cf.thisType.toJava}</b> <i>${methodAsJava}</i>{<br/>"
+                case Some(field: Field) ⇒
+                    val fieldAsJava = scala.xml.Text(field.toJava)
+                    s"class <b>${cf.thisType.toJava}</b> <i>${fieldAsJava}</i>{<br/>"
+                case _ /* In case of a classFile*/ ⇒ s"class <b>${cf.thisType.toJava}</b>{<br/>"
             }
+
+            val pageContent = new StringBuilder(header).append("<ul>")
+            val lineSep = System.getProperty("line.separator")
+
+            properties.foreach { p ⇒
+                val property = scala.xml.Text(p.toString())
+                pageContent.append(s" <li> <b> ${PropertyKey.name(p.key.id)}:</b> ${property.toString()} </li>")
+                pageContent.append(lineSep)
+            }
+
+            pageContent.append(s"</ul>$lineSep")
+            propView.engine.loadContent(pageContent.toString)
         }
 
-        val title = "Computed properties for "+method.map(_.toJava(cf)).getOrElse(cf.thisType.toJava)
+        val title = "Computed properties for "+classMember.collectFirst {
+            case m: Method ⇒ m.toJava(cf)
+            case f: Field  ⇒ f.toJava(cf)
+        }.getOrElse(cf.thisType.toJava)
+
         WebViewStage.showWebView(title, propView, 175d, 100d)
     }
+
     private def findSourceFile(
         classFile:  ClassFile,
         lineOption: Option[String]
