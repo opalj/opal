@@ -368,7 +368,10 @@ trait RecordCFG
     }
 
     /**
-     * Returns the basic block based representation of the cfg.
+     * Returns the basic block based representation of the cfg. This CFG may have less nodes
+     * than the CFG computed using the naive bytecode representation because it was possible
+     * to detect dead paths or to identify that a method call may never throw an exception
+     * (in the given situation).
      */
     private[this] def computeBBCFG: CFG = {
 
