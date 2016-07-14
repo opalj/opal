@@ -62,20 +62,20 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 (m, ts)
             }
         }
-        val methodsWithCompleteThrownExceptionsInfoCount = methodsWithCompleteThrownExceptionsInfo.size
-        val report = methodsWithCompleteThrownExceptionsInfo.map {
-            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava(project.classFile(m))} ⇒ $ts" }
-        }.toList.sorted.mkString("\n")
-
-        val privateMethodsWithCompleteThrownExceptionsInfoCount = {
-            methodsWithCompleteThrownExceptionsInfo.view.filter(_._1.isPrivate).size
-        }
-
         val methodsWhichDoNotThrowExceptions = methodsWithCompleteThrownExceptionsInfo.collect {
             case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e
         }
+
+        val methodsWithCompleteThrownExceptionsInfoCount = methodsWithCompleteThrownExceptionsInfo.size
+        val privateMethodsWithCompleteThrownExceptionsInfoCount = {
+            methodsWithCompleteThrownExceptionsInfo.view.filter(_._1.isPrivate).size
+        }
         val methodsWhichDoNotThrowExceptionsCount =
             methodsWhichDoNotThrowExceptions.view.filter(_._1.isPrivate).size
+
+        val report = methodsWithCompleteThrownExceptionsInfo.map {
+            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava(project.classFile(m))} ⇒ $ts" }
+        }.toList.sorted.mkString("\n")
 
         BasicReport(
             report+
