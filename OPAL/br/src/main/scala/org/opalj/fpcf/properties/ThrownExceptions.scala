@@ -32,6 +32,7 @@ package properties
 
 //import scala.collection.Set
 import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyKey.CycleResolutionStrategy
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC
@@ -41,10 +42,10 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 
 /**
- * Determines for each method the exceptions that are potentially thrown by the respective method.
- * This includes the set of exceptions thrown by called methods (if any). The property does not
- * take the exceptions which are potentially thrown by the methods which override the respective
- * method into account. Nevertheless, in case of a method call all potental receiver methods are
+ * Specifies for each method the exceptions that are potentially thrown by the respective method.
+ * This includes the set of exceptions thrown by called methods (if any). The property '''does not
+ * take the exceptions of methods which override the respective method into account'''.
+ * Nevertheless, in case of a method call all potential receiver methods are
  * taken into consideration.
  *
  * Note that it may be possible to compute some meaningful upper type bound for the set of
@@ -61,6 +62,8 @@ import org.opalj.br.instructions._
  *  }
  * }
  * }}}
+ *
+ * @author Michael Eichberg
  */
 sealed trait ThrownExceptions extends Property {
 
@@ -71,39 +74,105 @@ sealed trait ThrownExceptions extends Property {
 
 object ThrownExceptions {
 
+    def cycleResolutionStrategy(
+        ps:   PropertyStore,
+        epks: Iterable[SomeEPK]
+    ): Iterable[PropertyComputationResult] = {
+        val e = epks.find(_.pk == Key).get
+        val p = ThrownExceptionsAreUnknown.UnableToComputeThrownException
+        Iterable(Result(e, p))
+    }
+
     final val Key = {
         PropertyKey.create[ThrownExceptions](
             "ThrownExceptions",
             ThrownExceptionsFallbackAnalysis,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒
-                ((throw new UnknownError("internal error")): Iterable[PropertyComputationResult])
+            cycleResolutionStrategy: CycleResolutionStrategy
         )
     }
 }
 
+sealed class AllThrownExceptions(
+        val types:        BRTypesSet,
+        val isRefineable: Boolean
+) extends ThrownExceptions {
+
+    override def toString: String = s"AllThrownExceptions($types)"
+}
+
+final case class NoExceptionsAreThrown(
+        explanation: String
+) extends AllThrownExceptions(BRTypesSet.empty, isRefineable = false) {
+    override def toString: String = s"NoExceptionsAreThrown($explanation)"
+}
+
+object NoExceptionsAreThrown {
+
+    final val NoInstructionThrowsExceptions = {
+        NoExceptionsAreThrown("none of the instructions of the method throws an exception")
+    }
+
+    final val MethodIsAbstract = NoExceptionsAreThrown("method is abstract")
+}
+
+final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExceptions {
+
+    def isRefineable: Boolean = false
+
+}
+
+object ThrownExceptionsAreUnknown {
+
+    final val UnableToComputeThrownException = {
+        ThrownExceptionsAreUnknown("a complex cycle was detected which the analysis could not resolve")
+    }
+
+    final val UnknownExceptionIsThrown = {
+        ThrownExceptionsAreUnknown("the precise type(s) of a thrown exception could not be determined")
+    }
+
+    final val SomeCallerThrowsUnknownExceptions = {
+        ThrownExceptionsAreUnknown("called method throws unknown exceptions")
+    }
+
+    final val MethodIsNative = {
+        ThrownExceptionsAreUnknown("the method is native")
+    }
+
+    final val MethodBodyIsNotAvailable = {
+        ThrownExceptionsAreUnknown("the method body is not available")
+    }
+}
+
+//
+//
+// THE FALLBACK/DEFAULT ANALYSIS
+//
+//
+
+/**
+ * A very straight forward flow-insensitive analysis which can successfully analyze methods
+ * with respect to the potentially thrown exceptions under the conditions that no other
+ * methods are invoked and that no exceptions are explicitly thrown (`ATHROW`). This analysis
+ * always computes a sound over approximation of the potentially thrown exceptions.
+ *
+ * The analysis has limited support for the following cases to be more precise in case of
+ * common code patterns (e.g., a standard getter):
+ *  - If all instance based field reads are using the self reference "this" and
+ *    "this" is used in the expected manner the [[org.opalj.br.instructions.GETFIELD]]
+ *  - If no [[org.opalj.br.instructions.MONITORENTER]]/[[org.opalj.br.instructions.MONITOREXIT]]
+ *    instructions are found, the return instructions will not throw
+ *    `IllegalMonitorStateException`s.
+ *
+ * Hence, the primary use case of this method is to identify those methods that are guaranteed
+ * to '''never throw exceptions'''.
+ */
 object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ ThrownExceptions) {
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
         e match { case m: Method ⇒ this(ps, m) }
     }
 
-    /**
-     * A very straight forward flow-insensitive analysis which can successfully analyze methods
-     * with respect to the potentially thrown exceptions under the conditions that no other
-     * methods are invoked and that no exceptions are thrown (`ATHROW`). This analysis always
-     * computes a sound overapproximation of the potentially thrown exceptions.
-     *
-     * The analysis has limited support for the following cases to be more precise in case of
-     * common code patterns (e.g., a standard getter):
-     *  - If all instance based field reads are using the self reference "this" and
-     *    "this" is used in the expected manner the [[org.opalj.br.instructions.GETFIELD]]
-     *  - If no [[org.opalj.br.instructions.MONITORENTER]]/[[org.opalj.br.instructions.MONITOREXIT]]
-     *    instructions are found, the return instructions will not throw
-     *    `IllegalMonitorStateException`s.
-     *
-     * Hence, the primary use case of this method is to identify those methods that are guaranteed
-     * to never throw exceptions which dramatically helps other analysis.
-     */
     def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
         if (m.isNative)
             return ThrownExceptionsAreUnknown.MethodIsNative;
@@ -131,6 +200,9 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         var fielAccessMayThrowNullPointerException = false
         var isFieldAccessed = false
 
+        /*
+         * @return `true` if it is possible to collect all potentially thrown exceptions.
+         */
         def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
             instruction.opcode match {
 
@@ -156,6 +228,7 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     if (instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex == 0)
                         isLocalVariable0Updated = true
                     true
+
                 case GETFIELD.opcode ⇒
                     isFieldAccessed = true
                     fielAccessMayThrowNullPointerException = fielAccessMayThrowNullPointerException ||
@@ -196,6 +269,40 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     // a MONITORENTER/MONITOREXIT instruction
                     true
 
+                case IREM.opcode | IDIV.opcode ⇒
+                    if (!joinInstructions.contains(pc)) {
+                        val predecessorPC = code.pcOfPreviousInstruction(pc)
+                        val valueInstruction = instructions(predecessorPC)
+                        valueInstruction match {
+                            case (lci: LoadConstantInstruction[Int] @unchecked) if lci.value != 0 ⇒
+                                // there will be no arithmetic exception
+                                true
+                            case _ ⇒
+                                exceptions ++= instruction.jvmExceptions
+                                true
+                        }
+                    } else {
+                        exceptions ++= instruction.jvmExceptions
+                        true
+                    }
+
+                case LREM.opcode | LDIV.opcode ⇒
+                    if (!joinInstructions.contains(pc)) {
+                        val predecessorPC = code.pcOfPreviousInstruction(pc)
+                        val valueInstruction = instructions(predecessorPC)
+                        valueInstruction match {
+                            case (lci: LoadConstantInstruction[Long] @unchecked) if lci.value != 0l ⇒
+                                // there will be no arithmetic exception
+                                true
+                            case _ ⇒
+                                exceptions ++= instruction.jvmExceptions
+                                true
+                        }
+                    } else {
+                        exceptions ++= instruction.jvmExceptions
+                        true
+                    }
+
                 case i ⇒
                     exceptions ++= instruction.jvmExceptions
                     true
@@ -226,54 +333,6 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
 class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComputation[Method] {
     def apply(m: Method): PropertyComputationResult = {
         ImmediateResult(m, ThrownExceptionsFallbackAnalysis(ps, m))
-    }
-}
-
-sealed class AllThrownExceptions(
-        val types:        BRTypesSet,
-        val isRefineable: Boolean
-) extends ThrownExceptions {
-
-    override def toString: String = s"AllThrownExceptions($types)"
-}
-
-final case class NoExceptionsAreThrown(
-        explanation: String
-) extends AllThrownExceptions(BRTypesSet.empty, isRefineable = false) {
-    override def toString: String = s"NoExceptionsAreThrown($explanation)"
-}
-
-object NoExceptionsAreThrown {
-
-    final val NoInstructionThrowsExceptions = {
-        NoExceptionsAreThrown("none of the instructions of the method throws an exception")
-    }
-
-    final val MethodIsAbstract = NoExceptionsAreThrown("method is abstract")
-}
-
-final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExceptions {
-
-    def isRefineable: Boolean = false
-
-}
-
-object ThrownExceptionsAreUnknown {
-
-    final val UnknownExceptionIsThrown = {
-        ThrownExceptionsAreUnknown("the precise type(s) of a thrown exception could not be determined")
-    }
-
-    final val SomeCallerThrowsUnknownExceptions = {
-        ThrownExceptionsAreUnknown("called method throws unknown exceptions")
-    }
-
-    final val MethodIsNative = {
-        ThrownExceptionsAreUnknown("the method is native")
-    }
-
-    final val MethodBodyIsNotAvailable = {
-        ThrownExceptionsAreUnknown("the method body is not available")
     }
 }
 
