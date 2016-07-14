@@ -124,19 +124,27 @@ trait AnalysisExecutor {
 
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
-        val quotedParams = """(-[\w.]+="[\w-_:;./\\ ]+")""".r
-        val unqoutedParams = """(-[\w.]+=[\w-_:;./\\]+)|(-[\w]+(?: |$))""".r
-        val input = unparsedArgs.mkString(" ")
-        val args: Array[String] =
-            (
-                quotedParams.findAllMatchIn(input).map { p ⇒
-                    val paramMatcher = """(-\w+=)"([\w-_:;./\\ ]*)"""".r
-                    val paramMatcher(kind, value) = p.matched
-                    kind + value
-                } ++
-                unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
-            ).toArray
-
+//        val quotedParams = """(-[\w.]+="[\w-_:;./\\ ]+")""".r
+//        val unqoutedParams = """(-[\w.]+=[\w-_:;./\\]+)|(-[\w]+(?: |$))""".r
+//        val input = unparsedArgs.mkString(" ")
+//        val args: Array[String] =
+//            (
+//                quotedParams.findAllMatchIn(input).map { p ⇒
+//                    val paramMatcher = """(-\w+=)"([\w-_:;./\\ ]*)"""".r
+//                    val paramMatcher(kind, value) = p.matched
+//                    kind + value
+//                } ++
+//                unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
+//            ).toArray
+//            val splittedArgs = unparsedArgs.mkString(" ").split(" ")
+//       val args = 
+//           if (splittedArgs.length > 1) {
+//               splittedArgs.tail.foldLeft(List(splittedArgs.head)(op)
+//           }
+//           else 
+//               splittedArgs
+            
+        val args = unparsedArgs
         if (args.contains("-help") || args.length < unparsedArgs.length) {
             printUsage
             sys.exit(0)
