@@ -618,7 +618,7 @@ private final class UIDArraySet[T <: UID](
         var r = op(b, es(0).asInstanceOf[T])
         var i = 1
         while (i < es.length) {
-            r = op(r, es(1).asInstanceOf[T])
+            r = op(r, es(i).asInstanceOf[T])
             i += 1
         }
         r
@@ -760,5 +760,9 @@ object UIDSet {
     def apply[T <: UID](set: scala.collection.TraversableOnce[T]): UIDSet[T] = {
         set.foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ s + e)
     }
+
+    //     def apply[T <: UID](set: Set[T]): UIDSet[T] = {
+    //        set.foldLeft[UIDSet[T]](UIDSet0)((s, e) ⇒ s + e)
+    //    }
 
 }
