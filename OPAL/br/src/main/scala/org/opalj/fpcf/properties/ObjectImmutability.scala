@@ -190,6 +190,11 @@ case object ConditionallyImmutableObject extends ObjectImmutability {
     final def isMutable: Answer = No
 }
 
+/**
+ * Models the (intermediate) state when the analysis has determined that the class is at least
+ * conditionally immutable, but has not yet analyzed all dependencies and - therefore - cannot
+ * make a final decision whether the class is immutable.    
+ */
 case object AtLeastConditionallyImmutableObject extends ObjectImmutability {
     final val isRefineable = true
     final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
