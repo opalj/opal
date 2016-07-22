@@ -63,12 +63,15 @@ object UnusedFields {
     ): Seq[Issue] = {
 
         val candidateFields = classFile.fields.filterNot { field ⇒
-            // These fields are inlined by compilers; hence, even if the field is not accessed 
-            // it may be used in the source code.
             (field.isSynthetic) ||
-                (field.isFinal && field.fieldType.isBaseType) ||
+                // These fields are inlined by compilers; hence, even if the field is not accessed 
+                // it may be used in the source code.
+                (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ObjectType.String)) ||
                 // The field is read at least once...
-                (fieldAccessInformation.readAccesses(classFile, field).nonEmpty)
+                (fieldAccessInformation.readAccesses(classFile, field).nonEmpty) ||
+                // We may have some users of the field in the future...
+                // IMPROVE use FutureFieldAccess property (TBD) to get the information if we may have future field accesses
+                (!field.isPrivate && AnalysisModes.isLibraryLike(theProject.analysisMode))
         }
 
         if (candidateFields.isEmpty)
@@ -117,7 +120,7 @@ object UnusedFields {
             } else if (analysisMode == AnalysisModes.CPA) {
                 unusedAndNotReflectivelyAccessedFields.filter(f ⇒
                     f.isPrivate || f.isPackagePrivate || {
-                        // IMPROVE Test if the "isExtensible" property was computed!
+                        // IMPROVE Test if the "isExtensible" property was properly computed!
                         f.isProtected && propertyStore(IsExtensible, classFile).isNo
                     })
             } else {
