@@ -293,7 +293,16 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
 
     final override def isSingletonSet: Boolean = true
 
-    override def +[X >: T <: UID](o: X): UIDSet[X] = UIDSet(e, o) // <= factory method
+    override def +[X >: T <: UID](o: X): UIDSet[X] = {
+        val oId = o.id
+        val eId = e.id
+        if (oId == eId)
+            this
+        else if (oId < eId)
+            new UIDSet2(o, e)
+        else
+            new UIDSet2(e, o)
+    }
 
     override def first = e
 
@@ -362,17 +371,19 @@ final class UIDSet2[T <: UID] private[collection] (
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
         val oId = o.id
         val e1Id = e1.id
-        val e2Id = e2.id
         if (oId < e1Id)
             new UIDSet3(o, e1, e2)
         else if (oId == e1Id)
             this
-        else if (oId < e2Id)
-            new UIDSet3(e1, o, e2)
-        else if (oId == e2Id)
-            this
-        else
-            new UIDSet3(e1, e2, o)
+        else {
+            val e2Id = e2.id
+            if (oId < e2Id)
+                new UIDSet3(e1, o, e2)
+            else if (oId == e2Id)
+                this
+            else
+                new UIDSet3(e1, e2, o)
+        }
     }
 
     override def first: T = e1
@@ -446,22 +457,26 @@ final class UIDSet3[T <: UID] private[collection] (
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
         val oId = o.id
         val e1Id = e1.id
-        val e2Id = e2.id
-        val e3Id = e3.id
         if (oId < e1Id)
             new UIDSet4(o, e1, e2, e3)
         else if (oId == e1Id)
             this
-        else if (oId < e2Id)
-            new UIDSet4(e1, o, e2, e3)
-        else if (oId == e2Id)
-            this
-        else if (oId < e3Id)
-            new UIDSet4(e1, e2, o, e3)
-        else if (oId == e3Id)
-            this
-        else
-            new UIDSet4(e1, e2, e3, o)
+        else {
+            val e2Id = e2.id
+            if (oId < e2Id)
+                new UIDSet4(e1, o, e2, e3)
+            else if (oId == e2Id)
+                this
+            else {
+                val e3Id = e3.id
+                if (oId < e3Id)
+                    new UIDSet4(e1, e2, o, e3)
+                else if (oId == e3Id)
+                    this
+                else
+                    new UIDSet4(e1, e2, e3, o)
+            }
+        }
     }
 
     override def first = e1
