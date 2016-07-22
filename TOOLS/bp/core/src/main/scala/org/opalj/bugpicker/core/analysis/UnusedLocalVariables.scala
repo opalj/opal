@@ -80,6 +80,7 @@ import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
+import org.opalj.ai.analyses.cg.CallGraphFactory
 
 /**
  * Identifies unused local variables in non-synthetic methods.
@@ -109,9 +110,17 @@ object UnusedLocalVariables {
         val operandsArray = result.operandsArray
         val allUnused = result.domain.unused()
         val unused = allUnused.filter { vo ⇒
-            // filter unused local variables related to dead code...
-            // (we have another analysis for that)
-            vo < 0 || (operandsArray(vo) ne null)
+            // IMPROVE Improve the identification of unused method parameters... check if future overridings are possible; if it already overrides a method where the parameter is used...
+            (vo < 0 && (
+                (
+                    method.isPrivate &&
+                    !CallGraphFactory.isPotentiallySerializationRelated(classFile, method)(theProject.classHierarchy)
+                )
+            ) ||
+                    method.isStatic) ||
+                    // filter unused local variables related to dead code...
+                    // (we have another analysis for that)
+                    (vo >= 0 && (operandsArray(vo) ne null))
         }
 
         if (unused.isEmpty)
