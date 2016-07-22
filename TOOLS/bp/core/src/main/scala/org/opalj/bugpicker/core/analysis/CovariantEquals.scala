@@ -36,6 +36,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BooleanType
+import org.opalj.br.IntegerType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ObjectType
 import org.opalj.issues.Issue
@@ -46,8 +47,9 @@ import org.opalj.issues.ClassLocation
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not
- * `equals(Object)`. This is bad practice and can lead to unexpected behaviour, because
+ * `equals(Object)`. This is bad practice and can lead to unexpected behavior, because
  * without an `equals(Object)` method, `Object.equals(Object)` is not properly overridden.
+ * However, the relevance is determined by the presence of a hashCode method.
  *
  * @author Daniel Klauer
  * @author Michael Eichberg
@@ -64,12 +66,39 @@ object CovariantEquals {
      * @return Whether the class has `equals()` methods but not `equals(Object)`.
      */
     private def hasEqualsButNotEqualsObject(classFile: ClassFile): Boolean = {
-        val paramTypes = classFile.methods.collect(_ match {
-            case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) ⇒
-                paramType
-        })
+        val paramTypes = classFile.methods.collect {
+            case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) ⇒ paramType
+        }
 
         paramTypes.size > 0 && !paramTypes.exists(_ == ObjectType.Object)
+    }
+
+    private def hasHashCode(classFile: ClassFile): Boolean = {
+        classFile.methods.exists {
+            case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    private def superClassHasCustomHashCode(
+        classFile: ClassFile
+    )(
+        implicit
+        project: SomeProject
+    ): Boolean = {
+
+        if ((classFile.thisType eq ObjectType.Object) ||
+            (classFile.superclassType.get eq ObjectType.Object))
+            return false;
+
+        project.classHierarchy.lookupMethodDefinition(
+            classFile.superclassType.get,
+            "hashCode", MethodDescriptor.JustReturnsInteger,
+            project
+        ) match {
+                case Some(m) ⇒ project.classFile(m).thisType ne ObjectType.Object
+                case _       ⇒ false
+            }
     }
 
     /**
@@ -80,20 +109,35 @@ object CovariantEquals {
      * @return A list of reports, or an empty list.
      */
     def apply(
-        project:   SomeProject,
+
         classFile: ClassFile
+    )(
+        implicit
+        project: SomeProject
     ): Iterable[Issue] = {
 
-        if (hasEqualsButNotEqualsObject(classFile))
+        if (hasEqualsButNotEqualsObject(classFile)) {
+            var message = "missing equals(Object) to override Object.equals(Object)"
+            val relevance =
+                if (hasHashCode(classFile)) {
+                    message += " (the class overrides the standard hashCode method)"
+                    Relevance.VeryHigh
+                } else if (superClassHasCustomHashCode(classFile)) {
+                    message += " (a superclass overrides the standard hashCode method)"
+                    Relevance.High
+                } else {
+                    Relevance.Low
+                }
+
             Iterable(Issue(
                 "CovariantEquals",
-                Relevance.Moderate,
-                "missing equals(Object) to override Object.equals(Object)",
+                relevance,
+                message,
                 Set(IssueCategory.Correctness),
                 Set(IssueKind.DubiousMethodDefinition),
                 List(new ClassLocation(None, project, classFile))
             ))
-        else
+        } else
             Nil
 
     }
