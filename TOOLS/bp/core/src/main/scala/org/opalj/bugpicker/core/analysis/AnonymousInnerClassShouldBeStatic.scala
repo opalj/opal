@@ -178,18 +178,31 @@ object AnonymousInnerClassShouldBeStatic {
      * @return A list of reports, or an empty list.
      */
     def apply(project: SomeProject, classFile: ClassFile): Iterable[Issue] = {
-        if (project.isLibraryType(classFile)) return None;
+        if (project.isLibraryType(classFile) || classFile.isSynthetic)
+            return None;
 
         if (!(isAnonymousInnerClass(classFile) &&
             !isWithinAnonymousInnerClass(classFile) &&
             isOuterClassReferenceUsed(classFile).isNo))
             return None;
 
+        var supertype = classFile.superclassType.get.toJava
+
+        if (classFile.interfaceTypes.nonEmpty) {
+            val superInterfacetypes = classFile.interfaceTypes.map(_.toJava).mkString(" with ")
+
+            if (classFile.superclassType.get == ObjectType.Object)
+                supertype = superInterfacetypes
+            else
+                supertype += " implements "+superInterfacetypes
+
+        }
+
         Some(
             Issue(
                 "AnonymousInnerClassShouldBeStatic",
                 Relevance.Low,
-                "this inner class should be made static",
+                s"this inner class of type $supertype should be made static",
                 Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                 Set(IssueKind.MissingStaticModifier),
                 List(new ClassLocation(None, project, classFile))
