@@ -70,8 +70,9 @@ Additionally, the pull request has to meet the following conditions:
 A recommended read (to speed up the process of getting your pull request pulled):
  [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
 
-* Our Jenkins can be found [here](http://opal.st.informatik.tu-darmstadt.de:8080)
+* OPAL is build using Shippable.
 
 # Further Information #
 
+* [Questions regarding how to write analyses (Stackoverflow)](http://stackoverflow.com/questions/tagged/opal-framework?sort=newest)
 * [OPAL Project](http://www.opal-project.de)
