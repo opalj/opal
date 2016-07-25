@@ -230,19 +230,19 @@ class PropertyStore private (
      * @param entities Conceptually a set of entities for which we will acquire the locks in order
      * 		of the locks' ids.
      */
-    //     @inline final private[this] def withEntitiesWriteLocks[T](entityProperties: List[EntityProperties])(f: ⇒ T): T = {
-    //         val sortedEntities = entityProperties.sortWith((e1, e2) ⇒ e1.id < e2.id)
-    //         val entityLocks = sortedEntities.view.map(e ⇒ e.l)
-    //         withWriteLocks(entityLocks)(f)
-    //     }
-    //    @inline final private[this] def withEntitiesWriteLocks[T](
-    //        sortedEntityProperties: SortedSet[EntityProperties]
-    //    )(
-    //        f: ⇒ T
-    //    ): T = {
-    //        val entityLocks = sortedEntityProperties.view.map(e ⇒ e.l)
+    //    @inline final private[this] def withEntitiesWriteLocks[T](epss: List[EntityProperties])(f: ⇒ T): T = {
+    //        val sortedEntities = epss.sortWith((e1, e2) ⇒ e1.id < e2.id)
+    //        val entityLocks = sortedEntities.view.map(e ⇒ e.l)
     //        withWriteLocks(entityLocks)(f)
     //    }
+    //        @inline final private[this] def withEntitiesWriteLocks[T](
+    //            sortedEntityProperties: SortedSet[EntityProperties]
+    //        )(
+    //            f: ⇒ T
+    //        ): T = {
+    //            val entityLocks = sortedEntityProperties.view.map(e ⇒ e.l)
+    //            withWriteLocks(entityLocks)(f)
+    //        }
     @inline final private[this] def withEntitiesWriteLocks[T](
         sortedEntityProperties: UIDSet[EntityProperties]
     )(
@@ -605,7 +605,6 @@ class PropertyStore private (
      *
      * @note Querying the properties of the given entities will trigger lazy and direct property
      * 		computations.
-     *
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
@@ -621,7 +620,6 @@ class PropertyStore private (
      *
      * @note Querying the properties of the given entities will trigger lazy and direct property
      * 		computations.
-     *
      * @note The returned collection can be used to create an [[IntermediateResult]].
      */
     // Locks (indirectly): apply(Entity,PropertyKey)
@@ -645,12 +643,10 @@ class PropertyStore private (
      *
      * @note In general, the returned value may change over time but only such that it
      *      is strictly more precise.
-     *
      * @note Querying a property may trigger the computation of the property if the underlying
      * 		function is either a lazy or a direct property computation function. In general
      * 		It is preferred that clients always assume that the property is lazily computed
      * 		when calling this function!
-     *
      * @param e An entity stored in the property store.
      * @param pk The kind of property.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
@@ -778,7 +774,6 @@ class PropertyStore private (
      *              Result(method, Impure)
      *          }
      * }}}
-     *
      * @param dependerE The entity for which we are currently computing a property.
      * @param dependerPK The property that is currently computed for the entity `dependerE`.
      * @param dependeeE The entity about which some information is strictly required to compute the
@@ -905,7 +900,6 @@ class PropertyStore private (
      *
      * @note The returned iterator operates on a snapshot and will never throw any
      * 		`ConcurrentModificatonException`.
-     *
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
@@ -1069,7 +1063,6 @@ class PropertyStore private (
      * other analyses.
      *
      * @see `set(e:Entity,p:Property):Unit` for further details.
-     *
      * @param entitySelector A partial function that selects the entities of interest.
      * @param f The function that computes the respective property.
      */
@@ -1424,19 +1417,18 @@ class PropertyStore private (
 
                     if (scheduled == 0 && cleanUpRequired) {
                         cleanUpRequired = false
-                        // Let's check if we have some potentially refineable intermediate results.
-                        if (debug) logDebug(
-                            "analysis progress", s"all $executed scheduled tasks have finished"
-                        )
-
+                        if (debug) {
+                            val message = s"all $executed scheduled tasks have finished"
+                            logDebug("analysis progress", message)
+                        }
                         try {
                             if (!isInterrupted) {
                                 if (debug) {
-                                    Thread.sleep(250)
-                                    logDebug(
-                                        "analysis progress", s"handling unsatisfied dependencies"
-                                    )
+                                    val message = "handling unsatisfied dependencies"
+                                    logDebug("analysis progress", message)
                                 }
+                                // Let's check if we have some potentially refineable 
+                                // intermediate results.
                                 handleUnsatisfiedDependencies()
                             }
                         } catch {
@@ -1581,9 +1573,8 @@ class PropertyStore private (
                 )
                 observers.view.map(_._1)
             }
-            val cSCCs: List[Iterable[SomeEPK]] = closedSCCs(
-                cyclicComputableEPKCandidates, epkSuccessors
-            )
+            val cSCCs: List[Iterable[SomeEPK]] =
+                closedSCCs(cyclicComputableEPKCandidates, epkSuccessors)
             if (debug && cSCCs.nonEmpty) logDebug(
                 "analysis progress",
                 cSCCs.
@@ -1601,8 +1592,10 @@ class PropertyStore private (
                         handleResult(result)
                     }
                 } else {
+                    // The following handles the case of a cycle where...
                     if (debug) {
-                        val infoMessage = s"\tresolution produced no results; removing observers\n\t"
+                        val cycle = cSCC.mkString("", " → ", " ↺")
+                        val infoMessage = s"resolution of $cycle produced no results; removing observers"
                         logInfo("analysis progress", infoMessage)
                     }
                     for (epk ← cSCC) { clearAllDependeeObservers(epk) }
@@ -1991,22 +1984,21 @@ class PropertyStore private (
                     )
 
                     val dependerPK = dependerP.key
-                    val dependerEPK = EPK(dependerE, dependerPK)
 
                     if (debug) assert(
-                        !dependees.exists(_ == dependerEPK),
+                        { val epk = EPK(dependerE, dependerPK); !dependees.exists(_ == epk) },
                         s"$dependerE: self-recursive computation of $dependerPK"
                     )
 
-                    // val accessedEntities = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
-                    // val accessedEntities = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList
-                    //val accessedEntities =
+                    //val accessedEPs = dependees.map(_.e) ++ Set(dependerE) // make dependees a Seq
+                    //val accessedEPs = data.get(dependerE) :: dependees.view.map(d ⇒ data.get(d.e)).toList
+                    //val accessedEPs =
                     //    SortedSet(data.get(dependerE))(EntityPropertiesOrdering) ++
                     //        dependees.view.map(d ⇒ data.get(d.e))
-                    val accessedEntities =
-                        UIDSet(data.get(dependerE)) ++ dependees.view.map(d ⇒ data.get(d.e))
-
-                    withEntitiesWriteLocks(accessedEntities) {
+                    val dependerEP = UIDSet(data.get(dependerE))
+                    //val accessedEPs = accessedDepender ++ dependees.view.map(d ⇒ data.get(d.e))
+                    val accessedEPs = dependees.foldLeft(dependerEP)((c, d) ⇒ c + data.get(d.e))
+                    withEntitiesWriteLocks(accessedEPs) {
                         /*internal*/ /* assert(
                             { val os = observers.get(dependerEPK); (os eq null) || (os.isEmpty) },
                             s"observers of $dependerEPK should be empty, but contains ${observers.get(dependerEPK)}"
