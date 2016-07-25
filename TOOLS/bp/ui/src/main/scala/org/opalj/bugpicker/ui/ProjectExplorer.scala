@@ -34,7 +34,7 @@ import java.io.File
 import java.io.FilenameFilter
 import java.net.URL
 
-import scala.collection.mutable.Map
+import scala.collection.mutable
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DomainRegistry
@@ -74,10 +74,10 @@ class ProjectExplorer(
         stage: Stage
 ) {
 
-    private[this] val projectPackageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem] = scala.collection.mutable.Map.empty
-    private[this] val libraryPackageStructure: scala.collection.mutable.Map[String, ProjectExplorerTreeItem] = scala.collection.mutable.Map.empty
-    private[this] val projectClassFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = scala.collection.mutable.Map.empty
-    private[this] val libraryClassFileStructure: scala.collection.mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = scala.collection.mutable.Map.empty
+    private[this] val projectPackageStructure: mutable.Map[String, ProjectExplorerTreeItem] = mutable.Map.empty
+    private[this] val libraryPackageStructure: mutable.Map[String, ProjectExplorerTreeItem] = mutable.Map.empty
+    private[this] val projectClassFileStructure: mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = mutable.Map.empty
+    private[this] val libraryClassFileStructure: mutable.Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = mutable.Map.empty
     private[this] var project: Project[URL] = null
     private[this] var sources: Seq[File] = Seq.empty
 
@@ -448,7 +448,7 @@ class ProjectExplorer(
                 pageContent.append(lineSep)
             }
 
-            pageContent.append(s"</ul>$lineSep")
+            pageContent.append(s"</ul>$lineSep}")
             propView.engine.loadContent(pageContent.toString)
         }
 
@@ -491,7 +491,10 @@ class ProjectExplorer(
         }
     }
 
-    private def decompileClassFile(project: Project[URL], theType: ObjectType): Option[org.opalj.da.ClassFile] = {
+    private def decompileClassFile(
+        project: Project[URL],
+        theType: ObjectType
+    ): Option[org.opalj.da.ClassFile] = {
         project.source(theType).map { url ⇒
             val inStream = url.openStream
             val cf = org.opalj.da.ClassFileReader.ClassFile(() ⇒ inStream)
@@ -503,7 +506,7 @@ class ProjectExplorer(
 
 object ProjectExplorer {
 
-    private[this] val imageCache: Map[String, Image] = Map(
+    private[this] val imageCache: mutable.Map[String, Image] = mutable.Map(
         "fallback" → new Image("/org/opalj/bugpicker/ui/explorer/error.gif")
     )
 
