@@ -54,7 +54,7 @@ import org.opalj.issues.IssueKind
 import org.opalj.issues.Relevance
 
 /**
- * Identifies unused local variables
+ * Identifies cases where the collections API is not used as intended.
  *
  * @author Michael Eichberg
  */
@@ -80,7 +80,7 @@ object CollectionsUsage {
         val domain = result.domain
         val code = domain.code
         val instructions = code.instructions
-        code.foreach { (pc, instruction) ⇒
+        code foreach { (pc, instruction) ⇒
             instruction match {
 
                 case INVOKESTATIC(Collections, false, "unmodifiableCollection", unmodifiableCollectionMethodDescriptor) ⇒
@@ -89,6 +89,7 @@ object CollectionsUsage {
                         origins.size == 1 &&
                         origins.head >= 0 && // the origin is not a parameter
                         instructions(origins.head).opcode == NEW.opcode) {
+                        // FIXME Add check if something is done in a loop
                         // there is just one path on which the value is initialized
                         val usages = domain.usedBy(origins.head)
                         if (usages.size == 2) {
@@ -130,6 +131,7 @@ object CollectionsUsage {
                                     case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
                                         foundConstructorCall = true
 
+                                        // TODO Support the case of a call to addElement
                                     case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) |
                                         INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) ⇒
                                         // is it the receiver or the parameter (in relation to a different collection?
@@ -157,9 +159,7 @@ object CollectionsUsage {
                                             Some("useless"),
                                             theProject, classFile, method, origins.head
                                         )
-
                                     )
-
                                 )
                             }
                         }
