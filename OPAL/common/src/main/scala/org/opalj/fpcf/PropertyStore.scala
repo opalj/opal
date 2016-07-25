@@ -2028,16 +2028,14 @@ class PropertyStore private (
 
                         var dependeeEPKs = List.empty[SomeEPK]
 
-                        val updatedDependee = dependees.find { eOptionP ⇒
+                        val updatedDependee = dependees.exists { eOptionP ⇒
 
                             val dependeeE = eOptionP.e
                             val dependeePK = eOptionP.pk
                             val dependeePKId = dependeePK.id
-                            val dependeeEPK = EPK(dependeeE, dependeePK)
 
                             val dependeeCurrentEPs = data.get(dependeeE)
                             val dependeeCurrentPs = dependeeCurrentEPs.ps
-
                             val dependeeCurrentPOs = dependeeCurrentPs(dependeePKId)
                             if ((dependeeCurrentPOs eq null) ||
                                 (dependeeCurrentPOs.p eq null) ||
@@ -2045,7 +2043,7 @@ class PropertyStore private (
                                     dependeeCurrentPOs.p == eOptionP.p &&
                                     (dependeeCurrentPOs.os ne null))) {
                                 // => the dependee's property and status (!) has not changed
-                                dependeeEPKs = dependeeEPK :: dependeeEPKs
+                                dependeeEPKs = EPK(dependeeE, dependeePK) :: dependeeEPKs
                                 false
                             } else {
                                 val updateType =
@@ -2061,15 +2059,17 @@ class PropertyStore private (
                                         s"currentP=${dependeeCurrentPOs.p}, "+
                                         s"updateType=$updateType"
                                 )
+                                // println("potential for savings.....")
                                 scheduleContinuation(dependeeE, dependeeCurrentPOs.p, updateType, c)
                                 true
                             }
                         }
 
-                        if (updatedDependee.isEmpty) {
+                        if (!updatedDependee) {
                             // we use ONE observer to make sure that the continuation function
                             // is called at most once - independent of how many entities are
                             // actually observed
+                            val dependerEPK = EPK(dependerE, dependerPK)
                             val o = new DependeePropertyObserver(dependerEPK, clearAllDependeeObservers) {
                                 def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
                                     /*internal*/ /* assert(
@@ -2087,15 +2087,12 @@ class PropertyStore private (
                                 val dependeePKId = dependeePK.id
 
                                 val dependeeCurrentPOs = dependeeCurrentPs(dependeePKId)
-                                val dependeeOs =
-                                    if (dependeeCurrentPOs eq null) {
-                                        val dependeeOs: Buffer[PropertyObserver] = Buffer.empty
-                                        dependeeCurrentPs(dependeePKId) = new PropertyAndObservers(null, dependeeOs)
-                                        dependeeOs
-                                    } else {
-                                        dependeeCurrentPOs.os
-                                    }
-                                dependeeOs += o
+                                if (dependeeCurrentPOs eq null) {
+                                    val dependeeOs: Buffer[PropertyObserver] = Buffer(o)
+                                    dependeeCurrentPs(dependeePKId) = new PropertyAndObservers(null, dependeeOs)
+                                } else {
+                                    dependeeCurrentPOs.os += o
+                                }
                                 registerDependeeObserverWithItsDepender(dependeeEPK, o)
                             }
                         }
