@@ -674,6 +674,18 @@ class PropertyStore private (
             FinalEP(e, ps(pkId).p.asInstanceOf[P])
         }
 
+        // quick path without locks...
+        {
+            val pos = ps.apply(pkId)
+            if (pos ne null) {
+                val p = pos.p
+                if ((p ne null) && !p.isBeingComputed && p.isFinal) {
+                    // println("quick check succeeded")
+                    return EP(e, p.asInstanceOf[P]);
+                }
+            }
+        }
+
         accessEntity {
             // Thread safety: We use double checked locking w.r.t. the entity to ensure that
             // we minimize the time we have to keep some lock.
