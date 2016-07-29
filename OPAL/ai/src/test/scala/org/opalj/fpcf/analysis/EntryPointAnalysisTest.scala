@@ -18,7 +18,7 @@ abstract class EntryPointAnalysisTest extends AbstractFixpointAnalysisAssumption
 
     override def testFilePath = "ai"
 
-    override def analysisRunner = LibraryEntryPointsAnalysis
+    override def analysisRunner = EntryPointsAnalysis
 
     override def propertyKey: PropertyKey[EntryPoint] = EntryPoint.Key
 

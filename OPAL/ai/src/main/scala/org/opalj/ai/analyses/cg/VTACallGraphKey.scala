@@ -31,21 +31,11 @@ package ai
 package analyses
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKey
 import br.analyses.ProjectInformationKey
 import br.analyses.SomeProject
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.fpcf.properties.IsEntryPoint
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.InjectedClassesInformationKey
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.opalj.br.MethodDescriptor
-import org.opalj.log.OPALLogger
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analysis.JavaEEEntryPointsAnalysis
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
@@ -60,7 +50,6 @@ import org.opalj.fpcf.analysis.JavaEEEntryPointsAnalysis
  *      {{{
  *      val ComputedCallGraph = project.get(VTACallGraphKey)
  *      }}}
- *
  * @author Michael Eichberg
  * @author Michael Reif
  */
@@ -69,7 +58,7 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
     override protected def requirements =
         Seq(
             InjectedClassesInformationKey,
-            FPCFAnalysesManagerKey,
+            EntryPointKey,
             SourceElementsPropertyStoreKey,
             InstantiableClassesKey,
             FieldValuesKey,
@@ -80,64 +69,18 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
+        import AnalysisModes.isLibraryLike
 
-        val analysisMode = project.analysisMode
-
-        //TODO Develop entry point analysis for desktop applications.
-        val entryPoints = analysisMode match {
-            case AnalysisModes.DesktopApplication ⇒
-                // This entry point set can be used but it is unnecessary imprecise...
-                CallGraphFactory.defaultEntryPointsForLibraries(project)
-            case AnalysisModes.JEE6WebApplication ⇒ {
-                val fpcfManager = project.get(FPCFAnalysesManagerKey)
-                if (!fpcfManager.isDerived(JavaEEEntryPointsAnalysis.derivedProperties))
-                    fpcfManager.runWithRecommended(JavaEEEntryPointsAnalysis)(true)
-                val propertyStore = project.get(SourceElementsPropertyStoreKey)
-                propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
-            }
-            case _ ⇒
-                throw new IllegalArgumentException(s"This call graph does not support the current analysis mode: $analysisMode")
+        if (isLibraryLike(project.analysisMode)) {
+            throw new IllegalArgumentException(s"This call graph does not support the current analysis mode: ${project.analysisMode}")
         }
 
-        // add configured entry points (e.g. called in native code, reflection or a web server)
-
-        val configEntryPoints = getConfigEntryPoints(project)
-
-        // create call graph
+        val entryPoints = project.get(EntryPointKey).getEntryPoints()
 
         CallGraphFactory.create(
             project,
-            () ⇒ entryPoints ++ configEntryPoints,
+            () ⇒ entryPoints,
             new DefaultVTACallGraphAlgorithmConfiguration(project)
         )
     }
-
-    private[this] def getConfigEntryPoints(project: SomeProject): Set[Method] = {
-
-        if (!project.config.hasPath("org.opalj.callgraph.entryPoints")) {
-            OPALLogger.warn("project config", "no config entry for additional entry points has been found")(project.logContext)
-            return Set.empty;
-        }
-
-        val configEntryPoints = project.config.as[List[EntryPoint]]("org.opalj.callgraph.entryPoints")
-        (configEntryPoints map { ep ⇒
-            val EntryPoint(epDeclaringClass, epName, epDescriptor) = ep
-            val ot = ObjectType(epDeclaringClass)
-            project.classFile(ot) match {
-                case Some(cf) ⇒
-                    if (epDescriptor.isEmpty)
-                        cf.methods.filter { method ⇒ method.name == epName }
-                    else {
-                        val md = MethodDescriptor(ep.descriptor.get)
-                        cf.methods.filter { method ⇒
-                            (method.descriptor == md) && (method.name == epName)
-                        }
-                    }
-                case None ⇒
-                    IndexedSeq.empty[Method]
-            }
-        }).foldLeft(Set.empty[Method])((res, methods) ⇒ res ++ methods)
-    }
 }
-
-private[cg] case class EntryPoint(val declaringClass: String, name: String, descriptor: Option[String])

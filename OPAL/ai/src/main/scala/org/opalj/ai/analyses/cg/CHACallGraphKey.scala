@@ -32,13 +32,8 @@ package analysis
 package cg
 package cha
 
-import org.opalj.br.Method
-import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.fpcf.properties.IsEntryPoint
-import org.opalj.ai.analyses.cg.CallGraphFactory
-import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.ai.analyses.cg._
 import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
-import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 import org.opalj.br.analyses._
 
 /**
@@ -60,7 +55,7 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      *
      * @return `Nil`.
      */
-    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey, IntStatisticsKey)
+    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey, IntStatisticsKey, EntryPointKey)
 
     /**
      * Computes the `CallGraph` for the given project.
@@ -69,42 +64,11 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
         val analysisMode = project.analysisMode
         val isLibrary = analysisMode == AnalysisModes.CPA || analysisMode == AnalysisModes.OPA
-        val entryPoints = analysisMode match {
-            case AnalysisModes.DesktopApplication ⇒
-                // This entry point set can be used but it is unnecessary imprecise...
-                CallGraphFactory.defaultEntryPointsForLibraries(project)
-            case AnalysisModes.JEE6WebApplication ⇒ {
-                val fpcfManager = project.get(FPCFAnalysesManagerKey)
-                if (!fpcfManager.isDerived(JavaEEEntryPointsAnalysis.derivedProperties))
-                    fpcfManager.runWithRecommended(JavaEEEntryPointsAnalysis)(true)
-                getEntryPointsFromPropertyStore(project)
-            }
-            case _ if isLibrary ⇒
-                val fpcfManager = project.get(FPCFAnalysesManagerKey)
-                if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
-                    fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
-                getEntryPointsFromPropertyStore(project)
-            case _ ⇒
-                throw new UnknownError(s"The given analysisMode is not supported: $analysisMode")
-        }
-
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(LibraryEntryPointsAnalysis.derivedProperties))
-            fpcfManager.runWithRecommended(LibraryEntryPointsAnalysis)(true)
-
-        project.get(InstantiableClassesKey)
+        val entryPoints = project.get(EntryPointKey).getEntryPoints()
 
         CallGraphFactory.create(
             project, () ⇒ entryPoints,
             new CHACallGraphAlgorithmConfiguration(project, isLibrary)
         )
-    }
-
-    /*
-     * Get all methods from the property store that are entry points.
-     */
-    private[this] def getEntryPointsFromPropertyStore(project: SomeProject): Set[Method] = {
-        val propertyStore = project.get(SourceElementsPropertyStoreKey)
-        propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }.toSet
     }
 }
