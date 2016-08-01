@@ -30,6 +30,7 @@ package org.opalj
 package collection
 package immutable
 
+import java.util.{Arrays ⇒ JArrays}
 import UIDSet.Relation
 
 /**
@@ -645,7 +646,7 @@ private final class UIDArraySet[T <: UID](
     }
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
-        val index = java.util.Arrays.binarySearch(es, o, UIDBasedOrdering)
+        val index = JArrays.binarySearch(es, o, UID.UIDBasedOrdering)
         if (index >= 0)
             this
         else {
@@ -661,7 +662,7 @@ private final class UIDArraySet[T <: UID](
     override def exists[X >: T](f: X ⇒ Boolean): Boolean = es.exists { e ⇒ f(e.asInstanceOf[T]) }
 
     override def contains[X >: T <: UID](o: X): Boolean = {
-        val index = java.util.Arrays.binarySearch(es, o, UIDBasedOrdering)
+        val index = JArrays.binarySearch(es, o, UID.UIDBasedOrdering)
         index >= 0
     }
 
