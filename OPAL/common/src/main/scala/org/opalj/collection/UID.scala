@@ -30,18 +30,18 @@ package org.opalj
 package collection
 
 /**
- * Implemented by objects that have – by construction - unique ids in a well-defined
- * scope. Typically the unique ids have to different among all object that (in)directly
- * inherit from the class/trait that inherits from UID.
- *
- * Furthermore, two data structures that are not ''equal'' have to have two different ids.
+ * Identifies objects which have a – potentially context dependent – unique id.
+ * I.e., this trait is implemented by objects that have – by construction -
+ * unique ids in a well-defined scope.
+ * @note Two object that are not equal may have the same id, if both objects
+ * 		do not have the same context.
  *
  * @author Michael Eichberg
  */
 trait UID {
 
     /**
-     * This object's unique id.
+     * This object's context dependent unique id.
      */
     def id: Int
 
@@ -70,5 +70,17 @@ object UID {
             t
         }
     }
+
+    /**
+     * Ordering for sorted collections of elements of type `UID`.
+     *
+     * @author Michael Eichberg
+     */
+    implicit object UIDBasedOrdering extends Ordering[UID] {
+
+        def compare(a: UID, b: UID): Int = a.id - b.id
+
+    }
+
 }
 
