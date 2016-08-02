@@ -42,7 +42,7 @@ import scala.collection.JavaConverters._
 import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 import java.io.ByteArrayInputStream
 
-import org.opalj.io.FailWhenByteArrayOutputStream
+import org.opalj.io.FailAfterByteArrayOutputStream
 import java.io.IOException
 import java.io.DataOutputStream
 import org.opalj.bi.TestSupport
@@ -112,7 +112,7 @@ class AssemberTest extends FlatSpec with Matchers {
                                     classFile
                                 )(
                                     Assembler.RichClassFile,
-                                    new DataOutputStream(new FailWhenByteArrayOutputStream(i, raw.length)),
+                                    new DataOutputStream(new FailAfterByteArrayOutputStream(i)(raw.length)),
                                     (s, i) ⇒ {}
                                 )
                             } catch {

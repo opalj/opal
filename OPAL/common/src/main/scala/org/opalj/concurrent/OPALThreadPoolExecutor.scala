@@ -37,10 +37,12 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.{Future ⇒ JFuture}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * A ThreadPool that knows the ThreadGroup associated with its threads and that
- * catches exceptions if a thread crashes and reports them using the OPALLogger facility.
+ * A ThreadPool that knows the `ThreadGroup` associated with its threads and that
+ * catches exceptions if a thread crashes and reports them using the OPALLogger
+ * facility.
  *
  * @author Michael Eichberg
  */
@@ -53,7 +55,7 @@ class OPALThreadPoolExecutor(
     new LinkedBlockingQueue[Runnable](),
     new ThreadFactory {
 
-        val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
+        val nextID = new AtomicLong(0l)
 
         def newThread(r: Runnable): Thread = {
             val id = s"${nextID.incrementAndGet()}"
