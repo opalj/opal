@@ -81,10 +81,14 @@ object Disassembler {
         }
 
         val jarName = args(0)
+        val jarFile = new File(jarName)
         if (args.length == 1) {
-            val classFiles = ClassFileReader.ClassFiles(new File(jarName))
+            val classFiles = ClassFileReader.ClassFiles(jarFile)
             if (classFiles.isEmpty) {
-                OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
+                if (jarFile.exists())
+                    OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
+                else
+                    OPALLogger.error("setup", s"the specified file does not exist ${args(0)}")
             } else {
                 classFiles.foreach(cfi ⇒ processClassFile(cfi._1))
             }
