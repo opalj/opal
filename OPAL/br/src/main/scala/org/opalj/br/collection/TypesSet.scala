@@ -38,7 +38,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-abstract class TypesSet {
+abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
     def concreteTypes: Set[ObjectType]
     def upperTypeBounds: Set[ObjectType]

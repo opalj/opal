@@ -245,11 +245,11 @@ object ACC_MANDATED extends AccessFlag {
 }
 
 /**
- * 
- * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is 
- * 		mandatory in the static phase, i.e., at compile time, but is optional in the 
+ *
+ * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is
+ * 		mandatory in the static phase, i.e., at compile time, but is optional in the
  * 		dynamic phase, i.e., at run time."
- * @note Only used in combination with Java 9 modules. 
+ * @note Only used in combination with Java 9 modules.
  */
 object ACC_STATIC_PHASE extends AccessFlag {
     final override val javaName: None.type = None
@@ -258,11 +258,11 @@ object ACC_STATIC_PHASE extends AccessFlag {
 }
 
 /**
- * 
- * @note From the JVM 9 specification: "Indicates that the package is concealed in the 
- * 		static phase, i.e., at compile time, but is exported in the dynamic phase, i.e., 
+ *
+ * @note From the JVM 9 specification: "Indicates that the package is concealed in the
+ * 		static phase, i.e., at compile time, but is exported in the dynamic phase, i.e.,
  * 		at run time."
- * @note Only used in combination with Java 9 modules. 
+ * @note Only used in combination with Java 9 modules.
  */
 object ACC_DYNAMIC_PHASE extends AccessFlag {
     final override val javaName: None.type = None

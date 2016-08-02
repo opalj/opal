@@ -30,59 +30,78 @@ package org.opalj
 package bi
 package reader
 
+import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 
 /**
- * The TargetPlatform attribute is an attribute in the attributes table
- * of a module definition (Java 9).
+ * Generic parser for the ''ConcealedPackages'' attribute (Java 9).
  *
  * @author Michael Eichberg
  */
-trait TargetPlatform_attributeReader extends AttributeReader {
+trait ConcealedPackages_attributeReader extends AttributeReader {
 
-    type TargetPlatform_attribute <: Attribute
+    type ConcealedPackages_attribute <: Attribute
+
+    type ConcealedPackagesEntry
+    implicit val ConcealedPackagesEntryManifest: ClassTag[ConcealedPackagesEntry]
+
+    def ConcealedPackages_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        packages:             ConcealedPackages // basically a list of strings
+    ): ConcealedPackages_attribute
 
     /**
-     * @note if the indexes are zero then the field is empty!
+     * @param packageIndex Points to the name in internal form of a package in
+     * 		the current module that is ''not to be exported''.
      */
-    def TargetPlatform_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        osNameIndex:        Constant_Pool_Index, // CONSTANT_UTF8
-        osArchIndex:        Constant_Pool_Index, // CONSTANT_UTF8
-        osVersionIndex:     Constant_Pool_Index // CONSTANT_UTF8
-    ): TargetPlatform_attribute
+    def ConcealedPackagesEntry(
+        constant_pool: Constant_Pool,
+        packageIndex:  Constant_Pool_Index // CONSTANT_UTF8
+    ): ConcealedPackagesEntry
 
-    /* From the Specification
-     *
+    //
+    // IMPLEMENTATION
+    //
+
+    type ConcealedPackages = IndexedSeq[ConcealedPackagesEntry]
+
+    /*
      * <pre>
-     * TargetPlatform_attribute {
+     * ConcealedPackages_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
      * 
-     *     u2 os_name_index;
-     *     u2 os_arch_index;
-     *     u2 os_version_index;
+     *     u2 packages_count;
+     *     {   u2 package_index;
+     *     } packages[package_count];
      * }
      * </pre>
      */
     registerAttributeReader(
-        TargetPlatform_attributeReader.ATTRIBUTE_NAME → (
+        ConcealedPackages_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                TargetPlatform_attribute(
-                    cp, attribute_name_index,
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort()
-                )
+                /*val attribute_length = */ in.readInt()
+                val packagesCount = in.readUnsignedShort()
+                if (packagesCount > 0 || reifyEmptyAttributes) {
+                    ConcealedPackages_attribute(
+                        cp,
+                        attribute_name_index,
+                        repeat(packagesCount) {
+                            ConcealedPackagesEntry(cp, in.readUnsignedShort)
+                        }
+                    )
+                } else
+                    null
             }
         )
     )
 }
 
-object TargetPlatform_attributeReader {
+object ConcealedPackages_attributeReader {
 
-    val ATTRIBUTE_NAME = "TargetPlatform"
+    val ATTRIBUTE_NAME = "ConcealedPackages"
 
 }
+

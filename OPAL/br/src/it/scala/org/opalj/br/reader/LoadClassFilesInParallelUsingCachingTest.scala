@@ -51,12 +51,6 @@ class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
         classFile.thisType.fqn should not be null
     }
 
-    private def interfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
-        commonValidator(classFile, source)
-        // the body of no method should be available
-        classFile.methods.forall(m ⇒ m.body.isEmpty)
-    }
-
     behavior of "OPAL"
 
     val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
@@ -64,7 +58,6 @@ class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
 
     val cache = new BytecodeInstructionsCache
     val reader = new Java8FrameworkWithCaching(cache)
-    val libraryReader = new Java8LibraryFrameworkWithCaching(cache)
 
     for {
         file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
@@ -74,13 +67,6 @@ class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
             reader.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 commonValidator(cf, s)
-            }
-        }
-
-        it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel using caching") in {
-            libraryReader.ClassFiles(file) foreach { cs ⇒
-                val (cf, s) = cs
-                interfaceValidator(cf, s)
             }
         }
     }

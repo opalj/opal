@@ -46,6 +46,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
 import org.opalj.de.DependencyTypes.toUsageDescription
+import org.opalj.br.reader.Java8LibraryFramework
 
 /**
  * A specification of a project's architectural constraints.
@@ -870,7 +871,7 @@ object Specification {
 
         OPALLogger.info("creating project", s"loading library $jarName")(GlobalLogContext)
 
-        Project.Java8LibraryClassFileReader.ClassFiles(file)
+        Java8LibraryFramework.ClassFiles(file)
     }
 
     /**

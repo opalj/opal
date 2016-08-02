@@ -27,30 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bi
 package reader
 
-import org.opalj.bi.reader.CodeReader
+import java.io.DataInputStream
 
 /**
- * This "framework" can be used to read in Java 8 (version 52) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented. Instructions will be cached.
+ * The MainClass attribute is an attribute in the attributes table
+ * of a module definition (Java 9).
  *
  * @author Michael Eichberg
  */
-class Java8FrameworkWithCaching(val cache: BytecodeInstructionsCache)
-    extends Java8LibraryFramework
-    with CodeAttributeBinding
-    with SourceDebugExtension_attributeBinding
-    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
-    // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
-    with BootstrapMethods_attributeBinding
-    with StackMapTable_attributeBinding
-    with CompactLineNumberTable_attributeBinding
-    with LocalVariableTable_attributeBinding
-    with LocalVariableTypeTable_attributeBinding
-    with Exceptions_attributeBinding
-    with CachedBytecodeReaderAndBinding
-    with CodeReader
+trait MainClass_attributeReader extends AttributeReader {
 
+    type MainClass_attribute <: Attribute
+
+    def MainClass_attribute(
+        cp:                 Constant_Pool,
+        attributeNameIndex: Constant_Pool_Index,
+        mainClassIndex:     Constant_Pool_Index // CONSTANT_CLASS
+    ): MainClass_attribute
+
+    /* From the Specification
+     *
+     * <pre>
+     * MainClass_attribute {
+     *     u2 attribute_name_index;
+     *     u4 attribute_length;
+     * 
+     *     u2 main_class_index;
+     * }
+     * </pre>
+     */
+    registerAttributeReader(
+        MainClass_attributeReader.ATTRIBUTE_NAME → (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                /*val attribute_length =*/ in.readInt
+                MainClass_attribute(cp, attribute_name_index, in.readUnsignedShort())
+            }
+        )
+    )
+}
+
+object MainClass_attributeReader {
+
+    val ATTRIBUTE_NAME = "MainClass"
+
+}

@@ -45,7 +45,7 @@ trait Version_attributeReader extends AttributeReader {
     def Version_attribute(
         cp:                 Constant_Pool,
         attributeNameIndex: Constant_Pool_Index,
-        versionIndex: Constant_Pool_Index // CONSTANT_UTF8 (!)
+        versionIndex:       Constant_Pool_Index // CONSTANT_UTF8 (!)
     ): Version_attribute
 
     /* From the Specification
@@ -63,7 +63,7 @@ trait Version_attributeReader extends AttributeReader {
         Version_attributeReader.ATTRIBUTE_NAME → (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 /*val attribute_length =*/ in.readInt
-                Version_attribute(cp, attribute_name_index,in.readUnsignedShort())
+                Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
             }
         )
     )

@@ -43,7 +43,7 @@ import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
+import org.opalj.br.reader.Java8LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
@@ -718,8 +718,6 @@ object Project {
 
     lazy val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
 
-    lazy val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
-
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
@@ -763,7 +761,7 @@ object Project {
     ): Project[URL] = {
         apply(
             Java8ClassFileReader.ClassFiles(projectFile),
-            Java8LibraryClassFileReader.ClassFiles(libraryFile),
+            Java8LibraryFramework.ClassFiles(libraryFile),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
@@ -775,7 +773,7 @@ object Project {
     ): Project[URL] = {
         apply(
             Java8ClassFileReader.AllClassFiles(projectFiles),
-            Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
+            Java8LibraryFramework.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )

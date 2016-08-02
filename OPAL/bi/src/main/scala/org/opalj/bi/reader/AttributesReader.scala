@@ -118,9 +118,9 @@ trait AttributesReader
      * <ul>
      * <li>Module_attribute</li>
      * <li>ConcealedPackages_attribute</li>
-     * <li>Version_attribute</li>     
+     * <li>Version_attribute</li>
      * <li>MainClass_attribute</li>
-     * <li>TargetPlatform_attribute</li> 
+     * <li>TargetPlatform_attribute</li>
      * </ul>
      *
      * The returned function is allowed to return null; in this case the attribute
