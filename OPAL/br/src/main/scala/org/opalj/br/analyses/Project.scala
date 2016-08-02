@@ -1109,7 +1109,7 @@ object Project {
      */
     private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
 
-        val disclaimer = "(this inconsistency may lead to analyses failing miserably)"
+        val disclaimer = "(this inconsistency may lead to completely useless results)"
 
         val ch = p.classHierarchy
 
