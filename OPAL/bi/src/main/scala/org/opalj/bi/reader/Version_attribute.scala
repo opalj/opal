@@ -27,39 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bi
 package reader
 
-import org.opalj.bi.reader.AttributesReader
-import org.opalj.bi.reader.SkipUnknown_attributeReader
+import java.io.DataInputStream
 
 /**
- * This "framework" can be used to read in Java 8 (version 52) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method bodies.
+ * The Version attribute is an attribute in the attributes table
+ * of a module definition (Java 9).
  *
  * @author Michael Eichberg
  */
-class Java8LibraryFrameworkWithCaching(
-    final val cache: BytecodeInstructionsCache
-)
-        extends ConstantPoolBinding
-        with FieldsBinding
-        with MethodsBinding
-        with ClassFileBinding
-        with AttributesReader
-        /* If you want unknown attributes to be represented uncomment the following: */
-        // with Unknown_attributeBinding
-        /* and comment out the following line: */
-        with SkipUnknown_attributeReader
-        with AnnotationAttributesBinding
-        with InnerClasses_attributeBinding
-        with EnclosingMethod_attributeBinding
-        with SourceFile_attributeBinding
-        with Deprecated_attributeBinding
-        with Signature_attributeBinding
-        with Synthetic_attributeBinding
-        with ConstantValue_attributeBinding
-        with MethodParameters_attributeBinding
-        with TypeAnnotationAttributesBinding
+trait Version_attributeReader extends AttributeReader {
 
+    type Version_attribute <: Attribute
+
+    def Version_attribute(
+        cp:                 Constant_Pool,
+        attributeNameIndex: Constant_Pool_Index,
+        versionIndex: Constant_Pool_Index // CONSTANT_UTF8 (!)
+    ): Version_attribute
+
+    /* From the Specification
+     *
+     * <pre>
+     * Version_attribute {
+     *     u2 attribute_name_index;
+     *     u4 attribute_length;
+     * 
+     *     u2 version_index;
+     * }
+     * </pre>
+     */
+    registerAttributeReader(
+        Version_attributeReader.ATTRIBUTE_NAME → (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                /*val attribute_length =*/ in.readInt
+                Version_attribute(cp, attribute_name_index,in.readUnsignedShort())
+            }
+        )
+    )
+}
+
+object Version_attributeReader {
+
+    val ATTRIBUTE_NAME = "Version"
+
+}

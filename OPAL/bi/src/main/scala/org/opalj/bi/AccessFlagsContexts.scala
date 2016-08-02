@@ -64,7 +64,8 @@ object AccessFlagsContexts extends Enumeration {
             ACC_ABSTRACT,
             ACC_SYNTHETIC,
             ACC_ANNOTATION,
-            ACC_ENUM
+            ACC_ENUM,
+            ACC_MODULE
         )
 
     val FIELD_FLAGS: IndexedSeq[AccessFlag] =

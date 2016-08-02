@@ -43,6 +43,8 @@ trait Java7Framework
     extends Java7LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
+    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
+    // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY    
     with BootstrapMethods_attributeBinding
     with StackMapTable_attributeBinding
     with CompactLineNumberTable_attributeBinding

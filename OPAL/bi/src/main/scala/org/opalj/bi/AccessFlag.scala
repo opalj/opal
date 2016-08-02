@@ -222,8 +222,50 @@ object ACC_ENUM extends AccessFlag {
     override def toString = "ENUM"
 }
 
+/**
+ * Identifies a class as defining a Java 9 module.
+ *
+ * @note From the specification: "If ACC_MODULE is set in ClassFile.access_flags, then
+ * 		no other flag in `ClassFile.access_flags` may be set."
+ * 		The name of the class has to be "/module-info".
+ * @note '''super_class, interfaces_count, fields_count, methods_count: zero. I.e.,
+ * 		a module does not have a super class.'''
+ * @note Only used in combination with Java 9 modules.
+ */
+object ACC_MODULE extends AccessFlag {
+    final override val javaName: None.type = None
+    final override val mask = 0x8000 // SAME AS ACC_MANDATED (!)
+    override def toString = "MODULE"
+}
+
 object ACC_MANDATED extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x8000
     override def toString = "MANDATED"
+}
+
+/**
+ * 
+ * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is 
+ * 		mandatory in the static phase, i.e., at compile time, but is optional in the 
+ * 		dynamic phase, i.e., at run time."
+ * @note Only used in combination with Java 9 modules. 
+ */
+object ACC_STATIC_PHASE extends AccessFlag {
+    final override val javaName: None.type = None
+    final override val mask = 0x0020
+    override def toString = "STATIC_PHASE"
+}
+
+/**
+ * 
+ * @note From the JVM 9 specification: "Indicates that the package is concealed in the 
+ * 		static phase, i.e., at compile time, but is exported in the dynamic phase, i.e., 
+ * 		at run time."
+ * @note Only used in combination with Java 9 modules. 
+ */
+object ACC_DYNAMIC_PHASE extends AccessFlag {
+    final override val javaName: None.type = None
+    final override val mask = 0x0040
+    override def toString = "DYNAMIC_PHASE"
 }

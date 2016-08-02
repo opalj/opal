@@ -108,9 +108,7 @@ class AssemberTest extends FlatSpec with Matchers {
                             val failedSegment = remainingSegments.head._1
 
                             try {
-                                Assembler.serialize(
-                                    classFile
-                                )(
+                                Assembler.serialize(classFile)(
                                     Assembler.RichClassFile,
                                     new DataOutputStream(new FailAfterByteArrayOutputStream(i)(raw.length)),
                                     (s, i) ⇒ {}

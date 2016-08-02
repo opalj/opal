@@ -40,7 +40,7 @@ import org.opalj.bi.reader.CodeReader
  * @author Michael Eichberg
  */
 class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
-    extends Java8LibraryFrameworkWithCaching(cache)
+    extends Java8LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
     // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE

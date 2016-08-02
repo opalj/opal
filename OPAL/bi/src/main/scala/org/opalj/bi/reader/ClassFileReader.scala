@@ -57,7 +57,7 @@ import scala.util.control.ControlThrowable
  * sources (Streams, Files, JAR archives).
  *
  * This library supports class files from version 45 (Java 1.1) up to
- * version 52 (Java 8).
+ * version 53 (Java 9).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
@@ -241,11 +241,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // let's make sure that we support this class file's version
         if (!(
             major_version >= 45 && // at least JDK 1.1
-            (major_version < 52 /* Java 7 = 51.0 */ ||
-                (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))
+            (major_version < 53 /* Java 8 = 52.0 */ ||
+                (major_version == 53 && minor_version == 0 /*Java 9 == 53.0*/ ))
         )) throw BytecodeProcessingFailedException(
             s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= 52(Java 8))"
+                " (Supported: 45(Java 1.1) <= version <= 53(Java 9))"
         )
 
         val cp = Constant_Pool(in)

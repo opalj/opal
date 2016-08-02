@@ -37,9 +37,7 @@ package reader
  *
  * @author Michael Eichberg
  */
-trait Java8Framework
-    extends Java7Framework
-    with Java8LibraryFramework
+trait Java8Framework extends Java7Framework with Java8LibraryFramework
 
 object Java8Framework extends Java8Framework
 
