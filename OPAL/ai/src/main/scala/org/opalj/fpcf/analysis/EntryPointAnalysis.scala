@@ -90,6 +90,10 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
                 analysis
             case (CPA | OPA) ⇒
                 val analysis = new LibraryEntryPointsAnalysis(project)
+                val analysisRunner = project.get(FPCFAnalysesManagerKey)
+                analysisRunner.run(SimpleInstantiabilityAnalysis)
+                analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
+                analysisRunner.run(MethodAccessibilityAnalysis)
                 propertyStore <||< (entitySelector, analysis.determineEntrypoints)
                 analysis
         }
