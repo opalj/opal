@@ -28,17 +28,21 @@
  */
 package org.opalj
 
+import java.nio.file.Files
+import java.nio.file.Path
 import java.io.File
 import java.io.IOException
 import java.io.Closeable
+import java.awt.Desktop
 
+import scala.io.Source
 import scala.xml.Node
 import scala.util.control.ControlThrowable
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
- * Various helper methods related to creating (temporary) files using Java NIO 2.
+ * Various io-related helper methods and classes.
+ *
+ * @note The implementations of the methods rely on Java NIO(2).
  *
  * @author Michael Eichberg
  */
@@ -98,15 +102,10 @@ package object io {
         filenameSuffix: String
     ): File = {
 
-        val path = Files.createTempFile(filenamePrefix, filenameSuffix)
-        Files.write(path, data.getBytes("UTF-8"))
-        val file = path.toFile()
-
-        //val file = File.createTempFile(filenamePrefix, filenameSuffix)
-        //process { new FileOutputStream(file) } { fos ⇒ fos.write(data.getBytes("UTF-8")) }
+        val file = write(data, filenamePrefix, filenameSuffix).toFile()
 
         try {
-            java.awt.Desktop.getDesktop().open(file)
+            Desktop.getDesktop().open(file)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable         ⇒ new OpeningFileFailedException(file, t)
@@ -125,12 +124,10 @@ package object io {
         path
     }
 
-    def write(
-        data: Array[Byte],
-        path: Path
-    ): Unit = {
-        Files.write(path, data)
-    }
+    /**
+     * A simple wrapper for `java.nio.Files.write(Path,byte[])`.
+     */
+    def write(data: Array[Byte], path: Path): Unit = Files.write(path, data)
 
     /**
      * This function takes a `Closeable` resource and a function `r` that will
@@ -165,7 +162,7 @@ package object io {
      *
      * @note If `source` is `null`, `null` is passed to `r`.
      */
-    def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {
+    def processSource[C <: Source, T](source: C)(r: C ⇒ T): T = {
         try {
             r(source)
         } finally {

@@ -670,7 +670,8 @@ class PropertyStore private (
             FinalEP(e, ps(pkId).p.asInstanceOf[P])
         }
 
-        // quick path without locks...
+        // quick path without locks... this path is only guaranteed to work if the property
+        // is final(!)
         {
             val pos = ps.apply(pkId)
             if (pos ne null) {

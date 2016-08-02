@@ -60,7 +60,7 @@ trait Locking {
     protected[this] def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
- * Factory for `Locking` objects.
+ * Defines several convenience methods related to using `(Reentrant(ReadWrite))Lock`s.
  */
 object Locking {
 
@@ -80,6 +80,10 @@ object Locking {
         }
     }
 
+    /**
+     * Acquires all given locks in the given order and then executes the given function `f`.
+     * Afterwards all locks are released in reverse order.
+     */
     @inline final def withWriteLocks[T](rwLocks: Traversable[ReentrantReadWriteLock])(f: ⇒ T): T = {
         var acquiredRWLocks: List[WriteLock] = Nil
         var error: Throwable = null
@@ -116,7 +120,7 @@ object Locking {
 
     /**
      * Acquires the read lock and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * the function `f`. Before returning the lock is always released.
      */
     @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
         val lock = rwLock.readLock()
@@ -130,7 +134,10 @@ object Locking {
 
     /**
      * Tries to acquire the read lock and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * the function `f`; if the read lock cannot be acquired
+     * the given function `f` is not executed and `None` is returned.
+     *
+     * If lock was acquired, it will always be released before the method returns.
      */
     final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): Option[B] = {
         var isLocked = false
@@ -147,7 +154,7 @@ object Locking {
 
     /**
      * Acquires the lock and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * the function `f`. Before returning the lock is always released.
      */
     @inline final def withLock[B](lock: ReentrantLock)(f: ⇒ B): B = {
         try {
