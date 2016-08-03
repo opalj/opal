@@ -51,8 +51,6 @@ case class Exceptions_attribute(
 
     override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2
 
-    override def attribute_name(implicit cp: Constant_Pool) = Exceptions_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
     }
@@ -65,10 +63,5 @@ case class Exceptions_attribute(
             }
         }</span>
     }
-
-}
-object Exceptions_attribute {
-
-    val name = "Exceptions"
 
 }

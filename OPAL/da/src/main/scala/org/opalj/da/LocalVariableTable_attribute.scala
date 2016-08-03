@@ -49,9 +49,4 @@ case class LocalVariableTable_attribute(
         </details>
     }
 }
-object LocalVariableTable_attribute {
-
-    val name = "LocalVariableTable"
-
-}
 

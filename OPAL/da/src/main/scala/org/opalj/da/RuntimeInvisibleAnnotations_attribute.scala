@@ -43,6 +43,8 @@ case class RuntimeInvisibleAnnotations_attribute(
         annotations:          IndexedSeq[Annotation]
 ) extends Annotations_attribute {
 
+    // final override def attribute_length = 2 /*num_annotations*/+annotations.map(_.length).sum
+
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotations runtime_invisible tooltip">
             <span>Runtime Invisible</span>

@@ -32,32 +32,24 @@ package da
 import scala.xml.Node
 
 /**
+ * The Version attribute is an attribute in the attributes table
+ * of a module definition (Java 9).
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class EnclosingMethod_attribute(
+case class Version_attribute(
         attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+        version_index:        Constant_Pool_Index // CONSTANT_UTF8
 ) extends Attribute {
 
-    final override def attribute_length = 2 + 2
+    def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span class="fqn">
-                { cp(class_index).toString }
-            </span>
-            {{
-            {
-                if (method_index != 0)
-                    cp(method_index).toString
-                else
-                    "<not immediately enclosed>"
-            }
-            }}
+        <div class="simple_attribute">
+            <span class="attribute_name">Version</span>
+            -
+            { cp(version_index).asString }
         </div>
     }
 }
+

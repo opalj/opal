@@ -44,17 +44,7 @@ case class StackMapTable_attribute(
         stack_map_frames:     IndexedSeq[StackMapFrame]
 ) extends Attribute {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
     type StackMapFrames = IndexedSeq[StackMapFrame]
-
-    //
-    // IMPLEMENTATION
-    //
-
-    val attribute_name = StackMapTable_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
@@ -78,8 +68,3 @@ case class StackMapTable_attribute(
 
 }
 
-object StackMapTable_attribute {
-
-    val name = "StackMapTable"
-
-}

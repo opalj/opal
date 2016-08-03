@@ -41,8 +41,8 @@ import scala.xml.Node
 case class LocalVariableTableEntry(
         start_pc:         Int,
         length:           Int,
-        name_index:       Int,
-        descriptor_index: Int,
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
         index:            Int
 ) {
 

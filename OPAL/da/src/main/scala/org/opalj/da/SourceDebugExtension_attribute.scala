@@ -45,13 +45,7 @@ case class SourceDebugExtension_attribute(
     final override def attribute_length = debug_extension.length
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attribute_name">SourceDebugExtension</span>: ("Content Not Available")</span>
+        <span><span class="attribute_name">SourceDebugExtension</span>:{ byteArrayToNode(debug_extension) }</span>
     }
-
-}
-
-object SourceDebugExtension_attribute {
-
-    val name = "SourceDebugExtension"
 
 }

@@ -32,32 +32,22 @@ package da
 import scala.xml.Node
 
 /**
+ * Java 9's `MainClass` attribute.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class EnclosingMethod_attribute(
+case class MainClass_attribute(
         attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
 ) extends Attribute {
 
-    final override def attribute_length = 2 + 2
+    def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span class="fqn">
-                { cp(class_index).toString }
-            </span>
-            {{
-            {
-                if (method_index != 0)
-                    cp(method_index).toString
-                else
-                    "<not immediately enclosed>"
-            }
-            }}
+        <div class="simple_attribute">
+            <span class="attribute_name">MainClass</span>
+            -
+            { cp(main_class_index).toString(cp) }
         </div>
     }
 }

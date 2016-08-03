@@ -49,9 +49,3 @@ case class RuntimeVisibleTypeAnnotations_attribute(
     }
 
 }
-
-object RuntimeVisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeVisibleTypeAnnotations"
-
-}

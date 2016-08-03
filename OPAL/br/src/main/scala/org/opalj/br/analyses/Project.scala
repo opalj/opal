@@ -42,8 +42,8 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFramework
+import org.opalj.br.reader.Java9FrameworkWithCaching
+import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
@@ -716,7 +716,9 @@ object Project {
 
     private[this] def cache = new BytecodeInstructionsCache
 
-    lazy val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+    lazy val JavaClassFileReader = new Java9FrameworkWithCaching(cache)
+
+    lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
@@ -729,7 +731,7 @@ object Project {
     }
 
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
-        apply(Java8ClassFileReader.ClassFiles(file), projectLogger = projectLogger)
+        apply(JavaClassFileReader.ClassFiles(file), projectLogger = projectLogger)
     }
 
     def apply[Source](
@@ -760,8 +762,8 @@ object Project {
         libraryFile: File
     ): Project[URL] = {
         apply(
-            Java8ClassFileReader.ClassFiles(projectFile),
-            Java8LibraryFramework.ClassFiles(libraryFile),
+            JavaClassFileReader.ClassFiles(projectFile),
+            JavaLibraryClassFileReader.ClassFiles(libraryFile),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
@@ -772,15 +774,15 @@ object Project {
         libraryFiles: Array[File]
     ): Project[URL] = {
         apply(
-            Java8ClassFileReader.AllClassFiles(projectFiles),
-            Java8LibraryFramework.AllClassFiles(libraryFiles),
+            JavaClassFileReader.AllClassFiles(projectFiles),
+            JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        project.extend(Java8ClassFileReader.ClassFiles(file))
+        project.extend(JavaClassFileReader.ClassFiles(file))
     }
 
     /**

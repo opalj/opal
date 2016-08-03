@@ -38,7 +38,7 @@ package bi
  */
 object AccessFlagsContexts extends Enumeration {
 
-    val INNER_CLASS, CLASS, METHOD, FIELD, METHOD_PARAMETERS = Value
+    val INNER_CLASS, CLASS, METHOD, FIELD, METHOD_PARAMETERS, MODULE = Value
 
     val INNER_CLASS_FLAGS: IndexedSeq[AccessFlag] =
         IndexedSeq(
@@ -97,6 +97,16 @@ object AccessFlagsContexts extends Enumeration {
             ACC_SYNTHETIC
         )
 
+    val MODULE_FLAGS: IndexedSeq[AccessFlag] = {
+        IndexedSeq(
+            ACC_TRANSITIVE, // requires_flag
+            ACC_STATIC_PHASE, // requires_flag
+            ACC_DYNAMIC_PHASE, // export_flag
+            ACC_SYNTHETIC, // requires_flag
+            ACC_MANDATED // requires_flag
+        )
+    }
+
     val METHOD_PARAMETER_FLAGS: IndexedSeq[AccessFlag] =
         IndexedSeq(ACC_FINAL, ACC_SYNTHETIC, ACC_MANDATED)
 
@@ -119,6 +129,7 @@ object AccessFlagsContexts extends Enumeration {
             case METHOD            ⇒ METHOD_FLAGS
             case FIELD             ⇒ FIELD_FLAGS
             case METHOD_PARAMETERS ⇒ METHOD_PARAMETER_FLAGS
+            case MODULE            ⇒ MODULE_FLAGS
         }
     }
 }

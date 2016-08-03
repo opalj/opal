@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -32,32 +32,25 @@ package da
 import scala.xml.Node
 
 /**
+ * Represents the ''ConcealedPackages'' attribute (Java 9).
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class EnclosingMethod_attribute(
+case class ConcealedPackages_attribute(
         attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+        packages:             IndexedSeq[Constant_Pool_Index]
 ) extends Attribute {
 
-    final override def attribute_length = 2 + 2
+    override def attribute_length: Int = 2 + packages.size * 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span class="fqn">
-                { cp(class_index).toString }
-            </span>
-            {{
-            {
-                if (method_index != 0)
-                    cp(method_index).toString
-                else
-                    "<not immediately enclosed>"
-            }
-            }}
+        <div id="concealed_packages">
+            <details>
+                <summary>ConcealedPackages</summary>
+                { packages.map { p ⇒ <span>{ cp(p).asString }</span><br/> } }
+            </details>
         </div>
     }
+
 }
+

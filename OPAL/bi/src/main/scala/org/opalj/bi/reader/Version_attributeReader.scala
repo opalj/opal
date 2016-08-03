@@ -43,30 +43,35 @@ trait Version_attributeReader extends AttributeReader {
     type Version_attribute <: Attribute
 
     def Version_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        versionIndex:       Constant_Pool_Index // CONSTANT_UTF8 (!)
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        version_index:        Constant_Pool_Index // CONSTANT_UTF8 (!)
     ): Version_attribute
 
-    /* From the Specification
+    /**
+     * Parser for a Java 9 Version attribute.
      *
+     * From the Specification
      * <pre>
      * Version_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
-     * 
+     *
      *     u2 version_index;
      * }
      * </pre>
      */
-    registerAttributeReader(
-        Version_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Attribute = {
+        /*val attribute_length =*/ in.readInt
+        Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
+    }
+
+    registerAttributeReader(Version_attributeReader.ATTRIBUTE_NAME → parser)
 }
 
 object Version_attributeReader {

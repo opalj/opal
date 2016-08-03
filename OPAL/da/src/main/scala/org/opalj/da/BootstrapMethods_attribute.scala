@@ -56,10 +56,6 @@ case class BootstrapMethods_attribute(
     def methodsToXHTML(implicit cp: Constant_Pool) = bootstrap_methods.map(_.toXHTML(cp))
 }
 
-object BootstrapMethods_attribute {
-    val name = "BootstrapMethods"
-}
-
 case class BootstrapMethod(method_ref: Constant_Pool_Index, arguments: Seq[BootstrapArgument]) {
 
     /**

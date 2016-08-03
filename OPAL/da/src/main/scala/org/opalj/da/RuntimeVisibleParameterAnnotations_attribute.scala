@@ -50,9 +50,3 @@ case class RuntimeVisibleParameterAnnotations_attribute(
     }
 
 }
-
-object RuntimeVisibleParameterAnnotations_attribute {
-
-    val name = "RuntimeVisibleParameterAnnotations"
-
-}

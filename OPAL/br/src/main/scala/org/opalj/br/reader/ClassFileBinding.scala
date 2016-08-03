@@ -72,7 +72,7 @@ trait ClassFileBinding extends ClassFileReader {
         )
     }
 
-    val removeBootstrapMethodAttribute: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
+    val removeBootstrapMethodAttribute: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
         val classFile = classFiles.head
         val attributes = classFile.attributes
         if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||

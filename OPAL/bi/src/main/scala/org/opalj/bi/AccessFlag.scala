@@ -245,6 +245,16 @@ object ACC_MANDATED extends AccessFlag {
 }
 
 /**
+ * Indicates that any module which depends on the current module, implicitly declares a
+ * dependence on the module indicated by this entry.
+ */
+object ACC_TRANSITIVE extends AccessFlag {
+    final override val javaName: None.type = None
+    final override val mask = 0x0010
+    override def toString = "TRANSITIVE"
+}
+
+/**
  *
  * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is
  * 		mandatory in the static phase, i.e., at compile time, but is optional in the

@@ -46,7 +46,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
 import org.opalj.de.DependencyTypes.toUsageDescription
-import org.opalj.br.reader.Java8LibraryFramework
 
 /**
  * A specification of a project's architectural constraints.
@@ -830,7 +829,7 @@ object Specification {
         if (!file.isDirectory)
             throw SpecificationError("the specified directory is not a directory: "+directoryName)
 
-        Project.Java8ClassFileReader.ClassFiles(file)
+        Project.JavaClassFileReader.ClassFiles(file)
     }
 
     def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
@@ -844,7 +843,7 @@ object Specification {
 
         OPALLogger.info("creating project", s"loading $jarName")(GlobalLogContext)
 
-        Project.Java8ClassFileReader.ClassFiles(file)
+        Project.JavaClassFileReader.ClassFiles(file)
     }
 
     /**
@@ -871,7 +870,7 @@ object Specification {
 
         OPALLogger.info("creating project", s"loading library $jarName")(GlobalLogContext)
 
-        Java8LibraryFramework.ClassFiles(file)
+        Project.JavaLibraryClassFileReader.ClassFiles(file)
     }
 
     /**

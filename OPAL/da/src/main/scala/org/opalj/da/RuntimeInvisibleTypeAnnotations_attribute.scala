@@ -49,9 +49,3 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
     }
 
 }
-
-object RuntimeInvisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeInvisibleTypeAnnotations"
-
-}

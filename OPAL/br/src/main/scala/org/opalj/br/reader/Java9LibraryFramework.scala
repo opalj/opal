@@ -27,37 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
+package br
+package reader
 
 /**
+ * This "framework" can be used to read in Java 9 (version 53) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented except of method implementations.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
  */
-case class EnclosingMethod_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
-) extends Attribute {
+trait Java9LibraryFramework
+    extends Java8LibraryFramework
+//with Version_attributeBinding
+//with ...
 
-    final override def attribute_length = 2 + 2
+object Java9LibraryFramework extends Java9LibraryFramework
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span class="fqn">
-                { cp(class_index).toString }
-            </span>
-            {{
-            {
-                if (method_index != 0)
-                    cp(method_index).toString
-                else
-                    "<not immediately enclosed>"
-            }
-            }}
-        </div>
-    }
-}

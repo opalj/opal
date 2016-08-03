@@ -73,13 +73,19 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME →
-        ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
-            val attributeLength = in.readInt()
-            AnnotationDefault_attribute(
-                cp, attributeNameIndex, attributeLength, ElementValue(cp, in)
-            )
-        }))
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Attribute = {
+        val attributeLength = in.readInt()
+        AnnotationDefault_attribute(
+            cp, attribute_name_index, attributeLength, ElementValue(cp, in)
+        )
+    }
+
+    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME → parser)
 }
 /**
  * Common properties of `AnnotationDefault` attributes.

@@ -40,9 +40,3 @@ case class Deprecated_attribute(attribute_name_index: Constant_Pool_Index) exten
     final override def attribute_length = 0
 
 }
-
-object Deprecated_attribute {
-
-    val name = "Deprecated"
-
-}
