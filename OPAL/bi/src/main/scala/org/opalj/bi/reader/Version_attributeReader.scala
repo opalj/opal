@@ -45,13 +45,12 @@ trait Version_attributeReader extends AttributeReader {
     def Version_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        version_index:        Constant_Pool_Index // CONSTANT_UTF8 (!)
+        version_index:        Constant_Pool_Index // CONSTANT_UTF8 (!); eg. "9-ea"
     ): Version_attribute
 
     /**
-     * Parser for a Java 9 Version attribute.
+     * Parser for the Java 9 Version attribute.
      *
-     * From the Specification
      * <pre>
      * Version_attribute {
      *     u2 attribute_name_index;
@@ -71,11 +70,11 @@ trait Version_attributeReader extends AttributeReader {
         Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
     }
 
-    registerAttributeReader(Version_attributeReader.ATTRIBUTE_NAME → parser)
+    registerAttributeReader(VersionAttribute.Name → parser)
 }
 
-object Version_attributeReader {
+object VersionAttribute {
 
-    val ATTRIBUTE_NAME = "Version"
+    final val Name = "Version"
 
 }

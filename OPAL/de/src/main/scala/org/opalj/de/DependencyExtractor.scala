@@ -210,7 +210,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case RuntimeInvisibleTypeAnnotationTable.KindId
                     | RuntimeVisibleTypeAnnotationTable.KindId ⇒
                     attribute.asInstanceOf[TypeAnnotationTable].typeAnnotations foreach {
-                        process(vf, _, ANNOTATED_WITH) // TODO [IMPROVE] Should be TYPE_ANNOTATED_WITH
+                        process(vf, _, ANNOTATED_WITH) // IMPROVE Should be TYPE_ANNOTATED_WITH
                     }
 
                 case ConstantInteger.KindId ⇒

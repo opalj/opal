@@ -43,34 +43,36 @@ trait MainClass_attributeReader extends AttributeReader {
     type MainClass_attribute <: Attribute
 
     def MainClass_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        mainClassIndex:     Constant_Pool_Index // CONSTANT_CLASS
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
     ): MainClass_attribute
 
-    /* From the Specification
-     *
+    /**
      * <pre>
      * MainClass_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
-     * 
+     *
      *     u2 main_class_index;
      * }
      * </pre>
      */
-    registerAttributeReader(
-        MainClass_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                MainClass_attribute(cp, attribute_name_index, in.readUnsignedShort())
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ) = {
+        /*val attribute_length =*/ in.readInt
+        MainClass_attribute(cp, attribute_name_index, in.readUnsignedShort())
+    }
+
+    registerAttributeReader(MainClassAttribute.Name → parser)
 }
 
-object MainClass_attributeReader {
+object MainClassAttribute {
 
-    val ATTRIBUTE_NAME = "MainClass"
+    final val Name = "MainClass"
 
 }

@@ -162,8 +162,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         }
     }
 
-    /* From the Specification
-     *
+    /**
      * <pre>
      * u1 target_type;
      * union {
@@ -209,20 +208,15 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x45 ⇒ MethodReferenceExpressionNew(in.readUnsignedShort())
             case 0x46 ⇒ MethodReferenceExpressionIdentifier(in.readUnsignedShort())
             case 0x47 ⇒ CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x48 ⇒
-                ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x49 ⇒
-                MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x48 ⇒ ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x49 ⇒ MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
             case 0x4A ⇒
                 ConstructorInMethodReferenceExpression(
                     in.readUnsignedShort(),
                     in.readUnsignedByte()
                 )
             case 0x4B ⇒
-                MethodInMethodReferenceExpression(
-                    in.readUnsignedShort(),
-                    in.readUnsignedByte()
-                )
+                MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
         }
     }
 }

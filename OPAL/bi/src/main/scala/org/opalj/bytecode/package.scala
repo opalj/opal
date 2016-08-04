@@ -133,8 +133,13 @@ package object bytecode {
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found). If the rt.jar cannot be found an
      * exception is raised.
+     *
+     * @note 	The Java 9 JDK/JRE is structured in a different way.
+     * 			// IMPROVE [JDK9] Add mechanism to locate JDK 9 System class files
      */
     lazy val JRELibraryFolder: File = {
+        System.getProperties()
+
         val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
         val paths = sunBootClassPath.split(File.pathSeparator)
         paths.find(_.endsWith("rt.jar")) match {
@@ -156,6 +161,10 @@ package object bytecode {
      * Returns the most likely position of the JRE's library folder. (I.e., the
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found).
+     *
+     * @note 	The Java 9 JDK/JRE does not have an `rt.jar`.
+     * 			// IMPROVE [JDK9] Mechanism to find the primary module.
+     *
      */
     lazy val RTJar: File = {
         val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")

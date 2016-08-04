@@ -44,12 +44,11 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
     type Annotations <: Traversable[Annotation]
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations
 
-    type RuntimeInvisibleAnnotations_attribute <: Attribute
+    type RuntimeInvisibleAnnotations_attribute >: Null <: Attribute
 
     protected def RuntimeInvisibleAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         annotations:          Annotations
     ): RuntimeInvisibleAnnotations_attribute
 
@@ -57,8 +56,7 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    /*
-     * '''From the Specification'''
+    /**
      * <pre>
      * RuntimeInvisibleAnnotations_attribute {
      *  u2 attribute_name_index;
@@ -68,20 +66,24 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        RuntimeInvisibleAnnotations_attributeReader.ATTRIBUTE_NAME →
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val annotations = Annotations(cp, in)
-                if (annotations.nonEmpty || reifyEmptyAttributes) {
-                    RuntimeInvisibleAnnotations_attribute(
-                        cp, attribute_name_index, attribute_length, annotations
-                    )
-                } else {
-                    null
-                }
-            })
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): RuntimeInvisibleAnnotations_attribute = {
+        /*val attribute_length = */ in.readInt()
+        val annotations = Annotations(cp, in)
+        if (annotations.nonEmpty || reifyEmptyAttributes) {
+            RuntimeInvisibleAnnotations_attribute(
+                cp, attribute_name_index, annotations
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(RuntimeInvisibleAnnotationsAttribute.Name → parser)
 }
 
 /**
@@ -89,9 +91,9 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
  *
  * @author Michael Eichberg
  */
-object RuntimeInvisibleAnnotations_attributeReader {
+object RuntimeInvisibleAnnotationsAttribute {
 
-    val ATTRIBUTE_NAME = "RuntimeInvisibleAnnotations"
+    final val Name = "RuntimeInvisibleAnnotations"
 
 }
 

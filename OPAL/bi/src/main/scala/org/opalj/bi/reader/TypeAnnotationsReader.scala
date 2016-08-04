@@ -73,7 +73,6 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
     /**
      * Reads a Runtime(In)VisibleTypeAnnotations attribute.
      *
-     * ''' From the Specification'''
      * <pre>
      * type_annotation {
      *            u1 target_type;

@@ -50,7 +50,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     // ABSTRACT DEFINITIONS
     //
 
-    type BootstrapMethods_attribute <: Attribute
+    type BootstrapMethods_attribute >: Null <: Attribute
 
     type BootstrapMethod
     implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod]
@@ -61,7 +61,6 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Int,
-        attribute_length:     Int,
         bootstrap_methods:    BootstrapMethods
     ): BootstrapMethods_attribute
 
@@ -98,7 +97,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         )
     }
 
-    /* Structure
+    /**
      * <pre>
      * BootstrapMethods_attribute {
      *  u2 attribute_name_index;
@@ -111,26 +110,28 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        BootstrapMethods_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt
-                val num_bootstrap_methods = in.readUnsignedShort
-                if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
-                    BootstrapMethods_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) }
-                    )
-                } else
-                    null
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): BootstrapMethods_attribute = {
+        /*val attribute_length =*/ in.readInt
+        val num_bootstrap_methods = in.readUnsignedShort
+        if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
+            BootstrapMethods_attribute(
+                cp,
+                attribute_name_index,
+                repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) }
+            )
+        } else
+            null
+    }
+
+    registerAttributeReader(BootstrapMethodsAttribute.Name → parser)
 }
 
-object BootstrapMethods_attributeReader {
-    val ATTRIBUTE_NAME = "BootstrapMethods"
+object BootstrapMethodsAttribute {
+    final val Name = "BootstrapMethods"
 }
 

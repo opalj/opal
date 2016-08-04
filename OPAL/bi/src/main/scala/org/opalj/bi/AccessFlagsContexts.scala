@@ -97,6 +97,9 @@ object AccessFlagsContexts extends Enumeration {
             ACC_SYNTHETIC
         )
 
+    /**
+     * Access flags related to Java 9 module definitions.
+     */
     val MODULE_FLAGS: IndexedSeq[AccessFlag] = {
         IndexedSeq(
             ACC_TRANSITIVE, // requires_flag

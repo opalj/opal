@@ -41,7 +41,7 @@ import java.io.DataInputStream
  */
 trait ConcealedPackages_attributeReader extends AttributeReader {
 
-    type ConcealedPackages_attribute <: Attribute
+    type ConcealedPackages_attribute >: Null <: Attribute
 
     type ConcealedPackagesEntry
     implicit val ConcealedPackagesEntryManifest: ClassTag[ConcealedPackagesEntry]
@@ -67,41 +67,44 @@ trait ConcealedPackages_attributeReader extends AttributeReader {
 
     type ConcealedPackages = IndexedSeq[ConcealedPackagesEntry]
 
-    /*
+    /**
      * <pre>
      * ConcealedPackages_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
-     * 
+     *
      *     u2 packages_count;
      *     {   u2 package_index;
      *     } packages[package_count];
      * }
      * </pre>
      */
-    registerAttributeReader(
-        ConcealedPackages_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length = */ in.readInt()
-                val packagesCount = in.readUnsignedShort()
-                if (packagesCount > 0 || reifyEmptyAttributes) {
-                    ConcealedPackages_attribute(
-                        cp,
-                        attribute_name_index,
-                        repeat(packagesCount) {
-                            ConcealedPackagesEntry(cp, in.readUnsignedShort)
-                        }
-                    )
-                } else
-                    null
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): ConcealedPackages_attribute = {
+        /*val attribute_length = */ in.readInt()
+        val packagesCount = in.readUnsignedShort()
+        if (packagesCount > 0 || reifyEmptyAttributes) {
+            ConcealedPackages_attribute(
+                cp,
+                attribute_name_index,
+                repeat(packagesCount) {
+                    ConcealedPackagesEntry(cp, in.readUnsignedShort)
+                }
+            )
+        } else
+            null
+    }
+
+    registerAttributeReader(ConcealedPackagesAttribute.Name → parser)
 }
 
-object ConcealedPackages_attributeReader {
+object ConcealedPackagesAttribute {
 
-    val ATTRIBUTE_NAME = "ConcealedPackages"
+    final val Name = "ConcealedPackages"
 
 }
 

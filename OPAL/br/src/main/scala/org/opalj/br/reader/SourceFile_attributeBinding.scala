@@ -47,9 +47,9 @@ trait SourceFile_attributeBinding
     def SourceFile_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourceFile_index:     Constant_Pool_Index
+        sourcefile_index:     Constant_Pool_Index
     ): SourceFile_attribute = {
-        new SourceFile_attribute(cp(sourceFile_index).asString)
+        new SourceFile_attribute(cp(sourcefile_index).asString)
     }
 
 }

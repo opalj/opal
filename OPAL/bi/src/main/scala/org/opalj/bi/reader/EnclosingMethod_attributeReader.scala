@@ -52,7 +52,7 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    /* From The Specification
+    /**
      * <pre>
      * EnclosingMethod_attribute {
      *  u2 attribute_name_index;
@@ -62,22 +62,25 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        EnclosingMethod_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                EnclosingMethod_attribute(
-                    cp,
-                    attribute_name_index,
-                    in.readUnsignedShort,
-                    in.readUnsignedShort
-                )
-            }
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): EnclosingMethod_attribute = {
+        /*val attribute_length =*/ in.readInt
+        EnclosingMethod_attribute(
+            cp,
+            attribute_name_index,
+            in.readUnsignedShort,
+            in.readUnsignedShort
         )
-    )
+    }
+
+    registerAttributeReader(EnclosingMethodAttribute.Name → parser)
 }
 
-object EnclosingMethod_attributeReader {
+object EnclosingMethodAttribute {
 
-    val ATTRIBUTE_NAME = "EnclosingMethod"
+    final val Name = "EnclosingMethod"
 }

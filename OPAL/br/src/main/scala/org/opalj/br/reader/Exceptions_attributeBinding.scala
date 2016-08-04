@@ -50,7 +50,6 @@ trait Exceptions_attributeBinding
     def Exceptions_attribute(
         cp:                    Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute = {
         new Exceptions_attribute(

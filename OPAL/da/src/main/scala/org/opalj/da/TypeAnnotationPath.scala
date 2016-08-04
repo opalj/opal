@@ -43,10 +43,15 @@ import scala.xml.Node
  */
 trait TypeAnnotationPath {
 
+    def attribute_length: Int
+
     def toXHTML(implicit cp: Constant_Pool): Node
 }
 
 case object TypeAnnotationDirectlyOnType extends TypeAnnotationPath {
+
+    final override def attribute_length: Int = 1
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DirectlyOnType</span>
     }
@@ -65,6 +70,8 @@ case class TypeAnnotationPathElements(
         path: IndexedSeq[TypeAnnotationPathElement]
 ) extends TypeAnnotationPath {
 
+    final override def attribute_length: Int = 1 + path.length * 2
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">Path:{ path.map(_.toXHTML(cp)) }]</span>
     }
@@ -75,9 +82,9 @@ case class TypeAnnotationPathElements(
  */
 case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
 
-    def type_path_kind: Int = 0
+    final override def type_path_kind: Int = 0
 
-    def type_argument_index: Int = 0
+    final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInArrayType</span>
@@ -86,9 +93,9 @@ case object TypeAnnotationDeeperInArrayType extends TypeAnnotationPathElement {
 
 case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
 
-    def type_path_kind: Int = 1
+    final override def type_path_kind: Int = 1
 
-    def type_argument_index: Int = 0
+    final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">DeeperInNestedType</span>
@@ -97,9 +104,9 @@ case object TypeAnnotationDeeperInNestedType extends TypeAnnotationPathElement {
 
 case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElement {
 
-    def type_path_kind: Int = 2
+    final override def type_path_kind: Int = 2
 
-    def type_argument_index: Int = 0
+    final override def type_argument_index: Int = 0
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnBoundOfWildcardType</span>
@@ -108,7 +115,7 @@ case object TypeAnnotationOnBoundOfWildcardType extends TypeAnnotationPathElemen
 
 case class TypeAnnotationOnTypeArgument(type_argument_index: Int) extends TypeAnnotationPathElement {
 
-    def type_path_kind: Int = 3
+    final override def type_path_kind: Int = 3
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>

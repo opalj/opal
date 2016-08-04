@@ -44,11 +44,10 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
     type TypeAnnotations <: Traversable[TypeAnnotation]
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations
 
-    type RuntimeVisibleTypeAnnotations_attribute <: Attribute
+    type RuntimeVisibleTypeAnnotations_attribute >: Null <: Attribute
     def RuntimeVisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         annotations:          TypeAnnotations
     ): RuntimeVisibleTypeAnnotations_attribute
 
@@ -56,8 +55,7 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    /*
-     * '''From the Specification'''
+    /**
      * <pre>
      * RuntimeVisibleTypeAnnotations_attribute {
      *      u2              attribute_name_index;
@@ -65,28 +63,32 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
      *      u2              num_annotations;
      *      type_annotation annotations[num_annotations];
      * }
-     * <pre> 
+     * <pre>
      */
-    registerAttributeReader(
-        RuntimeVisibleTypeAnnotations_attributeReader.ATTRIBUTE_NAME →
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val annotations = TypeAnnotations(cp, in)
-                if (annotations.nonEmpty || reifyEmptyAttributes) {
-                    RuntimeVisibleTypeAnnotations_attribute(
-                        cp, attribute_name_index, attribute_length, annotations
-                    )
-                } else {
-                    null
-                }
-            })
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): RuntimeVisibleTypeAnnotations_attribute = {
+        /*val attribute_length = */ in.readInt()
+        val annotations = TypeAnnotations(cp, in)
+        if (annotations.nonEmpty || reifyEmptyAttributes) {
+            RuntimeVisibleTypeAnnotations_attribute(
+                cp, attribute_name_index, annotations
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(RuntimeVisibleTypeAnnotationsAttribute.Name → parser)
 }
 /**
  * Common properties of `RuntimeVisibleTypeAnnotations` attributes.
  */
-object RuntimeVisibleTypeAnnotations_attributeReader {
+object RuntimeVisibleTypeAnnotationsAttribute {
 
-    val ATTRIBUTE_NAME = "RuntimeVisibleTypeAnnotations"
+    final val Name = "RuntimeVisibleTypeAnnotations"
 
 }

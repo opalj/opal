@@ -39,17 +39,12 @@ import scala.xml.Node
  */
 case class AnnotationDefault_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         element_value:        ElementValue
 ) extends Attribute {
+
+    final def attribute_length: Int = element_value.attribute_length
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">default { element_value.toXHTML(cp) }</div>
     }
-}
-
-object AnnotationDefault_attribute {
-
-    val name = "AnnotationDefault"
-
 }

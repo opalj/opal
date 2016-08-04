@@ -46,7 +46,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
      */
     def ParametersAnnotations(cp: Constant_Pool, in: DataInputStream): ParametersAnnotations
 
-    type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
+    type RuntimeInvisibleParameterAnnotations_attribute >: Null <: Attribute
 
     /**
      * Factory method to create a representation of a
@@ -55,7 +55,6 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     protected def RuntimeInvisibleParameterAnnotations_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
         parameter_annotations: ParametersAnnotations
     ): RuntimeInvisibleParameterAnnotations_attribute
 
@@ -63,8 +62,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     // IMPLEMENTATION
     //
 
-    /* 
-     * '''From the Specification'''
+    /**
      * <pre>
      * RuntimeInvisibleParameterAnnotations_attribute {
      *  u2 attribute_name_index;
@@ -77,29 +75,33 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
      * }
      * </pre>
      */
-    registerAttributeReader(
-        RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME →
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val parameter_annotations = ParametersAnnotations(cp, in)
-                if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
-                    RuntimeInvisibleParameterAnnotations_attribute(
-                        cp, attribute_name_index, attribute_length, parameter_annotations
-                    )
-                } else {
-                    null
-                }
-            })
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): RuntimeInvisibleParameterAnnotations_attribute = {
+        /*val attribute_length = */ in.readInt()
+        val parameter_annotations = ParametersAnnotations(cp, in)
+        if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
+            RuntimeInvisibleParameterAnnotations_attribute(
+                cp, attribute_name_index, parameter_annotations
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(RuntimeInvisibleParameterAnnotationsAttribute.Name → parser)
 
 }
 
 /**
  * Common properties of the `RuntimeInvisibleParameterAnnotations` attribute.
  */
-object RuntimeInvisibleParameterAnnotations_attributeReader {
+object RuntimeInvisibleParameterAnnotationsAttribute {
 
-    val ATTRIBUTE_NAME = "RuntimeInvisibleParameterAnnotations"
+    final val Name = "RuntimeInvisibleParameterAnnotations"
 
 }
 

@@ -39,9 +39,11 @@ import scala.xml.Node
  */
 case class RuntimeVisibleAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[Annotation]
 ) extends Annotations_attribute {
+
+    final override def attribute_length =
+        annotations.foldLeft(2 /*num_annotations*/ )(_ + _.attribute_length)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotations runtime_visible tooltip">

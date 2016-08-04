@@ -76,7 +76,6 @@ trait StackMapTable_attributeBinding
     def StackMapTable_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute = StackMapTable(stack_map_frames)
 

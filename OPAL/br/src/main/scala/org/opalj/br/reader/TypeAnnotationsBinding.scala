@@ -82,40 +82,44 @@ trait TypeAnnotationsBinding
     // type_parameter_target
     override def ParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int
-    ): TAOfParameterDeclarationOfClassOrInterface =
+    ): TAOfParameterDeclarationOfClassOrInterface = {
         TAOfParameterDeclarationOfClassOrInterface(type_parameter_index)
+    }
 
     override def ParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int
-    ): TAOfParameterDeclarationOfMethodOrConstructor =
+    ): TAOfParameterDeclarationOfMethodOrConstructor = {
         TAOfParameterDeclarationOfMethodOrConstructor(type_parameter_index)
+    }
 
     //______________________________
     // supertype_target
     override def SupertypeTarget(
         supertype_index: Int
-    ): TAOfSupertype =
+    ): TAOfSupertype = {
         TAOfSupertype(supertype_index)
-
+    }
     //______________________________
     // type_parameter_bound_target
     override def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
         bound_index:          Int
-    ): TAOfTypeBoundOfParameterDeclarationOfClassOrInterface =
+    ): TAOfTypeBoundOfParameterDeclarationOfClassOrInterface = {
         TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
             type_parameter_index,
             bound_index
         )
+    }
 
     override def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
         bound_index:          Int
-    ): TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor =
+    ): TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor = {
         TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
             type_parameter_index,
             bound_index
         )
+    }
 
     //______________________________
     // empty_target
@@ -127,18 +131,17 @@ trait TypeAnnotationsBinding
 
     //______________________________
     // formal_parameter_target
-    override def FormalParameter(formal_parameter_index: Int): TAOfFormalParameter =
+    override def FormalParameter(formal_parameter_index: Int): TAOfFormalParameter = {
         TAOfFormalParameter(formal_parameter_index)
+    }
 
     //______________________________
     // throws_target
-    override def Throws(throws_type_index: Int): TAOfThrows =
-        TAOfThrows(throws_type_index)
+    override def Throws(throws_type_index: Int): TAOfThrows = TAOfThrows(throws_type_index)
 
     //______________________________
     // catch_target
-    override def Catch(exception_table_index: Int): TAOfCatch =
-        TAOfCatch(exception_table_index)
+    override def Catch(exception_table_index: Int): TAOfCatch = TAOfCatch(exception_table_index)
 
     //______________________________
     // localvar_target
@@ -151,11 +154,13 @@ trait TypeAnnotationsBinding
         new LocalvarTableEntry(start_pc, length, local_variable_table_index)
     }
 
-    override def LocalvarDecl(localVarTable: LocalvarTable): TAOfLocalvarDecl =
+    override def LocalvarDecl(localVarTable: LocalvarTable): TAOfLocalvarDecl = {
         TAOfLocalvarDecl(localVarTable)
+    }
 
-    override def ResourcevarDecl(localVarTable: LocalvarTable): TAOfResourcevarDecl =
+    override def ResourcevarDecl(localVarTable: LocalvarTable): TAOfResourcevarDecl = {
         TAOfResourcevarDecl(localVarTable)
+    }
 
     //______________________________
     // offset_target
@@ -165,48 +170,54 @@ trait TypeAnnotationsBinding
 
     override def MethodReferenceExpressionNew /*::New*/ (
         offset: Int
-    ): TAOfMethodReferenceExpressionNew =
+    ): TAOfMethodReferenceExpressionNew = {
         TAOfMethodReferenceExpressionNew(offset)
+    }
 
     override def MethodReferenceExpressionIdentifier /*::Identifier*/ (
         offset: Int
-    ): TAOfMethodReferenceExpressionIdentifier =
+    ): TAOfMethodReferenceExpressionIdentifier = {
         TAOfMethodReferenceExpressionIdentifier(offset)
+    }
 
     //______________________________
     // type_arguement_target
     override def CastExpression(
         offset:              Int,
         type_argument_index: Int
-    ): TAOfCastExpression =
+    ): TAOfCastExpression = {
         TAOfCastExpression(offset, type_argument_index)
+    }
 
     override def ConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
-    ): TAOfConstructorInvocation =
+    ): TAOfConstructorInvocation = {
         TAOfConstructorInvocation(offset, type_argument_index)
+    }
 
     override def MethodInvocation(
         offset:              Int,
         type_argument_index: Int
-    ): TAOfMethodInvocation =
+    ): TAOfMethodInvocation = {
         TAOfMethodInvocation(offset, type_argument_index)
+    }
 
     override def ConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-    ): TAOfConstructorInMethodReferenceExpression =
+    ): TAOfConstructorInMethodReferenceExpression = {
         TAOfConstructorInMethodReferenceExpression(
             offset,
             type_argument_index
         )
-
+    }
     override def MethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
-    ): TAOfMethodInMethodReferenceExpression =
+    ): TAOfMethodInMethodReferenceExpression = {
         TAOfMethodInMethodReferenceExpression(offset, type_argument_index)
+    }
 
     //
     // TypeAnnotationPath
@@ -215,24 +226,25 @@ trait TypeAnnotationsBinding
     override def TypeAnnotationDirectlyOnType: TADirectlyOnType.type =
         TADirectlyOnType
 
-    override def TypeAnnotationPath(
-        path: IndexedSeq[TypeAnnotationPathElement]
-    ): TAOnNestedType =
+    override def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TAOnNestedType = {
         TAOnNestedType(path)
+    }
 
-    override def TypeAnnotationDeeperInArrayType: TADeeperInArrayType.type =
+    override def TypeAnnotationDeeperInArrayType: TADeeperInArrayType.type = {
         TADeeperInArrayType
+    }
 
-    override def TypeAnnotationDeeperInNestedType: TADeeperInNestedType.type =
+    override def TypeAnnotationDeeperInNestedType: TADeeperInNestedType.type = {
         TADeeperInNestedType
+    }
 
-    override def TypeAnnotationOnBoundOfWildcardType: TAOnBoundOfWildcardType.type =
+    override def TypeAnnotationOnBoundOfWildcardType: TAOnBoundOfWildcardType.type = {
         TAOnBoundOfWildcardType
+    }
 
-    override def TypeAnnotationOnTypeArgument(
-        type_argument_index: Int
-    ): TAOnTypeArgument =
+    override def TypeAnnotationOnTypeArgument(type_argument_index: Int): TAOnTypeArgument = {
         TAOnTypeArgument(type_argument_index)
+    }
 
 }
 

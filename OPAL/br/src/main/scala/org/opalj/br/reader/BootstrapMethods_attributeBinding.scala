@@ -55,7 +55,6 @@ trait BootstrapMethods_attributeBinding
     def BootstrapMethods_attribute(
         cp:                 Constant_Pool,
         attributeNameIndex: Int,
-        attributeLength:    Int,
         bootstrapMethods:   BootstrapMethods
     ): BootstrapMethods_attribute = {
         new BootstrapMethodTable(bootstrapMethods)

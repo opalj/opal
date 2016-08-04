@@ -40,7 +40,6 @@ import scala.xml.Node
  */
 case class RuntimeInvisibleTypeAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[TypeAnnotation]
 ) extends TypeAnnotations_attribute {
 

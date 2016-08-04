@@ -79,7 +79,6 @@ trait CompactLineNumberTable_attributeBinding
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         line_number_table:    Array[Byte]
     ): CompactLineNumberTable =
         new CompactLineNumberTable(line_number_table)

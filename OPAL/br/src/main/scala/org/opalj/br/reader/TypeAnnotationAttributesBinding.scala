@@ -52,7 +52,6 @@ trait TypeAnnotationAttributesBinding
     protected def RuntimeInvisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         annotations:          TypeAnnotations
     ): RuntimeInvisibleTypeAnnotations_attribute = {
         new RuntimeInvisibleTypeAnnotationTable(annotations)
@@ -61,7 +60,6 @@ trait TypeAnnotationAttributesBinding
     def RuntimeVisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         annotations:          TypeAnnotations
     ): RuntimeVisibleTypeAnnotations_attribute = {
         new RuntimeVisibleTypeAnnotationTable(annotations)

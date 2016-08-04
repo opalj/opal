@@ -60,8 +60,7 @@ trait Signature_attributeReader extends AttributeReader {
         signature_index:      Constant_Pool_Index
     ): Signature_attribute
 
-    /* From the Specification
-     *
+    /**
      * The Signature attribute is an optional attribute in the
      * attributes table of a ClassFile, field_info or method_info structure.
      *
@@ -73,23 +72,26 @@ trait Signature_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        Signature_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                Signature_attribute(
-                    cp,
-                    ap,
-                    attribute_name_index,
-                    in.readUnsignedShort
-                )
-            }
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Signature_attribute = {
+        /*val attribute_length =*/ in.readInt
+        Signature_attribute(
+            cp,
+            ap,
+            attribute_name_index,
+            in.readUnsignedShort
         )
-    )
+    }
+
+    registerAttributeReader(SignatureAttribute.Name → parser)
 }
 
-object Signature_attributeReader {
+object SignatureAttribute {
 
-    val ATTRIBUTE_NAME = "Signature"
+    final val Name = "Signature"
 
 }

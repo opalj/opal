@@ -44,7 +44,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     //
     // ABSTRACT DEFINITIONS
     //
-    type LocalVariableTypeTable_attribute <: Attribute
+    type LocalVariableTypeTable_attribute >: Null <: Attribute
 
     type LocalVariableTypeTableEntry
     implicit val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry]
@@ -52,7 +52,6 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     def LocalVariableTypeTable_attribute(
         constant_pool:             Constant_Pool,
         attribute_name_index:      Constant_Pool_Index,
-        attribute_length:          Int,
         local_variable_type_table: LocalVariableTypes
     ): LocalVariableTypeTable_attribute
 
@@ -71,8 +70,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     type LocalVariableTypes = IndexedSeq[LocalVariableTypeTableEntry]
 
-    /* '''From the Specification'''
-     * 
+    /**
      * <pre>
      * LocalVariableTypeTable_attribute {
      *  u2 attribute_name_index;
@@ -87,37 +85,40 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): LocalVariableTypeTable_attribute = {
+        /*val attribute_length =*/ in.readInt()
 
-                val entriesCount = in.readUnsignedShort()
-                if (entriesCount > 0 || reifyEmptyAttributes) {
-                    LocalVariableTypeTable_attribute(
+        val entriesCount = in.readUnsignedShort()
+        if (entriesCount > 0 || reifyEmptyAttributes) {
+            LocalVariableTypeTable_attribute(
+                cp,
+                attribute_name_index,
+                repeat(entriesCount) {
+                    LocalVariableTypeTableEntry(
                         cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(entriesCount) {
-                            LocalVariableTypeTableEntry(
-                                cp,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort
-                            )
-                        }
+                        in.readUnsignedShort,
+                        in.readUnsignedShort,
+                        in.readUnsignedShort,
+                        in.readUnsignedShort,
+                        in.readUnsignedShort
                     )
-                } else {
-                    null
                 }
-            }
-        )
-    )
-}
-object LocalVariableTypeTable_attributeReader {
+            )
+        } else {
+            null
+        }
+    }
 
-    val ATTRIBUTE_NAME = "LocalVariableTypeTable"
+    registerAttributeReader(LocalVariableTypeTableAttribute.Name → parser)
+}
+
+object LocalVariableTypeTableAttribute {
+
+    final val Name = "LocalVariableTypeTable"
 
 }

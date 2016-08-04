@@ -69,5 +69,9 @@ trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstracti
      */
     def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
 
+    /**
+     * Controls whether empty attribute (e.g., a LocalVariableTypeTable with no entries)
+     * should be reified or should be dropped.
+     */
     def reifyEmptyAttributes: Boolean = false
 }

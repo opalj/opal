@@ -49,15 +49,14 @@ trait SourceFile_attributeReader extends AttributeReader {
     def SourceFile_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourceFile_index:     Constant_Pool_Index
+        sourcefile_index:     Constant_Pool_Index
     ): SourceFile_attribute
 
     //
     // IMPLEMENTATION
     //
 
-    /* '''From the Specification'''
-     *
+    /**
      * The SourceFile attribute is an optional fixed-length attribute in the
      * attributes table of a ClassFile structure.
      *
@@ -69,18 +68,21 @@ trait SourceFile_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        SourceFile_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): SourceFile_attribute = {
+        /*val attribute_length =*/ in.readInt
+        SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
+    }
+
+    registerAttributeReader(SourceFileAttribute.Name → parser)
 }
 
-object SourceFile_attributeReader {
+object SourceFileAttribute {
 
-    val ATTRIBUTE_NAME = "SourceFile"
+    final val Name = "SourceFile"
 
 }

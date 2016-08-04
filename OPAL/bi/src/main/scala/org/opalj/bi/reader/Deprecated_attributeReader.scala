@@ -50,9 +50,7 @@ trait Deprecated_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    /*
-     * '''From the Specification'''
-     *
+    /**
      * <pre>
      * Deprecated_attribute {
      *  u2 attribute_name_index;
@@ -60,18 +58,21 @@ trait Deprecated_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        Deprecated_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                Deprecated_attribute(cp, attribute_name_index)
-            }
-        )
-    )
-}
-object Deprecated_attributeReader {
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Deprecated_attribute = {
+        /*val attribute_length =*/ in.readInt
+        Deprecated_attribute(cp, attribute_name_index)
+    }
 
-    val ATTRIBUTE_NAME = "Deprecated"
+    registerAttributeReader(DeprecatedAttribute.Name → parser)
+}
+object DeprecatedAttribute {
+
+    final val Name = "Deprecated"
 
 }
 

@@ -43,12 +43,11 @@ trait Synthetic_attributeReader extends AttributeReader {
     type Synthetic_attribute <: Attribute
 
     def Synthetic_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index
     ): Synthetic_attribute
 
-    /* From the Specification
-     *
+    /**
      * <pre>
      * Synthetic_attribute {
      *  u2 attribute_name_index;
@@ -56,18 +55,21 @@ trait Synthetic_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        Synthetic_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                Synthetic_attribute(cp, attribute_name_index)
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Synthetic_attribute = {
+        /*val attribute_length =*/ in.readInt
+        Synthetic_attribute(cp, attribute_name_index)
+    }
+
+    registerAttributeReader(SyntheticAttribute.Name → parser)
 }
 
-object Synthetic_attributeReader {
+object SyntheticAttribute {
 
-    val ATTRIBUTE_NAME = "Synthetic"
+    final val Name = "Synthetic"
 
 }

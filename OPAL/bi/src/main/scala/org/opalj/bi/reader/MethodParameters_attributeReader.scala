@@ -41,7 +41,7 @@ import java.io.DataInputStream
  */
 trait MethodParameters_attributeReader extends AttributeReader {
 
-    type MethodParameters_attribute <: Attribute
+    type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter
     implicit val MethodParameterManifest: ClassTag[MethodParameter]
@@ -49,7 +49,6 @@ trait MethodParameters_attributeReader extends AttributeReader {
     def MethodParameters_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         parameters:           MethodParameters
     ): MethodParameters_attribute
 
@@ -65,8 +64,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
 
     type MethodParameters = IndexedSeq[MethodParameter]
 
-    /* From The Specification
-     * 
+    /**
      * <pre>
      * MethodParameters_attribute {
      *      u2 attribute_name_index;
@@ -78,31 +76,33 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        MethodParameters_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val parameters_count = in.readUnsignedByte
-                if (parameters_count > 0 || reifyEmptyAttributes) {
-                    MethodParameters_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(parameters_count) {
-                            MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
-                        }
-                    )
-                } else {
-                    null
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): MethodParameters_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val parameters_count = in.readUnsignedByte
+        if (parameters_count > 0 || reifyEmptyAttributes) {
+            MethodParameters_attribute(
+                cp,
+                attribute_name_index,
+                repeat(parameters_count) {
+                    MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
-            }
-        )
-    )
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(MethodParametersAttribute.Name → parser)
 }
 
-object MethodParameters_attributeReader {
+object MethodParametersAttribute {
 
-    val ATTRIBUTE_NAME = "MethodParameters"
+    final val Name = "MethodParameters"
 
 }
 

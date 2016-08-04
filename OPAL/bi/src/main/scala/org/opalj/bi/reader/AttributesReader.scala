@@ -114,7 +114,7 @@ trait AttributesReader
      * <li>MethodParameters_attribute </li>
      * <li>RuntimeVisibleTypeAnnotations_attribute </li>
      * <li>RuntimeInvisibleTypeAnnotations_attribute </li>
-     * <b>Java 9</b>Attributes:<br />
+     * <b>Java 9</b>Attributes (Aug. 2016):<br />
      * <ul>
      * <li>Module_attribute</li>
      * <li>ConcealedPackages_attribute</li>

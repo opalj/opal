@@ -45,7 +45,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     // ABSTRACT DEFINITIONS
     //
 
-    type StackMapTable_attribute <: Attribute
+    type StackMapTable_attribute >: Null <: Attribute
 
     type StackMapFrame
     implicit val StackMapFrameManifest: ClassTag[StackMapFrame]
@@ -61,11 +61,10 @@ trait StackMapTable_attributeReader extends AttributeReader {
     def StackMapTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute
 
-    /*
+    /**
      * <pre>
      * StackMapTable_attribute {
      *  	u2              attribute_name_index;
@@ -75,29 +74,31 @@ trait StackMapTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        StackMapTable_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val number_of_entries = in.readUnsignedShort()
-                if (number_of_entries > 0 || reifyEmptyAttributes) {
-                    StackMapTable_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(number_of_entries) { StackMapFrame(cp, in) }
-                    )
-                } else {
-                    null
-                }
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): StackMapTable_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val number_of_entries = in.readUnsignedShort()
+        if (number_of_entries > 0 || reifyEmptyAttributes) {
+            StackMapTable_attribute(
+                cp,
+                attribute_name_index,
+                repeat(number_of_entries) { StackMapFrame(cp, in) }
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(StackMapTableAttribute.Name → parser)
 }
 
-object StackMapTable_attributeReader {
+object StackMapTableAttribute {
 
-    val ATTRIBUTE_NAME = "StackMapTable"
+    final val Name = "StackMapTable"
 
 }
 

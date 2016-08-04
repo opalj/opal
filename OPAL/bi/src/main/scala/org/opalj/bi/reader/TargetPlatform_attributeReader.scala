@@ -46,43 +46,46 @@ trait TargetPlatform_attributeReader extends AttributeReader {
      * @note if the indexes are zero then the field is empty!
      */
     def TargetPlatform_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        osNameIndex:        Constant_Pool_Index, // CONSTANT_UTF8
-        osArchIndex:        Constant_Pool_Index, // CONSTANT_UTF8
-        osVersionIndex:     Constant_Pool_Index // CONSTANT_UTF8
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        os_name_index:        Constant_Pool_Index, // CONSTANT_UTF8
+        os_arch_index:        Constant_Pool_Index, // CONSTANT_UTF8
+        os_version_index:     Constant_Pool_Index // CONSTANT_UTF8
     ): TargetPlatform_attribute
 
-    /* From the Specification
-     *
+    /**
      * <pre>
      * TargetPlatform_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
-     * 
+     *
      *     u2 os_name_index;
      *     u2 os_arch_index;
      *     u2 os_version_index;
      * }
      * </pre>
      */
-    registerAttributeReader(
-        TargetPlatform_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                TargetPlatform_attribute(
-                    cp, attribute_name_index,
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort()
-                )
-            }
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): TargetPlatform_attribute = {
+        /*val attribute_length =*/ in.readInt
+        TargetPlatform_attribute(
+            cp, attribute_name_index,
+            in.readUnsignedShort(),
+            in.readUnsignedShort(),
+            in.readUnsignedShort()
         )
-    )
+    }
+
+    registerAttributeReader(TargetPlatformAttribute.Name → parser)
+
 }
 
-object TargetPlatform_attributeReader {
+object TargetPlatformAttribute {
 
-    val ATTRIBUTE_NAME = "TargetPlatform"
+    final val Name = "TargetPlatform"
 
 }

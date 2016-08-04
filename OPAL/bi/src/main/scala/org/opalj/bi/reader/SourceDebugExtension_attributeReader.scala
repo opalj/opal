@@ -47,12 +47,10 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
     def SourceDebugExtension_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         debug_extension:      Array[Byte]
     ): SourceDebugExtension_attribute
 
-    /* From the Specification
-     *
+    /**
      * The SourceDebugExtension attribute is an optional attribute in the
      * attributes table of a ClassFile structure.
      *
@@ -67,25 +65,25 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        SourceDebugExtension_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): SourceDebugExtension_attribute = {
+        val attribute_length = in.readInt
+        val data = new Array[Byte](attribute_length)
+        in.readFully(data)
 
-                val data = new Array[Byte](attribute_length)
-                in.readFully(data)
+        SourceDebugExtension_attribute(cp, attribute_name_index, data)
+    }
 
-                SourceDebugExtension_attribute(
-                    cp, attribute_name_index, attribute_length, data
-                )
-            }
-        )
-    )
+    registerAttributeReader(SourceDebugExtensionAttribute.Name → parser)
 
 }
 
-object SourceDebugExtension_attributeReader {
+object SourceDebugExtensionAttribute {
 
-    val ATTRIBUTE_NAME = "SourceDebugExtension"
+    final val Name = "SourceDebugExtension"
 
 }

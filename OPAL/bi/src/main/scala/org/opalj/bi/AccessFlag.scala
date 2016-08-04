@@ -33,7 +33,9 @@ package bi
  * A class, field or method declaration's access flags. An access flag (e.g., `public`
  * or `static`) is basically just a specific bit that can be combined with other
  * access flags to create an integer based bit vector that represents all
- * flags defined for a class, method or field declaration.
+ * flags defined for a class, method or field declaration. Access flags are
+ * generally context dependent and the same value means different things
+ * depending on the context.
  *
  * @author Michael Eichberg
  */
@@ -249,7 +251,7 @@ object ACC_MANDATED extends AccessFlag {
  * dependence on the module indicated by this entry.
  */
 object ACC_TRANSITIVE extends AccessFlag {
-    final override val javaName: None.type = None
+    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen 
     final override val mask = 0x0010
     override def toString = "TRANSITIVE"
 }
@@ -262,7 +264,7 @@ object ACC_TRANSITIVE extends AccessFlag {
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_STATIC_PHASE extends AccessFlag {
-    final override val javaName: None.type = None
+    final override val javaName = Some("static")
     final override val mask = 0x0020
     override def toString = "STATIC_PHASE"
 }
@@ -275,7 +277,7 @@ object ACC_STATIC_PHASE extends AccessFlag {
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_DYNAMIC_PHASE extends AccessFlag {
-    final override val javaName: None.type = None
+    final override val javaName = Some("dynamic")
     final override val mask = 0x0040
     override def toString = "DYNAMIC_PHASE"
 }

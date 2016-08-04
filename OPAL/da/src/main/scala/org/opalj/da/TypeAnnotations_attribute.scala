@@ -36,6 +36,9 @@ import scala.xml.Node
  */
 trait TypeAnnotations_attribute extends Attribute {
 
+    final override def attribute_length =
+        annotations.foldLeft(2 /*num_annotations*/ )(_ + _.attribute_length)
+
     val annotations: IndexedSeq[TypeAnnotation]
 
     def annotationsToXHTML(implicit cp: Constant_Pool): Seq[Node] = annotations.map(_.toXHTML(cp))

@@ -94,7 +94,7 @@ trait RecordMethodCallResults
         }
     }
 
-    // [IMPROVE] Remap returned exceptions
+    // IMPROVE Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues = {
 
         val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException]
