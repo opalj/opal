@@ -40,17 +40,21 @@ import java.util.zip.{ZipFile, ZipEntry}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.util.control.ControlThrowable
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+
+import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
+
+import org.opalj.control.repeat
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.Future
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import scala.util.control.ControlThrowable
-import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
 
 /**
  * Implements the template method to read in a Java class file. Additionally,

@@ -33,6 +33,7 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.

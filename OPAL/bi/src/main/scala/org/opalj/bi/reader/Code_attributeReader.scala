@@ -32,7 +32,8 @@ package reader
 
 import java.io.DataInputStream
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+import org.opalj.control.repeat
 
 /**
  * Defines a template method to read in the code attribute.

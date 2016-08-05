@@ -33,6 +33,7 @@ package reader
 import reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for the local variable type table attribute.

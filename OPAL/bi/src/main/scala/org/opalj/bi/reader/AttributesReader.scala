@@ -31,6 +31,7 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Trait that implements a template method to read in the attributes of

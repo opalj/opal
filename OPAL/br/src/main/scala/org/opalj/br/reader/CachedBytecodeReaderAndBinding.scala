@@ -30,8 +30,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.br.instructions._
+import org.opalj.control.repeat
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br.instructions._
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and

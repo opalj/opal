@@ -33,6 +33,7 @@ package reader
 import java.io.DataInputStream
 
 import scala.reflect.ClassTag
+import org.opalj.control.repeat
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.

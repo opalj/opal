@@ -31,6 +31,7 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for the `type_path` field of type annotations. This

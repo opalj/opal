@@ -33,6 +33,8 @@ import scala.language.existentials
 
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
+
+import org.opalj.control.foreachNonNullValue
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.ai.util.removeFirstUnless

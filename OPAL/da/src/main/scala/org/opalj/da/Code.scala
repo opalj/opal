@@ -33,6 +33,8 @@ import scala.xml.Node
 import scala.xml.Text
 import scala.xml.Unparsed
 
+import org.opalj.control.repeat
+
 /**
  * @author Wael Alkhatib
  * @author Isbel Isbel

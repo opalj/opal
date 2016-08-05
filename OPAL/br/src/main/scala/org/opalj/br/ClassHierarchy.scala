@@ -29,12 +29,15 @@
 package org.opalj
 package br
 
-import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
+
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.io.BufferedSource
+
+import org.opalj.control.foreachNonNullValue
 import org.opalj.io.processSource
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
