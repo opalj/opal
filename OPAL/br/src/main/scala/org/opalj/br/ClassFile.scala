@@ -77,10 +77,10 @@ import org.opalj.collection.immutable.UShortPair
  *    In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
  *    attributes are added:
  *    - ''Module_attribute''
- *    - ''ConcealedPackages_attribute''
- *    - ''Version_attribute''
- *    - ''MainClass_attribute''
- *    - ''TargetPlatform_attribute''
+ *    - TODO ''ConcealedPackages_attribute''
+ *    - TODO ''Version_attribute''
+ *    - TODO ''MainClass_attribute''
+ *    - TODO ''TargetPlatform_attribute''
  *
  *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *    is, however, resolved and is not part of the attributes table of the class file.
@@ -181,8 +181,13 @@ final class ClassFile private (
      */
     def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
-    def enclosingMethod: Option[EnclosingMethod] =
+    def module: Option[Module] = {
+        attributes collectFirst { case m: Module ⇒ m }
+    }
+
+    def enclosingMethod: Option[EnclosingMethod] = {
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
+    }
 
     /**
      * Returns the `inner classes attribute`, if defined.

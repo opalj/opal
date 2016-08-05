@@ -28,19 +28,49 @@
  */
 package org.opalj
 package br
-package reader
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * Definition of a Java 9 module.
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-// IMPROVE [JDK8] Add support for the other meta information attributes (e.g. Version Attribute)
+case class Module(
+        requires: IndexedSeq[Requires],
+        exports:  IndexedSeq[Exports],
+        uses:     IndexedSeq[ObjectType],
+        provides: IndexedSeq[Provides]
+) extends Attribute {
 
-object Java9LibraryFramework extends Java9LibraryFramework
+    final override def kindId: Int = Module.KindId
+
+}
+
+object Module {
+
+    final val KindId = 44
+
+}
+
+/**
+ * @param requires The name of a required module.
+ */
+case class Requires(
+    requires:      String,
+    requiresFlags: Int
+)
+
+/**
+ * @param 	exports Name of an exported package in internal form.
+ * @param 	exportsTo List of names of modules whose code can access the
+ * 			public types in this exported package (in internal form).
+ */
+case class Exports(
+    exports:   String,
+    exportsTo: IndexedSeq[String]
+)
+
+case class Provides(
+    provides:      ObjectType,
+    withInterface: ObjectType
+)
 
