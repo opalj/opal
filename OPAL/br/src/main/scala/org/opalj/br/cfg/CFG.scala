@@ -42,7 +42,8 @@ import org.opalj.collection.mutable.UShortSet
  * To compute a `CFG` use the [[CFGFactory]].
  *
  * ==Thread-Safety==
- * This class is thread-safe; all data is effectively immutable.
+ * This class is thread-safe; all data is effectively immutable
+ * '''after construction''' time.
  *
  * @param code The code for which the CFG was build.
  * @param normalReturnNode The unique exit node of the control flow graph if the
@@ -92,7 +93,7 @@ case class CFG(
      *
      * @note The returned set is recomputed every time this method is called.
      */
-    lazy val allBBs: Set[BasicBlock] = basicBlocks.filter(_ ne null).toSet
+    lazy val allBBs: Set[BasicBlock] = basicBlocks.view.filter(_ ne null).toSet
 
     /**
      * Iterates over all runtime successors of the instruction with the given pc.
@@ -106,7 +107,7 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): Set[PC] = {
+    def successors(pc: PC): Set[PC] /* IMPROVE Use (refactored) UShortSet */ = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
@@ -146,7 +147,7 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC)(implicit code: Code): Set[PC] = {
+    def predecessors(pc: PC): Set[PC] /* IMPROVE Use (refactored) UShortSet */ = {
         if (pc == 0)
             return Set.empty;
 
@@ -161,7 +162,7 @@ case class CFG(
         }
     }
 
-    def foreachPredecessor(pc: PC)(f: PC ⇒ Unit)(implicit code: Code): Unit = {
+    def foreachPredecessor(pc: PC)(f: PC ⇒ Unit): Unit = {
         if (pc == 0)
             return ;
 
@@ -192,9 +193,9 @@ case class CFG(
      * If the first index (i.e., `pcToIndex(0)` is not 0, then a new basic block for the indexes
      * in {0,pcToIndex(0)} is created if necessary.
      *
-     * @param lastIndex The index of the last instruction of the underlying (non-empty) code array.
-     * 		I.e., if the instruction array contains one instruction then the `lastIndex` has to be
-     * 		`0`.
+     * @param 	lastIndex The index of the last instruction of the underlying (non-empty) code array.
+     * 			I.e., if the instruction array contains one instruction then the `lastIndex` has to be
+     * 			`0`.
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 

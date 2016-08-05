@@ -77,29 +77,33 @@ trait AnnotationAttributesBinding
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations
-    ) =
+    ) = {
         new RuntimeVisibleAnnotations_attribute(annotations)
+    }
 
     def RuntimeInvisibleAnnotations_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations
-    ) =
+    ) = {
         new RuntimeInvisibleAnnotations_attribute(annotations)
+    }
 
     def RuntimeVisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
-    ) =
+    ) = {
         new RuntimeVisibleParameterAnnotations_attribute(parameters_annotations)
+    }
 
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
-    ) =
+    ) = {
         new RuntimeInvisibleParameterAnnotations_attribute(parameters_annotations)
+    }
 
 }
 

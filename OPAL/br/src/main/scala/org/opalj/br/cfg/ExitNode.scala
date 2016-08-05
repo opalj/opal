@@ -38,15 +38,17 @@ package org.opalj.br.cfg
  */
 class ExitNode(normalReturn: Boolean) extends CFGNode {
 
-    final def isBasicBlock: Boolean = false
-    final def isCatchNode: Boolean = false
-    final def isExitNode: Boolean = true
+    final override def isBasicBlock: Boolean = false
+    final override def isCatchNode: Boolean = false
+    final override def isExitNode: Boolean = true
 
-    def isStartOfSubroutine: Boolean = false
+    final override def isStartOfSubroutine: Boolean = false
 
-    override def addSuccessor(successor: CFGNode): Unit = throw new UnsupportedOperationException
+    final override def addSuccessor(successor: CFGNode): Unit = {
+        throw new UnsupportedOperationException()
+    }
 
-    override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = {
+    final override private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = {
         throw new UnsupportedOperationException()
     }
 
@@ -58,8 +60,9 @@ class ExitNode(normalReturn: Boolean) extends CFGNode {
 
     override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
 
-    override def toHRR: Option[String] =
+    override def toHRR: Option[String] = {
         Some(if (normalReturn) "Normal Return" else "Abnormal Return")
+    }
 
     override def visualProperties: Map[String, String] = {
         if (normalReturn)

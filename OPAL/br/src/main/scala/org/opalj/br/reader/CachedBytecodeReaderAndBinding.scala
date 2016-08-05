@@ -53,10 +53,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
      * Transforms an array of bytes into an array of
      * [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(
-        cp:     Constant_Pool,
-        source: Array[Byte]
-    ): Instructions = {
+    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -372,9 +369,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     WIDE
 
                 case opcode ⇒
-                    throw new BytecodeProcessingFailedException(
-                        "unsupported opcode: "+opcode
-                    )
+                    throw new BytecodeProcessingFailedException("unsupported opcode: "+opcode)
             }
 
         }

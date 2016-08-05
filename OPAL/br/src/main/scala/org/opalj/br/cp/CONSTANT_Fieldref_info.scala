@@ -48,10 +48,11 @@ case class CONSTANT_Fieldref_info(
 
     // We don't mind if the field is initialized more than once (if reading the classfile 
     // should be parallelized) as it is just an optimization and the object reference
-    // is of now importance; an equals check would even return true. Hence, w.r.t. the
+    // is of now importance; an equals check will return true. Hence, w.r.t. the
     // previous definition this code is thread-safe.
     private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
     override def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) = {
+        var fieldref = this.fieldref
         if (fieldref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
             fieldref =
@@ -60,6 +61,7 @@ case class CONSTANT_Fieldref_info(
                     nameAndType.name(cp),
                     nameAndType.fieldType(cp)
                 )
+            this.fieldref = fieldref
         }
         fieldref
     }

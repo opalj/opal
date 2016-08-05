@@ -40,7 +40,7 @@ case class RuntimeInvisibleParameterAnnotationTable(
 
     final def isRuntimeVisible: Boolean = false
 
-    override def kindId: Int = RuntimeInvisibleParameterAnnotationTable.KindId
+    final override def kindId: Int = RuntimeInvisibleParameterAnnotationTable.KindId
 
 }
 object RuntimeInvisibleParameterAnnotationTable {

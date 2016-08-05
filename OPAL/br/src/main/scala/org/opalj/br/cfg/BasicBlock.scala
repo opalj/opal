@@ -53,10 +53,11 @@ class BasicBlock(val startPC: PC) extends CFGNode {
         setSuccessors(successors)
     }
 
-    final override def isBasicBlock: Boolean = true
-    final override def asBasicBlock: this.type = this
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = false
+
+    final override def isBasicBlock: Boolean = true
+    final override def asBasicBlock: this.type = this
 
     private[this] var _endPC: PC = 0 // will be initialized at construction time
     def endPC_=(pc: PC): Unit = {
@@ -105,9 +106,9 @@ class BasicBlock(val startPC: PC) extends CFGNode {
      * Calls the function `f` for all instructions - identified by their respective
      * pcs - of a basic block.
      *
-     * @param f The function that will be called.
-     * @param code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
-     * 		belongs.
+     * @param 	f The function that will be called.
+     * @param 	code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     * 			belongs.
      */
     def foreach[U](f: PC ⇒ U)(implicit code: Code): Unit = {
         val instructions = code.instructions

@@ -48,8 +48,9 @@ trait SourceDebugExtension_attributeBinding
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         debug_extension:      Array[Byte]
-    ): SourceDebugExtension_attribute =
+    ): SourceDebugExtension_attribute = {
         new SourceDebugExtension(debug_extension)
+    }
 
 }
 

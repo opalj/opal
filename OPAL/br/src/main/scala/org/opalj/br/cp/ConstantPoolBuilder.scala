@@ -34,7 +34,9 @@ import org.opalj.br.instructions._
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
- * Factory to compute a constant pool for a given class file.
+ * Factory to compute a constant pool for a given class file. The constant pool
+ * will only contain entries for the supported elements of a class file. This
+ * is basically equivalent to the elements specified by the JVM specification.
  *
  * @author Andre Pacak
  * @author Michael Eichberg
@@ -72,6 +74,7 @@ object ConstantPoolBuilder {
         }
 
         def collectFromClassFileAttribute(attribute: Attribute): Unit = attribute match {
+            // IMPROVE use an attribute's kindId
             case EnclosingMethod(clazz, name, descriptor) ⇒
                 cp.CPEUtf8("EnclosingMethod")
                 cp.CPEClass(clazz)
@@ -102,6 +105,8 @@ object ConstantPoolBuilder {
             case signature: ClassSignature ⇒
                 cp.CPEUtf8("Signature")
                 cp.CPEUtf8(signature.toJVMSignature)
+
+            // IMPROVE [JDK9] support  case module : Module =>... case ...Version    
 
             case default ⇒ collectFromGeneralAttribute(default)
 

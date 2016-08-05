@@ -84,24 +84,28 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     def asObjectType(cp: Constant_Pool): ObjectType =
         throw new BytecodeProcessingFailedException("conversion to object type is not supported")
 
-    def asReferenceType(cp: Constant_Pool): ReferenceType =
-        throw new BytecodeProcessingFailedException("conversion to object type is not supported")
+    def asReferenceType(cp: Constant_Pool): ReferenceType = {
+        val message = "conversion to reference type is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 
-    def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-        throw new BytecodeProcessingFailedException(
-            "conversion to bootstrap argument is not supported"
-        )
+    def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = {
+        val message = "conversion to bootstrap argument is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 
-    def asMethodHandle(cp: Constant_Pool): MethodHandle =
-        throw new BytecodeProcessingFailedException("conversion to method handle is not supported")
+    def asMethodHandle(cp: Constant_Pool): MethodHandle = {
+        val message = "conversion to method handle is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 
-    def asNameAndType: CONSTANT_NameAndType_info =
-        throw new BytecodeProcessingFailedException(
-            "conversion to name and type info is not supported"
-        )
+    def asNameAndType: CONSTANT_NameAndType_info = {
+        val message = "conversion to name and type info is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 
-    def asInvokeDynamic: CONSTANT_InvokeDynamic_info =
-        throw new BytecodeProcessingFailedException(
-            "conversion to invoke dynamic info is not supported"
-        )
+    def asInvokeDynamic: CONSTANT_InvokeDynamic_info = {
+        val message = "conversion to invoke dynamic info is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 }

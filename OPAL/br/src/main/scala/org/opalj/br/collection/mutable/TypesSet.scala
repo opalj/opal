@@ -50,6 +50,10 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
     protected[this] var theConcreteTypes: Set[ObjectType] = Set.empty
     protected[this] var theUpperTypeBounds: Set[ObjectType] = Set.empty
 
+    /**
+     * The set of concrete types which are not subtypes of any type which
+     * is returned by `upperTypeBounds`.
+     */
     final def concreteTypes: Set[ObjectType] = theConcreteTypes
     final def upperTypeBounds: Set[ObjectType] = theUpperTypeBounds
 
@@ -62,6 +66,14 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
 
     def ++=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { += }
 
+    def ++<:=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { +<:= }
+
+    /**
+     * Adds the given upper type bound to this `TypesSet` unless a supertype
+     * of the given type is already added as an upper type bound.
+     *
+     * All subtypes – whether concrete or upper types bounds – are removed.
+     */
     def +<:=(tpe: ObjectType): Unit = {
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe

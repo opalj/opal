@@ -148,10 +148,7 @@ trait AnnotationsBinding
         )
     }
 
-    def AnnotationValue(
-        cp:         Constant_Pool,
-        annotation: Annotation
-    ): ElementValue = {
+    def AnnotationValue(cp: Constant_Pool, annotation: Annotation): ElementValue = {
         new AnnotationValue(annotation)
     }
 

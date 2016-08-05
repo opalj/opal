@@ -49,8 +49,9 @@ trait Unknown_attributeBinding
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         info:                 Array[Byte]
-    ): Unknown_attribute =
+    ): Unknown_attribute = {
         new Unknown_attribute(cp(attribute_name_index).asString, info)
+    }
 
 }
 
