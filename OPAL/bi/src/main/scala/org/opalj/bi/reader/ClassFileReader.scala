@@ -50,6 +50,7 @@ import scala.concurrent.Future
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import scala.util.control.ControlThrowable
+import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -326,7 +327,23 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null) {
-                val message = s"the file $jarFile does not contain $jarFileEntryName"
+                var names: List[(Int, String)] = Nil
+                val zfEntries = zf.entries()
+                while (zfEntries.hasMoreElements()) {
+                    val zfEntry = zfEntries.nextElement()
+                    val zfEntryName = zfEntry.getName
+                    val distance = getLevenshteinDistance(zfEntryName, jarFileEntryName)
+                    names = (distance, zfEntryName) :: names
+                }
+                val mostRelatedNames = names.sortWith((l, r) ⇒ l._1 < r._1).map(_._2)
+                val ending = if (mostRelatedNames.length > 15) ", ...)" else ")"
+
+                val message =
+                    mostRelatedNames.take(15).mkString(
+                        s"the file $jarFile does not contain $jarFileEntryName (similar: ",
+                        ", ",
+                        ending
+                    )
                 throw new IOException(message)
             }
             ClassFile(zf, jarEntry)
