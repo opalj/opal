@@ -121,6 +121,22 @@ class BasicBlock(val startPC: PC) extends CFGNode {
         }
     }
 
+    /**
+     * Counts the instructions of this basic block.
+     */
+    def countInstructions(implicit code: Code): Int = {
+        val instructions = code.instructions
+        var count = 1
+        val startPC = this.startPC
+        var pc = instructions(startPC).indexOfNextInstruction(startPC)
+        val endPC = this.endPC
+        while (pc <= endPC) {
+            count += 1
+            pc = instructions(pc).indexOfNextInstruction(pc)
+        }
+        count
+    }
+
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
