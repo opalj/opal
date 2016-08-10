@@ -32,15 +32,14 @@ package ui
 
 import java.io.File
 import java.net.URL
+
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
+import org.opalj.br.reader.{BytecodeInstructionsCache, Java9FrameworkWithCaching, Java9LibraryFramework}
 import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.log.OPALLogger
+
 import scalafx.collections.ObservableBuffer
-import scalafx.Includes._
 import scalafx.stage.Stage
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -72,8 +71,8 @@ object ProjectHelper {
     ): Project[URL] = {
         OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-        val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
-        val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
+        val Java8ClassFileReader = new Java9FrameworkWithCaching(cache)
+        val Java8LibraryClassFileReader = Java9LibraryFramework
 
         val (classFiles, exceptions1) =
             br.reader.readClassFiles(
