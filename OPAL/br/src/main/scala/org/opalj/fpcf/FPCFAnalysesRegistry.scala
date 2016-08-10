@@ -29,13 +29,12 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analysis.MethodAccessibilityAnalysis
-import org.opalj.fpcf.analysis.FactoryMethodAnalysis
-import org.opalj.fpcf.analysis.SimpleInstantiabilityAnalysis
-import org.opalj.fpcf.analysis.CallableFromClassesInOtherPackagesAnalysis
-import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
-import org.opalj.fpcf.analysis.PurityAnalysis
-import org.opalj.fpcf.analysis.ClassExtensibilityAnalysis
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -64,80 +63,99 @@ object FPCFAnalysesRegistry {
      * used to compute a specific (set of) property(ies).
      *
      * @param analysisDescription A short description of the analysis and the properties that the
-     * 		analysis computes; in particular w.r.t. a specific set of entities.
-     *
-     * @param analysisFactory The factory.
+     *                            analysis computes; in particular w.r.t. a specific set of entities.
+     * @param analysisFactory     The factory.
      */
     def register(
         analysisID:          String,
         analysisDescription: String,
-        analysisFactory:     FPCFAnalysisRunner
+        analysisFactory:     String
     ): Unit = this.synchronized {
-        idToFactory += ((analysisID, analysisFactory))
-        idToDescription += ((analysisID, analysisDescription))
+        val analysisRunner = resolveAnalysisRunner(analysisFactory)
+        if (analysisRunner.nonEmpty) {
+            idToFactory += ((analysisID, analysisRunner.get))
+            idToDescription += ((analysisID, analysisDescription))
+        } else {
+            OPALLogger.error(
+                "setup",
+                s"Unknown fix-point analysis. Analysis runner could not be instantiated: $analysisFactory"
+            )(
+                    GlobalLogContext
+                )
+        }
+    }
+
+    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisRunner] = {
+        import scala.reflect.runtime.universe.runtimeMirror
+        val mirror = runtimeMirror(getClass.getClassLoader)
+        var result = Option.empty[FPCFAnalysisRunner]
+        try {
+            val module = mirror.staticModule(fqn)
+            result = Some(mirror.reflectModule(module).instance.asInstanceOf[FPCFAnalysisRunner])
+        } catch {
+            case e: ScalaReflectionException ⇒
+            case c: ClassCastException       ⇒
+        }
+        result
+    }
+
+    private[this] case class AnalysisFactory(val id: String, val description: String, val factory: String)
+
+    def registerFromConfig(): Unit = {
+        val config = ConfigFactory.load().as[Config]("org.opalj.fpcf.registry.analyses")
+        try {
+
+            val entries = config.entrySet()
+            val itr = entries.iterator()
+            while (itr.hasNext) {
+                val confMap = itr.next()
+                val configuredAnalyses = config.as[List[AnalysisFactory]](confMap.getKey)
+                configuredAnalyses foreach { a ⇒
+                    println(a)
+                    register(a.id, a.description, a.factory)
+                }
+            }
+        } catch {
+            case e: Exception ⇒ OPALLogger.error(
+                "setup",
+                "Error creating the FixpointRegistry. Invalid config. (org.opalj.fcpf.registry.analyses)"
+            )(GlobalLogContext)
+        }
+    }
+
+    def main(args: Array[String]): Unit = {
+
     }
 
     /**
      * Returns the ids of the registered analyses.
      */
-    def analysisIDs(): Iterable[String] = this.synchronized { idToFactory.keys }
+    def analysisIDs(): Iterable[String] = this.synchronized {
+        idToFactory.keys
+    }
 
     /**
      * Returns the descriptions of the registered analyses. These descriptions are
      * expected to be useful to the end-users.
      */
-    def analysisDescriptions(): Iterable[String] = this.synchronized { idToDescription.values }
+    def analysisDescriptions(): Iterable[String] = this.synchronized {
+        idToDescription.values
+    }
 
     /**
      * Returns the current view of the registry.
      */
-    def factories: Iterable[FPCFAnalysisRunner] = this.synchronized { idToFactory.values }
+    def factories: Iterable[FPCFAnalysisRunner] = this.synchronized {
+        idToFactory.values
+    }
 
     /**
      * Returns the factory for analysis with a matching description.
      */
-    def factory(id: String): FPCFAnalysisRunner = this.synchronized { idToFactory(id) }
+    def factory(id: String): FPCFAnalysisRunner = this.synchronized {
+        idToFactory(id)
+    }
 
     //initialize the registry with the known default analyses
-    register(
-        "MethodAccessibilityAnalysis",
-        "Computes the project accessibility property of methods w.r.t. clients.",
-        MethodAccessibilityAnalysis
-    )
-
-    register(
-        "FactoryMethodAnalysis",
-        "Determines if a static method is an accessible factory method w.r.t. clients.",
-        FactoryMethodAnalysis
-    )
-
-    register(
-        "InstantiabilityAnalysis",
-        "Computes if a class can (possibly) be instantiated.",
-        SimpleInstantiabilityAnalysis
-    )
-
-    register(
-        "CallableFromClassesInOtherPackagesAnalysis",
-        "Computes whether a non-static method can be called via an super or subclass.",
-        CallableFromClassesInOtherPackagesAnalysis
-    )
-
-    register(
-        "FieldMutabilityAnalysis",
-        "Determines if fields are (effectively) final.",
-        FieldMutabilityAnalysis
-    )
-
-    register(
-        "PurityAnalysis",
-        "Determines if a method is pure (~ has no side effects).",
-        PurityAnalysis
-    )
-
-    register(
-        "ClassExtensibilityAnalysis",
-        "Determines which classes may have subclasses (this analysis is particularly relevant when analyzing libraries)",
-        ClassExtensibilityAnalysis
-    )
+    registerFromConfig()
 }
