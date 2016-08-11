@@ -178,7 +178,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                                 s"code size=${method.body.get.instructions.length}."
                         )
                     }
-                    if (pc != postDT.startNode && // this should be always if we have an artifical start node
+                    if (pc != postDT.startNode && // this should be always if we have an artificial start node
                         postDT.dom(pc) != postDT.startNode &&
                         !evaluatedInstructions.contains(postDT.dom(pc))) {
                         fail(s"the post-dominator ${postDT.dom(pc)} of $pc was not evaluated")

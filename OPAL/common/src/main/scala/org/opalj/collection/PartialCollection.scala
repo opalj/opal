@@ -32,7 +32,7 @@ package collection
 /**
  * Identifies a collection as being (guaranteed) complete or as being potentially incomplete.
  *
- * This class is typically used by analysis that derive some results and which are also able to
+ * This class is typically used by analyses that derive some results and which are also able to
  * do so in case of incomplete information. But in the latter case the analysis may not be able
  * to determine whether the derived information is complete or not. For example, imagine you
  * are analyzing some library (but not the JDK). In this case the class hierarchy will be incomplete

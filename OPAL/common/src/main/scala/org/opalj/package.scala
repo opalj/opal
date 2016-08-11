@@ -104,28 +104,28 @@ package object opalj {
     /**
      * The type of a concrete analysis mode.
      */
-    type AnalysisMode = AnalysisModes.Value
+    final type AnalysisMode = AnalysisModes.Value
 
     /**
      * The type of the predefined relational operators.
      *
      * See [[org.opalj.RelationalOperators]] for the list of all defined operators.
      */
-    type RelationalOperator = RelationalOperators.Value
+    final type RelationalOperator = RelationalOperators.Value
 
     /**
      * The type of the predefined binary arithmetic operators.
      *
      * See [[org.opalj.BinaryArithmeticOperators]] for the list of all defined operators.
      */
-    type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
+    final type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
 
     /**
      * The type of the predefined unary arithmetic operators.
      *
      * See [[org.opalj.UnaryArithmeticOperators]] for the list of all defined operators.
      */
-    type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
+    final type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
 
     /**
      * A simple type alias that can be used to communicate that the respective
@@ -148,7 +148,7 @@ package object opalj {
      *      `11111111111111111111111111111111`); in other words, the long's sign bit will
      *      still be `0`.
      */
-    final def i2lBitMask(value: Int): Long = {
+    @inline final def i2lBitMask(value: Int): Long = {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
     }
 
