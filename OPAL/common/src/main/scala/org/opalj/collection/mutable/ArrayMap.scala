@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,17 +35,17 @@ import java.util.Arrays
 
 /**
  * Conceptually, a map where the keys are positive `Int` values and the values are
- * non-null. (`null` values are not permitted!)
+ * non-`null`. (`null` values are not permitted!)
  * The key values always have to be larger than or equal to 0 and are ideally continues
- * (0,1,2,3,...). The values are stored in a plain array to enable true O(1) access.
+ * (0,1,2,3,...). The values are stored in a plain array to enable true O(1) retrieval.
  * Furthermore, the array is only as large as it has to be to keep the value associated
  * with the largest key.
  *
- * @note This data structure is not thread safe!
+ * @note This data structure is not thread safe.
  *
  * @author Michael Eichberg
  */
-class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T]) {
+class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T]) { self ⇒
 
     /**
      * Clears, but does not resize/shrink the map.
@@ -59,30 +59,31 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
      */
     @throws[IndexOutOfBoundsException]("if the key is negative")
     def apply(key: Int): T = {
+        val data = this.data
         if (key < data.length)
             data(key)
         else
             null
     }
 
-    @throws[IndexOutOfBoundsException]("if the key is negative")
     def get(key: Int): Option[T] = {
-        if (key < data.length) {
+        val data = this.data
+        if (key >= 0 && key < data.length) {
             Option(data(key))
         } else
             None
     }
 
-    @throws[IndexOutOfBoundsException]("if the key is negative")
     def remove(key: Int): Unit = {
-        if (key < data.length) {
+        val data = this.data
+        if (key >= 0 && key < data.length) {
             data(key) = null
         }
     }
 
-    @throws[IndexOutOfBoundsException]("if the key is negative")
     def getOrElse(key: Int, f: ⇒ T): T = {
-        if (key < data.length) {
+        val data = this.data
+        if (key >= 0 && key < data.length) {
             val entry = data(key)
             if (entry ne null)
                 return entry;
@@ -91,9 +92,9 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         f
     }
 
-    @throws[IndexOutOfBoundsException]("if the key is negative")
     def getOrElseUpdate(key: Int, f: ⇒ T): T = {
-        if (key < data.length) {
+        val data = this.data
+        if (key >= 0 && key < data.length) {
             val entry = data(key)
             if (entry ne null)
                 return entry;
@@ -113,7 +114,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     @throws[IndexOutOfBoundsException]("if the key is negative")
     final def update(key: Int, value: T): Unit = {
         assert(value ne null, "ArrayMap only supports non-null values")
-
+        val data = this.data
         val max = data.length
         if (key < max) {
             data(key) = value
@@ -121,11 +122,12 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
             val newData = new Array[T](key + 2)
             System.arraycopy(data, 0, newData, 0, max)
             newData(key) = value
-            data = newData
+            this.data = newData
         }
     }
 
     def foreachValue(f: T ⇒ Unit): Unit = {
+        val data = this.data
         var i = 0
         val max = data.length
         while (i < max) {
@@ -137,6 +139,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     }
 
     def foreach(f: (Int, T) ⇒ Unit): Unit = {
+        val data = this.data
         var i = 0
         val max = data.length
         while (i < max) {
@@ -148,6 +151,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     }
 
     def forall(f: T ⇒ Boolean): Boolean = {
+        val data = this.data
         var i = 0
         val max = data.length
         while (i < max) {
@@ -167,6 +171,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         new Iterator[(Int, T)] {
 
             private[this] def getNextIndex(startIndex: Int): Int = {
+                val data = self.data
                 val max = data.length
                 var i = startIndex
                 while (i + 1 < max) {
@@ -190,6 +195,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     }
 
     def map[X](f: (Int, T) ⇒ X): List[X] = {
+        val data = this.data
         var rs = List.empty[X]
         var i = 0
         val max = data.length
@@ -230,6 +236,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
     }
 
     def mkString(start: String, sep: String, end: String): String = {
+        val data = this.data
         var s = start
         var i = 0
         val max = data.length
