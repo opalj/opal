@@ -229,10 +229,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * }
      * </pre>
      *
-     * @param in The `DataInputStream from which the class file will be read. The
-     *    stream is not closed by this method.
-     *    '''It is highly recommended that the stream is buffered; otherwise the
-     *    performance will be terrible!'''
+     * @param in 	The `DataInputStream from which the class file will be read. The
+     *    			stream is not closed by this method.
+     *    			'''It is highly recommended that the stream is buffered; otherwise the
+     *    			performance will be terrible!'''
      */
     def ClassFile(in: DataInputStream): List[ClassFile] = {
         // magic
