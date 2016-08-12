@@ -31,6 +31,8 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Implements the template method to read signature attributes.
@@ -42,7 +44,7 @@ import java.io.DataInputStream
  */
 trait Signature_attributeReader extends AttributeReader {
 
-    type Signature_attribute <: Attribute
+    type Signature_attribute >: Null <: Attribute
 
     /**
      * '''From the Specification'''
@@ -52,6 +54,8 @@ trait Signature_attributeReader extends AttributeReader {
      * attribute is an attribute of a ClassFile structure, a method type
      * signature, if this signature is an attribute of a method_info structure,
      * or a field type signature otherwise.
+     *
+     * @throw IllegalArgumentException If the signature is syntactically invalid.
      */
     def Signature_attribute(
         constant_pool:        Constant_Pool,
@@ -71,6 +75,11 @@ trait Signature_attributeReader extends AttributeReader {
      *    u2 signature_index;
      * }
      * </pre>
+     *
+     * Given that the Java Reflection API has extensive exception handling support
+     * for handling wrong signatures, we at least provide support for the case
+     * where the signature is syntactically invalid. In this case the attribute
+     * is skipped.
      */
     private[this] def parser(
         ap:                   AttributeParent,
@@ -79,12 +88,17 @@ trait Signature_attributeReader extends AttributeReader {
         in:                   DataInputStream
     ): Signature_attribute = {
         /*val attribute_length =*/ in.readInt
-        Signature_attribute(
-            cp,
-            ap,
-            attribute_name_index,
-            in.readUnsignedShort
-        )
+        val signature_index = in.readUnsignedShort
+        try {
+            Signature_attribute(cp, ap, attribute_name_index, signature_index)
+        } catch {
+            case iae: IllegalArgumentException ⇒
+                OPALLogger.error(
+                    "parsing bytecode",
+                    s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
+                )(GlobalLogContext)
+                null
+        }
     }
 
     registerAttributeReader(SignatureAttribute.Name → parser)
