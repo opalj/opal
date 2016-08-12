@@ -54,7 +54,7 @@ final class IntArrayStack private (
 
     def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
 
-	override def size: Int = size0
+    override def size: Int = size0
     override def length: Int = size0
     override def isEmpty: Boolean = size0 == 0
     override def nonEmpty: Boolean = size0 > 0
@@ -105,7 +105,7 @@ final class IntArrayStack private (
 
         if (thatSize == 0) {
             return ;
-		}
+        }
 
         val thisSize = this.size0
         var thisData = this.data
