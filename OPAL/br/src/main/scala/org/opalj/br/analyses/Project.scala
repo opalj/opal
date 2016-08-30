@@ -42,7 +42,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithCaching
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
@@ -56,6 +56,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.log.GlobalLogContext
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -716,7 +717,11 @@ object Project {
 
     private[this] def cache = new BytecodeInstructionsCache
 
-    lazy val JavaClassFileReader = new Java9FrameworkWithCaching(cache)
+    def JavaClassFileReader(
+        implicit
+        config:     Config     = ConfigFactory.load(),
+        logContext: LogContext = GlobalLogContext
+    ) = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
 
     lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
@@ -732,6 +737,18 @@ object Project {
 
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
         apply(JavaClassFileReader.ClassFiles(file), projectLogger = projectLogger)
+    }
+
+    def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
+        this(
+            projectClassFilesWithSources = JavaClassFileReader(config, logContext).ClassFiles(file),
+            libraryClassFilesWithSources = Traversable.empty,
+            libraryClassFilesAreInterfacesOnly = true,
+            virtualClassFiles = Traversable.empty,
+            handleInconsistentProject = defaultHandlerForInconsistentProjects,
+            config = config,
+            logContext
+        )
     }
 
     def apply[Source](
@@ -920,9 +937,30 @@ object Project {
         config:        Config     = ConfigFactory.load(),
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
-
         implicit val logContext = new DefaultLogContext()
         OPALLogger.register(logContext, projectLogger)
+        this(
+            projectClassFilesWithSources,
+            libraryClassFilesWithSources,
+            libraryClassFilesAreInterfacesOnly,
+            virtualClassFiles,
+            handleInconsistentProject,
+            config,
+            logContext
+        )
+    }
+
+    def apply[Source](
+        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesAreInterfacesOnly: Boolean,
+        virtualClassFiles:                  Traversable[ClassFile],
+        handleInconsistentProject:          HandleInconsistenProject,
+        config:                             Config,
+        logContext:                         LogContext
+    ): Project[Source] = {
+        implicit val projectConfig = config
+        implicit val projectLogContext = logContext
 
         try {
             import scala.collection.mutable.Set

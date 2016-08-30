@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -72,21 +72,66 @@ trait ClassFileBinding extends ClassFileReader {
         )
     }
 
-    val removeBootstrapMethodAttribute: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
-        val classFile = classFiles.head
-        val attributes = classFile.attributes
-        if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||
-            attributes.size == 0 ||
-            attributes.forall(attribute ⇒ !attribute.isInstanceOf[BootstrapMethodTable]))
-            classFiles
-        else {
-            val newAttributes = classFile.attributes filter { attribute ⇒
-                !attribute.isInstanceOf[BootstrapMethodTable]
+    /**
+     * Tests if the classfile has a [[SynthesizedClassFiles]] attribute and if so
+     * extracts the class file and removes the attribute.
+     */
+    val extractSynthesizedClassFiles: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
+        var updatedClassFiles = List.empty[ClassFile]
+        var classFilesToProcess = classFiles
+        while (classFilesToProcess.nonEmpty) {
+            val classFile = classFilesToProcess.head
+            classFilesToProcess = classFilesToProcess.tail
+
+            var hasSynthesizedClassFilesAttribute = false
+            val newAttributes = classFile.attributes.filterNot { a ⇒
+                if (a.kindId == SynthesizedClassFiles.KindId) {
+                    val SynthesizedClassFiles(synthesizedClassFiles) = a
+                    synthesizedClassFiles.foreach { cf ⇒
+                        classFilesToProcess = cf :: classFilesToProcess
+                    }
+                    hasSynthesizedClassFilesAttribute = true
+                    true
+                } else {
+                    false
+                }
             }
-            classFile.updateAttributes(newAttributes) +: classFiles.tail
+            if (hasSynthesizedClassFilesAttribute) {
+                updatedClassFiles = classFile.copy(attributes = newAttributes) :: updatedClassFiles
+            } else {
+                updatedClassFiles = classFile :: updatedClassFiles
+            }
+
         }
+        updatedClassFiles
     }
 
-    registerClassFilePostProcessor(removeBootstrapMethodAttribute)
-}
+    /**
+     * Removes all `BootstrapMethod` attributes because the invokedynamic instructions are
+     * either completely resolved by creating code that resembles the code executed by the
+     * JVM or the instructions are at least enhanced and have explicit references to the
+     * bootsrap methods.
+     */
+    def removeBootstrapMethodAttribute(classFiles: List[ClassFile]): List[ClassFile] = {
+        var updatedClassFiles = List.empty[ClassFile]
+        var classFilesToProcess = classFiles
+        while (classFilesToProcess.nonEmpty) {
+            val classFile = classFilesToProcess.head
+            classFilesToProcess = classFilesToProcess.tail
 
+            val attributes = classFile.attributes
+            if (classFile.majorVersion > 50 /* <=> does not have BootstrapMethodTable*/ &&
+                attributes.nonEmpty &&
+                attributes.exists(_.kindId == BootstrapMethodTable.KindId)) {
+                val newAttributes = attributes.filter(_.kindId != BootstrapMethodTable.KindId)
+                updatedClassFiles = classFile.copy(attributes = newAttributes) :: updatedClassFiles
+            } else {
+                updatedClassFiles = classFile :: updatedClassFiles
+            }
+        }
+        updatedClassFiles
+    }
+
+    /* EXECUTED SECOND */ registerClassFilePostProcessor(removeBootstrapMethodAttribute)
+    /* EXECUTED FIRST  */ registerClassFilePostProcessor(extractSynthesizedClassFiles)
+}

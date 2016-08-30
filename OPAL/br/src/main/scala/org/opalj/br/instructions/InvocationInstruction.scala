@@ -34,14 +34,26 @@ import org.opalj.collection.mutable.UShortSet
 
 /**
  * An instruction that "invokes" something. This can be, e.g., the invocation of a method
- * or – using `invokedynamic` – the read of a field value.
+ * or – using [[INCOMPLETE_INVOKEDYNAMIC]] – the read of a field value.
  *
  * @author Michael Eichberg
  */
 abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
 
+    /**
+     * The simple name of the called method.
+     *
+     * @note	This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
+     * 			– only available after loading the entire class file.
+     */
     def name: String
 
+    /**
+     * The method descriptor of the called method.
+     *
+     * @note	This information is – in case of [[INCOMPLETE_INVOKEDYNAMIC]] instructions
+     * 			– only available after loading the entire class file.
+     */
     def methodDescriptor: MethodDescriptor
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
@@ -66,8 +78,8 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
 
     /**
      * Given that we have – without any sophisticated analysis – no idea which
-     * exceptions may be thrown we make the safe assumption that any handler
-     * is a potential successor!
+     * exceptions may be thrown by the called method we make the safe assumption that
+     * any handler is a potential successor!
      */
     final def nextInstructions(
         currentPC:             PC,
@@ -84,4 +96,3 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
         }
     }
 }
-

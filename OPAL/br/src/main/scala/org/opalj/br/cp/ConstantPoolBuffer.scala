@@ -207,7 +207,7 @@ class ConstantPoolBuffer {
                 bmt.indexOf(bootstrap)
             }
         val indexOfNameAndType = CPENameAndType(name, descriptor)
-        getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, indexOfNameAndType),1)
+        getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, indexOfNameAndType), 1)
     }
 
     def toArray = {

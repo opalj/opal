@@ -194,7 +194,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * new `ClassFilePostProcessors` while processing class files is not supported
      * and the behavior is undefined'''.
      *
-     * PostProcessors will be executed in last-in-first-out order.
+     * @note `PostProcessors` will be executed in last-in-first-out order.
      */
     def registerClassFilePostProcessor(p: List[ClassFile] ⇒ List[ClassFile]): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
