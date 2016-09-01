@@ -55,6 +55,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import java.io.ByteArrayInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -305,9 +306,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
         process(create() match {
-            case dis: DataInputStream     ⇒ dis
-            case bis: BufferedInputStream ⇒ new DataInputStream(bis)
-            case is                       ⇒ new DataInputStream(new BufferedInputStream(is))
+            case dis: DataInputStream      ⇒ dis
+            case bis: BufferedInputStream  ⇒ new DataInputStream(bis)
+            case bas: ByteArrayInputStream ⇒ new DataInputStream(bas)
+            case is                        ⇒ new DataInputStream(new BufferedInputStream(is))
         }) { in ⇒ ClassFile(in) }
     }
 
