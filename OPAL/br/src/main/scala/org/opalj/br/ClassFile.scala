@@ -159,7 +159,7 @@ final class ClassFile private (
     def isEnumDeclaration: Boolean = (accessFlags & ACC_ENUM.mask) == ACC_ENUM.mask
 
     // JVM 9 Specification:
-    // If ACC_MODULE is set in ClassFile.access_flags, then no other flag in 
+    // If ACC_MODULE is set in ClassFile.access_flags, then no other flag in
     // ClassFile.access_flags may be set.
     def isModuleDeclaration: Boolean = accessFlags == ACC_MODULE.mask
 
@@ -612,6 +612,23 @@ final class ClassFile private (
             this.version, this.accessFlags,
             this.thisType, this.superclassType, this.interfaceTypes,
             this.fields, this.methods, newAttributes
+        )
+    }
+
+    def copy(
+        version:        UShortPair         = this.version,
+        accessFlags:    Int                = this.accessFlags,
+        thisType:       ObjectType         = this.thisType,
+        superclassType: Option[ObjectType] = this.superclassType,
+        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
+        fields:         Fields             = this.fields,
+        methods:        Methods            = this.methods,
+        attributes:     Attributes         = this.attributes
+    ): ClassFile = {
+        new ClassFile(
+            version, accessFlags,
+            thisType, superclassType, interfaceTypes,
+            fields, methods, attributes
         )
     }
 }
