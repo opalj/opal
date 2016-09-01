@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,6 +47,18 @@ trait Signature_attributeReader extends AttributeReader {
     type Signature_attribute >: Null <: Attribute
 
     /**
+     * Returns `true` if an exception is to be raise if an invalid signature is found.
+     * The default is to just log the invalid signature and to otherwise ignore it.
+     *
+     * This method is intended to be overridden.
+     *
+     * @return `false`.
+     */
+    def throwIllegalArgumentException: Boolean = false
+
+    /**
+     * Creates a `Signature_attribute`.
+     *
      * '''From the Specification'''
      *
      * The constant pool entry at signature_index must be a CONSTANT_Utf8_info
@@ -54,8 +66,6 @@ trait Signature_attributeReader extends AttributeReader {
      * attribute is an attribute of a ClassFile structure, a method type
      * signature, if this signature is an attribute of a method_info structure,
      * or a field type signature otherwise.
-     *
-     * @throw IllegalArgumentException If the signature is syntactically invalid.
      */
     def Signature_attribute(
         constant_pool:        Constant_Pool,
@@ -97,7 +107,7 @@ trait Signature_attributeReader extends AttributeReader {
                     "parsing bytecode",
                     s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
                 )(GlobalLogContext)
-                null
+                if (throwIllegalArgumentException) throw iae else null
         }
     }
 
