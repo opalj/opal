@@ -75,9 +75,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
     private def collectTheFactoryMethod(classFile: ClassFile): Method = {
         collectTheMethodOf(classFile){m ⇒
-            m.isStatic && m.isPublic &&
-                (m.name == "$newInstance" || m.name == "$createInstance")
-                }
+            m.isStatic && m.isPublic && (m.name == "$newInstance" || m.name == "$createInstance")
+        }
     }
 
     private def collectTheForwardingMethod(classFile: ClassFile): Method = {
