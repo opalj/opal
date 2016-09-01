@@ -82,7 +82,7 @@ case class ClassFile(
             2 + // access_flags
             2 + // this_class
             2 + // super_class
-            2 + // interfaces count 
+            2 + // interfaces count
             interfaces.length * 2 + // interfaces[interfaces_count]
             2 + // fields_count
             fields.view.map(_.size).sum +
@@ -100,7 +100,7 @@ case class ClassFile(
      * The fully qualified name of the class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val fqn = cp(this_class).toString
+    final val fqn: String = cp(this_class).toString
 
     final val superTypeFQNs = {
         {
