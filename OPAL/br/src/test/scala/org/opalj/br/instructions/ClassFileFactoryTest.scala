@@ -55,19 +55,13 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
 
     private def getMethods(
-        theClass:   ObjectType,
+        classType:   ObjectType,
         repository: ClassFileRepository
     ): Iterable[(ObjectType, Method)] = {
-        repository.classFile(theClass).map { cf ⇒
-            cf.methods.map((theClass, _))
-        }.getOrElse(Iterable.empty)
+        repository.classFile(classType).toSeq.flatMap { _.methods.map{(classType, _)} }
     }
 
-    private def checkAndReturnMethod(
-        classFile: ClassFile
-    )(
-        filter: Method ⇒ Boolean
-    ): Method = {
+    private def collectTheMethodOf(classFile: ClassFile)( filter: Method ⇒ Boolean ): Method = {
         val methods = classFile.methods.filter(filter)
         methods should have size (1)
         val method = methods.head
@@ -75,17 +69,22 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         method
     }
 
-    private def checkAndReturnConstructor(classFile: ClassFile): Method =
-        checkAndReturnMethod(classFile)(_.isConstructor)
+    private def collectTheConstructor(classFile: ClassFile): Method = {
+        collectTheMethodOf(classFile)(_.isConstructor)
+    }
 
-    private def checkAndReturnFactoryMethod(classFile: ClassFile): Method =
-        checkAndReturnMethod(classFile)(m ⇒
+    private def collectTheFactoryMethod(classFile: ClassFile): Method = {
+        collectTheMethodOf(classFile){m ⇒
             m.isStatic && m.isPublic &&
-                (m.name == "$newInstance" || m.name == "$createInstance"))
+                (m.name == "$newInstance" || m.name == "$createInstance")
+                }
+    }
 
-    private def checkAndReturnForwardingMethod(classFile: ClassFile): Method =
-        checkAndReturnMethod(classFile)(m ⇒
-            !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance"))
+    private def collectTheForwardingMethod(classFile: ClassFile): Method = {
+        collectTheMethodOf(classFile){m ⇒
+            !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance")
+            }
+}
 
     describe("ClassFileFactory") {
 
@@ -121,7 +120,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             it("and a constructor that sets that instance field (if present)") {
                 testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
                     if (!calleeTypeAndMethod._2.isStatic) {
-                        val constructor = checkAndReturnConstructor(classFile)
+                        val constructor = collectTheConstructor(classFile)
                         bi.ACC_PUBLIC.isSet(constructor.accessFlags) should be(true)
                         constructor.parameterTypes should have size (1)
                         constructor.parameterTypes(0) should be(calleeTypeAndMethod._1)
@@ -157,8 +156,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and one static factory that calls the constructor") {
                 testMethods(methods, testProject) { (classFile, _) ⇒
-                    val factoryMethod = checkAndReturnFactoryMethod(classFile)
-                    val constructor = checkAndReturnConstructor(classFile)
+                    val factoryMethod = collectTheFactoryMethod(classFile)
+                    val constructor = collectTheConstructor(classFile)
                     factoryMethod.descriptor should be(MethodDescriptor(
                         constructor.parameterTypes, classFile.thisType
                     ))
@@ -194,14 +193,14 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and one forwarding method") {
                 testMethods(methods, testProject) { (classFile, _) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     bi.ACC_PUBLIC.isSet(method.accessFlags) should be(true)
                 }
             }
 
             it("that calls the callee method with the appropriate invokeX instruction") {
                 testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
                     if (calleeMethod.isStatic) {
@@ -234,7 +233,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and passes all parameters correctly [barring reference type check]") {
                 testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     var currentInstruction = 0
                     val body = method.body.get
                     val instructions = body.instructions
@@ -250,15 +249,15 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             instructions.slice(currentInstruction, instructions.size)
                         val consumedInstructions =
                             requiredParameter match {
-                                case IntegerType      ⇒ requireInt(remainingInstructions)
-                                case ShortType        ⇒ requireInt(remainingInstructions)
-                                case ByteType         ⇒ requireInt(remainingInstructions)
-                                case CharType         ⇒ requireInt(remainingInstructions)
-                                case BooleanType      ⇒ requireInt(remainingInstructions)
-                                case FloatType        ⇒ requireFloat(remainingInstructions)
-                                case DoubleType       ⇒ requireDouble(remainingInstructions)
-                                case LongType         ⇒ requireLong(remainingInstructions)
-                                case _: ReferenceType ⇒ requireReference(remainingInstructions)
+                                case IntegerType      ⇒ requireIntLoad(remainingInstructions)
+                                case ShortType        ⇒ requireIntLoad(remainingInstructions)
+                                case ByteType         ⇒ requireIntLoad(remainingInstructions)
+                                case CharType         ⇒ requireIntLoad(remainingInstructions)
+                                case BooleanType      ⇒ requireIntLoad(remainingInstructions)
+                                case FloatType        ⇒ requireFloatLoad(remainingInstructions)
+                                case DoubleType       ⇒ requireDoubleLoad(remainingInstructions)
+                                case LongType         ⇒ requireLongLoad(remainingInstructions)
+                                case _: ReferenceType ⇒ requireReferenceLoadOrCreation(remainingInstructions)
                             }
                         currentInstruction += consumedInstructions
                     }
@@ -267,7 +266,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and computes correct maxLocals/maxStack values") {
                 testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     val body = method.body.get
                     val operandsSize: Int =
                         (if (calleeTypeAndMethod._2.isStatic) 0 else 1 /* for `this`*/ ) +
@@ -300,7 +299,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     testProject
                 ) { (classFile, calleeTypeAndMethod) ⇒
                     val calleeField = classFile.fields.head
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
                     val instructions = body.instructions
@@ -348,7 +347,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     staticMethodWithManyParametersAndNoReturnValue,
                     testProject
                 ) { (classFile, calleeTypeAndMethod) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
                     val instructions = body.instructions
@@ -406,7 +405,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         INVOKESTATIC.opcode
                     )
 
-                val method = checkAndReturnForwardingMethod(proxy)
+                val method = collectTheForwardingMethod(proxy)
                 val body = method.body.get
                 val instructions = body.instructions
                 body.maxStack should be(10)
@@ -465,21 +464,21 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             invocationInstruction
                         )
 
-                    val constructor = checkAndReturnConstructor(proxy)
+                    val constructor = collectTheConstructor(proxy)
                     if (method.isStatic) {
                         constructor.parameterTypes should be(IndexedSeq(IntegerType))
                     } else {
                         constructor.parameterTypes should be(IndexedSeq(theType, IntegerType))
                     }
 
-                    val factory = checkAndReturnFactoryMethod(proxy)
+                    val factory = collectTheFactoryMethod(proxy)
                     if (method.isStatic) {
                         factory.parameterTypes should be(IndexedSeq(IntegerType))
                     } else {
                         factory.parameterTypes should be(IndexedSeq(theType, IntegerType))
                     }
 
-                    val forwarder = checkAndReturnForwardingMethod(proxy)
+                    val forwarder = collectTheForwardingMethod(proxy)
                     forwarder.parameterTypes should be(method.parameterTypes)
                 }
             }
@@ -517,7 +516,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ),
                             invocationInstruction
                         )
-                    val forwarderMethod = checkAndReturnForwardingMethod(proxy)
+                    val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
                     var currentPC = 0
@@ -548,8 +547,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             }
 
             it("and returns correctly") {
+
                 testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
-                    val method = checkAndReturnForwardingMethod(classFile)
+                    val method = collectTheForwardingMethod(classFile)
                     val body = method.body.get
                     val instructions = body.instructions
                     instructions.last should be(method.returnType match {
@@ -597,7 +597,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ),
                             invocationInstruction
                         )
-                    val forwarderMethod = checkAndReturnForwardingMethod(proxy)
+                    val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
                     val indexOfInvocation =
@@ -635,15 +635,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         describe("should be able to create correct proxies for method reference invokedynamics") {
 
             describe("lambda expressions should not be identified as method references") {
-                val Lambdas = lambdasProject.allProjectClassFiles.find(
-                    _.fqn == "lambdas/Lambdas"
-                ).get
+                val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 it("they are not constructor references") {
                     for {
-                        MethodWithBody(body) ← Lambdas.methods
-                        instruction ← body.instructions
-                        if instruction.isInstanceOf[INVOKEDYNAMIC]
-                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                        MethodWithBody(body) ← lambdas.methods
+                        invokedynamic ← body.instructions.collect{case i : INVOKEDYNAMIC => i}
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -660,10 +656,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
                 it("nor are they virtual method calls") {
                     for {
-                        MethodWithBody(body) ← Lambdas.methods
-                        instruction ← body.instructions
-                        if instruction.isInstanceOf[INVOKEDYNAMIC]
-                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                        MethodWithBody(body) ← lambdas.methods
+                        invokedynamic ← body.instructions.collect{case i : INVOKEDYNAMIC => i}
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -675,9 +669,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 }
             }
 
-            val MethodReferences = lambdasProject.allProjectClassFiles.find(
-                _.fqn == "lambdas/MethodReferences"
-            ).get
+            val MethodReferences = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/MethodReferences").get
 
             describe("references to constructors") {
                 it("should be correctly identified") {
@@ -788,7 +780,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         new NoArgumentMethodDescriptor(theType),
                         INVOKESTATIC.opcode
                     )
-                val factoryMethod = checkAndReturnFactoryMethod(proxy)
+                val factoryMethod = collectTheFactoryMethod(proxy)
                 factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
             }
         }
@@ -965,8 +957,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             it("should safely convert primitive values") {
                 val d1 =
                     MethodDescriptor(
-                        IndexedSeq(ByteType, CharType, ShortType,
-                            IntegerType, FloatType, LongType),
+                        IndexedSeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
                         VoidType
                     )
                 val d2 =
@@ -995,21 +986,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 )
             }
 
-            def valueOfDescriptor(baseType: BaseType): MethodDescriptor =
+            def valueOfDescriptor(baseType: BaseType): MethodDescriptor = {
                 MethodDescriptor(baseType, baseType.WrapperType)
+            }
 
             it("should create boxing instructions for primitive types") {
                 val d1 =
                     MethodDescriptor(
-                        IndexedSeq(ByteType, CharType, ShortType,
-                            IntegerType, FloatType, LongType),
+                        IndexedSeq(ByteType, CharType, ShortType, IntegerType, FloatType, LongType),
                         VoidType
                     )
                 val d2 =
                     MethodDescriptor(
                         IndexedSeq(ObjectType.Byte, ObjectType.Character,
-                            ObjectType.Short, ObjectType.Integer, ObjectType.Float,
-                            ObjectType.Long),
+                            ObjectType.Short, ObjectType.Integer, ObjectType.Float, ObjectType.Long),
                         VoidType
                     )
                 ClassFileFactory.parameterForwardingInstructions(
@@ -1198,35 +1188,30 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
     }
 
-    /* *************************************
+    /**
+     * Searches the array of `remainingInstructions` for the next one
+     * that is searched for.
      *
-     * The require functions search the array of remainingInstructions for the next one
-     * that loads a value of their respective required type onto the operand stack and
-     * return the number of instructions "consumed" that way.
+     * For example, if the first Instruction of the array is an `ICONST_1`,
+     * `require(Set(ICONST_1.opcode),...)` would return 1.
      *
-     * For example, if the first Instruction of the array is an "ICONST_<X>",
-     * requireInt would return 1.
-     *
-     * If no fitting instruction can be found, the function fails the test.
-     *
-     ************************************** */
-
+     * If no instruction can be found, an `AssertionError` will be thrown.
+     */
     private def require(
         oneOf:                 Set[Opcode],
         remainingInstructions: Array[Instruction]
     ): Int = {
-        val indexOfNextFittingInstruction =
-            remainingInstructions.filter(_ != null).
-                indexWhere(instruction ⇒ oneOf contains instruction.opcode)
+        val instructions = remainingInstructions.view.filter(_ != null)
+        val indexOfFirstMatchingInstruction = instructions.indexWhere(oneOf contains _.opcode)
         assert(
-            indexOfNextFittingInstruction != -1,
+            indexOfFirstMatchingInstruction != -1,
             s"Could not find required instruction ${oneOf.mkString(",")}"
         )
 
-        indexOfNextFittingInstruction + 1
+        indexOfFirstMatchingInstruction + 1
     }
 
-    private def requireInt(remainingInstructions: Array[Instruction]): Int =
+    private def requireIntLoad(remainingInstructions: Array[Instruction]): Int = {
         require(
             Set(
                 ILOAD_0.opcode,
@@ -1237,8 +1222,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
+    }
 
-    private def requireLong(remainingInstructions: Array[Instruction]): Int =
+    private def requireLongLoad(remainingInstructions: Array[Instruction]): Int = {
         require(
             Set(
                 LLOAD_0.opcode,
@@ -1249,8 +1235,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
+}
 
-    private def requireFloat(remainingInstructions: Array[Instruction]): Int =
+    private def requireFloatLoad(remainingInstructions: Array[Instruction]): Int = {
         require(
             Set(
                 FLOAD_0.opcode,
@@ -1261,8 +1248,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
+    }
 
-    private def requireDouble(remainingInstructions: Array[Instruction]): Int =
+    private def requireDoubleLoad(remainingInstructions: Array[Instruction]): Int = {
         require(
             Set(
                 DLOAD_0.opcode,
@@ -1273,19 +1261,19 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
+}
 
-    private def requireReference(remainingInstructions: Array[Instruction]): Int =
-        require(
-            Set(
-                ALOAD_0.opcode,
-                ALOAD_1.opcode,
-                ALOAD_2.opcode,
-                ALOAD_3.opcode,
-                ALOAD.opcode,
-                NEW.opcode
-            ),
-            remainingInstructions
-        )
+    private def requireReferenceLoadOrCreation(remainingInstructions: Array[Instruction]): Int = {
+val required =    Set(
+            ALOAD_0.opcode,
+            ALOAD_1.opcode,
+            ALOAD_2.opcode,
+            ALOAD_3.opcode,
+            ALOAD.opcode,
+            NEW.opcode
+            )
+        require(required,            remainingInstructions        )
+    }
 
     /**
      * Iterates over the given list of tuples, generating a proxy class file for the

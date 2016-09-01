@@ -84,7 +84,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * Generates a new, internal name for a lambda expression found in the given
      * `surroundingType`.
      *
-     * It follows the pattern: `Lambda\$${surroundingType.id}:${uniqueId}`, where
+     * It follows the pattern: `Lambda${surroundingType.id}:{uniqueId}`, where
      * `uniqueId` is simply a run-on counter. For example: `Lambda$17:4` would refer to
      * the fourth Lambda INVOKEDYNAMIC parsed during the analysis of the project, which
      * is defined in the [[ClassFile]] with the type id `17`.
@@ -93,7 +93,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = typeIdGenerator.getAndIncrement()
-        s"Lambda\$${surroundingType.id}:${nextId}"
+        s"Lambda$$${surroundingType.id}:$nextId"
     }
 
     override def deferredInvokedynamicResolution(
