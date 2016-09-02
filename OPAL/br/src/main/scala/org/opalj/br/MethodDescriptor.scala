@@ -105,6 +105,10 @@ sealed abstract class MethodDescriptor
             parameterTypes.view.map(_.toJava).mkString("(", ",", ")")
     }
 
+     def toJava(declaringClassName : String, methodName: String): String = {
+         s"$declaringClassName{ ${toJava(methodName)} }"
+    }
+
     def toUMLNotation: String = {
         "("+{
             if (parameterTypes.size == 0)
@@ -506,4 +510,3 @@ object MethodDescriptor {
         }
     }
 }
-
