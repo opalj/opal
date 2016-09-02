@@ -31,8 +31,11 @@ package br
 package reader
 
 import java.util.concurrent.atomic.AtomicInteger
-import org.opalj.br.instructions._
+
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
+
+import org.opalj.br.instructions._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -65,14 +68,24 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val performJava8LambdaExpressionsRewriting: Boolean = {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
-        import net.ceedubs.ficus.Ficus._
-        val doRewrite = config.as[Option[Boolean]](Key).getOrElse(false)
-        if (doRewrite) {
+        val rewrite : Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        if (rewrite) {
             OPALLogger.info("project configuration", "Java 8 lambda expressions are rewritten")
         } else {
             OPALLogger.info("project configuration", "Java 8 lambda expressions are not resolved")
         }
-        doRewrite
+        rewrite
+    }
+
+     val logJava8LambdaExpressionsRewrites: Boolean = {
+        import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
+        val logRewrites : Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        if (logRewrites) {
+            OPALLogger.info("project configuration", "Java 8 lambda expressions rewrites are logged")
+        } else {
+            OPALLogger.info("project configuration", "Java 8 lambda expressions rewrites are not logged")
+        }
+        logRewrites
     }
 
     /**
@@ -129,6 +142,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 invokeTargetMethodHandle: MethodCallMethodHandle,
                 functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*) =
                 bootstrapArguments
+
             val MethodCallMethodHandle(
                 targetMethodOwner: ObjectType,
                 targetMethodName,
@@ -146,10 +160,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             val receiverDescriptor: MethodDescriptor =
                 if (invokeTargetMethodHandle.isInstanceOf[NewInvokeSpecialMethodHandle]) {
-                    MethodDescriptor(
-                        targetMethodDescriptor.parameterTypes,
-                        targetMethodOwner
-                    )
+                    MethodDescriptor(targetMethodDescriptor.parameterTypes,targetMethodOwner                    )
                 } else {
                     targetMethodDescriptor
                 }
@@ -160,7 +171,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             val bridgeMethodDescriptor: Option[MethodDescriptor] =
                 if (needsBridgeMethod) {
                     Some(functionalInterfaceDescriptorAfterTypeErasure)
-                } else None
+                } else {
+                    None
+                }
 
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
@@ -179,16 +192,21 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 else
                     proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).get
 
-            // TODO: log this replacement sometime in the future
-            instructions(index) = INVOKESTATIC(
+                    val newInvokestatic = INVOKESTATIC(
                 proxy.thisType,
                 isInterface = false,
                 factoryMethod.name,
                 factoryMethod.descriptor
             )
+            if (logJava8LambdaExpressionsRewrites) {
+                OPALLogger.info(
+                        "analysis",
+                        s"rewriting lambda expression: ${instructions(index)} ⇒ $newInvokestatic")
+            }
+                instructions(index) = newInvokestatic
+
             // since invokestatic is two bytes shorter than invokedynamic, we need to fill
             // the two-byte gap following the invokestatic with NOPs
-            // TODO [Compact Code] Remove the addition of the following two NOPS!
             instructions(index + 3) = NOP
             instructions(index + 4) = NOP
 
@@ -256,7 +274,16 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 }
 
 object Java8LambdaExpressionsRewriting {
+
+    final val Java8LambdaExpressionsConfigKeyPrefix = {
+        "org.opalj.br.reader.Java8LambdaExpressions"
+    }
+
     final val Java8LambdaExpressionsRewritingConfigKey = {
-        "org.opalj.br.reader.Java8LambdaExpressionsRewriting"
+        Java8LambdaExpressionsConfigKeyPrefix+".rewrite"
+    }
+
+      final val Java8LambdaExpressionsLogRewritingsConfigKey = {
+        Java8LambdaExpressionsConfigKeyPrefix+".logRewrites"
     }
 }
