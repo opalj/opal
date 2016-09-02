@@ -61,7 +61,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
     private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
-            invokevirtual ← body.instructions.view.collect{case i : INVOKEVIRTUAL => i}
+            invokevirtual ← body.instructions.view.collect { case i: INVOKEVIRTUAL ⇒ i }
             annotations = method.runtimeVisibleAnnotations
         } {
             val invokedMethod = getInvokedMethod(annotations)
@@ -114,7 +114,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     private def getParameterTypes(pairs: ElementValuePairs): IndexedSeq[FieldType] = {
         pairs.find(_.name == "parameterTypes").map { p ⇒
-            p.value.asInstanceOf[ArrayValue].values.map{
+            p.value.asInstanceOf[ArrayValue].values.map {
                 case ClassValue(x: ObjectType) ⇒ x
                 case ClassValue(x: BaseType)   ⇒ x
                 case x: ElementValue           ⇒ x.valueType

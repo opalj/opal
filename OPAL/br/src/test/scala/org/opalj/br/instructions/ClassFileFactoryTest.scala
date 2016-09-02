@@ -55,13 +55,13 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
 
     private def getMethods(
-        classType:   ObjectType,
+        classType:  ObjectType,
         repository: ClassFileRepository
     ): Iterable[(ObjectType, Method)] = {
-        repository.classFile(classType).toSeq.flatMap { _.methods.map{(classType, _)} }
+        repository.classFile(classType).toSeq.flatMap { _.methods.map { (classType, _) } }
     }
 
-    private def collectTheMethodOf(classFile: ClassFile)( filter: Method ⇒ Boolean ): Method = {
+    private def collectTheMethodOf(classFile: ClassFile)(filter: Method ⇒ Boolean): Method = {
         val methods = classFile.methods.filter(filter)
         methods should have size (1)
         val method = methods.head
@@ -74,16 +74,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     }
 
     private def collectTheFactoryMethod(classFile: ClassFile): Method = {
-        collectTheMethodOf(classFile){m ⇒
+        collectTheMethodOf(classFile) { m ⇒
             m.isStatic && m.isPublic && (m.name == "$newInstance" || m.name == "$createInstance")
         }
     }
 
     private def collectTheForwardingMethod(classFile: ClassFile): Method = {
-        collectTheMethodOf(classFile){m ⇒
+        collectTheMethodOf(classFile) { m ⇒
             !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance")
-            }
-}
+        }
+    }
 
     describe("ClassFileFactory") {
 
@@ -638,7 +638,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 it("they are not constructor references") {
                     for {
                         MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect{case i : INVOKEDYNAMIC => i}
+                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC ⇒ i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -656,7 +656,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 it("nor are they virtual method calls") {
                     for {
                         MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect{case i : INVOKEDYNAMIC => i}
+                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC ⇒ i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -1234,7 +1234,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
-}
+    }
 
     private def requireFloatLoad(remainingInstructions: Array[Instruction]): Int = {
         require(
@@ -1260,18 +1260,18 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             ),
             remainingInstructions
         )
-}
+    }
 
     private def requireReferenceLoadOrCreation(remainingInstructions: Array[Instruction]): Int = {
-val required =    Set(
+        val required = Set(
             ALOAD_0.opcode,
             ALOAD_1.opcode,
             ALOAD_2.opcode,
             ALOAD_3.opcode,
             ALOAD.opcode,
             NEW.opcode
-            )
-        require(required,            remainingInstructions        )
+        )
+        require(required, remainingInstructions)
     }
 
     /**
