@@ -623,6 +623,23 @@ final class ClassFile private (
             fields, methods, attributes
         )
     }
+
+    def copy(
+        version:        UShortPair         = this.version,
+        accessFlags:    Int                = this.accessFlags,
+        thisType:       ObjectType         = this.thisType,
+        superclassType: Option[ObjectType] = this.superclassType,
+        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
+        fields:         Fields             = this.fields,
+        methods:        Methods            = this.methods,
+        attributes:     Attributes         = this.attributes
+    ): ClassFile = {
+        new ClassFile(
+            version, accessFlags,
+            thisType, superclassType, interfaceTypes,
+            fields, methods, attributes
+        )
+    }
 }
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related

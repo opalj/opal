@@ -69,7 +69,7 @@ object MethodFilter {
             classFiles.filter(_.fqn == className).map { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
-                    val matches = cp(m.name_index).toString == methodName
+                    val matches = m.name == methodName
                     if (keep)
                         matches
                     else
@@ -83,4 +83,3 @@ object MethodFilter {
         }
     }
 }
-
