@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import analyses.{ Project, SomeProject }
+import analyses.{Project, SomeProject}
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.opalj.br.ClassFile
@@ -50,37 +50,22 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.ai.InterpretationFailedException
 
 /**
- * Test that code with resolved invokedynamic instructions is still valid bytecode.
+ * Test that code with rewritten invokedynamic instructions is still valid bytecode.
  *
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class JDK8InvokedynamicResolutionBytecodeStructureTest extends FunSpec with Matchers {
-    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method) {
+class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
+
+    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method) :Unit = {
+        assert( method.body.get.instructions.nonEmpty,s"empty method: ${method.toJava(classFile)}")
+
         val domain = new BaseDomain(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
-
             // the abstract interpretation succeed
             result should not be ('wasAborted)
-
-            // the method was non-empty
             val instructions = method.body.get.instructions
-
-            // there is no dead-code
-            // XXX this check causes problems with several JDK methods
-            // for example, run a standard abstract interpretation on:
-            // /path/to/jre/lib/rt.jar java/util/stream/LongPipeline$6$1 accept
-            // there will be no information about operands (for whatever reason) 
-            //            var nextPc = 0
-            //            while (nextPc < instructions.size) {
-            //                withClue("instruction @ "+nextPc+": "+instructions(nextPc)+"\n"+
-            //                instructions.zipWithIndex.mkString("\t", "\n\t", "\n")) {
-            //                    result.operandsArray(nextPc) should not be (null)
-            //                }
-            //                nextPc = instructions(nextPc).indexOfNextInstruction(nextPc, false)
-            //            }
-
             // the layout of the instructions array is correct
             for { pc ← 0 until instructions.size } {
                 if (instructions(pc) != null) {
@@ -91,31 +76,25 @@ class JDK8InvokedynamicResolutionBytecodeStructureTest extends FunSpec with Matc
         } catch {
             case e: InterpretationFailedException ⇒ {
                 val msg = e.getMessage+"\n"+
-                    (if (e.getCause != null) "\tCause: "+e.getCause.getMessage+"\n" else "") +
+                    (if (e.getCause != null) "\tcause: "+e.getCause.getMessage+"\n" else "") +
                     s"\tAt PC ${e.pc}\n"+
-                    s"\tWith stack:\n${e.operandsArray(e.pc).mkString(", ")}\n"+
+                    s"\twith stack:\n${e.operandsArray(e.pc).mkString(", ")}\n"+
                     method.toJava(classFile) + method.body.get.instructions.zipWithIndex.mkString("\n\t\t", "\n\t\t", "\n")
                 fail(msg)
             }
         }
     }
 
-    def testProject(project: SomeProject) {
+    def testProject(project: SomeProject) : Unit = {
         for {
-            classFile ← project.projectClassFiles
+            classFile ← project.allProjectClassFiles.par
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
-            methodIncludedInvokedynamic = instructions.exists { instruction ⇒
-                instruction.isInstanceOf[INVOKESTATIC] &&
-                    instruction.asInstanceOf[INVOKESTATIC].declaringClass.fqn.matches(
-                        "^Lambda\\$\\d+:\\d+$")
+            if instructions.exists {
+                case i : INVOKESTATIC => i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
             }
         } {
-            if (methodIncludedInvokedynamic) {
-                it(method.toJava(classFile)) {
                     verifyMethod(project, classFile, method)
-                }
-            }
         }
     }
 
