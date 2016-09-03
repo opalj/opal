@@ -38,6 +38,11 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
+import org.opalj.log.GlobalLogContext
+import com.typesafe.config.Config
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * @author Arne Lottmann
@@ -45,8 +50,23 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
 
+    /**
+     * ********************************************************************************************
+     * TEST FIXTURE
+     * ********************************************************************************************
+     */
     val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
-    val lambdasProject = Project(locateTestResources("classfiles/Lambdas.jar", "br"))
+    val lambdasProject = {
+        val jarFile = locateTestResources("classfiles/Lambdas.jar", "br")
+        val baseConfig: Config = ConfigFactory.load()
+        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
+        val config = baseConfig.
+            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
+            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+
+        Project(jarFile, GlobalLogContext, config)
+    }
 
     val StaticMethods = ObjectType("proxy/StaticMethods")
     val InstanceMethods = ObjectType("proxy/InstanceMethods")
@@ -54,11 +74,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val PrivateInstanceMethods = ObjectType("proxy/PrivateInstanceMethods")
     val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
 
+    /**
+     * ********************************************************************************************
+     * HELPER METHODS
+     * ********************************************************************************************
+     */
+
     private def getMethods(
         classType:  ObjectType,
         repository: ClassFileRepository
     ): Iterable[(ObjectType, Method)] = {
-        repository.classFile(classType).toSeq.flatMap { _.methods.map { (classType, _) } }
+        repository.classFile(classType) match {
+            case Some(cf) ⇒ cf.methods.map { (classType, _) }
+            case None     ⇒ fail(s"${classType.toJava} cannot be found")
+        }
     }
 
     private def collectTheMethodOf(classFile: ClassFile)(filter: Method ⇒ Boolean): Method = {
@@ -85,6 +114,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
     }
 
+    /**
+     * ********************************************************************************************
+     * TESTS
+     * ********************************************************************************************
+     */
+
     describe("ClassFileFactory") {
 
         describe("should be able to proxify methods") {
@@ -109,7 +144,6 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     } else {
                         classFile.fields should have size (1)
                         val field = classFile.fields(0)
-                        bi.ACC_FINAL.isSet(field.accessFlags) should be(true)
                         bi.ACC_FINAL.isSet(field.accessFlags) should be(true)
                         field.fieldType should be(calleeTypeAndMethod._1)
                     }
@@ -153,13 +187,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 }
             }
 
-            it("and one static factory that calls the constructor") {
+            it("and one static factory method that calls the constructor") {
                 testMethods(methods, testProject) { (classFile, _) ⇒
                     val factoryMethod = collectTheFactoryMethod(classFile)
                     val constructor = collectTheConstructor(classFile)
-                    factoryMethod.descriptor should be(MethodDescriptor(
-                        constructor.parameterTypes, classFile.thisType
-                    ))
+                    val parameterTypes = constructor.parameterTypes
+                    factoryMethod.descriptor should be(MethodDescriptor(parameterTypes, classFile.thisType))
                     val maxLocals = factoryMethod.parameterTypes.map(_.computationalType.operandSize).sum
                     val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
                     var currentVariableIndex = 0
@@ -673,9 +706,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             describe("references to constructors") {
                 it("should be correctly identified") {
                     val newValueMethod = MethodReferences.findMethod("newValue").get
-                    val indy = newValueMethod.body.get.instructions.find(
-                        _.isInstanceOf[INVOKEDYNAMIC]
-                    ).get.asInstanceOf[INVOKEDYNAMIC]
+                    val body = newValueMethod.body.get
+                    val indy = body.collectFirstWithIndex { case (pc, i: INVOKEDYNAMIC) ⇒ i } match {
+                        case Some(i) ⇒ i
+                        case None ⇒
+                            fail(s"couldn't find invokedynamic instruction:\n$body")
+                    }
                     val targetMethod = indy.bootstrapMethod.arguments(1).
                         asInstanceOf[MethodCallMethodHandle]
                     val opcode = targetMethod.opcodeOfUnderlyingInstruction
@@ -1275,7 +1311,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     }
 
     /**
-     * Iterates over the given list of tuples, generating a proxy class file for the
+     * Iterates over the given list of methods to generate a proxy class file for the
      * method specified by each tuple, and passes that proxy class file to the provided
      * test function.
      */
@@ -1285,9 +1321,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     )(
         test: (ClassFile, (ObjectType, Method)) ⇒ Unit
     ): Unit = {
-        for {
+        for (
             (calleeType, calleeMethod) ← methods
-        } {
+        ) {
             testMethod(calleeType, calleeMethod, repository)(test)
         }
     }
