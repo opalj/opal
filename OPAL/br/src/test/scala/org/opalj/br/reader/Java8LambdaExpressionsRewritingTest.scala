@@ -52,7 +52,9 @@ import com.typesafe.config.ConfigValueFactory
  * Tests the rewriting of Java8 lambda expressions based [[INVOKEDYNAMIC]] instruction.
  *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
@@ -62,9 +64,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
-            instruction ← body.instructions
-            if instruction.isInstanceOf[INVOKESTATIC]
-            factoryCall = instruction.asInstanceOf[INVOKESTATIC]
+            factoryCall ← body.collectInstructions { case i: INVOKESTATIC ⇒ i }
             if factoryCall.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
             annotations = method.runtimeVisibleAnnotations
         } {
@@ -73,7 +73,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
             val actualTarget = getCallTarget(project, factoryCall)
             withClue {
-                s"Failed to resolve $factoryCall in ${classFile.fqn}.${method.toJava}"
+                s"failed to resolve $factoryCall in ${method.toJava(classFile)}"
             }(actualTarget should be(expectedTarget))
         }
     }
@@ -81,8 +81,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
     private def getCallTarget(project: SomeProject, factoryCall: INVOKESTATIC): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
         val forwardingMethod = proxy.methods.find { m ⇒
-            !m.isConstructor && m.name != factoryCall.name &&
-                !bi.ACC_BRIDGE.isSet(m.accessFlags)
+            !m.isConstructor && m.name != factoryCall.name && !bi.ACC_BRIDGE.isSet(m.accessFlags)
         }.get
         val invocationInstructions = forwardingMethod.body.get.instructions.collect {
             case i: MethodInvocationInstruction ⇒ i
@@ -169,8 +168,11 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val cache = new BytecodeInstructionsCache
         implicit val logContext: LogContext = GlobalLogContext
         val baseConfig: Config = ConfigFactory.load()
-        val configKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        implicit val config = baseConfig.withValue(configKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
+        implicit val config = baseConfig.
+            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
+            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
         val framework = new Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val project = Project(
             framework.ClassFiles(testResources),
