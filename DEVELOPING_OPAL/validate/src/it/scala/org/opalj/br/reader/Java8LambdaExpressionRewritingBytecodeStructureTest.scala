@@ -30,27 +30,24 @@ package org.opalj
 package br
 package reader
 
-import analyses.{Project, SomeProject}
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.opalj.br.ClassFile
-import org.opalj.br.ClassValue
-import org.opalj.br.ElementValuePair
+import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.StringValue
 import org.opalj.bi.TestSupport
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.BaseAI
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.opalj.ai.InterpretationFailedException
+import org.opalj.log.GlobalLogContext
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Test that code with rewritten invokedynamic instructions is still valid bytecode.
+ * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
  *
  * @author Arne Lottmann
  */
@@ -85,54 +82,47 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         }
     }
 
-    def testProject(project: SomeProject): Unit = {
+    def testProject(project: SomeProject): Int = {
+        val verifiedMethodsCounter = new AtomicInteger(0)
         for {
             classFile ← project.allProjectClassFiles.par
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
                 case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
+                case _ => false
             }
         } {
+            verifiedMethodsCounter.incrementAndGet()
             verifyMethod(project, classFile, method)
         }
+        verifiedMethodsCounter.get
     }
 
-    val testProjectFile = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+    describe("test interpretation of rewritten invokedynamic instructions") {
 
-    describe("Testing a test project and the JRE with and without caching") {
-        describe("Testing the test project without caching") {
-            val project: SomeProject = Project(
-                Java8FrameworkWithLambdaSupport.ClassFiles(testProjectFile),
-                Java8LibraryFramework.ClassFiles(util.JRELibraryFolder)
+        describe("testing the rewritten methods of the lambdas test project") {
+            val testProjectFile = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+            val config = Java8LambdaExpressionsRewriting.defaultConfig(
+                rewrite = true,
+                logRewrites = false
             )
-            testProject(project)
+            val testProject = Project(testProjectFile, GlobalLogContext, config)
+            val verifiedMethodsCount = this.testProject(testProject)
+           info(s"interpreted $verifiedMethodsCount methods")
         }
 
-        describe("Testing the test project with caching") {
-            val cache = new BytecodeInstructionsCache()
-            val framework = new Java8FrameworkWithLambdaSupportAndCaching(cache)
-            val project: SomeProject = Project(
-                framework.ClassFiles(testProjectFile),
-                Java8LibraryFramework.ClassFiles(util.JRELibraryFolder)
+        describe("testing the rewritten methods of the rewritten JRE") {
+            val jrePath = org.opalj.bytecode.JRELibraryFolder
+            val config = Java8LambdaExpressionsRewriting.defaultConfig(
+                rewrite = true,
+                logRewrites = false
             )
-            testProject(project)
+            val jreProject = Project(jrePath, GlobalLogContext, config)
+
+            val verifiedMethodsCount =this.testProject(jreProject)
+            info(s"interpreted $verifiedMethodsCount methods")
         }
 
-        describe("Testing the JRE rt.jar without caching") {
-            val project: SomeProject = Project(
-                Java8FrameworkWithLambdaSupport.ClassFiles(util.RTJar)
-            )
-            testProject(project)
-        }
-
-        describe("Testing the JRE rt.jar with caching") {
-            val cache = new BytecodeInstructionsCache()
-            val framework = new Java8FrameworkWithLambdaSupportAndCaching(cache)
-            val project: SomeProject = Project(
-                framework.ClassFiles(util.RTJar)
-            )
-            testProject(project)
-        }
     }
 }
