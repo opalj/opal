@@ -50,6 +50,5 @@ class Java8FrameworkWithLambdaExpressionsSupportAndCaching(
     implicit
     val logContext: LogContext = GlobalLogContext,
     val config:     Config     = ConfigFactory.load()
-)
-        extends Java8FrameworkWithCaching(cache)
+) extends Java8FrameworkWithCaching(cache)
         with Java8LambdaExpressionsRewriting

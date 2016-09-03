@@ -57,8 +57,8 @@ import org.opalj.ai.InterpretationFailedException
 @RunWith(classOf[JUnitRunner])
 class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
 
-    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method) :Unit = {
-        assert( method.body.get.instructions.nonEmpty,s"empty method: ${method.toJava(classFile)}")
+    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method): Unit = {
+        assert(method.body.get.instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
         val domain = new BaseDomain(testProject, classFile, method)
         try {
@@ -85,16 +85,16 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         }
     }
 
-    def testProject(project: SomeProject) : Unit = {
+    def testProject(project: SomeProject): Unit = {
         for {
             classFile ← project.allProjectClassFiles.par
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i : INVOKESTATIC => i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
+                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
             }
         } {
-                    verifyMethod(project, classFile, method)
+            verifyMethod(project, classFile, method)
         }
     }
 

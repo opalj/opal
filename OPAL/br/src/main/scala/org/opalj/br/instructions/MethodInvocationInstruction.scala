@@ -52,7 +52,7 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
     def asVirtualMethod: VirtualMethod = VirtualMethod(declaringClass, name, methodDescriptor)
 
     override def toString: String = {
-        s"${this.getClass.getSimpleName}(${methodDescriptor.toJava(declaringClass.toJava,name)})"
+        s"${this.getClass.getSimpleName}(${methodDescriptor.toJava(declaringClass.toJava, name)})"
     }
 
 }

@@ -48,6 +48,4 @@ class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
     implicit
     logContext: LogContext = GlobalLogContext,
     config:     Config     = ConfigFactory.load()
-)
-        extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        with Java9LibraryFramework
+) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework
