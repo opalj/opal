@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -44,12 +44,15 @@ sealed trait MethodHandle extends ConstantValue[MethodHandle] {
      */
     override def valueType: ObjectType = ObjectType.MethodHandle
 
+    def isInvokeStaticMethodHandle: Boolean = false
+
     override def valueToString: String = this.toString
 
     def toJava: String
 }
 
 sealed trait FieldAccessMethodHandle extends MethodHandle {
+
     def declaringClassType: ObjectType
     def name: String
     def fieldType: FieldType
@@ -57,10 +60,7 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     def asVirtualField = VirtualField(declaringClassType, name, fieldType)
 
     override def toJava: String = {
-        val handleType = getClass.getSimpleName.toString
-        val fieldName = declaringClassType.toJava+"."+name
-        val returnType = ": "+fieldType.toJava
-        handleType+": "+fieldName + returnType
+        s"${getClass.getSimpleName}: ${declaringClassType.toJava}.$name:${fieldType.toJava}"
     }
 }
 
@@ -93,15 +93,13 @@ case class PutStaticMethodHandle(
 ) extends FieldWriteAccessMethodHandle
 
 sealed trait MethodCallMethodHandle extends MethodHandle {
+
     def receiverType: ReferenceType
     def name: String
     def methodDescriptor: MethodDescriptor
 
     override def toJava: String = {
-        val handleType = getClass.getSimpleName
-        val typeName = receiverType.toJava
-        val methodCall = name + methodDescriptor.toUMLNotation
-        handleType+": "+typeName+"."+methodCall
+        s"${getClass.getSimpleName}: ${receiverType.toJava}.$name${methodDescriptor.toUMLNotation}"
     }
 
     def opcodeOfUnderlyingInstruction: Opcode
@@ -131,6 +129,8 @@ case class InvokeStaticMethodHandle(
 ) extends MethodCallMethodHandle {
 
     override val opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
+
+    final override def isInvokeStaticMethodHandle: Boolean = true
 }
 
 case class InvokeSpecialMethodHandle(

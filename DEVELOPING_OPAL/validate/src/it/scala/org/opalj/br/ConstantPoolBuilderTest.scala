@@ -46,6 +46,8 @@ import org.opalj.br.cp.{Constant_Pool_Entry ⇒ BRConstant_Pool_Entry}
 import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ConstantPoolTags
 import org.opalj.util.PerformanceEvaluation
+import org.opalj.log.GlobalLogContext
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting
 
 /**
  * Tests that every entry in the rebuild constant pool can also be found in the original
@@ -263,5 +265,7 @@ private object ConstantPoolBuilderTest {
 
     val daClassFiles = ClassFileReader.ClassFiles(RTJar)
 
-    val brProject = Project(RTJar)
+    val brProject = {
+        Project(RTJar,GlobalLogContext,Java8LambdaExpressionsRewriting.defaultConfig(false,true))
+    }
 }

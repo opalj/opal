@@ -30,27 +30,24 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.CodeReader
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
- * This configuration can be used to read in Java 8 (version 52) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented. Instructions will be cached.
+ * This configuration can be used to read in Java 8 (version 52) class files with full
+ * support for rewriting `invokedynamic` instructions created by the JDK(8) compiler for
+ * lambda and method reference expressions. All standard information (as defined in the
+ * Java Virtual Machine Specification) is represented. Instructions will be cached.
  *
+ * @author Arne Lottmann
  * @author Michael Eichberg
  */
-class Java8FrameworkWithCaching(
-    val cache: BytecodeInstructionsCache
-) extends Java8LibraryFramework
-        with CodeAttributeBinding
-        with SourceDebugExtension_attributeBinding
-        // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
-        // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
-        with BootstrapMethods_attributeBinding
-        with StackMapTable_attributeBinding
-        with CompactLineNumberTable_attributeBinding
-        with LocalVariableTable_attributeBinding
-        with LocalVariableTypeTable_attributeBinding
-        with Exceptions_attributeBinding
-        with CachedBytecodeReaderAndBinding
-        with CodeReader
+class Java8FrameworkWithLambdaExpressionsSupportAndCaching(
+    cache: BytecodeInstructionsCache
+)(
+    implicit
+    val logContext: LogContext = GlobalLogContext,
+    val config:     Config     = ConfigFactory.load()
+) extends Java8FrameworkWithCaching(cache) with Java8LambdaExpressionsRewriting

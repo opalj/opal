@@ -607,14 +607,6 @@ final class ClassFile private (
         }
     }
 
-    protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {
-        new ClassFile(
-            this.version, this.accessFlags,
-            this.thisType, this.superclassType, this.interfaceTypes,
-            this.fields, this.methods, newAttributes
-        )
-    }
-
     def copy(
         version:        UShortPair         = this.version,
         accessFlags:    Int                = this.accessFlags,
@@ -631,6 +623,7 @@ final class ClassFile private (
             fields, methods, attributes
         )
     }
+
 }
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related

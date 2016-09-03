@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -220,15 +220,16 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 116 ⇒ INEG
                 case 193 ⇒ INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 ⇒
-                    val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
+                    // The invokeDynamicInfo constant pool entry cannot yet be resolved;
+                    // we first need to load the BootstrapMethodTable attribute.
+                    val invokeDynamicInfo = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
                         deferredInvokedynamicResolution(
-                            classFile, cp, cpEntry, instructions, index
+                            classFile, cp, invokeDynamicInfo, instructions, index /* <=> pc */
                         )
                     }
-                    //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
                 case 185 ⇒
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
@@ -310,9 +311,9 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 195 ⇒ MONITOREXIT
                 case 197 ⇒
                     MULTIANEWARRAY(
-                        // componentType 
+                        // componentType
                         cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType.asArrayType,
-                        //  dimensions 
+                        //  dimensions
                         in.readUnsignedByte
                     )
                 case 187 ⇒ NEW(cp(in.readUnsignedShort).asObjectType(cp))
@@ -362,4 +363,3 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
     }
 
 }
-
