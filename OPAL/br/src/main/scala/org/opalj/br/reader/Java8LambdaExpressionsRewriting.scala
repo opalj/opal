@@ -33,6 +33,8 @@ package reader
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.br.instructions._
@@ -289,5 +291,14 @@ object Java8LambdaExpressionsRewriting {
 
     final val Java8LambdaExpressionsLogRewritingsConfigKey = {
         Java8LambdaExpressionsConfigKeyPrefix+".logRewrites"
+    }
+
+    def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
+        val baseConfig: Config = ConfigFactory.load()
+        val rewritingConfigKey = Java8LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = Java8LambdaExpressionsLogRewritingsConfigKey
+        baseConfig.
+            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
+            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }
