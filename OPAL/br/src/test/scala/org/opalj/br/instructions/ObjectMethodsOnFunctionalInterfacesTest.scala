@@ -34,17 +34,21 @@ import java.io.File
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 
-import analyses.{Project, SomeProject}
-import reader.{Java8Framework, Java8LibraryFramework}
+import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
  *
  * @author Arne Lottmann
  */
+@RunWith(classOf[JUnitRunner])
 class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
