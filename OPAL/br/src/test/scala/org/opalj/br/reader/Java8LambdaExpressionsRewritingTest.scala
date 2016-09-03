@@ -172,7 +172,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
         implicit val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         val framework = new Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         val project = Project(
             framework.ClassFiles(testResources),

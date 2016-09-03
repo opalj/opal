@@ -60,7 +60,7 @@ class JRELambdaExpressionsRewritingTest extends FunSpec with Matchers {
             val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
             val config = baseConfig.
                 withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-                withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+                withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
 
             val logContext = new DefaultLogContext
             OPALLogger.register(logContext)
