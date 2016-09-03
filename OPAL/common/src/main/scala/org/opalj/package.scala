@@ -152,4 +152,32 @@ package object opalj {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
     }
 
+    /**
+     * Returns `true` if the current JRE is at least Java 8 or a newer version.
+     *
+     * @note This method makes some assumptions how the version numbers will evolve.
+     */
+    final lazy val isCurrentJREAtLeastJava8 : Boolean = {
+            val versionString = System.getProperty("java.version")
+        try {
+    val splittedVersionString = versionString.split('.')
+   if ( Integer.parseInt(splittedVersionString(0)) > 1 /*up until Java 8, the first number is "1" */ ||
+    (splittedVersionString.length > 1 && Integer.parseInt(splittedVersionString(1)) >= 8) ) {
+
+                OPALLogger.info(                        "system configuration",                        s"current JRE is at least Java 8"                        )(GlobalLogContext)
+    true
+   } else {
+       OPALLogger.info(                        "system configuration",                        s"current JRE is older than Java 8"                        )(GlobalLogContext)
+       false // we were not able to detect/derive enough information!
+   }
+        } catch {
+            case t : Throwable =>
+                OPALLogger.error(
+                        "system configuration",
+                        s"could not interpret current JRE version: $versionString"
+                        )(GlobalLogContext)
+                false
+        }
+    }
+
 }
