@@ -54,6 +54,12 @@ javaOptions in ThisBuild ++= Seq(
 
 addCommandAlias("compileAll","; test:compile ; it:scalariformFormat ; it:compile")
 
+addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
+
+addCommandAlias("cleanBuild","; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
+
+addCommandAlias("build","; eclipse ; compileAll ; OPAL/unidoc ;  publishLocal ")
+
 //EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
