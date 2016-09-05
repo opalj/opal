@@ -30,15 +30,16 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-import bi.ACC_ABSTRACT
-import bi.ACC_ANNOTATION
-import bi.ACC_INTERFACE
-import bi.ACC_ENUM
-import bi.ACC_FINAL
-import bi.ACC_PUBLIC
-import bi.AccessFlagsContexts
-import bi.AccessFlags
-import bi.AccessFlagsMatcher
+import org.opalj.bi.ACC_ABSTRACT
+import org.opalj.bi.ACC_ANNOTATION
+import org.opalj.bi.ACC_INTERFACE
+import org.opalj.bi.ACC_ENUM
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsMatcher
+import org.opalj.bi.ACC_MODULE
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
@@ -55,7 +56,7 @@ import org.opalj.collection.immutable.UShortPair
  *  inherit from [[org.opalj.bi.AccessFlag]].
  * @param thisType The type implemented by this class file.
  * @param superclassType The class type from which this class inherits. `None` if this
- *      class file defines `java.lang.Object`.
+ *      class file defines `java.lang.Object` or a module.
  * @param interfaceTypes The set of implemented interfaces. May be empty.
  * @param fields The declared fields. May be empty. The list is sorted by name.
  * @param methods The declared methods. May be empty. The list is first sorted by name,
@@ -73,6 +74,13 @@ import org.opalj.collection.immutable.UShortPair
  *    - ''Deprecated''
  *    - ''RuntimeVisibleAnnotations''
  *    - ''RuntimeInvisibleAnnotations''
+ *    In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
+ *    attributes are added:
+ *    - ''Module_attribute''
+ *    - TODO ''ConcealedPackages_attribute''
+ *    - TODO ''Version_attribute''
+ *    - TODO ''MainClass_attribute''
+ *    - TODO ''TargetPlatform_attribute''
  *
  *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *    is, however, resolved and is not part of the attributes table of the class file.
@@ -150,6 +158,11 @@ final class ClassFile private (
 
     def isEnumDeclaration: Boolean = (accessFlags & ACC_ENUM.mask) == ACC_ENUM.mask
 
+    // JVM 9 Specification:
+    // If ACC_MODULE is set in ClassFile.access_flags, then no other flag in
+    // ClassFile.access_flags may be set.
+    def isModuleDeclaration: Boolean = accessFlags == ACC_MODULE.mask
+
     /**
      * Returns true if this class file represents an interface.
      *
@@ -168,8 +181,13 @@ final class ClassFile private (
      */
     def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
-    def enclosingMethod: Option[EnclosingMethod] =
+    def module: Option[Module] = {
+        attributes collectFirst { case m: Module ⇒ m }
+    }
+
+    def enclosingMethod: Option[EnclosingMethod] = {
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
+    }
 
     /**
      * Returns the `inner classes attribute`, if defined.
@@ -589,13 +607,23 @@ final class ClassFile private (
         }
     }
 
-    protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {
+    def copy(
+        version:        UShortPair         = this.version,
+        accessFlags:    Int                = this.accessFlags,
+        thisType:       ObjectType         = this.thisType,
+        superclassType: Option[ObjectType] = this.superclassType,
+        interfaceTypes: Seq[ObjectType]    = this.interfaceTypes,
+        fields:         Fields             = this.fields,
+        methods:        Methods            = this.methods,
+        attributes:     Attributes         = this.attributes
+    ): ClassFile = {
         new ClassFile(
-            this.version, this.accessFlags,
-            this.thisType, this.superclassType, this.interfaceTypes,
-            this.fields, this.methods, newAttributes
+            version, accessFlags,
+            thisType, superclassType, interfaceTypes,
+            fields, methods, attributes
         )
     }
+
 }
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related
@@ -605,7 +633,7 @@ final class ClassFile private (
  */
 object ClassFile {
 
-    val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+    val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask | ACC_MODULE.mask
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 

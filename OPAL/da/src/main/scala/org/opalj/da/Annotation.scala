@@ -42,6 +42,9 @@ case class Annotation(
         element_value_pairs: IndexedSeq[ElementValuePair] = IndexedSeq.empty
 ) {
 
+    final def attribute_length: Int =
+        2 + element_value_pairs.foldLeft(2 /*num_...*/ )((c, n) ⇒ c + n.attribute_length)
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val element_value_pairsAsXHTML = this.element_value_pairs.map(_.toXHTML(cp))
 

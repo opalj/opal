@@ -74,6 +74,7 @@ import org.opalj.issues.IssueOrdering
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
+import org.opalj.issues.Relevance
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -119,6 +120,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         import theProject.config
 
+        implicit val project = theProject
         implicit val logContext = theProject.logContext
 
         // related to managing the analysis progress
@@ -408,7 +410,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
                     addResults(AnonymousInnerClassShouldBeStatic(theProject, classFile))
                     addResults(ManualGarbageCollection(theProject, classFile))
-                    addResults(CovariantEquals(theProject, classFile))
+                    addResults(CovariantEquals(classFile))
 
                     //
                     // FIND UNUSED FIELDS
@@ -510,13 +512,29 @@ object BugPickerAnalysis {
 
     def resultsAsXHTML(
         config:       Seq[String],
-        issues:       Iterable[Issue],
+        theIssues:    Iterable[Issue],
         showSearch:   Boolean,
         analysisTime: Nanoseconds
     ): Node = {
-        val issuesCount = issues.size
-        // TODO Make this a configurable property!!!
+        // TODO Make the filtering a configurable property!!!
+        val issuesCount = theIssues.size
+        val issues =
+            if (issuesCount > 1000) {
+                theIssues.filter(_.relevance.value >= Relevance.VeryLow.value)
+            } else {
+                theIssues
+            }
         val basicInfoOnly = issuesCount > 15000
+
+        val totalIssues = {
+            var is = s"(Total issues: $issuesCount)"
+            if (issues.size < theIssues.size)
+                is += "(Due to the number of identified issues all those that are most likely completely irrelevant are filtered.)"
+            if (basicInfoOnly)
+                is += "(Due to the number of remaining issues an abbreviated report is shown.)"
+
+            is
+        }
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
@@ -536,14 +554,6 @@ object BugPickerAnalysis {
                     </details>
                 })
             result.seq
-        }
-
-        val totalIssues = {
-            val is = s"(Total issues: $issuesCount)"
-            if (basicInfoOnly)
-                is+"(Due to the number of issues an abbreviated report is shown.)"
-            else
-                is
         }
 
         val (searchJS: NodeSeq, searchBox: NodeSeq) =

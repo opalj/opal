@@ -102,21 +102,21 @@ sealed trait CallBySignature extends Property {
 
 object CallBySignature {
 
-    val fallback: (PropertyStore, Entity) => CallBySignature = (ps, e) => {
-      val method = e.asInstanceOf[Method]
-      val project = ps.context[SomeProject]
-      val classFile = project.classFile(method)
+    val fallback: (PropertyStore, Entity) ⇒ CallBySignature = (ps, e) ⇒ {
+        val method = e.asInstanceOf[Method]
+        val project = ps.context[SomeProject]
+        val classFile = project.classFile(method)
 
-      if(classFile.isClassDeclaration)
-        NoCBSTargets;
-      else {
-        val analysisMode = project.analysisMode
-        analysisMode match {
-          case CPA => UnknownCBSTargets
-          case OPA => UnknownCBSTargets
-          case DesktopApplication | JEE6WebApplication => NoCBSTargets
+        if (classFile.isClassDeclaration)
+            NoCBSTargets;
+        else {
+            val analysisMode = project.analysisMode
+            analysisMode match {
+                case CPA                                     ⇒ UnknownCBSTargets
+                case OPA                                     ⇒ UnknownCBSTargets
+                case DesktopApplication | JEE6WebApplication ⇒ NoCBSTargets
+            }
         }
-      }
     }
 
     final val Key = {

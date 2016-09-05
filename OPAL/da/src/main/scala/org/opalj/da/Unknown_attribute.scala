@@ -42,12 +42,11 @@ case class Unknown_attribute(
     final override def attribute_length: Int = info.size
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
+        val attributeName = cp(attribute_name_index).toString
         <div class="simple_attribute">
-            <span class="attribute_name">{ cp(attribute_name_index).toString } (Bytes: { attribute_length })</span>
+            <span class="attribute_name">{ attributeName } (Size: { attribute_length }bytes)</span>
             :<br/>
-            {
-                info.map(b ⇒ f"$b%02x").sliding(4).map(_.mkString(" ")).mkString("   ")
-            }
+            { byteArrayToNode(info) }
         </div>
     }
 }

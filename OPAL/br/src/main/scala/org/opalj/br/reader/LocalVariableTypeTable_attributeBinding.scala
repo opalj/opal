@@ -70,7 +70,6 @@ trait LocalVariableTypeTable_attributeBinding
     def LocalVariableTypeTable_attribute(
         cp:                        Constant_Pool,
         attribute_name_index:      Constant_Pool_Index,
-        attribute_length:          Int,
         local_variable_type_table: LocalVariableTypes
     ) =
         new LocalVariableTypeTable(local_variable_type_table)

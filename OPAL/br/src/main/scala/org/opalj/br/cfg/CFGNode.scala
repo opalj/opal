@@ -42,8 +42,10 @@ trait CFGNode extends Node {
 
     def isBasicBlock: Boolean
     def asBasicBlock: BasicBlock = throw new ClassCastException();
+
     def isCatchNode: Boolean
     def asCatchNode: CatchNode = throw new ClassCastException();
+
     def isExitNode: Boolean
 
     def isStartOfSubroutine: Boolean
@@ -92,9 +94,7 @@ trait CFGNode extends Node {
     // GENERIC QUERY METHODS
     //
 
-    private[cfg] def reachable(
-        reachable: mutable.Set[CFGNode]
-    ): Unit = {
+    private[cfg] def reachable(reachable: mutable.Set[CFGNode]): Unit = {
         _successors.
             filterNot { d ⇒ reachable.contains(d) }.
             foreach { d ⇒ reachable += d; d.reachable(reachable) }
@@ -106,9 +106,7 @@ trait CFGNode extends Node {
      * @param includeSubroutines is only evaluated for successors of this node.
      * @note The result is not cached.
      */
-    def reachable(
-        reflexive: Boolean = false
-    ): mutable.Set[CFGNode] = {
+    def reachable(reflexive: Boolean = false): mutable.Set[CFGNode] = {
         val reachable = mutable.HashSet.empty[CFGNode]
         if (reflexive) reachable += this
         this.reachable(reachable)

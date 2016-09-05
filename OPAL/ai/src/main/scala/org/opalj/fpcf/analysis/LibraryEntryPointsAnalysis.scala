@@ -49,10 +49,9 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
 /**
  * Determines which methods of a library are the entry points of
  *
- *
  * @author Michael Reif
  */
-class LibraryEntryPointsAnalysis private (
+class LibraryEntryPointsAnalysis private[analysis] (
     val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.Key
@@ -67,7 +66,7 @@ class LibraryEntryPointsAnalysis private (
         }
     }
 
-    def determineProperty(method: Method): PropertyComputationResult = {
+    def determineEntrypoints(method: Method): PropertyComputationResult = {
         val classFile = project.classFile(method)
 
         if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile))
@@ -124,39 +123,5 @@ class LibraryEntryPointsAnalysis private (
         }
 
         require(method, EntryPoint.Key, classFile, InstantiabilityKey)(c_inst);
-    }
-}
-
-object LibraryEntryPointsAnalysis extends FPCFAnalysisRunner {
-
-    final def entitySelector: PartialFunction[Entity, Method] = {
-        case m: Method if !m.isAbstract && !m.isNative ⇒ m
-    }
-
-    override def derivedProperties: Set[PropertyKind] = Set(EntryPoint.Key)
-
-    override def usedProperties: Set[PropertyKind] = {
-        Set(ProjectAccessibility.Key, ClientCallable.Key, Instantiability)
-    }
-
-    /*
-     * This recommendations are not transitive. All (even indirect) dependencies are listed here.
-     */
-    //override def recommendations = Set(FactoryMethodAnalysis, InstantiabilityAnalysis, LibraryLeakageAnalysis, MethodAccessibilityAnalysis)
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set(
-            SimpleInstantiabilityAnalysis,
-            CallableFromClassesInOtherPackagesAnalysis,
-            MethodAccessibilityAnalysis
-        )
-    }
-
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
-        val analysis = new LibraryEntryPointsAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
-        analysis
     }
 }

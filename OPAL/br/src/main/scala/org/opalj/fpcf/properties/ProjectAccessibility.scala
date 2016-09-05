@@ -50,23 +50,23 @@ sealed trait ProjectAccessibility extends Property {
 
 object ProjectAccessibility {
 
-    final val fallback: (PropertyStore, Entity) => ProjectAccessibility = (ps, e) => {
-      import AnalysisModes._
-      val analysisMode = ps.context[SomeProject].analysisMode
+    final val fallback: (PropertyStore, Entity) ⇒ ProjectAccessibility = (ps, e) ⇒ {
+        import AnalysisModes._
+        val analysisMode = ps.context[SomeProject].analysisMode
 
-      e match {
-        case m: Method =>
-          if(m.isPrivate) ClassLocal
-          else if(m.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
-          else Global
-        case cf: ClassFile =>
-          if(cf.isPackageVisible && !(analysisMode eq OPA)) PackageLocal
-          else Global
-        case f: Field =>
-          if(f.isPrivate) ClassLocal
-          else if(f.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
-          else Global
-      }
+        e match {
+            case m: Method ⇒
+                if (m.isPrivate) ClassLocal
+                else if (m.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
+                else Global
+            case cf: ClassFile ⇒
+                if (cf.isPackageVisible && !(analysisMode eq OPA)) PackageLocal
+                else Global
+            case f: Field ⇒
+                if (f.isPrivate) ClassLocal
+                else if (f.isPackagePrivate && !(analysisMode eq OPA)) PackageLocal
+                else Global
+        }
     }
 
     final val cycleResolutionStrategy: PropertyKey.CycleResolutionStrategy = (

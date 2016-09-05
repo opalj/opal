@@ -33,6 +33,7 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''inner classes'' attribute.
@@ -44,7 +45,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClassesEntry
     implicit val InnerClassesEntryManifest: ClassTag[InnerClassesEntry]
 
-    type InnerClasses_attribute <: Attribute
+    type InnerClasses_attribute >: Null <: Attribute
 
     def InnerClasses_attribute(
         constant_pool:        Constant_Pool,
@@ -66,8 +67,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
 
     type InnerClasses = IndexedSeq[InnerClassesEntry]
 
-    /*
-     * '''From the Specification'''
+    /**
      * <pre>
      * InnerClasses_attribute {
      * u2 attribute_name_index;
@@ -81,29 +81,32 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        InnerClasses_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt()
-                val number_of_classes = in.readUnsignedShort
-                if (number_of_classes > 0 || reifyEmptyAttributes) {
-                    InnerClasses_attribute(
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): InnerClasses_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val number_of_classes = in.readUnsignedShort
+        if (number_of_classes > 0 || reifyEmptyAttributes) {
+            InnerClasses_attribute(
+                cp,
+                attribute_name_index,
+                repeat(number_of_classes) {
+                    InnerClassesEntry(
                         cp,
-                        attribute_name_index,
-                        repeat(number_of_classes) {
-                            InnerClassesEntry(
-                                cp,
-                                in.readUnsignedShort, in.readUnsignedShort,
-                                in.readUnsignedShort, in.readUnsignedShort
-                            )
-                        }
+                        in.readUnsignedShort, in.readUnsignedShort,
+                        in.readUnsignedShort, in.readUnsignedShort
                     )
-                } else {
-                    null
                 }
-            }
-        )
-    )
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(InnerClasses_attributeReader.ATTRIBUTE_NAME → parser)
 }
 
 object InnerClasses_attributeReader {

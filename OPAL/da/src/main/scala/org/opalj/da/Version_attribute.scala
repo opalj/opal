@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2016
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,24 +22,34 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package da
+
+import scala.xml.Node
 
 /**
- * Registers FPCFAnalysis analyses that are defined in the ai project at the FPCFAnalysisRegistry.
+ * The Version attribute is an attribute in the attributes table
+ * of a module definition (Java 9).
  *
- * @author Michael Reif
+ * @author Michael Eichberg
  */
-package object analysis {
+case class Version_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        version_index:        Constant_Pool_Index // CONSTANT_UTF8
+) extends Attribute {
 
-    ///=== register all fpcf analyses that are defined in the ai package === 
-    FPCFAnalysesRegistry.register(
-        "LibraryEntryPointsAnalysis",
-        "Computes the entry points of a library.",
-        LibraryEntryPointsAnalysis
-    )
+    def attribute_length = 2
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div class="simple_attribute">
+            <span class="attribute_name">Version</span>
+            -
+            { cp(version_index).asString }
+        </div>
+    }
 }
+

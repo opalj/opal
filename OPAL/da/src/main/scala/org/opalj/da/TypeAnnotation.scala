@@ -45,6 +45,12 @@ case class TypeAnnotation(
         element_value_pairs: IndexedSeq[ElementValuePair]
 ) {
 
+    final def attribute_length: Int =
+        target_type.attribute_length +
+            target_path.attribute_length +
+            2 +
+            element_value_pairs.foldLeft(2 /*num_...*/ )(_ + _.attribute_length)
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val evps = element_value_pairs.map(_.toXHTML)
         <div class="annotation">

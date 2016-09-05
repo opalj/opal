@@ -27,16 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package collection
+package br
 
 /**
- * Ordering for sorted collections of elements of type `UID`.
+ * Definition of a Java 9 module.
  *
  * @author Michael Eichberg
  */
-object UIDBasedOrdering extends Ordering[UID] {
+case class Module(
+        requires: IndexedSeq[Requires],
+        exports:  IndexedSeq[Exports],
+        uses:     IndexedSeq[ObjectType],
+        provides: IndexedSeq[Provides]
+) extends Attribute {
 
-    def compare(a: UID, b: UID): Int = a.id - b.id
+    final override def kindId: Int = Module.KindId
 
 }
+
+object Module {
+
+    final val KindId = 44
+
+}
+
+/**
+ * @param requires The name of a required module.
+ */
+case class Requires(
+    requires:      String,
+    requiresFlags: Int
+)
+
+/**
+ * @param 	exports Name of an exported package in internal form.
+ * @param 	exportsTo List of names of modules whose code can access the
+ * 			public types in this exported package (in internal form).
+ */
+case class Exports(
+    exports:   String,
+    exportsTo: IndexedSeq[String]
+)
+
+case class Provides(
+    provides:      ObjectType,
+    withInterface: ObjectType
+)
 

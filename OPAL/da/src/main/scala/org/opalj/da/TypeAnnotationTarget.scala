@@ -42,20 +42,26 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 trait TypeAnnotationTarget {
-    def toXHTML(implicit cp: Constant_Pool): Node
+
+    def attribute_length: Int
 
     def tag: Int
+
+    def toXHTML(implicit cp: Constant_Pool): Node
+
 }
 
 //______________________________
 // type_parameter_target
 
 trait Type_Parameter_Target extends TypeAnnotationTarget {
-    def type_parameter_index: Constant_Pool_Index
+    def type_parameter_index: Int
+
+    final override def attribute_length: Int = 1 + 1
 }
 
 case class ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Constant_Pool_Index
+        type_parameter_index: Int
 ) extends Type_Parameter_Target {
 
     final override def tag: Int = 0x00
@@ -66,7 +72,7 @@ case class ParameterDeclarationOfClassOrInterface(
 }
 
 case class ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Constant_Pool_Index
+        type_parameter_index: Int
 ) extends Type_Parameter_Target {
 
     final override def tag: Int = 0x01
@@ -80,6 +86,8 @@ case class ParameterDeclarationOfMethodOrConstructor(
 // supertype_target
 case class Supertype_Target(supertype_index: Constant_Pool_Index) extends TypeAnnotationTarget {
 
+    final override def attribute_length: Int = 1 + 2
+
     final override def tag: Int = 0x10
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -91,12 +99,14 @@ case class Supertype_Target(supertype_index: Constant_Pool_Index) extends TypeAn
 // type_parameter_bound_target
 
 trait Type_Parameter_Bound_Target extends TypeAnnotationTarget {
-    def type_parameter_index: Constant_Pool_Index
-    def bound_index: Constant_Pool_Index
+    def type_parameter_index: Int
+    def bound_index: Int
+
+    final override def attribute_length: Int = 1 + 1 + 1
 }
 case class TypeBoundOfParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Constant_Pool_Index,
-        bound_index:          Constant_Pool_Index
+        type_parameter_index: Int,
+        bound_index:          Int
 ) extends Type_Parameter_Bound_Target {
 
     final override def tag: Int = 0x11
@@ -106,8 +116,8 @@ case class TypeBoundOfParameterDeclarationOfClassOrInterface(
     }
 }
 case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Constant_Pool_Index,
-        bound_index:          Constant_Pool_Index
+        type_parameter_index: Int,
+        bound_index:          Int
 ) extends Type_Parameter_Bound_Target {
 
     final override def tag: Int = 0x12
@@ -119,7 +129,11 @@ case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
 
 //______________________________
 // empty_target
-case object FieldDeclaration extends TypeAnnotationTarget {
+trait Empty_Target extends TypeAnnotationTarget {
+    final override def attribute_length: Int = 1
+}
+
+case object FieldDeclaration extends Empty_Target {
 
     final override def tag: Int = 0x13
 
@@ -127,7 +141,7 @@ case object FieldDeclaration extends TypeAnnotationTarget {
         <span class="type_annotation_target">Field Decleration</span>
     }
 }
-case object ReturnType extends TypeAnnotationTarget {
+case object ReturnType extends Empty_Target {
 
     final override def tag: Int = 0x14
 
@@ -135,7 +149,7 @@ case object ReturnType extends TypeAnnotationTarget {
         <span class="type_annotation_target">Return Type</span>
     }
 }
-case object ReceiverType extends TypeAnnotationTarget {
+case object ReceiverType extends Empty_Target {
 
     final override def tag: Int = 0x15
 
@@ -146,7 +160,9 @@ case object ReceiverType extends TypeAnnotationTarget {
 
 //______________________________
 // formal_parameter_target
-case class Formal_Parameter_Target(formal_parameter_index: Constant_Pool_Index) extends TypeAnnotationTarget {
+case class Formal_Parameter_Target(formal_parameter_index: Int) extends TypeAnnotationTarget {
+
+    final override def attribute_length: Int = 1 + 1
 
     final override def tag: Int = 0x16
 
@@ -157,7 +173,9 @@ case class Formal_Parameter_Target(formal_parameter_index: Constant_Pool_Index) 
 
 //______________________________
 // throws_target
-case class Throws_Target(throws_type_index: Constant_Pool_Index) extends TypeAnnotationTarget {
+case class Throws_Target(throws_type_index: Int) extends TypeAnnotationTarget {
+
+    final override def attribute_length: Int = 1 + 2
 
     final override def tag: Int = 0x17
 
@@ -170,7 +188,12 @@ case class Throws_Target(throws_type_index: Constant_Pool_Index) extends TypeAnn
 // localvar_target
 
 trait Localvar_Target extends TypeAnnotationTarget {
+
     def localvarTable: IndexedSeq[LocalvarTableEntry]
+
+    final override def attribute_length: Int =
+        1 + 2 + localvarTable.size * 6
+
 }
 
 case class LocalvarTableEntry(
@@ -207,7 +230,9 @@ case class ResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extend
 
 //______________________________
 // catch_target
-case class Catch_Target(exception_table_index: Constant_Pool_Index) extends TypeAnnotationTarget {
+case class Catch_Target(exception_table_index: Int) extends TypeAnnotationTarget {
+
+    final override def attribute_length: Int = 1 + 2
 
     final override def tag: Int = 0x42
 
@@ -221,6 +246,9 @@ case class Catch_Target(exception_table_index: Constant_Pool_Index) extends Type
 
 trait Offset_Target extends TypeAnnotationTarget {
     def offset: Int
+
+    final override def attribute_length: Int = 1 + 2
+
 }
 
 case class InstanceOf(offset: Int) extends Offset_Target {
@@ -261,12 +289,15 @@ case class MethodReferenceExpressionIdentifier /*::Identifier*/ (offset: Int) ex
 
 trait Type_Argument_Target extends TypeAnnotationTarget {
     def offset: Int
-    def type_argument_index: Constant_Pool_Index
+    def type_argument_index: Int
+
+    final override def attribute_length: Int = 1 /*tag*/ + 2 + 1
+
 }
 
 case class CastExpression(
         offset:              Int,
-        type_argument_index: Constant_Pool_Index
+        type_argument_index: Int
 ) extends Type_Argument_Target {
 
     final override def tag: Int = 0x47
@@ -277,7 +308,7 @@ case class CastExpression(
 }
 case class ConstructorInvocation(
         offset:              Int,
-        type_argument_index: Constant_Pool_Index
+        type_argument_index: Int
 ) extends Type_Argument_Target {
 
     final override def tag: Int = 0x48
@@ -288,7 +319,7 @@ case class ConstructorInvocation(
 }
 case class MethodInvocation(
         offset:              Int,
-        type_argument_index: Constant_Pool_Index
+        type_argument_index: Int
 ) extends Type_Argument_Target {
 
     final override def tag: Int = 0x49
@@ -299,7 +330,7 @@ case class MethodInvocation(
 }
 case class ConstructorInMethodReferenceExpression(
         offset:              Int,
-        type_argument_index: Constant_Pool_Index
+        type_argument_index: Int
 ) extends Type_Argument_Target {
 
     final override def tag: Int = 0x4a
@@ -310,7 +341,7 @@ case class ConstructorInMethodReferenceExpression(
 }
 case class MethodInMethodReferenceExpression(
         offset:              Int,
-        type_argument_index: Constant_Pool_Index
+        type_argument_index: Int
 ) extends Type_Argument_Target {
 
     final override def tag: Int = 0x4b

@@ -103,7 +103,7 @@ class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extend
             return NotInheritableByNewTypes;
 
         //packages that start with "java." are closed, even under the open packages assumption
-        val isJavaPackage = false //classFile.thisType.packageName.startsWith("java.")
+        val isJavaPackage = classFile.thisType.packageName.startsWith("java.")
         if ((isClosedLibrary || isJavaPackage)
             && method.isPackagePrivate)
             return NotInheritableByNewTypes;

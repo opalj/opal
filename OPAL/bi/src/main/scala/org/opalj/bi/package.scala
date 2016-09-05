@@ -60,7 +60,7 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 52 == 8; ... 50 == 6
+        // 53 == 9, 52 == 8; ... 50 == 6
         if (majorVersion >= 49) {
             "Java "+(majorVersion - 44)
         } else if (majorVersion > 45) {

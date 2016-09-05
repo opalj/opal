@@ -40,9 +40,16 @@ import scala.xml.Node
  */
 trait VerificationTypeInfo {
 
-    def toXHTML(implicit cp: Constant_Pool): Node
+    /**
+     * The number of bytes required to store the VerificationTypeInfo
+     * information in a class file.
+     */
+    def attribute_length: Int
 
     def tag: Int
+
+    def toXHTML(implicit cp: Constant_Pool): Node
+
 }
 
 object VerificationTypeInfo {
@@ -59,6 +66,8 @@ object VerificationTypeInfo {
 
 case object TopVariableInfo extends VerificationTypeInfo {
 
+    final override def attribute_length: Int = 1
+
     def tag = VerificationTypeInfo.ITEM_Top
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">top |</span>
@@ -66,6 +75,8 @@ case object TopVariableInfo extends VerificationTypeInfo {
 }
 
 case object IntegerVariableInfo extends VerificationTypeInfo {
+
+    final override def attribute_length: Int = 1
 
     def tag = VerificationTypeInfo.ITEM_Integer
 
@@ -75,6 +86,8 @@ case object IntegerVariableInfo extends VerificationTypeInfo {
 
 case object FloatVariableInfo extends VerificationTypeInfo {
 
+    final override def attribute_length: Int = 1
+
     def tag = VerificationTypeInfo.ITEM_Float
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">float |</span>
@@ -82,6 +95,8 @@ case object FloatVariableInfo extends VerificationTypeInfo {
 }
 
 case object LongVariableInfo extends VerificationTypeInfo {
+
+    final override def attribute_length: Int = 1
 
     def tag = VerificationTypeInfo.ITEM_Long
 
@@ -91,6 +106,8 @@ case object LongVariableInfo extends VerificationTypeInfo {
 
 case object DoubleVariableInfo extends VerificationTypeInfo {
 
+    final override def attribute_length: Int = 1
+
     def tag = VerificationTypeInfo.ITEM_Double
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">double |</span>
@@ -99,6 +116,8 @@ case object DoubleVariableInfo extends VerificationTypeInfo {
 
 case object NullVariableInfo extends VerificationTypeInfo {
 
+    final override def attribute_length: Int = 1
+
     def tag = VerificationTypeInfo.ITEM_Null
 
     def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">null |</span>
@@ -106,6 +125,8 @@ case object NullVariableInfo extends VerificationTypeInfo {
 }
 
 case object UninitializedThisVariableInfo extends VerificationTypeInfo {
+
+    final override def attribute_length: Int = 1
 
     def tag = VerificationTypeInfo.ITEM_UninitializedThis
 
@@ -116,6 +137,8 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
 case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
+    final override def attribute_length: Int = 1 + 2
+
     def tag = VerificationTypeInfo.ITEM_Object
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -124,6 +147,8 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 }
 
 case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeInfo {
+
+    final override def attribute_length: Int = 1 + 2
 
     def tag = VerificationTypeInfo.ITEM_Unitialized
 

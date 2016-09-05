@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -50,6 +50,7 @@ import scalafx.scene.layout.BorderPane
 import scalafx.scene.layout.HBox
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
+import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 
 object ProjectInfoDialog {
     def toUL(files: Seq[File]): String =
@@ -96,6 +97,8 @@ object ProjectInfoDialog {
     }
 
     private def report(project: Project[URL], preferences: LoadedFiles): String = {
+
+        val propertiesStoreInfo = project.get(SourceElementsPropertyStoreKey).toString()
 
         val mlStatistics =
             <table>
@@ -147,6 +150,8 @@ object ProjectInfoDialog {
             <body>
                 <h1>Project statistics</h1>
                 <ul>{ project.statistics.toList.map(e ⇒ e._1+": "+e._2).sorted.map(e ⇒ <li>{ e }</li>) }</ul>
+                <h2>Properties information</h2>
+                <ul>{ Unparsed(propertiesStoreInfo.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;")) }</ul>
                 <h2>Loaded jar files and directories</h2>
                 <ul>{ preferences.projectFiles.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
                 <h2>Loaded libraries</h2>

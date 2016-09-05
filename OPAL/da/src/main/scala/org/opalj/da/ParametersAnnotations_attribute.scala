@@ -40,6 +40,11 @@ import scala.xml.Node
  */
 trait ParametersAnnotations_attribute extends Attribute {
 
+    final override def attribute_length =
+        parameters_annotations.foldLeft(1 /*num_parameters*/ ) { (c, n) ⇒
+            c + n.foldLeft(2 /*num_annotations*/ )((c, n) ⇒ c + n.attribute_length)
+        }
+
     type ParameterAnnotations = IndexedSeq[da.Annotation]
 
     type ParametersAnnotations = IndexedSeq[ParameterAnnotations]

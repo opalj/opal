@@ -31,7 +31,8 @@ package collection
 package immutable
 
 /**
- * A memory-efficient representation of a pair of UShortValues.
+ * A memory-efficient representation of a pair of UShortValues which
+ * uses one Integer value.
  *
  * @example
  * {{{

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,6 +31,8 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Implements the template method to read signature attributes.
@@ -42,9 +44,21 @@ import java.io.DataInputStream
  */
 trait Signature_attributeReader extends AttributeReader {
 
-    type Signature_attribute <: Attribute
+    type Signature_attribute >: Null <: Attribute
 
     /**
+     * Returns `true` if an exception is to be raise if an invalid signature is found.
+     * The default is to just log the invalid signature and to otherwise ignore it.
+     *
+     * This method is intended to be overridden.
+     *
+     * @return `false`.
+     */
+    def throwIllegalArgumentException: Boolean = false
+
+    /**
+     * Creates a `Signature_attribute`.
+     *
      * '''From the Specification'''
      *
      * The constant pool entry at signature_index must be a CONSTANT_Utf8_info
@@ -60,8 +74,7 @@ trait Signature_attributeReader extends AttributeReader {
         signature_index:      Constant_Pool_Index
     ): Signature_attribute
 
-    /* From the Specification
-     *
+    /**
      * The Signature attribute is an optional attribute in the
      * attributes table of a ClassFile, field_info or method_info structure.
      *
@@ -72,24 +85,37 @@ trait Signature_attributeReader extends AttributeReader {
      *    u2 signature_index;
      * }
      * </pre>
+     *
+     * Given that the Java Reflection API has extensive exception handling support
+     * for handling wrong signatures, we at least provide support for the case
+     * where the signature is syntactically invalid. In this case the attribute
+     * is skipped.
      */
-    registerAttributeReader(
-        Signature_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                /*val attribute_length =*/ in.readInt
-                Signature_attribute(
-                    cp,
-                    ap,
-                    attribute_name_index,
-                    in.readUnsignedShort
-                )
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Signature_attribute = {
+        /*val attribute_length =*/ in.readInt
+        val signature_index = in.readUnsignedShort
+        try {
+            Signature_attribute(cp, ap, attribute_name_index, signature_index)
+        } catch {
+            case iae: IllegalArgumentException ⇒
+                OPALLogger.error(
+                    "parsing bytecode",
+                    s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
+                )(GlobalLogContext)
+                if (throwIllegalArgumentException) throw iae else null
+        }
+    }
+
+    registerAttributeReader(SignatureAttribute.Name → parser)
 }
 
-object Signature_attributeReader {
+object SignatureAttribute {
 
-    val ATTRIBUTE_NAME = "Signature"
+    final val Name = "Signature"
 
 }

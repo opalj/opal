@@ -31,9 +31,12 @@ package ai
 package domain
 
 import java.io.{ByteArrayOutputStream, PrintStream}
+
 import scala.xml.Node
 import scala.collection.BitSet
 import scala.collection.mutable
+
+import org.opalj.control.forFirstN
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet

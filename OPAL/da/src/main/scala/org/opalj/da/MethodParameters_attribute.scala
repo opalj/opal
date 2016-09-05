@@ -39,22 +39,16 @@ import scala.xml.Node
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
         parameters:           IndexedSeq[MethodParameter]
 ) extends Attribute {
 
-    def attribute_name = MethodParameters_attribute.name
+    final override def attribute_length = 1 /*parameters_count*/ + parameters.size * 4
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>{ cp(attribute_name_index).toString(cp) }({ parametersToXHTML(cp) })</span>
     }
 
     def parametersToXHTML(implicit cp: Constant_Pool) = parameters.map(_.toXHTML(cp))
-
-}
-object MethodParameters_attribute {
-
-    val name = "MethodParameters"
 
 }
 

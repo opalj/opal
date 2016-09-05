@@ -196,5 +196,8 @@ package object da {
             </span>
     }
 
+    def byteArrayToNode(info: Array[Byte]): Node = {
+        <pre>{ info.map(b ⇒ f"$b%02x").grouped(40).map(_.mkString("", " ", "\n")).mkString }</pre>
+    }
 }
 

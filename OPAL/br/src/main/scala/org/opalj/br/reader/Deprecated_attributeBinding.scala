@@ -42,10 +42,9 @@ trait Deprecated_attributeBinding
 
     type Deprecated_attribute = br.Attribute
 
-    def Deprecated_attribute(
-        constant_pool:        Constant_Pool,
-        attribute_name_index: Constant_Pool_Index
-    ) = br.Deprecated
+    def Deprecated_attribute(cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) = {
+        br.Deprecated
+    }
 
 }
 

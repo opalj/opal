@@ -56,7 +56,7 @@ case class InnerClasses_attribute(
         classes:              Seq[InnerClassesEntry]
 ) extends Attribute {
 
-    def attribute_length = 2 + (classes.size * 8)
+    final override def attribute_length = 2 + (classes.size * 8)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         throw new UnsupportedOperationException(
@@ -75,8 +75,5 @@ case class InnerClasses_attribute(
         </div>
     }
 
-}
-object InnerClasses_attribute {
-    val name = "InnerClasses"
 }
 

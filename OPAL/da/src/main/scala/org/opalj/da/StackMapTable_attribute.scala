@@ -40,21 +40,11 @@ import scala.xml.Node
  */
 case class StackMapTable_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         stack_map_frames:     IndexedSeq[StackMapFrame]
 ) extends Attribute {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
-    type StackMapFrames = IndexedSeq[StackMapFrame]
-
-    //
-    // IMPLEMENTATION
-    //
-
-    val attribute_name = StackMapTable_attribute.name
+    final override def attribute_length: Int =
+        stack_map_frames.foldLeft(2 /*count*/ )((c, n) ⇒ c + n.attribute_length)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
@@ -78,8 +68,3 @@ case class StackMapTable_attribute(
 
 }
 
-object StackMapTable_attribute {
-
-    val name = "StackMapTable"
-
-}

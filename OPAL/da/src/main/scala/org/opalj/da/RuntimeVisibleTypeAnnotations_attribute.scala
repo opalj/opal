@@ -40,18 +40,11 @@ import scala.xml.Node
  */
 case class RuntimeVisibleTypeAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[TypeAnnotation]
 ) extends TypeAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
     }
-
-}
-
-object RuntimeVisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeVisibleTypeAnnotations"
 
 }

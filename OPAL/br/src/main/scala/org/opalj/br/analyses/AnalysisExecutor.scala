@@ -36,7 +36,7 @@ import scala.util.control.ControlThrowable
 import com.typesafe.config.ConfigFactory
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
+import org.opalj.br.reader.Java8LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -118,26 +118,10 @@ trait AnalysisExecutor {
         OPALLogger.info("general", "copyright: "+analysis.copyright)
     }
 
-    def main(unparsedArgs: Array[String]): Unit = {
+    def main(args: Array[String]): Unit = {
 
         implicit val logContext = GlobalLogContext
-
-        // transform parameters input to allow parameters like -param="in put"
-        // -param="the input" is transformed into -param=the input
-        val quotedParams = """(-[\w.]+="[\w-_:;./\\ ]+")""".r
-        val unqoutedParams = """(-[\w.]+=[\w-_:;./\\]+)|(-[\w]+(?: |$))""".r
-        val input = unparsedArgs.mkString(" ")
-        val args: Array[String] =
-            (
-                quotedParams.findAllMatchIn(input).map { p ⇒
-                    val paramMatcher = """(-\w+=)"([\w-_:;./\\ ]*)"""".r
-                    val paramMatcher(kind, value) = p.matched
-                    kind + value
-                } ++
-                unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
-            ).toArray
-
-        if (args.contains("-help") || args.length < unparsedArgs.length) {
+        if (args.contains("-help")) {
             printUsage
             sys.exit(0)
         }
@@ -291,7 +275,6 @@ trait AnalysisExecutor {
         OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
-        val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
@@ -305,7 +288,7 @@ trait AnalysisExecutor {
                 OPALLogger.info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java8LibraryClassFileReader.ClassFiles,
+                    Java8LibraryFramework.ClassFiles,
                     (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {

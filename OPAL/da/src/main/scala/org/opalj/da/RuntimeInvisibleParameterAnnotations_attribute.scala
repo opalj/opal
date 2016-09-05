@@ -40,18 +40,11 @@ import scala.xml.Node
  */
 case class RuntimeInvisibleParameterAnnotations_attribute(
         attribute_name_index:   Constant_Pool_Index,
-        attribute_length:       Int, // TODO Compute on demand
         parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
 ) extends ParametersAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
     }
-
-}
-
-object RuntimeInvisibleParameterAnnotations_attribute {
-
-    val name = "RuntimeInvisibleParameterAnnotations"
 
 }

@@ -68,7 +68,6 @@ trait LocalVariableTable_attributeBinding
     override def LocalVariableTable_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         local_variable_table: LocalVariables
     ): LocalVariableTable =
         new LocalVariableTable(local_variable_table)

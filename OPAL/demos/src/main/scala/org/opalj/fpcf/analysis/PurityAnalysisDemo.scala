@@ -32,7 +32,6 @@ package analysis
 
 import java.net.URL
 
-import org.opalj.util.Seconds
 import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -43,6 +42,8 @@ import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -51,64 +52,109 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 object PurityAnalysisDemo extends DefaultOneStepAnalysis {
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+    //                                                                                            //
+    // THIS CODE CONTAINS THE PERFORMANCE MEASUREMENT CODE AS USED FOR THE "REACTIVE PAPER"!      //
+    //                                                                                            //
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+
     override def title: String = "determines those methods that are pure"
 
     override def description: String =
-        "identifies method which are pure; i.e. which just operate on the passed parameters"
+        "identifies methods which are pure; i.e. which just operate on the passed parameters"
+
+    private[this] var setupTime = Nanoseconds.None
+    private[this] var analysisTime = Nanoseconds.None
+    private[this] var performanceData: Map[Nanoseconds, List[Nanoseconds]] = Map.empty
 
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+
+        var r: () ⇒ String = null
+
+        def handleResults(t: Nanoseconds, ts: Seq[Nanoseconds]) = {
+            performanceData += ((t, List(setupTime, analysisTime)))
+            performanceData = performanceData.filter((t_ts) ⇒ ts.contains(t_ts._1))
+        }
+
+        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
+            performanceData = Map.empty
+            PerformanceEvaluation.gc()
+
+            println(s"\nRunning analysis with $parallelismLevel thread(s):")
+            r = time[() ⇒ String](5, 10, 5, analyze(project, parallelismLevel))(handleResults)
+            println(
+                s"Results with $parallelismLevel threads:\n"+
+                    performanceData.values.
+                    map(v ⇒ v.map(_.toSeconds.toString(false))).
+                    map(v ⇒ List("setup\t", "analysis\t").zip(v).map(e ⇒ e._1 + e._2).mkString("", "\n", "\n")).
+                    mkString("\n")
+            )
+
+            PerformanceEvaluation.gc()
+        }
+
+        BasicReport(r())
+    }
+
+    def analyze(theProject: Project[URL], parallelismLevel: Int): () ⇒ String = {
+        val project = Project.recreate(theProject) // We need an empty project(!)
+
         import project.get
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
 
-        var s = Seconds.None
-        val projectStore = time { get(SourceElementsPropertyStoreKey) } { r ⇒ s = r.toSeconds }
+        val projectStore = time {
+            SourceElementsPropertyStoreKey.parallelismLevel = parallelismLevel
+            get(SourceElementsPropertyStoreKey)
+        } { r ⇒ setupTime = r }
         projectStore.debug = false
 
         val manager = project.get(FPCFAnalysesManagerKey)
-
         manager.runAll(FieldMutabilityAnalysis)
-        var e = Seconds.None
-        time { manager.runAll(PurityAnalysis) } { r ⇒ e += r.toSeconds }
 
-        val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
-            projectStore.entities(FieldMutability.key)
+        time {
+            manager.runAll(PurityAnalysis);
+            projectStore.waitOnPropertyComputationCompletion(true)
+        } { r ⇒ analysisTime = r }
 
-        val effectivelyFinalFields: Traversable[(Field, Property)] =
-            effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
+        println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
-        val effectivelyFinalFieldsAsStrings =
-            effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
+        () ⇒ {
+            val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
+                projectStore.entities(FieldMutability.key)
 
-        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
-        val pureMethods: Traversable[(Method, Property)] =
-            pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings =
-            pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+            val effectivelyFinalFields: Traversable[(Field, Property)] =
+                effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
 
-        val fieldInfo =
-            effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
-                "\nMutability of private static non-final fields:\n",
-                "\n",
-                s"\nTotal: ${effectivelyFinalFields.size}\n"
-            )
+            val effectivelyFinalFieldsAsStrings =
+                effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava(project.classFile(f._1)))
 
-        val methodInfo =
-            pureMethodsAsStrings.toList.sorted.mkString(
-                "\nPure methods:\n",
-                "\n",
-                s"\nTotal: ${pureMethods.size}\n"
-            )
-        BasicReport(
-            fieldInfo +
-                methodInfo +
-                projectStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size +
-                s"\nSetup time: $s; Analysis time: $e; Combined: ${s + e}"
-        )
+            val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
+            val pureMethods: Traversable[(Method, Property)] =
+                pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
+            val pureMethodsAsStrings =
+                pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava(project.classFile(m._1)))
+
+            val fieldInfo =
+                effectivelyFinalFieldsAsStrings.toList.sorted.mkString(
+                    "\nMutability of private static non-final fields:\n",
+                    "\n",
+                    s"\nTotal: ${effectivelyFinalFields.size}\n"
+                )
+
+            val methodInfo =
+                pureMethodsAsStrings.toList.sorted.mkString(
+                    "\nPure methods:\n",
+                    "\n",
+                    s"\nTotal: ${pureMethods.size}\n"
+                )
+
+            fieldInfo + methodInfo + projectStore.toString(false)+
+                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+        }
     }
 }

@@ -39,6 +39,12 @@ import scala.xml.Node
  */
 trait StackMapFrame {
 
+    /**
+     * The number of bytes required to store the StackMapFrame
+     * information in a class file.
+     */
+    def attribute_length: Int
+
     val frame_type: Int
 
     var initial_offset: Int = 0;
@@ -48,6 +54,8 @@ trait StackMapFrame {
 }
 
 case class SameFrame(frame_type: Int) extends StackMapFrame {
+
+    final override def attribute_length: Int = 1
 
     override def toXHTML(implicit cp: Constant_Pool, previous_frame_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_frame_Offset + frame_type + 1; initial_offset },frame_type:same]</div>
@@ -60,6 +68,8 @@ case class SameLocals1StackItemFrame(
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
 
+    final override def attribute_length: Int = 1 + verification_type_info_stack.attribute_length
+
     override def toXHTML(implicit cp: Constant_Pool, previous_frame_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_frame_Offset + frame_type - 64 + 1; initial_offset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
     }
@@ -70,6 +80,8 @@ case class SameLocals1StackItemFrameExtended(
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
+
+    final override def attribute_length: Int = 1 + 2 + verification_type_info_stack.attribute_length
 
     override def toXHTML(implicit cp: Constant_Pool, previous_frame_Offset: Int): Node = {
         <div>
@@ -82,12 +94,16 @@ case class SameLocals1StackItemFrameExtended(
 
 case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
 
+    final override def attribute_length: Int = 1 + 2
+
     override def toXHTML(implicit cp: Constant_Pool, previous_frame_Offset: Int): Node = {
         <div>[pc: { initial_offset = previous_frame_Offset + offset_delta + 1; initial_offset },frame_type:Chop]</div>
     }
 }
 
 case class SameFrameExtended(frame_type: Int, offset_delta: Int) extends StackMapFrame {
+
+    final override def attribute_length: Int = 1 + 2
 
     override def toXHTML(implicit cp: Constant_Pool, previous_frame_Offset: Int): Node = {
         <div>
@@ -102,6 +118,11 @@ case class AppendFrame(
         offset_delta:                  Int,
         verification_type_info_locals: Seq[VerificationTypeInfo]
 ) extends StackMapFrame {
+
+    final override def attribute_length: Int = {
+        val initial = 1 + 2
+        verification_type_info_locals.foldLeft(initial)((c, n) ⇒ c + n.attribute_length)
+    }
 
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { verification_type_info_locals.map(_.toXHTML(cp)) }</span>
@@ -123,6 +144,13 @@ case class FullFrame(
         verification_type_info_locals: IndexedSeq[VerificationTypeInfo],
         verification_type_info_stack:  IndexedSeq[VerificationTypeInfo]
 ) extends StackMapFrame {
+
+    final override def attribute_length: Int = {
+        val initial = 1 + 2
+        val locals = verification_type_info_locals.foldLeft(2 /*count*/ )((c, n) ⇒ c + n.attribute_length)
+        val stack = verification_type_info_stack.foldLeft(2 /*count*/ )((c, n) ⇒ c + n.attribute_length)
+        initial + locals + stack
+    }
 
     private def localsToXHTML(implicit cp: Constant_Pool): Node = {
         <span> { verification_type_info_locals.map(_.toXHTML(cp)) }</span>

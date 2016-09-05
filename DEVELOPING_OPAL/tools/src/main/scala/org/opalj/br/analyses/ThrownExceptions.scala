@@ -38,7 +38,7 @@ import org.opalj.fpcf.properties.AllThrownExceptions
 import org.opalj.fpcf.properties.NoExceptionsAreThrown
 
 /**
- * Prints out the string constants found in the code.
+ * Prints out the information about the exceptions thrown by methods.
  *
  * @author Michael Eichberg
  */
@@ -57,19 +57,33 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
 
         ps.waitOnPropertyComputationCompletion(true)
 
-        val report = ps.collect {
+        val methodsWithCompleteThrownExceptionsInfo = ps.collect {
             case (m: Method, ts: AllThrownExceptions) if ts != NoExceptionsAreThrown.MethodIsAbstract ⇒ {
-                s"${m.toJava(project.classFile(m))} ⇒ $ts"
+                (m, ts)
             }
-        }.toList.sorted.mkString("\n")
+        }
+        val methodsWhichDoNotThrowExceptions = methodsWithCompleteThrownExceptionsInfo.collect {
+            case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e
+        }
 
-        val methodsThatDoNotThrowExceptionsCount =
-            ps.entities(NoExceptionsAreThrown.NoInstructionThrowsExceptions).size
+        val methodsWithCompleteThrownExceptionsInfoCount = methodsWithCompleteThrownExceptionsInfo.size
+        val privateMethodsWithCompleteThrownExceptionsInfoCount = {
+            methodsWithCompleteThrownExceptionsInfo.view.filter(_._1.isPrivate).size
+        }
+        val methodsWhichDoNotThrowExceptionsCount =
+            methodsWhichDoNotThrowExceptions.view.filter(_._1.isPrivate).size
+
+        val report = methodsWithCompleteThrownExceptionsInfo.map {
+            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava(project.classFile(m))} ⇒ $ts" }
+        }.toList.sorted.mkString("\n")
 
         BasicReport(
             report+
-                "\n\nNumber of methods which do not throw exceptions: "+
-                methodsThatDoNotThrowExceptionsCount
+                "\n\nNumber of methods for which the set of thrown exceptions is known: "+
+                methodsWithCompleteThrownExceptionsInfoCount+"\n"+
+                s" ... private methods: ${privateMethodsWithCompleteThrownExceptionsInfoCount}\n"+
+                s" ... number of methods which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
+                s" ... ... private methods: $methodsWhichDoNotThrowExceptionsCount"
         )
     }
 }

@@ -53,7 +53,6 @@ trait CodeAttributeBinding
     def Code_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         max_stack:            Int,
         max_locals:           Int,
         instructions:         Instructions,

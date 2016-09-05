@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
+package control
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

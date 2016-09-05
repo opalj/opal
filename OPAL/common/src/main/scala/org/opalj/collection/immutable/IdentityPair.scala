@@ -37,22 +37,26 @@ import java.lang.System.identityHashCode
  * Compared to a standard pair (Tuple2), however, comparison of two `IdentityPair`
  * objects is done by doing a reference-based comparison of the stored values.
  *
- * {{{
- * val a = new String("fooBar")
- * val b = "foo"+"Bar"
- * val p1 = new IdentityPair(a,b) // #1
- * val p2 = new IdentityPair(a,a) // #2
- * val p3 = new IdentityPair(a,b) // #3
- * p1 == p2 // => false (though (a,b) == (a,a) would be true
- * p1 == p3 // => true
- * }}}
+ * @example
+ * 	{{{
+ * 	val a = new String("fooBar")
+ * 	val b = "foo"+"Bar"
+ * 	val p1 = new IdentityPair(a,b) // #1
+ * 	val p2 = new IdentityPair(a,a) // #2
+ * 	val p3 = new IdentityPair(a,b) // #3
+ * 	p1 == p2 // => false (though (a,b) == (a,a) would be true
+ * 	p1 == p3 // => true
+ * 	}}}
  *
  * @param _1 A reference value (can be `null`).
  * @param _2 A reference value (can be `null`).
  *
  * @author Michael Eichberg
  */
-final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](_1: T1, _2: T2) extends Product2[T1, T2] {
+final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
+        _1: T1,
+        _2: T2
+) extends Product2[T1, T2] {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 

@@ -82,7 +82,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
                 MethodAccessibilityAnalysis
             )
 
-            cpaExecuter.run(LibraryEntryPointsAnalysis, true)
+            cpaExecuter.run(EntryPointsAnalysis, true)
 
         } { t ⇒ analysisTimeCPA = t.toSeconds }
 
@@ -100,7 +100,7 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
                 MethodAccessibilityAnalysis
             )
 
-            opaExecuter.run(LibraryEntryPointsAnalysis)
+            opaExecuter.run(EntryPointsAnalysis)
 
         } { t ⇒ analysisTimeOPA = t.toSeconds }
 

@@ -166,7 +166,6 @@ class ConstantPoolBuffer {
                     CPEInterfaceMethodRef(receiverType, name, descriptor.toJVMDescriptor)
                 else
                     CPEMethodRef(receiverType, name, descriptor.toJVMDescriptor)
-
             getOrElseUpdate(CONSTANT_MethodHandle_info(7, methodRef), 1)
 
         case NewInvokeSpecialMethodHandle(receiverType, name, descriptor) ⇒
@@ -208,10 +207,7 @@ class ConstantPoolBuffer {
                 bmt.indexOf(bootstrap)
             }
         val indexOfNameAndType = CPENameAndType(name, descriptor)
-        getOrElseUpdate(
-            CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, indexOfNameAndType),
-            1
-        )
+        getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, indexOfNameAndType), 1)
     }
 
     def toArray = {

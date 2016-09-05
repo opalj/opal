@@ -40,16 +40,22 @@ import java.util.zip.{ZipFile, ZipEntry}
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.util.control.ControlThrowable
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+
+import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
+
+import org.opalj.control.repeat
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.concurrent.Future
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import scala.util.control.ControlThrowable
+import java.io.ByteArrayInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -57,7 +63,7 @@ import scala.util.control.ControlThrowable
  * sources (Streams, Files, JAR archives).
  *
  * This library supports class files from version 45 (Java 1.1) up to
- * version 52 (Java 8).
+ * version 53 (Java 9).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
@@ -180,7 +186,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    private[this] var classFilePostProcessors: List[Seq[ClassFile] ⇒ Seq[ClassFile]] = Nil
+    private[this] var classFilePostProcessors: List[List[ClassFile] ⇒ List[ClassFile]] = Nil
 
     /**
      * Register a class file post processor. A class file post processor
@@ -189,9 +195,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * new `ClassFilePostProcessors` while processing class files is not supported
      * and the behavior is undefined'''.
      *
-     * PostProcessors will be executed in last-in-first-out order.
+     * @note `PostProcessors` will be executed in last-in-first-out order.
      */
-    def registerClassFilePostProcessor(p: Seq[ClassFile] ⇒ Seq[ClassFile]): Unit = {
+    def registerClassFilePostProcessor(p: List[ClassFile] ⇒ List[ClassFile]): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
     }
 
@@ -229,7 +235,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *    '''It is highly recommended that the stream is buffered; otherwise the
      *    performance will be terrible!'''
      */
-    def ClassFile(in: DataInputStream): Seq[ClassFile] = {
+    def ClassFile(in: DataInputStream): List[ClassFile] = {
         // magic
         val readMagic = in.readInt
         if (ClassFileMagic != readMagic)
@@ -241,11 +247,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // let's make sure that we support this class file's version
         if (!(
             major_version >= 45 && // at least JDK 1.1
-            (major_version < 52 /* Java 7 = 51.0 */ ||
-                (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))
+            (major_version < 53 /* Java 8 = 52.0 */ ||
+                (major_version == 53 && minor_version == 0 /*Java 9 == 53.0*/ ))
         )) throw BytecodeProcessingFailedException(
             s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= 52(Java 8))"
+                " (Supported: 45(Java 1.1) <= version <= 53(Java 9))"
         )
 
         val cp = Constant_Pool(in)
@@ -274,7 +280,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
-        var classFiles = Seq(classFile)
+        var classFiles = List(classFile)
         classFilePostProcessors foreach { postProcessor ⇒
             classFiles = postProcessor(classFiles)
         }
@@ -298,15 +304,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  The created input stream will automatically be wrapped by OPAL to enable
      *  efficient reading of the class file.
      */
-    def ClassFile(create: () ⇒ InputStream): Seq[ClassFile] = {
+    def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
         process(create() match {
-            case dis: DataInputStream     ⇒ dis
-            case bis: BufferedInputStream ⇒ new DataInputStream(bis)
-            case is                       ⇒ new DataInputStream(new BufferedInputStream(is))
+            case dis: DataInputStream      ⇒ dis
+            case bis: BufferedInputStream  ⇒ new DataInputStream(bis)
+            case bas: ByteArrayInputStream ⇒ new DataInputStream(bas)
+            case is                        ⇒ new DataInputStream(new BufferedInputStream(is))
         }) { in ⇒ ClassFile(in) }
     }
 
-    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): Seq[ClassFile] = {
+    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
         process(jarFile.getInputStream(jarEntry)) { in ⇒
             ClassFile(new DataInputStream(new BufferedInputStream(in)))
         }
@@ -319,14 +326,30 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName The name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFile: File, jarFileEntryName: String): Seq[ClassFile] = {
+    def ClassFile(jarFile: File, jarFileEntryName: String): List[ClassFile] = {
         if (jarFile.length() == 0)
             throw new IOException("the file "+jarFile+" is empty");
 
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null) {
-                val message = s"the file $jarFile does not contain $jarFileEntryName"
+                var names: List[(Int, String)] = Nil
+                val zfEntries = zf.entries()
+                while (zfEntries.hasMoreElements()) {
+                    val zfEntry = zfEntries.nextElement()
+                    val zfEntryName = zfEntry.getName
+                    val distance = getLevenshteinDistance(zfEntryName, jarFileEntryName)
+                    names = (distance, zfEntryName) :: names
+                }
+                val mostRelatedNames = names.sortWith((l, r) ⇒ l._1 < r._1).map(_._2)
+                val ending = if (mostRelatedNames.length > 15) ", ...)" else ")"
+
+                val message =
+                    mostRelatedNames.take(15).mkString(
+                        s"the file $jarFile does not contain $jarFileEntryName (similar: ",
+                        ", ",
+                        ending
+                    )
                 throw new IOException(message)
             }
             ClassFile(zf, jarEntry)
@@ -340,7 +363,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFilename: String, jarFileEntryName: String): Seq[ClassFile] = {
+    def ClassFile(jarFilename: String, jarFileEntryName: String): List[ClassFile] = {
         ClassFile(new File(jarFilename), jarFileEntryName)
     }
 
@@ -353,7 +376,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         jarFile:          ZipFile,
         exceptionHandler: ExceptionHandler
-    ): Seq[(ClassFile, URL)] = {
+    ): List[(ClassFile, URL)] = {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
@@ -492,9 +515,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         file:             File,
         exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): Seq[(ClassFile, URL)] = {
+    ): List[(ClassFile, URL)] = {
 
-        def processJar(file: File): Seq[(ClassFile, URL)] = {
+        def processJar(file: File): List[(ClassFile, URL)] = {
             try {
                 process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
             } catch {
@@ -504,7 +527,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             }
         }
 
-        def processClassFile(file: File): Seq[(ClassFile, URL)] = {
+        def processClassFile(file: File): List[(ClassFile, URL)] = {
             try {
                 process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
                     ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))

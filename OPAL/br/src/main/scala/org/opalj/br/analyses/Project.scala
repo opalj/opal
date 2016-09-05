@@ -42,8 +42,8 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
@@ -56,6 +56,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.log.GlobalLogContext
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -716,9 +717,13 @@ object Project {
 
     private[this] def cache = new BytecodeInstructionsCache
 
-    lazy val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+    def JavaClassFileReader(
+        implicit
+        config:     Config     = ConfigFactory.load(),
+        logContext: LogContext = GlobalLogContext
+    ) = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
 
-    lazy val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
+    lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
@@ -731,7 +736,19 @@ object Project {
     }
 
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
-        apply(Java8ClassFileReader.ClassFiles(file), projectLogger = projectLogger)
+        apply(JavaClassFileReader.ClassFiles(file), projectLogger = projectLogger)
+    }
+
+    def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
+        this(
+            projectClassFilesWithSources = JavaClassFileReader(config, logContext).ClassFiles(file),
+            libraryClassFilesWithSources = Traversable.empty,
+            libraryClassFilesAreInterfacesOnly = true,
+            virtualClassFiles = Traversable.empty,
+            handleInconsistentProject = defaultHandlerForInconsistentProjects,
+            config = config,
+            logContext
+        )
     }
 
     def apply[Source](
@@ -762,8 +779,8 @@ object Project {
         libraryFile: File
     ): Project[URL] = {
         apply(
-            Java8ClassFileReader.ClassFiles(projectFile),
-            Java8LibraryClassFileReader.ClassFiles(libraryFile),
+            JavaClassFileReader.ClassFiles(projectFile),
+            JavaLibraryClassFileReader.ClassFiles(libraryFile),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
@@ -774,15 +791,15 @@ object Project {
         libraryFiles: Array[File]
     ): Project[URL] = {
         apply(
-            Java8ClassFileReader.AllClassFiles(projectFiles),
-            Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
+            JavaClassFileReader.AllClassFiles(projectFiles),
+            JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
         )
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        project.extend(Java8ClassFileReader.ClassFiles(file))
+        project.extend(JavaClassFileReader.ClassFiles(file))
     }
 
     /**
@@ -844,11 +861,11 @@ object Project {
     /**
      * Creates a new `Project` that consists of the source files of the previous
      * project and uses the (new) configuration. The old project
-     * configuration is by default used as fallback, so not all values have to be updated.
+     * configuration is by default used as a fallback, so not all values have to be updated.
      */
     def recreate[Source](
         project:                Project[Source],
-        config:                 Config,
+        config:                 Config          = ConfigFactory.empty(),
         useOldConfigAsFallback: Boolean         = true
     ) = {
         apply(
@@ -920,9 +937,30 @@ object Project {
         config:        Config     = ConfigFactory.load(),
         projectLogger: OPALLogger = OPALLogger.globalLogger()
     ): Project[Source] = {
-
         implicit val logContext = new DefaultLogContext()
         OPALLogger.register(logContext, projectLogger)
+        this(
+            projectClassFilesWithSources,
+            libraryClassFilesWithSources,
+            libraryClassFilesAreInterfacesOnly,
+            virtualClassFiles,
+            handleInconsistentProject,
+            config,
+            logContext
+        )
+    }
+
+    def apply[Source](
+        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        libraryClassFilesAreInterfacesOnly: Boolean,
+        virtualClassFiles:                  Traversable[ClassFile],
+        handleInconsistentProject:          HandleInconsistenProject,
+        config:                             Config,
+        logContext:                         LogContext
+    ): Project[Source] = {
+        implicit val projectConfig = config
+        implicit val projectLogContext = logContext
 
         try {
             import scala.collection.mutable.Set
@@ -1109,7 +1147,7 @@ object Project {
      */
     private[this] def validate(p: SomeProject): Seq[InconsistentProjectException] = {
 
-        val disclaimer = "(this inconsistency may lead to analyses failing miserably)"
+        val disclaimer = "(this inconsistency may lead to completely useless results)"
 
         val ch = p.classHierarchy
 

@@ -29,12 +29,15 @@
 package org.opalj
 package br
 
-import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
+
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.io.BufferedSource
+
+import org.opalj.control.foreachNonNullValue
 import org.opalj.io.processSource
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
@@ -54,6 +57,8 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * ==Thread safety==
  * This class is effectively immutable. Hence, concurrent access to the class hierarchy is supported.
+ *
+ * @note Java 9 module definitions are completely ignored.
  *
  * @param interfaceTypesMap `true` iff the type is an interface otherwise `false`.
  * @param isKnownToBeFinalMap `true` if the class is known to be `final`.
@@ -111,7 +116,11 @@ class ClassHierarchy private (
     )
     assert(
         (0 until knownTypesMap.length) forall { i ⇒
-            (interfaceTypesMap(i) && !isKnownToBeFinalMap(i)) || !interfaceTypesMap(i)
+            if (!(!interfaceTypesMap(i) || !isKnownToBeFinalMap(i))) {
+                println(s"the interface type ${knownTypesMap(i).toJava} is final")
+                false
+            } else
+                true
         }
     )
 
@@ -202,7 +211,7 @@ class ClassHierarchy private (
         val rootTypes = this.rootTypes
         if (rootTypes.size > 1)
             OPALLogger.log(Warn(
-                "project configuration",
+                "project configuration - class hierarchy",
                 "supertype information incomplete:\n\t"+
                     rootTypes.filterNot(_ eq ObjectType.Object).
                     map(rt ⇒ (if (isInterface(rt)) "interface " else "class ") + rt.toJava).
@@ -214,7 +223,7 @@ class ClassHierarchy private (
             if (isFinal) {
                 if (subclassTypesMap(index).nonEmpty) {
                     OPALLogger.log(Warn(
-                        "project configuration ",
+                        "project configuration - class hierarchy",
                         s"the final type ${knownTypesMap(index).toJava} "+
                             "has subclasses: "+subclassTypesMap(index)+
                             "; resetting the \"is final\" property."
@@ -224,7 +233,7 @@ class ClassHierarchy private (
 
                 if (subinterfaceTypesMap(index).nonEmpty) {
                     OPALLogger.log(Warn(
-                        "project configuration] ",
+                        "project configuration - class hierarchy",
                         s"the final type ${knownTypesMap(index).toJava} "+
                             "has subinterfaces: "+subclassTypesMap(index)+
                             "; resetting the \"is final\" property."
@@ -2182,7 +2191,7 @@ class ClassHierarchy private (
 
         if (isUnknown(upperTypeBoundA)) {
             OPALLogger.logOnce(Warn(
-                "project configuration",
+                "project configuration - class hierarchy",
                 "type unknown: "+upperTypeBoundA.toJava
             ))
             // there is nothing that we can do...
@@ -2593,10 +2602,10 @@ object ClassHierarchy {
             val typeDefinitions = processSource(new BufferedSource(in)) { source ⇒
                 if (source eq null) {
                     OPALLogger.error(
-                        "project configuration",
-                        "Loading the predefined class hierarchy failed.\n"+
-                            "Make sure that all resources are found in the correct folders.\n"+
-                            "Try to rebuild the project using \"sbt copy-resources\"."
+                        "internal - class hierarchy",
+                        "loading the predefined class hierarchy failed; "+
+                            "make sure that all resources are found in the correct folders and "+
+                            "try to rebuild the project using \"sbt copy-resources\""
                     )
                     return Iterator.empty;
                 }
@@ -2618,7 +2627,7 @@ object ClassHierarchy {
         }
         // We have to make sure that we have seen all types before we can generate
         // the arrays to store the information about the types!
-        val typeDeclarations = (for (ch ← typeHierarchyDefinitions) yield parseTypeHierarchyDefinition(ch)).flatten
+        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition(_))
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
@@ -2641,6 +2650,14 @@ object ClassHierarchy {
             theSuperclassType:      Option[ObjectType],
             theSuperinterfaceTypes: Set[ObjectType]
         ): Unit = {
+
+            if (isInterfaceType && isFinal) {
+                val message = s"the class file ${objectType.toJava} defines a final interface "+
+                    "which violates the JVM specifiction and is therefore ignored"
+                OPALLogger.error("project configuration - class hierarchy", message)
+
+                return ;
+            }
 
             def addToSet(data: Array[Set[ObjectType]], index: Int, t: ObjectType) = {
                 val objectTypes = data(index)
@@ -2689,9 +2706,16 @@ object ClassHierarchy {
             }
             theSuperinterfaceTypes foreach { aSuperinterfaceType ⇒
                 val aSuperinterfaceTypeId = aSuperinterfaceType.id
-                knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
-                interfaceTypesMap(aSuperinterfaceTypeId) = true
 
+                if (knownTypesMap(aSuperinterfaceTypeId) eq null) {
+                    knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
+                    interfaceTypesMap(aSuperinterfaceTypeId) = true
+                } else if (!interfaceTypesMap(aSuperinterfaceTypeId)) {
+                    val message = s"the class file ${objectType.toJava} defines a "+
+                        s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
+                        "which is actually a regular class file"
+                    OPALLogger.warn("project configuration - class hierarchy", message)
+                }
                 if (isInterfaceType) {
                     addToSet(subinterfaceTypesMap, aSuperinterfaceTypeId, objectType)
                     ensureHasSet(subclassTypesMap, aSuperinterfaceTypeId)
@@ -2700,6 +2724,7 @@ object ClassHierarchy {
                     assert(subclassTypesMap(aSuperinterfaceTypeId).contains(objectType))
                     ensureHasSet(subinterfaceTypesMap, aSuperinterfaceTypeId)
                 }
+
             }
         }
 
@@ -2714,13 +2739,15 @@ object ClassHierarchy {
         }
         // Analyzes the given class file and extends the current class hierarchy.
         classFiles.seq foreach { classFile ⇒
-            process(
-                classFile.thisType,
-                classFile.isInterfaceDeclaration,
-                classFile.isFinal,
-                classFile.superclassType,
-                immutable.HashSet(classFile.interfaceTypes: _*)
-            )
+            if (!classFile.isModuleDeclaration) {
+                process(
+                    classFile.thisType,
+                    classFile.isInterfaceDeclaration,
+                    classFile.isFinal,
+                    classFile.superclassType,
+                    immutable.HashSet(classFile.interfaceTypes: _*)
+                )
+            }
         }
 
         new ClassHierarchy(

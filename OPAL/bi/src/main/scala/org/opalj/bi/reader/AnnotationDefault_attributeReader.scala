@@ -55,7 +55,6 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     def AnnotationDefault_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         element_value:        ElementValue
     ): AnnotationDefault_attribute
 
@@ -63,8 +62,7 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    /*
-     * '''From the Specification'''
+    /**
      * <pre>
      * AnnotationDefault_attribute {
      *  u2 attribute_name_index;
@@ -73,19 +71,23 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME →
-        ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
-            val attributeLength = in.readInt()
-            AnnotationDefault_attribute(
-                cp, attributeNameIndex, attributeLength, ElementValue(cp, in)
-            )
-        }))
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Attribute = {
+        /* val attributeLength =*/ in.readInt()
+        AnnotationDefault_attribute(cp, attribute_name_index, ElementValue(cp, in))
+    }
+
+    registerAttributeReader(AnnotationDefaultAttribute.Name → parser)
 }
 /**
  * Common properties of `AnnotationDefault` attributes.
  */
-object AnnotationDefault_attributeReader {
+object AnnotationDefaultAttribute {
 
-    val ATTRIBTUE_NAME = "AnnotationDefault"
+    final val Name = "AnnotationDefault"
 
 }

@@ -33,6 +33,7 @@ package reader
 import reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for type annotations. This
@@ -73,7 +74,6 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
     /**
      * Reads a Runtime(In)VisibleTypeAnnotations attribute.
      *
-     * ''' From the Specification'''
      * <pre>
      * type_annotation {
      *            u1 target_type;

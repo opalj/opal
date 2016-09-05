@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -46,7 +46,21 @@ case class Method_Info(
         attributes:       Attributes
 ) {
 
+    /**
+     * The number of bytes required to store this method info object.
+     */
     def size: Int = 2 + 2 + 2 + 2 /*attributes_count*/ + attributes.view.map(_.size).sum
+
+    /**
+     * The simple name of the method.
+     */
+    def name(implicit cp: Constant_Pool) = cp(name_index).toString(cp)
+
+    /**
+     * The method descriptor as used by the Java VM. E.g., the method `void doIt()`
+     * would have the descriptor `()V`.
+     */
+    def descriptor(implicit cp: Constant_Pool) = cp(descriptor_index).asString
 
     /**
      * @param definingTypeFQN The FQN of the class defining this field.
@@ -64,8 +78,8 @@ case class Method_Info(
                 case _ ⇒ flags
             }
 
-        val name = cp(name_index).toString(cp)
-        val jvmDescriptor = cp(descriptor_index).asString
+        val name = this.name
+        val jvmDescriptor = descriptor
         val javaDescriptor = parseMethodDescriptor(name, jvmDescriptor)
         val index = methodIndex.toString
         <div class="method" name={ name } id={ name + jvmDescriptor } data-method-index={ index } data-method-flags={ filter_flags }>
@@ -78,9 +92,9 @@ case class Method_Info(
     }
 
     private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {
-        attributes map (_ match {
+        attributes map {
             case codeAttribute: Code_attribute ⇒ codeAttribute.toXHTML(methodIndex)
             case attribute                     ⇒ attribute.toXHTML(cp)
-        })
+        }
     }
 }

@@ -33,6 +33,7 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -44,7 +45,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     //
     // ABSTRACT DEFINITIONS
     //
-    type LocalVariableTable_attribute <: Attribute
+    type LocalVariableTable_attribute >: Null <: Attribute
 
     type LocalVariableTableEntry
     implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
@@ -61,7 +62,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     def LocalVariableTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         local_variable_table: LocalVariables
     ): LocalVariableTable_attribute
 
@@ -71,8 +71,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
 
     type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
-    /* From The Specification:
-     * 
+    /**
      * <pre>
      * LocalVariableTable_attribute {
      *  u2 attribute_name_index;
@@ -87,41 +86,42 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        LocalVariableTable_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-
-                val attribute_length = in.readInt()
-                val entriesCount = in.readUnsignedShort()
-                if (entriesCount > 0 || reifyEmptyAttributes) {
-                    LocalVariableTable_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        {
-                            repeat(entriesCount) {
-                                LocalVariableTableEntry(
-                                    cp,
-                                    in.readUnsignedShort,
-                                    in.readUnsignedShort,
-                                    in.readUnsignedShort,
-                                    in.readUnsignedShort,
-                                    in.readUnsignedShort
-                                )
-                            }
-                        }
-                    )
-                } else {
-                    null
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): LocalVariableTable_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val entriesCount = in.readUnsignedShort()
+        if (entriesCount > 0 || reifyEmptyAttributes) {
+            LocalVariableTable_attribute(
+                cp,
+                attribute_name_index,
+                {
+                    repeat(entriesCount) {
+                        LocalVariableTableEntry(
+                            cp,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort
+                        )
+                    }
                 }
-            }
-        )
-    )
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(LocalVariableTableAttribute.Name → parser)
 }
 
-object LocalVariableTable_attributeReader {
+object LocalVariableTableAttribute {
 
-    val ATTRIBUTE_NAME = "LocalVariableTable"
+    final val Name = "LocalVariableTable"
 
 }
 

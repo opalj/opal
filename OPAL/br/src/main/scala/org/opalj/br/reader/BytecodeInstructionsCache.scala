@@ -59,27 +59,30 @@ class BytecodeInstructionsCache {
         for (i ← (0 until instructions.size)) instructions(i) = new GOTO(i - 1000)
         instructions
     }
-    def GOTO(branchtarget: Int): GOTO =
+    def GOTO(branchtarget: Int): GOTO = {
         if (branchtarget >= -1000 && branchtarget < 1000) gotoInstructions(branchtarget + 1000)
         else { new GOTO(branchtarget) }
+    }
 
     private[this] val ifnullInstructions = {
         val instructions = new Array[IFNULL](1000)
         for (i ← (0 until instructions.size)) instructions(i) = new IFNULL(i - 150)
         instructions
     }
-    def IFNULL(branchtarget: Int): IFNULL =
+    def IFNULL(branchtarget: Int): IFNULL = {
         if (branchtarget >= -150 && branchtarget < 850) ifnullInstructions(branchtarget + 150)
         else { new IFNULL(branchtarget) }
+    }
 
     private[this] val ifnonnullInstructions = {
         val instructions = new Array[IFNONNULL](500)
         for (i ← (0 until instructions.size)) instructions(i) = new IFNONNULL(i - 150)
         instructions
     }
-    def IFNONNULL(branchtarget: Int): IFNONNULL =
+    def IFNONNULL(branchtarget: Int): IFNONNULL = {
         if (branchtarget >= -150 && branchtarget < 350) ifnonnullInstructions(branchtarget + 150)
         else { new IFNONNULL(branchtarget) }
+    }
 
     private[this] val ifacmpeqInstructions = {
         val instructions = new Array[IF_ACMPEQ](1000)
@@ -104,99 +107,110 @@ class BytecodeInstructionsCache {
         for (i ← (0 until instructions.size)) instructions(i) = new IFNE(i - 256)
         instructions
     }
-    def IFNE(branchtarget: Int): IFNE =
+    def IFNE(branchtarget: Int): IFNE = {
         if (branchtarget >= -256 && branchtarget < 512) ifneInstructions(branchtarget + 256)
         else { new IFNE(branchtarget) }
+    }
 
     private[this] val ifeqInstructions = {
         val instructions = new Array[IFEQ](256 + 512)
         for (i ← (0 until instructions.size)) instructions(i) = new IFEQ(i - 256)
         instructions
     }
-    def IFEQ(branchtarget: Int): IFEQ =
+    def IFEQ(branchtarget: Int): IFEQ = {
         if (branchtarget >= -256 && branchtarget < 512) ifeqInstructions(branchtarget + 256)
         else { new IFEQ(branchtarget) }
+    }
 
     private[this] val ifltInstructions = {
         val instructions = new Array[IFLT](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IFLT(i - 128)
         instructions
     }
-    def IFLT(branchtarget: Int): IFLT =
+    def IFLT(branchtarget: Int): IFLT = {
         if (branchtarget >= -128 && branchtarget < 256) ifltInstructions(branchtarget + 128)
         else { new IFLT(branchtarget) }
+    }
 
     private[this] val ifgtInstructions = {
         val instructions = new Array[IFGT](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IFGT(i - 128)
         instructions
     }
-    def IFGT(branchtarget: Int): IFGT =
+    def IFGT(branchtarget: Int): IFGT = {
         if (branchtarget >= -128 && branchtarget < 256) ifgtInstructions(branchtarget + 128)
         else { new IFGT(branchtarget) }
+    }
 
     private[this] val ifleInstructions = {
         val instructions = new Array[IFLE](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IFLE(i - 128)
         instructions
     }
-    def IFLE(branchtarget: Int): IFLE =
+    def IFLE(branchtarget: Int): IFLE = {
         if (branchtarget >= -128 && branchtarget < 256) ifleInstructions(branchtarget + 128)
         else { new IFLE(branchtarget) }
+    }
 
     private[this] val ifgeInstructions = {
         val instructions = new Array[IFGE](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IFGE(i - 128)
         instructions
     }
-    def IFGE(branchtarget: Int): IFGE =
+    def IFGE(branchtarget: Int): IFGE = {
         if (branchtarget >= -128 && branchtarget < 256) ifgeInstructions(branchtarget + 128)
         else { new IFGE(branchtarget) }
+    }
 
     private[this] val ificmpneInstructions = {
         val instructions = new Array[IF_ICMPNE](256 + 512)
         for (i ← (0 until instructions.size)) instructions(i) = new IF_ICMPNE(i - 256)
         instructions
     }
-    def IF_ICMPNE(branchtarget: Int): IF_ICMPNE =
+    def IF_ICMPNE(branchtarget: Int): IF_ICMPNE = {
         if (branchtarget >= -256 && branchtarget < 512) ificmpneInstructions(branchtarget + 256)
         else { new IF_ICMPNE(branchtarget) }
+    }
 
     private[this] val ificmpeqInstructions = {
         val instructions = new Array[IF_ICMPEQ](256 + 512)
         for (i ← (0 until instructions.size)) instructions(i) = new IF_ICMPEQ(i - 256)
         instructions
     }
-    def IF_ICMPEQ(branchtarget: Int): IF_ICMPEQ =
+    def IF_ICMPEQ(branchtarget: Int): IF_ICMPEQ = {
         if (branchtarget >= -256 && branchtarget < 512) ificmpeqInstructions(branchtarget + 256)
         else { new IF_ICMPEQ(branchtarget) }
+    }
 
     private[this] val ificmpltInstructions = {
         val instructions = new Array[IF_ICMPLT](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IF_ICMPLT(i - 128)
         instructions
     }
-    def IF_ICMPLT(branchtarget: Int): IF_ICMPLT =
+    def IF_ICMPLT(branchtarget: Int): IF_ICMPLT = {
         if (branchtarget >= -128 && branchtarget < 256) ificmpltInstructions(branchtarget + 128)
         else { new IF_ICMPLT(branchtarget) }
+    }
 
     private[this] val ificmpgtInstructions = {
         val instructions = new Array[IF_ICMPGT](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IF_ICMPGT(i - 128)
         instructions
     }
-    def IF_ICMPGT(branchtarget: Int): IF_ICMPGT =
+    def IF_ICMPGT(branchtarget: Int): IF_ICMPGT = {
         if (branchtarget >= -128 && branchtarget < 256) ificmpgtInstructions(branchtarget + 128)
         else { new IF_ICMPGT(branchtarget) }
+    }
 
     private[this] val ificmpleInstructions = {
         val instructions = new Array[IF_ICMPLE](128 + 256)
         for (i ← (0 until instructions.size)) instructions(i) = new IF_ICMPLE(i - 128)
         instructions
     }
-    def IF_ICMPLE(branchtarget: Int): IF_ICMPLE =
+    def IF_ICMPLE(branchtarget: Int): IF_ICMPLE = {
         if (branchtarget >= -128 && branchtarget < 256) ificmpleInstructions(branchtarget + 128)
         else { new IF_ICMPLE(branchtarget) }
+    }
 
     private[this] val ificmpgeInstructions = {
         val instructions = new Array[IF_ICMPGE](128 + 256)
@@ -320,38 +334,44 @@ class BytecodeInstructionsCache {
         for (i ← (0 until instructions.size)) instructions(i) = new DLOAD(i)
         instructions
     }
-    def DLOAD(lvIndex: Int): DLOAD =
+    def DLOAD(lvIndex: Int): DLOAD = {
         if (lvIndex < 256) dloadInstructions(lvIndex)
         else { new DLOAD(lvIndex) }
+    }
 
     private[this] val dstoreInstructions = {
         val instructions = new Array[DSTORE](256)
         for (i ← (0 until instructions.size)) instructions(i) = new DSTORE(i)
         instructions
     }
-    def DSTORE(lvIndex: Int): DSTORE =
+    def DSTORE(lvIndex: Int): DSTORE = {
         if (lvIndex < 256) dstoreInstructions(lvIndex)
         else { new DSTORE(lvIndex) }
+    }
 
     //
     // ReferenceType based caching
     //
 
     private[this] val newInstructions = TrieMap.empty[ObjectType, NEW]
-    def NEW(objectType: ObjectType) =
+    def NEW(objectType: ObjectType) = {
         newInstructions.getOrElseUpdate(objectType, new NEW(objectType))
+    }
 
     private[this] val checkcastInstructions = TrieMap.empty[ReferenceType, CHECKCAST]
-    def CHECKCAST(referenceType: ReferenceType) =
+    def CHECKCAST(referenceType: ReferenceType) = {
         checkcastInstructions.getOrElseUpdate(referenceType, new CHECKCAST(referenceType))
+    }
 
     private[this] val instanceOfInstructions = TrieMap.empty[ReferenceType, INSTANCEOF]
-    def INSTANCEOF(referenceType: ReferenceType) =
+    def INSTANCEOF(referenceType: ReferenceType) = {
         instanceOfInstructions.getOrElseUpdate(referenceType, new INSTANCEOF(referenceType))
+    }
 
     private[this] val anewarrayInstructions = TrieMap.empty[ReferenceType, ANEWARRAY]
-    def ANEWARRAY(referenceType: ReferenceType) =
+    def ANEWARRAY(referenceType: ReferenceType) = {
         anewarrayInstructions.getOrElseUpdate(referenceType, new ANEWARRAY(referenceType))
+    }
 
 }
 

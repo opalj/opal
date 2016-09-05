@@ -63,12 +63,22 @@ import org.opalj.issues.InstructionLocation
 import org.opalj.issues.IssueKind
 
 /**
- * Identifies accesses to local
- * reference variables that are once done in a guarded context (w.r.t. its nullness
- * property; guarded by an if instruction) and that are also done in an unguarded context.
+ * Identifies accesses to local reference variables that are once done in a guarded context
+ * (w.r.t. its nullness property; guarded by an if instruction) and that are also done in
+ * an unguarded context.
  *
- * This is only a very shallow (but always correct) analysis; if we would integrate
- * the analysis with the evaluation process more precise results would be possible.
+ * This is only a very shallow analysis that is subject to false positives; to filter
+ * potential false positives we filter all those issues where we can identify a
+ * control and data-dependency to a derived value. E.g.,
+ * {{{
+ * def printSize(f : File) : Unit = {
+ * 	val name = if(f eq null) null else f.getName
+ *  if(name == null) throw new NullPointerException;
+ *  // here... f is not null; because if f is null at the beginning, name would be null to
+ *  // and the method call would have returned abnormally (raised a NullPointerException).
+ *  println(f.size)
+ * }
+ * }}}
  *
  * @author Michael Eichberg
  */

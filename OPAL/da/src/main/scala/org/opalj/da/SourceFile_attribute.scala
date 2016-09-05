@@ -43,12 +43,13 @@ case class SourceFile_attribute(
         sourceFile_index:     Constant_Pool_Index
 ) extends Attribute {
 
-    def attribute_length = 2
+    final override def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">SourceFile</span>
-            { ": "+cp(sourceFile_index).asString }
+            -
+            { cp(sourceFile_index).asString }
         </div>
     }
 

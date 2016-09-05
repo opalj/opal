@@ -27,33 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package io
+package br
+package reader
 
-import java.io.ByteArrayOutputStream
-import java.io.IOException
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
- * A ByteArrayOutputStream that will always fail after a given number of written bytes.
+ * This configuration can be used to read in Java 9 (version 53) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented. Instructions will be cached.
  *
  * @author Michael Eichberg
  */
-class FailWhenByteArrayOutputStream(
-        failIfByteNIsWritten: Int,
-        initialSize:          Int = 32
-) extends ByteArrayOutputStream(initialSize) {
-
-    override def write(b: Int): Unit = this.synchronized {
-        super.write(b)
-        if (size >= failIfByteNIsWritten) {
-            throw new IOException(s"passed the set boundary of $failIfByteNIsWritten; wrote ${size()} bytes")
-        }
-    }
-
-    override def write(b: Array[Byte], off: Int, len: Int): Unit = this.synchronized {
-        super.write(b, off, len)
-        if (size >= failIfByteNIsWritten) {
-            throw new IOException(s"passed the set boundary of $failIfByteNIsWritten; wrote ${size()} bytes")
-        }
-
-    }
-}
+class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
+    cache: BytecodeInstructionsCache
+)(
+    implicit
+    logContext: LogContext = GlobalLogContext,
+    config:     Config     = ConfigFactory.load()
+) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework

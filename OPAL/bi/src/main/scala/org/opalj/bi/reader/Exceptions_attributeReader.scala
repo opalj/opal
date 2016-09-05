@@ -30,9 +30,10 @@ package org.opalj
 package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for a code block's ''exceptions'' attribute.
@@ -41,13 +42,12 @@ import java.io.DataInputStream
  */
 trait Exceptions_attributeReader extends AttributeReader {
 
-    type Exceptions_attribute <: Attribute
+    type Exceptions_attribute >: Null <: Attribute
     implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
     def Exceptions_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute
 
@@ -68,27 +68,29 @@ trait Exceptions_attributeReader extends AttributeReader {
      * }
      * </pre> 
      */
-    registerAttributeReader(
-        Exceptions_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val number_of_exceptions = in.readUnsignedShort
-                if (number_of_exceptions > 0 || reifyEmptyAttributes) {
-                    Exceptions_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(number_of_exceptions) { in.readUnsignedShort }
-                    )
-                } else
-                    null
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Exceptions_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val number_of_exceptions = in.readUnsignedShort
+        if (number_of_exceptions > 0 || reifyEmptyAttributes) {
+            Exceptions_attribute(
+                cp,
+                attribute_name_index,
+                repeat(number_of_exceptions) { in.readUnsignedShort }
+            )
+        } else
+            null
+    }
+
+    registerAttributeReader(ExceptionsAttribute.Name → parser)
 }
 
-object Exceptions_attributeReader {
+object ExceptionsAttribute {
 
-    val ATTRIBUTE_NAME = "Exceptions"
+    final val Name = "Exceptions"
 
 }

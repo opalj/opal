@@ -43,6 +43,12 @@ import scala.xml.Node
  */
 trait ElementValue {
 
+    /**
+     * The number of byte required to store this element value
+     * in a class file.
+     */
+    def attribute_length: Int
+
     def tag: Int
 
     def toXHTML(implicit cp: Constant_Pool): Node
@@ -50,6 +56,8 @@ trait ElementValue {
 }
 
 trait BaseElementValue extends ElementValue {
+
+    final override def attribute_length: Int = 1 + 2
 
     def const_value_index: Constant_Pool_Index
 
@@ -60,72 +68,79 @@ trait BaseElementValue extends ElementValue {
 }
 
 case class ByteValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = ByteValue.tag.toInt
+    final override def tag = ByteValue.tag.toInt
 }
-object ByteValue { val tag = 'B' }
+object ByteValue { final val tag = 'B' }
 
 case class CharValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = CharValue.tag.toInt
+    final override def tag = CharValue.tag.toInt
 }
-object CharValue { val tag = 'C' }
+object CharValue { final val tag = 'C' }
 
 case class DoubleValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = DoubleValue.tag.toInt
+    final override def tag = DoubleValue.tag.toInt
 }
-object DoubleValue { val tag = 'D' }
+object DoubleValue { final val tag = 'D' }
 
 case class FloatValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = FloatValue.tag.toInt
+    final override def tag = FloatValue.tag.toInt
 }
-object FloatValue { val tag = 'F' }
+object FloatValue { final val tag = 'F' }
 
 case class IntValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = IntValue.tag.toInt
+    final override def tag = IntValue.tag.toInt
 }
-object IntValue { val tag = 'I' }
+object IntValue { final val tag = 'I' }
 
 case class LongValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = LongValue.tag.toInt
+    final override def tag = LongValue.tag.toInt
 }
-object LongValue { val tag = 'J' }
+object LongValue { final val tag = 'J' }
 
 case class ShortValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = ShortValue.tag.toInt
+    final override def tag = ShortValue.tag.toInt
 }
-object ShortValue { val tag = 'S' }
+object ShortValue { final val tag = 'S' }
 
 case class BooleanValue(const_value_index: Constant_Pool_Index) extends BaseElementValue {
-    def tag: Int = BooleanValue.tag.toInt
+    final override def tag = BooleanValue.tag.toInt
 }
-object BooleanValue { val tag = 'Z' }
+object BooleanValue { final val tag = 'Z' }
 
 case class StringValue(const_value_index: Constant_Pool_Index) extends ElementValue {
-    def tag: Int = StringValue.tag.toInt
+
+    final override def attribute_length: Int = 1 + 2
+
+    final override def tag = StringValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">"{ cp(const_value_index).toString }"</span>
     }
 }
-
-object StringValue { val tag = 's' }
+object StringValue { final val tag = 's' }
 
 case class ClassValue(class_info_index: Constant_Pool_Index) extends ElementValue {
-    def tag: Int = ClassValue.tag.toInt
+
+    final override def attribute_length: Int = 1 + 2
+
+    final override def tag = ClassValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value type">{ parseReturnType(class_info_index) }.class</span>
     }
 
 }
-object ClassValue { val tag = 'c' }
+object ClassValue { final val tag = 'c' }
 
-trait StructuredElementValue extends ElementValue {}
+trait StructuredElementValue extends ElementValue
 
 case class EnumValue(
         type_name_index:  Constant_Pool_Index,
         const_name_index: Constant_Pool_Index
 ) extends StructuredElementValue {
-    def tag: Int = EnumValue.tag.toInt
+    final override def attribute_length: Int = 1 + 2 + 2
+
+    final override def tag = EnumValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val et = parseFieldType(type_name_index).javaTypeName
@@ -135,20 +150,27 @@ case class EnumValue(
     }
 
 }
-object EnumValue { val tag = 'e' }
+object EnumValue { final val tag = 'e' }
 
 case class AnnotationValue(val annotation: Annotation) extends StructuredElementValue {
-    def tag: Int = AnnotationValue.tag.toInt
+
+    final override def attribute_length: Int = 1 + annotation.attribute_length
+
+    final override def tag = AnnotationValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="constant_value">{ annotation.toXHTML }</span>
     }
 
 }
-object AnnotationValue { val tag = '@' }
+object AnnotationValue { final val tag = '@' }
 
 case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementValue {
-    def tag: Int = ArrayValue.tag.toInt
+
+    final override def attribute_length: Int =
+        1 + values.foldLeft(2 /*num_values*/ )((c, n) ⇒ c + n.attribute_length)
+
+    final override def tag = ArrayValue.tag.toInt
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val values = this.values.map(v ⇒ { v.toXHTML })
@@ -156,4 +178,4 @@ case class ArrayValue(val values: Seq[ElementValue]) extends StructuredElementVa
     }
 
 }
-object ArrayValue { val tag = '[' }
+object ArrayValue { final val tag = '[' }

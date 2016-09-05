@@ -29,7 +29,9 @@
 package org.opalj
 package br
 
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java9Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Loads class files form a JAR archive and prints the signatures of the classes.
@@ -71,9 +73,50 @@ object ClassFileInformation {
             // compile class file.
             sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
 
+            module map { m ⇒
+                println("\tMODULE: ")
+                if (m.requires.nonEmpty) {
+                    println(
+                        m.requires.map { r ⇒
+                            val flags = AccessFlags.toString(r.requiresFlags, AccessFlagsContexts.MODULE)
+                            s"\t\trequires $flags${r.requires};"
+                        }.sorted.mkString("\n")
+                    )
+                    println()
+                }
+
+                if (m.exports.nonEmpty) {
+                    println(
+                        m.exports.map { e ⇒
+                            if (e.exportsTo.nonEmpty)
+                                e.exportsTo.mkString(s"\t\texports ${e.exports} to ", ", ", ";")
+                            else
+                                s"\t\texports ${e.exports};"
+                        }.sorted.mkString("\n")
+                    )
+                    println()
+                }
+
+                if (m.uses.nonEmpty) {
+                    println(
+                        m.uses.sortWith((l, r) ⇒ l.toJava < r.toJava).map(u ⇒ s"\t\tuses ${u.toJava};").mkString("\n")
+                    )
+                    println()
+                }
+
+                if (m.provides.nonEmpty) {
+                    println(
+                        m.provides.map { p ⇒
+                            s"\t\tprovides ${p.provides.toJava} with ${p.withInterface.toJava};"
+                        }.sorted.mkString("\n")
+                    )
+                    println()
+                }
+            }
+
             // The version of the class file. Basically, every major version of the
             // JDK defines additional (new) features.
-            println("\tVERSION: "+majorVersion+"."+minorVersion)
+            println(s"\tVERSION: $majorVersion.$minorVersion (${org.opalj.bi.jdkVersion(majorVersion)})")
 
             println(fields.map(_.toJavaSignature).mkString("\tFIELDS:\n\t", "\n\t", ""))
 

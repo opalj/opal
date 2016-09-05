@@ -44,8 +44,8 @@ case class CONSTANT_Methodref_info(
         name_and_type_index: Constant_Pool_Index
 ) extends AsMethodref {
 
-    override def tag: Int = ConstantPoolTags.CONSTANT_Methodref_ID
+    final override def tag: Int = ConstantPoolTags.CONSTANT_Methodref_ID
 
-    final def isInterfaceMethodRef: Boolean = false
+    final override def isInterfaceMethodRef: Boolean = false
 
 }

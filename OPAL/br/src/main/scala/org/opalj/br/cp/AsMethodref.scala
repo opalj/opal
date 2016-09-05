@@ -50,6 +50,12 @@ trait AsMethodref extends Constant_Pool_Entry {
     // to cache the result
     private[this] var methodref: (ReferenceType, Boolean /*InterfaceMethodRef*/ , String, MethodDescriptor) = null
     override def asMethodref(cp: Constant_Pool): (ReferenceType, Boolean, String, MethodDescriptor) = {
+        // The following solution is sufficiently thread safe; i.e.,
+        // it may happen that two or more methodref instances  
+        // are created, but these instances are guaranteed to
+        // be equal (`==`).
+
+        var methodref = this.methodref
         if (methodref eq null) {
             val nameAndType = cp(name_and_type_index).asNameAndType
             methodref =
@@ -59,6 +65,7 @@ trait AsMethodref extends Constant_Pool_Entry {
                     nameAndType.name(cp),
                     nameAndType.methodDescriptor(cp)
                 )
+            this.methodref = methodref
         }
         methodref
     }

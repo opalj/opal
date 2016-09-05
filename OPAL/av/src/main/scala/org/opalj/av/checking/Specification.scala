@@ -829,7 +829,7 @@ object Specification {
         if (!file.isDirectory)
             throw SpecificationError("the specified directory is not a directory: "+directoryName)
 
-        Project.Java8ClassFileReader.ClassFiles(file)
+        Project.JavaClassFileReader.ClassFiles(file)
     }
 
     def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
@@ -843,7 +843,7 @@ object Specification {
 
         OPALLogger.info("creating project", s"loading $jarName")(GlobalLogContext)
 
-        Project.Java8ClassFileReader.ClassFiles(file)
+        Project.JavaClassFileReader.ClassFiles(file)
     }
 
     /**
@@ -870,7 +870,7 @@ object Specification {
 
         OPALLogger.info("creating project", s"loading library $jarName")(GlobalLogContext)
 
-        Project.Java8LibraryClassFileReader.ClassFiles(file)
+        Project.JavaLibraryClassFileReader.ClassFiles(file)
     }
 
     /**

@@ -38,7 +38,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-abstract class TypesSet {
+abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
     def concreteTypes: Set[ObjectType]
     def upperTypeBounds: Set[ObjectType]
@@ -113,5 +113,17 @@ case object EmptyTypesSet extends TypesSet {
 
     def concreteTypes: Set[ObjectType] = Set.empty
     def upperTypeBounds: Set[ObjectType] = Set.empty
+
+}
+
+case class TheTypes( final val concreteTypes: Set[ObjectType]) extends TypesSet {
+
+    final override def upperTypeBounds = Set.empty
+
+}
+
+case class UpperTypeBounds( final val upperTypeBounds: Set[ObjectType]) extends TypesSet {
+
+    final override def concreteTypes = Set.empty
 
 }

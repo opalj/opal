@@ -60,7 +60,6 @@ trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_att
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Unknown_attribute = {
-
         val info = new Array[Byte](in.readInt)
         in.readFully(info)
 

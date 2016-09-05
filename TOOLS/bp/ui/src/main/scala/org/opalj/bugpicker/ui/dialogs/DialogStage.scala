@@ -93,7 +93,13 @@ object DialogStage {
         stage.showAndWait()
     }
 
-    def showMessageWithBinaryChoice(theTitle: String, message: String, buttonNegativeMessage: String, buttonPositiveMessage: String, owner: Window): Boolean = {
+    def showMessageWithBinaryChoice(
+        theTitle:              String,
+        message:               String,
+        buttonNegativeMessage: String,
+        buttonPositiveMessage: String,
+        owner:                 Window
+    ): Boolean = {
         var choice: Boolean = false
         val stage = new DialogStage(owner) {
             theStage ⇒

@@ -42,9 +42,3 @@ case class Synthetic_attribute(attribute_name_index: Constant_Pool_Index) extend
     final override def attribute_length = 0
 
 }
-
-object Synthetic_attribute {
-
-    val name = "Synthetic"
-
-}

@@ -40,18 +40,11 @@ import scala.xml.Node
  */
 case class RuntimeInvisibleTypeAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int, // TODO Compute on demand
         annotations:          IndexedSeq[TypeAnnotation]
 ) extends TypeAnnotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
     }
-
-}
-
-object RuntimeInvisibleTypeAnnotations_attribute {
-
-    val name = "RuntimeInvisibleTypeAnnotations"
 
 }

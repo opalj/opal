@@ -52,7 +52,6 @@ trait MethodParameters_attributeBinding
     override def MethodParameters_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         parameters:           MethodParameters
     ): MethodParameters_attribute = {
         new MethodParameterTable(parameters)

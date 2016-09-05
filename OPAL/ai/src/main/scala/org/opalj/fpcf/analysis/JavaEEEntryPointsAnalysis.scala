@@ -38,12 +38,11 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.InjectedClassesInformationKey
 import org.opalj.fpcf.properties.NoEntryPoint
 import org.opalj.fpcf.properties.IsEntryPoint
-import org.opalj.fpcf.properties.EntryPoint
 
 import scala.collection.mutable.ListBuffer
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
-class JavaEEEntryPointsAnalysis private (
+class JavaEEEntryPointsAnalysis private[analysis] (
     val project: SomeProject
 ) extends {
     private[this] final val SerializableType = ObjectType.Serializable
@@ -54,7 +53,7 @@ class JavaEEEntryPointsAnalysis private (
     /**
      * Identifies those private static non-final fields that are initialized exactly once.
      */
-    def determineProperty(classFile: ClassFile): PropertyComputationResult = {
+    def determineEntrypoints(classFile: ClassFile): PropertyComputationResult = {
 
         if (project.isLibraryType(classFile))
             // the library does not contain the relevant entry points
@@ -114,29 +113,11 @@ class JavaEEEntryPointsAnalysis private (
     }
 }
 
-object JavaEEEntryPointsAnalysis extends FPCFAnalysisRunner {
+object JavaEEEntryPointsAnalysis {
 
     val injectAnnotation = ObjectType("javax.inject.Inject")
 
     final def entitySelector: PartialFunction[Entity, ClassFile] = {
         case cf: ClassFile ⇒ cf
-    }
-
-    override def derivedProperties: Set[PropertyKind] = Set(EntryPoint.Key)
-
-    /*
-     * This recommendations are not transitive. All (even indirect) dependencies are listed here.
-     */
-    override def recommendations: Set[FPCFAnalysisRunner] = {
-        Set()
-    }
-
-    def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
-        val analysis = new JavaEEEntryPointsAnalysis(project)
-        propertyStore <||< (entitySelector, analysis.determineProperty)
-        analysis
     }
 }

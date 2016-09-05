@@ -44,12 +44,11 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
     type Annotations <: Traversable[Annotation]
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations
 
-    type RuntimeVisibleAnnotations_attribute <: Attribute
+    type RuntimeVisibleAnnotations_attribute >: Null <: Attribute
 
     def RuntimeVisibleAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         annotations:          Annotations
     ): RuntimeVisibleAnnotations_attribute
 
@@ -57,26 +56,30 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    registerAttributeReader(
-        RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME →
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val annotations = Annotations(cp, in)
-                if (annotations.nonEmpty || reifyEmptyAttributes) {
-                    RuntimeVisibleAnnotations_attribute(
-                        cp, attribute_name_index, attribute_length, annotations
-                    )
-                } else {
-                    null
-                }
-            })
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): RuntimeVisibleAnnotations_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val annotations = Annotations(cp, in)
+        if (annotations.nonEmpty || reifyEmptyAttributes) {
+            RuntimeVisibleAnnotations_attribute(
+                cp, attribute_name_index, annotations
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(RuntimeVisibleAnnotationsAttribute.Name → parser)
 }
 /**
  * Common properties of `RuntimeVisibleAnnotations` attributes.
  */
-object RuntimeVisibleAnnotations_attributeReader {
+object RuntimeVisibleAnnotationsAttribute {
 
-    val ATTRIBUTE_NAME = "RuntimeVisibleAnnotations"
+    final val Name = "RuntimeVisibleAnnotations"
 
 }

@@ -33,6 +33,7 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
@@ -41,7 +42,7 @@ import java.io.DataInputStream
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 
-    type LineNumberTable_attribute <: Attribute
+    type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry
     implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
@@ -49,7 +50,6 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         line_number_table:    LineNumbers
     ): LineNumberTable_attribute
 
@@ -61,8 +61,8 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
-    /*
-     *  <pre>
+    /**
+     * <pre>
      * LineNumberTable_attribute {
      *   u2 attribute_name_index;
      *   u4 attribute_length;
@@ -72,32 +72,33 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      *   }  line_number_table[line_number_table_length];
      * }
      * </pre>
-     *
      */
-    registerAttributeReader(
-        LineNumberTable_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val line_number_table_length = in.readUnsignedShort
-                if (line_number_table_length > 0 || reifyEmptyAttributes) {
-                    LineNumberTable_attribute(
-                        cp,
-                        attribute_name_index,
-                        attribute_length,
-                        repeat(line_number_table_length) {
-                            LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
-                        }
-                    )
-                } else
-                    null
-            }
-        )
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): LineNumberTable_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val line_number_table_length = in.readUnsignedShort
+        if (line_number_table_length > 0 || reifyEmptyAttributes) {
+            LineNumberTable_attribute(
+                cp,
+                attribute_name_index,
+                repeat(line_number_table_length) {
+                    LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
+                }
+            )
+        } else
+            null
+    }
+
+    registerAttributeReader(LineNumberTableAttribute.Name → parser)
 }
 
-object LineNumberTable_attributeReader {
+object LineNumberTableAttribute {
 
-    val ATTRIBUTE_NAME = "LineNumberTable"
+    final val Name = "LineNumberTable"
 
 }
 

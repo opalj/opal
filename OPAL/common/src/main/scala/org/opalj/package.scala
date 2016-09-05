@@ -28,8 +28,6 @@
  */
 package org
 
-import scala.language.experimental.macros
-import scala.reflect.macros.blackbox.Context
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -106,28 +104,28 @@ package object opalj {
     /**
      * The type of a concrete analysis mode.
      */
-    type AnalysisMode = AnalysisModes.Value
+    final type AnalysisMode = AnalysisModes.Value
 
     /**
      * The type of the predefined relational operators.
      *
      * See [[org.opalj.RelationalOperators]] for the list of all defined operators.
      */
-    type RelationalOperator = RelationalOperators.Value
+    final type RelationalOperator = RelationalOperators.Value
 
     /**
      * The type of the predefined binary arithmetic operators.
      *
      * See [[org.opalj.BinaryArithmeticOperators]] for the list of all defined operators.
      */
-    type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
+    final type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
 
     /**
      * The type of the predefined unary arithmetic operators.
      *
      * See [[org.opalj.UnaryArithmeticOperators]] for the list of all defined operators.
      */
-    type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
+    final type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
 
     /**
      * A simple type alias that can be used to communicate that the respective
@@ -142,30 +140,6 @@ package object opalj {
     final type UByte = Int
 
     /**
-     * Iterates over a given array `a` and calls the given function `f` for
-     * each non-null value in the array.
-     *
-     * @note '''This is a macro.'''
-     */
-    final def foreachNonNullValue[T <: AnyRef](
-        a: Array[T]
-    )(
-        f: (Int, T) ⇒ Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
-
-    /**
-     * Executes the given function `f` for the first `n` values of the given list.
-     * The behavior is undefined if the given list does not have at least `n` elements.
-     *
-     * @note '''This is a macro.'''
-     */
-    final def forFirstN[T <: AnyRef](
-        l: List[T], n: Int
-    )(
-        f: (T) ⇒ Unit
-    ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
-
-    /**
      * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
      *
      * @note This is not the same as a type conversion as the "sign-bit" is not treated
@@ -174,192 +148,36 @@ package object opalj {
      *      `11111111111111111111111111111111`); in other words, the long's sign bit will
      *      still be `0`.
      */
-    final def i2lBitMask(value: Int): Long = {
+    @inline final def i2lBitMask(value: Int): Long = {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
     }
 
     /**
-     * Evaluates the given expression `f` with type `T` the given number of
-     * `times` and stores the result in an `IndexedSeq[T]`.
+     * Returns `true` if the current JRE is at least Java 8 or a newer version.
      *
-     * ==Example Usage==
-     * {{{
-     * val result = repeat(15) {
-     *      System.in.read()
-     * }
-     * }}}
-     *
-     * @note '''This is a macro.'''
-     *
-     * @param times The number of times the expression `f` is evaluated. The `times`
-     *      expression is evaluated exactly once.
-     * @param f An expression that is evaluated the given number of times unless an
-     *      exception is thrown. Hence, even though `f` is not a by-name parameter,
-     *      it behaves in the same way.
-     * @return The result of the evaluation of the expression `f` the given number of
-     *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
-     *      returned.
+     * @note This method makes some assumptions how the version numbers will evolve.
      */
-    def repeat[T](
-        times: Int
-    )(
-        f: T
-    ): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
-    // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
-    // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
-    //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
-    //            val array = new scala.collection.mutable.ArrayBuffer[T](times)
-    //            var i = 0
-    //            while (i < times) {
-    //                array += f
-    //                i += 1
-    //            }
-    //            array
-    //        }
-    // The macro-based implementation has proven to be approx. 1,3 to 1,4 times faster
-    // when the number of times that we repeat an operation is small (e.g., 1 to 15 times)
-    // (which is very often the case when we read in Java class files)
+    final lazy val isCurrentJREAtLeastJava8: Boolean = {
+        val versionString = System.getProperty("java.version")
+        try {
+            val splittedVersionString = versionString.split('.')
+            if (Integer.parseInt(splittedVersionString(0)) > 1 /*up until Java 8, the first number is "1" */ ||
+                (splittedVersionString.length > 1 && Integer.parseInt(splittedVersionString(1)) >= 8)) {
 
-    /**
-     * Iterates over the given range of integer values `[from,to]` and calls the given
-     * function f for each value.
-     *
-     * If `from` is smaller or equal to `to`, `f` will not be called.
-     *
-     * @note '''This is a macro.'''
-     */
-    def iterateTo(
-        from: Int, to: Int
-    )(
-        f: Int ⇒ Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateTo
-
-    /**
-     * Iterates over the given range of integer values `[from,until)` and calls the given
-     * function f for each value.
-     *
-     * If `from` is smaller than `until`, `f` will not be called.
-     */
-    def iterateUntil(
-        from: Int, until: Int
-    )(
-        f: Int ⇒ Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateUntil
-}
-
-/**
- * Implementation of the macros.
- *
- * @author Michael Eichberg
- */
-private object ControlAbstractionsImplementation {
-
-    def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
-        c: Context
-    )(
-        a: c.Expr[Array[T]]
-    )(
-        f: c.Expr[(Int, T) ⇒ Unit]
-    ): c.Expr[Unit] = {
-        import c.universe._
-
-        reify {
-            val array = a.splice // evaluate only once!
-            val arrayLength = array.length
-            var i = 0
-            while (i < arrayLength) {
-                val arrayEntry = array(i)
-                if (arrayEntry ne null) f.splice(i, arrayEntry)
-                i += 1
-            }
-        }
-    }
-
-    def forFirstN[T <: AnyRef: c.WeakTypeTag](
-        c: Context
-    )(
-        l: c.Expr[List[T]], n: c.Expr[Int]
-    )(
-        f: c.Expr[T ⇒ Unit]
-    ): c.Expr[Unit] = {
-        import c.universe._
-
-        reify {
-            var remainingList = l.splice
-            val max = n.splice
-            var i = 0
-            while (i < max) {
-                val head = remainingList.head
-                remainingList = remainingList.tail
-                f.splice(head)
-                i += 1
-            }
-        }
-    }
-
-    def repeat[T: c.WeakTypeTag](
-        c: Context
-    )(
-        times: c.Expr[Int]
-    )(
-        f: c.Expr[T]
-    ): c.Expr[IndexedSeq[T]] = {
-        import c.universe._
-
-        reify {
-            val size = times.splice // => times is evaluated only once
-            if (size == 0) {
-                IndexedSeq.empty
+                OPALLogger.info("system configuration", s"current JRE is at least Java 8")(GlobalLogContext)
+                true
             } else {
-                val array = new scala.collection.mutable.ArrayBuffer[T](size)
-                var i = 0
-                while (i < size) {
-                    val value = f.splice // => we evaluate f the given number of times
-                    array += value
-                    i += 1
-                }
-                array
+                OPALLogger.info("system configuration", s"current JRE is older than Java 8")(GlobalLogContext)
+                false // we were not able to detect/derive enough information!
             }
+        } catch {
+            case t: Throwable ⇒
+                OPALLogger.error(
+                    "system configuration",
+                    s"could not interpret current JRE version: $versionString"
+                )(GlobalLogContext)
+                false
         }
     }
 
-    def iterateTo(
-        c: Context
-    )(
-        from: c.Expr[Int],
-        to:   c.Expr[Int]
-    )(
-        f: c.Expr[(Int) ⇒ Unit]
-    ): c.Expr[Unit] = {
-        import c.universe._
-
-        reify {
-            var i = from.splice
-            val max = to.splice // => to is evaluated only once
-            while (i <= max) {
-                f.splice(i) // => we evaluate f the given number of times
-                i += 1
-            }
-        }
-    }
-
-    def iterateUntil(
-        c: Context
-    )(
-        from:  c.Expr[Int],
-        until: c.Expr[Int]
-    )(
-        f: c.Expr[(Int) ⇒ Unit]
-    ): c.Expr[Unit] = {
-        import c.universe._
-
-        reify {
-            var i = from.splice
-            val max = until.splice // => until is evaluated only once
-            while (i < max) {
-                f.splice(i) // => we evaluate f the given number of times
-                i += 1
-            }
-        }
-    }
 }

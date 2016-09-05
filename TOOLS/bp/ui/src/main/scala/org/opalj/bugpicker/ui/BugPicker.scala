@@ -995,8 +995,9 @@ object BugPicker {
                 PREFERENCES_RECENT_PROJECT
             )
 
+            val fileConfig = ConfigFactory.load()
             val currentConfig = loadedFiles.config match {
-                case Some(config) ⇒ config
+                case Some(config) ⇒ config.withFallback(fileConfig)
                 case None         ⇒ ConfigFactory.load()
             }
 

@@ -111,7 +111,7 @@ trait Instruction {
      * of (A) (potential) padding bytes and (B) the branch offset of JSR(_W) instructions.
      * In the first case the branch offsets are corrected by the number of padding bytes and
      * in the second case the absolute addresses are compared (i.e., whether both
-     * instructions call the same subroutine.
+     * instructions call the same subroutine).
      *
      * For example, an `aload_0` instruction is only
      * isomorphic to another `aload_0` instruction and is not isomorphic to an `aload(0)`
@@ -203,8 +203,8 @@ trait Instruction {
      * some kind of computation; i.e., just copying, duplicating or moving a value between the
      * stack and the registers is not considered to be an expression.
      *
-     * @note The CHECKCAST instruction is special in the sense that it just inspects the top-most
-     * 			value.
+     * @note 	The CHECKCAST instruction is special in the sense that it just inspects the
+     * 			top-most value.
      */
     def expressionResult: ExpressionResultLocation
 
@@ -213,8 +213,8 @@ trait Instruction {
      * (conditional) jump instruction then the PCs of the target instructions are
      * given absolute address.
      *
-     * @param currentPC The program counter of this instruction. Used to resolve relative
-     *      jump targets.
+     * @param 	currentPC The program counter of this instruction. Used to resolve relative
+     *      	jump targets.
      */
     def toString(currentPC: Int): String = toString()
 
@@ -226,7 +226,7 @@ trait Instruction {
  */
 object Instruction {
 
-    final val ILLEGAL_INDEX = -1
+    final val IllegalIndex = -1
 
     /**
      * Facilitates the matching of [[Instruction]] objects.

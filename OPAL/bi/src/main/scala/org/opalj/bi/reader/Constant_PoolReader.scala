@@ -31,8 +31,10 @@ package bi
 package reader
 
 import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**

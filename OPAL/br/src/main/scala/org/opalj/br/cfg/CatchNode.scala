@@ -49,23 +49,24 @@ class CatchNode(
         this(handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
     }
 
-    final def isBasicBlock: Boolean = false
-    final def isCatchNode: Boolean = true
-    final override def asCatchNode: this.type = this
-    final def isExitNode: Boolean = false
+    final override def isBasicBlock: Boolean = false
+    final override def isExitNode: Boolean = false
+    final override def isStartOfSubroutine: Boolean = false
 
-    final def isStartOfSubroutine: Boolean = false
+    final override def isCatchNode: Boolean = true
+    final override def asCatchNode: this.type = this
 
     //
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
-    override def nodeId: Long =
+    override def nodeId: Long = {
         startPC.toLong |
             (endPC.toLong << 16) |
             (handlerPC.toLong << 32) |
             // ObjectTypes have positive ids; Any can hence be associated with -1
             (catchType.map(_.hashCode()).getOrElse(-1).toLong << 48)
+    }
 
     override def toHRR: Option[String] = Some(
         s"try[$startPC,$endPC) ⇒ $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"
@@ -79,8 +80,9 @@ class CatchNode(
         "shape" → "rectangle"
     )
 
-    override def toString: String =
+    override def toString: String = {
         s"CatchNode([$startPC,$endPC)⇒$handlerPC,"+
             s"${catchType.map(_.toJava).getOrElse("<none>")})"
+    }
 
 }

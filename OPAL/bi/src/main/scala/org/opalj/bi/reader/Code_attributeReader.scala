@@ -32,7 +32,8 @@ package reader
 
 import java.io.DataInputStream
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+import org.opalj.control.repeat
 
 /**
  * Defines a template method to read in the code attribute.
@@ -65,7 +66,6 @@ trait Code_attributeReader extends AttributeReader {
     def Code_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         max_stack:            Int,
         max_locals:           Int,
         instructions:         Instructions,
@@ -87,12 +87,12 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
-    /*
+    /**
      * '''From the Specification'''
      * <pre>
      * Code_attribute {
      *  u2 attribute_name_index; u4 attribute_length;
-     *  u2 max_stack;   
+     *  u2 max_stack;
      *  u2 max_locals;
      *  u4 code_length;
      *  u1 code[code_length];
@@ -107,33 +107,37 @@ trait Code_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    registerAttributeReader(
-        Code_attributeReader.ATTRIBUTE_NAME → (
-            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                Code_attribute(
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Code_attribute = {
+        /*val attribute_length = */ in.readInt()
+        Code_attribute(
+            cp,
+            attribute_name_index,
+            in.readUnsignedShort(),
+            in.readUnsignedShort(),
+            Instructions(cp, in),
+            repeat(in.readUnsignedShort()) { // "exception_table_length" times
+                ExceptionTableEntry(
                     cp,
-                    attribute_name_index,
-                    in.readInt(),
-                    in.readUnsignedShort(),
-                    in.readUnsignedShort(),
-                    Instructions(cp, in),
-                    repeat(in.readUnsignedShort()) { // "exception_table_length" times
-                        ExceptionTableEntry(
-                            cp,
-                            in.readUnsignedShort, in.readUnsignedShort,
-                            in.readUnsignedShort, in.readUnsignedShort
-                        )
-                    },
-                    Attributes(AttributesParent.Code, cp, in)
+                    in.readUnsignedShort, in.readUnsignedShort,
+                    in.readUnsignedShort, in.readUnsignedShort
                 )
-            }
+            },
+            Attributes(AttributesParent.Code, cp, in)
         )
-    )
+    }
+
+    registerAttributeReader(CodeAttribute.Name → parser)
+
 }
 
-object Code_attributeReader {
+object CodeAttribute {
 
-    val ATTRIBUTE_NAME = "Code"
+    final val Name = "Code"
 
 }
 

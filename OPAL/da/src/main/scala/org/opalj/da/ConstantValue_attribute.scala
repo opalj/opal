@@ -46,15 +46,10 @@ case class ConstantValue_attribute(
         constantValue_index:  Constant_Pool_Index
 ) extends Attribute {
 
-    override final def attribute_length = 2
+    final override def attribute_length = 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>=<span class="constant_value"> { cp(constantValue_index).asInlineNode }</span></span>
     }
-
-}
-object ConstantValue_attribute {
-
-    val name = "ConstantValue"
 
 }

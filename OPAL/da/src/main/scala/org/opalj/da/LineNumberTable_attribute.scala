@@ -42,9 +42,7 @@ case class LineNumberTable_attribute(
         line_number_table:    Seq[LineNumberTableEntry]
 ) extends Attribute {
 
-    def attribute_length: Int = 2 + line_number_table.size * 4
-
-    def attribute_name = LineNumberTable_attribute.name
+    final override def attribute_length: Int = 2 + line_number_table.size * 4
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
@@ -54,10 +52,5 @@ case class LineNumberTable_attribute(
     }
 
     def line_number_tableToXHTML(implicit cp: Constant_Pool) = line_number_table.map(_.toXHTML(cp))
-
-}
-object LineNumberTable_attribute {
-
-    val name = "LineNumberTable"
 
 }

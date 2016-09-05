@@ -144,6 +144,8 @@ class ProjectExplorerTreeItem(
                     case f: Field ⇒ {
                         ProjectExplorerFieldData(
                             f.name,
+                            classFile,
+                            f,
                             f.isStatic
                         )
                     }

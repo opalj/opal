@@ -46,12 +46,11 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
      */
     def ParametersAnnotations(cp: Constant_Pool, in: DataInputStream): ParametersAnnotations
 
-    type RuntimeVisibleParameterAnnotations_attribute <: Attribute
+    type RuntimeVisibleParameterAnnotations_attribute >: Null <: Attribute
 
     def RuntimeVisibleParameterAnnotations_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        attribute_length:      Int,
         parameter_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute
 
@@ -59,8 +58,7 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
     // IMPLEMENTATION
     //
 
-    /*
-     * '''From the Specification'''
+    /**
      * <pre>
      * RuntimeVisibleParameterAnnotations_attribute {
      *  u2 attribute_name_index;
@@ -73,27 +71,32 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
      *  }
      * </pre>
      */
-    registerAttributeReader(
-        RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME →
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                val parameter_annotations = ParametersAnnotations(cp, in)
-                if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
-                    RuntimeVisibleParameterAnnotations_attribute(
-                        cp, attribute_name_index, attribute_length, parameter_annotations
-                    )
-                } else {
-                    null
-                }
-            })
-    )
+    private[this] def parser(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): RuntimeVisibleParameterAnnotations_attribute = {
+        /*val attribute_length =*/ in.readInt()
+        val parameter_annotations = ParametersAnnotations(cp, in)
+        if (parameter_annotations.nonEmpty || reifyEmptyAttributes) {
+            RuntimeVisibleParameterAnnotations_attribute(
+                cp, attribute_name_index, parameter_annotations
+            )
+        } else {
+            null
+        }
+    }
+
+    registerAttributeReader(RuntimeVisibleParameterAnnotationsAttribute.Name → parser)
+
 }
 /**
  * Common properties of `RuntimeVisibleParameterAnnotations` attributes.
  */
-object RuntimeVisibleParameterAnnotations_attributeReader {
+object RuntimeVisibleParameterAnnotationsAttribute {
 
-    val ATTRIBUTE_NAME = "RuntimeVisibleParameterAnnotations"
+    final val Name = "RuntimeVisibleParameterAnnotations"
 
 }
 
