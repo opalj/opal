@@ -90,7 +90,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             instructions = body.instructions
             if instructions.exists {
                 case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
-                case _ => false
+                case _               ⇒ false
             }
         } {
             verifiedMethodsCounter.incrementAndGet()
@@ -109,7 +109,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             )
             val testProject = Project(testProjectFile, GlobalLogContext, config)
             val verifiedMethodsCount = this.testProject(testProject)
-           info(s"interpreted $verifiedMethodsCount methods")
+            info(s"interpreted $verifiedMethodsCount methods")
         }
 
         describe("testing the rewritten methods of the rewritten JRE") {
@@ -120,7 +120,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             )
             val jreProject = Project(jrePath, GlobalLogContext, config)
 
-            val verifiedMethodsCount =this.testProject(jreProject)
+            val verifiedMethodsCount = this.testProject(jreProject)
             info(s"interpreted $verifiedMethodsCount methods")
         }
 
