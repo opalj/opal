@@ -86,7 +86,7 @@ trait ClassFileBinding extends ClassFileReader {
             var hasSynthesizedClassFilesAttribute = false
             val newAttributes = classFile.attributes.filterNot { a ⇒
                 if (a.kindId == SynthesizedClassFiles.KindId) {
-                    val SynthesizedClassFiles(synthesizedClassFiles) = a
+                    val SynthesizedClassFiles(synthesizedClassFiles, _) = a
                     synthesizedClassFiles.foreach { cf ⇒
                         classFilesToProcess = cf :: classFilesToProcess
                     }
@@ -110,9 +110,9 @@ trait ClassFileBinding extends ClassFileReader {
      * Removes all `BootstrapMethod` attributes because the invokedynamic instructions are
      * either completely resolved by creating code that resembles the code executed by the
      * JVM or the instructions are at least enhanced and have explicit references to the
-     * bootsrap methods.
+     * bootstrap methods.
      */
-    def removeBootstrapMethodAttribute(classFiles: List[ClassFile]): List[ClassFile] = {
+    val removeBootstrapMethodAttribute: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
         var updatedClassFiles = List.empty[ClassFile]
         var classFilesToProcess = classFiles
         while (classFilesToProcess.nonEmpty) {

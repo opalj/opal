@@ -62,8 +62,7 @@ import java.io.ByteArrayInputStream
  * several convenience methods are defined to read in class files from various
  * sources (Streams, Files, JAR archives).
  *
- * This library supports class files from version 45 (Java 1.1) up to
- * version 53 (Java 9).
+ * This library supports class files from version 45 (Java 1.1) up to version 53 (Java 9).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
@@ -444,10 +443,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                             } catch {
-                                case ct: ControlThrowable ⇒
-                                    throw ct
-                                case t: Throwable ⇒
-                                    exceptionHandler(jarEntryName, t)
+                                case ct: ControlThrowable ⇒ throw ct
+                                case t: Throwable         ⇒ exceptionHandler(jarEntryName, t)
                             }
                         } else if (jarEntryName.endsWith(".jar")) {
                             innerJarEntries.add(jarEntry)
@@ -490,9 +487,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         try {
             val jarFile = File.createTempFile(entry, ".zip")
 
-            process { new java.io.FileOutputStream(jarFile) } { fout ⇒
-                fout.write(jarData)
-            }
+            process { new java.io.FileOutputStream(jarFile) } { fout ⇒ fout.write(jarData) }
             ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
 
             jarFile.delete()

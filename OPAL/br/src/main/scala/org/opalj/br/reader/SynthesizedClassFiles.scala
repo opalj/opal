@@ -35,27 +35,29 @@ package reader
  * while parsing the annotated ClassFile.
  *
  * For example, to represent proxy types that have been created
- * by JDK8 lambda or method reference expressions.
+ * by Java8 lambda or method reference expressions.
  *
- * This attribute is typically only present while the class file is processed/read
+ * This attribute may only be present while the class file is processed/read
  * and will be removed from the attributes table before any analysis sees the
  * "final" class file.
  *
  * This attribute may occur multiple times in the attributes table of a class file structure.
  *
- * @author Arne Lottmann
- * @author Michael Eichberg
+ * @param 	reason An object that provides detailed information why a new class file
+ * 			was synthesized.
+ *
+ * @author 	Arne Lottmann
+ * @author 	Michael Eichberg
  */
-case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
+case class SynthesizedClassFiles(
+        classFiles: Seq[ClassFile],
+        reason:     Option[AnyRef] = None
+) extends Attribute {
 
     final override val kindId = SynthesizedClassFiles.KindId
 
     override def toString: String = {
-        classFiles.map(_.thisType.toJava).mkString(
-            "SynthesizedClassFiles(",
-            ", ",
-            ")"
-        )
+        classFiles.map(_.thisType.toJava).mkString("SynthesizedClassFiles(", ", ", ")")
     }
 }
 
