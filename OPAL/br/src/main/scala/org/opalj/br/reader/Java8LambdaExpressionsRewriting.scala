@@ -266,11 +266,12 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     def storeProxy(classFile: ClassFile, proxy: ClassFile): ClassFile = {
         classFile.attributes.collectFirst {
-            case scf @ SynthesizedClassFiles(proxies) ⇒ {
+            case scf @ SynthesizedClassFiles(proxies, _) ⇒ {
                 val newScf = new SynthesizedClassFiles(proxies :+ proxy)
-                val newAttributes = newScf +: classFile.attributes.filterNot(_ eq scf)
+                val newAttributes = newScf +: classFile.attributes.filter(_ ne scf)
                 classFile.copy(attributes = newAttributes)
             }
+            // FIXME This does not seem to make any sense at all!
             case _ ⇒ {
                 val newAttributes = new SynthesizedClassFiles(Seq(proxy)) +: classFile.attributes
                 classFile.copy(attributes = newAttributes)
