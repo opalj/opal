@@ -131,6 +131,15 @@ final class Field private (
         }
     }
 
+    def copy(
+        accessFlags: Int        = this.accessFlags,
+        name:        String     = this.name,
+        fieldType:   FieldType  = this.fieldType,
+        attributes:  Attributes = this.attributes
+    ): Field = {
+        new Field(accessFlags, name, fieldType, attributes)
+    }
+
     override def toString(): String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")

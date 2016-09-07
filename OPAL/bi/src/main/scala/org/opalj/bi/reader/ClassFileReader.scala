@@ -55,14 +55,14 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import java.io.ByteArrayInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
  * several convenience methods are defined to read in class files from various
  * sources (Streams, Files, JAR archives).
  *
- * This library supports class files from version 45 (Java 1.1) up to
- * version 53 (Java 9).
+ * This library supports class files from version 45 (Java 1.1) up to version 53 (Java 9).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
@@ -194,7 +194,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * new `ClassFilePostProcessors` while processing class files is not supported
      * and the behavior is undefined'''.
      *
-     * PostProcessors will be executed in last-in-first-out order.
+     * @note `PostProcessors` will be executed in last-in-first-out order.
      */
     def registerClassFilePostProcessor(p: List[ClassFile] ⇒ List[ClassFile]): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
@@ -305,9 +305,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFile(create: () ⇒ InputStream): List[ClassFile] = {
         process(create() match {
-            case dis: DataInputStream     ⇒ dis
-            case bis: BufferedInputStream ⇒ new DataInputStream(bis)
-            case is                       ⇒ new DataInputStream(new BufferedInputStream(is))
+            case dis: DataInputStream      ⇒ dis
+            case bis: BufferedInputStream  ⇒ new DataInputStream(bis)
+            case bas: ByteArrayInputStream ⇒ new DataInputStream(bas)
+            case is                        ⇒ new DataInputStream(new BufferedInputStream(is))
         }) { in ⇒ ClassFile(in) }
     }
 
@@ -442,10 +443,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                             } catch {
-                                case ct: ControlThrowable ⇒
-                                    throw ct
-                                case t: Throwable ⇒
-                                    exceptionHandler(jarEntryName, t)
+                                case ct: ControlThrowable ⇒ throw ct
+                                case t: Throwable         ⇒ exceptionHandler(jarEntryName, t)
                             }
                         } else if (jarEntryName.endsWith(".jar")) {
                             innerJarEntries.add(jarEntry)
@@ -488,9 +487,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         try {
             val jarFile = File.createTempFile(entry, ".zip")
 
-            process { new java.io.FileOutputStream(jarFile) } { fout ⇒
-                fout.write(jarData)
-            }
+            process { new java.io.FileOutputStream(jarFile) } { fout ⇒ fout.write(jarData) }
             ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
 
             jarFile.delete()

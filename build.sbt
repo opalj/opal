@@ -52,6 +52,14 @@ javaOptions in ThisBuild ++= Seq(
 	  "-Xmx3G", "-Xms1024m", "-Xnoclassgc",
 		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
+addCommandAlias("compileAll","; test:compile ; it:scalariformFormat ; it:compile")
+
+addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
+
+addCommandAlias("cleanBuild","; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
+
+addCommandAlias("build","; eclipse ; compileAll ; OPAL/unidoc ;  publishLocal ")
+
 //EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)

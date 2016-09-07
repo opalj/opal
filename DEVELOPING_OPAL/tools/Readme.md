@@ -1,3 +1,3 @@
 #Overview
-The Tools project contains tools useful when extending OPAL or developing analyses using OPAL.
+This project contains tools useful when extending OPAL or developing analyses using OPAL.
 

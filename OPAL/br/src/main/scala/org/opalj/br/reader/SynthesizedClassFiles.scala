@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,14 +35,32 @@ package reader
  * while parsing the annotated ClassFile.
  *
  * For example, to represent proxy types that have been created
- * by JDK8 lambda or method reference expressions.
+ * by Java8 lambda or method reference expressions.
  *
- * @author Arne Lottmann
+ * This attribute may only be present while the class file is processed/read
+ * and will be removed from the attributes table before any analysis sees the
+ * "final" class file.
+ *
+ * This attribute may occur multiple times in the attributes table of a class file structure.
+ *
+ * @param 	reason An object that provides detailed information why a new class file
+ * 			was synthesized.
+ *
+ * @author 	Arne Lottmann
+ * @author 	Michael Eichberg
  */
-case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
+case class SynthesizedClassFiles(
+        classFiles: Seq[ClassFile],
+        reason:     Option[AnyRef] = None
+) extends Attribute {
 
-    override val kindId = 1002
+    final override val kindId = SynthesizedClassFiles.KindId
 
-    override def toString: String =
-        s"SynthesizedClassFiles(${classFiles.map(_.thisType.toJava).mkString(", ")})"
+    override def toString: String = {
+        classFiles.map(_.thisType.toJava).mkString("SynthesizedClassFiles(", ", ", ")")
+    }
+}
+
+object SynthesizedClassFiles {
+    final val KindId = 1002
 }

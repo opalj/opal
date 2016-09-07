@@ -231,6 +231,16 @@ final class Method private (
         descriptor.toJava(declaringClassType.toJava+"."+name)
     }
 
+    def copy(
+        accessFlags: Int              = this.accessFlags,
+        name:        String           = this.name,
+        descriptor:  MethodDescriptor = this.descriptor,
+        body:        Option[Code]     = this.body,
+        attributes:  Attributes       = this.attributes
+    ): Method = {
+        new Method(accessFlags, name, descriptor, body, attributes)
+    }
+
     override def toString(): String = {
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
