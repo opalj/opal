@@ -35,9 +35,16 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.br.reader
 import java.io.File
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.ai.Domain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Tests that all methods of the JDK can be converted to a three address representation.
@@ -52,21 +59,25 @@ class TACJDKTest extends FunSpec with Matchers {
         val jreLibFolder: File = JRELibraryFolder
         val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
-        def checkFolder(folder: File): Unit = {
+        def checkFolder(
+            folder:        File,
+            domainFactory: Option[(SomeProject, ClassFile, Method) ⇒ Domain] = None
+        ): Unit = {
             var errors: List[(String, Throwable)] = Nil
             val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
             val mutex = new Object
             for {
                 file ← folder.listFiles()
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
+                project = Project(file)
             } {
-                reader.Java8Framework.ClassFiles(file).par foreach { cs ⇒
-                    val (cf, _) = cs
+                project.allProjectClassFiles.par foreach { cf ⇒
                     cf.methods.filter(_.body.isDefined) foreach { m ⇒
                         try {
                             val quadruples = AsQuadruples(
                                 method = m,
-                                optimizations = AllOptimizations, aiResult = None
+                                optimizations = AllOptimizations,
+                                aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
                             )
                             ToJavaLike(quadruples._1)
                             successfullyCompleted.incrementAndGet()
@@ -101,9 +112,26 @@ class TACJDKTest extends FunSpec with Matchers {
                 fail(message)
             }
         }
+
         it("should be able to convert all methods of the JDK to three-address code") {
-            checkFolder(jreLibFolder)
+            PerformanceEvaluation.time {
+                checkFolder(jreLibFolder)
+            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
         }
+
+        it("should be able to convert all methods of the JDK to three-address code using the result of an abstract interpretation") {
+            PerformanceEvaluation.time {
+                checkFolder(
+                    jreLibFolder,
+                    Some(
+                        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+                            new DefaultDomainWithCFGAndDefUse(p, cf, m)
+                        }
+                    )
+                )
+            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+        }
+
         it("should be able to convert all methods of the set of collected class files") {
             checkFolder(biClassfilesFolder)
         }
