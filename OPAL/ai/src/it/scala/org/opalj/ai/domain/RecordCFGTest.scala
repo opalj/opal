@@ -185,11 +185,12 @@ class RecordCFGTest extends FunSpec with Matchers {
                     }
                     try {
                         dTime('QueryingControlDependencies) {
-                            cdg.xIsControlDependentOn(pc)(i ⇒ { /*let's just test that everything is fine*/ })
+                            cdg.xIsControlDependentOn(pc)(x ⇒ { /* "somke test" */ })
                         }
                     } catch {
                         case t: Throwable ⇒
-                            fail(s"it is not possible to get the control dependency information for $pc", t)
+                            t.printStackTrace
+                            fail(s"getting the control dependency information for $pc failed", t)
                     }
                 }
             } catch {

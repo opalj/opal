@@ -36,7 +36,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 /**
- * Tests the utility methods.
+ * Tests the ArrayMap.
  *
  * @author Michael Eichberg
  */

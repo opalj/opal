@@ -81,7 +81,7 @@ final class ControlDependencies private[graphs] (val dominanceFrontiers: Dominan
         while (worklist.nonEmpty) {
             //  val x = worklist.head
             //worklist = worklist.tail
-            val x = worklist.pop
+            val x = worklist.pop()
 
             dominanceFrontiers(x).foreach { y ⇒
                 if (!seen.contains(y)) {

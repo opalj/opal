@@ -118,9 +118,9 @@ object DominanceFrontiers {
      * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
-     * @param dt The dominator tree of the specified (flow) graph. In case of the reverse flow
+     * @param 	dt The dominator tree of the specified (flow) graph. In case of the reverse flow
      * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
-     * @param isValidNode A function that returns `true` if the given id represents a node of the
+     * @param 	isValidNode A function that returns `true` if the given id represents a node of the
      * 			underlying graph. If the underlying graph contains a single, new artificial start
      * 			node then this node may or may not be reported as a valid node; this is not relevant
      * 			for this algorithm.
