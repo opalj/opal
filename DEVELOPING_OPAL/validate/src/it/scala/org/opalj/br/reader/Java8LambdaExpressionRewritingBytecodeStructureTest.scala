@@ -45,6 +45,9 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.log.GlobalLogContext
 import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -54,10 +57,15 @@ import java.util.concurrent.atomic.AtomicInteger
 @RunWith(classOf[JUnitRunner])
 class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
 
-    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method): Unit = {
+    def verifyMethod(
+        testProject:   SomeProject,
+        classFile:     ClassFile,
+        method:        Method,
+        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain
+    ): Unit = {
         assert(method.body.get.instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
-        val domain = new BaseDomain(testProject, classFile, method)
+        val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
             // the abstract interpretation succeed
@@ -82,7 +90,10 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         }
     }
 
-    def testProject(project: SomeProject): Int = {
+    def testProject(
+        project:       SomeProject,
+        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain
+    ): Int = {
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
             classFile ← project.allProjectClassFiles.par
@@ -94,7 +105,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             }
         } {
             verifiedMethodsCounter.incrementAndGet()
-            verifyMethod(project, classFile, method)
+            verifyMethod(project, classFile, method, domainFactory)
         }
         verifiedMethodsCounter.get
     }
@@ -108,7 +119,9 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 logRewrites = false
             )
             val testProject = Project(testProjectFile, GlobalLogContext, config)
-            val verifiedMethodsCount = this.testProject(testProject)
+            val verifiedMethodsCount =
+                this.testProject(testProject, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    this.testProject(testProject, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
             info(s"interpreted $verifiedMethodsCount methods")
         }
 
@@ -120,8 +133,11 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             )
             val jreProject = Project(jrePath, GlobalLogContext, config)
 
-            val verifiedMethodsCount = this.testProject(jreProject)
-            info(s"interpreted $verifiedMethodsCount methods")
+            val verifiedMethodsCount =
+                this.testProject(jreProject, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    this.testProject(jreProject, (p, cf, m) ⇒ new DefaultDomain(p, cf, m)) +
+                    this.testProject(jreProject, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
+            info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
         }
 
     }
