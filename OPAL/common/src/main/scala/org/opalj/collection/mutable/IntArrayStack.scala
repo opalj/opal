@@ -82,7 +82,7 @@ final class IntArrayStack private (
         val size0 = this.size0
         var data = this.data
         if (data.length == size0) {
-            val newData = new Array[Int](size0 * 2)
+            val newData = new Array[Int]((size0 + 1) * 2)
             System.arraycopy(data, 0, newData, 0, size0)
             data = newData
             this.data = newData
@@ -95,7 +95,7 @@ final class IntArrayStack private (
     /**
      * Pushes the value of the given stack on this stack while maintaining the order
      * in which the values were pushed on the given stack. I.e.,
-     * if this contains the values `[1|2...` and the given one the values `[3,4...`
+     * if this contains the values `[1|2->` and the given one the values `[3,4->`
      * then the resulting stack will contain the values `[1|2|3|4...`.
      *
      * @note In case of `++` the order of the values is reversed.
@@ -205,7 +205,7 @@ final class IntArrayStack private (
         }
     }
 
-    override def clone(): IntArrayStack = new IntArrayStack(data.clone(), 0)
+    override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {
         s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
