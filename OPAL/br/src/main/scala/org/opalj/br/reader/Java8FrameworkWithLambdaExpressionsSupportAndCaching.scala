@@ -30,11 +30,6 @@ package org.opalj
 package br
 package reader
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-
 /**
  * This configuration can be used to read in Java 8 (version 52) class files with full
  * support for rewriting `invokedynamic` instructions created by the JDK(8) compiler for
@@ -46,8 +41,4 @@ import org.opalj.log.LogContext
  */
 class Java8FrameworkWithLambdaExpressionsSupportAndCaching(
     cache: BytecodeInstructionsCache
-)(
-    implicit
-    val logContext: LogContext = GlobalLogContext,
-    val config:     Config     = ConfigFactory.load()
 ) extends Java8FrameworkWithCaching(cache) with Java8LambdaExpressionsRewriting

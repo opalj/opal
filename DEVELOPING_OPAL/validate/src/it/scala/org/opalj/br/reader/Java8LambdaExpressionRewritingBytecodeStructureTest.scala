@@ -57,6 +57,9 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
     def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method): Unit = {
         assert(method.body.get.instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
+        classFile.bootstrapMethodTable should be('empty)
+        classFile.attributes.count { _.kindId == SynthesizedClassFiles.KindId } should be <= (1)
+
         val domain = new BaseDomain(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
@@ -64,11 +67,9 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             result should not be ('wasAborted)
             val instructions = method.body.get.instructions
             // the layout of the instructions array is correct
-            for { pc ← 0 until instructions.size } {
-                if (instructions(pc) != null) {
-                    val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
-                    instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
-                }
+            for { pc ← 0 until instructions.size; if instructions(pc) != null } {
+                val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
+                instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
             case e: InterpretationFailedException ⇒ {

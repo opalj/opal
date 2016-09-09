@@ -30,7 +30,11 @@ package org.opalj
 package br
 package reader
 
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.bi.reader.ClassFileReader
+import org.opalj.log.OPALLogger
+import org.opalj.br.reader.{ClassFileReaderConfiguration ⇒ BRClassFileReaderConfiguration}
 
 /**
  *
@@ -38,6 +42,30 @@ import org.opalj.bi.reader.ClassFileReader
  */
 trait ClassFileBinding extends ClassFileReader {
     this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
+
+    /**
+     * This property determines whether artificial [[SynthesizedClassFiles]] attributes
+     * are kept or removed.
+     *
+     * @note	This setting can be set using the configuration key
+     * 			`ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey`.
+     */
+    val deleteSynthesizedClassFilesAttributes: Boolean = {
+        import ClassFileBinding.{DeleteSynthesizedClassFilesAttributesConfigKey ⇒ Key}
+        val deleteConfiguration = config.as[Option[Boolean]](Key)
+        val delete: Boolean = deleteConfiguration match {
+            case Some(x) ⇒ x
+            case None ⇒
+                OPALLogger.warn("project configuration", s"the configruation key $Key is not set")
+                false
+        }
+        if (delete) {
+            OPALLogger.info("project configuration", "information about synthesized class files is removed")
+        } else {
+            OPALLogger.info("project configuration", "information about synthesized class files is kept")
+        }
+        delete
+    }
 
     type ClassFile = br.ClassFile
 
@@ -73,8 +101,8 @@ trait ClassFileBinding extends ClassFileReader {
     }
 
     /**
-     * Tests if the classfile has a [[SynthesizedClassFiles]] attribute and if so
-     * extracts the class file and removes the attribute.
+     * Tests if the class file has [[SynthesizedClassFiles]] attributes and if so
+     * extracts the class files and removes the attributes.
      */
     val extractSynthesizedClassFiles: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
         var updatedClassFiles = List.empty[ClassFile]
@@ -96,7 +124,7 @@ trait ClassFileBinding extends ClassFileReader {
                     false
                 }
             }
-            if (hasSynthesizedClassFilesAttribute) {
+            if (hasSynthesizedClassFilesAttribute && deleteSynthesizedClassFilesAttributes) {
                 updatedClassFiles = classFile.copy(attributes = newAttributes) :: updatedClassFiles
             } else {
                 updatedClassFiles = classFile :: updatedClassFiles
@@ -107,7 +135,7 @@ trait ClassFileBinding extends ClassFileReader {
     }
 
     /**
-     * Removes all `BootstrapMethod` attributes because the invokedynamic instructions are
+     * Removes all [[BootstrapMethodTable]] attributes because the `invokedynamic` instructions are
      * either completely resolved by creating code that resembles the code executed by the
      * JVM or the instructions are at least enhanced and have explicit references to the
      * bootstrap methods.
@@ -134,4 +162,12 @@ trait ClassFileBinding extends ClassFileReader {
 
     /* EXECUTED SECOND */ registerClassFilePostProcessor(removeBootstrapMethodAttribute)
     /* EXECUTED FIRST  */ registerClassFilePostProcessor(extractSynthesizedClassFiles)
+}
+
+object ClassFileBinding {
+
+    final val DeleteSynthesizedClassFilesAttributesConfigKey = {
+        BRClassFileReaderConfiguration.ConfigKeyPrefix+"deleteSynthesizedClassFilesAttributes"
+    }
+
 }

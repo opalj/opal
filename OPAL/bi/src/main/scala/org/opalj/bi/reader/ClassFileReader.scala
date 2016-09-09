@@ -33,6 +33,7 @@ package reader
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
@@ -48,14 +49,13 @@ import scala.concurrent.Future
 
 import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.control.repeat
+import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.io.process
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
-import java.io.ByteArrayInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -73,7 +73,7 @@ import java.io.ByteArrayInputStream
  *
  * @author Michael Eichberg
  */
-trait ClassFileReader extends Constant_PoolAbstractions {
+trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbstractions {
 
     import ClassFileReader.{ExceptionHandler, defaultExceptionHandler}
 
@@ -621,4 +621,5 @@ object ClassFileReader {
             t
         )(GlobalLogContext)
     }
+
 }

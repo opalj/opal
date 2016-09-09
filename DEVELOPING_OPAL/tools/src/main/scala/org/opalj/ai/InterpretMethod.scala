@@ -290,15 +290,12 @@ object InterpretMethod {
                     }
                 }
 
-                val resultHeader =
-                    Some(causeToString(ife, false))
+                val resultHeader = Some(causeToString(ife, false))
                 val evaluationDump =
                     dump(
                         Some(classFile), Some(method), method.body.get,
                         resultHeader, ife.domain
-                    )(
-                            ife.operandsArray, ife.localsArray
-                        )
+                    )(ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }

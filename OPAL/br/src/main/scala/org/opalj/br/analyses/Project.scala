@@ -717,11 +717,19 @@ object Project {
 
     private[this] def cache = new BytecodeInstructionsCache
 
+    private lazy val GlobalConfig = ConfigFactory.load()
+
     def JavaClassFileReader(
-        implicit
-        config:     Config     = ConfigFactory.load(),
-        logContext: LogContext = GlobalLogContext
-    ) = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        theLogContext: LogContext = GlobalLogContext,
+        theConfig:     Config     = GlobalConfig
+    ) = {
+        // The following makes use of Early Initializers
+        class ConfiguredFramework extends {
+            override implicit val logContext: LogContext = theLogContext
+            override implicit val config: Config = theConfig
+        } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        new ConfiguredFramework
+    }
 
     lazy val JavaLibraryClassFileReader = Java9LibraryFramework
 
@@ -736,12 +744,12 @@ object Project {
     }
 
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
-        apply(JavaClassFileReader.ClassFiles(file), projectLogger = projectLogger)
+        apply(JavaClassFileReader().ClassFiles(file), projectLogger = projectLogger)
     }
 
     def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
         this(
-            projectClassFilesWithSources = JavaClassFileReader(config, logContext).ClassFiles(file),
+            projectClassFilesWithSources = JavaClassFileReader(logContext, config).ClassFiles(file),
             libraryClassFilesWithSources = Traversable.empty,
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty,
@@ -779,7 +787,7 @@ object Project {
         libraryFile: File
     ): Project[URL] = {
         apply(
-            JavaClassFileReader.ClassFiles(projectFile),
+            JavaClassFileReader().ClassFiles(projectFile),
             JavaLibraryClassFileReader.ClassFiles(libraryFile),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
@@ -791,7 +799,7 @@ object Project {
         libraryFiles: Array[File]
     ): Project[URL] = {
         apply(
-            JavaClassFileReader.AllClassFiles(projectFiles),
+            JavaClassFileReader().AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Traversable.empty
@@ -799,7 +807,7 @@ object Project {
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        project.extend(JavaClassFileReader.ClassFiles(file))
+        project.extend(JavaClassFileReader().ClassFiles(file))
     }
 
     /**

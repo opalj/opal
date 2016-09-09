@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,43 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bi
+package reader
 
-import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
-import org.opalj.br.analyses.StringConstantsInformationKey
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
- * Prints out all string constants found in the bytecode.
- *
  * @author Michael Eichberg
  */
-object StringConstants extends DefaultOneStepAnalysis {
+trait ClassFileReaderConfiguration {
 
-    override def description: String = "collects all constant strings in the program"
+    /**
+     * The [[LogContext]] that should be used to log rewritings.
+     *
+     * @note 	The [[LogContext]] is typically either the GlobalLogContext or a project
+     * 			specific log context.
+     */
+    implicit val logContext: LogContext = GlobalLogContext
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ) = {
+    /**
+     * The `Config` object that will be used to read the configuration settings for
+     * reading in class files.
+     */
+    implicit val config: Config = ConfigFactory.load()
 
-        val data = project.get(StringConstantsInformationKey)
-        val mappedData = data.map { kv ⇒
-            val (string, locations) = kv
-            val escapedString = string.
-                replace("\u001b", "\\u001b").
-                replace("\n", "\\n").
-                replace("\t", "\\t").
-                replace("\"", "\\\"")
-            locations.map { methodPc ⇒
-                val (method, pc) = methodPc
-                method.toJava(project.classFile(method))+": "+pc
-            }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
-        }
-
-        val report = mappedData.mkString("Strings:\n", "\n", s"Found ${data.size} string constants.")
-
-        BasicReport(report)
-    }
 }

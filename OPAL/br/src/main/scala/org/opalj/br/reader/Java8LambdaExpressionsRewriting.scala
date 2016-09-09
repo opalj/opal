@@ -38,7 +38,6 @@ import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.br.instructions._
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -59,14 +58,6 @@ import org.opalj.log.OPALLogger
  */
 trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
-
-    /**
-     * The `Config` object that will be used to read the setting whether JDK8 invokedynamic
-     * calls should be rewritten or not.
-     */
-    def config: Config
-
-    implicit def logContext: LogContext
 
     val performJava8LambdaExpressionsRewriting: Boolean = {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
@@ -134,7 +125,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             return updatedClassFile;
 
         val invokedynamic = instructions(index).asInstanceOf[INVOKEDYNAMIC]
-        if (isJDK8Invokedynamic(invokedynamic)) {
+        if (isJava8LambdaExpression(invokedynamic)) {
             val INVOKEDYNAMIC(
                 bootstrapMethod,
                 functionalInterfaceMethodName,
@@ -250,7 +241,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         ObjectType.CallSite
     )
 
-    def isJDK8Invokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+    def isJava8LambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         val bootstrapMethodHandle = invokedynamic.bootstrapMethod.handle
         if (!bootstrapMethodHandle.isInvokeStaticMethodHandle)
             return false;
@@ -265,33 +256,31 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     def storeProxy(classFile: ClassFile, proxy: ClassFile): ClassFile = {
-        classFile.attributes.collectFirst {
-            case scf @ SynthesizedClassFiles(proxies, _) ⇒ {
-                val newScf = new SynthesizedClassFiles(proxies :+ proxy)
+        classFile.synthesizedClassFiles match {
+            case Some(scf @ SynthesizedClassFiles(proxies, _)) ⇒
+                val newScf = new SynthesizedClassFiles(proxy :: proxies)
                 val newAttributes = newScf +: classFile.attributes.filter(_ ne scf)
                 classFile.copy(attributes = newAttributes)
-            }
-            // FIXME This does not seem to make any sense at all!
-            case _ ⇒ {
-                val newAttributes = new SynthesizedClassFiles(Seq(proxy)) +: classFile.attributes
+            case None ⇒
+                val newAttributes = new SynthesizedClassFiles(List(proxy)) +: classFile.attributes
                 classFile.copy(attributes = newAttributes)
-            }
-        }.get
+
+        }
     }
 }
 
 object Java8LambdaExpressionsRewriting {
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
-        "org.opalj.br.reader.Java8LambdaExpressions"
+        org.opalj.br.reader.ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
     }
 
     final val Java8LambdaExpressionsRewritingConfigKey = {
-        Java8LambdaExpressionsConfigKeyPrefix+".rewrite"
+        Java8LambdaExpressionsConfigKeyPrefix+"rewrite"
     }
 
     final val Java8LambdaExpressionsLogRewritingsConfigKey = {
-        Java8LambdaExpressionsConfigKeyPrefix+".logRewrites"
+        Java8LambdaExpressionsConfigKeyPrefix+"logRewrites"
     }
 
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {

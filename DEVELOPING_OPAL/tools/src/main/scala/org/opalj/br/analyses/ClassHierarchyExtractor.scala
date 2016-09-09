@@ -34,8 +34,8 @@ import java.io.File
 import org.opalj.log.GlobalLogContext
 
 /**
- * Writes out (a subset of) the class hierarchy in the format used by the
- * `org.opalj.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
+ * Writes out (a subset of) the class hierarchy in the format used by
+ * [[org.opalj.br.ClassHierarchy]] to create the pre-initialized
  * class hierarchy.
  *
  * @author Michael Eichberg
@@ -44,7 +44,9 @@ object ClassHierarchyExtractor {
 
     def main(args: Array[String]): Unit = {
 
-        import reader.Java8Framework.ClassFiles
+        import Console.err
+
+        import org.opalj.br.reader.Java8Framework.ClassFiles
 
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR file>+")
@@ -64,11 +66,7 @@ object ClassHierarchyExtractor {
         val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
-            Console.err.println(
-                "The specified supertype: "+
-                    supertypeName+
-                    " is not defined in the specified jar(s)."
-            )
+            err.println(s"The type: $supertypeName is not defined in the specified jar(s).")
             sys.exit(-2)
         }
 
@@ -95,8 +93,7 @@ object ClassHierarchyExtractor {
                 specLine += " extends "+superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
-                    specLine +=
-                        " implements "+superinterfaceTypes.get.map(_.fqn).mkString(", ")
+                    specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
                 }
             }
             specLine

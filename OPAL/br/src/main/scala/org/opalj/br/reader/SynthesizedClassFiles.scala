@@ -50,8 +50,8 @@ package reader
  * @author 	Michael Eichberg
  */
 case class SynthesizedClassFiles(
-        classFiles: Seq[ClassFile],
-        reason:     Option[AnyRef] = None
+        classFiles: List[ClassFile],
+        reason:     Option[AnyRef]  = None
 ) extends Attribute {
 
     final override val kindId = SynthesizedClassFiles.KindId

@@ -43,6 +43,8 @@ object ClassHierarchyVisualizer {
 
     def main(args: Array[String]): Unit = {
 
+        implicit val logContext = GlobalLogContext
+
         if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
             println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -50,17 +52,17 @@ object ClassHierarchyVisualizer {
         }
 
         val classHierarchy =
-            if (args.size == 0)
+            if (args.size == 0) {
                 ClassHierarchy.preInitializedClassHierarchy
-            else {
+            } else {
                 val classFiles =
                     (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
                         cfs ++ ClassFiles(new java.io.File(filename))
                     }
-                ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
+                ClassHierarchy(classFiles.view.map(_._1))
             }
 
         val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
+        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".gv")
     }
 }
