@@ -116,11 +116,10 @@ private[mutable] final class SmallValuesSetBackedByOPALSet(
 
     override def toString(): String = {
         mkString(
-            s"SmallValuesSetBackedByOpalSet(offset=$offset;values={",
+            s"SmallValuesSetBackedByOpalSet(offset=$offset;(adjusted)values={",
             ", ",
             "})",
             offset
         )
     }
 }
-
