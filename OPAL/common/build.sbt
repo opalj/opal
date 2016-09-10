@@ -11,4 +11,6 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
 
 libraryDependencies += "net.ceedubs" %% "ficus" % "1.1.2"
 
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.5" % "test"
+
 //scalacOptions in Compile += "-Xdisable-assertions"
