@@ -53,6 +53,7 @@ import org.opalj.ai.domain.l1.DefaultDomain
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
  *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
@@ -63,14 +64,15 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         method:        Method,
         domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain
     ): Unit = {
-        assert(method.body.get.instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
+        val code = method.body.get
+        val instructions = code.instructions
+        assert(instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
         val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
             // the abstract interpretation succeed
             result should not be ('wasAborted)
-            val instructions = method.body.get.instructions
             // the layout of the instructions array is correct
             for { pc ← 0 until instructions.size } {
                 if (instructions(pc) != null) {
@@ -79,14 +81,21 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 }
             }
         } catch {
-            case e: InterpretationFailedException ⇒ {
+            case e: InterpretationFailedException ⇒
+                val pc = e.pc
+                val details =
+                    if (pc == instructions.length) {
+                        "post-processing failed"
+                    } else {
+                        e.operandsArray(pc).mkString(s"\tAt PC $pc\n\twith stack:\n", ", ", "")
+                    }
                 val msg = e.getMessage+"\n"+
                     (if (e.getCause != null) "\tcause: "+e.getCause.getMessage+"\n" else "") +
-                    s"\tAt PC ${e.pc}\n"+
-                    s"\twith stack:\n${e.operandsArray(e.pc).mkString(", ")}\n"+
-                    method.toJava(classFile) + method.body.get.instructions.zipWithIndex.mkString("\n\t\t", "\n\t\t", "\n")
+                    details+"\n"+
+                    method.toJava(classFile) +
+                    instructions.zipWithIndex.map(_.swap).mkString("\n\t\t", "\n\t\t", "\n")
+                Console.err.println(msg)
                 fail(msg)
-            }
         }
     }
 
@@ -121,6 +130,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             val testProject = Project(testProjectFile, GlobalLogContext, config)
             val verifiedMethodsCount =
                 this.testProject(testProject, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    this.testProject(testProject, (p, cf, m) ⇒ new DefaultDomain(p, cf, m)) +
                     this.testProject(testProject, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
             info(s"interpreted $verifiedMethodsCount methods")
         }
