@@ -531,6 +531,16 @@ trait AI[D <: Domain] {
         /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
         /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
 
+        def throwInterpretationFailedException(cause: Throwable, pc: PC): Nothing = {
+            throw InterpretationFailedException(
+                cause, theDomain
+            )(
+                this,
+                pc, worklist, evaluated,
+                operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
+            )
+        }
+
         // Integrates the abstract state related to the execution of the subroutines with the main
         // operands/locals array. The abstract state is the state computed across all executions
         // of the respective subroutines!
@@ -2544,17 +2554,8 @@ trait AI[D <: Domain] {
                 )
 
             } catch {
-                case ct: ControlThrowable ⇒
-                    throw ct
-
-                case cause: Throwable ⇒
-                    throw InterpretationFailedException(
-                        cause, theDomain
-                    )(
-                        this,
-                        pc, worklist, evaluated,
-                        operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
-                    )
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ throwInterpretationFailedException(t, pc)
             }
         }
 
@@ -2565,7 +2566,12 @@ trait AI[D <: Domain] {
             )(
                 evaluated, operandsArray, localsArray
             )
-        theDomain.abstractInterpretationEnded(result)
+        try {
+            theDomain.abstractInterpretationEnded(result)
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+        }
         if (tracer.isDefined) tracer.get.result(result)
         result
     }
