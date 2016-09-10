@@ -65,9 +65,8 @@ case class CONSTANT_InvokeDynamic_info(
         val ntiNode = cp(name_and_type_index).asInlineNode
         val paramsNode =
             Seq(
-                Text(s"( Bootstrap Method Attribute[$bootstrap_method_attr_index], "),
                 ntiNode,
-                Text(")")
+                Text(s" //Bootstrap Method Attribute[$bootstrap_method_attr_index]")
             )
         <span class="cp_entry">{ paramsNode }</span>
     }

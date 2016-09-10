@@ -81,7 +81,7 @@ package object da {
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    // TODO return FieldTypeInfo structure 
+    // TODO return FieldTypeInfo structure
     def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
@@ -146,11 +146,14 @@ package object da {
 
         <span class="cp_method">
             <span class="method_returntype fqn">{ returnType }</span>
-            <span class="method_name"> { methodName }</span>
+            &nbsp;
+            <span class="method_name">{ methodName }</span>
             <span class="method_parametertypes">({
                 if (parameterTypes.nonEmpty)
                     <span class="method_parametertype fqn">{ parameterTypes.head }</span> ++ {
-                        parameterTypes.tail.map(x ⇒ <span class="method_parametertype fqn">{ ", "+x }</span>)
+                        parameterTypes.tail.map { x ⇒
+                            <span class="method_parametertype fqn">{ ", "+x }</span>
+                        }
                     }
                 else
                     scala.xml.NodeSeq.Empty
@@ -200,4 +203,3 @@ package object da {
         <pre>{ info.map(b ⇒ f"$b%02x").grouped(40).map(_.mkString("", " ", "\n")).mkString }</pre>
     }
 }
-
