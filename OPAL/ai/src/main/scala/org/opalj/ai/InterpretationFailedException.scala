@@ -35,6 +35,10 @@ package ai
  *
  * To create an instance use the companion object [[InterpretationFailedException$]].
  *
+ * @param 	pc The program counter of the instruction for which the interpretation failed.
+ * 			If `pc == code.length` then the interpretation completed successfully,
+ * 			but the post-processing failed.
+ *
  * @author Michael Eichberg
  */
 sealed trait InterpretationFailedException {
@@ -83,4 +87,3 @@ object InterpretationFailedException {
 
     }
 }
-

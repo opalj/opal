@@ -41,6 +41,7 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.mutable.SmallValuesSet
+import org.opalj.collection.immutable.:!:
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -556,7 +557,7 @@ trait RecordDefUse extends RecordCFG {
          * Specifies that the given number of stack values is used and also popped from
          * the stack and that – optionally – a new value is pushed onto the stack (and
          * associated with a new variable).
-         * 
+         *
          * Usage is independent of the question whether the usage resulted in an
          * exceptional control flow.
          */
@@ -785,7 +786,7 @@ trait RecordDefUse extends RecordCFG {
                 propagate(v1 :: v2 :: v1 :: rest, defLocals(currentPC))
             case 91 /*dup_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: _ ⇒
+                    case (v1 /*@ CTC1()*/ ) :!: (v2 @ CTC1()) :!: _ ⇒
                         val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
                         propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
                     case _ ⇒
@@ -794,7 +795,7 @@ trait RecordDefUse extends RecordCFG {
                 }
             case 92 /*dup2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: _ ⇒
+                    case (v1 @ CTC1()) :!: _ ⇒
                         val currentDefOps = defOps(currentPC)
                         val (v1 :: v2 :: _) = currentDefOps
                         propagate(v1 :: v2 :: currentDefOps, defLocals(currentPC))
@@ -804,7 +805,7 @@ trait RecordDefUse extends RecordCFG {
                 }
             case 93 /*dup2_x1*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: _ ⇒
+                    case (v1 @ CTC1()) :!: _ ⇒
                         val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
                         propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
                     case _ ⇒
@@ -813,13 +814,13 @@ trait RecordDefUse extends RecordCFG {
                 }
             case 94 /*dup2_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: _ ⇒
+                    case (v1 @ CTC1()) :!: (v2 @ CTC1()) :!: (v3 @ CTC1()) :!: _ ⇒
                         val (v1 :: v2 :: v3 :: v4 :: rest) = defOps(currentPC)
                         propagate(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, defLocals(currentPC))
-                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: _ ⇒
+                    case (v1 @ CTC1()) :!: (v2 @ CTC1()) :!: _ ⇒
                         val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
                         propagate(v1 :: v2 :: v3 :: v1 :: v2 :: rest, defLocals(currentPC))
-                    case (v1 /* @ CTC2()*/ ) :: (v2 @ CTC1()) :: _ ⇒
+                    case (v1 /* @ CTC2()*/ ) :!: (v2 @ CTC1()) :!: _ ⇒
                         val (v1 :: v2 :: v3 :: rest) = defOps(currentPC)
                         propagate(v1 :: v2 :: v3 :: v1 :: rest, defLocals(currentPC))
                     case _ ⇒

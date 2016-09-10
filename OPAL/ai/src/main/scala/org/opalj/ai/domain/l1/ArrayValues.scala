@@ -584,7 +584,7 @@ trait ArrayValues
 
     override def NewArray(
         origin:    ValueOrigin,
-        counts:    List[DomainValue],
+        counts:    Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
         var intCounts: List[Int] = Nil

@@ -387,7 +387,7 @@ trait TaintAnalysisDomain[Source]
      */
     private def isRelevantCall(
         methodDescriptor: MethodDescriptor,
-        operands:         List[DomainValue]
+        operands:         Operands
     ): Boolean = {
         operands.exists { op ⇒
             origin(op).exists(pc ⇒ contextNode.identifier._1.union(taintedPCs).contains(pc))
@@ -412,7 +412,7 @@ trait TaintAnalysisDomain[Source]
         declaringClass:   ObjectType,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands:         List[DomainValue]
+        operands:         Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
@@ -502,7 +502,7 @@ trait TaintAnalysisDomain[Source]
         declaringClass:   ReferenceType,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands:         List[DomainValue]
+        operands:         Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
@@ -549,7 +549,7 @@ trait TaintAnalysisDomain[Source]
         declaringClass:   ObjectType,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands:         List[DomainValue]
+        operands:         Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
@@ -584,7 +584,7 @@ trait TaintAnalysisDomain[Source]
         declaringClass:   ObjectType,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
-        operands:         List[DomainValue]
+        operands:         Operands
     ): MethodCallResult = {
 
         def doTypeLevelInvoke =
@@ -735,7 +735,10 @@ trait TaintAnalysisDomain[Source]
      * A relevant call needs to return a Class or an Object
      * and its declaring Class must be an ObjectType
      */
-    def isIrrelevantInvoke(methodDescriptor: MethodDescriptor, declaringClass: ReferenceType): Boolean = {
+    def isIrrelevantInvoke(
+        methodDescriptor: MethodDescriptor,
+        declaringClass:   ReferenceType
+    ): Boolean = {
         (!declaringClass.isObjectType || (
             methodDescriptor.returnType != Class &&
             methodDescriptor.returnType != Object &&
@@ -747,7 +750,7 @@ trait TaintAnalysisDomain[Source]
      * Compares the list of possibly tainted values with the operands
      * and returns all parameters that could be tainted.
      */
-    def computeRelevantOperands(operands: List[DomainValue]) = {
+    def computeRelevantOperands(operands: Operands) = {
         operands.zipWithIndex.filter { operand_index ⇒
             val (operand, _ /*index*/ ) = operand_index
             origin(operand).exists { operandOrigin ⇒
@@ -760,7 +763,11 @@ trait TaintAnalysisDomain[Source]
      * Check if the method call resembles a call to Class.forName. In this
      * case the analysis has found a sink and this method returns true.
      */
-    def checkForSink(declaringClass: ObjectType, methodDescriptor: MethodDescriptor, methodName: String): Boolean = {
+    def checkForSink(
+        declaringClass:   ObjectType,
+        methodDescriptor: MethodDescriptor,
+        methodName:       String
+    ): Boolean = {
         (declaringClass == ObjectType.Class &&
             methodName == "forName" &&
             methodDescriptor.parameterTypes == Seq(String))
@@ -770,7 +777,7 @@ trait TaintAnalysisDomain[Source]
      * Creates a sinkNode into the call graph and add the PC to additionalRelevantParameters
      * and relevantValuesOrigins
      */
-    def registerSink(pc: PC, operands: List[DomainValue]) = {
+    def registerSink(pc: PC, operands: Operands) = {
         val sinkNode: CallerNode = new CallerNode(pc+": Class.forName("+operands.head+")")
         contextNode.addChild(sinkNode)
         callToClassForNameFound = true;
@@ -787,7 +794,7 @@ trait TaintAnalysisDomain[Source]
     def inspectMethod(
         pc:       PC,
         method:   Method,
-        operands: List[DomainValue]
+        operands: Operands
     ): Boolean = {
         val classFile = project.classFile(method)
 
@@ -797,7 +804,8 @@ trait TaintAnalysisDomain[Source]
             // compute the new pc of relevant parameters that the analysis
             // wants to keep track of
             var relevantParameters: List[Int] = List.empty
-            for ((operand, index) ← operands.view.reverse.zipWithIndex) {
+            for (opWithIndex ← operands.reverse.zipWithIndex) {
+                val (operand, index) = opWithIndex
                 if ((origin(operand)).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
                     relevantParameters = -(index + 1) :: relevantParameters
                 }
@@ -813,7 +821,8 @@ trait TaintAnalysisDomain[Source]
 
             val calleeParameters = calleeDomain.DomainValue.newArray(method.body.get.maxLocals)
             var localVariableIndex = 0
-            for ((operand, index) ← operands.view.reverse.zipWithIndex) {
+            for (opWithIndex ← operands.reverse.zipWithIndex) {
+                val (operand, index) = opWithIndex
                 calleeParameters(localVariableIndex) =
                     operand.adapt(calleeDomain, -(index + 1))
                 localVariableIndex += operand.computationalType.operandSize

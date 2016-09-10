@@ -265,7 +265,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                 YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+
                 effectivePC + line(domain, effectivePC)+":"
         )
-        val changedOperands = operands.view.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2).force
+        val changedOperands = operands.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2)
         if (changedOperands.nonEmpty) {
             println(YELLOW_B + BLUE+"\tUpdated Operands:")
             changedOperands.foreach(ops ⇒ print(YELLOW_B + BLUE+"\t\t"+ops._1+" => "+ops._2+"\n"))

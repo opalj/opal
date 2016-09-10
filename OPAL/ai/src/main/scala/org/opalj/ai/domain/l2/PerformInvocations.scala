@@ -31,11 +31,13 @@ package ai
 package domain
 package l2
 
+import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
+import org.opalj.collection.immutable.FastNil
+import org.opalj.collection.immutable.FastList
 import org.opalj.br._
-import scala.util.control.ControlThrowable
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -74,7 +76,7 @@ trait PerformInvocations extends MethodCallsHandling {
     )(
         parameters: calledMethodDomain.Locals
     ): AIResult { val domain: calledMethodDomain.type } = {
-        val noOperands = List.empty[calledMethodDomain.DomainValue]
+        val noOperands: FastList[calledMethodDomain.DomainValue] = FastNil
         val isStrict = method.isStrict
         val code = method.body.get
         calledMethodAI.performInterpretation(
@@ -372,4 +374,3 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
 }
-

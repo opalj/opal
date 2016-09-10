@@ -74,7 +74,7 @@ package object l1 {
         // be one constructor call
 
         (collectPCWithOperands(domain)(code, operandsArray) {
-            case (pc, constructorCall @ INVOKESPECIAL(_, _, "<init>", md), operands) if operands.length >= md.parametersCount &&
+            case (pc, constructorCall @ INVOKESPECIAL(_, _, "<init>", md), operands) if operands.size >= md.parametersCount &&
                 domain.asObjectValue(operands(md.parametersCount)).origin == receiverOrigin ⇒ pc
         })
     }
