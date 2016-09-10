@@ -64,6 +64,18 @@ object FastListSpecification extends Properties("FastList") {
         i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
+    val listsOfSingleCharStringsGen = for {
+        n ← Gen.choose(0, 3)
+        l1 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
+        l2 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
+    } yield (l1, l2)
+
+    property("create") = forAll { s: String ⇒
+        val fl = FastList(s)
+        val l = List(s)
+        fl.head == l.head
+    }
+
     property("==|hashCode") = forAll { (l1: List[String], l2: List[String]) ⇒
         val fl1 = FastList(l1)
         val fl2 = FastList(l2)
@@ -160,8 +172,10 @@ object FastListSpecification extends Properties("FastList") {
                 classify(count == l.length, "takes all elements") {
                     classify(count > l.length, "takes too many elements") {
                         val fl = FastList(l)
-                        (count <= l.length && fl.take(count) == FastList(l.take(count)) && fl.size == l.size) ||
-                            { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
+                        (
+                            count <= l.length &&
+                            fl.take(count) == FastList(l.take(count)) && fl.size == l.size
+                        ) || { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
                     }
                 }
             }
@@ -180,13 +194,11 @@ object FastListSpecification extends Properties("FastList") {
         fl.filter(filter) == FastList(l.filter(filter))
     }
 
-    property("drop") = forAll(listAndIndexGen) { (listAndCount: (List[String], Int)) ⇒
+    property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
         val (l, count) = listAndCount
         val fl = FastList(l)
-        val fldrop = fl.drop(count)
-        val dropfl = FastList(l.drop(count))
-        (count <= l.length && fldrop == dropfl && fldrop.size == dropfl.size) ||
-            { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
+        (count <= l.length && fl.drop(count) == FastList(l.drop(count))) ||
+            { try { fl.drop(count); false } catch { case _: Throwable ⇒ true } }
     }
 
     property("map") = forAll { l: List[String] ⇒
@@ -221,12 +233,18 @@ object FastListSpecification extends Properties("FastList") {
         }
     }
 
-    property("corresponds") = forAll { (l1: List[String], l2: List[String]) ⇒
-        def test(s1: String, s2: String): Boolean = s1.length == s2.length
+    property("corresponds") = forAll(listsOfSingleCharStringsGen) { ls ⇒
+        val (l1: List[String], l2: List[String]) = ls
+        def test(s1: String, s2: String): Boolean = s1 == s2
         val fl1 = FastList(l1)
         val fl2 = FastList(l2)
-
-        fl1.corresponds(fl2)(test) == l1.corresponds(l2)(test)
+        classify(fl1.isEmpty && fl2.isEmpty, "both lists are empty") {
+            classify(fl1.size == fl2.size, "both lists have the same length") {
+                classify(l1.corresponds(l2)(test), "both lists correspond") {
+                    fl1.corresponds(fl2)(test) == l1.corresponds(l2)(test)
+                }
+            }
+        }
     }
 
     property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
