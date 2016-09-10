@@ -94,8 +94,7 @@ class DefaultDomainWithCFG[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-) extends DefaultDomain[Source](project, classFile, method)
-        with RecordCFG
+) extends DefaultDomain[Source](project, classFile, method) with RecordCFG
 
 /**
  * Configuration of a domain that uses the most capable `l1` domains and
@@ -106,6 +105,4 @@ class DefaultDomainWithCFGAndDefUse[Source](
     project:   Project[Source],
     classFile: ClassFile,
     method:    Method
-) extends DefaultDomain[Source](project, classFile, method)
-        with RecordDefUse
-
+) extends DefaultDomain[Source](project, classFile, method) with RecordDefUse

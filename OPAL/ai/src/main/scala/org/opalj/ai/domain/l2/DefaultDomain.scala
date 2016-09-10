@@ -34,6 +34,8 @@ package l2
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
+import org.opalj.collection.immutable.FastList
+import org.opalj.collection.immutable.FastList
 
 /**
  * A common that defines a common reference frame for all subsequent domains.
@@ -137,8 +139,8 @@ class DefaultDomain[Source](
     // hence, before the first usage of the CalledMethodsStore by the AI)
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
-            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
-                if (n ne null) n :: l else l)
+            localsArray(0).foldLeft(FastList.empty[DomainValue])((l, n) ⇒
+                if (n ne null) n :!: l else l)
         CalledMethodsStore(
             coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
         )(
@@ -174,4 +176,3 @@ class ChildDefaultDomain[Source](
         )
 
 }
-
