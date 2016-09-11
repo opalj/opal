@@ -99,7 +99,7 @@ sealed trait MethodCallMethodHandle extends MethodHandle {
     def methodDescriptor: MethodDescriptor
 
     override def toJava: String = {
-        s"${getClass.getSimpleName}: ${receiverType.toJava}.$name${methodDescriptor.toUMLNotation}"
+        s"${getClass.getSimpleName}: ${methodDescriptor.toJava(receiverType.toJava, name)}"
     }
 
     def opcodeOfUnderlyingInstruction: Opcode
