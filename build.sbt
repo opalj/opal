@@ -44,11 +44,9 @@ scalacOptions in (ScalaUnidoc, unidoc) <<=
   }
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
-	Opts.doc.sourceUrl(
-		if (isSnapshot.value)
-	    	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
-	  	else
-	    	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=develop"
+	Opts.doc.sourceUrl( 
+		"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?"+
+			(if (isSnapshot.value) "at=develop" else "at=master")
   )
 
 javaOptions in ThisBuild ++= Seq(
