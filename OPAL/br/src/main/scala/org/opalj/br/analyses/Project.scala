@@ -73,6 +73,9 @@ import org.opalj.log.GlobalLogContext
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
+ * 	   One of the most important project information keys is the 
+ *	   [[org.opalj.br.org.opalj.br.analyses.SourceElementsPropertyStore]] 
+ *     which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.
@@ -237,7 +240,7 @@ class Project[Source] private (
         f: ClassFile ⇒ T
     ): List[Throwable] = {
         parForeachProjectClassFile(isInterrupted)(f) :::
-            parForeachLibraryClassFile(isInterrupted)(f)
+		 parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -407,7 +410,7 @@ class Project[Source] private (
     }
 
     /**
-     * Returns true if the given class file belongs to the library part of the project.
+     * Returns `true` if the given class file belongs to the library part of the project.
      * This is only the case if the class file was explicitly identified as being
      * part of the library. By default all class files are considered to belong to the
      * code base that will be analyzed.
@@ -415,7 +418,7 @@ class Project[Source] private (
     def isLibraryType(classFile: ClassFile): Boolean = isLibraryType(classFile.thisType)
 
     /**
-     * Returns true if the given type file belongs to the library part of the project.
+     * Returns `true` if the given type belongs to the library part of the project.
      * This is generally the case if no class file was loaded for the given type.
      */
     def isLibraryType(objectType: ObjectType): Boolean = !projectTypes.contains(objectType)
@@ -424,14 +427,14 @@ class Project[Source] private (
      * Returns the source (for example, a `File` object or `URL` object) from which
      * the class file was loaded that defines the given object type, if any.
      *
-     * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
+     * @param objectType Some object type. 
      */
     def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
      *
-     * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
+     * @param objectType Some object type. 
      */
     override def classFile(objectType: ObjectType): Option[ClassFile] = {
         objectTypeToClassFile.get(objectType)
@@ -514,9 +517,10 @@ class Project[Source] private (
     }
 
     /**
-     * Returns the number of (non-synthetic) source elements per method length
-     * (size in length of the method's code array). The number of class members of
-     * nested classes are also taken into consideration.
+     * Returns the number of (non-synthetic) fields and methods per class file. 
+     * The number of class members of nested classes is also taken into consideration. 
+	 * I.e., the map's key identifies the category and the value is a pair where the first value
+	 * is the count and the value is the names of the source elements.
      */
     def projectClassMembersPerClassDistribution: Map[Int, (Int, Set[String])] = {
         val data = OpenHashMap.empty[String, Int]
@@ -600,9 +604,9 @@ class Project[Source] private (
      */
     def availableProjectInformation: List[AnyRef] = {
         var pis = List.empty[AnyRef]
-        val thisProjectInformation = this.projectInformation
-        for (i ← (0 until thisProjectInformation.length())) {
-            val pi = thisProjectInformation.get(i)
+        val projectInformation = this.projectInformation
+        for (i ← (0 until projectInformation.length())) {
+            val pi = projectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
             }
@@ -617,11 +621,11 @@ class Project[Source] private (
      * If the information was not yet required the information is computed and
      * returned. Subsequent calls will directly return the information.
      *
-     * @note (Development Time)
-     * 		Every analysis using [[ProjectInformationKey]]s must list '''All
-     * 		requirements; failing to specify a requirement can end up in a deadlock.'''
+     * @note	(Development Time)
+     * 			Every analysis using [[ProjectInformationKey]]s must list '''All
+     * 			requirements; failing to specify a requirement can end up in a deadlock.'''
      *
-     * @see [[ProjectInformationKey]] for further information.
+     * @see 	[[ProjectInformationKey]] for further information.
      */
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
         val pikUId = pik.uniqueId
@@ -636,21 +640,21 @@ class Project[Source] private (
                 pi
             }
 
-        val thisProjectInformation = this.projectInformation
-        if (pikUId < thisProjectInformation.length()) {
-            val pi = thisProjectInformation.get(pikUId)
+        val projectInformation = this.projectInformation
+        if (pikUId < projectInformation.length()) {
+            val pi = projectInformation.get(pikUId)
             if (pi != null) {
                 pi.asInstanceOf[T]
             } else {
                 this.synchronized {
                     // It may be the case that the underlying array was replaced!
-                    val thisProjectInformation = this.projectInformation
+                    val projectInformation = this.projectInformation
                     // double-checked locking (works with Java >=6)
-                    val pi = thisProjectInformation.get(pikUId)
+                    val pi = projectInformation.get(pikUId)
                     if (pi != null) {
                         pi.asInstanceOf[T]
                     } else {
-                        derive(thisProjectInformation)
+                        derive(projectInformation)
                     }
                 }
             }
@@ -659,14 +663,14 @@ class Project[Source] private (
             // to make sure that we do not loose a concurrent update or
             // derive an information more than once.
             this.synchronized {
-                val thisProjectInformation = this.projectInformation
-                if (pikUId < thisProjectInformation.length()) {
+                val projectInformation = this.projectInformation
+                if (pikUId < projectInformation.length()) {
                     get(pik)
                 } else {
-                    val newLength = Math.max(thisProjectInformation.length * 2, pikUId * 2)
+                    val newLength = Math.max(projectInformation.length * 2, pikUId * 2)
                     val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
-                    for (i ← 0 until thisProjectInformation.length()) {
-                        newProjectInformation.set(i, thisProjectInformation.get(i))
+                    for (i ← 0 until projectInformation.length()) {
+                        newProjectInformation.set(i, projectInformation.get(i))
                     }
                     this.projectInformation = newProjectInformation
                     derive(newProjectInformation)
