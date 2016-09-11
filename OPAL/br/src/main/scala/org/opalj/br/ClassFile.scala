@@ -43,7 +43,6 @@ import org.opalj.bi.ACC_MODULE
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UShortPair
-import org.opalj.br.reader.SynthesizedClassFiles
 
 /**
  * Represents a single class file which either defines a class type or an interface type.

@@ -28,7 +28,6 @@
  */
 package org.opalj
 package br
-package reader
 
 /**
  * This attribute stores references to [[ClassFile]] objects that have been generated
