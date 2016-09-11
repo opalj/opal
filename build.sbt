@@ -44,8 +44,11 @@ scalacOptions in (ScalaUnidoc, unidoc) <<=
   }
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
-  Opts.doc.sourceUrl(
-	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
+	Opts.doc.sourceUrl(
+		if (isSnapshot.value)
+	    	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
+	  	else
+	    	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=develop"
   )
 
 javaOptions in ThisBuild ++= Seq(
@@ -56,9 +59,7 @@ addCommandAlias("compileAll","; test:compile ; it:scalariformFormat ; it:compile
 
 addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
-addCommandAlias("cleanBuild","; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
-
-addCommandAlias("build","; eclipse ; compileAll ; OPAL/unidoc ;  publishLocal ")
+addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
 
 //EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
