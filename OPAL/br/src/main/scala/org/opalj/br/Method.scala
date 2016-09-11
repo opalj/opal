@@ -292,10 +292,10 @@ object Method {
     ): Boolean = {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
-        import MethodDescriptor.readObjectDescriptor
-        import MethodDescriptor.writeObjectDescriptor
-        import MethodDescriptor.readObjectInputDescriptor
-        import MethodDescriptor.writeObjectOutputDescriptor
+        import MethodDescriptor.ReadObjectDescriptor
+        import MethodDescriptor.WriteObjectDescriptor
+        import MethodDescriptor.ReadObjectInputDescriptor
+        import MethodDescriptor.WriteObjectOutputDescriptor
 
         val name = method.name
         val descriptor = method.descriptor
@@ -305,14 +305,14 @@ object Method {
             (name == "readResolve" && descriptor == JustReturnsObject) ||
             (name == "writeReplace" && descriptor == JustReturnsObject) ||
             ((
-                (name == "readObject" && descriptor == readObjectDescriptor) ||
-                (name == "writeObject" && descriptor == writeObjectDescriptor)
+                (name == "readObject" && descriptor == ReadObjectDescriptor) ||
+                (name == "writeObject" && descriptor == WriteObjectDescriptor)
             ) && isInheritedBySerializableOnlyClass.isYesOrUnknown) ||
                 (
                     method.isPublic /*we are implementing an interface...*/ &&
                     (
-                        (name == "readExternal" && descriptor == readObjectInputDescriptor) ||
-                        (name == "writeExternal" && descriptor == writeObjectOutputDescriptor)
+                        (name == "readExternal" && descriptor == ReadObjectInputDescriptor) ||
+                        (name == "writeExternal" && descriptor == WriteObjectOutputDescriptor)
                     ) &&
                         isInheritedByExternalizableClass.isYesOrUnknown
                 )
@@ -324,9 +324,9 @@ object Method {
     }
 
     /**
-     * @param name The name of the method. In case of a constructor the method
-     *      name has to be "<init>". In case of a static initializer the name has to
-     *      be "<clinit>".
+     * @param 	name The name of the method. In case of a constructor the method
+     *      	name has to be "<init>". In case of a static initializer the name has to
+     *      	be "<clinit>".
      */
     def apply(
         accessFlags: Int,

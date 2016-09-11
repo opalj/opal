@@ -59,6 +59,9 @@ import org.opalj.log.OPALLogger
 trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
 
+    import MethodDescriptor.LambdaMetafactoryDescriptor
+    import MethodDescriptor.LambdaAltMetafactoryDescriptor
+
     val performJava8LambdaExpressionsRewriting: Boolean = {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
@@ -182,11 +185,12 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 invocationInstruction,
                 bridgeMethodDescriptor
             )
-            val factoryMethod =
+            val factoryMethod = {
                 if (functionalInterfaceMethodName == ClassFileFactory.DefaultFactoryMethodName)
                     proxy.findMethod(ClassFileFactory.AlternativeFactoryMethodName).get
                 else
                     proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).get
+            }
 
             val newInvokestatic = INVOKESTATIC(
                 proxy.thisType,
@@ -213,46 +217,17 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         updatedClassFile
     }
 
-    /**
-     * Descriptor of the method `java.lang.invoke.LambdaMetafactory.metafactory`.
-     */
-    val lambdaMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ObjectType.MethodType,
-            ObjectType.MethodHandle,
-            ObjectType.MethodType
-        ),
-        ObjectType.CallSite
-    )
-
-    /**
-     * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
-     */
-    val lambdaAltMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(
-            ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ArrayType.ArrayOfObjects
-        ),
-        ObjectType.CallSite
-    )
-
     def isJava8LambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        val bootstrapMethodHandle = invokedynamic.bootstrapMethod.handle
-        if (!bootstrapMethodHandle.isInvokeStaticMethodHandle)
-            return false;
-
-        val InvokeStaticMethodHandle(receiver, isInterface, name, descriptor) =
-            bootstrapMethodHandle
-
-        receiver == ObjectType.LambdaMetafactory && !isInterface && (
-            (name == "metafactory" && descriptor == lambdaMetafactoryDescriptor) ||
-            (name == "altMetafactory" && descriptor == lambdaAltMetafactoryDescriptor)
-        )
+        import ObjectType.LambdaMetafactory
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) ⇒
+                if (name == "metafactory") {
+                    descriptor == LambdaMetafactoryDescriptor
+                } else {
+                    name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
+                }
+            case _ ⇒ false
+        }
     }
 
     def storeProxy(classFile: ClassFile, proxy: ClassFile): ClassFile = {
