@@ -42,9 +42,9 @@ import org.opalj.log.OPALLogger
 
 /**
  * Provides full support for rewriting Java 8 lambda or method reference expressions that
- * are translated to [[INVOKEDYNAMIC]] instructions. This trait should be mixed in alongside a
- * [[BytecodeReaderAndBinding]], which extracts basic `invokedynamic` information from the
- * [[BootstrapMethodTable]].
+ * are translated to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
+ * This trait should be mixed in alongside a [[BytecodeReaderAndBinding]], which extracts
+ * basic `invokedynamic` information from the [[BootstrapMethodTable]].
  *
  * Specifically, whenever an `invokedynamic` instruction is encountered that is the result
  * of a lambda/method reference expression compiled by Oracle's JDK8, it creates a proxy
