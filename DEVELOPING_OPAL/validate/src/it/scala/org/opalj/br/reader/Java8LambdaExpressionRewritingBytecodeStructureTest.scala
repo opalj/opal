@@ -47,7 +47,6 @@ import org.opalj.log.GlobalLogContext
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -69,7 +68,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         assert(instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
         classFile.bootstrapMethodTable should be('empty)
-        classFile.attributes.count ( _.kindId == SynthesizedClassFiles.KindId ) should be <= (1)
+        classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= (1)
         val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
@@ -116,6 +115,10 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             verifiedMethodsCounter.incrementAndGet()
             verifyMethod(project, classFile, method, domainFactory)
         }
+        if (verifiedMethodsCounter.get == 0) {
+            fail("didn't find any instance of a rewritten Java lambda expression")
+        }
+
         verifiedMethodsCounter.get
     }
 
@@ -134,19 +137,20 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             info(s"interpreted $verifiedMethodsCount methods")
         }
 
-        describe("testing the rewritten methods of the rewritten JRE") {
-            val jrePath = org.opalj.bytecode.JRELibraryFolder
-            val config = Java8LambdaExpressionsRewriting.defaultConfig(
-                rewrite = true,
-                logRewrites = false
-            )
-            val jre = Project(jrePath, GlobalLogContext, config)
+        if (org.opalj.bi.isCurrentJREAtLeastJava8) {
+            describe("testing the rewritten methods of the rewritten JRE") {
+                val jrePath = org.opalj.bytecode.JRELibraryFolder
+                val config = Java8LambdaExpressionsRewriting.defaultConfig(
+                    rewrite = true,
+                    logRewrites = false
+                )
+                val jre = Project(jrePath, GlobalLogContext, config)
 
-            val verifiedMethodsCount =
-                testProject(jre, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
-                    testProject(jre, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
-            info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
+                val verifiedMethodsCount =
+                    testProject(jre, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                        testProject(jre, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
+                info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
+            }
         }
-
     }
 }
