@@ -34,15 +34,15 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.DEFAULT_INVOKEDYNAMIC
 
 /**
- * Mixin this trait to resolve links between [[INVOKEDYNAMIC]] instructions and the
- * [[BootstrapMethodTable]].
+ * Mixin this trait to resolve links between [[org.opalj.br.instructions.INVOKEDYNAMIC]]
+ * instructions and the [[BootstrapMethodTable]].
  */
 trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBinding {
 
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
-     * Resolves an [[INCOMPLETE_INVOKEDYNAMIC]] instruction using the
+     * Resolves an [[org.opalj.br.instructions.INCOMPLETE_INVOKEDYNAMIC]] instruction using the
      * [[BootstrapMethodTable]] of the class.
      *
      * Deferred resolution is necessary since the [[BootstrapMethodTable]] – which
@@ -61,7 +61,8 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      *
      * @param 	classFile The [[ClassFile]] with which the deferred action was registered.
      * @param 	cp The class file's [[Constant_Pool]].
-     * @param 	invokeDynamicInfo The [[INVOKEDYNAMIC]] instruction's constant pool entry.
+     * @param 	invokeDynamicInfo The [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction's
+     * 			constant pool entry.
      * @param 	instructions This method's array of [[instructions.Instruction]]s.
      * 			(The array returned by the [[#Instructions]] method.)
      * @param 	pc The program counter of the `invokedynamic` instruction.

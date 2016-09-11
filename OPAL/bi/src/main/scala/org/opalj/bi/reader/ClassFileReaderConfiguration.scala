@@ -42,9 +42,10 @@ import org.opalj.log.LogContext
 trait ClassFileReaderConfiguration {
 
     /**
-     * The [[LogContext]] that should be used to log rewritings.
+     * The [[org.opalj.log.LogContext]] that should be used to log rewritings.
      *
-     * @note 	The [[LogContext]] is typically either the GlobalLogContext or a project
+     * @note 	The [[org.opalj.log.LogContext]] is typically either the
+     * 			[[org.opalj.log.GlobalLogContext]] or a project
      * 			specific log context.
      */
     implicit val logContext: LogContext = GlobalLogContext
