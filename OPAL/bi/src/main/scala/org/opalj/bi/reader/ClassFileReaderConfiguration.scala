@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,40 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bi
 package reader
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+
 /**
- * This attribute stores references to [[ClassFile]] objects that have been generated
- * while parsing the annotated ClassFile.
- *
- * For example, to represent proxy types that have been created
- * by Java8 lambda or method reference expressions.
- *
- * This attribute may only be present while the class file is processed/read
- * and will be removed from the attributes table before any analysis sees the
- * "final" class file.
- *
- * This attribute may occur multiple times in the attributes table of a class file structure.
- *
- * @param 	reason An object that provides detailed information why a new class file
- * 			was synthesized.
- *
- * @author 	Arne Lottmann
- * @author 	Michael Eichberg
+ * @author Michael Eichberg
  */
-case class SynthesizedClassFiles(
-        classFiles: Seq[ClassFile],
-        reason:     Option[AnyRef] = None
-) extends Attribute {
+trait ClassFileReaderConfiguration {
 
-    final override val kindId = SynthesizedClassFiles.KindId
+    /**
+     * The [[LogContext]] that should be used to log rewritings.
+     *
+     * @note 	The [[LogContext]] is typically either the GlobalLogContext or a project
+     * 			specific log context.
+     */
+    implicit val logContext: LogContext = GlobalLogContext
 
-    override def toString: String = {
-        classFiles.map(_.thisType.toJava).mkString("SynthesizedClassFiles(", ", ", ")")
-    }
-}
+    /**
+     * The `Config` object that will be used to read the configuration settings for
+     * reading in class files.
+     */
+    implicit val config: Config = ConfigFactory.load()
 
-object SynthesizedClassFiles {
-    final val KindId = 1002
 }

@@ -47,7 +47,6 @@ import org.opalj.log.GlobalLogContext
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -68,17 +67,17 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         val instructions = code.instructions
         assert(instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
+        classFile.bootstrapMethodTable should be('empty)
+        classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= (1)
         val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
             // the abstract interpretation succeed
             result should not be ('wasAborted)
             // the layout of the instructions array is correct
-            for { pc ← 0 until instructions.size } {
-                if (instructions(pc) != null) {
-                    val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
-                    instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
-                }
+            for { pc ← 0 until instructions.size; if instructions(pc) != null } {
+                val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
+                instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
             case e: InterpretationFailedException ⇒
@@ -116,6 +115,10 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             verifiedMethodsCounter.incrementAndGet()
             verifyMethod(project, classFile, method, domainFactory)
         }
+        if (verifiedMethodsCounter.get == 0) {
+            fail("didn't find any instance of a rewritten Java lambda expression")
+        }
+
         verifiedMethodsCounter.get
     }
 
@@ -127,28 +130,27 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 rewrite = true,
                 logRewrites = false
             )
-            val testProject = Project(testProjectFile, GlobalLogContext, config)
+            val lambdas = Project(testProjectFile, GlobalLogContext, config)
             val verifiedMethodsCount =
-                this.testProject(testProject, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
-                    this.testProject(testProject, (p, cf, m) ⇒ new DefaultDomain(p, cf, m)) +
-                    this.testProject(testProject, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
+                testProject(lambdas, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    testProject(lambdas, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
             info(s"interpreted $verifiedMethodsCount methods")
         }
 
-        describe("testing the rewritten methods of the rewritten JRE") {
-            val jrePath = org.opalj.bytecode.JRELibraryFolder
-            val config = Java8LambdaExpressionsRewriting.defaultConfig(
-                rewrite = true,
-                logRewrites = false
-            )
-            val jreProject = Project(jrePath, GlobalLogContext, config)
+        if (org.opalj.bi.isCurrentJREAtLeastJava8) {
+            describe("testing the rewritten methods of the rewritten JRE") {
+                val jrePath = org.opalj.bytecode.JRELibraryFolder
+                val config = Java8LambdaExpressionsRewriting.defaultConfig(
+                    rewrite = true,
+                    logRewrites = false
+                )
+                val jre = Project(jrePath, GlobalLogContext, config)
 
-            val verifiedMethodsCount =
-                this.testProject(jreProject, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
-                    this.testProject(jreProject, (p, cf, m) ⇒ new DefaultDomain(p, cf, m)) +
-                    this.testProject(jreProject, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
-            info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
+                val verifiedMethodsCount =
+                    testProject(jre, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                        testProject(jre, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
+                info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
+            }
         }
-
     }
 }

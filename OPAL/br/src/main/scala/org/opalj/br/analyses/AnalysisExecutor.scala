@@ -271,12 +271,12 @@ trait AnalysisExecutor {
         analysisMode: AnalysisMode
     )(implicit initialLogContext: LogContext): Project[URL] = {
 
-        val config =
-            ConfigFactory.parseString(s"${AnalysisMode.ConfigKey} = $analysisMode").
-              withFallback(ConfigFactory.load())
+        val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
+        val analysisModeConfig = ConfigFactory.parseString(analysisModeSpecification)
+        val configuredConfig = analysisModeConfig.withFallback(ConfigFactory.load())
 
         OPALLogger.info("creating project", "reading project class files")
-        val JavaClassFileReader = Project.JavaClassFileReader(config = config)
+        val JavaClassFileReader = Project.JavaClassFileReader(theConfig = configuredConfig)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
@@ -304,7 +304,7 @@ trait AnalysisExecutor {
                 libraryClassFilesAreInterfacesOnly = true,
                 Traversable.empty
             )(
-                config = config
+                config = configuredConfig
             )
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 

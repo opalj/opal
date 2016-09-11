@@ -419,21 +419,49 @@ object MethodDescriptor {
 
     final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
 
-    final val readObjectDescriptor = {
+    final val ReadObjectDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
     }
 
-    final val writeObjectDescriptor = {
+    final val WriteObjectDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
     }
 
-    final val readObjectInputDescriptor = {
+    final val ReadObjectInputDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
     }
 
-    final val writeObjectOutputDescriptor = {
+    final val WriteObjectOutputDescriptor = {
         MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
     }
+
+    /**
+     * Descriptor of the method `java.lang.invoke.LambdaMetafactory.metafactory`.
+     */
+    final val LambdaMetafactoryDescriptor = MethodDescriptor(
+        IndexedSeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ObjectType.MethodType,
+            ObjectType.MethodHandle,
+            ObjectType.MethodType
+        ),
+        ObjectType.CallSite
+    )
+
+    /**
+     * Descriptor of the method `java.lang.invoke.LambdaMetafactory.altMetafactory`.
+     */
+    final val LambdaAltMetafactoryDescriptor = MethodDescriptor(
+        IndexedSeq(
+            ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ArrayType.ArrayOfObjects
+        ),
+        ObjectType.CallSite
+    )
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

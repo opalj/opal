@@ -35,7 +35,7 @@ import org.opalj.br.analyses.SourceElementsPropertyStoreKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.properties.AllThrownExceptions
-import org.opalj.fpcf.properties.NoExceptionsAreThrown
+import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -52,15 +52,11 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ) = {
         val ps = project.get(SourceElementsPropertyStoreKey)
-
         ps <||< (PropertyStore.entitySelector[Method], new ThrownExceptionsFallbackAnalysis(ps))
-
         ps.waitOnPropertyComputationCompletion(true)
 
         val methodsWithCompleteThrownExceptionsInfo = ps.collect {
-            case (m: Method, ts: AllThrownExceptions) if ts != NoExceptionsAreThrown.MethodIsAbstract ⇒ {
-                (m, ts)
-            }
+            case (m: Method, ts: AllThrownExceptions) if ts != MethodIsAbstract ⇒ (m, ts)
         }
         val methodsWhichDoNotThrowExceptions = methodsWithCompleteThrownExceptionsInfo.collect {
             case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e

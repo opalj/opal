@@ -37,6 +37,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.bi.isCurrentJREAtLeastJava8
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory

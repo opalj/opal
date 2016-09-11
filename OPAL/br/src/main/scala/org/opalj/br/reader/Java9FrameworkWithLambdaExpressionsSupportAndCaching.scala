@@ -30,11 +30,6 @@ package org.opalj
 package br
 package reader
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-
 /**
  * This configuration can be used to read in Java 9 (version 53) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
@@ -44,8 +39,4 @@ import org.opalj.log.LogContext
  */
 class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
     cache: BytecodeInstructionsCache
-)(
-    implicit
-    logContext: LogContext = GlobalLogContext,
-    config:     Config     = ConfigFactory.load()
 ) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework

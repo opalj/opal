@@ -28,42 +28,16 @@
  */
 package org.opalj
 package br
-
-import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
-import org.opalj.br.analyses.StringConstantsInformationKey
+package reader
 
 /**
- * Prints out all string constants found in the bytecode.
  *
  * @author Michael Eichberg
  */
-object StringConstants extends DefaultOneStepAnalysis {
+object ClassFileReaderConfiguration {
 
-    override def description: String = "collects all constant strings in the program"
-
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ) = {
-
-        val data = project.get(StringConstantsInformationKey)
-        val mappedData = data.map { kv ⇒
-            val (string, locations) = kv
-            val escapedString = string.
-                replace("\u001b", "\\u001b").
-                replace("\n", "\\n").
-                replace("\t", "\\t").
-                replace("\"", "\\\"")
-            locations.map { methodPc ⇒
-                val (method, pc) = methodPc
-                method.toJava(project.classFile(method))+": "+pc
-            }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
-        }
-
-        val report = mappedData.mkString("Strings:\n", "\n", s"Found ${data.size} string constants.")
-
-        BasicReport(report)
+    final val ConfigKeyPrefix = {
+        org.opalj.br.reader.ConfigKeyPrefix+"ClassFileReader."
     }
+
 }

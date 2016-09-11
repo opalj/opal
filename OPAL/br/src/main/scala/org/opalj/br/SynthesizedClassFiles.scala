@@ -29,41 +29,37 @@
 package org.opalj
 package br
 
-import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
-import org.opalj.br.analyses.StringConstantsInformationKey
-
 /**
- * Prints out all string constants found in the bytecode.
+ * This attribute stores references to [[ClassFile]] objects that have been generated
+ * while parsing the annotated ClassFile.
  *
- * @author Michael Eichberg
+ * For example, to represent proxy types that have been created
+ * by Java8 lambda or method reference expressions.
+ *
+ * This attribute may only be present while the class file is processed/read
+ * and will be removed from the attributes table before any analysis sees the
+ * "final" class file.
+ *
+ * This attribute may occur multiple times in the attributes table of a class file structure.
+ *
+ * @param 	reason An object that provides detailed information why a new class file
+ * 			was synthesized.
+ *
+ * @author 	Arne Lottmann
+ * @author 	Michael Eichberg
  */
-object StringConstants extends DefaultOneStepAnalysis {
+case class SynthesizedClassFiles(
+        classFiles: List[ClassFile],
+        reason:     Option[AnyRef]  = None
+) extends Attribute {
 
-    override def description: String = "collects all constant strings in the program"
+    final override val kindId = SynthesizedClassFiles.KindId
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ) = {
-
-        val data = project.get(StringConstantsInformationKey)
-        val mappedData = data.map { kv ⇒
-            val (string, locations) = kv
-            val escapedString = string.
-                replace("\u001b", "\\u001b").
-                replace("\n", "\\n").
-                replace("\t", "\\t").
-                replace("\"", "\\\"")
-            locations.map { methodPc ⇒
-                val (method, pc) = methodPc
-                method.toJava(project.classFile(method))+": "+pc
-            }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
-        }
-
-        val report = mappedData.mkString("Strings:\n", "\n", s"Found ${data.size} string constants.")
-
-        BasicReport(report)
+    override def toString: String = {
+        classFiles.map(_.thisType.toJava).mkString("SynthesizedClassFiles(", ", ", ")")
     }
+}
+
+object SynthesizedClassFiles {
+    final val KindId = 1002
 }

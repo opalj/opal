@@ -40,6 +40,8 @@ import scala.util.control.ControlThrowable
  */
 package object reader {
 
+    final val ConfigKeyPrefix = org.opalj.br.ConfigKeyPrefix+"reader."
+
     type Source = AnyRef
 
     /**
