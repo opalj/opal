@@ -702,7 +702,9 @@ class Project[Source] private (
      */
     override protected def finalize(): Unit = {
         OPALLogger.debug("project", "finalized ("+logContext+")")
-        OPALLogger.unregister(logContext)
+        if (logContext != GlobalLogContext) {
+            OPALLogger.unregister(logContext)
+        }
 
         super.finalize()
     }
