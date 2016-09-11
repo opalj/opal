@@ -11,7 +11,7 @@ branches:
     - develop 
 
 script:
-  - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:PermSize=256M -XX:MaxPermSize=512M"
+  - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled"
   - sbt clean coverage test
   - sbt coverageAggregate
 
