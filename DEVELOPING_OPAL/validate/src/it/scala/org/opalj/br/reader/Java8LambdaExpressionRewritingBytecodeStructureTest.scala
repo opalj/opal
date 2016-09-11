@@ -45,45 +45,64 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.log.GlobalLogContext
 import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
  *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
 
-    def verifyMethod(testProject: SomeProject, classFile: ClassFile, method: Method): Unit = {
-        assert(method.body.get.instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
+    def verifyMethod(
+        testProject:   SomeProject,
+        classFile:     ClassFile,
+        method:        Method,
+        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain
+    ): Unit = {
+        val code = method.body.get
+        val instructions = code.instructions
+        assert(instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
         classFile.bootstrapMethodTable should be('empty)
-        classFile.attributes.count { _.kindId == SynthesizedClassFiles.KindId } should be <= (1)
-
-        val domain = new BaseDomain(testProject, classFile, method)
+        classFile.attributes.count ( _.kindId == SynthesizedClassFiles.KindId ) should be <= (1)
+        val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
             // the abstract interpretation succeed
             result should not be ('wasAborted)
-            val instructions = method.body.get.instructions
             // the layout of the instructions array is correct
             for { pc ← 0 until instructions.size; if instructions(pc) != null } {
                 val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
                 instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
-            case e: InterpretationFailedException ⇒ {
+            case e: InterpretationFailedException ⇒
+                val pc = e.pc
+                val details =
+                    if (pc == instructions.length) {
+                        "post-processing failed"
+                    } else {
+                        e.operandsArray(pc).mkString(s"\tAt PC $pc\n\twith stack:\n", ", ", "")
+                    }
                 val msg = e.getMessage+"\n"+
                     (if (e.getCause != null) "\tcause: "+e.getCause.getMessage+"\n" else "") +
-                    s"\tAt PC ${e.pc}\n"+
-                    s"\twith stack:\n${e.operandsArray(e.pc).mkString(", ")}\n"+
-                    method.toJava(classFile) + method.body.get.instructions.zipWithIndex.mkString("\n\t\t", "\n\t\t", "\n")
+                    details+"\n"+
+                    method.toJava(classFile) +
+                    instructions.zipWithIndex.map(_.swap).mkString("\n\t\t", "\n\t\t", "\n")
+                Console.err.println(msg)
                 fail(msg)
-            }
         }
     }
 
-    def testProject(project: SomeProject): Int = {
+    def testProject(
+        project:       SomeProject,
+        domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain
+    ): Int = {
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
             classFile ← project.allProjectClassFiles.par
@@ -95,7 +114,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             }
         } {
             verifiedMethodsCounter.incrementAndGet()
-            verifyMethod(project, classFile, method)
+            verifyMethod(project, classFile, method, domainFactory)
         }
         verifiedMethodsCounter.get
     }
@@ -108,8 +127,10 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 rewrite = true,
                 logRewrites = false
             )
-            val testProject = Project(testProjectFile, GlobalLogContext, config)
-            val verifiedMethodsCount = this.testProject(testProject)
+            val lambdas = Project(testProjectFile, GlobalLogContext, config)
+            val verifiedMethodsCount =
+                testProject(lambdas, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    testProject(lambdas, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
             info(s"interpreted $verifiedMethodsCount methods")
         }
 
@@ -119,10 +140,12 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 rewrite = true,
                 logRewrites = false
             )
-            val jreProject = Project(jrePath, GlobalLogContext, config)
+            val jre = Project(jrePath, GlobalLogContext, config)
 
-            val verifiedMethodsCount = this.testProject(jreProject)
-            info(s"interpreted $verifiedMethodsCount methods")
+            val verifiedMethodsCount =
+                testProject(jre, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
+                    testProject(jre, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
+            info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
         }
 
     }

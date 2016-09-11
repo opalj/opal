@@ -32,11 +32,10 @@ package analyses
 
 import java.net.URL
 import java.io.File
+
 import scala.util.control.ControlThrowable
 import com.typesafe.config.ConfigFactory
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFramework
+import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -272,14 +271,17 @@ trait AnalysisExecutor {
         analysisMode: AnalysisMode
     )(implicit initialLogContext: LogContext): Project[URL] = {
 
+        val config =
+            ConfigFactory.parseString(s"${AnalysisMode.ConfigKey} = $analysisMode").
+              withFallback(ConfigFactory.load())
+
         OPALLogger.info("creating project", "reading project class files")
-        val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-        val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+        val JavaClassFileReader = Project.JavaClassFileReader(config = config)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
-                Java8ClassFileReader.ClassFiles,
+                JavaClassFileReader.ClassFiles,
                 (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
             )
 
@@ -288,16 +290,13 @@ trait AnalysisExecutor {
                 OPALLogger.info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java8LibraryFramework.ClassFiles,
+                    Java9LibraryFramework.ClassFiles,
                     (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val config =
-            ConfigFactory.parseString(s"${AnalysisMode.ConfigKey} = $analysisMode").
-                withFallback(ConfigFactory.load())
         val project =
             Project(
                 classFiles,

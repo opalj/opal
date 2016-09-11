@@ -610,7 +610,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      */
     override def multianewarray(
         pc:        PC,
-        counts:    List[DomainValue],
+        counts:    Operands,
         arrayType: ArrayType
     ): Computation[DomainArrayValue, ExceptionValue] = {
         var validCounts: Answer = Yes
@@ -822,8 +822,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Size: '''Depending on the values in `counts`'''
      *  - Content: '''Empty'''
      */
-    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainArrayValue =
+    def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
+    }
 
     /**
      * Creates a new `DomainValue` that represents an array value with unknown
@@ -871,7 +872,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         operands:       Operands,
         locals:         Locals
     ): (Operands, Locals) = {
-        (ReferenceValue(pc, upperTypeBound) :: operands.tail, locals)
+        (ReferenceValue(pc, upperTypeBound) :!: operands.tail, locals)
     }
 
     override def refTopOperandIsNull(
@@ -879,8 +880,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
-        (NullValue(pc /*Irrelevant - at least here*/ ) :: operands.tail, locals)
+        (NullValue(pc /*Irrelevant - at least here*/ ) :!: operands.tail, locals)
     }
 
 }
-

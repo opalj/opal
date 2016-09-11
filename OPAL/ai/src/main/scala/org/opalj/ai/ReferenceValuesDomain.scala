@@ -242,7 +242,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      */
     def multianewarray(
         pc:        PC,
-        counts:    List[DomainValue],
+        counts:    Operands,
         arrayType: ArrayType
     ): Computation[DomainValue, ExceptionValue]
 

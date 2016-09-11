@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 
+import org.opalj.collection.immutable.FastNil
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 
@@ -137,7 +138,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             } else {
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
-                var newOperands: Operands = List.empty // during the update we build the operands stack in reverse order
+                var newOperands: Operands = FastNil // during the update we build the operands stack in reverse order
 
                 while (thisRemainingOperands.nonEmpty /* && both stacks have to contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
@@ -157,7 +158,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
-                    newOperands = newOperand :: newOperands
+                    newOperands = newOperand :!: newOperands
                 }
                 if (operandsUpdated.noUpdate) {
                     thisOperands
