@@ -267,4 +267,17 @@ object FastListSpecification extends Properties("FastList") {
         val fl = FastList(l)
         fl.mkString(pre, sep, post) == l.mkString(pre, sep, post)
     }
+
+    property("toIterable") = forAll { l: List[String] ⇒
+        val fl = FastList(l).toIterable().toList
+        fl == l
+    }
+    property("toIterator") = forAll { l: List[String] ⇒
+        val fl = FastList(l).toIterator().toList
+        fl == l
+    }
+    property("toTraversable") = forAll { l: List[String] ⇒
+        val fl = FastList(l).toTraversable().toList
+        fl == l
+    }
 }

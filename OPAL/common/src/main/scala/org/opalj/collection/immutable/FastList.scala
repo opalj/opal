@@ -45,7 +45,7 @@ import scala.collection.GenIterable
  * @author Michael Eichberg
  */
 // TODO Add "with FilterMonadic[T,FastList[T]]
-sealed trait FastList[@specialized(Int) +T] {
+sealed trait FastList[@specialized(Int) +T] { self ⇒
     def head: T
     def tail: FastList[T]
     def last: T = {
@@ -202,6 +202,30 @@ sealed trait FastList[@specialized(Int) +T] {
 
         result.append(post)
         result.toString
+    }
+
+    def toIterable(): Iterable[T] = {
+        new scala.collection.Iterable[T] {
+            def iterator: Iterator[T] = self.toIterator
+        }
+    }
+
+    def toIterator(): Iterator[T] = {
+        new scala.collection.Iterator[T] {
+            var rest = self
+            def hasNext: Boolean = rest.nonEmpty
+            def next(): T = {
+                val result = rest.head
+                rest = rest.tail
+                result
+            }
+        }
+    }
+
+    def toTraversable(): Traversable[T] = {
+        new scala.collection.Traversable[T] {
+            def foreach[U](f: T ⇒ U): Unit = self.foreach(f)
+        }
     }
 }
 object FastList {
