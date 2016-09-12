@@ -377,7 +377,7 @@ object XHTML {
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-                { operands.map(op ⇒ <li>{ valueToString(op) }</li>) }
+                { operands.map(op ⇒ <li>{ valueToString(op) }</li>).toIterable() }
             </ul>
         }
 
@@ -405,4 +405,3 @@ object XHTML {
     }
 
 }
-
