@@ -2,8 +2,7 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
 
-//version := "0.1" // LAST RELEASE
-version := "0.9-SNAPSHOT"
+version in ThisBuild := "0.9-SNAPSHOT"
 
 organization in ThisBuild := "de.opal-project"
 
@@ -14,11 +13,18 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 scalaVersion in ThisBuild := "2.11.8"
+//scalaVersion in ThisBuild := "2.12.0-M5"
 
-scalacOptions in ThisBuild ++= Seq(
+scalacOptions in (ThisBuild,Compile, compile) ++= Seq(
 	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", "-Xfatal-warnings", 
 	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
 	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
+
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
+	
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
+	
+resolvers in ThisBuild += Resolver.jcenterRepo
 
 parallelExecution in ThisBuild := false // the tests/analysis are already parallelized
 
@@ -32,10 +38,6 @@ testOptions in ThisBuild <<=
   }
 
 testOptions in ThisBuild += Tests.Argument("-o")
-
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
-
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
