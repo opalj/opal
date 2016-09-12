@@ -40,14 +40,14 @@ import scala.collection.GenIterable
  * 			semantics when compared to the methods with the same name defined
  * 			by the Scala collections API. In this case these methods may
  * 			fail arbitrarily if the list is not long enough.
- * 			Therefore, `FastList` does not inherit from `scala...Seq`.
+ * 			Therefore, `ChainedList` does not inherit from `scala...Seq`.
  *
  * @author Michael Eichberg
  */
-// TODO Add "with FilterMonadic[T,FastList[T]]
-sealed trait FastList[@specialized(Int) +T] { self ⇒
+// TODO Add "with FilterMonadic[T,ChainedList[T]]
+sealed trait ChainedList[@specialized(Int) +T] { self ⇒
     def head: T
-    def tail: FastList[T]
+    def tail: ChainedList[T]
     def last: T = {
         var rest = this
         while (rest.tail.nonEmpty) { rest = rest.tail }
@@ -100,7 +100,7 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
         }
         result
     }
-    def :!:[X >: T](x: X): FastList[X] = new :!:(x, this)
+    def :&:[X >: T](x: X): ChainedList[X] = new :&:(x, this)
     def foreach[U](f: T ⇒ U): Unit = {
         var rest = this
         while (rest.nonEmpty) {
@@ -108,41 +108,41 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
             rest = rest.tail
         }
     }
-    def take(n: Int): FastList[T]
-    def takeWhile(f: T ⇒ Boolean): FastList[T]
-    def filter(f: T ⇒ Boolean): FastList[T]
-    def drop(n: Int): FastList[T]
-    def map[X](f: T ⇒ X): FastList[X]
-    def zip[X](other: GenIterable[X]): FastList[(T, X)] = {
+    def take(n: Int): ChainedList[T]
+    def takeWhile(f: T ⇒ Boolean): ChainedList[T]
+    def filter(f: T ⇒ Boolean): ChainedList[T]
+    def drop(n: Int): ChainedList[T]
+    def map[X](f: T ⇒ X): ChainedList[X]
+    def zip[X](other: GenIterable[X]): ChainedList[(T, X)] = {
         if (this.isEmpty)
-            return this.asInstanceOf[FastNil.type];
+            return this.asInstanceOf[ChainedNil.type];
         val otherIt = other.iterator
         if (!otherIt.hasNext)
-            return FastNil;
+            return ChainedNil;
 
         var thisIt = this.tail
-        val result: :!:[(T, X)] = new :!:((this.head, otherIt.next), FastNil)
+        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next), ChainedNil)
         var last = result
         while (thisIt.nonEmpty && otherIt.hasNext) {
-            val newLast = new :!:((thisIt.head, otherIt.next), FastNil)
+            val newLast = new :&:((thisIt.head, otherIt.next), ChainedNil)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
         }
         result
     }
-    def zip[X](other: FastList[X]): FastList[(T, X)] = {
+    def zip[X](other: ChainedList[X]): ChainedList[(T, X)] = {
         if (this.isEmpty)
-            return this.asInstanceOf[FastNil.type];
+            return this.asInstanceOf[ChainedNil.type];
         if (other.isEmpty)
-            return other.asInstanceOf[FastNil.type];
+            return other.asInstanceOf[ChainedNil.type];
 
         var thisIt = this.tail
         var otherIt = other.tail
-        val result: :!:[(T, X)] = new :!:((this.head, other.head), FastNil)
+        val result: :&:[(T, X)] = new :&:((this.head, other.head), ChainedNil)
         var last = result
         while (thisIt.nonEmpty && otherIt.nonEmpty) {
-            val newLast = new :!:((thisIt.head, otherIt.head), FastNil)
+            val newLast = new :&:((thisIt.head, otherIt.head), ChainedNil)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
@@ -150,7 +150,7 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
         }
         result
     }
-    def zipWithIndex: FastList[(T, Int)] = {
+    def zipWithIndex: ChainedList[(T, Int)] = {
         var index = 0
         map { e ⇒
             val currentIndex = index
@@ -158,7 +158,7 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
             (e, currentIndex)
         }
     }
-    def corresponds[X](other: FastList[X])(f: (T, X) ⇒ Boolean): Boolean = {
+    def corresponds[X](other: ChainedList[X])(f: (T, X) ⇒ Boolean): Boolean = {
         if (this.isEmpty)
             return other.isEmpty;
         if (other.isEmpty)
@@ -177,12 +177,12 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
         }
         thisIt.isEmpty && otherIt.isEmpty
     }
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): FastList[X]
-    def reverse: FastList[T] = {
-        var result: FastList[T] = FastNil
+    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X]
+    def reverse: ChainedList[T] = {
+        var result: ChainedList[T] = ChainedNil
         var rest = this
         while (rest.nonEmpty) {
-            result :!:= rest.head
+            result :&:= rest.head
             rest = rest.tail
         }
         result
@@ -228,19 +228,19 @@ sealed trait FastList[@specialized(Int) +T] { self ⇒
         }
     }
 }
-object FastList {
+object ChainedList {
 
-    def empty[T]: FastList[T] = FastNil
+    def empty[T]: ChainedList[T] = ChainedNil
 
-    def apply[T](e: T) = new :!:(e, FastNil)
+    def apply[T](e: T) = new :&:(e, ChainedNil)
 
-    def apply[T](t: Traversable[T]): FastList[T] = {
+    def apply[T](t: Traversable[T]): ChainedList[T] = {
         if (t.isEmpty)
-            return FastNil;
-        val result = new :!:(t.head, FastNil)
+            return ChainedNil;
+        val result = new :&:(t.head, ChainedNil)
         var last = result
         t.tail.foreach { e ⇒
-            val newLast = new :!:(e, FastNil)
+            val newLast = new :&:(e, ChainedNil)
             last.rest = newLast
             last = newLast
         }
@@ -248,40 +248,40 @@ object FastList {
     }
 
 }
-case object FastNil extends FastList[Nothing] {
+case object ChainedNil extends ChainedList[Nothing] {
     def head: Nothing = throw new IllegalStateException("the list is empty")
     def tail: Nothing = throw new IllegalStateException("the list is empty")
     def isEmpty: Boolean = true
     def nonEmpty: Boolean = false
-    def take(n: Int): FastNil.type = {
+    def take(n: Int): ChainedNil.type = {
         if (n == 0) this else throw new IllegalStateException("the list is empty")
     }
-    def takeWhile(f: Nothing ⇒ Boolean): FastList[Nothing] = this
-    def filter(f: Nothing ⇒ Boolean): FastList[Nothing] = this
-    def drop(n: Int): FastNil.type = {
+    def takeWhile(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
+    def filter(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
+    def drop(n: Int): ChainedNil.type = {
         if (n == 0) this else throw new IllegalStateException("the list is empty")
     }
-    def map[X](f: Nothing ⇒ X): FastList[X] = this
-    def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): FastList[X] = this
+    def map[X](f: Nothing ⇒ X): ChainedList[X] = this
+    def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
 
 }
-case class :!:[@specialized(Int) T](head: T, private[immutable] var rest: FastList[T]) extends FastList[T] {
+case class :&:[@specialized(Int) T](head: T, private[immutable] var rest: ChainedList[T]) extends ChainedList[T] {
 
-    def tail: FastList[T] = rest
+    def tail: ChainedList[T] = rest
     def isEmpty: Boolean = false
     def nonEmpty: Boolean = true
 
-    def take(n: Int): FastList[T] = {
+    def take(n: Int): ChainedList[T] = {
         if (n == 0)
-            return FastNil;
+            return ChainedNil;
         var taken = 1
-        val result = new :!:(head, FastNil)
+        val result = new :&:(head, ChainedNil)
         var last = result
-        var rest: FastList[T] = this.rest
+        var rest: ChainedList[T] = this.rest
         while (taken < n) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :!:(x, FastNil)
+            val newLast = new :&:(x, ChainedNil)
             last.rest = newLast
             last = newLast
             taken += 1
@@ -289,35 +289,35 @@ case class :!:[@specialized(Int) T](head: T, private[immutable] var rest: FastLi
         result
     }
 
-    def takeWhile(f: T ⇒ Boolean): FastList[T] = {
+    def takeWhile(f: T ⇒ Boolean): ChainedList[T] = {
         val head = this.head
         if (!f(head))
-            return FastNil;
+            return ChainedNil;
 
-        val result = new :!:(head, FastNil)
+        val result = new :&:(head, ChainedNil)
         var last = result
-        var rest: FastList[T] = this.rest
+        var rest: ChainedList[T] = this.rest
         while (rest.nonEmpty && f(rest.head)) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :!:(x, FastNil)
+            val newLast = new :&:(x, ChainedNil)
             last.rest = newLast
             last = newLast
         }
         result
     }
 
-    def filter(f: T ⇒ Boolean): FastList[T] = {
-        var result: FastList[T] = FastNil
+    def filter(f: T ⇒ Boolean): ChainedList[T] = {
+        var result: ChainedList[T] = ChainedNil
         var last = result
-        var rest: FastList[T] = this
+        var rest: ChainedList[T] = this
         do {
             val x = rest.head
             rest = rest.tail
             if (f(x)) {
-                val newLast = new :!:(x, FastNil)
+                val newLast = new :&:(x, ChainedNil)
                 if (last.nonEmpty) {
-                    last.asInstanceOf[:!:[T]].rest = newLast
+                    last.asInstanceOf[:&:[T]].rest = newLast
                 } else {
                     result = newLast
                 }
@@ -327,11 +327,11 @@ case class :!:[@specialized(Int) T](head: T, private[immutable] var rest: FastLi
         result
     }
 
-    def drop(n: Int): FastList[T] = {
+    def drop(n: Int): ChainedList[T] = {
         if (n == 0)
             return this;
         var dropped = 1
-        var result: FastList[T] = this.rest
+        var result: ChainedList[T] = this.rest
         while (dropped < n) {
             dropped += 1
             result = result.tail
@@ -339,33 +339,33 @@ case class :!:[@specialized(Int) T](head: T, private[immutable] var rest: FastLi
         result
     }
 
-    def map[X](f: T ⇒ X): FastList[X] = {
-        val result = new :!:(f(head), FastNil)
+    def map[X](f: T ⇒ X): ChainedList[X] = {
+        val result = new :&:(f(head), ChainedNil)
         var last = result
-        var rest: FastList[T] = this.rest
+        var rest: ChainedList[T] = this.rest
         while (rest.nonEmpty) {
             val x = f(rest.head)
             rest = rest.tail
-            val newLast = new :!:(x, FastNil)
+            val newLast = new :&:(x, ChainedNil)
             last.rest = newLast
             last = newLast
         }
         result
     }
 
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): FastList[X] = {
+    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X] = {
         val head = this.head
         val newHead = f(head)
         var updated = (head.asInstanceOf[AnyRef] ne newHead)
-        val result = new :!:(newHead, FastNil)
+        val result = new :&:(newHead, ChainedNil)
         var last = result
-        var rest: FastList[T] = this.rest
+        var rest: ChainedList[T] = this.rest
         while (rest.nonEmpty) {
             val e = rest.head
             val x = f(e)
             updated = updated || (x ne e.asInstanceOf[AnyRef])
             rest = rest.tail
-            val newLast = new :!:(x, FastNil)
+            val newLast = new :&:(x, ChainedNil)
             last.rest = newLast
             last = newLast
         }

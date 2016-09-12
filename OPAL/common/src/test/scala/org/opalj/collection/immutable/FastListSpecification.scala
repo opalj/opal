@@ -38,13 +38,13 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
 /**
- * Tests `FastList` by creating standard Scala Lists and comparing
+ * Tests `ChainedList` by creating standard Scala Lists and comparing
  * the results of the respective functions modulo the different semantics.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-object FastListSpecification extends Properties("FastList") {
+object ChainedListSpecification extends Properties("ChainedList") {
 
     /**
      * Generates a list and an int value in the range [0,length of list ].
@@ -66,24 +66,25 @@ object FastListSpecification extends Properties("FastList") {
 
     val listsOfSingleCharStringsGen = for {
         n ← Gen.choose(0, 3)
+        m ← Gen.choose(0, 3)
         l1 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
-        l2 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
+        l2 ← Gen.listOfN(m, Gen.oneOf("a", "b", "c"))
     } yield (l1, l2)
 
     property("create") = forAll { s: String ⇒
-        val fl = FastList(s)
+        val fl = ChainedList(s)
         val l = List(s)
         fl.head == l.head
     }
 
     property("==|hashCode") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = FastList(l1)
-        val fl2 = FastList(l2)
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
         (l1 == l2) == (fl1 == fl2) && (fl1 != fl2 || fl1.hashCode() == fl2.hashCode())
     }
 
     property("head") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         (l.nonEmpty && l.head == fl.head) ||
             // if the list is empty, an exception needs to be thrown
             { try { fl.head; false } catch { case _: Throwable ⇒ true } }
@@ -91,21 +92,21 @@ object FastListSpecification extends Properties("FastList") {
     }
 
     property("tail") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
-        (l.nonEmpty && FastList(l.tail) == fl.tail) ||
+        val fl = ChainedList(l)
+        (l.nonEmpty && ChainedList(l.tail) == fl.tail) ||
             // if the list is empty, an exception needs to be thrown
             { try { fl.tail; false } catch { case _: Throwable ⇒ true } }
     }
 
     property("last") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         (l.nonEmpty && l.last == fl.last) ||
             // if the list is empty, an exception needs to be thrown
             { try { fl.last; false } catch { case _: Throwable ⇒ true } }
     }
 
     property("(is|non)Empty") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         l.isEmpty == fl.isEmpty && l.nonEmpty == fl.nonEmpty
     }
 
@@ -113,7 +114,7 @@ object FastListSpecification extends Properties("FastList") {
         val (l, index) = listAndIndex
         classify(index == 0, "takes first") {
             classify(index == l.length - 1, "takes last") {
-                val fl = FastList(l)
+                val fl = ChainedList(l)
                 (index < l.length && fl(index) == l(index)) ||
                     // if the index is not valid an exception
                     { try { fl(index); false } catch { case _: Throwable ⇒ true } }
@@ -122,39 +123,39 @@ object FastListSpecification extends Properties("FastList") {
     }
 
     property("exists") = forAll { (l: List[String], c: Int) ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         def test(s: String): Boolean = s.length == c
         l.exists(test) == fl.exists(test)
     }
 
     property("forall") = forAll { (l: List[String], c: Int) ⇒
-        val fl = FastList(l)
-        def test(s: String): Boolean = s.length == c
+        val fl = ChainedList(l)
+        def test(s: String): Boolean = s.length <= c
         l.forall(test) == fl.forall(test)
     }
 
     property("contains") = forAll { (l: List[String], s: String) ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         l.contains(s) == fl.contains(s)
     }
 
     property("size") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         l.size == fl.size
     }
 
-    property(":!:") = forAll { (l: List[String], es: List[String]) ⇒
-        var fle = FastList(l)
+    property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
+        var fle = ChainedList(l)
         var le = l
         es.forall { e ⇒
-            fle :!:= e
+            fle :&:= e
             le ::= e
             fle.head == le.head
         }
     }
 
     property("foreach") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         var lRest = l
         fl.foreach { e ⇒
             if (e != lRest.head)
@@ -171,10 +172,10 @@ object FastListSpecification extends Properties("FastList") {
             classify(count == 0, "takes no elements") {
                 classify(count == l.length, "takes all elements") {
                     classify(count > l.length, "takes too many elements") {
-                        val fl = FastList(l)
+                        val fl = ChainedList(l)
                         (
                             count <= l.length &&
-                            fl.take(count) == FastList(l.take(count)) && fl.size == l.size
+                            fl.take(count) == ChainedList(l.take(count)) && fl.size == l.size
                         ) || { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
                     }
                 }
@@ -184,60 +185,60 @@ object FastListSpecification extends Properties("FastList") {
 
     property("takeWhile") = forAll { (l: List[String], c: Int) ⇒
         def filter(s: String): Boolean = s.length() >= c
-        val fl = FastList(l)
-        fl.takeWhile(filter) == FastList(l.takeWhile(filter))
+        val fl = ChainedList(l)
+        fl.takeWhile(filter) == ChainedList(l.takeWhile(filter))
     }
 
     property("filter") = forAll { (l: List[String], c: Int) ⇒
         def filter(s: String): Boolean = s.length() >= c
-        val fl = FastList(l)
-        fl.filter(filter) == FastList(l.filter(filter))
+        val fl = ChainedList(l)
+        fl.filter(filter) == ChainedList(l.filter(filter))
     }
 
     property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
         val (l, count) = listAndCount
-        val fl = FastList(l)
-        (count <= l.length && fl.drop(count) == FastList(l.drop(count))) ||
+        val fl = ChainedList(l)
+        (count <= l.length && fl.drop(count) == ChainedList(l.drop(count))) ||
             { try { fl.drop(count); false } catch { case _: Throwable ⇒ true } }
     }
 
     property("map") = forAll { l: List[String] ⇒
         def f(s: String): Int = s.length()
-        val fl = FastList(l)
-        fl.map(f) == FastList(l.map(f))
+        val fl = ChainedList(l)
+        fl.map(f) == ChainedList(l.map(f))
     }
 
     property("zip(GenIterable)") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = FastList(l1)
+        val fl1 = ChainedList(l1)
         classify(l1.size == l2.size, "same length") {
-            fl1.zip(l2) == FastList(l1.zip(l2))
+            fl1.zip(l2) == ChainedList(l1.zip(l2))
         }
     }
 
-    property("zip(FastList)") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = FastList(l1)
-        val fl2 = FastList(l2)
+    property("zip(ChainedList)") = forAll { (l1: List[String], l2: List[String]) ⇒
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
         classify(l1.isEmpty, "the first list is empty") {
             classify(l2.isEmpty, "the second list is empty") {
                 classify(l1.size == l2.size, "same length") {
-                    fl1.zip(fl2) == FastList(l1.zip(l2))
+                    fl1.zip(fl2) == ChainedList(l1.zip(l2))
                 }
             }
         }
     }
 
     property("zipWithIndex") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         classify(l.isEmpty, "empty", "non empty") {
-            fl.zipWithIndex == FastList(l.zipWithIndex)
+            fl.zipWithIndex == ChainedList(l.zipWithIndex)
         }
     }
 
     property("corresponds") = forAll(listsOfSingleCharStringsGen) { ls ⇒
         val (l1: List[String], l2: List[String]) = ls
         def test(s1: String, s2: String): Boolean = s1 == s2
-        val fl1 = FastList(l1)
-        val fl2 = FastList(l2)
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
         classify(fl1.isEmpty && fl2.isEmpty, "both lists are empty") {
             classify(fl1.size == fl2.size, "both lists have the same length") {
                 classify(l1.corresponds(l2)(test), "both lists correspond") {
@@ -250,34 +251,34 @@ object FastListSpecification extends Properties("FastList") {
     property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
         var alwaysTrue = true
         def transform(s: String): String = { if (s.length < c) s else { alwaysTrue = false; s + c } }
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         classify(l.forall(s ⇒ transform(s) eq s), "all strings remain the same") {
             val mappedFL = fl.mapConserve(transform)
-            (mappedFL == FastList(l.mapConserve(transform))) &&
+            (mappedFL == ChainedList(l.mapConserve(transform))) &&
                 (!alwaysTrue || (fl eq mappedFL))
         }
     }
 
     property("reverse") = forAll { l: List[String] ⇒
-        val fl = FastList(l)
-        fl.reverse == FastList(l.reverse)
+        val fl = ChainedList(l)
+        fl.reverse == ChainedList(l.reverse)
     }
 
     property("mkString") = forAll { (l: List[String], pre: String, sep: String, post: String) ⇒
-        val fl = FastList(l)
+        val fl = ChainedList(l)
         fl.mkString(pre, sep, post) == l.mkString(pre, sep, post)
     }
 
     property("toIterable") = forAll { l: List[String] ⇒
-        val fl = FastList(l).toIterable().toList
+        val fl = ChainedList(l).toIterable().toList
         fl == l
     }
     property("toIterator") = forAll { l: List[String] ⇒
-        val fl = FastList(l).toIterator().toList
+        val fl = ChainedList(l).toIterator().toList
         fl == l
     }
     property("toTraversable") = forAll { l: List[String] ⇒
-        val fl = FastList(l).toTraversable().toList
+        val fl = ChainedList(l).toTraversable().toList
         fl == l
     }
 }

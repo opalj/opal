@@ -872,7 +872,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         operands:       Operands,
         locals:         Locals
     ): (Operands, Locals) = {
-        (ReferenceValue(pc, upperTypeBound) :!: operands.tail, locals)
+        (ReferenceValue(pc, upperTypeBound) :&: operands.tail, locals)
     }
 
     override def refTopOperandIsNull(
@@ -880,7 +880,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
-        (NullValue(pc /*Irrelevant - at least here*/ ) :!: operands.tail, locals)
+        (NullValue(pc /*Irrelevant - at least here*/ ) :&: operands.tail, locals)
     }
 
 }

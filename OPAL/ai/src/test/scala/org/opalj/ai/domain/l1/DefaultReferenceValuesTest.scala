@@ -44,7 +44,7 @@ import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
-import org.opalj.collection.immutable.FastList
+import org.opalj.collection.immutable.ChainedList
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -202,7 +202,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                     val (updatedOperands, updatedLocals) =
                         theObjectValue.refineUpperTypeBound(
                             -1, Serializable,
-                            FastList(theObjectValue),
+                            ChainedList(theObjectValue),
                             Locals(IndexedSeq(theFileValue, theObjectValue))
                         )
                     updatedOperands.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(Serializable)
@@ -213,7 +213,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 {
                     // there is nothing to refine...
                     val (updatedOperands, _) =
-                        theFileValue.refineUpperTypeBound(-1, Serializable, FastList(theObjectValue), Locals.empty)
+                        theFileValue.refineUpperTypeBound(-1, Serializable, ChainedList(theObjectValue), Locals.empty)
                     updatedOperands.head should be(theObjectValue)
                 }
             }
@@ -231,7 +231,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineIsNull(-1, No, FastList(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineIsNull(-1, No, ChainedList(mv1), Locals.empty)
                 refinedOperands.head should be(v2)
             }
 
@@ -248,7 +248,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), FastList(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), ChainedList(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
@@ -271,7 +271,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, FastList(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, ChainedList(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
@@ -291,7 +291,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                         3
                     )
 
-                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, FastList(mv1), Locals.empty)
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, ChainedList(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
