@@ -47,6 +47,7 @@ import org.opalj.log.GlobalLogContext
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -65,10 +66,10 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
     ): Unit = {
         val code = method.body.get
         val instructions = code.instructions
-        assert(instructions.nonEmpty, s"empty method: ${method.toJava(classFile)}")
 
         classFile.bootstrapMethodTable should be('empty)
         classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= (1)
+
         val domain = domainFactory(testProject, classFile, method)
         try {
             val result = BaseAI(classFile, method, domain)
@@ -104,11 +105,11 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
     ): Int = {
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
-            classFile ← project.allProjectClassFiles.par
+            classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$\\d+:\\d+$")
+                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches("^Lambda\\$[0-9a-f]+:[0-9a-f]+$")
                 case _               ⇒ false
             }
         } {
@@ -124,17 +125,21 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
 
     describe("test interpretation of rewritten invokedynamic instructions") {
 
+        import ClassFileBinding.DeleteSynthesizedClassFilesAttributesConfigKey
+        val configValueFalse = ConfigValueFactory.fromAnyRef(false)
+
         describe("testing the rewritten methods of the lambdas test project") {
-            val testProjectFile = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+            val lambdasJar = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
             val config = Java8LambdaExpressionsRewriting.defaultConfig(
                 rewrite = true,
                 logRewrites = false
-            )
-            val lambdas = Project(testProjectFile, GlobalLogContext, config)
+            ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
+            val lambdas = Project(lambdasJar, GlobalLogContext, config)
+            info(lambdas.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
             val verifiedMethodsCount =
                 testProject(lambdas, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
                     testProject(lambdas, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
-            info(s"interpreted $verifiedMethodsCount methods")
+            info(s"interpreted ${verifiedMethodsCount / 2} methods")
         }
 
         if (org.opalj.bi.isCurrentJREAtLeastJava8) {
@@ -143,13 +148,13 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
                 val config = Java8LambdaExpressionsRewriting.defaultConfig(
                     rewrite = true,
                     logRewrites = false
-                )
+                ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
                 val jre = Project(jrePath, GlobalLogContext, config)
-
+                info(jre.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
                 val verifiedMethodsCount =
                     testProject(jre, (p, cf, m) ⇒ BaseDomain(p, cf, m)) +
                         testProject(jre, (p, cf, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, cf, m))
-                info(s"successfully interpreted ${verifiedMethodsCount / 3} methods")
+                info(s"successfully interpreted ${verifiedMethodsCount / 2} methods")
             }
         }
     }

@@ -102,7 +102,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = typeIdGenerator.getAndIncrement()
-        s"Lambda$$${surroundingType.id}:$nextId"
+        s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -110,7 +110,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         cp:                Constant_Pool,
         invokeDynamicInfo: CONSTANT_InvokeDynamic_info,
         instructions:      Array[Instruction],
-        index:             Int
+        pc:                PC
     ): ClassFile = {
 
         // gather complete information about invokedynamic instructions from the bootstrap
@@ -121,38 +121,38 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 cp,
                 invokeDynamicInfo,
                 instructions,
-                index
+                pc
             )
 
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
 
-        val invokedynamic = instructions(index).asInstanceOf[INVOKEDYNAMIC]
+        val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (isJava8LambdaExpression(invokedynamic)) {
+
             val INVOKEDYNAMIC(
-                bootstrapMethod,
-                functionalInterfaceMethodName,
-                factoryDescriptor) = invokedynamic
+                bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
+                ) = invokedynamic
             val bootstrapArguments = bootstrapMethod.arguments
             // apparently there are cases in the JRE where there are more than just those
             // three parameters
             val Seq(
                 functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
                 invokeTargetMethodHandle: MethodCallMethodHandle,
-                functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*) =
+                functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
+                ) =
                 bootstrapArguments
 
             val MethodCallMethodHandle(
-                targetMethodOwner: ObjectType,
-                targetMethodName,
-                targetMethodDescriptor) = invokeTargetMethodHandle
+                targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
+                ) = invokeTargetMethodHandle
 
-            val superInterface: Set[ObjectType] = Set(factoryDescriptor.returnType.asObjectType)
+            val superInterfaceTypes = Set(factoryDescriptor.returnType.asObjectType)
             val typeDeclaration = TypeDeclaration(
                 ObjectType(newLambdaTypeName(targetMethodOwner)),
                 isInterfaceType = false,
-                Some(ObjectType.Object),
-                superInterface
+                Some(ObjectType.Object), // we basically create a "CallSiteObject"
+                superInterfaceTypes
             )
 
             val invocationInstruction = invokeTargetMethodHandle.opcodeOfUnderlyingInstruction
@@ -196,22 +196,42 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 proxy.thisType,
                 isInterface = false,
                 factoryMethod.name,
-                factoryMethod.descriptor
+                // the invokedynamic's methodDescriptor (factoryDescriptor) determines
+                // the parameters that are actually pushed and popped from/to the stack
+                factoryDescriptor
             )
+            // DEBUG ---
+            if (classFile.thisType.toJava.startsWith("java.util.stream.DistinctOps")) {
+                println("Creating Proxy Class:")
+                println(s"\t\ttypeDeclaration = $typeDeclaration")
+                println(s"\t\tfunctionalInterfaceMethodName = $functionalInterfaceMethodName")
+                println(s"\t\tfunctionalInterfaceDescriptorBeforeTypeErasure = $functionalInterfaceDescriptorBeforeTypeErasure")
+                println(s"\t\ttargetMethodOwner = $targetMethodOwner")
+                println(s"\t\ttargetMethodName = $targetMethodName")
+                println(s"\t\treceiverDescriptor = $receiverDescriptor")
+                println(s"\t\tinvocationInstruction = $invocationInstruction")
+                println(s"\t\tbridgeMethodDescriptor = $bridgeMethodDescriptor")
+                println(s"$pc: factoryMethod md => ${factoryMethod.descriptor}")
+                println(s"$pc: invokedynamic md => ${invokedynamic.methodDescriptor}")
+                println(s"$pc:\n$invokedynamic\n=>\n$newInvokestatic\n")
+                println()
+            }
+            // --- DEBUG
             if (logJava8LambdaExpressionsRewrites) {
                 OPALLogger.info(
                     "analysis",
-                    s"rewriting lambda expression: ${instructions(index)} ⇒ $newInvokestatic"
+                    s"rewriting lambda expression: $invokedynamic ⇒ $newInvokestatic"
                 )
             }
-            instructions(index) = newInvokestatic
+            instructions(pc) = newInvokestatic
 
             // since invokestatic is two bytes shorter than invokedynamic, we need to fill
             // the two-byte gap following the invokestatic with NOPs
-            instructions(index + 3) = NOP
-            instructions(index + 4) = NOP
+            instructions(pc + 3) = NOP
+            instructions(pc + 4) = NOP
 
-            updatedClassFile = storeProxy(updatedClassFile, proxy)
+            val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
+            updatedClassFile = storeProxy(updatedClassFile, proxy, reason)
         }
 
         updatedClassFile
@@ -230,16 +250,16 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         }
     }
 
-    def storeProxy(classFile: ClassFile, proxy: ClassFile): ClassFile = {
+    def storeProxy(classFile: ClassFile, proxy: ClassFile, reason: Option[AnyRef]): ClassFile = {
         classFile.synthesizedClassFiles match {
-            case Some(scf @ SynthesizedClassFiles(proxies, _)) ⇒
-                val newScf = new SynthesizedClassFiles(proxy :: proxies)
-                val newAttributes = newScf +: classFile.attributes.filter(_ ne scf)
-                classFile.copy(attributes = newAttributes)
+            case Some(scf @ SynthesizedClassFiles(cfs)) ⇒
+                val newScf = new SynthesizedClassFiles(((proxy, reason)) :: cfs)
+                val newAttrs = newScf +: classFile.attributes.filter(_ ne scf)
+                classFile.copy(attributes = newAttrs)
             case None ⇒
-                val newAttributes = new SynthesizedClassFiles(List(proxy)) +: classFile.attributes
-                classFile.copy(attributes = newAttributes)
-
+                val attributes = classFile.attributes
+                val newAttrs = new SynthesizedClassFiles(List((proxy, reason))) +: attributes
+                classFile.copy(attributes = newAttrs)
         }
     }
 }

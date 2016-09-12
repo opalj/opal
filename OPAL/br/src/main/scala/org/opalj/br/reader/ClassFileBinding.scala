@@ -101,8 +101,8 @@ trait ClassFileBinding extends ClassFileReader {
     }
 
     /**
-     * Tests if the class file has [[SynthesizedClassFiles]] attributes and if so
-     * extracts the class files and removes the attributes.
+     * Tests if the class file has a [[SynthesizedClassFiles]] attribute and – if so –
+     * extracts the class file and removes the attribute.
      */
     val extractSynthesizedClassFiles: List[ClassFile] ⇒ List[ClassFile] = { classFiles ⇒
         var updatedClassFiles = List.empty[ClassFile]
@@ -114,9 +114,9 @@ trait ClassFileBinding extends ClassFileReader {
             var hasSynthesizedClassFilesAttribute = false
             val newAttributes = classFile.attributes.filterNot { a ⇒
                 if (a.kindId == SynthesizedClassFiles.KindId) {
-                    val SynthesizedClassFiles(synthesizedClassFiles, _) = a
-                    synthesizedClassFiles.foreach { cf ⇒
-                        classFilesToProcess = cf :: classFilesToProcess
+                    val SynthesizedClassFiles(synthesizedClassFiles) = a
+                    synthesizedClassFiles.foreach { cfAndReason ⇒
+                        classFilesToProcess = cfAndReason._1 :: classFilesToProcess
                     }
                     hasSynthesizedClassFilesAttribute = true
                     true

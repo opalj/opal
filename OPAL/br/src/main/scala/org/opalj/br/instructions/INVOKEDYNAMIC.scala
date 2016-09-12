@@ -54,14 +54,6 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 
     final override def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
 
-    //
-    // DEBUG PURPOSES
-    //
-
-    override def toString: String = {
-        s"INVOKEDYNAMIC($bootstrapMethod, target=$name.${methodDescriptor.toUMLNotation})"
-    }
-
 }
 
 /**
@@ -119,7 +111,13 @@ case object INCOMPLETE_INVOKEDYNAMIC extends INVOKEDYNAMIC {
  * @author Arne Lottmann
  */
 case class DEFAULT_INVOKEDYNAMIC(
-    bootstrapMethod:  BootstrapMethod,
-    name:             String,
-    methodDescriptor: MethodDescriptor
-) extends INVOKEDYNAMIC
+        bootstrapMethod:  BootstrapMethod,
+        name:             String,
+        methodDescriptor: MethodDescriptor
+) extends INVOKEDYNAMIC {
+
+    override def toString: String = {
+        s"INVOKEDYNAMIC($bootstrapMethod, target=${methodDescriptor.toJava(name)})"
+    }
+
+}
