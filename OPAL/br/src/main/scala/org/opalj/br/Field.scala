@@ -71,15 +71,26 @@ final class Field private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Field] {
 
+       def copy(
+        accessFlags: Int        = this.accessFlags,
+        name:        String     = this.name,
+        fieldType:   FieldType  = this.fieldType,
+        attributes:  Attributes = this.attributes
+    ): Field = {
+        new Field(accessFlags, name, fieldType, attributes)
+    }
+
     final override def isField = true
 
     final override def asField = this
 
-    final def asVirtualField(declaringClassFile: ClassFile): VirtualField =
+    final def asVirtualField(declaringClassFile: ClassFile): VirtualField = {
         asVirtualField(declaringClassFile.thisType)
+    }
 
-    def asVirtualField(declaringClassType: ObjectType): VirtualField =
+    def asVirtualField(declaringClassType: ObjectType): VirtualField = {
         VirtualField(declaringClassType, name, fieldType)
+    }
 
     def isTransient: Boolean = (ACC_TRANSIENT.mask & accessFlags) != 0
 
@@ -103,12 +114,7 @@ final class Field private (
 
     def toJava(): String = {
         val accessFlags = AccessFlags.toStrings(this.accessFlags, AccessFlagsContexts.FIELD)
-        (
-            if (accessFlags.nonEmpty)
-                accessFlags.mkString("", " ", " ")
-            else
-                ""
-        ) +
+        (if (accessFlags.nonEmpty) accessFlags.mkString("", " ", " ") else "") +
             fieldType.toJava+" "+name
     }
 
@@ -131,29 +137,22 @@ final class Field private (
         }
     }
 
-    def copy(
-        accessFlags: Int        = this.accessFlags,
-        name:        String     = this.name,
-        fieldType:   FieldType  = this.fieldType,
-        attributes:  Attributes = this.attributes
-    ): Field = {
-        new Field(accessFlags, name, fieldType, attributes)
-    }
-
     override def toString(): String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
         val jDescriptor = fieldType.toJava+" "+name
         val field =
-            if (jAccessFlags.nonEmpty)
+            if (jAccessFlags.nonEmpty) {
                 jAccessFlags+" "+jDescriptor
-            else
+            } else {
                 jDescriptor
+            }
 
-        if (attributes.nonEmpty)
+        if (attributes.nonEmpty) {
             field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
-        else
+        } else {
             field
+        }
     }
 }
 
@@ -171,6 +170,7 @@ object Field {
         new Field(accessFlags, name.intern(), fieldType, attributes)
     }
 
-    def unapply(field: Field): Option[(Int, String, FieldType)] =
+    def unapply(field: Field): Option[(Int, String, FieldType)] = {
         Some((field.accessFlags, field.name, field.fieldType))
+    }
 }
