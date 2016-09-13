@@ -1,6 +1,7 @@
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
+
 version in ThisBuild := "0.9-SNAPSHOT"
 organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
@@ -25,9 +26,9 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 	
 resolvers in ThisBuild += Resolver.jcenterRepo
 
-parallelExecution in ThisBuild := false // the tests/analysis are already parallelized
-
-parallelExecution in Global := false // the tests/analysis are already parallelized
+// the tests/analysis are already parallelized
+parallelExecution in ThisBuild := false 
+parallelExecution in Global := false 
 
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
@@ -40,15 +41,15 @@ testOptions in ThisBuild += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
-  baseDirectory map {
-    bd => Seq ("-sourcepath", bd.getAbsolutePath)
-  }
+	baseDirectory map {
+    	bd => Seq ("-sourcepath", bd.getAbsolutePath)
+  	}
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
 	Opts.doc.sourceUrl( 
 		"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?"+
 			(if (isSnapshot.value) "at=develop" else "at=master")
-  )
+    )
 
 javaOptions in ThisBuild ++= Seq(
 	  "-Xmx3G", "-Xms1024m", "-Xnoclassgc",
