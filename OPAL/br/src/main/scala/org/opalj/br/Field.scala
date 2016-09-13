@@ -71,7 +71,7 @@ final class Field private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Field] {
 
-       def copy(
+    def copy(
         accessFlags: Int        = this.accessFlags,
         name:        String     = this.name,
         fieldType:   FieldType  = this.fieldType,

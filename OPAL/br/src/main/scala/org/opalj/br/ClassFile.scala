@@ -108,7 +108,7 @@ final class ClassFile private (
     /**
      * Creates a shallow copy of this class file object.
      */
-      def copy(
+    def copy(
         version:        UShortPair         = this.version,
         accessFlags:    Int                = this.accessFlags,
         thisType:       ObjectType         = this.thisType,

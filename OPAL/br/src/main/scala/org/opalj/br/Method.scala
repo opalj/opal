@@ -76,7 +76,7 @@ final class Method private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Method] with InstructionsContainer {
 
-     def copy(
+    def copy(
         accessFlags: Int              = this.accessFlags,
         name:        String           = this.name,
         descriptor:  MethodDescriptor = this.descriptor,
