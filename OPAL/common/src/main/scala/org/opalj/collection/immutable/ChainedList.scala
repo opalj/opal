@@ -57,7 +57,8 @@ import scala.collection.generic.FilterMonadic
  */
 sealed trait ChainedList[@specialized(Int) +T]
         extends TraversableOnce[T]
-        with FilterMonadic[T, ChainedList[T]] { self ⇒
+        with FilterMonadic[T, ChainedList[T]]
+        with Serializable { self ⇒
 
     class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
 
