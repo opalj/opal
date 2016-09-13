@@ -95,8 +95,9 @@ trait AnalysisExecutor {
      * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] =
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
+    }
 
     /**
      * Prints out general information how to use this analysis. Printed whenever
@@ -111,6 +112,7 @@ trait AnalysisExecutor {
                 "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
                 "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
+                "[-completelyLoadLibraries=<true|false> (The default is false.)]\n"+
                 analysisSpecificParametersDescription
         )
         OPALLogger.info("general", "description: "+analysis.description)
@@ -221,9 +223,26 @@ trait AnalysisExecutor {
         }
         OPALLogger.info("project configuration", s"the analysis mode is $analysisMode")
 
-        if (args3.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific paramters: "+args3.mkString(","))
-        val issues = checkAnalysisSpecificParameters(args3)
+        val (completelyLoadLibraries, args4) = try {
+            args3.partition(_.startsWith("-completelyLoadLibraries=")) match {
+                case (Array(), args4) ⇒
+                    (false, args4)
+                case (Array(completelyLoadLibrariesParameter), args4) ⇒
+                    val completelyLoadLibraries: Boolean = completelyLoadLibrariesParameter.substring(25).toBoolean
+                    (completelyLoadLibraries, args4)
+            }
+
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
+                printUsage
+                sys.exit(2)
+        }
+
+        if (args4.nonEmpty)
+            OPALLogger.info("project configuration", "analysis specific paramters: "+args4.mkString(","))
+        val issues = checkAnalysisSpecificParameters(args4)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
             printUsage
@@ -234,7 +253,7 @@ trait AnalysisExecutor {
         // 2. setup project context
         //
         val project: Project[URL] = try {
-            setupProject(cpFiles, libcpFiles, analysisMode)
+            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode)
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
@@ -266,9 +285,10 @@ trait AnalysisExecutor {
     }
 
     def setupProject(
-        cpFiles:      Iterable[File],
-        libcpFiles:   Iterable[File],
-        analysisMode: AnalysisMode
+        cpFiles:                 Iterable[File],
+        libcpFiles:              Iterable[File],
+        completelyLoadLibraries: Boolean,
+        analysisMode:            AnalysisMode
     )(implicit initialLogContext: LogContext): Project[URL] = {
 
         val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
@@ -290,7 +310,11 @@ trait AnalysisExecutor {
                 OPALLogger.info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java9LibraryFramework.ClassFiles,
+                    if (completelyLoadLibraries) {
+                        JavaClassFileReader.ClassFiles
+                    } else {
+                        Java9LibraryFramework.ClassFiles
+                    },
                     (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {
@@ -301,7 +325,7 @@ trait AnalysisExecutor {
             Project(
                 classFiles,
                 libraryClassFiles,
-                libraryClassFilesAreInterfacesOnly = true,
+                libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
                 Traversable.empty
             )(
                 config = configuredConfig
