@@ -33,7 +33,7 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-import org.opalj.collection.immutable.FastList
+import org.opalj.collection.immutable.ChainedList
 import org.opalj.ai.domain.ValuesCoordinatingDomain
 import org.opalj.ai.domain.l0.DefaultReferenceValuesBinding
 import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
@@ -42,7 +42,7 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.PredefinedClassHierarchy
-import org.opalj.collection.immutable.FastNil
+import org.opalj.collection.immutable.ChainedNil
 
 /**
  * Tests the utility methods.
@@ -56,14 +56,14 @@ class PackageTest extends FlatSpec with Matchers {
 
     it should ("be able to map an empty list of operands") in {
         import SimpleCoordinatingTypeLevelDomain._
-        val operands = FastList.empty[DomainValue]
+        val operands = ChainedList.empty[DomainValue]
 
         mapOperands(operands, SimpleCoordinatingTypeLevelDomain) should be(empty)
     }
 
     it should ("be able to map a list with one operand") in {
         import SimpleCoordinatingTypeLevelDomain._
-        val operands: FastList[DomainValue] = FastList(IntegerValue(valueOrigin = -1))
+        val operands: ChainedList[DomainValue] = ChainedList(IntegerValue(valueOrigin = -1))
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result.size should be(1)
@@ -72,8 +72,8 @@ class PackageTest extends FlatSpec with Matchers {
 
     it should ("be able to map a list with two different operands") in {
         import SimpleCoordinatingTypeLevelDomain._
-        val operands: FastList[DomainValue] =
-            IntegerValue(valueOrigin = -1) :!: FloatValue(valueOrigin = -2) :!: FastNil
+        val operands: ChainedList[DomainValue] =
+            IntegerValue(valueOrigin = -1) :&: FloatValue(valueOrigin = -2) :&: ChainedNil
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))
@@ -82,11 +82,11 @@ class PackageTest extends FlatSpec with Matchers {
 
     it should ("be able to map a list with three different operands") in {
         import SimpleCoordinatingTypeLevelDomain._
-        val operands: FastList[DomainValue] =
-            IntegerValue(valueOrigin = -1) :!:
-                FloatValue(valueOrigin = -2) :!:
-                DoubleValue(valueOrigin = -3) :!:
-                FastNil
+        val operands: ChainedList[DomainValue] =
+            IntegerValue(valueOrigin = -1) :&:
+                FloatValue(valueOrigin = -2) :&:
+                DoubleValue(valueOrigin = -3) :&:
+                ChainedNil
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))
@@ -97,11 +97,11 @@ class PackageTest extends FlatSpec with Matchers {
     it should ("be able to map a list with three different operands, where the two first operands are identical") in {
         import SimpleCoordinatingTypeLevelDomain._
         val firstOperand = IntegerValue(valueOrigin = -1)
-        val operands: FastList[DomainValue] =
-            firstOperand :!:
-                firstOperand :!:
-                DoubleValue(valueOrigin = -3) :!:
-                FastNil
+        val operands: ChainedList[DomainValue] =
+            firstOperand :&:
+                firstOperand :&:
+                DoubleValue(valueOrigin = -3) :&:
+                ChainedNil
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))
@@ -113,11 +113,11 @@ class PackageTest extends FlatSpec with Matchers {
     it should ("be able to map a list with three different operands, where the two last operands are identical") in {
         import SimpleCoordinatingTypeLevelDomain._
         val lastOperand = IntegerValue(valueOrigin = -2)
-        val operands: FastList[DomainValue] =
-            DoubleValue(valueOrigin = -1) :!:
-                lastOperand :!:
-                lastOperand :!:
-                FastNil
+        val operands: ChainedList[DomainValue] =
+            DoubleValue(valueOrigin = -1) :&:
+                lastOperand :&:
+                lastOperand :&:
+                ChainedNil
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(DoubleValue(valueOrigin = -1))
@@ -129,7 +129,7 @@ class PackageTest extends FlatSpec with Matchers {
     it should ("be able to map a list with three different operands, where all three operands are identical") in {
         import SimpleCoordinatingTypeLevelDomain._
         val operand = IntegerValue(valueOrigin = -1)
-        val operands: FastList[DomainValue] = operand :!: operand :!: operand :!: FastNil
+        val operands: ChainedList[DomainValue] = operand :&: operand :&: operand :&: ChainedNil
 
         val result = mapOperands(operands, SimpleCoordinatingTypeLevelDomain)
         result(0) should be(IntegerValue(valueOrigin = -1))

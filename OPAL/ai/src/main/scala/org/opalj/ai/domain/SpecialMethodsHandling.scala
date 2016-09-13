@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.:!:
+import org.opalj.collection.immutable.:&:
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
@@ -70,7 +70,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
             return super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands);
         }
 
-        val length :!: destPos :!: dest :!: sourcePos :!: source :!: _ = operands
+        val length :&: destPos :&: dest :&: sourcePos :&: source :&: _ = operands
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {

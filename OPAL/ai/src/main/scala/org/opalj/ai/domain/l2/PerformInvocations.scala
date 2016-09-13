@@ -35,8 +35,8 @@ import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
-import org.opalj.collection.immutable.FastNil
-import org.opalj.collection.immutable.FastList
+import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.ChainedList
 import org.opalj.br._
 
 /**
@@ -76,7 +76,7 @@ trait PerformInvocations extends MethodCallsHandling {
     )(
         parameters: calledMethodDomain.Locals
     ): AIResult { val domain: calledMethodDomain.type } = {
-        val noOperands: FastList[calledMethodDomain.DomainValue] = FastNil
+        val noOperands: ChainedList[calledMethodDomain.DomainValue] = ChainedNil
         val isStrict = method.isStrict
         val code = method.body.get
         calledMethodAI.performInterpretation(

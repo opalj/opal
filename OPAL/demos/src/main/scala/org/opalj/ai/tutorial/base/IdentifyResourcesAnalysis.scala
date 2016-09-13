@@ -30,7 +30,7 @@ package org.opalj.ai.tutorial.base
 
 import java.net.URL
 
-import org.opalj.collection.immutable.:!:
+import org.opalj.collection.immutable.:&:
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
@@ -97,7 +97,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                 (cf, m, pcs) ← callSites
                 result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
                 (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :!: _) ⇒ (pc, value)
+                    case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
                 }
             } yield (cf, m, pc, value)
 

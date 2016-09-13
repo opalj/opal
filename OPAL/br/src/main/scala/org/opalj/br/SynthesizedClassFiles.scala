@@ -42,21 +42,21 @@ package br
  *
  * This attribute may occur multiple times in the attributes table of a class file structure.
  *
- * @param 	reason An object that provides detailed information why a new class file
- * 			was synthesized.
+ * @param 	classFiles A sequence consisting of class file objects and "reasons" why the
+ * 			respective class file was created.
  *
  * @author 	Arne Lottmann
  * @author 	Michael Eichberg
  */
-case class SynthesizedClassFiles(
-        classFiles: List[ClassFile],
-        reason:     Option[AnyRef]  = None
-) extends Attribute {
+case class SynthesizedClassFiles(classFiles: List[(ClassFile, Option[AnyRef])]) extends Attribute {
 
     final override val kindId = SynthesizedClassFiles.KindId
 
     override def toString: String = {
-        classFiles.map(_.thisType.toJava).mkString("SynthesizedClassFiles(", ", ", ")")
+        classFiles.map { cfAndReason ⇒
+            val (cf, reason) = cfAndReason
+            cf.thisType.toJava + (reason.map(r ⇒ s"/*$r*/").getOrElse(""))
+        }.mkString("SynthesizedClassFiles(", ", ", ")")
     }
 }
 

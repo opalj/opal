@@ -76,6 +76,16 @@ final class Method private (
         val attributes:  Attributes
 ) extends ClassMember with Ordered[Method] with InstructionsContainer {
 
+    def copy(
+        accessFlags: Int              = this.accessFlags,
+        name:        String           = this.name,
+        descriptor:  MethodDescriptor = this.descriptor,
+        body:        Option[Code]     = this.body,
+        attributes:  Attributes       = this.attributes
+    ): Method = {
+        new Method(accessFlags, name, descriptor, body, attributes)
+    }
+
     final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
 
     final override def isMethod = true
@@ -229,16 +239,6 @@ final class Method private (
 
     def fullyQualifiedSignature(declaringClassType: ObjectType): String = {
         descriptor.toJava(declaringClassType.toJava+"."+name)
-    }
-
-    def copy(
-        accessFlags: Int              = this.accessFlags,
-        name:        String           = this.name,
-        descriptor:  MethodDescriptor = this.descriptor,
-        body:        Option[Code]     = this.body,
-        attributes:  Attributes       = this.attributes
-    ): Method = {
-        new Method(accessFlags, name, descriptor, body, attributes)
     }
 
     override def toString(): String = {
