@@ -4,9 +4,6 @@ name := "Incubation"
 version := "ALWAYS-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Opts.doc.title("Incubation") 
-
 scalacOptions in (Compile, console) := Seq("-deprecation")
 
-
-// We want to use a different VM 
 fork in run := true

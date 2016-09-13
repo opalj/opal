@@ -1,5 +1,8 @@
 name := "Common"
 
+// We don't want the build to be aborted by inter-project links that are reported by
+// scaladoc as errors using the standard compiler setting. (This case is only true, when 
+// we publish the projects.)
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL-Common") 
 scalacOptions in (Compile, console) := Seq("-deprecation")
 

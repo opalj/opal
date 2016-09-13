@@ -21,7 +21,6 @@ scalacOptions in (ThisBuild,Compile,compile) ++= Seq(
 	)
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
-	
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 	
 resolvers in ThisBuild += Resolver.jcenterRepo
