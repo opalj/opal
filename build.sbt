@@ -1,13 +1,9 @@
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 name := "OPAL Library"
-
 version in ThisBuild := "0.9-SNAPSHOT"
-
 organization in ThisBuild := "de.opal-project"
-
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
-
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
@@ -15,10 +11,13 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 scalaVersion in ThisBuild := "2.11.8"
 //scalaVersion in ThisBuild := "2.12.0-M5"
 
-scalacOptions in (ThisBuild,Compile, compile) ++= Seq(
-	"-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", "-Xfatal-warnings", 
-	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
+scalacOptions in (ThisBuild,Compile,compile) ++= Seq(
+		"-target:jvm-1.8",
+		"-deprecation", "-feature", "-unchecked", 
+		"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+		"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
+		"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code"
+	)
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 	
