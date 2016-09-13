@@ -61,6 +61,7 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 
     override def equals(other: Any): Boolean = {
+		// We don't need to call canEqual because this class is final!
         other match {
             case that: IdentityPair[_, _] ⇒ (this._1 eq that._1) && (this._2 eq that._2)
             case _                        ⇒ false
