@@ -31,10 +31,21 @@ package collection
 package immutable
 
 import scala.collection.GenIterable
+import scala.collection.GenTraversableOnce
+import scala.collection.generic.CanBuildFrom
+import scala.collection.mutable.Builder
+import scala.collection.generic.HasNewBuilder
+import scala.annotation.unchecked.uncheckedVariance
+import scala.collection.generic.FilterMonadic
 
 /**
- * A linked list which does not perform any length related checks. I.e., it fails if the size
- * of the list is smaller than expected.
+ * A linked list which does not perform any length related checks. I.e., it fails in
+ * case of `drop` and `take` etc. if the size of the list is smaller than expected.
+ * Furthermore, all directly implemented methods use `while` loops for maxium
+ * efficiency.
+ *
+ * @note	In most cases a `ChainedList` can be used as a drop-in replacement for a standard
+ * 			Scala List.
  *
  * @note 	Some core methods, e.g. `drop` and `take`, have different
  * 			semantics when compared to the methods with the same name defined
@@ -44,8 +55,111 @@ import scala.collection.GenIterable
  *
  * @author Michael Eichberg
  */
-// TODO Add "with FilterMonadic[T,ChainedList[T]]
-sealed trait ChainedList[@specialized(Int) +T] { self ⇒
+sealed trait ChainedList[@specialized(Int) +T]
+        extends TraversableOnce[T]
+        with FilterMonadic[T, ChainedList[T]] { self ⇒
+
+    class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
+
+        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
+            val list = self
+            val b = bf(list)
+            var rest = self
+            while (rest.nonEmpty) {
+                val x = rest.head
+                if (p(x)) b += f(x)
+                rest = rest.tail
+            }
+            b.result
+        }
+
+        def flatMap[B, That](
+            f: T ⇒ GenTraversableOnce[B]
+        )(
+            implicit
+            bf: CanBuildFrom[ChainedList[T], B, That]
+        ): That = {
+            val list = self
+            val b = bf(list)
+            var rest = list
+            while (rest.nonEmpty) {
+                val x = rest.head
+                if (p(x)) b ++= f(x).seq
+                rest = rest.tail
+            }
+            b.result
+        }
+
+        def foreach[U](f: T ⇒ U): Unit = {
+            var rest = self
+            while (rest.nonEmpty) {
+                val x = rest.head
+                if (p(x)) f(x)
+                rest = rest.tail
+            }
+        }
+
+        def withFilter(q: T ⇒ Boolean): WithFilter = new WithFilter(x ⇒ p(x) && q(x))
+    }
+
+    // Defined by TraversableOnce: def isEmpty: Boolean
+    final override def hasDefiniteSize: Boolean = true
+    final override def isTraversableAgain: Boolean = true
+    final override def seq: TraversableOnce[T] = this
+
+    override def foreach[U](f: T ⇒ U): Unit = {
+        var rest = this
+        while (rest.nonEmpty) {
+            f(rest.head)
+            rest = rest.tail
+        }
+    }
+
+    def flatMap[B, That](
+        f: (T) ⇒ GenTraversableOnce[B]
+    )(
+        implicit
+        bf: CanBuildFrom[ChainedList[T], B, That]
+    ): That = {
+        val b = bf(this)
+        //OLD: foreach { t ⇒ f(t) foreach { e ⇒ builder += e } }
+        var rest = this
+        while (rest.nonEmpty) {
+            val t = rest.head
+            b ++= f(t).seq
+            rest = rest.tail
+        }
+        b.result
+    }
+
+    /*
+    def map[X](f: T ⇒ X): ChainedList[X] = {
+        val result = new :&:(f(head), ChainedNil)
+        var last = result
+        var rest: ChainedList[T] = this.rest
+        while (rest.nonEmpty) {
+            val x = f(rest.head)
+            rest = rest.tail
+            val newLast = new :&:(x, ChainedNil)
+            last.rest = newLast
+            last = newLast
+        }
+        result
+    }
+    */
+    def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
+        val builder = bf(this)
+        var rest = this
+        while (rest.nonEmpty) {
+            val t = rest.head
+            builder += f(t)
+            rest = rest.tail
+        }
+        builder.result
+    }
+
+    def withFilter(p: (T) ⇒ Boolean): FilterMonadic[T, ChainedList[T]] = new WithFilter(p)
+
     def head: T
     def tail: ChainedList[T]
     def last: T = {
@@ -53,8 +167,8 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         while (rest.tail.nonEmpty) { rest = rest.tail }
         rest.head
     }
-    def isEmpty: Boolean
-    def nonEmpty: Boolean
+
+    override def nonEmpty: Boolean
     def apply(index: Int): T = {
         var count = index
         var rest = this
@@ -91,7 +205,17 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         }
         false
     }
-    def size: Int = {
+    def find(p: T ⇒ Boolean): Option[T] = {
+        var rest = this
+        while (rest.nonEmpty) {
+            val e = rest.head
+            if (p(e))
+                return Some(e);
+            rest = rest.tail
+        }
+        None
+    }
+    override def size: Int = {
         var result = 0
         var rest = this
         while (rest.nonEmpty) {
@@ -101,18 +225,10 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         result
     }
     def :&:[X >: T](x: X): ChainedList[X] = new :&:(x, this)
-    def foreach[U](f: T ⇒ U): Unit = {
-        var rest = this
-        while (rest.nonEmpty) {
-            f(rest.head)
-            rest = rest.tail
-        }
-    }
     def take(n: Int): ChainedList[T]
     def takeWhile(f: T ⇒ Boolean): ChainedList[T]
     def filter(f: T ⇒ Boolean): ChainedList[T]
     def drop(n: Int): ChainedList[T]
-    def map[X](f: T ⇒ X): ChainedList[X]
     def zip[X](other: GenIterable[X]): ChainedList[(T, X)] = {
         if (this.isEmpty)
             return this.asInstanceOf[ChainedNil.type];
@@ -187,7 +303,7 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         }
         result
     }
-    def mkString(pre: String, sep: String, post: String): String = {
+    override def mkString(pre: String, sep: String, post: String): String = {
         val result = new StringBuilder(pre)
         var rest = this
         if (rest.nonEmpty) {
@@ -204,7 +320,7 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         result.toString
     }
 
-    def toIterable(): Iterable[T] = {
+    override def toIterable(): Iterable[T] = {
         new scala.collection.Iterable[T] {
             def iterator: Iterator[T] = self.toIterator
         }
@@ -222,13 +338,55 @@ sealed trait ChainedList[@specialized(Int) +T] { self ⇒
         }
     }
 
+    /**
+     * Returns a newly created `Traversable[T]` collection.
+     */
     def toTraversable(): Traversable[T] = {
         new scala.collection.Traversable[T] {
             def foreach[U](f: T ⇒ U): Unit = self.foreach(f)
         }
     }
+
+    def toStream(): Stream[T] = toTraversable.toStream
+
+    def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
+        val max = xs.length
+        var copied = 0
+        var rest = this
+        while (copied < len && start + copied < max) {
+            xs(start + copied) = rest.head
+            copied += 1
+            rest = rest.tail
+        }
+    }
+
 }
 object ChainedList {
+
+    class ChainedListBuilder[T] extends Builder[T, ChainedList[T]] {
+        private var list: ChainedList[T] = ChainedNil
+        private var last: :&:[T] = null
+        def +=(elem: T): this.type = {
+            val newLast = new :&:(elem, ChainedNil)
+            if (list.isEmpty) {
+                list = newLast
+            } else {
+                last.rest = newLast
+            }
+            last = newLast
+            this
+        }
+        def clear(): Unit = list = ChainedNil
+        def result(): ChainedList[T] = list
+    }
+
+    implicit def canBuildFrom[A]: CanBuildFrom[ChainedList[_], A, ChainedList[A]] = {
+        new CanBuildFrom[ChainedList[_], A, ChainedList[A]] {
+            def apply(from: ChainedList[_]) = newBuilder
+            def apply() = newBuilder
+        }
+    }
+    def newBuilder[T]: ChainedListBuilder[T] = new ChainedListBuilder[T]
 
     def empty[T]: ChainedList[T] = ChainedNil
 
@@ -248,11 +406,13 @@ object ChainedList {
     }
 
 }
+
 case object ChainedNil extends ChainedList[Nothing] {
+
     def head: Nothing = throw new IllegalStateException("the list is empty")
     def tail: Nothing = throw new IllegalStateException("the list is empty")
     def isEmpty: Boolean = true
-    def nonEmpty: Boolean = false
+    override def nonEmpty: Boolean = false
     def take(n: Int): ChainedNil.type = {
         if (n == 0) this else throw new IllegalStateException("the list is empty")
     }
@@ -261,7 +421,6 @@ case object ChainedNil extends ChainedList[Nothing] {
     def drop(n: Int): ChainedNil.type = {
         if (n == 0) this else throw new IllegalStateException("the list is empty")
     }
-    def map[X](f: Nothing ⇒ X): ChainedList[X] = this
     def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
 
 }
@@ -269,7 +428,7 @@ case class :&:[@specialized(Int) T](head: T, private[immutable] var rest: Chaine
 
     def tail: ChainedList[T] = rest
     def isEmpty: Boolean = false
-    def nonEmpty: Boolean = true
+    override def nonEmpty: Boolean = true
 
     def take(n: Int): ChainedList[T] = {
         if (n == 0)
@@ -339,20 +498,6 @@ case class :&:[@specialized(Int) T](head: T, private[immutable] var rest: Chaine
         result
     }
 
-    def map[X](f: T ⇒ X): ChainedList[X] = {
-        val result = new :&:(f(head), ChainedNil)
-        var last = result
-        var rest: ChainedList[T] = this.rest
-        while (rest.nonEmpty) {
-            val x = f(rest.head)
-            rest = rest.tail
-            val newLast = new :&:(x, ChainedNil)
-            last.rest = newLast
-            last = newLast
-        }
-        result
-    }
-
     def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X] = {
         val head = this.head
         val newHead = f(head)
@@ -374,4 +519,6 @@ case class :&:[@specialized(Int) T](head: T, private[immutable] var rest: Chaine
         else
             this
     }
+
+    override def toString: String = s"$head :&: ${rest.toString}"
 }
