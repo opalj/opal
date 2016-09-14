@@ -29,6 +29,7 @@
 package org.opalj
 
 import scala.language.existentials
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
@@ -438,7 +439,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: Function3[PC, Instruction, domain.Operands, U]
+        f: (PC, Instruction, domain.Operands) ⇒ U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

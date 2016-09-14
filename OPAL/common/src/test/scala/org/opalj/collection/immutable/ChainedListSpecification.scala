@@ -345,15 +345,15 @@ object ChainedListSpecification extends Properties("ChainedList") {
     }
 
     property("toIterable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterable().toList
+        val fl = ChainedList(l).toIterable.toList
         fl == l
     }
     property("toIterator") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterator().toList
+        val fl = ChainedList(l).toIterator.toList
         fl == l
     }
     property("toTraversable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toTraversable().toList
+        val fl = ChainedList(l).toTraversable.toList
         fl == l
     }
     property("toStream") = forAll { l: List[String] ⇒
@@ -373,99 +373,101 @@ object ChainedListSpecification extends Properties("ChainedList") {
     property("toString") = forAll { l: List[String] ⇒
         ChainedList(l).toString.endsWith("ChainedNil")
     }
-	
+
 }
 
-/***** PERFORMANCE EVALUATION
-/// USING SCALA LIST
-
-var l : List[Long] = Nil
-
-def take2MultipleAndAdd() = {
-var rest = l
-if (rest.nonEmpty) {
-val first = rest.head
-rest = rest.tail
-if (rest.nonEmpty) {
-rest ::= first* rest.head
-} else {
-rest = l
-}
-}
-rest
-}
-
-def sum() : Long = {
-var sum = 0l
-var rest = l
-while (rest.nonEmpty) {
-sum += rest.head
-rest = rest.tail
-}
-sum
-}
-
-
-{
-val startTime = System.nanoTime
-for (i <- 0 to 500) {
-var j = 0
-while (j < i) {
-j += 1
-l ::= 10
-if (j % 20 == 0) sum()
-else if (j % 3 == 0) take2MultipleAndAdd()
-}
-}
-println("Elapsed time: "+(System.nanoTime-startTime))
-}
-
-sum()
-
-
-///
-/// USING CHAINED LIST
-///
-import org.opalj.collection.immutable._
-var l : ChainedList[Long] = ChainedNil
-
-def take2MultipleAndAdd() = {
-var rest = l
-if (rest.nonEmpty) {
-val first = rest.head
-rest = rest.tail
-if (rest.nonEmpty) {
-rest :&:= first* rest.head
-} else {
-rest = l
-}
-}
-rest
-}
-
-def sum() : Long = {
-var sum = 0l
-var rest = l
-while (rest.nonEmpty) {
-sum += rest.head
-rest = rest.tail
-}
-sum
-}
-
-{
-val startTime = System.nanoTime
-for (i <- 0 to 500) {
-var j = 0
-while (j < i) {
-j += 1
-l :&:= 10
-if (j % 20 == 0) sum()
-else if (j % 3 == 0) take2MultipleAndAdd()
-}
-}
-println("Elapsed time: "+(System.nanoTime-startTime))
-}
-
-sum()
-****/
+/*
+ * PERFORMANCE EVALUATION
+ * /// USING SCALA LIST
+ *
+ * var l : List[Long] = Nil
+ *
+ * def take2MultipleAndAdd() = {
+ * var rest = l
+ * if (rest.nonEmpty) {
+ * val first = rest.head
+ * rest = rest.tail
+ * if (rest.nonEmpty) {
+ * rest ::= first* rest.head
+ * } else {
+ * rest = l
+ * }
+ * }
+ * rest
+ * }
+ *
+ * def sum() : Long = {
+ * var sum = 0l
+ * var rest = l
+ * while (rest.nonEmpty) {
+ * sum += rest.head
+ * rest = rest.tail
+ * }
+ * sum
+ * }
+ *
+ *
+ * {
+ * val startTime = System.nanoTime
+ * for (i <- 0 to 500) {
+ * var j = 0
+ * while (j < i) {
+ * j += 1
+ * l ::= 10
+ * if (j % 20 == 0) sum()
+ * else if (j % 3 == 0) take2MultipleAndAdd()
+ * }
+ * }
+ * println("Elapsed time: "+(System.nanoTime-startTime))
+ * }
+ *
+ * sum()
+ *
+ *
+ * ///
+ * /// USING CHAINED LIST
+ * ///
+ * import org.opalj.collection.immutable._
+ * var l : ChainedList[Long] = ChainedNil
+ *
+ * def take2MultipleAndAdd() = {
+ * var rest = l
+ * if (rest.nonEmpty) {
+ * val first = rest.head
+ * rest = rest.tail
+ * if (rest.nonEmpty) {
+ * rest :&:= first* rest.head
+ * } else {
+ * rest = l
+ * }
+ * }
+ * rest
+ * }
+ *
+ * def sum() : Long = {
+ * var sum = 0l
+ * var rest = l
+ * while (rest.nonEmpty) {
+ * sum += rest.head
+ * rest = rest.tail
+ * }
+ * sum
+ * }
+ *
+ * {
+ * val startTime = System.nanoTime
+ * for (i <- 0 to 500) {
+ * var j = 0
+ * while (j < i) {
+ * j += 1
+ * l :&:= 10
+ * if (j % 20 == 0) sum()
+ * else if (j % 3 == 0) take2MultipleAndAdd()
+ * }
+ * }
+ * println("Elapsed time: "+(System.nanoTime-startTime))
+ * }
+ *
+ * sum()
+ * 
+ */

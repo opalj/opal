@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+
 /**
  * Exception that is thrown by the abstract interpreter when the abstract
  * interpretation of a method's implementation failed.

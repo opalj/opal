@@ -31,6 +31,7 @@ package ai
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
@@ -67,14 +68,14 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var flow: List[List[FlowEntity]] = List(List.empty)
     private[this] def newBranch(): List[List[FlowEntity]] = {
-        flow = List.empty[FlowEntity] :: flow
+        flow = List.empty[FlowEntity] :&: flow
         flow
     }
     private[this] def addFlowEntity(flowEntity: FlowEntity): Unit = {
         if (flow.head.exists(_.pc == flowEntity.pc))
             newBranch()
 
-        flow = (flowEntity :: flow.head) :: flow.tail
+        flow = (flowEntity :&: flow.head) :&: flow.tail
     }
 
     private def instructionToNode(
@@ -411,4 +412,3 @@ trait XHTMLTracer extends AITracer {
     }
 
 }
-

@@ -36,6 +36,9 @@ import scala.xml.NodeSeq
 import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
+
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.io.writeAndOpen
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -377,7 +380,7 @@ object XHTML {
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-                { operands.map(op ⇒ <li>{ valueToString(op) }</li>).toIterable() }
+                { operands.map(op ⇒ <li>{ valueToString(op) }</li>).toIterable }
             </ul>
         }
 

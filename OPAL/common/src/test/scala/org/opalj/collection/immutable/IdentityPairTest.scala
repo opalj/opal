@@ -34,7 +34,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.Assertions.assert
 
 /**
  * Tests IdentityPair.
