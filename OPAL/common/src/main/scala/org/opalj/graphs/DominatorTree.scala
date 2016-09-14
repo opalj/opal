@@ -32,11 +32,12 @@ package graphs
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
- * The (post) dominator tree of a control flow graph. To construct a dominator tree use the
- * companion object's factory method (`apply`). To compute a post dominator tree use the factory
+ * The (post) dominator tree of, for example, a control flow graph.
+ * To construct a dominator tree use the companion object's factory method (`apply`).
+ * To compute a post dominator tree use the factory
  * method defined in [[org.opalj.graphs.PostDominatorTree]].
  *
- * @param idom An array that contains for each node its immediate dominator.
+ * @param	idom An array that contains for each node its immediate dominator.
  * 			If not all unique ids are used, then the array is a sparse array and external
  * 			knowledge is necessary to determine which elements of the array contain useful
  * 			information.
@@ -108,9 +109,9 @@ final class DominatorTree private (
     def immediateDominators: IndexedSeq[Int] = idom
 
     /**
-     * @param isIndexValid A function that returns `true` if an element in the iDom array with a
-     * 		specific index is actually containing some valid data. This is particularly useful/
-     * 		required if the `idom` array given at initialization time is a sparse array.
+     * @param 	isIndexValid A function that returns `true` if an element in the iDom array with a
+     * 			specific index is actually containing some valid data. This is particularly useful/
+     * 			required if the `idom` array given at initialization time is a sparse array.
      */
     def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
@@ -172,23 +173,23 @@ object DominatorTree {
      * is identified using a unique int value (e.g. the pc of an instruction) in the range
      * [0..maxNode], although not all ids need to be used.
      *
-     * @param startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
+     * @param 	startNode The id of the unique root node of the graph. (E.g., (pc=)"0" for the CFG
      * 			computed for some method or the id of the artificial start node created when
      * 			computing a reverse CFG.
-     * @param hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
+     * @param 	hasStartNodePredecessors If `true` an artificial start node with the id `maxNode+1`
      * 			will be created and added to the graph.
-     * @param foreachSuccessorOf A function that given a node subsequently executes the given
+     * @param 	foreachSuccessorOf A function that given a node subsequently executes the given
      * 			function for each direct successor of the given node.
-     * @param foreachPredecessorOf A function that given a node executes the given function for
+     * @param 	foreachPredecessorOf A function that given a node executes the given function for
      * 			each direct predecessor. The signature of a function that can directly be passed
      * 			as a parameter is:
      * 			{{{
      *  		def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit
      *  		}}}
-     * @param maxNode The largest unique int id that identifies a node. (E.g., in case of
+     * @param 	maxNode The largest unique int id that identifies a node. (E.g., in case of
      * 			the analysis of some code it is equivalent to the length of the code-1.)
      *
-     * @return The computed dominator tree.
+     * @return 	The computed dominator tree.
      *
      * @note 	This is an implementation of the "fast dominators" algorithm
      * 			presented by T. Lengauaer and R. Tarjan in

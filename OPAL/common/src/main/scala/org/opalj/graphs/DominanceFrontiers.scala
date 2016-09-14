@@ -32,7 +32,6 @@ package graphs
 import org.opalj.collection.SmallValuesSet
 import org.opalj.collection.immutable
 import org.opalj.collection.mutable
-//import scala.collection.mutable.ArrayBuffer
 import org.opalj.collection.mutable.IntArrayStack
 
 /**

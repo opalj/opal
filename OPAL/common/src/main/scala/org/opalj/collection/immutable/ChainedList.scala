@@ -59,6 +59,10 @@ sealed trait ChainedList[@specialized(Int) +T]
         with FilterMonadic[T, ChainedList[T]]
         with Serializable { self ⇒
 
+    /**
+     * Represents a filtered [[ChainedList]]. Instances of [[WithFilter]] are
+	 * created by [[ChainedList]]'s `withFilter` method.
+     */
     class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
 
         def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
@@ -131,22 +135,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         b.result
     }
-
-    /*
-    def map[X](f: T ⇒ X): ChainedList[X] = {
-        val result = new :&:(f(head), ChainedNil)
-        var last = result
-        var rest: ChainedList[T] = this.rest
-        while (rest.nonEmpty) {
-            val x = f(rest.head)
-            rest = rest.tail
-            val newLast = new :&:(x, ChainedNil)
-            last.rest = newLast
-            last = newLast
-        }
-        result
-    }
-    */
+   
     def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
         val builder = bf(this)
         var rest = this
@@ -362,6 +351,12 @@ sealed trait ChainedList[@specialized(Int) +T]
     }
 
 }
+
+/**
+ * Factory for [[ChainedList]]s.
+ *
+ * @author Michael Eichberg
+ */
 object ChainedList {
 
     class ChainedListBuilder[@specialized(Int) T] extends Builder[T, ChainedList[T]] {
@@ -383,8 +378,8 @@ object ChainedList {
 
     implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[ChainedList[_], A, ChainedList[A]] = {
         new CanBuildFrom[ChainedList[_], A, ChainedList[A]] {
-            def apply(from: ChainedList[_]) = newBuilder
-            def apply() = newBuilder
+            def apply(from: ChainedList[_]) = new ChainedListBuilder[A]
+            def apply() = new ChainedListBuilder[A]
         }
     }
     implicit def canBuildIntChainedListFrom: CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] = {
@@ -393,12 +388,25 @@ object ChainedList {
             def apply() = new ChainedListBuilder[Int]
         }
     }
-    def newBuilder[T]: ChainedListBuilder[T] = new ChainedListBuilder[T]
 
+    def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
+        if (t.runtimeClass == classOf[Int])
+            (new ChainedListBuilder[Int]).asInstanceOf[ChainedListBuilder[T]]
+        else
+            new ChainedListBuilder[T]
+    }
+
+    /**
+     * Returns an empty list.
+     *
+     * @note	In general it is preferable to directly use [[ChainedNil]].
+     */
     def empty[T]: ChainedList[T] = ChainedNil
 
+    /**
+     * Creates a new [[ChainedList]] containing the given element.
+     */
     def apply[@specialized(Int) T](e: T) = new :&:[T](e, ChainedNil)
-    //  def apply(e: Int) = new :&:[Int](e, ChainedNil)
 
     def apply[@specialized(Int) T](t: Traversable[T]): ChainedList[T] = {
         if (t.isEmpty)
@@ -415,6 +423,11 @@ object ChainedList {
 
 }
 
+/**
+ * An empty [[ChainedList]]s.
+ *
+ * @author Michael Eichberg
+ */
 case object ChainedNil extends ChainedList[Nothing] {
 
     def head: Nothing = throw new IllegalStateException("the list is empty")
@@ -477,7 +490,7 @@ final case class :&:[@specialized(Int) T](
         if (n == 0)
             return ChainedNil;
         var taken = 1
-        val result = new :&:(head, ChainedNil)
+        val result = new :&:[T](head, ChainedNil)
         var last = result
         var rest: ChainedList[T] = this.rest
         while (taken < n) {

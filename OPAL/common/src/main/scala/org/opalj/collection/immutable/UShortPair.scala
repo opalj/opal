@@ -42,17 +42,14 @@ package immutable
  *
  * @author Michael Eichberg
  */
-class UShortPair private (val pair: Int) extends AnyVal {
-
+final class UShortPair private (val pair: Int) extends AnyVal {
     def _1: UShort = pair & UShort.MaxValue
-    final def key: UShort = _1
-    final def minor: UShort = _1
+    def key: UShort = _1
+    def minor: UShort = _1
     def _2: UShort = pair >>> 16
-    final def value: UShort = _2
-    final def major: UShort = _2
-
+    def value: UShort = _2
+    def major: UShort = _2
     override def toString: String = s"UShortPair($key,$value)"
-
 }
 /**
  * Factory to create `UShortPair` objects.

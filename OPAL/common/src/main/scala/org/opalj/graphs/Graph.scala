@@ -34,8 +34,7 @@ import scala.collection.mutable.Set
 import scala.collection.{Map ⇒ AMap}
 
 /**
- * A very simple representation of a mutable graph that is generally useful, but was designed
- * to facilitate testing of graph based algorithms.
+ * A very simple representation of a mutable graph with ordered edges.
  *
  * @author Michael Eichberg
  */
@@ -65,11 +64,12 @@ class Graph[@specialized(Int) N] private (
     }
 
     /**
-     * Returns the set of nodes with no incoming dependencies; self-dependencies are ignored.
+     * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
+     * ignored.
      *
-     * @param ignoreSelfRecursiveDependencies If true self-dependencies are ignored. This means that
-     * 		nodes that have a self dependency are considered as being root nodes if
-     * 		they have no further incoming dependencies.
+     * @param 	ignoreSelfRecursiveDependencies If true self-dependencies are ignored.
+     * 			This means that nodes that have a self dependency are considered as being root
+     * 			nodes if they have no further incoming dependencies.
      *
      * @example
      * {{{
@@ -135,7 +135,7 @@ class Graph[@specialized(Int) N] private (
         ranksep: String = "1.0",
         rankdir: String = "TB"
     ): String = {
-        org.opalj.graphs.toDot(toNodes.toSet, dir, ranksep)
+        org.opalj.graphs.toDot(toNodes.toSet, dir, ranksep, rankdir = rankdir)
     }
 }
 

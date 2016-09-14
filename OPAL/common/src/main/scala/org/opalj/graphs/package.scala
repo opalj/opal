@@ -42,7 +42,7 @@ import scala.collection.mutable
 package object graphs {
 
     /**
-     * Generates a string that describes a (multi-)graph using the ".dot" file format
+     * Generates a string that describes a (multi-)graph using the ".dot/.gv" file format
      * [[http://graphviz.org/pdf/dotguide.pdf]].
      * The graph is defined by the given set of nodes.
      *
