@@ -42,7 +42,8 @@ import scala.collection.generic.FilterMonadic
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
  * Furthermore, all directly implemented methods use `while` loops for maxium
- * efficiency.
+ * efficiency and the list is also specialized for primitive `int` values which
+ * makes this list far more efficient when used; e.g., for storing lists of int values.
  *
  * @note	In most cases a `ChainedList` can be used as a drop-in replacement for a standard
  * 			Scala List.
@@ -106,7 +107,7 @@ sealed trait ChainedList[@specialized(Int) +T]
     // Defined by TraversableOnce: def isEmpty: Boolean
     final override def hasDefiniteSize: Boolean = true
     final override def isTraversableAgain: Boolean = true
-    final override def seq: TraversableOnce[T] = this
+    final override def seq: this.type = this
 
     override def foreach[U](f: T ⇒ U): Unit = {
         var rest = this
@@ -226,6 +227,9 @@ sealed trait ChainedList[@specialized(Int) +T]
         result
     }
     def :&:[X >: T](x: X): ChainedList[X] = new :&:(x, this)
+    def :&:(x: Int)(implicit ev: this.type <:< ChainedList[Int]): ChainedList[Int] = {
+        new :&:[Int](x, this.asInstanceOf[ChainedList[Int]])
+    }
     def take(n: Int): ChainedList[T]
     def takeWhile(f: T ⇒ Boolean): ChainedList[T]
     def filter(f: T ⇒ Boolean): ChainedList[T]
@@ -354,7 +358,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         val max = xs.length
         var copied = 0
         var rest = this
-        while (copied < len && start + copied < max) {
+        while (copied < len && start + copied < max && rest.nonEmpty) {
             xs(start + copied) = rest.head
             copied += 1
             rest = rest.tail
@@ -364,7 +368,7 @@ sealed trait ChainedList[@specialized(Int) +T]
 }
 object ChainedList {
 
-    class ChainedListBuilder[T] extends Builder[T, ChainedList[T]] {
+    class ChainedListBuilder[@specialized(Int) T] extends Builder[T, ChainedList[T]] {
         private var list: ChainedList[T] = ChainedNil
         private var last: :&:[T] = null
         def +=(elem: T): this.type = {
@@ -391,12 +395,13 @@ object ChainedList {
 
     def empty[T]: ChainedList[T] = ChainedNil
 
-    def apply[T](e: T) = new :&:(e, ChainedNil)
+    def apply[@specialized(Int) T](e: T) = new :&:[T](e, ChainedNil)
+    //  def apply(e: Int) = new :&:[Int](e, ChainedNil)
 
-    def apply[T](t: Traversable[T]): ChainedList[T] = {
+    def apply[@specialized(Int) T](t: Traversable[T]): ChainedList[T] = {
         if (t.isEmpty)
             return ChainedNil;
-        val result = new :&:(t.head, ChainedNil)
+        val result = new :&:[T](t.head, ChainedNil)
         var last = result
         t.tail.foreach { e ⇒
             val newLast = new :&:(e, ChainedNil)
@@ -425,7 +430,10 @@ case object ChainedNil extends ChainedList[Nothing] {
     def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
 
 }
-case class :&:[@specialized(Int) T](head: T, private[immutable] var rest: ChainedList[T]) extends ChainedList[T] {
+final case class :&:[@specialized(Int) T](
+        head:                        T,
+        private[immutable] var rest: ChainedList[T]
+) extends ChainedList[T] {
 
     def tail: ChainedList[T] = rest
     def isEmpty: Boolean = false
