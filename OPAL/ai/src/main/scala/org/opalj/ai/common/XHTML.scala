@@ -37,8 +37,6 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.io.writeAndOpen
 import org.opalj.br._
 import org.opalj.br.instructions._
