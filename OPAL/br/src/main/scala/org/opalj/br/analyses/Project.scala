@@ -73,8 +73,8 @@ import org.opalj.log.GlobalLogContext
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
- * 	   One of the most important project information keys is the 
- *	   [[org.opalj.br.org.opalj.br.analyses.SourceElementsPropertyStore]] 
+ * 	   One of the most important project information keys is the
+ * 	   [[org.opalj.br.org.opalj.br.analyses.SourceElementsPropertyStore]]
  *     which gives access to the property store.
  *
  * ==Thread Safety==
@@ -240,7 +240,7 @@ class Project[Source] private (
         f: ClassFile ⇒ T
     ): List[Throwable] = {
         parForeachProjectClassFile(isInterrupted)(f) :::
-		 parForeachLibraryClassFile(isInterrupted)(f)
+            parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -427,14 +427,14 @@ class Project[Source] private (
      * Returns the source (for example, a `File` object or `URL` object) from which
      * the class file was loaded that defines the given object type, if any.
      *
-     * @param objectType Some object type. 
+     * @param objectType Some object type.
      */
     def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
      *
-     * @param objectType Some object type. 
+     * @param objectType Some object type.
      */
     override def classFile(objectType: ObjectType): Option[ClassFile] = {
         objectTypeToClassFile.get(objectType)
@@ -517,10 +517,10 @@ class Project[Source] private (
     }
 
     /**
-     * Returns the number of (non-synthetic) fields and methods per class file. 
-     * The number of class members of nested classes is also taken into consideration. 
-	 * I.e., the map's key identifies the category and the value is a pair where the first value
-	 * is the count and the value is the names of the source elements.
+     * Returns the number of (non-synthetic) fields and methods per class file.
+     * The number of class members of nested classes is also taken into consideration.
+     * I.e., the map's key identifies the category and the value is a pair where the first value
+     * is the count and the value is the names of the source elements.
      */
     def projectClassMembersPerClassDistribution: Map[Int, (Int, Set[String])] = {
         val data = OpenHashMap.empty[String, Int]
