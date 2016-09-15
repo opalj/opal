@@ -1918,7 +1918,12 @@ class ClassHierarchy private (
     }
 
     /**
-     * @param upperTypeBound A set of types that are in no inheritance relationship.
+     * Computes the set of types which are subtypes of all types identified by the
+     * given `upper type bound`. E.g., a the class X which implements I and J,
+     * would be a direct subtype of the upper type bound consisting of I and J.
+     *
+     * @param 	upperTypeBound A set of types that are in no inheritance relationship.
+     * 			`upperTypeBound` must not be empty.
      */
     def directSubtypesOf(upperTypeBound: UIDSet[ObjectType]): Set[ObjectType] = {
         val primaryType = upperTypeBound.first

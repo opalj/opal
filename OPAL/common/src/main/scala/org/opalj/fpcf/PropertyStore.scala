@@ -1428,7 +1428,7 @@ class PropertyStore private (
                                     val message = "handling unsatisfied dependencies"
                                     logDebug("analysis progress", message)
                                 }
-                                // Let's check if we have some potentially refineable 
+                                // Let's check if we have some potentially refineable
                                 // intermediate results.
                                 handleUnsatisfiedDependencies()
                             }
