@@ -41,7 +41,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-sealed trait PartialCollection[S] {
+sealed trait QualifiedCollection[S] {
 
     /**
      * The underlying collection.
@@ -63,6 +63,6 @@ sealed trait PartialCollection[S] {
     final def isIncomplete: Boolean = !isComplete
 }
 
-case class Complete[S](s: S) extends PartialCollection[S] { final val isComplete = true }
+case class CompleteCollection[S](s: S) extends QualifiedCollection[S] { final def isComplete = true }
 
-case class Incomplete[S](s: S) extends PartialCollection[S] { final val isComplete = false }
+case class IncompleteCollection[S](s: S) extends QualifiedCollection[S] { final def isComplete = false }
