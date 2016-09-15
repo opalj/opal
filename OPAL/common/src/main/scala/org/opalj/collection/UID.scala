@@ -46,6 +46,15 @@ trait UID {
      */
     def id: Int
 
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: UID ⇒ (this eq that) || this.id == that.id
+            case _         ⇒ false
+        }
+    }
+
+    final override def hashCode: Int = id
+
 }
 
 /**
@@ -84,4 +93,3 @@ object UID {
     }
 
 }
-
