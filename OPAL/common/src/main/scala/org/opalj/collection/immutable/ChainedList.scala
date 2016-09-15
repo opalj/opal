@@ -34,8 +34,6 @@ import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
-import scala.collection.generic.HasNewBuilder
-import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.generic.FilterMonadic
 
 /**
