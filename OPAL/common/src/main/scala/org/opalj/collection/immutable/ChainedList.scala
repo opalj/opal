@@ -61,7 +61,7 @@ sealed trait ChainedList[@specialized(Int) +T]
 
     /**
      * Represents a filtered [[ChainedList]]. Instances of [[WithFilter]] are
-	 * created by [[ChainedList]]'s `withFilter` method.
+     * created by [[ChainedList]]'s `withFilter` method.
      */
     class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
 
@@ -135,7 +135,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         b.result
     }
-   
+
     def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
         val builder = bf(this)
         var rest = this
