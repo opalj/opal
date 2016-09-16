@@ -29,12 +29,11 @@
 package org.opalj
 package br
 
-import org.opalj.collection.PartialCollection
+import org.opalj.collection.QualifiedCollection
 import scala.collection.Map
 
 /**
- * Defines implicit conversions to wrap some types of analyses such that they generate
- * results of type [[org.opalj.br.analyses.ReportableAnalysisResult]].
+ * Defines commonly useful type aliases.
  *
  * @author Michael Eichberg
  */
@@ -47,7 +46,7 @@ package object analyses {
 
     type ProgressEvent = ProgressEvents.Value
 
-    type DeclaredMethods = Map[ObjectType, PartialCollection[Set[Method]]]
+    type DeclaredMethods = Map[ObjectType, QualifiedCollection[Set[Method]]]
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef]]
 
