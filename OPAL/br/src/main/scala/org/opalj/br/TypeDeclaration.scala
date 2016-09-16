@@ -38,5 +38,5 @@ case class TypeDeclaration(
     objectType:             ObjectType,
     isInterfaceType:        Boolean,
     theSuperclassType:      Option[ObjectType],
-    theSuperinterfaceTypes: Set[ObjectType]
+    theSuperinterfaceTypes: UIDSet[ObjectType]
 )
