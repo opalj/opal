@@ -31,6 +31,7 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
+import scala.collection.immutable.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.{forAll, classify, BooleanOperators}
@@ -51,6 +52,20 @@ object UIDSetSpecification extends Properties("UIDSet") {
     val EmptySUIDSet: SUIDSet = UIDSet0
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
+    implicit def toSUIDSet(l: Traversable[Int]): SUIDSet = {
+        val ls: Traversable[SUID] = l.map(i ⇒ SUID(i))
+        EmptySUIDSet ++ ls
+    }
+    def isSorted(s: SUIDSet): Boolean = {
+        s.isEmpty || {
+            var lastId = s.head.id
+            s.tail.forall { suid ⇒
+                val result = suid.id > lastId
+                lastId = suid.id
+                result
+            }
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 							G E N E R A T O R S
@@ -66,15 +81,22 @@ object UIDSetSpecification extends Properties("UIDSet") {
         (fl1.head == s) :| "apply" && (fl2.head == s) :| "builder" && (fl3.head == s) :| "+"
     }
 
-    property("create set incrementally") = forAll { orig: Set[Int] ⇒
+    property("create set(++)") = forAll { orig: Set[Int] ⇒
         val s = orig.map(SUID(_))
         val us = EmptySUIDSet ++ s
-        s.size == us.size && s.forall(us.contains(_)) && us.forall(s.contains(_))
+        s.size == us.size && s.forall(us.contains(_)) && us.forall(s.contains(_)) && isSorted(us)
+    }
+
+    property("create set(+)") = forAll { orig: Set[Int] ⇒
+        val s = orig.map(SUID(_))
+        var us = EmptySUIDSet
+        s.foreach { us += _ }
+        s.size == us.size && s.forall(us.contains(_)) && us.forall(s.contains(_)) && isSorted(us)
     }
 
     property("create set given two values") = forAll { (a: Int, b: Int) ⇒
         val us = UIDSet(SUID(a), SUID(b))
-        (a == b && us.size == 1) || (a != b && us.size == 2)
+        (a == b && us.size == 1) || (a != b && us.size == 2) && isSorted(us)
     }
 
     property("==|hashCode[AnyRef]") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
@@ -83,6 +105,21 @@ object UIDSetSpecification extends Properties("UIDSet") {
         classify(s1 == s2, "both sets are equal") {
             (s1 == s2) == (us1 == us2) && (us1 != us2 || us1.hashCode() == us2.hashCode())
         }
+    }
+
+    property("hasDefiniteSize") = forAll { l: List[Int] ⇒
+        val fl = toSUIDSet(l)
+        fl.hasDefiniteSize
+    }
+
+    property("isTraversableAgain") = forAll { l: List[Int] ⇒
+        val fl = toSUIDSet(l)
+        fl.isTraversableAgain
+    }
+
+    property("seq") = forAll { l: List[Int] ⇒
+        val fl = toSUIDSet(l)
+        (fl.seq eq fl)
     }
 
     // METHODS DEFINED BY UIDSet
@@ -113,302 +150,133 @@ object UIDSetSpecification extends Properties("UIDSet") {
         newUs == us.filter(_ != SUID(0))
     }
 
-    /*
-    property("chained lists can be used in for comprehensions") = forAll(listOfListGen) { orig: List[List[String]] ⇒
-        // In the following we, have an implicit withFilter, map and flatMap call!
-        val cl = for {
-            es ← ChainedList(orig)
-            if es.length > 1
-            if es.length < 10
-            e ← es
-            r = e.capitalize
-        } yield r+":"+r.length
-
-        val l = for {
-            es ← orig
-            if es.length > 1
-            if es.length < 10
-            e ← es
-            r = e.capitalize
-        } yield r+":"+r.length
-
-        cl == ChainedList(l)
+    property("uid sets can be used in for comprehensions") = forAll { orig: List[Int] ⇒
+        val s = orig.map(SUID(_))
+        val us = EmptySUIDSet ++ s
+        var newUs: SUIDSet = for { suid ← us } yield { SUID(suid.id + 1) }
+        newUs == us.map[SUID, SUIDSet](suid ⇒ SUID(suid.id + 1))
     }
 
-    property("a for-comprehension constructs specialized lists when possible") = forAll { orig: List[List[Int]] ⇒
-        // In the following we, have an implicit withFilter, map and flatMap call!
-        val cl = for { es ← ChainedList(orig) } yield ChainedList(es)
-        cl.forall(icl ⇒ isSpecialized(icl))
+    property("head|first") = forAll { l: List[Int] ⇒
+        val fl = toSUIDSet(l)
+        l.isEmpty || (fl.head.id == l.min && fl.head == fl.first)
     }
 
-    property("hasDefiniteSize") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        fl.hasDefiniteSize
+    property("last") = forAll { l: List[Int] ⇒
+        val fl = toSUIDSet(l)
+        l.isEmpty || (fl.last.id == l.max)
     }
 
-    property("isTraversableAgain") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        fl.isTraversableAgain
+    property("contains") = forAll { (s: Set[Int], i: Int) ⇒
+        val us = toSUIDSet(s)
+        us.contains(SUID(i)) == s.contains(i)
     }
 
-    property("seq") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        (fl.seq eq fl)
+    property("exists") = forAll { (s: Set[Int]) ⇒
+        val us = toSUIDSet(s)
+        us.exists(_.id % 2 == 0) == s.exists(_ % 2 == 0)
     }
 
-    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
-        val fl = ChainedList(l)
-        classify(l.isEmpty, "outer list is empty") {
-            classify(l.nonEmpty && l.forall(_.isEmpty), "all (at least one) inner lists are empty") {
-                def t(ss: List[String]): List[Int] = ss.map(_.length)
-                fl.flatMap(t) == ChainedList(l.flatMap(t))
-            }
+    property("find") = forAll { (s: Set[Int]) ⇒
+        def test(suid: SUID) = suid.id < 0
+        val us = toSUIDSet(s)
+        val ssuid = (SortedSet.empty[Int] ++ s).toList.map(SUID(_))
+        us.find(test) == ssuid.find(test)
+    }
+
+    property("compare(subsets)") = forAll { (s: Set[Int]) ⇒
+        val us = toSUIDSet(s)
+        classify(s.isEmpty, "the set is empty") {
+            (s.isEmpty && us.compare(UIDSet0) == EqualSets) || (
+                (s.tail.inits.forall(init ⇒ toSUIDSet(init).compare(us) == StrictSubset)) &&
+                (s.tail.inits.forall(init ⇒ us.compare(toSUIDSet(init)) == StrictSuperset))
+            )
         }
     }
 
-    property("map") = forAll { l: List[String] ⇒
-        def f(s: String): Int = s.length()
-        val fl = ChainedList(l)
-        fl.map(f) == ChainedList(l.map(f))
+    property("compare(arbitrary sets)") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
+        val us1 = toSUIDSet(s1)
+        val us2 = toSUIDSet(s2)
+        val us1CompareUs2 = us1.compare(us2)
+        val us2CompareUs1 = us2.compare(us1)
+        (s1 == s2 && us1CompareUs2 == us2CompareUs1 && us1CompareUs2 == EqualSets) ||
+            (s1.subsetOf(s2) && us1CompareUs2 == StrictSubset && us2CompareUs1 == StrictSuperset) ||
+            (s2.subsetOf(s1) && us2CompareUs1 == StrictSubset && us1CompareUs2 == StrictSuperset) ||
+            (us1CompareUs2 == us2CompareUs1 && us1CompareUs2 == UncomparableSets)
     }
 
-    property("head") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        (l.nonEmpty && l.head == fl.head) ||
-            // if the list is empty, an exception needs to be thrown
-            { try { fl.head; false } catch { case _: Throwable ⇒ true } }
-
-    }
-
-    property("tail") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        (l.nonEmpty && ChainedList(l.tail) == fl.tail) ||
-            // if the list is empty, an exception needs to be thrown
-            { try { fl.tail; false } catch { case _: Throwable ⇒ true } }
-    }
-
-    property("last") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        (l.nonEmpty && l.last == fl.last) ||
-            // if the list is empty, an exception needs to be thrown
-            { try { fl.last; false } catch { case _: Throwable ⇒ true } }
-    }
-
-    property("(is|non)Empty") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        l.isEmpty == fl.isEmpty && l.nonEmpty == fl.nonEmpty
-    }
-
-    property("apply") = forAll(listAndIndexGen) { (listAndIndex: (List[String], Int)) ⇒
-        val (l, index) = listAndIndex
-        classify(index == 0, "takes first") {
-            classify(index == l.length - 1, "takes last") {
-                val fl = ChainedList(l)
-                (index < l.length && fl(index) == l(index)) ||
-                    // if the index is not valid an exception
-                    { try { fl(index); false } catch { case _: Throwable ⇒ true } }
-            }
+    property("tail") = forAll { (orig: Set[Int]) ⇒
+        orig.nonEmpty ==> {
+            val s = SortedSet.empty ++ orig
+            val us = toSUIDSet(s).tail
+            toSUIDSet(s.tail) == us && isSorted(us)
         }
     }
 
-    property("exists") = forAll { (l: List[String], c: Int) ⇒
-        val fl = ChainedList(l)
-        def test(s: String): Boolean = s.length == c
-        l.exists(test) == fl.exists(test)
+    property("filter") = forAll { (s: Set[Int], i: Int) ⇒
+        def test(s: SUID) = s.id < 0
+        val us = toSUIDSet(s).filter(test)
+        toSUIDSet(s.filter(i ⇒ test(SUID(i)))) == us && isSorted(us)
     }
 
-    property("forall") = forAll { (l: List[String], c: Int) ⇒
-        val fl = ChainedList(l)
-        def test(s: String): Boolean = s.length <= c
-        l.forall(test) == fl.forall(test)
+    property("filterNot") = forAll { (s: Set[Int], i: Int) ⇒
+        def test(s: SUID) = s.id < 0
+        val us = toSUIDSet(s).filterNot(test)
+        toSUIDSet(s.filterNot(i ⇒ test(SUID(i)))) == us && isSorted(us)
     }
 
-    property("contains") = forAll { (l: List[String], s: String) ⇒
-        val fl = ChainedList(l)
-        l.contains(s) == fl.contains(s)
+    property("intersect") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
+        val us1 = toSUIDSet(s1)
+        val us2 = toSUIDSet(s2)
+        val us = toSUIDSet(s1 intersect s2)
+        us == (us1 intersect us2)
     }
 
-    property("find") = forAll { (l: List[Int], i: Int) ⇒
-        val fl = ChainedList(l)
-        l.find(_ == i) == fl.find(_ == i)
-    }
-
-    property("size") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        l.size == fl.size
-    }
-
-    property(":&:") = forAll { (l: List[String], es: List[String]) ⇒
-        var fle = ChainedList(l)
-        var le = l
-        es.forall { e ⇒
-            fle :&:= e
-            le ::= e
-            fle.head == le.head
+    val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
+    val oneToOneHunderdGen = Gen.choose(0, 100)
+    property("copyToArray") = forAll(intSetGen, oneToOneHunderdGen) { (orig: Set[Int], size: Int) ⇒
+        (size >= 0 && size < 100) ==> {
+            val s = SortedSet.empty ++ orig
+            val sa = new Array[SUID](size)
+            val usa = new Array[SUID](size)
+            val us = toSUIDSet(s)
+            s.copyToArray(sa, 4, 4) == us.copyToArray(usa, 4, 4)
         }
     }
 
-    property(":&::") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = ChainedList(l1)
-        val fl2 = ChainedList(l2)
-        val fl3 = fl2 :&:: fl1
-        val l3 = l2 ::: l1
-        fl3.toList == l3
+    property("foldLeft") = forAll { (s: Set[Int], i: Int) ⇒
+        toSUIDSet(s).foldLeft(0)(_ + _.id * 2) == s.foldLeft(0)(_ + _.id * 2)
     }
 
-    property("++") = forAll { (l1: List[String], l2: List[String]) ⇒
-        l1.nonEmpty ==> {
-            val fl1 = ChainedList(l1)
-            val fl2 = ChainedList(l2)
-            val fl3 = fl1.asInstanceOf[:&:[String]] ++ fl2
-            val l3 = l1 ++ l2
-            fl3.toList == l3
-        }
+    property("map") = forAll { (orig: Set[Int]) ⇒
+        val s = orig.map(SUID(_))
+        def f(s: SUID): SUID = SUID(s.id % 5)
+        val us: SUIDSet = toSUIDSet(orig).map(f)
+        EmptySUIDSet ++ s.map(f) == us && isSorted(us)
     }
 
-    property("foreach") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        var lRest = l
-        fl.foreach { e ⇒
-            if (e != lRest.head)
-                throw new UnknownError;
-            else
-                lRest = lRest.tail
-        }
-        true
+    property("toStream") = forAll { (orig: Set[Int]) ⇒
+        val s = orig.map(SUID(_))
+        val us = toSUIDSet(orig)
+        s.toStream.toSet == us.toStream.toSet
     }
 
-    property("take") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
-        val (l, count) = listAndCount
-        classify(l.isEmpty, "list is empty") {
-            classify(count == 0, "takes no elements") {
-                classify(count == l.length, "takes all elements") {
-                    classify(count > l.length, "takes too many elements") {
-                        val fl = ChainedList(l)
-                        (
-                            count <= l.length &&
-                            fl.take(count) == ChainedList(l.take(count)) && fl.size == l.size
-                        ) || { try { fl.take(count); false } catch { case _: Throwable ⇒ true } }
-                    }
-                }
-            }
-        }
+    property("toSeq") = forAll { (orig: Set[Int]) ⇒
+        val s = orig.toList.sorted.map(SUID(_))
+        val us = toSUIDSet(orig)
+        s.toSeq == us.toSeq
     }
 
-    property("takeWhile") = forAll { (l: List[String], c: Int) ⇒
-        def filter(s: String): Boolean = s.length() >= c
-        val fl = ChainedList(l)
-        fl.takeWhile(filter) == ChainedList(l.takeWhile(filter))
+    property("toTraversable") = forAll { (orig: Set[Int]) ⇒
+        val s = orig.toList.sorted.map(SUID(_))
+        val us = toSUIDSet(orig)
+        s.toTraversable.toList == us.toTraversable.toList
     }
 
-    property("dropWhile") = forAll { (l: List[String], c: Int) ⇒
-        def filter(s: String): Boolean = s.length() < 2
-        val fl = ChainedList(l)
-        fl.dropWhile(filter) == ChainedList(l.dropWhile(filter))
+    property("toString") = forAll { (orig: Set[Int]) ⇒
+        val s = (SortedSet.empty[Int] ++ orig).toList.map(SUID(_))
+        val us = toSUIDSet(orig)
+        us.toString == s.mkString("UIDSet(", ", ", ")")
     }
 
-    property("filter") = forAll { (l: List[String], c: Int) ⇒
-        def filter(s: String): Boolean = s.length() >= c
-        val fl = ChainedList(l)
-        fl.filter(filter) == ChainedList(l.filter(filter))
-    }
-
-    property("drop") = forAll(listAndIntGen) { (listAndCount: (List[String], Int)) ⇒
-        val (l, count) = listAndCount
-        val fl = ChainedList(l)
-        (count <= l.length && fl.drop(count) == ChainedList(l.drop(count))) ||
-            { try { fl.drop(count); false } catch { case _: Throwable ⇒ true } }
-    }
-
-    property("zip(GenIterable)") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = ChainedList(l1)
-        classify(l1.size == l2.size, "same length") {
-            fl1.zip(l2) == ChainedList(l1.zip(l2))
-        }
-    }
-
-    property("zip(ChainedList)") = forAll { (l1: List[String], l2: List[String]) ⇒
-        val fl1 = ChainedList(l1)
-        val fl2 = ChainedList(l2)
-        classify(l1.isEmpty, "the first list is empty") {
-            classify(l2.isEmpty, "the second list is empty") {
-                classify(l1.size == l2.size, "same length") {
-                    fl1.zip(fl2) == ChainedList(l1.zip(l2))
-                }
-            }
-        }
-    }
-
-    property("zipWithIndex") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        classify(l.isEmpty, "empty", "non empty") {
-            fl.zipWithIndex == ChainedList(l.zipWithIndex)
-        }
-    }
-
-    property("corresponds") = forAll(listsOfSingleCharStringsGen) { ls ⇒
-        val (l1: List[String], l2: List[String]) = ls
-        def test(s1: String, s2: String): Boolean = s1 == s2
-        val fl1 = ChainedList(l1)
-        val fl2 = ChainedList(l2)
-        classify(fl1.isEmpty && fl2.isEmpty, "both lists are empty") {
-            classify(fl1.size == fl2.size, "both lists have the same length") {
-                classify(l1.corresponds(l2)(test), "both lists correspond") {
-                    fl1.corresponds(fl2)(test) == l1.corresponds(l2)(test)
-                }
-            }
-        }
-    }
-
-    property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
-        var alwaysTrue = true
-        def transform(s: String): String = { if (s.length < c) s else { alwaysTrue = false; s + c } }
-        val fl = ChainedList(l)
-        classify(l.forall(s ⇒ transform(s) eq s), "all strings remain the same") {
-            val mappedFL = fl.mapConserve(transform)
-            (mappedFL == ChainedList(l.mapConserve(transform))) &&
-                (!alwaysTrue || (fl eq mappedFL))
-        }
-    }
-
-    property("reverse") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        fl.reverse == ChainedList(l.reverse)
-    }
-
-    property("mkString") = forAll { (l: List[String], pre: String, sep: String, post: String) ⇒
-        val fl = ChainedList(l)
-        fl.mkString(pre, sep, post) == l.mkString(pre, sep, post)
-    }
-
-    property("toIterable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterable.toList
-        fl == l
-    }
-    property("toIterator") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterator.toList
-        fl == l
-    }
-    property("toTraversable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toTraversable.toList
-        fl == l
-    }
-    property("toStream") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toStream
-        fl == l.toStream
-    }
-    property("copyToArray") = forAll(listAndIntGen) { v ⇒
-        val (l, i) = v
-        val fl = ChainedList(l)
-        val la = new Array[String](10)
-        val fla = new Array[String](10)
-        l.copyToArray(la, i / 3, i * 2)
-        fl.copyToArray(fla, i / 3, i * 2)
-        la.zip(fla).forall(e ⇒ e._1 == e._2)
-    }
-
-    property("toString") = forAll { l: List[String] ⇒
-        ChainedList(l).toString.endsWith("ChainedNil")
-    }
-*/
 }

@@ -48,6 +48,9 @@ import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
  *
  * @author Michael Eichberg
  */
+/*
+NOTE: SETS OF SIZE [0..4] are always represented using no additional nodes.
+*/
 sealed trait UIDSet[+T <: UID]
         extends TraversableOnce[T]
         with FilterMonadic[T, UIDSet[T]]
@@ -57,7 +60,7 @@ sealed trait UIDSet[+T <: UID]
      * Represents a filtered [[UIDSet]]. Instances of [[WithFilter]] are typically
      * created by [[UIDSet]]'s `withFilter` method.
      */
-    class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, UIDSet[T]] {
+    class UIDSetWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, UIDSet[T]] {
 
         def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
             val set = self
@@ -79,15 +82,21 @@ sealed trait UIDSet[+T <: UID]
         }
 
         def foreach[U](f: T ⇒ U): Unit = self.foreach { e ⇒ if (p(e)) f(e) }
-        def withFilter(q: T ⇒ Boolean): WithFilter = new WithFilter(x ⇒ p(x) && q(x))
+        def withFilter(q: T ⇒ Boolean): UIDSetWithFilter = new UIDSetWithFilter(x ⇒ p(x) && q(x))
     }
+
+    /**
+     * Creates a representation that is guaranteed to use a canonic representation
+     * for sets with size 0...4. I.e., those sets are never represented using
+     * an UIDSetNode.
+     */
+    protected[immutable] def compact: UIDSet[T] = this
 
     //
     // 1: QUERY THE PROPERTIES OF THIS SET OR THE PROPPERTIES OF ITS ELEMENTS
     //
 
     final def hasDefiniteSize: Boolean = true
-
     final def isTraversableAgain: Boolean = true
 
     /**
@@ -186,7 +195,7 @@ sealed trait UIDSet[+T <: UID]
      */
     final def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((e) ⇒ !p(e))
 
-    def withFilter(p: T ⇒ Boolean): WithFilter = new WithFilter(p)
+    def withFilter(p: T ⇒ Boolean): UIDSetWithFilter = new UIDSetWithFilter(p)
 
     override def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
         if (len == 0)
@@ -213,14 +222,18 @@ sealed trait UIDSet[+T <: UID]
             var thisNextId = thisNext.id
             var thatNext = thatIt.next
             var thatNextId = thatNext.id
-            while (thisNextId < thatNextId && thisIt.hasNext) {
-                thisNext = thisIt.next
-                thisNextId = thisNext.id
-            }
-            while (thatNextId < thisNextId && thatIt.hasNext) {
-                thatNext = thatIt.next
-                thatNextId = thatNext.id
-            }
+            do {
+                while (thisNextId < thatNextId && thisIt.hasNext) {
+                    thisNext = thisIt.next
+                    thisNextId = thisNext.id
+                }
+                while (thatNextId < thisNextId && thatIt.hasNext) {
+                    thatNext = thatIt.next
+                    thatNextId = thatNext.id
+                }
+            } while (thisNextId != thatNextId &&
+                (thisIt.hasNext && thisNextId < thatNextId) ||
+                (thatIt.hasNext && thatNextId < thisNextId))
             if (thisNextId == thatNextId) {
                 result += thisNext
             }
@@ -231,7 +244,7 @@ sealed trait UIDSet[+T <: UID]
     //
     // 5: TRANSFORM
     //
-    final def seq: TraversableOnce[T] = this
+    final def seq: this.type = this
 
     /**
      * Creates a new `(UID)Set` which contains the mapped values as specified by the given
@@ -715,7 +728,23 @@ final class UIDSet4[T <: UID] private[collection] (
     override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3); f(e4) }
 
     override def filter(f: T ⇒ Boolean): UIDSet[T] = {
-        foldLeft(UIDSet0: UIDSet[T])((c, n) ⇒ if (f(n)) c + n else c)
+        var retained = 0
+        val take1 = if (f(e1)) { retained += 1; true } else { false }
+        val take2 = if (f(e2)) { retained += 1; true } else { false }
+        val take3 = if (f(e3)) { retained += 1; true } else { false }
+        val take4 = if (f(e4)) { retained += 1; true } else { false }
+        if (retained == 4)
+            this
+        else if (retained == 0) {
+            UIDSet0
+        } else {
+            var result: UIDSet[T] = UIDSet0
+            if (take1) result += e1
+            if (take2) result += e2
+            if (take3) result += e3
+            if (take4) result += e4
+            result
+        }
     }
 
     override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
@@ -782,6 +811,13 @@ private final class UIDSetNode[T <: UID](
 
     assert(right.nonEmpty)
 
+    override protected[immutable] def compact: UIDSet[T] = {
+        if (left.size + right.size <= 4)
+            left ++ right
+        else
+            this
+    }
+
     override def size = left.size + right.size
 
     override def isSingletonSet = false
@@ -831,7 +867,9 @@ private final class UIDSetNode[T <: UID](
     override def tail: UIDSet[T] = {
         val leftTail = left.tail
         if (leftTail.isEmpty)
-            right
+            right.compact
+        else if (leftTail.size + right.size <= 4)
+            leftTail ++ right
         else
             new UIDSetNode(leftTail, pivot, right)
     }
@@ -958,7 +996,7 @@ object UIDSet {
      *      or more elements that share the same id.
      */
     def apply[T <: UID](e1: T, e2: T, elems: T*): UIDSet[T] = {
-        elems.foldLeft[UIDSet[T]](UIDSet(e1, e2))((s, e) ⇒ s + e)
+        UIDSet(e1, e2) ++ elems
     }
 
 }
