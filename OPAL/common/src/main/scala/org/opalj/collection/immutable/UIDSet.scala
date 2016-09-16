@@ -30,10 +30,12 @@ package org.opalj
 package collection
 package immutable
 
+import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
+import scala.collection.generic.FilterMonadic
 import scala.collection.mutable.Builder
 
-import org.opalj.collection.immutable.UID.areEqual
+import org.opalj.collection.UID.areEqual
 import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
 
 /**
@@ -41,21 +43,51 @@ import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
  *
  * Contains checks etc. are based on the element's unique id.
  *
- * [[UIDSet$]]s are constructed using the factory methods of the companion object and 
+ * [[UIDSet$]]s are constructed using the factory methods of the companion object and
  * are generally expected to be small.
  *
  * @author Michael Eichberg
  */
 sealed trait UIDSet[+T <: UID]
         extends TraversableOnce[T]
+        with FilterMonadic[T, UIDSet[T]]
         with Serializable { self ⇒
+
+    /**
+     * Represents a filtered [[UIDSet]]. Instances of [[WithFilter]] are typically
+     * created by [[UIDSet]]'s `withFilter` method.
+     */
+    class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, UIDSet[T]] {
+
+        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
+            val set = self
+            val b = bf(set)
+            set.foreach { e ⇒ if (p(e)) b += f(e) }
+            b.result
+        }
+
+        def flatMap[B, That](
+            f: T ⇒ GenTraversableOnce[B]
+        )(
+            implicit
+            bf: CanBuildFrom[UIDSet[T], B, That]
+        ): That = {
+            val set = self
+            val b = bf(set)
+            set.foreach { e ⇒ if (p(e)) b ++= f(e).seq }
+            b.result
+        }
+
+        def foreach[U](f: T ⇒ U): Unit = self.foreach { e ⇒ if (p(e)) f(e) }
+        def withFilter(q: T ⇒ Boolean): WithFilter = new WithFilter(x ⇒ p(x) && q(x))
+    }
 
     //
     // 1: QUERY THE PROPERTIES OF THIS SET OR THE PROPPERTIES OF ITS ELEMENTS
     //
 
     final def hasDefiniteSize: Boolean = true
-	
+
     final def isTraversableAgain: Boolean = true
 
     /**
@@ -83,7 +115,7 @@ sealed trait UIDSet[+T <: UID]
 
     /**
      * Returns `true` if the an element with the same id as the given element is already
-	 * in this list, `false` otherwise.
+     * in this list, `false` otherwise.
      */
     def contains[X <: UID](o: X): Boolean
 
@@ -152,7 +184,9 @@ sealed trait UIDSet[+T <: UID]
      * Returns a new `UIDList` that contains all elements which '''do not satisfy'''
      * the given predicate.
      */
-    final def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((e) ⇒ !f(e))
+    final def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((e) ⇒ !p(e))
+
+    def withFilter(p: T ⇒ Boolean): WithFilter = new WithFilter(p)
 
     override def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
         if (len == 0)
@@ -168,6 +202,30 @@ sealed trait UIDSet[+T <: UID]
                 return ;
             }
         }
+    }
+
+    def intersect[X >: T <: UID](that: UIDSet[X]): UIDSet[X] = {
+        val thisIt = this.toIterator
+        val thatIt = that.toIterator
+        var result: UIDSet[X] = UIDSet0
+        while (thisIt.hasNext && thatIt.hasNext) {
+            var thisNext = thisIt.next
+            var thisNextId = thisNext.id
+            var thatNext = thatIt.next
+            var thatNextId = thatNext.id
+            while (thisNextId < thatNextId && thisIt.hasNext) {
+                thisNext = thisIt.next
+                thisNextId = thisNext.id
+            }
+            while (thatNextId < thisNextId && thatIt.hasNext) {
+                thatNext = thatIt.next
+                thatNextId = thatNext.id
+            }
+            if (thisNextId == thatNextId) {
+                result += thisNext
+            }
+        }
+        result
     }
 
     //
@@ -194,7 +252,7 @@ sealed trait UIDSet[+T <: UID]
      * 		  us.map(e => MyUID(e.id+1))
      * 		  ^
      * scala> // this problem is easily fixed by; e.g., specifying the type of the target
-     * scala> // collection (e.g. by assigning the list to an appropriately typed variable)	
+     * scala> // collection (e.g. by assigning the list to an appropriately typed variable)
      * scala> us = us.map(e => MyUID(e.id+1))
      * us: org.opalj.collection.immutable.UIDSet[MyUID] = UIDSet(MyUID(-2), MyUID(2), MyUID(3))
      * scala> val s : Set[MyUID] = us.map(e => MyUID(e.id+1))
@@ -204,6 +262,18 @@ sealed trait UIDSet[+T <: UID]
     def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
         var b = bf(this)
         foreach { e ⇒ b += f(e) }
+        b.result
+    }
+
+    def flatMap[B, That](
+        f: T ⇒ GenTraversableOnce[B]
+    )(
+        implicit
+        bf: CanBuildFrom[UIDSet[T], B, That]
+    ): That = {
+        val set = self
+        val b = bf(set)
+        set.foreach { e ⇒ b ++= f(e).seq }
         b.result
     }
 
@@ -232,24 +302,24 @@ sealed trait UIDSet[+T <: UID]
 object UIDSet0 extends UIDSet[Nothing] {
 
     override def size = 0
-    
-	override def isEmpty = true
-    
-	override def nonEmpty = false
-    
-	override def isSingletonSet = false
-    
-	override def head: Nothing = throw new NoSuchElementException("the set is empty")
-    
-	override def last: Nothing = throw new NoSuchElementException("the set is empty")
-    
-	override def exists(p: Nothing ⇒ Boolean): Boolean = false
-    
-	override def forall(p: Nothing ⇒ Boolean) = true
-    
-	override def contains[X <: UID](o: X): Boolean = false
-    
-	override def find(p: Nothing ⇒ Boolean): None.type = None
+
+    override def isEmpty = true
+
+    override def nonEmpty = false
+
+    override def isSingletonSet = false
+
+    override def head: Nothing = throw new NoSuchElementException("the set is empty")
+
+    override def last: Nothing = throw new NoSuchElementException("the set is empty")
+
+    override def exists(p: Nothing ⇒ Boolean): Boolean = false
+
+    override def forall(p: Nothing ⇒ Boolean) = true
+
+    override def contains[X <: UID](o: X): Boolean = false
+
+    override def find(p: Nothing ⇒ Boolean): None.type = None
 
     override def foreach[U](f: Nothing ⇒ U): Unit = {}
 
@@ -283,7 +353,7 @@ private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
 final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 1
-	
+
     override def isSingletonSet: Boolean = true
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
@@ -302,29 +372,29 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
     }
 
     override def head: T = e
-    
-	override def last: T = e
+
+    override def last: T = e
 
     override def tail: UIDSet[T] = UIDSet0
-    
-	override def foreach[U](f: T ⇒ U): Unit = f(e)
-    
-	override def forall(f: T ⇒ Boolean): Boolean = f(e)
-    
-	override def exists(f: T ⇒ Boolean): Boolean = f(e)
-    
-	override def contains[X <: UID](o: X): Boolean = UID.areEqual(e, o)
-    
-	override def find(f: T ⇒ Boolean): Option[T] = { val e = this.e; if (f(e)) Some(e) else None }
-    
-	override def filter(f: T ⇒ Boolean): UIDSet[T] = if (f(e)) this else UIDSet0
-    
-	override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(b, e)
-    
-	override def reduce[X >: T](op: (X, X) ⇒ X): X = e
-    
-	override def toSeq = e :: Nil
-	
+
+    override def foreach[U](f: T ⇒ U): Unit = f(e)
+
+    override def forall(f: T ⇒ Boolean): Boolean = f(e)
+
+    override def exists(f: T ⇒ Boolean): Boolean = f(e)
+
+    override def contains[X <: UID](o: X): Boolean = UID.areEqual(e, o)
+
+    override def find(f: T ⇒ Boolean): Option[T] = { val e = this.e; if (f(e)) Some(e) else None }
+
+    override def filter(f: T ⇒ Boolean): UIDSet[T] = if (f(e)) this else UIDSet0
+
+    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(b, e)
+
+    override def reduce[X >: T](op: (X, X) ⇒ X): X = e
+
+    override def toSeq = e :: Nil
+
     override def toIterator: Iterator[T] = Iterator.single(e)
 
     override def equals(other: Any): Boolean = {
@@ -383,17 +453,17 @@ final class UIDSet2[T <: UID] private[collection] (
     }
 
     override def head: T = e1
-    
-	override def last: T = e2
-    
-	override def tail: UIDSet[T] = new UIDSet1(e2)
-    
-	override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2) }
-    
-	override def forall(f: T ⇒ Boolean): Boolean = f(e1) && f(e2)
-    
-	override def exists(f: T ⇒ Boolean): Boolean = f(e1) || f(e2)
-	
+
+    override def last: T = e2
+
+    override def tail: UIDSet[T] = new UIDSet1(e2)
+
+    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2) }
+
+    override def forall(f: T ⇒ Boolean): Boolean = f(e1) && f(e2)
+
+    override def exists(f: T ⇒ Boolean): Boolean = f(e1) || f(e2)
+
     override def contains[X <: UID](o: X): Boolean = {
         val oId = o.id
         e1.id == oId || e2.id == oId
@@ -429,7 +499,7 @@ final class UIDSet2[T <: UID] private[collection] (
     override def reduce[X >: T](op: (X, X) ⇒ X): X = op(e1, e2)
 
     override def toSeq = e1 :: e2 :: Nil
-	
+
     override def toIterator = new Iterator[T] {
         var index = 0
         def hasNext = index < 2
@@ -465,7 +535,7 @@ final class UIDSet3[T <: UID] private[collection] (
 ) extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def isSingletonSet: Boolean = false
-	
+
     override def size = 3
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
@@ -497,15 +567,15 @@ final class UIDSet3[T <: UID] private[collection] (
     }
 
     override def head = e1
-	
+
     override def last: T = e3
-	
+
     override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3) }
-	
+
     override def forall(f: T ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3)
-	
+
     override def exists(f: T ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3)
-	
+
     override def contains[X <: UID](o: X): Boolean = {
         val oId = o.id
         e1.id == oId || e2.id == oId || e3.id == oId
@@ -559,7 +629,7 @@ final class UIDSet3[T <: UID] private[collection] (
 
     override def toIterator = new Iterator[T] {
         var index = 0
-        def hasNext = index < 2
+        def hasNext = index < 3
         def next = {
             val value = index match {
                 case 0 ⇒ e1
@@ -596,7 +666,7 @@ final class UIDSet4[T <: UID] private[collection] (
 ) extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def isSingletonSet: Boolean = false
-	
+
     override def size = 4
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = {
@@ -637,22 +707,22 @@ final class UIDSet4[T <: UID] private[collection] (
     }
 
     override def head = e1
-	
+
     override def last: T = e4
 
     override def tail = new UIDSet3(e2, e3, e4)
 
     override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3); f(e4) }
-	
+
     override def filter(f: T ⇒ Boolean): UIDSet[T] = {
-		foldLeft(UIDSet0: UIDSet[T])((c, n) ⇒ if (f(n)) c + n else c)
-	}
-	
+        foldLeft(UIDSet0: UIDSet[T])((c, n) ⇒ if (f(n)) c + n else c)
+    }
+
     override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
 
     override def forall(f: T ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3) && f(e4)
-    
-	override def exists(f: T ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3) || f(e4)
+
+    override def exists(f: T ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3) || f(e4)
 
     override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(op(op(op(b, e1), e2), e3), e4)
 
@@ -675,10 +745,10 @@ final class UIDSet4[T <: UID] private[collection] (
     }
 
     override def toSeq: List[T] = e1 :: e2 :: e3 :: e4 :: Nil
-	
+
     override def toIterator = new Iterator[T] {
         var index = 0
-        def hasNext = index < 2
+        def hasNext = index < 4
         def next = {
             val value = index match {
                 case 0 ⇒ e1
@@ -713,29 +783,29 @@ private final class UIDSetNode[T <: UID](
     assert(right.nonEmpty)
 
     override def size = left.size + right.size
-	
+
     override def isSingletonSet = false
 
     override def head: T = left.head
-	
+
     override def last: T = right.last
-	
+
     override def exists(p: T ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
-	
+
     override def forall(p: T ⇒ Boolean) = left.forall(p) && right.forall(p)
-    
-	override def contains[X <: UID](o: X): Boolean = left.contains(o) || right.contains(o)
-    
-	override def find(p: T ⇒ Boolean): Option[T] = {
+
+    override def contains[X <: UID](o: X): Boolean = left.contains(o) || right.contains(o)
+
+    override def find(p: T ⇒ Boolean): Option[T] = {
         left.find(p) match {
             case r @ Some(_) ⇒ r
             case None        ⇒ right.find(p)
         }
     }
-    
-	override def foreach[U](f: T ⇒ U): Unit = { left.foreach(f); right.foreach(f) }
-    
-	override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
+
+    override def foreach[U](f: T ⇒ U): Unit = { left.foreach(f); right.foreach(f) }
+
+    override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
         right.foldLeft(left.foldLeft(b)(op))(op)
     }
 
@@ -773,7 +843,13 @@ private final class UIDSetNode[T <: UID](
             rightFiltered
         else if (rightFiltered.isEmpty)
             leftFiltered
-        new UIDSetNode(leftFiltered, leftFiltered.last.id, rightFiltered)
+        else if (leftFiltered.size + rightFiltered.size <= 4)
+            // UIDSets which contain less than 5 elements have to use the
+            // canonical representation to ensure that the equality 
+            // tests succeed!
+            leftFiltered ++ rightFiltered
+        else
+            new UIDSetNode(leftFiltered, leftFiltered.last.id, rightFiltered)
     }
 
     override def toIterator: Iterator[T] = left.toIterator ++ right.toIterator
@@ -831,6 +907,15 @@ object UIDSet {
             def apply() = new ChainedListBuilder[Int]
         }
     }
+
+    def canBuildUIDSetFromTraversableOnce[T <: UID]: CanBuildFrom[TraversableOnce[T], T, UIDSet[T]] = {
+        new CanBuildFrom[TraversableOnce[T], T, UIDSet[T]] {
+            def apply(from: TraversableOnce[T]) = new UIDSetBuilder[T]
+            def apply() = new UIDSetBuilder[T]
+        }
+    }
+
+    def newBuilder[T <: UID]: UIDSetBuilder[T] = new UIDSetBuilder[T]
 
     /**
      * Returns an empty [[UIDSet]].
