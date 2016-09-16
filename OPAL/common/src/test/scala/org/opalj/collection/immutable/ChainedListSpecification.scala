@@ -55,6 +55,11 @@ object ChainedListSpecification extends Properties("ChainedList") {
         i ← Gen.choose(0, n)
     } yield (m, i)
 
+    val listOfListGen = for {
+        n ← Gen.choose(0, 20)
+        m ← Gen.listOfN(n, Arbitrary.arbitrary[List[String]])
+    } yield m
+
     /**
      * Generates a list and an int value in the range [0,length of list +2 ].
      */
@@ -81,6 +86,77 @@ object ChainedListSpecification extends Properties("ChainedList") {
         val fl1 = ChainedList(l1)
         val fl2 = ChainedList(l2)
         (l1 == l2) == (fl1 == fl2) && (fl1 != fl2 || fl1.hashCode() == fl2.hashCode())
+    }
+
+    // METHODS DEFINED BY CHAINED LIST
+
+    property("WithFilter") = forAll { orig: List[String] ⇒
+        def test(s: String): Boolean = s.length > 0
+        val cl = ChainedList(orig).withFilter(test).map[String, ChainedList[String]](s ⇒ s)
+        val l = orig.withFilter(test).map[String, List[String]](s ⇒ s)
+        cl == ChainedList(l)
+    }
+
+    property("hasDefiniteSize") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        fl.hasDefiniteSize
+    }
+
+    property("isTraversableAgain") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        fl.isTraversableAgain
+    }
+
+    property("seq") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        (fl.seq eq fl)
+    }
+
+    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
+        val fl = ChainedList(l)
+        classify(l.isEmpty, "outer list is empty") {
+            classify(l.nonEmpty && l.forall(_.isEmpty), "all (at least one) inner lists are empty") {
+                def t(ss: List[String]): List[Int] = ss.map(_.length)
+                fl.flatMap(t) == ChainedList(l.flatMap(t))
+            }
+        }
+    }
+
+    property("map") = forAll { l: List[String] ⇒
+        def f(s: String): Int = s.length()
+        val fl = ChainedList(l)
+        fl.map(f) == ChainedList(l.map(f))
+    }
+
+    property("chained lists can be used in for loop") = forAll { orig: List[String] ⇒
+        // In the following we, have an implicit foreach call
+        var newL = List.empty[String]
+        for {
+            e ← ChainedList(orig)
+            if e != null
+        } { newL ::= e }
+        newL == orig.reverse
+    }
+
+    property("chained lists can be used in for comprehensions") = forAll(listOfListGen) { orig: List[List[String]] ⇒
+        // In the following we, have an implicit withFilter, map and flatMap call!
+        val cl = for {
+            es ← ChainedList(orig)
+            if es.length > 1
+            if es.length < 10
+            e ← es
+            r = e.capitalize
+        } yield r+":"+r.length
+
+        val l = for {
+            es ← orig
+            if es.length > 1
+            if es.length < 10
+            e ← es
+            r = e.capitalize
+        } yield r+":"+r.length
+
+        cl == ChainedList(l)
     }
 
     property("head") = forAll { l: List[String] ⇒
@@ -137,6 +213,11 @@ object ChainedListSpecification extends Properties("ChainedList") {
     property("contains") = forAll { (l: List[String], s: String) ⇒
         val fl = ChainedList(l)
         l.contains(s) == fl.contains(s)
+    }
+
+    property("find") = forAll { (l: List[Int], i: Int) ⇒
+        val fl = ChainedList(l)
+        l.find(_ == i) == fl.find(_ == i)
     }
 
     property("size") = forAll { l: List[String] ⇒
@@ -202,12 +283,6 @@ object ChainedListSpecification extends Properties("ChainedList") {
             { try { fl.drop(count); false } catch { case _: Throwable ⇒ true } }
     }
 
-    property("map") = forAll { l: List[String] ⇒
-        def f(s: String): Int = s.length()
-        val fl = ChainedList(l)
-        fl.map(f) == ChainedList(l.map(f))
-    }
-
     property("zip(GenIterable)") = forAll { (l1: List[String], l2: List[String]) ⇒
         val fl1 = ChainedList(l1)
         classify(l1.size == l2.size, "same length") {
@@ -270,15 +345,129 @@ object ChainedListSpecification extends Properties("ChainedList") {
     }
 
     property("toIterable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterable().toList
+        val fl = ChainedList(l).toIterable.toList
         fl == l
     }
     property("toIterator") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toIterator().toList
+        val fl = ChainedList(l).toIterator.toList
         fl == l
     }
     property("toTraversable") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l).toTraversable().toList
+        val fl = ChainedList(l).toTraversable.toList
         fl == l
     }
+    property("toStream") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l).toStream
+        fl == l.toStream
+    }
+    property("copyToArray") = forAll(listAndIntGen) { v ⇒
+        val (l, i) = v
+        val fl = ChainedList(l)
+        val la = new Array[String](10)
+        val fla = new Array[String](10)
+        l.copyToArray(la, i / 3, i * 2)
+        fl.copyToArray(fla, i / 3, i * 2)
+        la.zip(fla).forall(e ⇒ e._1 == e._2)
+    }
+
+    property("toString") = forAll { l: List[String] ⇒
+        ChainedList(l).toString.endsWith("ChainedNil")
+    }
+
 }
+
+/*
+ * PERFORMANCE EVALUATION
+ * /// USING SCALA LIST
+ *
+ * var l : List[Long] = Nil
+ *
+ * def take2MultipleAndAdd() = {
+ * var rest = l
+ * if (rest.nonEmpty) {
+ * val first = rest.head
+ * rest = rest.tail
+ * if (rest.nonEmpty) {
+ * rest ::= first* rest.head
+ * } else {
+ * rest = l
+ * }
+ * }
+ * rest
+ * }
+ *
+ * def sum() : Long = {
+ * var sum = 0l
+ * var rest = l
+ * while (rest.nonEmpty) {
+ * sum += rest.head
+ * rest = rest.tail
+ * }
+ * sum
+ * }
+ *
+ *
+ * {
+ * val startTime = System.nanoTime
+ * for (i <- 0 to 500) {
+ * var j = 0
+ * while (j < i) {
+ * j += 1
+ * l ::= 10
+ * if (j % 20 == 0) sum()
+ * else if (j % 3 == 0) take2MultipleAndAdd()
+ * }
+ * }
+ * println("Elapsed time: "+(System.nanoTime-startTime))
+ * }
+ *
+ * sum()
+ *
+ *
+ * ///
+ * /// USING CHAINED LIST
+ * ///
+ * import org.opalj.collection.immutable._
+ * var l : ChainedList[Long] = ChainedNil
+ *
+ * def take2MultipleAndAdd() = {
+ * var rest = l
+ * if (rest.nonEmpty) {
+ * val first = rest.head
+ * rest = rest.tail
+ * if (rest.nonEmpty) {
+ * rest :&:= first* rest.head
+ * } else {
+ * rest = l
+ * }
+ * }
+ * rest
+ * }
+ *
+ * def sum() : Long = {
+ * var sum = 0l
+ * var rest = l
+ * while (rest.nonEmpty) {
+ * sum += rest.head
+ * rest = rest.tail
+ * }
+ * sum
+ * }
+ *
+ * {
+ * val startTime = System.nanoTime
+ * for (i <- 0 to 500) {
+ * var j = 0
+ * while (j < i) {
+ * j += 1
+ * l :&:= 10
+ * if (j % 20 == 0) sum()
+ * else if (j % 3 == 0) take2MultipleAndAdd()
+ * }
+ * }
+ * println("Elapsed time: "+(System.nanoTime-startTime))
+ * }
+ *
+ * sum()
+ * 
+ */

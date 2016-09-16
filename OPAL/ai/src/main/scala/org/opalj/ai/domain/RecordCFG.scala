@@ -32,6 +32,9 @@ package domain
 
 import scala.collection.BitSet
 import scala.collection.mutable
+
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.br.Code
@@ -637,6 +640,7 @@ trait RecordCFG
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
+        import scala.collection.immutable.{List ⇒ ScalaList}
         val instructions = code.instructions
         val codeSize = instructions.size
         val nodes = new Array[DefaultMutableNode[List[PC]]](codeSize)
@@ -646,7 +650,7 @@ trait RecordCFG
             Nil,
             (n) ⇒ "Exit",
             Map("shape" → "doubleoctagon", "fillcolor" → "black", "color" → "white", "labelloc" → "l"),
-            List.empty[DefaultMutableNode[List[PC]]]
+            ScalaList.empty[DefaultMutableNode[List[PC]]]
         )
         for (pc ← code.programCounters) {
             nodes(pc) = {
@@ -689,7 +693,7 @@ trait RecordCFG
                     List(pc),
                     pcsToString,
                     visualProperties,
-                    List.empty[DefaultMutableNode[List[PC]]]
+                    ScalaList.empty[DefaultMutableNode[List[PC]]]
                 )
             }
         }
@@ -718,7 +722,7 @@ trait RecordCFG
                     val successorNodePC = successorNode.identifier.head
                     if (nodePredecessorsCount(successorNodePC) == 1) {
                         currentNode.updateIdentifier(
-                            currentNode.identifier ++ currentNode.firstChild.identifier
+                            currentNode.identifier :&:: currentNode.firstChild.identifier
                         )
                         currentNode.mergeVisualProperties(successorNode.visualProperties)
                         currentNode.removeLastAddedChild() // the only child...

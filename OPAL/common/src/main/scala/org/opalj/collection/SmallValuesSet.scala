@@ -154,11 +154,11 @@ trait SmallValuesSet /* by purpose, we do not inherit from Traversable[Int] */ {
 
     /**
      * Calculates the `hashCode` based on the values in the set. This is a O(n)
-     * operation.s
+     * operation.
      */
     override def hashCode(): Int = {
         var hashCode = -1
-        foreach { v ⇒ hashCode = hashCode * v }
+        foreach { v ⇒ hashCode = hashCode * 17 + v }
         hashCode
     }
 

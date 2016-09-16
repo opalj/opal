@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -34,6 +34,7 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.ChainedList
 
 /**
  * Tests the utility methods.
@@ -45,8 +46,8 @@ class UtilTest extends FlatSpec with Matchers {
 
     behavior of "the function removeFirstWhile"
 
-    val shortList = List(1, 5, 4)
-    val longList = List(1, 4, 5, 6, 4848, 34, 35, 35, 37)
+    val shortList = ChainedList(List(1, 5, 4))
+    val longList = ChainedList(List(1, 4, 5, 6, 4848, 34, 35, 35, 37))
 
     it should ("return the given list if no element matches") in {
         val newList = removeFirstUnless(longList, -1)(_ <= 0)
@@ -72,11 +73,11 @@ class UtilTest extends FlatSpec with Matchers {
 
     it should ("return the list without it's second element if that element matches") in {
         val newList = removeFirstUnless(longList, 4)(_ >= 1000)
-        newList should be(longList.head :: longList.tail.tail)
+        newList should be(longList.head :&: longList.tail.tail)
     }
 
     it should ("return the list without it's last element if that element matches") in {
         val newList = removeFirstUnless(shortList, 4)(_ >= 1000)
-        newList should be(List(1, 5))
+        newList should be(ChainedList(List(1, 5)))
     }
 }

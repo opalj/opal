@@ -34,12 +34,14 @@ import scala.language.existentials
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
+import org.opalj.collection.immutable.:&:
+import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.control.foreachNonNullValue
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.immutable.ChainedNil
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.:&:
 import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
@@ -319,7 +321,7 @@ trait AI[D <: Domain] {
         continueInterpretation(
             strictfp, code, theDomain
         )(
-            AI.initialWorkList, List.empty[PC], operandsArray, localsArray
+            AI.initialWorkList, Nil /*List.empty[PC]*/ , operandsArray, localsArray
         )
     }
 
@@ -618,7 +620,7 @@ trait AI[D <: Domain] {
                     val jumpToSubroutineId = belongsToSubroutine(targetPC)
                     if (jumpToSubroutineId != memoryLayoutBeforeSubroutineCall.head._1) {
                         var subroutinesToTerminate = 1
-                        val it = memoryLayoutBeforeSubroutineCall.iterator
+                        val it = memoryLayoutBeforeSubroutineCall.toIterator
                         it.next()
                         while (it.hasNext && it.next()._1 != jumpToSubroutineId) {
                             subroutinesToTerminate += 1
@@ -677,7 +679,7 @@ trait AI[D <: Domain] {
                 var remainingWorklist: List[PC] = worklist
                 while (subroutinesToTerminate > 0) {
                     val pc = remainingWorklist.head
-                    header = pc :: header
+                    header = pc :&: header
                     remainingWorklist = remainingWorklist.tail
                     if (pc == SUBROUTINE)
                         subroutinesToTerminate -= 1
@@ -699,10 +701,10 @@ trait AI[D <: Domain] {
                 val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
                 val rescheduled = filteredRemainingWorkList ne remainingWorklist
                 if (rescheduled || forceSchedule) {
-                    remainingWorklist = targetPC :: filteredRemainingWorkList
+                    remainingWorklist = targetPC :&: filteredRemainingWorkList
                 }
                 while (header.nonEmpty) {
-                    remainingWorklist = header.head :: remainingWorklist
+                    remainingWorklist = header.head :&: remainingWorklist
                     header = header.tail
                 }
 
@@ -737,7 +739,7 @@ trait AI[D <: Domain] {
                     } else if (worklist.nonEmpty && joinInstructions.contains(targetPC)) {
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
-                        worklist = targetPC :: worklist
+                        worklist = targetPC :&: worklist
                     }
 
                     if (tracer.isDefined)
@@ -765,7 +767,7 @@ trait AI[D <: Domain] {
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
-                        worklist = targetPC :: worklist
+                        worklist = targetPC :&: worklist
                     }
                     if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
@@ -943,15 +945,15 @@ trait AI[D <: Domain] {
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
                 while (worklist.head < 0) { // while we may return from multiple nested subroutines
-                    evaluated = SUBROUTINE_END :: evaluated
+                    evaluated :&:= SUBROUTINE_END
                     // the structure is:
-                    //      SUBROUTINE_START ::
+                    //      SUBROUTINE_START :&:
                     //          (
-                    //              (RET_PC :: )+
-                    //              SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE  :: lvIndex ::
+                    //              (RET_PC :&: )+
+                    //              SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE  :&: lvIndex :&:
                     //          )?
-                    //      SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
-                    //      SUBROUTINE ::
+                    //      SUBROUTINE_RETURN_TO_TARGET :&: returnTarget :&:
+                    //      SUBROUTINE :&:
                     //      remaining worklist
                     worklist = worklist.tail // remove SUBROUTINE_START
                     var retPCs = Set.empty[PC]
@@ -990,7 +992,7 @@ trait AI[D <: Domain] {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
                             case SUBROUTINE_END   ⇒ subroutineLevel += 1
                             case pc ⇒
-                                if (subroutineLevel == 0) subroutine = pc :: subroutine
+                                if (subroutineLevel == 0) subroutine :&:= pc
                         }
                         trace = trace.tail
                     }
@@ -1088,7 +1090,7 @@ trait AI[D <: Domain] {
 
             try {
                 worklist = worklist.tail
-                evaluated = pc :: evaluated
+                evaluated :&:= pc
                 val instruction = instructions(pc)
                 // the memory layout before executing the instruction with the given pc
                 val operands = operandsArray(pc)
@@ -1471,29 +1473,25 @@ trait AI[D <: Domain] {
                         | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
                         val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
-                        evaluated = SUBROUTINE_START :: evaluated
+                        evaluated :&:= SUBROUTINE_START
                         // FIXME we have to make sure that "theOperands|LocalsArray" are used
                         // to store the results of the main abstraction
-                        memoryLayoutBeforeSubroutineCall =
-                            (branchTarget, operandsArray.clone, localsArray.clone) ::
-                                memoryLayoutBeforeSubroutineCall
+                        memoryLayoutBeforeSubroutineCall :&:= (
+                            (branchTarget, operandsArray.clone, localsArray.clone)
+                        )
 
                         // let's check if we can eagerly fetch the information where the
                         // return address is stored!
-                        instructions(branchTarget) match {
+                        worklist = instructions(branchTarget) match {
                             case AStoreInstruction(lvIndex) ⇒
-                                worklist =
-                                    SUBROUTINE_START ::
-                                        SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
-                                        SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
-                                        SUBROUTINE ::
-                                        worklist
+                                SUBROUTINE_START :&:
+                                    SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :&: lvIndex :&:
+                                    SUBROUTINE_RETURN_TO_TARGET :&: returnTarget :&:
+                                    SUBROUTINE :&: worklist
                             case _ ⇒
-                                worklist =
-                                    SUBROUTINE_START ::
-                                        SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
-                                        SUBROUTINE ::
-                                        worklist
+                                SUBROUTINE_START :&:
+                                    SUBROUTINE_RETURN_TO_TARGET :&: returnTarget :&:
+                                    SUBROUTINE :&: worklist
                         }
                         val newOperands =
                             theDomain.ReturnAddressValue(returnTarget) :&: operands
@@ -1515,12 +1513,12 @@ trait AI[D <: Domain] {
                         val lvIndex = as[RET](instruction).lvIndex
                         // we now know the local variable that is used and
                         // (one of) the ret instruction(s), we store this for later usage
-                        val oldWorklist = worklist
+                        val oldWorklist: List[PC] = worklist
 
                         var subroutineWorklist = List.empty[PC] // after the next steps...
                         var tail = worklist
                         while (tail.head >= 0) {
-                            subroutineWorklist = tail.head :: subroutineWorklist
+                            subroutineWorklist :&:= tail.head
                             tail = tail.tail
                         }
                         subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
@@ -1528,22 +1526,22 @@ trait AI[D <: Domain] {
 
                         var dynamicSubroutineInformation = List.empty[PC]
                         while (tail.head != SUBROUTINE_RETURN_TO_TARGET) {
-                            dynamicSubroutineInformation = tail.head :: dynamicSubroutineInformation
+                            dynamicSubroutineInformation :&:= tail.head
                             tail = tail.tail
                         }
                         // let's check if we already know the used local variable
                         if (dynamicSubroutineInformation.isEmpty) {
                             // let's store the local variable
                             worklist =
-                                subroutineWorklist :::
-                                    (SUBROUTINE_START :: pc ::
-                                        SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
+                                subroutineWorklist :&::
+                                    (SUBROUTINE_START :&: pc :&:
+                                        SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :&: lvIndex :&:
                                         tail)
                         } else {
                             // just let's store this ret instruction
                             worklist =
-                                subroutineWorklist :::
-                                    (SUBROUTINE_START :: pc :: dynamicSubroutineInformation.reverse) :::
+                                subroutineWorklist :&::
+                                    (SUBROUTINE_START :&: pc :&: dynamicSubroutineInformation.reverse) :&::
                                     tail
                         }
 

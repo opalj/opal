@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,39 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package collection
-package immutable
+package fpcf
+package analysis
 
-/**
- * A memory-efficient representation of a pair of UShortValues which
- * uses one Integer value.
- *
- * @example
- * {{{
- * scala> val p = org.opalj.collection.immutable.UShortPair(2323,332)
- * p: org.opalj.collection.immutable.UShortPair = UShortPair(2323,332)
- * }}}
- *
- * @author Michael Eichberg
- */
-final class UShortPair private (val pair: Int) extends AnyVal {
-    def _1: UShort = pair & UShort.MaxValue
-    def key: UShort = _1
-    def minor: UShort = _1
-    def _2: UShort = pair >>> 16
-    def value: UShort = _2
-    def major: UShort = _2
-    override def toString: String = s"UShortPair($key,$value)"
-}
-/**
- * Factory to create `UShortPair` objects.
- */
-object UShortPair {
-
-    def apply(a: UShort, b: UShort): UShortPair = {
-        assert(a >= UShort.MinValue && a <= UShort.MaxValue)
-        assert(b >= UShort.MinValue && b <= UShort.MaxValue)
-
-        new UShortPair(a | b << 16)
-    }
-}
+//import scala.collection.Set
+//import org.opalj.fpcf.PropertyComputation
+//import org.opalj.br.Method
+//
+//class ThrownExceptionsAnalysis(ps: PropertyStore) extends PropertyComputation[Method] {
+//
+//    def apply(m: Method): PropertyComputationResult = {
+//
+//    }
+//
+//}

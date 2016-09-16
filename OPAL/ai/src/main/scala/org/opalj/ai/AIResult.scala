@@ -30,6 +30,9 @@ package org.opalj
 package ai
 
 import scala.collection.BitSet
+
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.collection.UShortSet
 import org.opalj.br.Code
 

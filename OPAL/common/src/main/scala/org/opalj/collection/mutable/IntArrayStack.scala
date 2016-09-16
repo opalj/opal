@@ -30,71 +30,153 @@ package org.opalj
 package collection
 package mutable
 
+import scala.collection.mutable
+import scala.collection.mutable
+import scala.collection.generic
+import scala.collection.AbstractIterator
+
 /**
- * A very lightweight array based implementation of a mutable stack of `int` values which has a
- * given initial height.
+ * An array based implementation of a mutable stack of `int` values which has a
+ * given initial size. If the stack is non-empty, the index of the top value is `0` and the
+ * index of the bottom value is (`length-1`).
  *
+ * @param data The array containing the values.
+ * @param size0	The number of stored values.
  * @author Michael Eichberg
  */
-final class IntArrayStack private (private var data: Array[Int]) {
+final class IntArrayStack private (
+    private var data:  Array[Int],
+    private var size0: Int
+) extends mutable.IndexedSeq[Int]
+        with mutable.IndexedSeqLike[Int, IntArrayStack]
+        with mutable.Cloneable[IntArrayStack]
+        with Serializable { stack ⇒
 
-    private var size = 0
+    def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
 
-    def this(initialSize: Int) { this(new Array[Int](Math.max(initialSize, 4))) }
+    override def size: Int = size0
+    override def length: Int = size0
+    override def isEmpty: Boolean = size0 == 0
+    override def nonEmpty: Boolean = size0 > 0
+
+    override def apply(index: Int): Int = {
+        val size0 = this.size0
+        val valueIndex = size0 - 1 - index
+        if (valueIndex < 0 || valueIndex >= size0)
+            throw new IndexOutOfBoundsException(s"$index (size: $size0)");
+
+        data(valueIndex)
+    }
+
+    override def update(index: Int, v: Int): Unit = data(size0 - 1 - index) = v
+
+    override def newBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
+
+    /** The same as push but additionally returns `this`. */
+    def +=(i: Int): this.type = {
+        push(i)
+        this
+    }
 
     def push(i: Int): Unit = {
-        val size = this.size
+        val size0 = this.size0
         var data = this.data
-        if (data.length == size) {
-            val newData = new Array[Int](size * 2)
-            System.arraycopy(data, 0, newData, 0, size)
+        if (data.length == size0) {
+            val newData = new Array[Int]((size0 + 1) * 2)
+            System.arraycopy(data, 0, newData, 0, size0)
             data = newData
             this.data = newData
         }
 
-        data(size) = i
-        this.size = size + 1
+        data(size0) = i
+        this.size0 = size0 + 1
     }
 
+    /**
+     * Pushes the value of the given stack on this stack while maintaining the order
+     * in which the values were pushed on the given stack. I.e.,
+     * if this contains the values `[1|2->` and the given one the values `[3,4->`
+     * then the resulting stack will contain the values `[1|2|3|4...`.
+     *
+     * @note In case of `++` the order of the values is reversed.
+     */
     def push(that: IntArrayStack): Unit = {
-        val thatSize = that.size
+        val thatSize = that.size0
 
-        if (thatSize == 0)
+        if (thatSize == 0) {
             return ;
-
-        val thisSize = this.size
-        var data = this.data
-        val combinedSize = thisSize + thatSize
-        if (combinedSize > data.length) {
-            val newData = new Array[Int](combinedSize + 10)
-            System.arraycopy(data, 0, newData, 0, thisSize)
-            data = newData
-            this.data = newData
         }
 
-        System.arraycopy(that.data, 0, data, thisSize, thatSize)
+        val thisSize = this.size0
+        var thisData = this.data
 
-        this.size = combinedSize
+        val newSize = thisSize + thatSize
+        if (newSize > thisData.length) {
+            val newData = new Array[Int](newSize + 10)
+            System.arraycopy(thisData, 0, newData, 0, thisSize)
+            thisData = newData
+            this.data = thisData
+        }
+
+        System.arraycopy(that.data, 0, thisData, thisSize, thatSize)
+
+        this.size0 = newSize
     }
 
+    /**
+     * Returns and removes the top most value from the stack.
+     *
+     * @note If the stack is empty a `NoSuchElementException` will be thrown.
+     */
     def pop(): Int = {
-        val index = this.size - 1
-        val i = data(index)
-        this.size = index
+        val index = this.size0 - 1
+        if (index < 0)
+            throw new NoSuchElementException("the stack is empty");
+
+        val i = this.data(index)
+        this.size0 = index
         i
     }
 
-    def foreach[U](f: Int ⇒ U): Unit = {
-        var i = size - 1
+    /**
+     * Returns the stack's top-most value.
+     *
+     * @note If the stack is empty a `NoSuchElementException` will be thrown.
+     */
+    def top(): Int = {
+        val index = this.size0 - 1
+        if (index < 0)
+            throw new NoSuchElementException("the stack is empty");
+
+        this.data(index)
+    }
+
+    /**
+     * Same as `top()`, but potentially less efficient due to (un)boxing if the head method
+     * of the supertype is called.
+     */
+    override /*TraversableLike*/ def head: Int = top()
+
+    override /*TraversableLike*/ def last: Int = {
+        if (this.size0 == 0)
+            throw new NoSuchElementException("the stack is empty");
+
+        this.data(0)
+    }
+
+    override def foreach[U](f: Int ⇒ U): Unit = {
+        val data = this.data
+        var i = this.size0 - 1
         while (i >= 0) {
             f(data(i))
             i -= 1
         }
     }
 
-    def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+        val data = this.data
         var v = z
-        var i = size - 1
+        var i = this.size0 - 1
         while (i >= 0) {
             v = f(v, data(i))
             i -= 1
@@ -102,9 +184,53 @@ final class IntArrayStack private (private var data: Array[Int]) {
         v
     }
 
-    def isEmpty: Boolean = size == 0
+    /**
+     * Returns an iterator which produces the values in LIFO order.
+     *
+     * @note 	The `next` method will throw an `IndexOutOfBoundsException`
+     * 			when all elements are already returned.
+     */
+    override def iterator: Iterator[Int] = {
+        new AbstractIterator[Int] {
+            var currentIndex = stack.size0 - 1
+            def hasNext: Boolean = currentIndex >= 0
 
-    def nonEmpty: Boolean = size > 0
+            def next(): Int = {
+                val currentIndex = this.currentIndex
+                val r = stack.data(currentIndex)
+                this.currentIndex = currentIndex - 1
+                r
+            }
 
-    override def toString: String = s"IntArrayStack(size=$size;data=${data.take(size).mkString("(", ",", ")")})"
+        }
+    }
+
+    override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
+
+    override def toString: String = {
+        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+    }
+}
+
+/**
+ * Factory to create [[IntArrayStack]]s.
+ */
+object IntArrayStack {
+
+    implicit def canBuildFrom: generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] = {
+        new generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] {
+            def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
+            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder
+        }
+    }
+
+    def newBuilder: mutable.Builder[Int, IntArrayStack] = {
+        new mutable.ArrayBuffer[Int] mapResult fromSeq
+    }
+
+    /**
+     * Creates a new stack based on a given sequence. The last value of the sequence will
+     * be the top value of the stack.
+     */
+    def fromSeq(seq: Seq[Int]): IntArrayStack = seq.foldLeft(new IntArrayStack())(_ += _)
 }

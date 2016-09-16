@@ -32,6 +32,9 @@ package debug
 
 import scala.Console.RED
 import scala.Console.RESET
+
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey

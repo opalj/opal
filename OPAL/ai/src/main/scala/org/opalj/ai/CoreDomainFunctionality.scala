@@ -29,7 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 
@@ -138,7 +139,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             } else {
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
-                var newOperands: Operands = ChainedNil // during the update we build the operands stack in reverse order
+                var newOperands: Operands = Nil // during the update we build the operands stack in reverse order
 
                 while (thisRemainingOperands.nonEmpty /* && both stacks have to contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
@@ -474,13 +475,13 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
                         if (subroutinesToTerminate > 0) {
-                            header = pc :: header
+                            header :&:= pc
                             true
                         } else {
                             false
                         }
                     } else {
-                        header = pc :: header
+                        header :&:= pc
                         true
                     }
                 }.tail /* drop SUBROUTINE MARKER */
@@ -488,13 +489,13 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                header.reverse ::: (SUBROUTINE :: successorPC :: relevantWorklist)
+                header.reverse :&:: (SUBROUTINE :&: successorPC :&: relevantWorklist)
             }
         } else {
             if (containsInPrefix(worklist, successorPC, SUBROUTINE_START)) {
                 worklist
             } else {
-                successorPC :: worklist
+                successorPC :&: worklist
             }
         }
     }

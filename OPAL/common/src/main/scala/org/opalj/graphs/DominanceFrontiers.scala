@@ -32,7 +32,6 @@ package graphs
 import org.opalj.collection.SmallValuesSet
 import org.opalj.collection.immutable
 import org.opalj.collection.mutable
-//import scala.collection.mutable.ArrayBuffer
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -43,8 +42,9 @@ final class DominanceFrontiers private (private final val dfs: Array[SmallValues
     final def apply(n: Int): SmallValuesSet = df(n)
 
     final def maxNode: Int = dfs.length - 1
+
     /**
-     * Returns the of nodes in the dominance frontier of the given node.
+     * Returns the nodes in the dominance frontier of the given node.
      */
     final def df(n: Int): SmallValuesSet = {
         val df = dfs(n)
@@ -56,6 +56,21 @@ final class DominanceFrontiers private (private final val dfs: Array[SmallValues
 
     def dominanceFrontiers: IndexedSeq[SmallValuesSet] = dfs
 
+    //
+    //
+    // DEBUGGING RELATED FUNCTIONALITY
+    //
+    //
+
+    /**
+     * Creates a dot graph which depicts the underlying graphs dominance frontiers.
+     *
+     * @param 	isNodeValid A function that returns true if the given int value
+     * 			identifies a valid node. If the underlying graph is not a sparse
+     * 			graph; i.e., if every index in the range [0...maxNode] identifies
+     * 			a valid node then the default function, which always returns `true`
+     * 			can be used.
+     */
     def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
         val g = Graph.empty[Int]
         dfs.zipWithIndex.foreach { e ⇒
@@ -102,9 +117,9 @@ object DominanceFrontiers {
      * val df = org.opalj.graphs.DominanceFrontiers(dtf,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
      * }}}
-     * @param dt The dominator tree of the specified (flow) graph. In case of the reverse flow
+     * @param 	dt The dominator tree of the specified (flow) graph. In case of the reverse flow
      * 			graph you have to give the [[DominatorTree]] computed using [[PostDominatorTree$]].
-     * @param isValidNode A function that returns `true` if the given id represents a node of the
+     * @param 	isValidNode A function that returns `true` if the given id represents a node of the
      * 			underlying graph. If the underlying graph contains a single, new artificial start
      * 			node then this node may or may not be reported as a valid node; this is not relevant
      * 			for this algorithm.
@@ -177,7 +192,7 @@ object DominanceFrontiers {
 
         // traverse in DFS order
         //var inDFSOrder: List[Int] = Nil
-        val inDFSOrder = new IntArrayStack(max - 2)
+        val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
         var nodes: List[Int] = List(startNode)
         //val nodes = new IntArrayStack(Math.max(1, max - 3))
         //nodes.push(startNode)

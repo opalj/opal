@@ -31,8 +31,9 @@ package ai
 package domain
 package tracing
 
-import org.opalj.br._
 import scala.collection.BitSet
+import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.br._
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
