@@ -420,17 +420,19 @@ object ChainedList {
         def result(): ChainedList[T] = list
     }
 
+    private[this] val baseCanBuildFrom = new CanBuildFrom[ChainedList[_], AnyRef, ChainedList[AnyRef]] {
+        def apply(from: ChainedList[_]) = new ChainedListBuilder[AnyRef]
+        def apply() = new ChainedListBuilder[AnyRef]
+    }
     implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[ChainedList[_], A, ChainedList[A]] = {
-        new CanBuildFrom[ChainedList[_], A, ChainedList[A]] {
-            def apply(from: ChainedList[_]) = new ChainedListBuilder[A]
-            def apply() = new ChainedListBuilder[A]
-        }
+        baseCanBuildFrom.asInstanceOf[CanBuildFrom[ChainedList[_], A, ChainedList[A]]]
+    }
+    private[this] val specializedCanBuildFrom = new CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] {
+        def apply(from: ChainedList[_]) = new ChainedListBuilder[Int]
+        def apply() = new ChainedListBuilder[Int]
     }
     implicit def canBuildIntChainedListFrom: CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] = {
-        new CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] {
-            def apply(from: ChainedList[_]) = new ChainedListBuilder[Int]
-            def apply() = new ChainedListBuilder[Int]
-        }
+        specializedCanBuildFrom
     }
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
@@ -474,7 +476,7 @@ object ChainedList {
  */
 case object ChainedNil extends ChainedList[Nothing] {
 
-    private def listIsEmpty = new IllegalStateException("the list is empty")
+    private def listIsEmpty = new NoSuchElementException("the list is empty")
 
     def head: Nothing = throw listIsEmpty
     def tail: Nothing = throw listIsEmpty
