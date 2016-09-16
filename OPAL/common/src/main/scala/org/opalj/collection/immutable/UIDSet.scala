@@ -273,7 +273,7 @@ sealed trait UIDSet[+T <: UID]
      * }}}
      */
     def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[UIDSet[T], B, That]): That = {
-        var b = bf(this)
+        val b = bf(this)
         foreach { e ⇒ b += f(e) }
         b.result
     }

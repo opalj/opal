@@ -529,7 +529,7 @@ class ClassHierarchy private (
                 f(subtype)
 
                 val subtypeId = subtype.id
-				allSubtypes =
+                allSubtypes =
                     subclassTypesMap(subtypeId) ::
                         subinterfaceTypesMap(subtypeId) ::
                         allSubtypes
