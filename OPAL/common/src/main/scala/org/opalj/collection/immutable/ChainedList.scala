@@ -67,8 +67,9 @@ sealed trait ChainedList[@specialized(Int) +T]
 
         def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
             val list = self
+            var rest = list
+
             val b = bf(list)
-            var rest = self
             while (rest.nonEmpty) {
                 val x = rest.head
                 if (p(x)) b += f(x)
