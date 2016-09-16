@@ -48,10 +48,12 @@ trait UID {
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: UID ⇒ (this eq that) || this.id == that.id
+            case that: UID ⇒ UID.areEqual(this, that)
             case _         ⇒ false
         }
     }
+
+    final def ===(that: UID): Boolean = UID.areEqual(this, that)
 
     final override def hashCode: Int = id
 
@@ -61,6 +63,8 @@ trait UID {
  * Helper methods related to data structures that have unique ids.
  */
 object UID {
+
+    final def areEqual(a: UID, b: UID): Boolean = (a eq b) || a.id == b.id
 
     /**
      * Returns the element stored in the given array at the position identified
