@@ -248,7 +248,7 @@ class PropertyStore private (
     )(
         f: ⇒ T
     ): T = {
-        val entityLocks = sortedEntityProperties.mapToList(e ⇒ e.l)
+        val entityLocks = sortedEntityProperties.toIterator.map(e ⇒ e.l)
         withWriteLocks(entityLocks)(f)
     }
 
