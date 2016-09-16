@@ -12,7 +12,7 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 scalaVersion in ThisBuild := "2.11.8"
 //scalaVersion in ThisBuild := "2.12.0-M5"
 
-scalacOptions in (ThisBuild,Compile,compile) ++= Seq(
+scalacOptions in ThisBuild ++= Seq(
 		"-target:jvm-1.8",
 		"-deprecation", "-feature", "-unchecked", 
 		"-Xlint", "-Xfuture", "-Xfatal-warnings", 
@@ -60,9 +60,8 @@ addCommandAlias("cleanAll","; clean ; cleanFiles ; cleanCache ; cleanLocal ")
 
 addCommandAlias("cleanBuild","; project OPAL ; cleanAll ; eclipse ; compileAll ; unidoc ;  publishLocal ")
 
-//EclipseKeys.createSrc := EclipseCreateSrc.Default 
-
 EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource)
+//EclipseKeys.createSrc := EclipseCreateSrc.Default 
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 
