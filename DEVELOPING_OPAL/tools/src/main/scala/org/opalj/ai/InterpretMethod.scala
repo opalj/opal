@@ -31,8 +31,6 @@ package ai
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
 import org.opalj.br.{ClassFile, Method}
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.ai.domain.l0.BaseDomain

@@ -60,7 +60,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         with Serializable { self ⇒
 
     /**
-     * Represents a filtered [[ChainedList]]. Instances of [[WithFilter]] are typically
+     * Represents a filtered [[ChainedList]]. Instances of [[ChainedListWithFilter]] are typically
      * created by [[ChainedList]]'s `withFilter` method.
      */
     class ChainedListWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
