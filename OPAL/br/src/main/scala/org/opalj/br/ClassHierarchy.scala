@@ -49,6 +49,10 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.collection.StrictSubset
+import org.opalj.collection.EqualSets
+import org.opalj.collection.StrictSuperset
+import org.opalj.collection.UncomparableSets
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -2143,10 +2147,10 @@ class ClassHierarchy private (
         assert(upperTypeBoundsB.nonEmpty)
 
         upperTypeBoundsA.compare(upperTypeBoundsB) match {
-            case UIDSet.StrictSubset   ⇒ upperTypeBoundsA
-            case UIDSet.Equal          ⇒ upperTypeBoundsA /*or upperTypeBoundsB*/
-            case UIDSet.StrictSuperset ⇒ upperTypeBoundsB
-            case UIDSet.Uncomparable ⇒
+            case StrictSubset   ⇒ upperTypeBoundsA
+            case EqualSets      ⇒ upperTypeBoundsA /*or upperTypeBoundsB*/
+            case StrictSuperset ⇒ upperTypeBoundsB
+            case UncomparableSets ⇒
                 val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
                 val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
                 val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
@@ -2178,13 +2182,14 @@ class ClassHierarchy private (
 
         if (upperTypeBoundB.isSingletonSet) {
             val upperTypeBound =
-                if (upperTypeBoundA eq upperTypeBoundB.first()) {
+                if (upperTypeBoundA eq upperTypeBoundB.first) {
                     if (reflexive)
                         upperTypeBoundB
                     else
                         UIDSet(directSupertypes(upperTypeBoundA))
-                } else
-                    joinObjectTypes(upperTypeBoundA, upperTypeBoundB.first(), reflexive)
+                } else {
+                    joinObjectTypes(upperTypeBoundA, upperTypeBoundB.first, reflexive)
+                }
 
             return upperTypeBound;
         }
