@@ -39,7 +39,10 @@ import org.opalj.collection.UID.areEqual
 import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
 
 /**
- * An immutable, sorted set of elements of type `UID` based on a simple search tree.
+ * An immutable, sorted set of elements of type `UID`. Underlying the implementation
+ * is a modified binary search tree. The primary use case of this structure is its
+ * use for small(er) sets or sets where the order of additions of elements is
+ * very unlikely to be accidentially ordered.
  *
  * Contains checks etc. are based on the element's unique id.
  *
@@ -49,7 +52,8 @@ import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
  * @author Michael Eichberg
  */
 /*
-NOTE: SETS OF SIZE [0..4] are always represented using no additional nodes.
+NOTE: SETS OF SIZE [0..4] are always represented using one of the following
+canonical representations.
 */
 sealed trait UIDSet[+T <: UID]
         extends TraversableOnce[T]
@@ -82,7 +86,10 @@ sealed trait UIDSet[+T <: UID]
         }
 
         def foreach[U](f: T ⇒ U): Unit = self.foreach { e ⇒ if (p(e)) f(e) }
-        def withFilter(q: T ⇒ Boolean): UIDSetWithFilter = new UIDSetWithFilter(x ⇒ p(x) && q(x))
+
+        def withFilter(q: T ⇒ Boolean): UIDSetWithFilter = {
+            new UIDSetWithFilter(x ⇒ p(x) && q(x))
+        }
     }
 
     /**
@@ -97,6 +104,7 @@ sealed trait UIDSet[+T <: UID]
     //
 
     final def hasDefiniteSize: Boolean = true
+
     final def isTraversableAgain: Boolean = true
 
     /**
@@ -123,7 +131,7 @@ sealed trait UIDSet[+T <: UID]
     @throws[NoSuchElementException]("If the set is empty.") def last: T
 
     /**
-     * Returns `true` if the an element with the same id as the given element is already
+     * Returns `true` if an element with the same id as the given element is already
      * in this list, `false` otherwise.
      */
     def contains[X <: UID](o: X): Boolean
@@ -346,6 +354,22 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def toIterator: Iterator[Nothing] = Iterator.empty
 
+    override def ++[X >: Nothing <: UID](es: TraversableOnce[X]): UIDSet[X] = {
+        es match {
+            case s: UIDSet[X] ⇒ s
+            case _            ⇒ super.++[X](es)
+        }
+    }
+
+    override def intersect[X >: Nothing <: UID](that: UIDSet[X]): UIDSet[X] = this
+
+    override def compare[X >: Nothing <: UID](that: UIDSet[X]): SetRelation = {
+        if (that eq this)
+            EqualSets
+        else
+            StrictSubset
+    }
+
     override def equals(other: Any): Boolean = other.isInstanceOf[UIDSet0.type]
 
     override def hashCode: Int = 34237
@@ -398,7 +422,10 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
 
     override def contains[X <: UID](o: X): Boolean = UID.areEqual(e, o)
 
-    override def find(f: T ⇒ Boolean): Option[T] = { val e = this.e; if (f(e)) Some(e) else None }
+    override def find(f: T ⇒ Boolean): Option[T] = {
+        val e = this.e
+        if (f(e)) Some(e) else None
+    }
 
     override def filter(f: T ⇒ Boolean): UIDSet[T] = if (f(e)) this else UIDSet0
 
@@ -409,6 +436,25 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
     override def toSeq = e :: Nil
 
     override def toIterator: Iterator[T] = Iterator.single(e)
+
+    override def ++[X >: T <: UID](es: TraversableOnce[X]): UIDSet[X] = {
+        es match {
+            case s: UIDSet[X] ⇒ if (s.nonEmpty) s + this.head else this
+            case _            ⇒ super.++(es)
+        }
+    }
+
+    override def intersect[X >: T <: UID](that: UIDSet[X]): UIDSet[X] = {
+        if (that.contains(this.head)) this else UIDSet0
+    }
+
+    override def compare[X >: T <: UID](that: UIDSet[X]): SetRelation = {
+        that.size match {
+            case 0 ⇒ StrictSuperset
+            case 1 ⇒ if (that.head.id == this.head.id) EqualSets else UncomparableSets
+            case _ ⇒ if (that.contains(this.head)) StrictSubset else UncomparableSets
+        }
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
