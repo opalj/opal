@@ -411,7 +411,7 @@ object ObjectImmutabilityAnalysis extends FPCFAnalysisRunner {
         // 3.
         // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
-        classHierarchy.directSubclassesOf(ObjectType.Object).view.
+        classHierarchy.directSubclassesOf(ObjectType.Object).toIterator.
             map(ot ⇒ (ot, project.classFile(ot))).
             foreach {
                 case (_, Some(cf)) ⇒ cfs ::= cf

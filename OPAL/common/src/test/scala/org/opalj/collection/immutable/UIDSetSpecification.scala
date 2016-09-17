@@ -30,13 +30,14 @@ package org.opalj
 package collection
 package immutable
 
+import scala.language.implicitConversions
+
 import org.junit.runner.RunWith
 import scala.collection.immutable.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.{forAll, classify, BooleanOperators}
 import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -153,7 +154,7 @@ object UIDSetSpecification extends Properties("UIDSet") {
     property("uid sets can be used in for comprehensions") = forAll { orig: List[Int] ⇒
         val s = orig.map(SUID(_))
         val us = EmptySUIDSet ++ s
-        var newUs: SUIDSet = for { suid ← us } yield { SUID(suid.id + 1) }
+        val newUs: SUIDSet = for { suid ← us } yield { SUID(suid.id + 1) }
         newUs == us.map[SUID, SUIDSet](suid ⇒ SUID(suid.id + 1))
     }
 

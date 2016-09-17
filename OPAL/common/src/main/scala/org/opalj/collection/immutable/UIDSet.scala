@@ -57,7 +57,7 @@ sealed trait UIDSet[+T <: UID]
         with Serializable { self ⇒
 
     /**
-     * Represents a filtered [[UIDSet]]. Instances of [[WithFilter]] are typically
+     * Represents a filtered [[UIDSet]]. Instances of [[UIDSetWithFilter]] are typically
      * created by [[UIDSet]]'s `withFilter` method.
      */
     class UIDSetWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, UIDSet[T]] {
@@ -883,7 +883,7 @@ private final class UIDSetNode[T <: UID](
             leftFiltered
         else if (leftFiltered.size + rightFiltered.size <= 4)
             // UIDSets which contain less than 5 elements have to use the
-            // canonical representation to ensure that the equality 
+            // canonical representation to ensure that the equality
             // tests succeed!
             leftFiltered ++ rightFiltered
         else
@@ -946,9 +946,9 @@ object UIDSet {
         }
     }
 
-    def canBuildUIDSetFromTraversableOnce[T <: UID]: CanBuildFrom[TraversableOnce[T], T, UIDSet[T]] = {
-        new CanBuildFrom[TraversableOnce[T], T, UIDSet[T]] {
-            def apply(from: TraversableOnce[T]) = new UIDSetBuilder[T]
+    def canBuildUIDSet[T <: UID]: CanBuildFrom[AnyRef, T, UIDSet[T]] = {
+        new CanBuildFrom[AnyRef, T, UIDSet[T]] {
+            def apply(from: AnyRef) = new UIDSetBuilder[T]
             def apply() = new UIDSetBuilder[T]
         }
     }

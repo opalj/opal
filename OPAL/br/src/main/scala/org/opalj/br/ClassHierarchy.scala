@@ -34,7 +34,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.io.BufferedSource
 
 import org.opalj.control.foreachNonNullValue
@@ -168,23 +167,24 @@ class ClassHierarchy private (
         }
     }
 
-    val leafTypes: Set[ObjectType] = {
-        val leafTypes = knownTypesMap.view filter { objectType ⇒
-            (objectType ne null) && {
-                val oid = objectType.id
-                subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
+    val leafTypes: Iterator[ObjectType] = {
+        knownTypesMap.iterator.
+            filter { t ⇒
+                (t ne null) && {
+                    val oid = t.id
+                    subclassTypesMap(oid).isEmpty && subinterfaceTypesMap(oid).isEmpty
+                }
             }
-        }
-        leafTypes.toSet
     }
 
-    def leafClassTypes: Iterable[ObjectType] = {
-        knownTypesMap.view filter { objectType ⇒
-            (objectType ne null) && {
-                val oid = objectType.id
-                subclassTypesMap(oid).isEmpty && !interfaceTypesMap(oid)
+    def leafClassTypes: Iterator[ObjectType] = {
+        knownTypesMap.iterator.
+            filter { t ⇒
+                (t ne null) && {
+                    val oid = t.id
+                    subclassTypesMap(oid).isEmpty && !interfaceTypesMap(oid)
+                }
             }
-        }
     }
 
     /**
@@ -260,7 +260,7 @@ class ClassHierarchy private (
         implicit def objectTypeToString(ot: ObjectType): String =
             if (ot ne null) ot.toJava else "N/A"
 
-        implicit def objectTypesToString(ots: Set[ObjectType]): String =
+        implicit def objectTypesToString(ots: UIDSet[ObjectType]): String =
             if (ots ne null) ots.map(_.toJava).mkString("{", ",", "}") else "N/A"
 
         case class TypeInfo(
@@ -569,7 +569,7 @@ class ClassHierarchy private (
             else {
                 val subclasses = subclassTypesMap(id)
                 if (subclasses ne null) {
-                    subclasses.iterator
+                    subclasses.toIterator
                 } else
                     return Iterator.empty;
             }
@@ -802,7 +802,7 @@ class ClassHierarchy private (
 
     def supertypes(objectType: ObjectType): UIDSet[ObjectType] = {
         superinterfaceTypes(objectType) match {
-            case None                      ⇒ superclassType(objectType).toSet
+            case None                      ⇒ superclassType(objectType).map(UIDSet(_)).getOrElse(UIDSet0)
             case Some(superinterfaceTypes) ⇒ superinterfaceTypes ++ superclassType(objectType)
         }
     }
@@ -958,7 +958,7 @@ class ClassHierarchy private (
                 No
             } else {
                 var answer: Answer = No
-                val superTypesIterator = superinterfaceTypes.iterator
+                val superTypesIterator = superinterfaceTypes.toIterator
                 while (superTypesIterator.hasNext) {
                     val intermediateType = superTypesIterator.next()
                     val anotherAnswer = implementsInterface(intermediateType, theSuperinterfaceType)
@@ -1947,7 +1947,7 @@ class ClassHierarchy private (
         // class Y implements J
 
         var directSubtypes = UIDSet.empty[ObjectType]
-        val processedTypes = UIDSet.empty[ObjectType]
+        var processedTypes = UIDSet.empty[ObjectType]
         val typesToProcess = new mutable.Queue ++= directSubtypesOf(firstType)
         while (typesToProcess.nonEmpty) {
             val candidateType = typesToProcess.dequeue
@@ -2175,7 +2175,7 @@ class ClassHierarchy private (
                     if (reflexive)
                         upperTypeBoundB
                     else
-                        UIDSet(directSupertypes(upperTypeBoundA))
+                        directSupertypes(upperTypeBoundA)
                 } else {
                     joinObjectTypes(upperTypeBoundA, upperTypeBoundB.first, reflexive)
                 }
@@ -2291,21 +2291,21 @@ class ClassHierarchy private (
             if (reflexive)
                 return UIDSet(upperTypeBoundA);
             else
-                return UIDSet(directSupertypes(upperTypeBoundA /*or ...B*/ ));
+                return directSupertypes(upperTypeBoundA /*or ...B*/ );
         }
 
         if (isSubtypeOf(upperTypeBoundB, upperTypeBoundA).isYes) {
             if (reflexive)
                 return UIDSet(upperTypeBoundA);
             else
-                return UIDSet(directSupertypes(upperTypeBoundA));
+                return directSupertypes(upperTypeBoundA);
         }
 
         if (isSubtypeOf(upperTypeBoundA, upperTypeBoundB).isYes) {
             if (reflexive)
                 return UIDSet(upperTypeBoundB);
             else
-                return UIDSet(directSupertypes(upperTypeBoundB));
+                return directSupertypes(upperTypeBoundB);
         }
 
         if (isUnknown(upperTypeBoundA) || isUnknown(upperTypeBoundB)) {
@@ -2620,7 +2620,7 @@ object ClassHierarchy {
                     Option(superinterfaceTypes).map { superinterfaceTypes ⇒
                         superinterfaceTypes.
                             split(',').
-                            map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSetFromTraversableOnce)
+                            map[ObjectType, UIDSet[ObjectType]](t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet)
                     }.getOrElse(UIDSet0)
                 )
             }

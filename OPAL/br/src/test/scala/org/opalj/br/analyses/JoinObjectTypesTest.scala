@@ -52,7 +52,9 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
     implicit def stringToObjectType(str: String) = ObjectType(str)
-    implicit def setToUIDSet(s: Set[String]) = UIDSet(s.map(ObjectType.apply))
+    implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
+        UIDSet.empty[ObjectType] ++ s.map(ObjectType.apply)
+    }
 
     def mkString(param: UIDSet[ObjectType]) = {
         param.toSeq.map(_.toJava).mkString("{", ",", "}")

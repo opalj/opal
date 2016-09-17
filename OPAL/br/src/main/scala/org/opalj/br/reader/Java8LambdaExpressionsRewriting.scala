@@ -37,6 +37,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.instructions._
 import org.opalj.log.OPALLogger
 
@@ -147,7 +148,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
                 ) = invokeTargetMethodHandle
 
-            val superInterfaceTypes = Set(factoryDescriptor.returnType.asObjectType)
+            val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
             val typeDeclaration = TypeDeclaration(
                 ObjectType(newLambdaTypeName(targetMethodOwner)),
                 isInterfaceType = false,
