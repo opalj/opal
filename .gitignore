@@ -42,3 +42,6 @@ TOOLS/bdl/org.opalj.bdl/plugin.xml_gen
 TOOLS/bdl/org.opalj.bdl.ui/plugin.xml_gen
 TOOLS/bdl/org.opalj.bdl.tests/org.opalj.bdl.tests.launch
 Test.class
+/.ensime
+/.ensime_cache
+/project/.ensime
