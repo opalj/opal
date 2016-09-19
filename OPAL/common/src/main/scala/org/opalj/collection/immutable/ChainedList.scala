@@ -246,6 +246,23 @@ sealed trait ChainedList[@specialized(Int) +T]
     def :&::[X >: T](x: ChainedList[X]): ChainedList[X]
 
     /**
+     * Prepends the given list to this list by setting the end of the given list to
+     * this list. This changes the given list.
+     */
+    private[collection] def prepend[X >: T](x: ChainedList[X]): ChainedList[X] = {
+        if (x.isEmpty)
+            this
+        else {
+            var lastNode = x.asInstanceOf[:&:[X]]
+            while (lastNode.rest.nonEmpty) {
+                lastNode = lastNode.rest.asInstanceOf[:&:[X]]
+            }
+            lastNode.rest = this
+            x
+        }
+    }
+
+    /**
      * Takes the first n elements of this list. If this list does not contain at
      * least n elements an IllegalStateException  will be thrown.
      * @param n    An int value in the range [0...this.size].
@@ -455,7 +472,7 @@ object ChainedList {
     /**
      * Creates a new [[ChainedList]] containing the given element.
      */
-    def apply[@specialized(Int) T](e: T) = new :&:[T](e, ChainedNil)
+    def apply[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
 
     def apply[@specialized(Int) T](t: Traversable[T]): ChainedList[T] = {
         if (t.isEmpty)
@@ -500,8 +517,8 @@ case object ChainedNil extends ChainedList[Nothing] {
  * @author Michael Eichberg
  */
 final case class :&:[@specialized(Int) T](
-        head:                        T,
-        private[immutable] var rest: ChainedList[T]
+        head:                         T,
+        private[collection] var rest: ChainedList[T]
 ) extends ChainedList[T] {
 
     def tail: ChainedList[T] = rest
