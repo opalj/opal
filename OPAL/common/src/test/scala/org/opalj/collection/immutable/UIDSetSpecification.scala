@@ -38,6 +38,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.{forAll, classify, BooleanOperators}
 import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -53,23 +54,39 @@ object UIDSetSpecification extends Properties("UIDSet") {
     val EmptySUIDSet: SUIDSet = UIDSet0
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): SUIDSet = {
+    implicit def toSUIDSet(l: Traversable[Int]): UIDSet[SUID] = {
         val ls: Traversable[SUID] = l.map(i ⇒ SUID(i))
-        EmptySUIDSet ++ ls
+        UIDSet0 ++ ls
     }
     def isSorted(s: SUIDSet): Boolean = {
         s.isEmpty || {
             var lastId = s.head.id
-            s.tail.forall { suid ⇒
-                val result = suid.id > lastId
+            s.tail.toIterator.foreach { suid ⇒
+                if (suid.id <= lastId)
+                    return false;
                 lastId = suid.id
-                result
+
             }
+            true
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // 							G E N E R A T O R S
+
+    val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
+
+    val oneToOneHunderdGen = Gen.choose(0, 100)
+
+    val veryLargeListGen = for {
+        i ← Gen.choose(30000, 100000)
+        s ← Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
+    } yield (s, i)
+
+    val largeSetGen = for {
+        i ← Gen.choose(20, 100)
+        s ← Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
+    } yield (s, i)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // 							P R O P E R T I E S
@@ -82,10 +99,20 @@ object UIDSetSpecification extends Properties("UIDSet") {
         (fl1.head == s) :| "apply" && (fl2.head == s) :| "builder" && (fl3.head == s) :| "+"
     }
 
+    property("singleton set when the set contains only one value after transformation") = forAll { (i: Int, j: Int) ⇒
+        i != j ==> {
+            UIDSet[SUID](i, j).tail.isSingletonSet :| "tail" &&
+                (UIDSet[SUID](i) + SUID(j)).filter(_ == SUID(i)).isSingletonSet :| "filter first value" &&
+                (UIDSet[SUID](i) + SUID(j)).filter(_ == SUID(j)).isSingletonSet :| "filter second value"
+        }
+    }
+
     property("create set(++)") = forAll { orig: Set[Int] ⇒
         val s = orig.map(SUID(_))
         val us = EmptySUIDSet ++ s
-        s.size == us.size && s.forall(us.contains(_)) && us.forall(s.contains(_)) && isSorted(us)
+        (s.size == us.size) :| "size" &&
+            s.forall(us.contains(_)) && us.forall(s.contains(_)) &&
+            isSorted(us) :| "sorted"
     }
 
     property("create set(+)") = forAll { orig: Set[Int] ⇒
@@ -182,7 +209,11 @@ object UIDSetSpecification extends Properties("UIDSet") {
         def test(suid: SUID) = suid.id < 0
         val us = toSUIDSet(s)
         val ssuid = (SortedSet.empty[Int] ++ s).toList.map(SUID(_))
-        us.find(test) == ssuid.find(test)
+        val usFound = us.find(test)
+        val ssFound = ssuid.find(test)
+        usFound.isDefined == ssFound.isDefined &&
+            (usFound.isEmpty || usFound.get.id < 0)
+
     }
 
     property("compare(subsets)") = forAll { (s: Set[Int]) ⇒
@@ -210,7 +241,11 @@ object UIDSetSpecification extends Properties("UIDSet") {
         orig.nonEmpty ==> {
             val s = SortedSet.empty ++ orig
             val us = toSUIDSet(s).tail
-            toSUIDSet(s.tail) == us && isSorted(us)
+            val tailTest = (toSUIDSet(s.tail) == us)
+            if (!tailTest) println(toSUIDSet(s.tail))
+            if (!tailTest) println(us)
+            tailTest :| "tail" &&
+                isSorted(us) :| "isSorted"
         }
     }
 
@@ -233,8 +268,6 @@ object UIDSetSpecification extends Properties("UIDSet") {
         us == (us1 intersect us2)
     }
 
-    val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
-    val oneToOneHunderdGen = Gen.choose(0, 100)
     property("copyToArray") = forAll(intSetGen, oneToOneHunderdGen) { (orig: Set[Int], size: Int) ⇒
         (size >= 0 && size < 100) ==> {
             val s = SortedSet.empty ++ orig
@@ -278,6 +311,65 @@ object UIDSetSpecification extends Properties("UIDSet") {
         val s = (SortedSet.empty[Int] ++ orig).toList.map(SUID(_))
         val us = toSUIDSet(orig)
         us.toString == s.mkString("UIDSet(", ", ", ")")
+    }
+
+    property("can handle large sets") = forAll(largeSetGen) { (v) ⇒
+        val (orig: Set[Int], i) = v
+        val us = toSUIDSet(orig)
+        val usTransformed =
+            (us.
+                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+
+        val s = (SortedSet.empty[UID](UID.UIDBasedOrdering) ++ orig.map(SUID(_)))
+        val sTransformed =
+            (s.
+                map[UID, SortedSet[UID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+        classify(orig.size > 20, "original set is large") {
+            classify(sTransformed.size > 20, "transformed set is large") {
+                usTransformed.forall(sTransformed.contains) :| "us <= s" &&
+                    sTransformed.forall(usTransformed.contains) :| "s <= us"
+            }
+        }
+    }
+
+    property("can handle very large sets") = forAll(veryLargeListGen) { (v) ⇒
+        val (orig: List[Int], i) = v
+        val us = toSUIDSet(orig)
+        val usTransformed =
+            time{
+            (us.
+                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+            }{t => println(t.toSeconds)}
+
+            time{
+            (us.
+                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) })
+            }{t => println(t.toSeconds)}
+
+        val s = (SortedSet.empty[UID](UID.UIDBasedOrdering) ++ orig.map(SUID(_)))
+        val sTransformed =
+            time{
+            (s.
+                map[UID, SortedSet[UID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+            }{t => println(t.toSeconds)}
+        classify(s.size > 10000, s"original set is large") {
+            classify(sTransformed.size > 10000, "transformed set is large") {
+                usTransformed.forall(sTransformed.contains) :| "us <= s" &&
+                    sTransformed.forall(usTransformed.contains) :| "s <= us"
+            }
+        }
     }
 
 }
