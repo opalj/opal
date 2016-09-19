@@ -102,7 +102,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * @param other Another `Locals` data-structure that has the the same number of
      *      elements as this `Locals` data-structure.
      */
-    /* ABSTRACT */ def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
+    /* ABSTRACT */ def merge(other: Locals[T], whenNE: (T, T) ⇒ T): Locals[T]
 
     /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
 
