@@ -246,19 +246,70 @@ sealed trait ChainedList[@specialized(Int) +T]
     def :&::[X >: T](x: ChainedList[X]): ChainedList[X]
 
     /**
-     * Prepends the given list to this list by setting the end of the given list to
-     * this list. This changes the given list.
+     * Prepends the given list to '''this list''' by setting the end of the given list to
+     * this list.
+     *
+     * @note 	'''This mutates the given list.'''
      */
-    private[collection] def prepend[X >: T](x: ChainedList[X]): ChainedList[X] = {
+    //private[collection]
+    def ++!:[X >: T](x: ChainedList[X]): ChainedList[X] = {
         if (x.isEmpty)
-            this
+            return this;
+
+        var lastNode = x.asInstanceOf[:&:[X]]
+        while (lastNode.rest.nonEmpty) {
+            lastNode = lastNode.rest.asInstanceOf[:&:[X]]
+        }
+        lastNode.rest = this
+        x
+    }
+
+    private[collection] def ++![X >: T](x: ChainedList[X]): ChainedList[X] = x.++!:(this)
+
+    /**
+     * Clones this list and returns the cloned list as well as the last element of the list; using
+     * the last element it is possible to immediately attach further elements to the list at its end.
+     * If this list is empty, the last element is null.
+     */
+    private[collection] def copy[X >: T](): (ChainedList[X], :&:[X]) = {
+        if (isEmpty)
+            return (this, null);
+
+        val result = new :&:[T](head, ChainedNil)
+        var last = result
+        var rest: ChainedList[T] = this.tail
+        while (rest.nonEmpty) {
+            val x = rest.head
+            rest = rest.tail
+            val newLast = new :&:[T](x, ChainedNil)
+            last.rest = newLast
+            last = newLast
+        }
+        (result, last.asInstanceOf[:&:[X]])
+    }
+
+    def ++[X >: T](that: ChainedList[X]): ChainedList[X] = {
+        if (that.isEmpty)
+            return this;
+        if (this.isEmpty)
+            return that;
+
+        val (head, last) = copy[X]
+        last.rest = that
+        head
+    }
+
+    def ++[X >: T <: AnyRef](other: Traversable[X]): ChainedList[X] = {
+        if (other.isEmpty)
+            return this;
+
+        val that = other.to[ChainedList]
+        if (this.isEmpty)
+            that
         else {
-            var lastNode = x.asInstanceOf[:&:[X]]
-            while (lastNode.rest.nonEmpty) {
-                lastNode = lastNode.rest.asInstanceOf[:&:[X]]
-            }
-            lastNode.rest = this
-            x
+            val (head, last) = copy[X]
+            last.rest = that
+            head
         }
     }
 
@@ -323,7 +374,7 @@ sealed trait ChainedList[@specialized(Int) +T]
 
     def zipWithIndex: ChainedList[(T, Int)] = {
         var index = 0
-        map { e ⇒
+        map[(T, Int), ChainedList[(T, Int)]] { e ⇒
             val currentIndex = index
             index += 1
             (e, currentIndex)
@@ -535,26 +586,6 @@ final case class :&:[@specialized(Int) T](
             case ChainedNil    ⇒ this
             case other: :&:[X] ⇒ other ++ this
         }
-    }
-
-    def ++[X <: T](other: ChainedList[X]): ChainedList[T] = {
-        if (other.isEmpty)
-            return this;
-
-        val Nil = ChainedNil
-        // first clone this one...
-        val result = new :&:[T](this.head, Nil)
-        var last = result
-        var rest = this.tail
-        while (rest.nonEmpty) {
-            val newLast = new :&:[T](rest.head, Nil)
-            last.rest = newLast
-            last = newLast
-            rest = rest.tail
-        }
-        // add other list...
-        last.rest = other
-        result
     }
 
     def take(n: Int): ChainedList[T] = {

@@ -301,14 +301,60 @@ object ChainedListSpecification extends Properties("ChainedList") {
         fl3.toList == l3
     }
 
-    property("++") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("++[ChainedList[String]]]") = forAll { (l1: List[String], l2: List[String]) ⇒
         l1.nonEmpty ==> {
             val fl1 = ChainedList(l1)
             val fl2 = ChainedList(l2)
-            val fl3 = fl1.asInstanceOf[:&:[String]] ++ fl2
+            val fl3 = fl1 ++ fl2
             val l3 = l1 ++ l2
             fl3.toList == l3
         }
+    }
+
+    property("++[List[String]]") = forAll { (l1: List[String], l2: List[String]) ⇒
+        l1.nonEmpty ==> {
+            val fl1 = ChainedList(l1)
+            val fl3 = fl1 ++ l2
+            val l3 = l1 ++ l2
+            fl3.toList == l3
+        }
+    }
+
+    property("++[ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+        l1.nonEmpty ==> {
+            val fl1 = ChainedList(l1)
+            val fl2 = ChainedList(l2)
+            val fl3 = fl1 ++ fl2
+            val l3 = l1 ++ l2
+            fl3.toList == l3 && isSpecialized(fl3)
+        }
+    }
+
+    property("copy") = forAll { (l1: List[Int]) ⇒
+        val fl1 = ChainedList(l1)
+        val (fl1Copy, last) = fl1.copy()
+        (fl1.isEmpty && fl1Copy.isEmpty && last == null) ||
+            ((fl1 ne fl1Copy) && last != null && last.rest == ChainedNil)
+    }
+
+    property("++!:[ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
+        val fl3 = fl1 ++!: fl2
+        val l3 = l1 ++: l2
+        (fl3.toList == l3) :| "list equality" &&
+            isSpecialized(fl3) :| "specialization" &&
+            (fl1.isEmpty || fl2.isEmpty || (fl3 eq fl1)) :| "reference equality"
+    }
+
+    property("++![ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
+        val fl3 = fl1 ++! fl2
+        val l3 = l1 ++ l2
+        fl3.toList == l3 && isSpecialized(fl3) && (fl1.isEmpty || (fl3 eq fl1))
     }
 
     property("foreach") = forAll { l: List[String] ⇒
@@ -551,5 +597,5 @@ object ChainedListSpecification extends Properties("ChainedList") {
  * }
  *
  * sum()
- * 
+ *
  */
