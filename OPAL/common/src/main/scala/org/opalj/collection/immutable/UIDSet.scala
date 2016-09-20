@@ -680,7 +680,10 @@ private[collection] final class UIDSetNode[T <: UID] private[collection] (
         }
     }
 
-    override def hashCode: Int = left.hashCode * 13 + right.hashCode
+    override def hashCode: Int = {
+        (if (left ne null) left.hashCode else 0) * 13 +
+            (if (right ne null) right.hashCode else 0)
+    }
 
 }
 
