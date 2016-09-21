@@ -342,28 +342,28 @@ object UIDSetSpecification extends Properties("UIDSet") {
         val (orig: List[Int], i) = v
         val us = toSUIDSet(orig)
         val usTransformed =
-            time {
-                (us.
-                    map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
-                    filter(_.id < i / 2).
-                    +(SUID(i)) + SUID(-i) + SUID(i + 100)).
-                    tail
-            } { t ⇒ println(t.toSeconds) }
-
-        time {
+            //time{
             (us.
-                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) })
-        } { t ⇒ println(t.toSeconds) }
+                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+        //}{t => println(t.toSeconds)}
+
+        //            time{
+        //            (us.
+        //                map[SUID, UIDSet[SUID]] { e ⇒ SUID(e.id % i) })
+        //            }{t => println(t.toSeconds)}
 
         val s = (SortedSet.empty[UID](UID.UIDBasedOrdering) ++ orig.map(SUID(_)))
         val sTransformed =
-            time {
-                (s.
-                    map[UID, SortedSet[UID]] { e ⇒ SUID(e.id % i) }.
-                    filter(_.id < i / 2).
-                    +(SUID(i)) + SUID(-i) + SUID(i + 100)).
-                    tail
-            } { t ⇒ println(t.toSeconds) }
+            //            time{
+            (s.
+                map[UID, SortedSet[UID]] { e ⇒ SUID(e.id % i) }.
+                filter(_.id < i / 2).
+                +(SUID(i)) + SUID(-i) + SUID(i + 100)).
+                tail
+        //            }{t => println(t.toSeconds)}
         classify(s.size > 10000, s"original set is large") {
             classify(sTransformed.size > 10000, "transformed set is large") {
                 usTransformed.forall(sTransformed.contains) :| "us <= s" &&
