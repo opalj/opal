@@ -1681,8 +1681,8 @@ class PropertyStore private (
 
         /*
     	 * The core method that actually submits runnables to the thread pool.
-    	 * @note tastStarted is called immediately and taskCompleted is called when the
-    	 * 		task has finished.
+    	 * @note	tastStarted is called immediately and taskCompleted is called when the
+    	 * 			task has finished.
     	 */
         // Locks: Tasks
         def scheduleTask(task: Runnable): Unit = {
