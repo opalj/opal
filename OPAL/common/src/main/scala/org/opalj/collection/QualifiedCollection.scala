@@ -52,7 +52,7 @@ sealed trait QualifiedCollection[S] {
      * Returns `true` if the underlying collection is guaranteed to contain all elements with
      * respect to some query/analysis. I.e., if the analysis is not conclusive, then `false`
      * is returned. However, it may still be the case that the underlying collection contains
-     * all elements, but that cannot be deduced.
+     * some or all elements, but that cannot be finally deduced.
      */
     def isComplete: Boolean
 

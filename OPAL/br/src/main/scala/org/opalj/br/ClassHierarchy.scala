@@ -43,6 +43,7 @@ import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.ChainedList.{IncompleteEmptyChainedList, CompleteEmptyChainedList}
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.EqualSets
 import org.opalj.collection.StrictSuperset
@@ -53,6 +54,12 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType.Object
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.QualifiedCollection
+import org.opalj.collection.QualifiedCollection
+import org.opalj.collection.CompleteCollection
+import org.opalj.collection.IncompleteCollection
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -364,20 +371,26 @@ class ClassHierarchy private (
     /**
      * Returns `true` if the class hierarchy has some information about the given
      * type.
+     *
+     * @note	Consider using isKnown(objectTypeId : Int) if you need the object ids anyway.
      */
-    @inline final def isKnown(objectType: ObjectType): Boolean = {
-        val id = objectType.id
-        (id < knownTypesMap.length) && (knownTypesMap(id) ne null)
+    @inline final def isKnown(objectType: ObjectType): Boolean = isKnown(objectType.id)
+
+    @inline final def isKnown(objectTypeId: Int): Boolean = {
+        (objectTypeId < knownTypesMap.length) && (knownTypesMap(objectTypeId) ne null)
     }
 
     /**
      * Returns `true` if the type is unknown. This is `true` for all types that are
      * referred to in the body of a method, but which are not referred to in the
      * declarations of the class files that were analyzed.
+     *
+     * @note	Consider using isUnknown(objectTypeId : Int) if you need the object ids anyway.
      */
-    @inline final def isUnknown(objectType: ObjectType): Boolean = {
-        val id = objectType.id
-        (id >= knownTypesMap.length) || (knownTypesMap(id) eq null)
+    @inline final def isUnknown(objectType: ObjectType): Boolean = isUnknown(objectType.id)
+
+    @inline final def isUnknown(objectTypeId: Int): Boolean = {
+        (objectTypeId >= knownTypesMap.length) || (knownTypesMap(objectTypeId) eq null)
     }
 
     /**
@@ -642,6 +655,8 @@ class ClassHierarchy private (
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
+     *
+     * This method will
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         if (isUnknown(objectType))
@@ -661,6 +676,43 @@ class ClassHierarchy private (
                 foreachSupertype(superinterfaceType)(f)
             }
         }
+    }
+
+    /**
+     * Returns a list which contains all super types in initialization order.
+     * I.e., it will return the top level super class first - i.e., `java.lang.Object`
+     * and then all sub class types.
+     *
+     * If the given type is `java.lang.Object` the empty list is returned.
+     *
+     * Interfaces are not further considered, because they generally don't need any instance
+     * initialization. If the given type is an interface type, the returned list will hence only
+     * contain `java.lang.Object`.
+     *
+     * @note	If the class hierarchy is not complete, it may happen that the super class chain
+     * 			is not complete. In this case an [[IncompleteCollection]] will be returned.
+     */
+    def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[ChainedList[ObjectType]] = {
+        if (objectType eq ObjectType.Object)
+            return CompleteEmptyChainedList;
+
+        val objectTypeId = objectType.id
+
+        if (isUnknown(objectTypeId))
+            return IncompleteEmptyChainedList;
+
+        var allTypes: ChainedList[ObjectType] = ChainedNil
+
+        val superclassTypeMap = this.superclassTypeMap
+        var superclassType = superclassTypeMap(objectTypeId)
+        while (superclassType ne null) {
+            allTypes :&:= superclassType
+            superclassType = superclassTypeMap(superclassType.id)
+        }
+        if (allTypes.head eq ObjectType.Object)
+            CompleteCollection(allTypes)
+        else
+            IncompleteCollection(allTypes)
     }
 
     def directSupertypes(objectType: ObjectType): UIDSet[ObjectType] = {

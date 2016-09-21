@@ -251,8 +251,7 @@ sealed trait ChainedList[@specialized(Int) +T]
      *
      * @note 	'''This mutates the given list.'''
      */
-    //private[collection]
-    def ++!:[X >: T](x: ChainedList[X]): ChainedList[X] = {
+    private[opalj] def ++!:[X >: T](x: ChainedList[X]): ChainedList[X] = {
         if (x.isEmpty)
             return this;
 
@@ -264,7 +263,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         x
     }
 
-    private[collection] def ++![X >: T](x: ChainedList[X]): ChainedList[X] = x.++!:(this)
+    private[opalj] def ++![X >: T](x: ChainedList[X]): ChainedList[X] = x.++!:(this)
 
     /**
      * Clones this list and returns the cloned list as well as the last element of the list; using
@@ -512,6 +511,10 @@ object ChainedList {
         else
             new ChainedListBuilder[T]
     }
+
+    final val IncompleteEmptyChainedList = new IncompleteCollection(ChainedNil: ChainedList[Nothing])
+
+    final val CompleteEmptyChainedList = new CompleteCollection(ChainedNil: ChainedList[Nothing])
 
     /**
      * Returns an empty list.
