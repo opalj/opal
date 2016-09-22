@@ -31,22 +31,23 @@ package tac
 
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.ai.AIResult
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CFG
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordCFG
 
 /**
  * Converts the bytecode of a method into a three address representation using quadruples.
  * The converted method has an isomorophic CFG when compared to the original method,
- *  but may contain more instructions.
+ * but may contain more instructions.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs

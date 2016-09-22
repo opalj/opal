@@ -115,6 +115,7 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI ⇒
+                    assert(bbAI.startPC <= bbAI.endPC,s"${bbAI.startPC}> ${bbAI.endPC}")
                     if (!pcs.add(bbAI.startPC))
                         fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
                     if (bbAI.endPC != bbAI.startPC) {

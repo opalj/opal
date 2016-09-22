@@ -30,10 +30,12 @@ package org.opalj
 package br
 package cfg
 
-import scala.collection.{Set ⇒ SomeSet}
-import scala.collection.JavaConverters._
 import java.util.Arrays
 import java.util.IdentityHashMap
+
+import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.JavaConverters._
+
 import org.opalj.collection.mutable.UShortSet
 
 /**
