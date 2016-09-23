@@ -36,12 +36,15 @@ import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.cfg.CFGFactory
 
 /**
  * Creates the three-address representation and prints it.
  *
  * @example
- * 		To convert all files of a project to TAC you can use:
+ *         To convert all files of a project to TAC you can use:
  * {{{
  * import org.opalj.io.write
  * import org.opalj.tac._
@@ -75,9 +78,16 @@ object TAC {
     def processMethod(project: SomeProject, classFile: ClassFile, method: Method): Unit = {
         try {
             val ch = project.classHierarchy
-            val (code, cfg) = AsQuadruples(method, ch, optimizations = AllOptimizations, forceCFGCreation = true)
+            val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
+            val aiResult = BaseAI(classFile, method, domain)
+            writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.cfg.gv")
+            writeAndOpen(CFGFactory(method.body.get, project.classHierarchy).toDot, method.name, ".br.cfg.gv")
+
+            val (code, cfg) =
+                //AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
+                AsQuadruples(method, ch, Some(aiResult), AllOptimizations, forceCFGCreation = true)
             val graph = cfg.get.toDot
-            writeAndOpen(graph, method.name, ".tac.cfg.dot")
+            writeAndOpen(graph, method.name, "tac.cfg.gv")
 
             val tac = ToJavaLike(code)
             val fileNamePrefix = classFile.thisType.toJava+"."+method.name
