@@ -51,7 +51,8 @@ case class INSTANCEOF(
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
     final def stackSlotsChange: Int = 0
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
