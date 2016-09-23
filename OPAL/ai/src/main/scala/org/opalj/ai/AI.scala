@@ -1259,7 +1259,7 @@ trait AI[D <: Domain] {
                         branchTarget: PC,
                         upperBound:   Option[ObjectType]
                     ): Unit = {
-                        val newOperands = ChainedList(exceptionValue)
+                        val newOperands = ChainedList.singleton(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
                                 theDomain.refEstablishIsNonNull(pc, exceptionValue, newOperands, locals)
@@ -2589,7 +2589,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    final val initialWorkList: List[PC] = List(0)
+    final val initialWorkList: List[PC] = ChainedList.singleton(0)
 
 }
 
