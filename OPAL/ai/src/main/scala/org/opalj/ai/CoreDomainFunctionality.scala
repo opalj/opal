@@ -137,6 +137,17 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
+                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue) = {
+                    val updatedOperand = joinValues(pc, thisValue, otherValue)
+                    if (updatedOperand eq NoUpdate) {
+                        thisValue
+                    } else {
+                        operandsUpdated &:= updatedOperand
+                        updatedOperand.value
+                    }
+                }
+                thisOperands.fuse(otherOperands, fuseOperands)
+                /*
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
                 var newOperands: Operands = Nil // during the update we build the operands stack in reverse order
@@ -165,11 +176,11 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     thisOperands
                 } else {
                     newOperands.reverse
-                }
+                }*/
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
+        //        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
@@ -179,18 +190,17 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                         localsUpdated &:= MetaInformationUpdateType
                         TheIllegalValue
                     } else {
-                        val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                        val updatedLocal = joinValues(pc, thisValue, otherValue)
                         if (updatedLocal eq NoUpdate) {
-                            thisLocal
+                            thisValue
                         } else {
-                            localsUpdated = localsUpdated &: updatedLocal
+                            localsUpdated &:= updatedLocal
                             val value = updatedLocal.value
-                            if (value ne TheIllegalValue)
-                                localsUpdateIsRelevant = true
+                            //                            if (value ne TheIllegalValue)
+                            //                                localsUpdateIsRelevant = true
                             value
                         }
                     }
-
                 }
                 val newLocals = thisLocals.fuse(otherLocals, fuseLocals)
                 //                val newLocals =
@@ -223,10 +233,10 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         afterBaseJoin(pc)
 
         val updateType =
-            if (localsUpdateIsRelevant)
-                operandsUpdated &: localsUpdated
-            else
-                operandsUpdated
+            // if (localsUpdateIsRelevant)
+            operandsUpdated &: localsUpdated
+        // else
+        //     operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 
