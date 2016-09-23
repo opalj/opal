@@ -404,6 +404,8 @@ sealed trait ChainedList[@specialized(Int) +T]
 
     def reverse: ChainedList[T]
 
+    override def mkString: String = mkString("", "", "")
+
     override def mkString(pre: String, sep: String, post: String): String = {
         val result = new StringBuilder(pre)
         var rest = this
