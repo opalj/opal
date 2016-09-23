@@ -132,8 +132,8 @@ class LocalsTest extends FlatSpec with Matchers {
                 v2 = v2.updated(i, i)
                 v3 = v3.updated(i, i + 1)
             }
-            v1.merge(v2, (a, b) ⇒ { a should equal(b); a })
-            val vm = v1.merge(v3, (a, b) ⇒ { a should not equal (b); -1 })
+            v1.fuse(v2, (a, b) ⇒ { a should equal(b); a })
+            val vm = v1.fuse(v3, (a, b) ⇒ { a should not equal (b); -1 })
             vm.foreach { v ⇒
                 if (v == null || v != -1)
                     fail("null is not -1 (size="+size+"; va="+v1.toString ++ "; vb="+v3.toString+"; vm="+vm.toString+")")
@@ -155,12 +155,12 @@ class LocalsTest extends FlatSpec with Matchers {
                 v2 = v2.updated(i, i)
                 v3 = v3.updated(i, i + 1)
             }
-            v1.merge(v2, (a, b) ⇒ a) should be theSameInstanceAs v1
+            v1.fuse(v2, (a, b) ⇒ a) should be theSameInstanceAs v1
 
-            v1.merge(v3, (a, b) ⇒ b) should be theSameInstanceAs v3
-            v1.merge(v3, (a, b) ⇒ a) should be theSameInstanceAs v1
-            v3.merge(v1, (a, b) ⇒ b) should be theSameInstanceAs v1
-            v3.merge(v1, (a, b) ⇒ a) should be theSameInstanceAs v3
+            v1.fuse(v3, (a, b) ⇒ b) should be theSameInstanceAs v3
+            v1.fuse(v3, (a, b) ⇒ a) should be theSameInstanceAs v1
+            v3.fuse(v1, (a, b) ⇒ b) should be theSameInstanceAs v1
+            v3.fuse(v1, (a, b) ⇒ a) should be theSameInstanceAs v3
         }
     }
 

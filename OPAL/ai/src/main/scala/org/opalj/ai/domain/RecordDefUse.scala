@@ -492,7 +492,7 @@ trait RecordDefUse extends RecordCFG {
                     // variables (there is no load without a previous store).
                     var newUsage = false
                     val joinedDefLocals =
-                        oldDefLocals.merge(
+                        oldDefLocals.fuse(
                             newDefLocals,
                             { (o, n) ⇒
                                 // In general, if n or o equals null, then

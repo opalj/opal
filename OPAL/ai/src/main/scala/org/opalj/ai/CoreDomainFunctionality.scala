@@ -174,9 +174,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                def mergeLocals(thisLocal: DomainValue, otherLocal: DomainValue) = {
-                    if ((thisLocal eq null) || (otherLocal eq null)) {
-                        localsUpdated = localsUpdated &: MetaInformationUpdateType
+                def fuseLocals(thisValue: DomainValue, otherValue: DomainValue) = {
+                    if ((thisValue eq null) || (otherValue eq null)) {
+                        localsUpdated &:= MetaInformationUpdateType
                         TheIllegalValue
                     } else {
                         val updatedLocal = joinValues(pc, thisLocal, otherLocal)
@@ -192,7 +192,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     }
 
                 }
-                val newLocals = thisLocals.merge(otherLocals, mergeLocals)
+                val newLocals = thisLocals.fuse(otherLocals, fuseLocals)
                 //                val newLocals =
                 //                    thisLocals.merge(
                 //                        otherLocals,
