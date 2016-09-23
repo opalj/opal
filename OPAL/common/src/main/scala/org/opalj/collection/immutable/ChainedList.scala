@@ -380,6 +380,9 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
     }
 
+    /**
+     * @see	`merge`
+     */
     def corresponds[X](other: ChainedList[X])(f: (T, X) ⇒ Boolean): Boolean = {
         if (this.isEmpty)
             return other.isEmpty;
@@ -459,6 +462,30 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
     }
 
+    /**
+     * Merges this list with the given list by merging the values using the given function.
+     * If all results are the same (reference equality) as this list's elements then the result
+     * will be `this`. Otherwise, only the tail that is identical will be kept.
+     *
+     * @param 	other A list with the same number of elements as this list. If the size of
+     * 			the lists it not equal, the result is undefined.
+     */
+    def merge[X <: AnyRef, Z >: T <: AnyRef](that: ChainedList[X])(f: (T, X) ⇒ Z): ChainedList[Z]
+
+    /**
+     * Fuses this list with the given list by fusing the values using the given function.
+     * The function `onDiff` is only called if the given list's element and this list's
+     * element differ. Hence, when the tail of both lists is equal fusing both lists
+     * will terminate immediately and the common tail is attached to the new heading.
+     *
+     * @param 	other A list with the same number of elements as this list. If the size of
+     * 			the lists it not equal, the result is undefined.
+     */
+    def fuse[X >: T <: AnyRef](that: ChainedList[X], onDiff: (T, X) ⇒ X): ChainedList[X]
+}
+
+trait ChainedListLowPriorityImplicits {
+
 }
 
 /**
@@ -466,7 +493,7 @@ sealed trait ChainedList[@specialized(Int) +T]
  *
  * @author Michael Eichberg
  */
-object ChainedList {
+object ChainedList extends ChainedListLowPriorityImplicits {
 
     /**
      * Builder for [[ChainedList]]s. The builder is specialized for the primitive
@@ -567,6 +594,14 @@ case object ChainedNil extends ChainedList[Nothing] {
     def drop(n: Int): ChainedNil.type = { if (n == 0) this else throw listIsEmpty }
     def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
     def reverse: ChainedList[Nothing] = this
+
+    def merge[X <: AnyRef, Z >: Nothing <: AnyRef](
+        that: ChainedList[X]
+    )(
+        f: (Nothing, X) ⇒ Z
+    ): ChainedList[Z] = this
+
+    def fuse[X >: Nothing <: AnyRef](that: ChainedList[X], onDiff: (Nothing, X) ⇒ X): ChainedList[X] = this
 }
 
 /**
@@ -575,8 +610,8 @@ case object ChainedNil extends ChainedList[Nothing] {
  * @author Michael Eichberg
  */
 final case class :&:[@specialized(Int) T](
-        head:                         T,
-        private[collection] var rest: ChainedList[T]
+        head:                        T,
+        private[opalj] var rest: ChainedList[T] = ChainedNil
 ) extends ChainedList[T] {
 
     def tail: ChainedList[T] = rest
@@ -704,6 +739,142 @@ final case class :&:[@specialized(Int) T](
             rest = rest.tail
         }
         result
+    }
+
+    /**
+     * @note	The `merge` function first calls the given function and then checks if the
+     * 			result is reference equal to the element of the first list while fuse first
+     * 			checks the reference equality of the members before it calls the given function.
+     * 			Therefore `fuse` can abort checking all further values when the
+     * 			remaining list fragments are reference equal because both lists are immutable.
+     * 			In other words: fuse is an optimized version of merge where the function f
+     * 			has the following shape: `(x,y) => if(x eq y) x else /*whatever*/`.
+     */
+    def fuse[X >: T <: AnyRef](
+        that:   ChainedList[X],
+        onDiff: (T, X) ⇒ X
+    ): ChainedList[X] = {
+
+        var thisHead: ChainedList[T] = this
+        var thatHead: ChainedList[X] = that
+
+        var equalHead: ChainedList[X] = null
+
+        var newHead: :&:[X] = null
+        var newLast: :&:[X] = null
+        def appendToNewLast(t: X): Unit = {
+            if (newLast eq null) {
+                newLast = new :&:[X](t, ChainedNil)
+                newHead = newLast
+            } else {
+                val e = new :&:[X](t, ChainedNil)
+                newLast.rest = e
+                newLast = e
+            }
+        }
+
+        do {
+            val thisValue: T = thisHead.head
+            val thatValue: X = thatHead.head
+
+            if (thatValue eq thisValue.asInstanceOf[AnyRef]) {
+                if (equalHead eq null) equalHead = thisHead
+            } else {
+                val mergedValue: X = onDiff(thisValue, thatValue)
+                if (mergedValue eq thisValue.asInstanceOf[AnyRef]) {
+                    if (equalHead eq null) equalHead = thisHead
+                } else {
+                    if (equalHead ne null) {
+                        // we have to clone all elements in the range [equalNode...thisHead)
+                        // to make it possible to attach a new element.
+                        appendToNewLast(equalHead.head)
+                        equalHead = equalHead.tail
+                        while (equalHead ne thisHead) {
+                            appendToNewLast(equalHead.head)
+                            equalHead = equalHead.tail
+                        }
+                        equalHead = null
+                    }
+                    appendToNewLast(mergedValue)
+                }
+            }
+            thisHead = thisHead.tail
+            thatHead = thatHead.tail
+        } while (thisHead.nonEmpty && (thisHead ne thatHead))
+
+        if (newHead eq null) {
+            this // or equalHead
+        } else if (equalHead ne null) {
+            newLast.rest = equalHead
+            newHead
+        } else if (thisHead.nonEmpty) {
+            newLast.rest = thisHead
+            newHead
+        } else {
+            newHead
+        }
+    }
+
+    def merge[X <: AnyRef, Z >: T <: AnyRef](
+        that: ChainedList[X]
+    )(
+        f: (T, X) ⇒ Z
+    ): ChainedList[Z] = {
+        // The idea: iterate over both lists in parallel, when the merge results in the
+        // same value as this list's value, then we do not create a new list element, but
+        // instead store this information and otherwise wait until we see a change.
+        var thisHead: ChainedList[T] = this
+        var thatHead: ChainedList[X] = that
+
+        var equalHead: ChainedList[Z] = null
+
+        var newHead: :&:[Z] = null
+        var newLast: :&:[Z] = null
+        def appendToNewLast(t: Z): Unit = {
+            if (newLast eq null) {
+                newLast = new :&:[Z](t, ChainedNil)
+                newHead = newLast
+            } else {
+                val e = new :&:[Z](t, ChainedNil)
+                newLast.rest = e
+                newLast = e
+            }
+        }
+
+        do {
+            val thisValue: T = thisHead.head
+            val thatValue: X = thatHead.head
+
+            val mergedValue: Z = f(thisValue, thatValue)
+            if (mergedValue eq thisValue.asInstanceOf[AnyRef]) {
+                if (equalHead eq null) {
+                    equalHead = thisHead
+                }
+            } else {
+                if (equalHead ne null) {
+                    // we have to clone all elements in the range [equalNode...thisHead)
+                    // to make it possible to attach a new element.
+                    appendToNewLast(equalHead.head)
+                    equalHead = equalHead.tail
+                    while (equalHead ne thisHead) {
+                        appendToNewLast(equalHead.head)
+                        equalHead = equalHead.tail
+                    }
+                    equalHead = null
+                }
+                appendToNewLast(mergedValue)
+            }
+            thisHead = thisHead.tail
+            thatHead = thatHead.tail
+        } while (thisHead.nonEmpty)
+
+        if (newHead eq null) {
+            this // or equalHead
+        } else if (equalHead ne null) {
+            newLast.rest = equalHead
+            newHead
+        } else
+            newHead
     }
 
     override def toString: String = s"$head :&: ${rest.toString}"
