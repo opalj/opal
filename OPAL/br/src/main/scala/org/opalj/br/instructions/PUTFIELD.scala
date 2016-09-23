@@ -54,6 +54,8 @@ case class PUTFIELD(
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
+    final def stackSlotsChange: Int = -fieldType.computationalType.operandSize - 1
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

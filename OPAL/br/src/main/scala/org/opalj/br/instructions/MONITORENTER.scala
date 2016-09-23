@@ -45,6 +45,8 @@ case object MONITORENTER extends SynchronizationInstruction {
 
     final val jvmExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
 
+    final def stackSlotsChange: Int = -1
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

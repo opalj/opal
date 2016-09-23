@@ -51,6 +51,8 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = 0
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this eq code.instructions(otherPC)
     }

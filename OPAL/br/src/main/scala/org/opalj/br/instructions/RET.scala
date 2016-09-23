@@ -85,6 +85,8 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
+    final def stackSlotsChange: Int = 0
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
     }

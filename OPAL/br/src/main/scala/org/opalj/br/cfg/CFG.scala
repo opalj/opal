@@ -245,6 +245,7 @@ case class CFG(
             startPC = nextStartPC
             startIndex = endIndex + 1
         } while (startPC < max)
+
         if (startIndex < lastIndex)
             Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, lastIndex, lastNewBB)
 

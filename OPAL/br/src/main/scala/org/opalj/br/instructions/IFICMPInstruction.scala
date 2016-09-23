@@ -42,5 +42,6 @@ abstract class IFICMPInstruction extends SimpleConditionalBranchInstruction {
 
     def condition: RelationalOperator
 
-}
+    final def stackSlotsChange: Int = -2
 
+}

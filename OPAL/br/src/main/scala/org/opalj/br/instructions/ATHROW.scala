@@ -49,6 +49,8 @@ case object ATHROW extends Instruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
+    final def stackSlotsChange: Int = -1 // take the current exception or null
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
         this eq code.instructions(otherPC)
 

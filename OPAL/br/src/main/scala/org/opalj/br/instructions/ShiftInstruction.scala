@@ -45,6 +45,8 @@ abstract class ShiftInstruction
 
     final def isShiftInstruction: Boolean = true
 
+    final def stackSlotsChange: Int = -1
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

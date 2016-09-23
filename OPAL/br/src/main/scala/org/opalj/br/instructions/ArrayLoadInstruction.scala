@@ -45,6 +45,8 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = -2 + elementTypeComputationalType.operandSize
+
     final def readsLocal: Boolean = false
 
     final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
