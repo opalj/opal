@@ -35,6 +35,8 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
@@ -427,7 +429,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ObjectType("StaticMethods$ProxyWithFiveArguments"),
                             false,
                             Some(ObjectType.Object),
-                            Set.empty
+                            UIDSet.empty
                         ),
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor,
@@ -482,7 +484,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
                                 Some(ObjectType.Object),
-                                Set.empty
+                                UIDSet.empty
                             ),
                             "theProxy",
                             method.descriptor,
@@ -535,7 +537,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
                                 Some(ObjectType.Object),
-                                Set.empty
+                                UIDSet.empty
                             ),
                             "theProxy",
                             method.descriptor,
@@ -616,7 +618,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
                                 Some(ObjectType.Object),
-                                Set.empty
+                                UIDSet.empty
                             ),
                             "theProxy",
                             method.descriptor,
@@ -725,7 +727,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ObjectType("MethodRefConstructorProxy"),
                         false,
                         Some(ObjectType.Object),
-                        Set.empty
+                        UIDSet.empty
                     ),
                     "get",
                     MethodDescriptor(ObjectType.String, SomeType),
@@ -774,7 +776,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ObjectType("InstanceMethodRefProxy"),
                         false,
                         Some(ObjectType.Object),
-                        Set.empty
+                        UIDSet.empty
                     ),
                     "isFull",
                     MethodDescriptor(SomeOtherType, BooleanType),
@@ -806,7 +808,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ObjectType(theType.toJava + '$'+"Proxy"),
                             false,
                             Some(ObjectType.Object),
-                            Set.empty
+                            UIDSet.empty
                         ),
                         "$newInstance",
                         new NoArgumentMethodDescriptor(theType),
@@ -828,7 +830,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =
                     ClassFileFactory.Proxy(
-                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), Set.empty),
+                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), UIDSet.empty),
                         "method",
                         methodDescriptor,
                         receiverType, false,
@@ -866,7 +868,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ObjectType("SomeRandomType"),
                     false,
                     Some(ObjectType.Object),
-                    Set.empty
+                    UIDSet.empty
                 )
 
             def testConstructor(
@@ -1342,7 +1344,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ObjectType(definingTypeName),
                 false,
                 Some(ObjectType.Object),
-                Set()
+                UIDSet.empty
             )
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor

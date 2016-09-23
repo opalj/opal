@@ -41,7 +41,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-sealed trait PartialCollection[S] {
+sealed trait QualifiedCollection[+S] {
 
     /**
      * The underlying collection.
@@ -52,7 +52,7 @@ sealed trait PartialCollection[S] {
      * Returns `true` if the underlying collection is guaranteed to contain all elements with
      * respect to some query/analysis. I.e., if the analysis is not conclusive, then `false`
      * is returned. However, it may still be the case that the underlying collection contains
-     * all elements, but that cannot be deduced.
+     * some or all elements, but that cannot be finally deduced.
      */
     def isComplete: Boolean
 
@@ -63,6 +63,10 @@ sealed trait PartialCollection[S] {
     final def isIncomplete: Boolean = !isComplete
 }
 
-case class Complete[S](s: S) extends PartialCollection[S] { final val isComplete = true }
+case class CompleteCollection[+S](s: S) extends QualifiedCollection[S] {
+    final def isComplete = true
+}
 
-case class Incomplete[S](s: S) extends PartialCollection[S] { final val isComplete = false }
+case class IncompleteCollection[+S](s: S) extends QualifiedCollection[S] {
+    final def isComplete = false
+}

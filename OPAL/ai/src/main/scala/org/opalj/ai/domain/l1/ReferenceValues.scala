@@ -1316,7 +1316,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
                     classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound).isYes) {
                     if (thisUpperTypeBound.isSingletonSet)
-                        refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first()).asInstanceOf[DomainSingleOriginReferenceValue]
+                        refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first).asInstanceOf[DomainSingleOriginReferenceValue]
                     else
                         refinedValue =
                             ObjectValue(

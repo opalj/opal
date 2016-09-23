@@ -34,7 +34,9 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.br.analyses.Project
@@ -61,7 +63,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
                         false,
                         Some(ObjectType.Object),
-                        Set.empty
+                        UIDSet.empty
                     )
                 val proxyMethodName = m.name + '$'+"proxy"
                 val tIsInterface = testProject.classFile(t).get.isInterfaceDeclaration

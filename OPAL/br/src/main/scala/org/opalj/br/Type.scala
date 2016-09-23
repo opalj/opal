@@ -984,6 +984,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         ObjectType.unboxValue(targetType)
     }
 
+    // The default equals and hashCode methods are a perfect fit.
+
     override def toString = "ObjectType("+fqn+")"
 
 }
@@ -1171,8 +1173,9 @@ object ObjectType {
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    final val SerializableAndCloneable: UIDSet[ObjectType] =
+    final val SerializableAndCloneable: UIDSet[ObjectType] = {
         UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
+    }
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id

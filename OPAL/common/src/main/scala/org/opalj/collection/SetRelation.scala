@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2016
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -27,18 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-
-import org.opalj.collection.immutable.UIDSet
+package collection
 
 /**
- * Stores information about a type's supertypes.
+ * Describes the relation between two sets.
  *
  * @author Michael Eichberg
  */
-case class TypeDeclaration(
-    objectType:             ObjectType,
-    isInterfaceType:        Boolean,
-    theSuperclassType:      Option[ObjectType],
-    theSuperinterfaceTypes: UIDSet[ObjectType]
-)
+sealed trait SetRelation
+
+final object StrictSubset extends SetRelation
+final object EqualSets extends SetRelation
+final object StrictSuperset extends SetRelation
+final object UncomparableSets extends SetRelation

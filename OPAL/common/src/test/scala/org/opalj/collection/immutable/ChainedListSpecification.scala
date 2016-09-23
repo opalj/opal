@@ -33,7 +33,7 @@ package immutable
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
-import org.scalacheck.Prop.{forAll, classify}
+import org.scalacheck.Prop.{forAll, classify, BooleanOperators}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
@@ -45,6 +45,26 @@ import org.scalacheck.Arbitrary
  */
 @RunWith(classOf[JUnitRunner])
 object ChainedListSpecification extends Properties("ChainedList") {
+
+    // FIRST LET'S CHECK THAT WE CAN ACTUALLY CREATE SPECIALIZED CLASSES
+    val nilClass = ChainedNil.getClass
+    val baseClass = new :&:[String]("1", ChainedNil).getClass
+    val specializedClass = new :&:[Int](1, ChainedNil).getClass
+    if (baseClass == specializedClass)
+        throw new UnknownError("unable to create a specialized instance of a chained list of ints")
+
+    def isNotSpecialized(cl: ChainedList[_]): Boolean = {
+        val clClass = cl.getClass
+        clClass == baseClass || clClass == nilClass
+    }
+
+    def isSpecialized(cl: ChainedList[_]): Boolean = {
+        val clClass = cl.getClass
+        clClass == specializedClass || clClass == nilClass
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // 							G E N E R A T O R S
 
     /**
      * Generates a list and an int value in the range [0,length of list ].
@@ -76,16 +96,48 @@ object ChainedListSpecification extends Properties("ChainedList") {
         l2 ← Gen.listOfN(m, Gen.oneOf("a", "b", "c"))
     } yield (l1, l2)
 
-    property("create") = forAll { s: String ⇒
-        val fl = ChainedList(s)
-        val l = List(s)
-        fl.head == l.head
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // 							P R O P E R T I E S
+
+    property("create[AnyRef]") = forAll { s: String ⇒
+        val fl1 = ChainedList(s)
+        val fl2 = (ChainedList.newBuilder[String] += s).result
+        val fl3 = s :&: ChainedNil
+        fl1.head == s && fl2.head == s && fl3.head == s
     }
 
-    property("==|hashCode") = forAll { (l1: List[String], l2: List[String]) ⇒
+    property("create[Int]") = forAll { i: Int ⇒
+        val fl1 = ChainedList(i)
+        val fl2 = new :&:[Int](i, ChainedNil)
+        val fl3 = (ChainedList.newBuilder[Int] += i).result
+        val fl4 = ChainedList(List[Int](i))
+        val fl5 = i :&: ChainedList(List[Int]())
+
+        fl1.head == i && fl2.head == i && fl3.head == i && fl4.head == i && fl5.head == i &&
+            isSpecialized(fl1) &&
+            isSpecialized(fl2) &&
+            isSpecialized(fl3) &&
+            isSpecialized(fl4) &&
+            isSpecialized(fl5)
+    }
+
+    property("==|hashCode[AnyRef]") = forAll { (l1: List[String], l2: List[String]) ⇒
         val fl1 = ChainedList(l1)
         val fl2 = ChainedList(l2)
         (l1 == l2) == (fl1 == fl2) && (fl1 != fl2 || fl1.hashCode() == fl2.hashCode())
+    }
+
+    property("==|hashCode[Int vs. AnyRef](I.e., a specialized list of ints should be equal to the same list containing boxed values)") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+        val fl1 = ChainedList(l1)
+        val fl1alt = ChainedList(l1: List[Any])
+        val l2AsAny: List[Any] = l2
+        val fl2 = ChainedList(l2AsAny)
+
+        isSpecialized(fl1) :| "specialization of fl1" &&
+            isNotSpecialized(fl2) :| "specialization of fl2" &&
+            (fl1 == fl1alt) :| "content equality" &&
+            ((l1 == l2) == (fl1 == fl2)) :| "content inequality" &&
+            (fl1 != fl2 || fl1.hashCode() == fl2.hashCode()) :| "hashCode (in)equality"
     }
 
     // METHODS DEFINED BY CHAINED LIST
@@ -95,37 +147,6 @@ object ChainedListSpecification extends Properties("ChainedList") {
         val cl = ChainedList(orig).withFilter(test).map[String, ChainedList[String]](s ⇒ s)
         val l = orig.withFilter(test).map[String, List[String]](s ⇒ s)
         cl == ChainedList(l)
-    }
-
-    property("hasDefiniteSize") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        fl.hasDefiniteSize
-    }
-
-    property("isTraversableAgain") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        fl.isTraversableAgain
-    }
-
-    property("seq") = forAll { l: List[String] ⇒
-        val fl = ChainedList(l)
-        (fl.seq eq fl)
-    }
-
-    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
-        val fl = ChainedList(l)
-        classify(l.isEmpty, "outer list is empty") {
-            classify(l.nonEmpty && l.forall(_.isEmpty), "all (at least one) inner lists are empty") {
-                def t(ss: List[String]): List[Int] = ss.map(_.length)
-                fl.flatMap(t) == ChainedList(l.flatMap(t))
-            }
-        }
-    }
-
-    property("map") = forAll { l: List[String] ⇒
-        def f(s: String): Int = s.length()
-        val fl = ChainedList(l)
-        fl.map(f) == ChainedList(l.map(f))
     }
 
     property("chained lists can be used in for loop") = forAll { orig: List[String] ⇒
@@ -157,6 +178,43 @@ object ChainedListSpecification extends Properties("ChainedList") {
         } yield r+":"+r.length
 
         cl == ChainedList(l)
+    }
+
+    property("a for-comprehension constructs specialized lists when possible") = forAll { orig: List[List[Int]] ⇒
+        // In the following we, have an implicit withFilter, map and flatMap call!
+        val cl = for { es ← ChainedList(orig) } yield ChainedList(es)
+        cl.forall(icl ⇒ isSpecialized(icl))
+    }
+
+    property("hasDefiniteSize") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        fl.hasDefiniteSize
+    }
+
+    property("isTraversableAgain") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        fl.isTraversableAgain
+    }
+
+    property("seq") = forAll { l: List[String] ⇒
+        val fl = ChainedList(l)
+        (fl.seq eq fl)
+    }
+
+    property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
+        val fl = ChainedList(l)
+        classify(l.isEmpty, "outer list is empty") {
+            classify(l.nonEmpty && l.forall(_.isEmpty), "all (at least one) inner lists are empty") {
+                def t(ss: List[String]): List[Int] = ss.map(_.length)
+                fl.flatMap(t) == ChainedList(l.flatMap(t))
+            }
+        }
+    }
+
+    property("map") = forAll { l: List[String] ⇒
+        def f(s: String): Int = s.length()
+        val fl = ChainedList(l)
+        fl.map(f) == ChainedList(l.map(f))
     }
 
     property("head") = forAll { l: List[String] ⇒
@@ -235,6 +293,70 @@ object ChainedListSpecification extends Properties("ChainedList") {
         }
     }
 
+    property(":&::") = forAll { (l1: List[String], l2: List[String]) ⇒
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
+        val fl3 = fl2 :&:: fl1
+        val l3 = l2 ::: l1
+        fl3.toList == l3
+    }
+
+    property("++[ChainedList[String]]]") = forAll { (l1: List[String], l2: List[String]) ⇒
+        l1.nonEmpty ==> {
+            val fl1 = ChainedList(l1)
+            val fl2 = ChainedList(l2)
+            val fl3 = fl1 ++ fl2
+            val l3 = l1 ++ l2
+            fl3.toList == l3
+        }
+    }
+
+    property("++[List[String]]") = forAll { (l1: List[String], l2: List[String]) ⇒
+        l1.nonEmpty ==> {
+            val fl1 = ChainedList(l1)
+            val fl3 = fl1 ++ l2
+            val l3 = l1 ++ l2
+            fl3.toList == l3
+        }
+    }
+
+    property("++[ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+        l1.nonEmpty ==> {
+            val fl1 = ChainedList(l1)
+            val fl2 = ChainedList(l2)
+            val fl3 = fl1 ++ fl2
+            val l3 = l1 ++ l2
+            fl3.toList == l3 && isSpecialized(fl3)
+        }
+    }
+
+    property("copy") = forAll { (l1: List[Int]) ⇒
+        val fl1 = ChainedList(l1)
+        val (fl1Copy, last) = fl1.copy()
+        (fl1.isEmpty && fl1Copy.isEmpty && last == null) ||
+            ((fl1 ne fl1Copy) && last != null && last.rest == ChainedNil)
+    }
+
+    property("++!:[ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
+        val fl3 = fl1 ++!: fl2
+        val l3 = l1 ++: l2
+        (fl3.toList == l3) :| "list equality" &&
+            isSpecialized(fl3) :| "specialization" &&
+            (fl1.isEmpty || fl2.isEmpty || (fl3 eq fl1)) :| "reference equality"
+    }
+
+    property("++![ChainedList[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+
+        val fl1 = ChainedList(l1)
+        val fl2 = ChainedList(l2)
+        val fl3 = fl1 ++! fl2
+        val l3 = l1 ++ l2
+        fl3.toList == l3 && isSpecialized(fl3) && (fl1.isEmpty || (fl3 eq fl1))
+    }
+
     property("foreach") = forAll { l: List[String] ⇒
         val fl = ChainedList(l)
         var lRest = l
@@ -268,6 +390,12 @@ object ChainedListSpecification extends Properties("ChainedList") {
         def filter(s: String): Boolean = s.length() >= c
         val fl = ChainedList(l)
         fl.takeWhile(filter) == ChainedList(l.takeWhile(filter))
+    }
+
+    property("dropWhile") = forAll { (l: List[String], c: Int) ⇒
+        def filter(s: String): Boolean = s.length() < 2
+        val fl = ChainedList(l)
+        fl.dropWhile(filter) == ChainedList(l.dropWhile(filter))
     }
 
     property("filter") = forAll { (l: List[String], c: Int) ⇒
@@ -469,5 +597,5 @@ object ChainedListSpecification extends Properties("ChainedList") {
  * }
  *
  * sum()
- * 
+ *
  */

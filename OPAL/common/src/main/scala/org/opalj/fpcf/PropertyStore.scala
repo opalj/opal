@@ -248,7 +248,7 @@ class PropertyStore private (
     )(
         f: ⇒ T
     ): T = {
-        val entityLocks = sortedEntityProperties.mapToList(e ⇒ e.l)
+        val entityLocks = sortedEntityProperties.toIterator.map(e ⇒ e.l)
         withWriteLocks(entityLocks)(f)
     }
 
@@ -1428,7 +1428,7 @@ class PropertyStore private (
                                     val message = "handling unsatisfied dependencies"
                                     logDebug("analysis progress", message)
                                 }
-                                // Let's check if we have some potentially refineable 
+                                // Let's check if we have some potentially refineable
                                 // intermediate results.
                                 handleUnsatisfiedDependencies()
                             }
@@ -1681,8 +1681,8 @@ class PropertyStore private (
 
         /*
     	 * The core method that actually submits runnables to the thread pool.
-    	 * @note tastStarted is called immediately and taskCompleted is called when the
-    	 * 		task has finished.
+    	 * @note	tastStarted is called immediately and taskCompleted is called when the
+    	 * 			task has finished.
     	 */
         // Locks: Tasks
         def scheduleTask(task: Runnable): Unit = {

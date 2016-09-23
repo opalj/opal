@@ -60,15 +60,16 @@ sealed trait ChainedList[@specialized(Int) +T]
         with Serializable { self ⇒
 
     /**
-     * Represents a filtered [[ChainedList]]. Instances of [[WithFilter]] are
+     * Represents a filtered [[ChainedList]]. Instances of [[ChainedListWithFilter]] are typically
      * created by [[ChainedList]]'s `withFilter` method.
      */
-    class WithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
+    class ChainedListWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
 
         def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
             val list = self
+            var rest = list
+
             val b = bf(list)
-            var rest = self
             while (rest.nonEmpty) {
                 val x = rest.head
                 if (p(x)) b += f(x)
@@ -103,12 +104,15 @@ sealed trait ChainedList[@specialized(Int) +T]
             }
         }
 
-        def withFilter(q: T ⇒ Boolean): WithFilter = new WithFilter(x ⇒ p(x) && q(x))
+        def withFilter(q: T ⇒ Boolean): ChainedListWithFilter = {
+            new ChainedListWithFilter(x ⇒ p(x) && q(x))
+        }
     }
 
-    // Defined by TraversableOnce: def isEmpty: Boolean
     final override def hasDefiniteSize: Boolean = true
+
     final override def isTraversableAgain: Boolean = true
+
     final override def seq: this.type = this
 
     override def foreach[U](f: T ⇒ U): Unit = {
@@ -147,10 +151,12 @@ sealed trait ChainedList[@specialized(Int) +T]
         builder.result
     }
 
-    def withFilter(p: (T) ⇒ Boolean): FilterMonadic[T, ChainedList[T]] = new WithFilter(p)
+    def withFilter(p: (T) ⇒ Boolean): ChainedListWithFilter = new ChainedListWithFilter(p)
 
     def head: T
+
     def tail: ChainedList[T]
+
     def last: T = {
         var rest = this
         while (rest.tail.nonEmpty) { rest = rest.tail }
@@ -158,6 +164,12 @@ sealed trait ChainedList[@specialized(Int) +T]
     }
 
     override def nonEmpty: Boolean
+
+    /**
+     * Returns the value of the element of this list with the given index.
+     *
+     * @param index A valid index. A value in the range [0...this.size-1].
+     */
     def apply(index: Int): T = {
         var count = index
         var rest = this
@@ -167,6 +179,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         rest.head
     }
+
     def exists(f: T ⇒ Boolean): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
@@ -176,6 +189,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         false
     }
+
     def forall(f: T ⇒ Boolean): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
@@ -185,6 +199,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         true
     }
+
     def contains[X >: T](e: X): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
@@ -194,6 +209,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         false
     }
+
     def find(p: T ⇒ Boolean): Option[T] = {
         var rest = this
         while (rest.nonEmpty) {
@@ -204,6 +220,13 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         None
     }
+
+    /**
+     * Counts the number of elements.
+     *
+     * @note   This operation has complexity O(n).
+     * @return The size of this list.
+     */
     override def size: Int = {
         var result = 0
         var rest = this
@@ -213,20 +236,102 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         result
     }
+
     def :&:[X >: T](x: X): ChainedList[X] = new :&:(x, this)
+
     def :&:(x: Int)(implicit ev: this.type <:< ChainedList[Int]): ChainedList[Int] = {
         new :&:[Int](x, this.asInstanceOf[ChainedList[Int]])
     }
+
     def :&::[X >: T](x: ChainedList[X]): ChainedList[X]
+
+    /**
+     * Prepends the given list to '''this list''' by setting the end of the given list to
+     * this list.
+     *
+     * @note 	'''This mutates the given list.'''
+     */
+    private[opalj] def ++!:[X >: T](x: ChainedList[X]): ChainedList[X] = {
+        if (x.isEmpty)
+            return this;
+
+        var lastNode = x.asInstanceOf[:&:[X]]
+        while (lastNode.rest.nonEmpty) {
+            lastNode = lastNode.rest.asInstanceOf[:&:[X]]
+        }
+        lastNode.rest = this
+        x
+    }
+
+    private[opalj] def ++![X >: T](x: ChainedList[X]): ChainedList[X] = x.++!:(this)
+
+    /**
+     * Clones this list and returns the cloned list as well as the last element of the list; using
+     * the last element it is possible to immediately attach further elements to the list at its end.
+     * If this list is empty, the last element is null.
+     */
+    private[collection] def copy[X >: T](): (ChainedList[X], :&:[X]) = {
+        if (isEmpty)
+            return (this, null);
+
+        val result = new :&:[T](head, ChainedNil)
+        var last = result
+        var rest: ChainedList[T] = this.tail
+        while (rest.nonEmpty) {
+            val x = rest.head
+            rest = rest.tail
+            val newLast = new :&:[T](x, ChainedNil)
+            last.rest = newLast
+            last = newLast
+        }
+        (result, last.asInstanceOf[:&:[X]])
+    }
+
+    def ++[X >: T](that: ChainedList[X]): ChainedList[X] = {
+        if (that.isEmpty)
+            return this;
+        if (this.isEmpty)
+            return that;
+
+        val (head, last) = copy[X]
+        last.rest = that
+        head
+    }
+
+    def ++[X >: T <: AnyRef](other: Traversable[X]): ChainedList[X] = {
+        if (other.isEmpty)
+            return this;
+
+        val that = other.to[ChainedList]
+        if (this.isEmpty)
+            that
+        else {
+            val (head, last) = copy[X]
+            last.rest = that
+            head
+        }
+    }
+
+    /**
+     * Takes the first n elements of this list. If this list does not contain at
+     * least n elements an IllegalStateException  will be thrown.
+     * @param n    An int value in the range [0...this.size].
+     * @return     A list consisting of the first n value.
+     */
     def take(n: Int): ChainedList[T]
+
     def takeWhile(f: T ⇒ Boolean): ChainedList[T]
+
     def filter(f: T ⇒ Boolean): ChainedList[T]
+
     def drop(n: Int): ChainedList[T]
+
     def dropWhile(f: T ⇒ Boolean): ChainedList[T] = {
         var rest = this
         while (rest.nonEmpty && f(rest.head)) { rest = rest.tail }
         rest
     }
+
     def zip[X](other: GenIterable[X]): ChainedList[(T, X)] = {
         if (this.isEmpty)
             return this.asInstanceOf[ChainedNil.type];
@@ -245,6 +350,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         result
     }
+
     def zip[X](other: ChainedList[X]): ChainedList[(T, X)] = {
         if (this.isEmpty)
             return this.asInstanceOf[ChainedNil.type];
@@ -264,14 +370,16 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         result
     }
+
     def zipWithIndex: ChainedList[(T, Int)] = {
         var index = 0
-        map { e ⇒
+        map[(T, Int), ChainedList[(T, Int)]] { e ⇒
             val currentIndex = index
             index += 1
             (e, currentIndex)
         }
     }
+
     def corresponds[X](other: ChainedList[X])(f: (T, X) ⇒ Boolean): Boolean = {
         if (this.isEmpty)
             return other.isEmpty;
@@ -291,8 +399,11 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
         thisIt.isEmpty && otherIt.isEmpty
     }
+
     def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X]
+
     def reverse: ChainedList[T]
+
     override def mkString(pre: String, sep: String, post: String): String = {
         val result = new StringBuilder(pre)
         var rest = this
@@ -311,14 +422,12 @@ sealed trait ChainedList[@specialized(Int) +T]
     }
 
     override def toIterable: Iterable[T] = {
-        new scala.collection.Iterable[T] {
-            def iterator: Iterator[T] = self.toIterator
-        }
+        new Iterable[T] { def iterator: Iterator[T] = self.toIterator }
     }
 
     def toIterator: Iterator[T] = {
-        new scala.collection.Iterator[T] {
-            var rest = self
+        new Iterator[T] {
+            private var rest = self
             def hasNext: Boolean = rest.nonEmpty
             def next(): T = {
                 val result = rest.head
@@ -332,9 +441,7 @@ sealed trait ChainedList[@specialized(Int) +T]
      * Returns a newly created `Traversable[T]` collection.
      */
     def toTraversable: Traversable[T] = {
-        new scala.collection.Traversable[T] {
-            def foreach[U](f: T ⇒ U): Unit = self.foreach(f)
-        }
+        new Traversable[T] { def foreach[U](f: T ⇒ U): Unit = self.foreach(f) }
     }
 
     def toStream: Stream[T] = toTraversable.toStream
@@ -359,6 +466,13 @@ sealed trait ChainedList[@specialized(Int) +T]
  */
 object ChainedList {
 
+    /**
+     * Builder for [[ChainedList]]s. The builder is specialized for the primitive
+     *         type `Int` to enable the creation of new instances of the correspondingly
+     *         specialized list.
+     *
+     * @tparam T    The type of the list's element.
+     */
     class ChainedListBuilder[@specialized(Int) T] extends Builder[T, ChainedList[T]] {
         private var list: ChainedList[T] = ChainedNil
         private var last: :&:[T] = null
@@ -376,25 +490,31 @@ object ChainedList {
         def result(): ChainedList[T] = list
     }
 
+    private[this] val baseCanBuildFrom = new CanBuildFrom[ChainedList[_], AnyRef, ChainedList[AnyRef]] {
+        def apply(from: ChainedList[_]) = new ChainedListBuilder[AnyRef]
+        def apply() = new ChainedListBuilder[AnyRef]
+    }
     implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[ChainedList[_], A, ChainedList[A]] = {
-        new CanBuildFrom[ChainedList[_], A, ChainedList[A]] {
-            def apply(from: ChainedList[_]) = new ChainedListBuilder[A]
-            def apply() = new ChainedListBuilder[A]
-        }
+        baseCanBuildFrom.asInstanceOf[CanBuildFrom[ChainedList[_], A, ChainedList[A]]]
+    }
+    private[this] val specializedCanBuildFrom = new CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] {
+        def apply(from: ChainedList[_]) = new ChainedListBuilder[Int]
+        def apply() = new ChainedListBuilder[Int]
     }
     implicit def canBuildIntChainedListFrom: CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] = {
-        new CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] {
-            def apply(from: ChainedList[_]) = new ChainedListBuilder[Int]
-            def apply() = new ChainedListBuilder[Int]
-        }
+        specializedCanBuildFrom
     }
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
         if (t.runtimeClass == classOf[Int])
-            (new ChainedListBuilder[Int]).asInstanceOf[ChainedListBuilder[T]]
+            new ChainedListBuilder[Int].asInstanceOf[ChainedListBuilder[T]]
         else
             new ChainedListBuilder[T]
     }
+
+    final val IncompleteEmptyChainedList = new IncompleteCollection(ChainedNil: ChainedList[Nothing])
+
+    final val CompleteEmptyChainedList = new CompleteCollection(ChainedNil: ChainedList[Nothing])
 
     /**
      * Returns an empty list.
@@ -406,7 +526,7 @@ object ChainedList {
     /**
      * Creates a new [[ChainedList]] containing the given element.
      */
-    def apply[@specialized(Int) T](e: T) = new :&:[T](e, ChainedNil)
+    def apply[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
 
     def apply[@specialized(Int) T](t: Traversable[T]): ChainedList[T] = {
         if (t.isEmpty)
@@ -430,30 +550,35 @@ object ChainedList {
  */
 case object ChainedNil extends ChainedList[Nothing] {
 
-    def head: Nothing = throw new IllegalStateException("the list is empty")
-    def tail: Nothing = throw new IllegalStateException("the list is empty")
+    private def listIsEmpty = new NoSuchElementException("the list is empty")
+
+    def head: Nothing = throw listIsEmpty
+    def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
     def :&::[X >: Nothing](x: ChainedList[X]): ChainedList[X] = x
-    def take(n: Int): ChainedNil.type = {
-        if (n == 0) this else throw new IllegalStateException("the list is empty")
-    }
+    def take(n: Int): ChainedNil.type = { if (n == 0) this else throw listIsEmpty }
     def takeWhile(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
     def filter(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
-    def drop(n: Int): ChainedNil.type = {
-        if (n == 0) this else throw new IllegalStateException("the list is empty")
-    }
+    def drop(n: Int): ChainedNil.type = { if (n == 0) this else throw listIsEmpty }
     def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
     def reverse: ChainedList[Nothing] = this
 }
 
+/**
+ * An container for a list element.
+ *
+ * @author Michael Eichberg
+ */
 final case class :&:[@specialized(Int) T](
-        head:                        T,
-        private[immutable] var rest: ChainedList[T]
+        head:                         T,
+        private[collection] var rest: ChainedList[T]
 ) extends ChainedList[T] {
 
     def tail: ChainedList[T] = rest
+
     def isEmpty: Boolean = false
+
     override def nonEmpty: Boolean = true
 
     // prepends the given list... to make sure that
@@ -466,37 +591,20 @@ final case class :&:[@specialized(Int) T](
         }
     }
 
-    def ++[X <: T](other: ChainedList[X]): ChainedList[T] = {
-        val Nil = ChainedNil
-        if (other.isEmpty)
-            return this;
-
-        // first clone this one...
-        val result = new :&:[T](this.head, Nil)
-        var last = result
-        var rest = this.tail
-        while (rest.nonEmpty) {
-            val newLast = new :&:[T](rest.head, Nil)
-            last.rest = newLast
-            last = newLast
-            rest = rest.tail
-        }
-        // add other list...
-        last.rest = other
-        result
-    }
-
     def take(n: Int): ChainedList[T] = {
+        val Nil = ChainedNil
+
         if (n == 0)
-            return ChainedNil;
+            return Nil;
+
         var taken = 1
-        val result = new :&:[T](head, ChainedNil)
+        val result = new :&:[T](head, Nil)
         var last = result
         var rest: ChainedList[T] = this.rest
         while (taken < n) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, ChainedNil)
+            val newLast = new :&:[T](x, Nil)
             last.rest = newLast
             last = newLast
             taken += 1
@@ -506,16 +614,18 @@ final case class :&:[@specialized(Int) T](
 
     def takeWhile(f: T ⇒ Boolean): ChainedList[T] = {
         val head = this.head
-        if (!f(head))
-            return ChainedNil;
+        val Nil = ChainedNil
 
-        val result = new :&:(head, ChainedNil)
+        if (!f(head))
+            return Nil;
+
+        val result = new :&:(head, Nil)
         var last = result
         var rest: ChainedList[T] = this.rest
         while (rest.nonEmpty && f(rest.head)) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, ChainedNil)
+            val newLast = new :&:[T](x, Nil)
             last.rest = newLast
             last = newLast
         }
@@ -523,14 +633,16 @@ final case class :&:[@specialized(Int) T](
     }
 
     def filter(f: T ⇒ Boolean): ChainedList[T] = {
-        var result: ChainedList[T] = ChainedNil
+        val Nil = ChainedNil
+
+        var result: ChainedList[T] = Nil
         var last = result
         var rest: ChainedList[T] = this
         do {
             val x = rest.head
             rest = rest.tail
             if (f(x)) {
-                val newLast = new :&:[T](x, ChainedNil)
+                val newLast = new :&:[T](x, Nil)
                 if (last.nonEmpty) {
                     last.asInstanceOf[:&:[T]].rest = newLast
                 } else {
@@ -545,6 +657,7 @@ final case class :&:[@specialized(Int) T](
     def drop(n: Int): ChainedList[T] = {
         if (n == 0)
             return this;
+
         var dropped = 1
         var result: ChainedList[T] = this.rest
         while (dropped < n) {

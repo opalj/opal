@@ -91,7 +91,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                     // the objectRef is (assumed to be) null
                     && {
                         val IsAReferenceValue(utb) = typeOfValue(objectRef)
-                        utb.first() eq ObjectType.NullPointerException
+                        utb.first eq ObjectType.NullPointerException
                     }
                     && {
                         val origins = origin(objectRef)
@@ -172,4 +172,3 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         }
     }
 }
-

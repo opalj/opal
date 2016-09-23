@@ -15,10 +15,10 @@
  *    and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * AND ANY ETPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, ETEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
@@ -27,18 +27,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-
-import org.opalj.collection.immutable.UIDSet
+package collection
+package immutable
 
 /**
- * Stores information about a type's supertypes.
+ * Implementation of a immutable binary digital search tree (a Trie with M=2) that
+ * is optimized for memory efficiency.
  *
- * @author Michael Eichberg
  */
-case class TypeDeclaration(
-    objectType:             ObjectType,
-    isInterfaceType:        Boolean,
-    theSuperclassType:      Option[ObjectType],
-    theSuperinterfaceTypes: UIDSet[ObjectType]
-)
+/*
+sealed trait TrieNode[+T] {
+
+    def add[X >: T](value: X)(implicit key: Int): TrieNode[X]
+
+    def foreach[U](f: (T) ⇒ U): Unit
+
+    // Trie Management
+    protected def left: TrieNode[T]
+    protected def right: TrieNode[T]
+
+}
+case object EmptyTrie extends TrieNode[Nothing] {
+    def foreach[U](f: (Nothing) ⇒ U): Unit = {}
+    def add[X >: Nothing](value: X)(implicit key: Int): TrieNode[X] = new LTrieNode(value)
+    protected def left: TrieNode[Nothing] = null
+    protected def right: TrieNode[Nothing] = null
+}
+
+class LTrieNode[+T](val value: T) extends TrieNode[T] {
+    def foreach[U](f: (T) ⇒ U): Unit = { f(value) }
+
+    def add[X >: T](value: X)(implicit key: Int): TrieNode[X]
+
+    protected def left = null
+    protected def right = null
+}
+
+abstract class LOTrieNode[+T](
+        val v:              T,
+        protected var left: TrieNode[T]
+) extends TrieNode[T] {
+    protected def right = null
+}
+
+object TrieDemo extends App {
+
+    class Store extends TrieNode[Int] {
+
+    }
+
+}
+*/ 
