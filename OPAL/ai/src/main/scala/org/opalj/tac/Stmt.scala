@@ -42,8 +42,9 @@ sealed trait Stmt {
     /**
      * The program counter of the original underyling bytecode instruction.
      *
-     * This `pc` is independent of the
-     * (implicit) `index` of the statement in the generated statements array!
+     * This `pc` is independent of the (implicit) `index` of the statement
+     * in the generated statements array! This pc is, e.g., useful for
+     * getting line number information.
      */
     def pc: UShort
 
@@ -54,7 +55,7 @@ sealed trait Stmt {
      *
      * ==Example==
      * The bytecode instruction:  `5: goto 10` (where 5 is the original `pc` and `10` is
-     * the branchoffset is re-mapped to a `goto pcToIndex(5+10)` quadruples statement.
+     * the branchoffset) is re-mapped to a `goto pcToIndex(5+10)` quadruples statement.
      */
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit
 }
@@ -76,7 +77,7 @@ case class If(
      * The target statement that is executed if the condition evaluates to `true`.
      *
      * @note Calling this method is only supported after the quadruples representation
-     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     *         is created and the re-mapping of `pc`s to instruction indexes has happened!
      */
     def targetStmt: Int = target
 }
@@ -94,7 +95,7 @@ case class Goto(pc: PC, private var target: Int) extends Stmt {
 
     /**
      * @note Calling this method is only supported after the quadruples representation
-     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     *         is created and the re-mapping of `pc`s to instruction indexes has happened!
      *
      */
     def targetStmt: Int = target
@@ -109,7 +110,7 @@ case class Ret(pc: PC, private var returnAddressVar: Var) extends Stmt {
  * A JSR Instruction is mapped to two instructions:
  *  1. the jsr instruction which performs a jump
  *  1. an assigment instruction at the jump target that initializes the local variable that
- *  	is used to store the return address.
+ *      is used to store the return address.
  *
  * @param target At creation time the `pc` (absolute) of the target instruction in the
  *          original bytecode array; then the index of the respective quadruples
@@ -125,7 +126,7 @@ case class JumpToSubroutine(pc: PC, private[tac] var target: Int) extends Stmt {
      * The first statement of the called subroutine.
      *
      * @note Calling this method is only supported after the quadruples representation
-     * 		is created and the re-mapping of `pc`s to instruction indexes has happened!
+     *         is created and the re-mapping of `pc`s to instruction indexes has happened!
      */
     def targetStmt: Int = target
 

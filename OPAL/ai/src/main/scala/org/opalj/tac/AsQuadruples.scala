@@ -58,8 +58,8 @@ object AsQuadruples {
      * Converts the bytecode of a method into a quadruples based three address representation using
      * the result of a bytecode based abstract interpretation of the method.
      *
-     * @param method A method with a body. I.e., a non-native, non-abstract method.
-     * @param aiResult The result of an abstract interpretation of the respective method.
+     * @param   method A method with a body. I.e., a non-native, non-abstract method.
+     * @param   aiResult The result of an abstract interpretation of the respective method.
      *
      * @return The array with the generated statements.
      */

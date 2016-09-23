@@ -47,17 +47,17 @@ import org.opalj.collection.mutable.UShortSet
  * This class is thread-safe; all data is effectively immutable
  * '''after construction''' time.
  *
- * @param code The code for which the CFG was build.
- * @param normalReturnNode The unique exit node of the control flow graph if the
- * 		method returns normally. If the method always throws an exception this
- * 		node will not have any predecessors.
- * @param abnormalReturnNode The unique exit node of the control flow graph if the
- * 		method returns abnormally (throws an exception). If the method is guaranteed
- * 		to never throw an exception, this node will not have any predecessors.
- * @param catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
- * 		[[org.opalj.br.ExceptionHandler]].
- * @param basicBlocks An implicit map between a program counter and its associated
- * 		[[BasicBlock]]; it may be a sparse array!
+ * @param     code The code for which the CFG was build.
+ * @param     normalReturnNode The unique exit node of the control flow graph if the
+ *             method returns normally. If the method always throws an exception this
+ *             node will not have any predecessors.
+ * @param     abnormalReturnNode The unique exit node of the control flow graph if the
+ *             method returns abnormally (throws an exception). If the method is guaranteed
+ *             to never throw an exception, this node will not have any predecessors.
+ * @param     catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
+ *             [[org.opalj.br.ExceptionHandler]].
+ * @param     basicBlocks An implicit map between a program counter and its associated
+ *             [[BasicBlock]]; it may be a sparse array!
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -208,9 +208,9 @@ case class CFG(
      * If the first index (i.e., `pcToIndex(0)` is not 0, then a new basic block for the indexes
      * in {0,pcToIndex(0)} is created if necessary.
      *
-     * @param 	lastIndex The index of the last instruction of the underlying (non-empty) code array.
-     * 			I.e., if the instruction array contains one instruction then the `lastIndex` has to be
-     * 			`0`.
+     * @param   lastIndex The index of the last instruction of the underlying (non-empty) code array.
+     *          I.e., if the instruction array contains one instruction then the `lastIndex` has to be
+     *           `0`.
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 

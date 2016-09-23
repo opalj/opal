@@ -102,26 +102,26 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * method should only be done for analysis purposes.
      *
      * ==Performance==
-     * This method heavily relies on reference comparison to speed up the overall
+     * This method heavily relies on reference comparisons to speed up the overall
      * process of performing an abstract interpretation of a method. Hence,
      * a computation should – whenever possible – return (one of) the original object(s) if
      * that value has the same abstract state as the result. Furthermore, if all original
      * values capture the same abstract state as the result of the computation, the "left"
      * value/the value that was already used in the past should be returned.
      *
-     * @return The joined operand stack and registers.
-     *      Returns `NoUpdate` if ''this'' memory layout already subsumes the
-     *      ''other'' memory layout.
-     * @note The size of the operands stacks that are to be joined and the number of
-     *      registers/locals that are to be joined can be expected to be identical
-     *      under the assumption that the bytecode is valid and the framework contains no
-     *      bugs.
-     * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
-     *      computational type (unless the bytecode is not valid or OPAL contains
-     *      an error). I.e., if the result of joining two operand stack values is an
-     *      `IllegalValue` we assume that the domain implementation is incorrect.
-     *      However, the joining of two register values can result in an illegal value
-     *      which identifies the value is dead.
+     * @return 	The joined operand stack and registers.
+     *      	Returns `NoUpdate` if ''this'' memory layout already subsumes the
+     *      	''other'' memory layout.
+     * @note 	The size of the operands stacks that are to be joined and the number of
+     *      	registers/locals that are to be joined can be expected to be identical
+     *      	under the assumption that the bytecode is valid and the framework contains no
+     *      	bugs.
+     * @note 	The operand stacks are guaranteed to contain compatible values w.r.t. the
+     *      	computational type (unless the bytecode is not valid or OPAL contains
+     *      	an error). I.e., if the result of joining two operand stack values is an
+     *     		 `IllegalValue` we assume that the domain implementation is incorrect.
+     *      	However, the joining of two register values can result in an illegal value
+     *      	which identifies the value is dead.
      */
     def join(
         pc:            PC,
@@ -258,12 +258,12 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * Methods should always `abstract override` this method and should call the super
      * method.
      *
-     * @param updateType The current update type. The level can be raised. It is
-     *      an error to lower the update level.
-     * @param oldOperands The old operands, before the join. Should not be changed.
-     * @param oldLocals The old locals, before the join. Should not be changed.
-     * @param newOperands The new operands; may be updated.
-     * @param newLocals The new locals; may be updated.
+     * @param 	updateType The current update type. The level can be raised. It is
+     *      	an error to lower the update level.
+     * @param 	oldOperands The old operands, before the join. Should not be changed.
+     * @param 	oldLocals The old locals, before the join. Should not be changed.
+     * @param 	newOperands The new operands; may be updated.
+     * @param 	newLocals The new locals; may be updated.
      */
     protected[this] def joinPostProcessing(
         updateType:  UpdateType,
