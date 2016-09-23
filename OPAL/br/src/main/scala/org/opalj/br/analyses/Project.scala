@@ -429,6 +429,7 @@ class Project[Source] private (
      * @param objectType Some object type.
      */
     def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
+    def source(classFile: ClassFile): Option[Source] = source(classFile.thisType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
