@@ -294,7 +294,7 @@ final class Code private (
      *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
      * }}}
      *
-     * In case of exceptions handlers the sound over approximation is made that
+     * In case of exception handlers the sound overapproximation is made that
      * all exception handlers may be reached on multiple paths.
      */
     def joinInstructions: BitSet = {
@@ -1209,10 +1209,8 @@ final class Code private (
      * attributes, etc.).
      */
     override def toString = {
-        "Code_attribute("+
-            "maxStack="+maxStack+
-            ", maxLocals="+maxLocals+","+
-            (instructions.zipWithIndex.filter(_._1 ne null).deep.toString) +
+        s"Code_attribute(maxStack=$maxStack, maxLocals=$maxLocals, "+
+            (instructions.zipWithIndex.filter(_._1 ne null).map(_.swap).deep.toString) +
             (exceptionHandlers.toString)+","+
             (attributes.toString)+
             ")"
