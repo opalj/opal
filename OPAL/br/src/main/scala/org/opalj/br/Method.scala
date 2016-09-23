@@ -101,6 +101,14 @@ final class Method private (
     }
 
     /**
+     * The number of registers required to store this method's parameters (
+     * including the self reference if necessary).
+     */
+    def requiredRegisters: Int = {
+        descriptor.requiredRegisters + (if (isStatic) 0 else 1)
+    }
+
+    /**
      * Returns `true` if this method has the given name and descriptor.
      *
      * @param ignoreReturnType If `false` (default), then the return type is taken
