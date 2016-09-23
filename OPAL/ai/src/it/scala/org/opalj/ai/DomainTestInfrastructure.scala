@@ -42,8 +42,8 @@ import org.scalatest.Matchers
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.io.writeAndOpen
 import org.opalj.log.GlobalLogContext
-import org.opalj.bi.{TestSupport => BITestSupport}
-import org.opalj.br.{TestSupport => BRTestSupport}
+import org.opalj.bi.{TestSupport ⇒ BITestSupport}
+import org.opalj.br.{TestSupport ⇒ BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
@@ -75,10 +75,10 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
      * Called for each method that was successfully analyzed.
      */
     def analyzeAIResult(
-            classFile : ClassFile,
-            method : Method,
-            result: AIResult { val domain: AnalyzedDomain }
-            ): Unit = {
+        classFile: ClassFile,
+        method:    Method,
+        result:    AIResult { val domain: AnalyzedDomain }
+    ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
         result.operandsArray.forall { ops ⇒
@@ -124,14 +124,12 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
                 case t: Throwable ⇒
-                    t.printStackTrace()
                     // basically, we want to catch everything!
-                    val source = project.source(classFile.thisType).get.toString
-                    Some((source, classFile, method, t))
+                    Some((project.source(classFile).get.toString, classFile, method, t))
             }
         }
 
-                // Interpret Methods
+        // Interpret Methods
         //
         val collectedExceptions = time('OVERALL) {
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
@@ -165,13 +163,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                         { exDetails }
                     </section>
                 }
-
-            val node =
-                XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"),NodeSeq.fromSeq(body.toSeq)
-                )
-            val file =
-                writeAndOpen(node, "CrashedAbstractInterpretationsReportFor"+projectName, ".html")
+            val node = XHTML.createXHTML(Some("Thrown Exceptions"), NodeSeq.fromSeq(body.toSeq))
+            val file = writeAndOpen(node, "FailedAbstractInterpretations-"+projectName, ".html")
 
             fail(
                 projectName+": "+
@@ -196,7 +189,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
     // The Configured Projects
     //
 
-    val cached = new BytecodeInstructionsCache
+    val cache = new BytecodeInstructionsCache
     val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
 
     behavior of domainName
@@ -205,13 +198,6 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         val project = BRTestSupport.createJREProject
 
         analyzeProject("JDK", project, 4d)
-    }
-
-    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
-        val classFiles = BITestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-
-        analyzeProject("OPAL-0.3", project, 2.5d)
     }
 
     it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-08-14-2014") in {
@@ -228,6 +214,13 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
+    }
+
+    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
+        val classFiles = BITestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
+
+        analyzeProject("OPAL-0.3", project, 2.5d)
     }
 
 }
