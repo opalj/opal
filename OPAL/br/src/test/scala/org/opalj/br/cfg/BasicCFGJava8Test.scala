@@ -35,6 +35,7 @@ import org.scalatest.Matchers
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
+import org.opalj.io.writeAndOpen
 
 /**
  * We merely construct CFGs for various, self-made methods and check their blocks
@@ -60,9 +61,7 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         try {
             f
         } catch {
-            case t: Throwable ⇒
-                org.opalj.io.writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv")
-                throw t
+            case t: Throwable ⇒ writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv"); throw t
         }
     }
 
@@ -71,12 +70,9 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         val testClass = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
         it("a cfg with no control flow statemts should consists of a single basic block") {
-
             val cfg = CFGFactory(testClass.findMethod("singleBlock").get.body.get)
-            val bbs = cfg.allBBs
-
             test("singleBlock", cfg) {
-                bbs.size should be(1)
+                cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
                 cfg.abnormalReturnNode.predecessors.size should be(1)
@@ -84,12 +80,9 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
-
             val cfg = CFGFactory(testClass.findMethod("conditionalOneReturn").get.body.get)
-            val bbs = cfg.allBBs
-
             test("conditionalOneReturn", cfg) {
-                bbs.size should be(11)
+                cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
                 cfg.abnormalReturnNode.predecessors.size should be(2)
@@ -97,12 +90,9 @@ class BasicCFGJava8Test extends FunSpec with Matchers {
         }
 
         it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
-
             val cfg = CFGFactory(testClass.findMethod("conditionalTwoReturns").get.body.get)
-            val bbs = cfg.allBBs
-
             test("conditionalTwoReturns", cfg) {
-                bbs.size should be(6)
+                cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(3)
                 cfg.abnormalReturnNode.predecessors.size should be(4)
