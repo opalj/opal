@@ -30,6 +30,8 @@ package org.opalj
 package collection
 package immutable
 
+import scala.language.implicitConversions
+
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
 import scala.collection.generic.CanBuildFrom
@@ -544,6 +546,8 @@ object ChainedList extends ChainedListLowPriorityImplicits {
     implicit def canBuildIntChainedListFrom: CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] = {
         specializedCanBuildFrom
     }
+
+    implicit def toTraversable[T](cl : ChainedList[T]) : Traversable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
         if (t.runtimeClass == classOf[Int])
