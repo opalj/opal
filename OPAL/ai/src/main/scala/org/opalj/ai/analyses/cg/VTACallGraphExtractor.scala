@@ -367,7 +367,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         val result = BaseAI(classFile, method, Domain(classFile, method))
         val context = AnalysisContext(result.domain)
 
-        result.domain.code.foreach { (pc, instruction) ⇒
+        result.domain.code.iterate { (pc, instruction) ⇒
             (instruction.opcode: @scala.annotation.switch) match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction

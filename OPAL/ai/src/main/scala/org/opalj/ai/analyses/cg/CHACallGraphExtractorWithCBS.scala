@@ -215,7 +215,7 @@ class CHACallGraphExtractorWithCBS(
     ): CallGraphExtractor.LocalCallGraphInformation = {
         val context = new AnalysisContext(project, classFile, method)
 
-        method.body.get.foreach { (pc, instruction) ⇒
+        method.body.get.iterate { (pc, instruction) ⇒
             instruction.opcode match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction

@@ -350,9 +350,7 @@ trait RecordCFG
             visitedSuccessors = visitedSuccessors ++ successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
-                    l ++ (regularSuccessorsOf(r).filter { pc ⇒
-                        !visitedSuccessors.contains(pc)
-                    })
+                    l ++ (regularSuccessorsOf(r).filter { pc ⇒ !visitedSuccessors.contains(pc) })
                 }
         }
         false

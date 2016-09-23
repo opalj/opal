@@ -191,15 +191,14 @@ object CHADemo extends DefaultOneStepAnalysis {
             for {
                 cf ← project.allClassFiles
                 m ← cf.methods if m.body.isDefined
+                (pc, instruction) ← m.body.get
             } {
-                m.body.get.foreach { (pc, instruction) ⇒
-                    instruction.opcode match {
-                        case INVOKEVIRTUAL.opcode   ⇒ incCallNum(0)
-                        case INVOKEINTERFACE.opcode ⇒ incCallNum(1)
-                        case INVOKESPECIAL.opcode   ⇒ incCallNum(2)
-                        case INVOKESTATIC.opcode    ⇒ incCallNum(3)
-                        case _                      ⇒
-                    }
+                instruction.opcode match {
+                    case INVOKEVIRTUAL.opcode   ⇒ incCallNum(0)
+                    case INVOKEINTERFACE.opcode ⇒ incCallNum(1)
+                    case INVOKESPECIAL.opcode   ⇒ incCallNum(2)
+                    case INVOKESTATIC.opcode    ⇒ incCallNum(3)
+                    case _                      ⇒
                 }
             }
 

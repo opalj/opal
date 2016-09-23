@@ -106,7 +106,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
 
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
-                code.foreach { (pc, instruction) ⇒
+                code.iterate { (pc, instruction) ⇒
                     val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
                     if (nextInstructions.isEmpty) {
                         if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
@@ -126,7 +126,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
                 }
 
                 // check that cfg.successors and cfg.foreachSuccessor return the same sets
-                code.foreach { (pc, instruction) ⇒
+                code.iterate { (pc, instruction) ⇒
                     {
                         val cfgSuccessors = cfg.successors(pc)
                         var cfgForeachSuccessors = Set.empty[PC]

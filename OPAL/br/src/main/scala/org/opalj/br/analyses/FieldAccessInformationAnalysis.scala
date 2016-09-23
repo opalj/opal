@@ -72,7 +72,7 @@ object FieldAccessInformationAnalysis {
             val readAccesses = AnyRefMap.empty[Field, UShortSet]
             val writeAccesses = AnyRefMap.empty[Field, UShortSet]
             val unresolved = UShortSet.empty
-            method.body.get.foreach { (pc, instruction) ⇒
+            method.body.get.iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
                     case GETFIELD.opcode | GETSTATIC.opcode ⇒

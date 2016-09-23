@@ -108,8 +108,8 @@ final class Code private (
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note Calling this method only makes sense for Java bytecode that actually contains
-     * 		[[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
-     * 		instructions.
+     *         [[org.opalj.br.instructions.JSR]] and [[org.opalj.br.instructions.RET]]
+     *         instructions.
      *
      * @return Basically a map that maps the `pc` of each instruction to the id of the
      *      subroutine.
@@ -296,12 +296,22 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    @inline final def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
+    @inline final def iterate[U](f: (PC, Instruction) ⇒ U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
+    @inline final def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f((pc, instruction))
             pc = pcOfNextInstruction(pc)
         }
     }
@@ -531,7 +541,7 @@ final class Code private (
      *      tables are merged into one by OPAL at class loading time.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def localVariableTable: Option[LocalVariables] = {
         attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
@@ -580,7 +590,7 @@ final class Code private (
      * Collects all local variable type tables.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def localVariableTypeTable: Seq[LocalVariableTypes] = {
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
@@ -601,7 +611,7 @@ final class Code private (
      * StackMapTable attribute.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
-     * 	    attribute may not be reified.
+     *         attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] = {
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
@@ -660,8 +670,8 @@ final class Code private (
      * is not defined.
      *
      * @return The program counter of the instruction for which the given partial function was
-     * 		not defined along with the list of previous results. '''The results are sorted in
-     * 		descending order w.r.t. the PC'''.
+     *         not defined along with the list of previous results. '''The results are sorted in
+     *         descending order w.r.t. the PC'''.
      */
     def collectUntil[B](f: PartialFunction[(PC, Instruction), B]): (PC, Seq[B]) = {
         val max_pc = instructions.size
@@ -1046,7 +1056,7 @@ final class Code private (
      * certain analyses to detect.
      *
      * @note If complex control flows should also be considered it is possible to compute
-     * 		a methods [[org.opalj.br.cfg.CFG]] and use that one.
+     *         a methods [[org.opalj.br.cfg.CFG]] and use that one.
      *
      * @param pc The program counter of an instruction that strictly dominates all
      *      succeeding instructions up until the next join instruction (as determined
@@ -1066,9 +1076,9 @@ final class Code private (
      *      return with the result of this call.
      *
      * @return `true` if the bytecode sequence starting with the instruction with the
-     * 		given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
-     * 		`false` in all other cases (i.e., the sequence does not end with an `athrow`
-     * 		instruction or the control flow is more complex.)
+     *         given `pc` always ends with an [[org.opalj.br.instructions.ATHROW]] instruction.
+     *         `false` in all other cases (i.e., the sequence does not end with an `athrow`
+     *         instruction or the control flow is more complex.)
      */
     @inline def alwaysResultsInException(
         pc:               PC,
