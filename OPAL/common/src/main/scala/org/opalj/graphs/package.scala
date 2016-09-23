@@ -49,13 +49,13 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        nodes:    Set[_ <: Node],
-        dir:      String         = "forward",
-        ranksep:  String         = "1.0",
-        fontname: String         = "Helvetica",
-        rankdir:  String         = "TB"
+        rootNodes: Set[_ <: Node],
+        dir:       String         = "forward",
+        ranksep:   String         = "1.0",
+        fontname:  String         = "Helvetica",
+        rankdir:   String         = "TB"
     ): String = {
-        var nodesToProcess = Set.empty[Node] ++ nodes
+        var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
 
         var s = "digraph G {\n"+
