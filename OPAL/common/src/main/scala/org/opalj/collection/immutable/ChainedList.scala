@@ -525,6 +525,8 @@ object ChainedList {
      */
     def empty[T]: ChainedList[T] = ChainedNil
 
+    def singleton[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
+
     /**
      * Creates a new [[ChainedList]] containing the given element.
      */
