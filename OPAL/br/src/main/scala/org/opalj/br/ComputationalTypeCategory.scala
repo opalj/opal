@@ -40,19 +40,18 @@ sealed abstract class ComputationalTypeCategory {
     /**
      * The size of operands of the values of this category
      */
-    val operandSize: Byte
+    val operandSize: Int
 
     /**
      * Identifies the computational type category.
      */
-    val id: Byte
+    val id: Int
 }
 case object Category1ComputationalTypeCategory extends ComputationalTypeCategory {
-    final val operandSize = 1.toByte
-    final val id /*: Byte*/ = 1.toByte
+    final val operandSize = 1
+    final val id /*: Byte*/ = 1
 }
 case object Category2ComputationalTypeCategory extends ComputationalTypeCategory {
-    final val operandSize = 2.toByte
-    final val id /*: Byte*/ = 2.toByte
+    final val operandSize = 2
+    final val id /*: Byte*/ = 2
 }
-

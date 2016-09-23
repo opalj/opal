@@ -2605,7 +2605,7 @@ private object AI {
  */
 object CTC1 {
     def unapply(value: Domain#DomainValue): Boolean =
-        value.computationalType.category == 1
+        value.computationalType.categoryId == 1
 }
 
 /**
@@ -2620,5 +2620,5 @@ object CTC1 {
  */
 object CTC2 {
     def unapply(value: Domain#DomainValue): Boolean =
-        value.computationalType.category == 2
+        value.computationalType.categoryId == 2
 }

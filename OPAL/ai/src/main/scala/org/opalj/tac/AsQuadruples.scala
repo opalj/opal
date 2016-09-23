@@ -493,7 +493,7 @@ object AsQuadruples {
                     INVOKESPECIAL.opcode |
                     INVOKEVIRTUAL.opcode ⇒
                     val invoke = as[MethodInvocationInstruction](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val (params, List(receiver)) = operands.splitAt(numOps - 1)
                     import invoke.{methodDescriptor, declaringClass, name}
@@ -533,7 +533,7 @@ object AsQuadruples {
 
                 case INVOKESTATIC.opcode ⇒
                     val invoke = as[INVOKESTATIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (params, rest) = stack.splitAt(numOps)
                     import invoke.{declaringClass, methodDescriptor, name}
                     val returnType = methodDescriptor.returnType
@@ -560,7 +560,7 @@ object AsQuadruples {
 
                 case INVOKEDYNAMIC.opcode ⇒
                     val invoke = as[INVOKEDYNAMIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.computationalTypeCategory }
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack.drop(x).head.cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val returnType = invoke.methodDescriptor.returnType
                     val target: Var = OperandVar(returnType.computationalType, rest)
@@ -805,7 +805,7 @@ object AsQuadruples {
             val sourceParam = Param(cTpe, varName)
             finalStatements += Assignment(-1, targetVar, sourceParam)
             index += 1
-            registerIndex += cTpe.category
+            registerIndex += cTpe.operandSize
         }
 
         var currentPC = 0
@@ -823,7 +823,7 @@ object AsQuadruples {
             currentPC += 1
         }
 
-        if (forceCFGCreation || optimizations.nonEmpty) cfg();
+        if (forceCFGCreation || optimizations.nonEmpty) cfg;
         var tacCFG = Option(theCFG).map(cfg ⇒ cfg.mapPCsToIndexes(pcToIndex, lastIndex = index - 1))
 
         finalStatements.foreach(_.remapIndexes(pcToIndex))
@@ -852,7 +852,7 @@ object AsQuadruples {
  * case v @ CTC1() => ...
  * }}}
  */
-private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.category == 1 }
+private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 1 }
 
 /**
  * Facilitates matching against values of computational type category 2.
@@ -862,4 +862,4 @@ private[tac] object CTC1 { def unapply(value: Var): Boolean = value.cTpe.categor
  * case v @ CTC2() => ...
  * }}}
  */
-private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.category == 2 }
+private[tac] object CTC2 { def unapply(value: Var): Boolean = value.cTpe.categoryId == 2 }
