@@ -82,7 +82,7 @@ object AsQuadruples {
 
         // only strictly needed if we find jsr/ret instructions or want to do optimizations
         var theCFG: CFG = null
-        def cfg(): CFG = {
+        def cfg: CFG = {
             if (theCFG eq null) {
                 if (aiResult.isDefined && aiResult.get.domain.isInstanceOf[RecordCFG]) {
                     theCFG = aiResult.get.domain.asInstanceOf[RecordCFG].bbCFG
@@ -830,11 +830,8 @@ object AsQuadruples {
         var tacCode = finalStatements.toArray
 
         if (optimizations.nonEmpty) {
-            val initialTAC = TACOptimizationResult(tacCode, tacCFG.get, false)
-            val result =
-                optimizations.foldLeft(initialTAC) {
-                    (currentTAC, optimization) ⇒ optimization.optimize(currentTAC)
-                }
+            val baseTAC = TACOptimizationResult(tacCode, tacCFG.get, false)
+            val result = optimizations.foldLeft(baseTAC) { (tac, optimization) ⇒ optimization(tac) }
             tacCode = result.code
             tacCFG = Some(result.cfg)
         }

@@ -779,9 +779,7 @@ trait AI[D <: Domain] {
                     // we already evaluated the target (join) instruction ...
                     val currentLocals = targetLocalsArray(targetPC)
                     val mergeResult =
-                        theDomain.join(
-                            targetPC, currentOperands, currentLocals, operands, locals
-                        )
+                        theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
                     if (tracer.isDefined) tracer.get.join(theDomain)(
                         targetPC,
                         currentOperands, currentLocals, operands, locals,
@@ -965,7 +963,8 @@ trait AI[D <: Domain] {
                     }
                     // We don't know the local variable in case that the subroutine
                     // never returned normally and we were not able to fetch the
-                    // information eagerly...
+                    // information eagerly... (which is, however, the case for all known
+                    // compilers)
                     val lvIndex =
                         if (worklist.head == SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE) {
                             worklist = worklist.tail
@@ -1010,19 +1009,21 @@ trait AI[D <: Domain] {
                         subroutine foreach { pc ⇒
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
+                                val currentLocals = localsArray(pc)
                                 assert(currentOperands ne null)
 
                                 val mergedOperands = subroutinesOperandsArray(pc)
                                 if (mergedOperands eq null) {
                                     subroutinesOperandsArray(pc) = currentOperands
-                                    subroutinesLocalsArray(pc) = localsArray(pc)
+                                    subroutinesLocalsArray(pc) = currentLocals
                                 } else {
                                     // we have to merge the results from a previous execution of the
                                     // subroutine with the current results
+                                    val mergedLocals = subroutinesLocalsArray(pc)
                                     theDomain.join(
                                         pc,
-                                        mergedOperands, subroutinesLocalsArray(pc),
-                                        currentOperands, localsArray(pc)
+                                        mergedOperands, mergedLocals,
+                                        currentOperands, currentLocals
                                     ) match {
                                         case NoUpdate ⇒ /*nothing to do...*/
                                         case SomeUpdate((newOperands, newLocals)) ⇒
@@ -1493,8 +1494,7 @@ trait AI[D <: Domain] {
                                     SUBROUTINE_RETURN_TO_TARGET :&: returnTarget :&:
                                     SUBROUTINE :&: worklist
                         }
-                        val newOperands =
-                            theDomain.ReturnAddressValue(returnTarget) :&: operands
+                        val newOperands = theDomain.ReturnAddressValue(returnTarget) :&: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
                             branchTarget, isExceptionalControlFlow = false,

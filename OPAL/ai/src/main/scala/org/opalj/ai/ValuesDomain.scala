@@ -420,21 +420,24 @@ trait ValuesDomain {
         }
 
         @throws[DomainException]("\"doJoin\" is not defined on illegal values")
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             throw DomainException("this method is not supported")
+        }
 
-        override def join(pc: PC, other: DomainValue): Update[DomainValue] =
+        override def join(pc: PC, other: DomainValue): Update[DomainValue] = {
             if (other eq TheIllegalValue)
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
+        }
 
         @throws[DomainException]("\"summarize\" is not defined on illegal values")
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.TheIllegalValue
+        }
 
         override def toString: String = "IllegalValue"
     }
