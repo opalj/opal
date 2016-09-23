@@ -287,8 +287,9 @@ object ClassFileFactory {
      * is a "NewInvokeSpecial" invocation (i.e. a reference to a constructor, like so:
      * `Object::new`).
      */
-    def isNewInvokeSpecial(opcode: Opcode, methodName: String): Boolean =
+    def isNewInvokeSpecial(opcode: Opcode, methodName: String): Boolean = {
         opcode == INVOKESPECIAL.opcode && methodName == "<init>"
+    }
 
     /**
      * Returns true if the given parameters identify a Java 8 method reference to an
@@ -538,8 +539,6 @@ object ClassFileFactory {
      * `receiverMethod`, perform the appropriate invocation instruction (one of
      * INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL), and return from the proxy method.
      *
-     *
-     *
      * @see [[parameterForwardingInstructions]]
      */
     private def createProxyMethodBytecode(
@@ -554,16 +553,18 @@ object ClassFileFactory {
         invocationInstruction:    Opcode
     ): Code = {
 
+        val isVirutalMethodReference = this.isVirtualMethodReference(
+            invocationInstruction,
+            receiverType,
+            receiverMethodDescriptor,
+            methodDescriptor
+        )
         // if the receiver method is not static, we need to push the receiver object
         // onto the stack, which we can retrieve from the receiver field on `this`
+        // unless we have a method reference where the receiver will be explicitly
+        // provided
         val loadReceiverObject: Array[Instruction] =
-            if (invocationInstruction == INVOKESTATIC.opcode ||
-                isVirtualMethodReference(
-                    invocationInstruction,
-                    receiverType,
-                    receiverMethodDescriptor,
-                    methodDescriptor
-                )) {
+            if (invocationInstruction == INVOKESTATIC.opcode || isVirutalMethodReference) {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
@@ -648,31 +649,19 @@ object ClassFileFactory {
             loadReceiverObject ++ forwardingInstructions ++ returnAndConvertInstructionsArray
 
         val receiverObjectStackSize =
-            if (loadReceiverObject.isEmpty) {
-                0
-            } else {
-                1
-            }
+            if (invocationInstruction == INVOKESTATIC.opcode) 0 else                 1
 
-        val parametersStackSize =
-            receiverMethodDescriptor.parameterTypes.map(_.computationalType.operandSize).sum
 
-        val returnValueStackSize =
-            if (methodDescriptor.returnType != VoidType) {
-                methodDescriptor.returnType.computationalType.operandSize.toInt
-            } else {
-                0
-            }
+        val parametersStackSize = receiverMethodDescriptor.requiredRegisters
+
+        val returnValueStackSize = methodDescriptor.returnType.operandSize
 
         val maxStack = math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
 
         val maxLocals = 1 + receiverObjectStackSize + parametersStackSize +
             returnValueStackSize
 
-        Code(maxStack, maxLocals,
-            bytecodeInstructions,
-            IndexedSeq.empty,
-            Seq.empty)
+        Code(maxStack, maxLocals, bytecodeInstructions, IndexedSeq.empty, Seq.empty)
     }
 
     /**
@@ -894,7 +883,6 @@ object ClassFileFactory {
                 if (toBeReturnedType.isBaseType) {
                     val baseType = toBeReturnedType.asBaseType
                     val wrapper = baseType.WrapperType
-
                     Array(CHECKCAST(wrapper), null, null) ++ wrapper.unboxValue
                 } else {
                     Array(CHECKCAST(toBeReturnedType.asReferenceType), null, null)
