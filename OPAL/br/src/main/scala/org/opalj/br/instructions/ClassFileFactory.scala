@@ -649,8 +649,7 @@ object ClassFileFactory {
             loadReceiverObject ++ forwardingInstructions ++ returnAndConvertInstructionsArray
 
         val receiverObjectStackSize =
-            if (invocationInstruction == INVOKESTATIC.opcode) 0 else                 1
-
+            if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
 
         val parametersStackSize = receiverMethodDescriptor.requiredRegisters
 
@@ -685,7 +684,6 @@ object ClassFileFactory {
         staticParameters:          Seq[Field],
         definingType:              ObjectType
     ): Array[Instruction] = {
-
         val receiverParameters = receiverMethodDescriptor.parameterTypes
         val forwarderParameters = forwarderMethodDescriptor.parameterTypes
 
@@ -815,6 +813,7 @@ object ClassFileFactory {
                 val llv = LoadLocalVariableInstruction(forwarderParameters(0), 1)
                 instructions(currentIndex) = llv
                 currentIndex = llv.indexOfNextInstruction(currentIndex, false)
+                lvIndex += 1
             }
             while (receiverParameterIndex < receiverParametersCount) {
                 val rt = receiverParameters(receiverParameterIndex)
