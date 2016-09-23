@@ -34,6 +34,8 @@ import scala.annotation.tailrec
 import scala.collection.BitSet
 import scala.collection.mutable
 import org.opalj.br.instructions._
+import scala.collection.generic.FilterMonadic
+import scala.collection.generic.CanBuildFrom
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -55,12 +57,76 @@ import org.opalj.br.instructions._
  * @author Michael Eichberg
  */
 final class Code private (
-        val maxStack:          Int,
-        val maxLocals:         Int,
-        val instructions:      Array[Instruction],
-        val exceptionHandlers: ExceptionHandlers,
-        val attributes:        Attributes
-) extends Attribute with CommonAttributes with InstructionsContainer {
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes:        Attributes
+) extends Attribute
+        with CommonAttributes
+        with InstructionsContainer
+        with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
+
+    class FilteredCode(final val p: ((PC, Instruction)) ⇒ Boolean)
+            extends FilterMonadic[(PC, Instruction), Nothing] {
+
+        def map[B, That](
+                f: ((PC, Instruction)) ⇒ B
+                )(
+                        implicit bf: CanBuildFrom[Nothing, B, That]
+                        ): That = {
+            val that = bf()
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) that += f(pcInstruction)
+            }
+            that.result
+        }
+
+        def flatMap[B, That](
+            f: ((PC, Instruction)) ⇒ scala.collection.GenTraversableOnce[B]
+        )(
+            implicit
+            bf: CanBuildFrom[Nothing, B, That]
+        ): That = {
+            val that = bf()
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) that ++= f(pcInstruction).seq
+            }
+            that.result
+        }
+
+        def foreach[U](f: ((PC, Instruction)) ⇒ U): Unit = {
+            code.foreach { (pcInstruction: (PC, Instruction)) ⇒
+                if (p(pcInstruction)) f((pcInstruction))
+            }
+        }
+
+        def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] =
+            new FilteredCode(
+                (pcInstruction: (PC, Instruction)) ⇒ this.p(pcInstruction) && p((pcInstruction))
+            )
+    }
+
+    def map[B, That](f: ((PC, Instruction)) ⇒ B)(implicit bf: CanBuildFrom[Nothing, B, That]): That = {
+        val that = bf()
+        code.foreach(that += f(_))
+        that.result
+    }
+	
+    def flatMap[B, That](
+        f: ((PC, Instruction)) ⇒ scala.collection.GenTraversableOnce[B]
+    )(
+        implicit
+        bf: CanBuildFrom[Nothing, B, That]
+    ): That = {
+        val that = bf()
+        code.foreach(pcInstruction ⇒ that ++= f(pcInstruction).seq)
+        that.result
+    }
+
+    def withFilter(p: ((PC, Instruction)) ⇒ Boolean): FilterMonadic[(PC, Instruction), Nothing] = {
+        new FilteredCode(p)
+    }
 
     override def instructionsOption: Some[Array[Instruction]] = Some(instructions)
 
@@ -1230,4 +1296,165 @@ object Code {
      * thrown by an instruction.
      */
     val preDefinedClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+
+    /**
+     * The maximum number of registers required to execute the code - independent
+     * of the number of parameters.
+     *
+     * @note    The method's descriptor may actually require
+     */
+    def maxRegistersRequiredByCode(instructions: Array[Instruction]): Int = {
+
+        val maxPC = instructions.length
+        var pc = 0
+        var maxRegisters = 0
+        var modifiedByWide = false
+        do {
+            val i: Instruction = instructions(pc)
+            if (i == WIDE) {
+                modifiedByWide
+                pc += 1
+            } else {
+                modifiedByWide = false
+                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters)
+                    maxRegisters = i.indexOfWrittenLocal
+                pc = i.indexOfNextInstruction(pc, modifiedByWide)
+            }
+
+        } while (pc < maxPC)
+        maxRegisters
+    }
+
+    def maxRegisters(
+        isInstanceMethod: Boolean,
+        descriptor:       MethodDescriptor,
+        instructions:     Array[Instruction]
+    ): Int = {
+        Math.max(
+            maxRegistersRequiredByCode(instructions),
+            descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) ⇒
+                c + n.computationalType.operandSize
+            }
+        )
+    }
+
+    /**
+     * Calculates the maximum stack size required during execution of this code
+     * block.
+     *
+     * @throws ClassFormatError If the stack size differs between execution paths.
+     */
+    @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
+    def computeMaxStack(
+        instructions:      Array[Instruction],
+        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
+    ): Int = {
+        ???
+        /*
+         * THE ALGORITHM
+         * Start with the first instruction and a stack size of zero.
+         * While instruction is valid (this means it is not null):
+         * Get the stack change by the current instruction and calculate max_stack.
+         * Push every jump target with the current stack size onto a target stack;
+         * if the target was not already pushed onto the stack. If the current instruction terminates the
+         * execution, set instruction to null. If instruction is not null set
+         * instruction to the next instruction otherwise pop a jump target from
+         * the stack, set the current instruction to the jump's target
+         * instruction and set the stack depth. Return the maximum stack size.
+         * (Note this algorithm works because for every instruction the stack
+         * depth must always be the same regardless of the taken execution path.
+         * See JVM spec. for details.)
+         */
+        /*
+        var maxStackDepth : Int = 0;
+        var stackDepth : Int = 0;
+
+        var jumpTargets : ChainedList[(PC,Int)]  = ChainedNil
+
+        exceptionHandlers.
+
+        Code_JumpTargets jumpTargets = new Code_JumpTargets();
+
+        // We have to make sure, that all exception handlers are evaluated for
+        // max_stack, if an exception is catched, the stack size is always 1 -
+        // containing the exception itself.
+        for (ExceptionHandler exceptionHandler : getExceptionHandlers()) {
+            jumpTargets.push(new Code_JumpTarget(exceptionHandler
+                .getHandlerInstruction(), 1));
+        }
+
+        /*
+         * Evaluate max_stack.
+         */
+        int maxStackDepth = 0;
+        int stackDepth = 0;
+
+        Instruction instruction = anchorInstruction.getNextInstruction();
+        while (instruction != null) {
+            // every method must always end with a "return" instruction, so
+            // NoInstruction (<=> anchorInstruction) should never be reached!
+            if (instruction == anchorInstruction)
+                throw new ClassFormatError(
+                        "Method does not end with a return instruction.");
+
+            stackDepth += instruction.getStackChange();
+
+            if (stackDepth > maxStackDepth)
+                maxStackDepth = stackDepth;
+
+            if (instruction.isJumpInstruction()) {
+                JumpInstruction jInstr = (JumpInstruction) instruction;
+
+                if (jInstr.isSingleJumpTargetInstruction()) {
+                    jumpTargets.push(new Code_JumpTarget(
+                            ((SingleTargetJumpInstruction) jInstr)
+                                .getJumpTarget().getTargetInstruction(),
+                            stackDepth));
+                }
+                else {
+                    for (JumpTarget jumpTarget : ((MultipleTargetsJumpInstruction) jInstr)
+                        .getJumpTargets()) {
+                        jumpTargets.push(new Code_JumpTarget(jumpTarget
+                            .getTargetInstruction(), stackDepth));
+                    }
+                }
+
+                int opcode = jInstr.getVirtualOpcode();
+
+                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_TABLESWITCH
+                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_LOOKUPSWITCH
+                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_GOTO)
+                    // the next instruction is determined by jump target
+                    instruction = null;
+
+                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_JSR) {
+                    // after returning the normal execution is continued, but
+                    // the stack_depth is reduced by one; to handle this case
+                    // the next instruction is also pushed onto the stack with
+                    // the appropriate stack_depth size.
+                    jumpTargets.push(new Code_JumpTarget(instruction
+                        .getNextInstruction(), stackDepth - 1));
+                    instruction = null;
+                }
+
+            }
+            else if (instruction.isReturnInstruction())
+                // "ret" is also a return instruction!
+                instruction = null;
+
+            if (instruction != null)
+                instruction = instruction.getNextInstruction();
+            else {
+                Code_JumpTarget jumpTarget = jumpTargets.pop();
+                if (jumpTarget != null) {
+                    instruction = jumpTarget.targetInstruction;
+                    stackDepth = jumpTarget.stackDepth;
+                }
+            }
+        }
+
+        return maxStackDepth;
+        */
+    }
+
 }
