@@ -71,34 +71,36 @@ class TACJDKTest extends FunSpec with Matchers {
                 file ← folder.listFiles()
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
                 project = Project(file)
+                cf ← project.allProjectClassFiles.par
+                m ← cf.methods
+                if m.body.isDefined
             } {
-                project.allProjectClassFiles.par foreach { cf ⇒
-                    cf.methods.filter(_.body.isDefined) foreach { m ⇒
-                        try {
-                            val quadruples = AsQuadruples(
-                                method = m,
-                                classHierarchy = project.classHierarchy,
-                                optimizations = AllOptimizations,
-                                aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
-                            )
-                            ToJavaLike(quadruples._1)
-                            successfullyCompleted.incrementAndGet()
-                        } catch {
-                            case e: Throwable ⇒ this.synchronized {
-                                val methodSignature = m.toJava(cf)
-                                mutex.synchronized {
-                                    println(methodSignature)
-                                    e.printStackTrace()
-                                    if (e.getCause != null) {
-                                        println("\tcause:")
-                                        e.getCause.printStackTrace()
-                                    }
-                                    println("\n")
-                                    errors ::= ((file+":"+methodSignature, e))
-                                }
+                try {
+                    val aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
+                    val (tacCode, _) = AsQuadruples(
+                        method = m,
+                        classHierarchy = project.classHierarchy,						
+                        optimizations = AllOptimizations,
+                        aiResult = aiResult
+                    )
+                    ToJavaLike(tacCode)
+                    successfullyCompleted.incrementAndGet()
+                } catch {
+                    case e: Throwable ⇒ this.synchronized {
+                        val methodSignature = m.toJava(cf)
+                        mutex.synchronized {
+                            println(methodSignature)
+                            e.printStackTrace()
+                            if (e.getCause != null) {
+                                println("\tcause:")
+                                e.getCause.printStackTrace()
                             }
+                            println("\n")
+                            println(m.body.get.toString)
+                            errors ::= ((file+":"+methodSignature, e))
                         }
                     }
+
                 }
             }
             if (errors.nonEmpty) {
