@@ -80,7 +80,7 @@ case class CFG(
      *
      * @param pc A valid pc.
      * @return The basic block associated with the given `pc`. If the `pc` is not valid
-     * 		`null` is returned or an index out of bounds exception is thrown.
+     *         `null` is returned or an index out of bounds exception is thrown.
      */
     def bb(pc: PC): BasicBlock = basicBlocks(pc)
 
@@ -90,12 +90,25 @@ case class CFG(
     lazy val reachableBBs: SomeSet[CFGNode] = basicBlocks(0).reachable(reflexive = true)
 
     /**
-     * Returns the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
+     * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
      * not returned.)
-     *
-     * @note The returned set is recomputed every time this method is called.
      */
-    lazy val allBBs: Set[BasicBlock] = basicBlocks.view.filter(_ ne null).toSet
+    lazy val allBBs: Iterator[BasicBlock] = {
+        //basicBlocks.view.filter(_ ne null).toSet
+        new Iterator[BasicBlock] {
+            var currentStartPC = 0
+            def hasNext: Boolean = currentStartPC < basicBlocks.length
+            def next: BasicBlock = {
+                val current = basicBlocks(currentStartPC)
+                currentStartPC = current.endPC + 1
+                while (currentStartPC < basicBlocks.length && (basicBlocks(currentStartPC) eq null)) {
+                    currentStartPC += 1
+                }
+                current
+            }
+        }
+
+    }
 
     /**
      * Iterates over all runtime successors of the instruction with the given pc.
@@ -105,7 +118,7 @@ case class CFG(
      * a handler of the respective method.
      *
      * @note If possible the function `foreachSuccessor` should be used as it does not have
-     * 		to create comparatively expensive intermediate data structures.
+     *         to create comparatively expensive intermediate data structures.
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
