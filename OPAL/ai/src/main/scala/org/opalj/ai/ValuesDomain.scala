@@ -475,6 +475,17 @@ trait ValuesDomain {
         throw new DomainException(message)
     }
 
+    trait ReturnAddressValues extends Value { this: DomainReturnAddressValue ⇒
+        final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+
+        @throws[DomainException]("Summarizing return address values is meaningless.")
+        override def summarize(pc: PC): DomainValue = {
+            throw DomainException("summarizing return address values is meaningless")
+        }
+    }
+
+    // val MultipleReturnAddressValues: ReturnAddressValues
+
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
      *
@@ -485,12 +496,11 @@ trait ValuesDomain {
      *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
      *      as these additional methods will never be called by OPAL-AI.
      */
-    class ReturnAddressValue(val address: PC) extends Value { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(
+            val address: PC
+    ) extends ReturnAddressValues { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
-
-        final override def computationalType: ComputationalType =
-            ComputationalTypeReturnAddress
 
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             // Note that "Value" already handles the case where this
@@ -498,13 +508,10 @@ trait ValuesDomain {
             MetaInformationUpdateIllegalValue
         }
 
-        @throws[DomainException]("Summarizing return address values is meaningless.")
-        override def summarize(pc: PC): DomainValue =
-            throw DomainException("summarizing return address values is meaningless")
-
         // Adaptation is supported to support on-the-fly domain up-/downcasts.
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ReturnAddressValue(address)
+        }
 
         override def toString = "ReturnAddress("+address+")"
 
