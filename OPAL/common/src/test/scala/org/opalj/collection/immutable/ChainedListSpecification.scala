@@ -593,8 +593,17 @@ fl6.head == i &&            isSpecialized(fl6)
             ChainedList(l1.zip(l1).map { v ⇒ val (s1: String, s2: String) = v; s1 + s2 }: _*) == cl3
     }
 
+    property("forFirstN") = forAll { (l1: List[String]) ⇒
+        val cl1 = ChainedList(l1: _*)
+        (0 until l1.size).forall { i ⇒
+            var result = ""
+            cl1.forFirstN(i)(result += _)
+            result == l1.take(i).foldLeft("")(_ + _)
+        }
+    }
+
     property("toString") = forAll { l: List[String] ⇒
-        ChainedList(l).toString.endsWith("ChainedNil")
+        ChainedList(l: _*).toString.endsWith("ChainedNil")
     }
 
 }

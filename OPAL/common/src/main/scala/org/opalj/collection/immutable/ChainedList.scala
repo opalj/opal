@@ -123,6 +123,17 @@ sealed trait ChainedList[@specialized(Int) +T]
         }
     }
 
+    def forFirstN[U](n: Int)(f: (T) ⇒ U): Unit = {
+        var rest = this
+        var i = 0
+        while (i < n) {
+            val head = rest.head
+            rest = rest.tail
+            f(head)
+            i += 1
+        }
+    }
+
     def flatMap[B, That](
         f: (T) ⇒ GenTraversableOnce[B]
     )(
@@ -555,16 +566,15 @@ object ChainedList extends ChainedListLowPriorityImplicits {
     def singleton[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
 
     /**
-     * Creates a new [[ChainedList]] containing the given element.
+     * @note 	The recommended way to create a ChainedList with one element is to
+     * 			use the `singleton` method.
      */
-    def apply[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
-
-    def apply[@specialized(Int) T](t: Traversable[T]): ChainedList[T] = {
-        if (t.isEmpty)
+    def apply[@specialized(Int) T](es: T*): ChainedList[T] = {
+        if (es.isEmpty)
             return ChainedNil;
-        val result = new :&:[T](t.head, ChainedNil)
+        val result = new :&:[T](es.head, ChainedNil)
         var last = result
-        t.tail.foreach { e ⇒
+        es.tail.foreach { e ⇒
             val newLast = new :&:[T](e, ChainedNil)
             last.rest = newLast
             last = newLast
