@@ -74,8 +74,7 @@ import org.opalj.log.GlobalLogContext
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
  * 	   One of the most important project information keys is the
- * 	   [[org.opalj.br.org.opalj.br.analyses.SourceElementsPropertyStore]]
- *     which gives access to the property store.
+ * 	   `SourceElementsPropertyStoreKey` which gives access to the property store.
  *
  * ==Thread Safety==
  * This class is thread-safe.

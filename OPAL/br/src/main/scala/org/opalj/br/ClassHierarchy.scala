@@ -85,7 +85,7 @@ import org.opalj.collection.IncompleteCollection
  *      is `java.lang.Object`.
  * @note Unless explicitly documented, it is an error to pass an instance of `ObjectType`
  *      to any method if the `ObjectType` was not previously added. If in doubt, first
- *      check if the type is known ([[isKnown]]/[[ifKnown]]).
+ *      check if the type is known (`isKnown`/`ifKnown`).
  * @author Michael Eichberg
  */
 class ClassHierarchy private (
@@ -450,7 +450,7 @@ class ClassHierarchy private (
      *  - the information is incomplete
      *
      * @param objectType An `ObjectType`.
-     * @note See [[isKnown]], [[ifKnown]] for further details.
+     * @note See `isKnown`, `ifKnown` for further details.
      */
     @inline def isInterface(objectType: ObjectType): Boolean = {
         isKnown(objectType) && interfaceTypesMap(objectType.id)
@@ -690,7 +690,8 @@ class ClassHierarchy private (
      * contain `java.lang.Object`.
      *
      * @note	If the class hierarchy is not complete, it may happen that the super class chain
-     * 			is not complete. In this case an [[IncompleteCollection]] will be returned.
+     * 			is not complete. In this case an [[org.opalj.collection.IncompleteCollection]]
+     *          will be returned.
      */
     def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[ChainedList[ObjectType]] = {
         if (objectType eq ObjectType.Object)
