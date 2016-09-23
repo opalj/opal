@@ -31,6 +31,8 @@ package ai
 
 import scala.language.existentials
 
+import scala.xml.Node
+
 import org.opalj.collection.immutable.{ChainedList ⇒ List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
@@ -133,11 +135,14 @@ trait XHTMLTracer extends AITracer {
             id.intValue()
         }
         val dialogSetup =
-            for (path ← inOrderFlow; entity ← path) yield {
+            (for {
+                path ← inOrderFlow
+                entity ← path
+            } yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
-            }
-        val dialogs =
-            for {
+            }).toIterable
+        val dialogs : Iterable[Node] =
+            (for {
                 (path, index) ← inOrderFlow.zipWithIndex
                 flowEntity ← path
             } yield {
@@ -148,14 +153,18 @@ trait XHTMLTracer extends AITracer {
                     <b>Locals</b><br/>
                     { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
                 </div>
-            }
+            }).toIterable
         def row(pc: PC) =
-            for (path ← inOrderFlow) yield {
+            (for (path ← inOrderFlow) yield {
                 val flowEntity = path.find(_.pc == pc)
                 <td>
-                    { flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
+                    {
+                        flowEntity.
+                            map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).
+                            getOrElse(xml.Text(" "))
+                    }
                 </td>
-            }
+            }).toIterable
         val joinInstructions = code.joinInstructions
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
@@ -319,15 +328,7 @@ trait XHTMLTracer extends AITracer {
         if (!continuingWithBranch)
             newBranch()
 
-        addFlowEntity(
-            FlowEntity(
-                pc,
-                instruction,
-                operands,
-                locals,
-                domain.properties(pc)
-            )
-        )
+        addFlowEntity(FlowEntity(pc, instruction, operands, locals, domain.properties(pc)))
         // if we have a call to instruction evaluation without an intermediate
         // flow call, we are continuing the evaluation with a branch
         continuingWithBranch = false
@@ -404,11 +405,7 @@ trait XHTMLTracer extends AITracer {
     ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {
-        writeAndOpen(
-            dumpXHTML((new java.util.Date).toString()),
-            "TraceOfAbstractInterpretation",
-            ".html"
-        )
+        writeAndOpen(dumpXHTML((new java.util.Date).toString()), "AITrace", ".html")
     }
 
 }
