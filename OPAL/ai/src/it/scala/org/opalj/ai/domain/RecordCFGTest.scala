@@ -50,7 +50,7 @@ import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.BasicBlock
 
 /**
- * Tests if we are able to computed the CFG as well as the dominator/post-dominator tree for
+ * Tests if we are able to compute the CFG as well as the dominator/post-dominator tree for
  * a larger number of classes.
  *
  * @author Michael Eichberg
@@ -115,7 +115,9 @@ class RecordCFGTest extends FunSpec with Matchers {
 
                 val pcs = new mutable.BitSet(method.body.size)
                 bbAICFG.allBBs.foreach { bbAI ⇒
-                    assert(bbAI.startPC <= bbAI.endPC,s"${bbAI.startPC}> ${bbAI.endPC}")
+
+                    assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
+
                     if (!pcs.add(bbAI.startPC))
                         fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
                     if (bbAI.endPC != bbAI.startPC) {
