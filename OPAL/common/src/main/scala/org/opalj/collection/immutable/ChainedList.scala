@@ -547,7 +547,7 @@ object ChainedList extends ChainedListLowPriorityImplicits {
         specializedCanBuildFrom
     }
 
-    implicit def toTraversable[T](cl : ChainedList[T]) : Traversable[T] = cl.toIterable
+    implicit def toTraversable[T](cl: ChainedList[T]): Traversable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
         if (t.runtimeClass == classOf[Int])
