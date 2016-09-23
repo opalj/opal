@@ -46,8 +46,8 @@ class UtilTest extends FlatSpec with Matchers {
 
     behavior of "the function removeFirstWhile"
 
-    val shortList = ChainedList(List(1, 5, 4))
-    val longList = ChainedList(List(1, 4, 5, 6, 4848, 34, 35, 35, 37))
+    val shortList = ChainedList(1, 5, 4)
+    val longList = ChainedList(1, 4, 5, 6, 4848, 34, 35, 35, 37)
 
     it should ("return the given list if no element matches") in {
         val newList = removeFirstUnless(longList, -1)(_ <= 0)
@@ -78,6 +78,6 @@ class UtilTest extends FlatSpec with Matchers {
 
     it should ("return the list without it's last element if that element matches") in {
         val newList = removeFirstUnless(shortList, 4)(_ >= 1000)
-        newList should be(ChainedList(List(1, 5)))
+        newList should be(ChainedList(1, 5))
     }
 }
