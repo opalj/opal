@@ -61,7 +61,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
         time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
     }
 
-        def doAnalyzeProject(name: String, project: SomeProject): Unit = {
+    def doAnalyzeProject(name: String, project: SomeProject): Unit = {
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
@@ -78,7 +78,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
                 }
 
                 // check that allBBs returns the same as a manual iterator
-                assert(cfg.allBBs.toSet ==                 code.programCounters.map(cfg.bb(_)).filter(_ ne null).toSet)
+                assert(cfg.allBBs.toSet == code.programCounters.map(cfg.bb(_)).filter(_ ne null).toSet)
 
                 // check the boundaries
                 var allStartPCs = Set.empty[Int]

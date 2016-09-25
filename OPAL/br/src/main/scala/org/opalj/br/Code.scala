@@ -67,14 +67,15 @@ final class Code private (
         with InstructionsContainer
         with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
-    class FilteredCode(final val p: ((PC, Instruction)) ⇒ Boolean)
+    class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
             extends FilterMonadic[(PC, Instruction), Nothing] {
 
         def map[B, That](
-                f: ((PC, Instruction)) ⇒ B
-                )(
-                        implicit bf: CanBuildFrom[Nothing, B, That]
-                        ): That = {
+            f: ((PC, Instruction)) ⇒ B
+        )(
+            implicit
+            bf: CanBuildFrom[Nothing, B, That]
+        ): That = {
             val that = bf()
             code.foreach { (pcInstruction: (PC, Instruction)) ⇒
                 if (p(pcInstruction)) that += f(pcInstruction)
@@ -112,7 +113,7 @@ final class Code private (
         code.foreach(that += f(_))
         that.result
     }
-	
+
     def flatMap[B, That](
         f: ((PC, Instruction)) ⇒ scala.collection.GenTraversableOnce[B]
     )(
@@ -284,12 +285,12 @@ final class Code private (
      *
      * ==Example==
      * {{{
-     * 	0: iload_1
-     * 	1: ifgt	6
-     * 	2: iconst_1
-     * 	5: goto 10
-     * 	6: ...
-     * 	9: iload_1
+     *     0: iload_1
+     *     1: ifgt    6
+     *     2: iconst_1
+     *     5: goto 10
+     *     6: ...
+     *     9: iload_1
      *  10:return // <= JOIN INSTRUCTION: the predecessors are the instructions 5 and 9.
      * }}}
      *
@@ -1342,7 +1343,7 @@ object Code {
      * Calculates the maximum stack size required during execution of this code
      * block.
      *
-     * @throws ClassFormatError If the stack size differs between execution paths.
+     * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def computeMaxStack(

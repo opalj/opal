@@ -50,6 +50,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
+import org.opalj.br.ExceptionHandler
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -64,13 +65,13 @@ import org.opalj.br.cfg.CatchNode
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''; i.e., the domain can only be used by one
- *  			abstract interpreter at a time.
- *  			However, using the collected results is thread-safe!
+ *              abstract interpreter at a time.
+ *              However, using the collected results is thread-safe!
  *  - Reusable: '''Yes'''; all state directly associated with the analyzed code block is
- *          	reset by the method `initProperties`.
+ *              reset by the method `initProperties`.
  *  - No Partial Results: If the abstract interpretation was aborted the results have
- *  			no meaning and must not be used; however, if the abstract interpretation
- *  			is later continued and successfully completed the results are correct.
+ *              no meaning and must not be used; however, if the abstract interpretation
+ *              is later continued and successfully completed the results are correct.
  *
  * @author Michael Eichberg
  * @author Marc Eichler
@@ -253,8 +254,9 @@ trait RecordCFG
      * The returned set is always empty for instructions that cannot raise exceptions,
      * such as the `StackManagementInstruction`s.
      *
-     * @note The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
-     *      thrown exception is directly handled inside this code block.
+     * @note    The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
+     *          thrown exception is directly handled inside this code block.
+     * @note    The successor instructions are necessarily the handlers of catch blocks.
      */
     def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
         val s = exceptionHandlerSuccessors(pc)

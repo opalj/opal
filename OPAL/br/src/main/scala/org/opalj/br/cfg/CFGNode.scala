@@ -119,7 +119,7 @@ trait CFGNode extends Node {
      *
      * @note The result is not cached.
      * @note This method is primarily (exclusively?) intended to be used to complete a call
-     * 		graph containing subroutines.
+     *         graph containing subroutines.
      */
     private[cfg] def subroutineFrontier(code: Code, bbs: Array[BasicBlock]): List[BasicBlock] = {
         assert(this.isStartOfSubroutine)
