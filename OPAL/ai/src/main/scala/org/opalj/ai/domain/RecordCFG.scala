@@ -425,6 +425,7 @@ trait RecordCFG
             }
             catchNode.addSuccessor(handlerBB)
         }
+
         // 2. iterate over the code to determine the basic block boundaries
         var runningBB: BasicBlock = null
         code.programCounters.foreach { pc ⇒
@@ -460,33 +461,37 @@ trait RecordCFG
                 sourceBB.addSuccessor(targetBB)
             }
 
-            var successorsCount = 0
             val nextInstructionPC = code.pcOfNextInstruction(pc)
             val theRegularSuccessors = regularSuccessorsOf(pc)
-            val theExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(pc)
-            if (theRegularSuccessors.nonEmpty) {
-                val bb = runningBB
-                successorsCount = theRegularSuccessors.foldLeft(successorsCount) { (count, nextPC) ⇒
-                    connect(bb, nextPC)
-                    if (nextInstructionPC != nextPC) endRunningBB = true
-                    count + 1
+            var connectedWithNextBBs = false
+            if (theRegularSuccessors.isEmpty) {
+                endRunningBB = true
+            } else {
+                // the following also handles the case where the last instruction is, e.g., a goto
+                if (theRegularSuccessors.exists(_ != nextInstructionPC)) {
+                    theRegularSuccessors.foreach { targetPC ⇒ connect(runningBB, targetPC) }
+                    endRunningBB = true
+                    connectedWithNextBBs = true
                 }
             }
+
+            val theExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(pc)
             if (theExceptionHandlerSuccessors.nonEmpty) {
                 endRunningBB = true
-                val bb = runningBB
-                successorsCount = theExceptionHandlerSuccessors.foldLeft(successorsCount) { (count, handlerPC) ⇒
-                    val catchNode = exceptionHandlers(handlerPC)
-                    catchNode.addPredecessor(bb)
-                    bb.addSuccessor(catchNode)
-                    count + 1
+                if (!connectedWithNextBBs) {
+                    connect(runningBB, nextInstructionPC)
+                    connectedWithNextBBs = true
+                }
+                theExceptionHandlerSuccessors.foreach { handlerPC ⇒
+                    val catchNode: CatchNode = exceptionHandlers(handlerPC)
+                    catchNode.addPredecessor(runningBB)
+                    runningBB.addSuccessor(catchNode)
                 }
             }
-            endRunningBB =
-                endRunningBB ||
-                    successorsCount > 1 ||
-                    nextInstructionPC == codeSize || // if the last instruction is, e.g., a goto instruction
-                    hasMultiplePredecessors(nextInstructionPC)
+            if (!endRunningBB && !connectedWithNextBBs && hasMultiplePredecessors(nextInstructionPC)) {
+                endRunningBB = true
+                connect(runningBB, nextInstructionPC)
+            }
 
             if (endRunningBB) {
                 runningBB.endPC = pc
