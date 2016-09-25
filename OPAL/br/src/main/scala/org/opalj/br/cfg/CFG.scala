@@ -280,53 +280,54 @@ case class CFG(
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 
+        /* [USED FOR DEBUGGING PURPOSES]
+         println(
+            basicBlocks.
+                filter(_ != null).
+                toSet.
+                map((bb: BasicBlock) ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+                mkString("\n")
+        )
+        println(
+            basicBlocks.
+                filter(_ != null).
+                toSet.
+                map((bb: BasicBlock) ⇒ bb.predecessors.mkString(", ")+" => "+bb.toString).
+                mkString("\n")
+        )
+        println(            catchNodes.mkString("CatchNodes:", ",", "")        )
+        */
+
+        val bbsLength = basicBlocks.length
         val bbMapping = new IdentityHashMap[CFGNode, CFGNode]()
 
         val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
-        var lastNewBB: BasicBlock = null
-        var startIndex = 0
         val requiresNewStartBlock = pcToIndex(0) > 0
+
+        var lastNewBB: BasicBlock = null
         if (requiresNewStartBlock) {
+            val endIndex = pcToIndex(0) - 1
             // we have added instructions at the beginning which belong to a new start bb
-            lastNewBB = new BasicBlock(0)
-            startIndex = pcToIndex(0)
-            lastNewBB.endPC = startIndex - 1
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], 0, startIndex, lastNewBB)
+            lastNewBB = new BasicBlock(startPC = 0, endPC = endIndex)
+            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
-        val max = basicBlocks.length
         do {
-            var oldBB = basicBlocks(startPC)
-            startIndex = pcToIndex(startPC)
-            lastNewBB = new BasicBlock(startIndex)
-
-            // find the start pc of the next bb that is ALIVE (!)
-            var nextStartPC = oldBB.endPC
-            do {
-                bbMapping.put(oldBB, lastNewBB)
-                nextStartPC += 1
-                while (nextStartPC < max && {
-                    val nextOldBB = basicBlocks(nextStartPC)
-                    (nextOldBB eq null) || (nextOldBB eq oldBB)
-                }) {
-                    nextStartPC += 1
-                }
-                if (nextStartPC < max)
-                    oldBB = basicBlocks(nextStartPC)
-                // repeat this loop while we see dead basic blocks (i.e., we have actually found
-                // code which cannot be reached on any path; this is a frequent issue with older
-                // compilers or foreign language compilers such as the groovy compiler)
-            } while (nextStartPC < max && pcToIndex(nextStartPC) == 0)
-
-            val endIndex = if (nextStartPC < max) pcToIndex(nextStartPC) - 1 else lastIndex
-            lastNewBB.endPC = endIndex
+            val oldBB = basicBlocks(startPC)
+            val startIndex = pcToIndex(startPC)
+            val endIndex = pcToIndex(oldBB.endPC)
+            lastNewBB = new BasicBlock(startIndex, endIndex)
+            bbMapping.put(oldBB, lastNewBB)
             Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, endIndex + 1, lastNewBB)
-            startPC = nextStartPC
-            startIndex = endIndex + 1
-        } while (startPC < max)
-
-        if (startIndex < lastIndex)
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, lastIndex, lastNewBB)
+            startPC = oldBB.endPC + 1
+            // let's advance startPC to the next instruction which is live (which has a BB)
+            while (startPC < bbsLength && {
+                val bb = basicBlocks(startPC)
+                (bb eq null) || (bb eq oldBB)
+            }) {
+                startPC += 1
+            }
+        } while (startPC < bbsLength)
 
         if (requiresNewStartBlock) {
             newBasicBlocks(0).addSuccessor(newBasicBlocks(pcToIndex(0)))
@@ -376,13 +377,7 @@ case class CFG(
 
         val newCatchNodes = catchNodes.map(bbMapping.get(_).asInstanceOf[CatchNode])
         assert(newCatchNodes.forall { _ ne null })
-        val newCFG = CFG(
-            code,
-            newNormalReturnNode,
-            newAbnormalReturnNode,
-            newCatchNodes,
-            newBasicBlocks
-        )
+        val newCFG = CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
