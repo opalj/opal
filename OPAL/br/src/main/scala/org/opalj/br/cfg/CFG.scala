@@ -113,9 +113,9 @@ case class CFG(
                         val predBB = predecessorBB.asBasicBlock
                         (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
                     }
-                ) || catchNodes.contains(predecessorBB.asCatchNode)
+                ) ||
+                    (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
             }
-
         },
         basicBlocks.filter(_ != null).
             map(bb ⇒ bb.toString+" => "+bb.predecessors.mkString(", ")).
