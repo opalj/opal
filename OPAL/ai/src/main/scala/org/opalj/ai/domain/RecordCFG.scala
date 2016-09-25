@@ -408,12 +408,12 @@ trait RecordCFG
             exceptionHandler ← code.exceptionHandlers
             if wasExecuted(exceptionHandler.handlerPC)
         } {
-            val catchNode = new CatchNode(exceptionHandler)
             val handlerPC = exceptionHandler.handlerPC
             val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
-                handlerBB = new BasicBlock(handlerPC, successors = Set(catchNode))
+                handlerBB = new BasicBlock(handlerPC)
+                handlerBB.addPredecessor(catchNode)
                 bbs(handlerPC) = handlerBB
             } else {
                 handlerBB.addPredecessor(catchNode)
