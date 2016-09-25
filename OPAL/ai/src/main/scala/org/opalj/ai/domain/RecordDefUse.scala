@@ -41,8 +41,8 @@ import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.mutable.SmallValuesSet
 import org.opalj.collection.immutable.:&:
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -126,7 +126,7 @@ trait RecordDefUse extends RecordCFG {
 
     // This array contains the information where each operand value found at a
     // specific instruction was defined.
-    private[this] var defOps: Array[ChainedList[ValueOrigins]] = _
+    private[this] var defOps: Array[Chain[ValueOrigins]] = _
     // This array contains the information where each local is defined;
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _
@@ -143,8 +143,8 @@ trait RecordDefUse extends RecordCFG {
         // use of a SmallValuesArray that can actually store larger values than
         // necessary; however, this will occur only in a very small number of cases.
         val absoluteMin = -code.maxLocals
-        val defOps = new Array[ChainedList[ValueOrigins]](codeSize)
-        defOps(0) = ChainedNil // the operand stack is empty...
+        val defOps = new Array[Chain[ValueOrigins]](codeSize)
+        defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
 
         // initialize initial def-use information based on the parameters
@@ -410,19 +410,19 @@ trait RecordDefUse extends RecordCFG {
         }
 
         def propagate(
-            newDefOps:    ChainedList[ValueOrigins],
+            newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
             if (joinInstructions.contains(successorPC) && (defLocals(successorPC) ne null)) {
 
                 // we now also have to perform a join...
                 @annotation.tailrec def joinDefOps(
-                    oldDefOps:     ChainedList[ValueOrigins],
-                    lDefOps:       ChainedList[ValueOrigins],
-                    rDefOps:       ChainedList[ValueOrigins],
-                    oldIsSuperset: Boolean                   = true,
-                    joinedDefOps:  ChainedList[ValueOrigins] = ChainedNil
-                ): ChainedList[ValueOrigins] = {
+                    oldDefOps:     Chain[ValueOrigins],
+                    lDefOps:       Chain[ValueOrigins],
+                    rDefOps:       Chain[ValueOrigins],
+                    oldIsSuperset: Boolean             = true,
+                    joinedDefOps:  Chain[ValueOrigins] = Naught
+                ): Chain[ValueOrigins] = {
                     if (lDefOps.isEmpty) {
                         // assert(rDefOps.isEmpty)
                         return if (oldIsSuperset) oldDefOps else joinedDefOps.reverse;
@@ -574,7 +574,7 @@ trait RecordDefUse extends RecordCFG {
                     // (Whether we had a join or not is irrelevant.)
                     val successorDefOps = defOps(successorPC)
                     if (successorDefOps eq null)
-                        ChainedList.singleton(ValueOrigins(origin = successorPC))
+                        Chain.singleton(ValueOrigins(origin = successorPC))
                     else {
                         // assert(successorDefOps.tail.isEmpty)
                         successorDefOps
@@ -858,7 +858,7 @@ trait RecordDefUse extends RecordCFG {
                     if (isExceptionalControlFlow) {
                         val successorDefOps = defOps(successorPC)
                         if (successorDefOps eq null)
-                            ChainedList.singleton(ValueOrigins(origin = successorPC))
+                            Chain.singleton(ValueOrigins(origin = successorPC))
                         else
                             successorDefOps
                     } else {

@@ -1369,7 +1369,7 @@ object Code {
         var maxStackDepth : Int = 0;
         var stackDepth : Int = 0;
 
-        var jumpTargets : ChainedList[(PC,Int)]  = ChainedNil
+        var jumpTargets : Chain[(PC,Int)]  = Naught
 
         exceptionHandlers.
 

@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{Chain ⇒ List}
 
 /**
  * Mixin this trait if a domain needs access to the operands ([[Domain#OperandsArray]])

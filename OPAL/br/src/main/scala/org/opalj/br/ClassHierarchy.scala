@@ -43,7 +43,7 @@ import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.ChainedList.{IncompleteEmptyChainedList, CompleteEmptyChainedList}
+import org.opalj.collection.immutable.Chain.{IncompleteEmptyChain, CompleteEmptyChain}
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.EqualSets
 import org.opalj.collection.StrictSuperset
@@ -54,8 +54,8 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ObjectType.Object
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.CompleteCollection
@@ -372,7 +372,7 @@ class ClassHierarchy private (
      * Returns `true` if the class hierarchy has some information about the given
      * type.
      *
-     * @note	Consider using isKnown(objectTypeId : Int) if you need the object ids anyway.
+     * @note    Consider using isKnown(objectTypeId : Int) if you need the object ids anyway.
      */
     @inline final def isKnown(objectType: ObjectType): Boolean = isKnown(objectType.id)
 
@@ -385,7 +385,7 @@ class ClassHierarchy private (
      * referred to in the body of a method, but which are not referred to in the
      * declarations of the class files that were analyzed.
      *
-     * @note	Consider using isUnknown(objectTypeId : Int) if you need the object ids anyway.
+     * @note    Consider using isUnknown(objectTypeId : Int) if you need the object ids anyway.
      */
     @inline final def isUnknown(objectType: ObjectType): Boolean = isUnknown(objectType.id)
 
@@ -502,8 +502,8 @@ class ClassHierarchy private (
      * @return The set of all direct and indirect subtypes of the given type.
      * @note If you don't need the set, it is more efficient to use `foreachSubtype`.
      * @note If the type hierarchy is not complete the answer may not be correct.
-     * 		E.g., if x inherits from y and y inherits from z, but y is not known to the
-     * 		class hierarchy then x will not be in the set of all (known) subtypes of z.
+     *         E.g., if x inherits from y and y inherits from z, but y is not known to the
+     *         class hierarchy then x will not be in the set of all (known) subtypes of z.
      */
     def allSubtypes(objectType: ObjectType, reflexive: Boolean): mutable.Set[ObjectType] = {
         val subtypes =
@@ -520,7 +520,7 @@ class ClassHierarchy private (
      * If the given `objectType` identifies an interface type then it is possible
      * that `f` is passed the same `ObjectType` multiple times.
      *
-     * @param objectType A known `ObjectType`. (See [[isKnown]],[[ifKnown]] for further details).
+     * @param objectType A known `ObjectType`. (See `isKnown`,`ifKnown` for further details).
      * @note For details regarding incomplete class hierarchies see [[allSubtypes]].
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
@@ -689,20 +689,20 @@ class ClassHierarchy private (
      * initialization. If the given type is an interface type, the returned list will hence only
      * contain `java.lang.Object`.
      *
-     * @note	If the class hierarchy is not complete, it may happen that the super class chain
-     * 			is not complete. In this case an [[org.opalj.collection.IncompleteCollection]]
+     * @note    If the class hierarchy is not complete, it may happen that the super class chain
+     *             is not complete. In this case an [[org.opalj.collection.IncompleteCollection]]
      *          will be returned.
      */
-    def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[ChainedList[ObjectType]] = {
+    def allSuperclassTypesInInitializationOrder(objectType: ObjectType): QualifiedCollection[Chain[ObjectType]] = {
         if (objectType eq ObjectType.Object)
-            return CompleteEmptyChainedList;
+            return CompleteEmptyChain;
 
         val objectTypeId = objectType.id
 
         if (isUnknown(objectTypeId))
-            return IncompleteEmptyChainedList;
+            return IncompleteEmptyChain;
 
-        var allTypes: ChainedList[ObjectType] = ChainedNil
+        var allTypes: Chain[ObjectType] = Naught
 
         val superclassTypeMap = this.superclassTypeMap
         var superclassType = superclassTypeMap(objectTypeId)
@@ -867,16 +867,16 @@ class ClassHierarchy private (
      * the fact that a type may just model an upper type bound into account.
      *
      * @param elementValueType The type of the value that should be stored in the
-     * 			array. This type is compared against the component type of the array.
+     *             array. This type is compared against the component type of the array.
      * @param elementValueTypeIsPrecise Specifies if the type information is precise;
-     * 		  i.e., whether elementValueType models the precise runtime type (`true`)
-     * 		  or just an upper bound (`false`). If the `elementValueType` is a base/
-     * 			primitive type then this value should be `true`; but actually it is
-     * 			ignored.
+     *           i.e., whether elementValueType models the precise runtime type (`true`)
+     *           or just an upper bound (`false`). If the `elementValueType` is a base/
+     *             primitive type then this value should be `true`; but actually it is
+     *             ignored.
      * @param arrayType The type of the array.
      * @param arrayTypeIsPrecise Specifies if the type information is precise;
-     * 		  i.e., whether arrayType models the precise runtime type (`true`)
-     * 		  or just an upper bound (`false`).
+     *           i.e., whether arrayType models the precise runtime type (`true`)
+     *           or just an upper bound (`false`).
      */
     @tailrec final def canBeStoredIn(
         elementValueType:          FieldType,
@@ -1977,8 +1977,8 @@ class ClassHierarchy private (
      * would be a direct subtype of the upper type bound consisting of I and J.
      * If the bound consists of only one type then the bound is returned.
      *
-     * @param 	upperTypeBound A set of types that are in no inheritance relationship.
-     * 			`upperTypeBound` must not be empty.
+     * @param     upperTypeBound A set of types that are in no inheritance relationship.
+     *             `upperTypeBound` must not be empty.
      */
     def directSubtypesOf(upperTypeBound: UIDSet[ObjectType]): UIDSet[ObjectType] = {
         if (upperTypeBound.isSingletonSet)
@@ -2129,12 +2129,12 @@ class ClassHierarchy private (
      * in the given set'''. If the given set is empty a containing `java.lang.Object`
      * is returned. A set which contains only one type will directly be returned.
      *
-     * @param 	types A set of types that contains '''for each type stored in the
-     *      	set all direct and indirect supertypes or none'''. For example, the intersection
-     *      	of the sets of all supertypes (as returned, e.g., by
-     *      	`ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
-     *      	condition. If `types` is empty, the returned leaf type is `ObjectType.Object`.
-     *      	which should always be a safe fallback.
+     * @param     types A set of types that contains '''for each type stored in the
+     *          set all direct and indirect supertypes or none'''. For example, the intersection
+     *          of the sets of all supertypes (as returned, e.g., by
+     *          `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
+     *          condition. If `types` is empty, the returned leaf type is `ObjectType.Object`.
+     *          which should always be a safe fallback.
      */
     def leafTypes(types: UIDSet[ObjectType]): UIDSet[ObjectType] = {
         if (types.isEmpty)

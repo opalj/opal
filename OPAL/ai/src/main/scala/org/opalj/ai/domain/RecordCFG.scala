@@ -33,8 +33,8 @@ package domain
 import scala.collection.BitSet
 import scala.collection.mutable
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.br.Code

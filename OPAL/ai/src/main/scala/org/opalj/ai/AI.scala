@@ -35,10 +35,10 @@ import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
 import org.opalj.collection.immutable.:&:
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.ChainedNil
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.control.foreachNonNullValue
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
@@ -170,7 +170,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method:    Method,
         domain:    D
-    ): domain.Operands = ChainedNil
+    ): domain.Operands = Naught
 
     /**
      * Returns the initial register assignment (the initialized locals) that is
@@ -1260,7 +1260,7 @@ trait AI[D <: Domain] {
                         branchTarget: PC,
                         upperBound:   Option[ObjectType]
                     ): Unit = {
-                        val newOperands = ChainedList.singleton(exceptionValue)
+                        val newOperands = Chain.singleton(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
                                 theDomain.refEstablishIsNonNull(pc, exceptionValue, newOperands, locals)
@@ -2589,7 +2589,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    final val initialWorkList: List[PC] = ChainedList.singleton(0)
+    final val initialWorkList: List[PC] = Chain.singleton(0)
 
 }
 

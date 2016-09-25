@@ -45,29 +45,29 @@ import scala.collection.generic.FilterMonadic
  * efficiency and the list is also specialized for primitive `int` values which
  * makes this list far more efficient when used; e.g., for storing lists of int values.
  *
- * @note	In most cases a `ChainedList` can be used as a drop-in replacement for a standard
- * 			Scala List.
+ * @note    In most cases a `Chain` can be used as a drop-in replacement for a standard
+ *             Scala List.
  *
- * @note 	Some core methods, e.g. `drop` and `take`, have different
- * 			semantics when compared to the methods with the same name defined
- * 			by the Scala collections API. In this case these methods may
- * 			fail arbitrarily if the list is not long enough.
- * 			Therefore, `ChainedList` does not inherit from `scala...Seq`.
+ * @note     Some core methods, e.g. `drop` and `take`, have different
+ *             semantics when compared to the methods with the same name defined
+ *             by the Scala collections API. In this case these methods may
+ *             fail arbitrarily if the list is not long enough.
+ *             Therefore, `Chain` does not inherit from `scala...Seq`.
  *
  * @author Michael Eichberg
  */
-sealed trait ChainedList[@specialized(Int) +T]
+sealed trait Chain[@specialized(Int) +T]
         extends TraversableOnce[T]
-        with FilterMonadic[T, ChainedList[T]]
+        with FilterMonadic[T, Chain[T]]
         with Serializable { self ⇒
 
     /**
-     * Represents a filtered [[ChainedList]]. Instances of [[ChainedListWithFilter]] are typically
-     * created by [[ChainedList]]'s `withFilter` method.
+     * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
+     * created by [[Chain]]'s `withFilter` method.
      */
-    class ChainedListWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, ChainedList[T]] {
+    class ChainWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, Chain[T]] {
 
-        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
+        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
             val list = self
             var rest = list
 
@@ -84,7 +84,7 @@ sealed trait ChainedList[@specialized(Int) +T]
             f: T ⇒ GenTraversableOnce[B]
         )(
             implicit
-            bf: CanBuildFrom[ChainedList[T], B, That]
+            bf: CanBuildFrom[Chain[T], B, That]
         ): That = {
             val list = self
             val b = bf(list)
@@ -106,8 +106,8 @@ sealed trait ChainedList[@specialized(Int) +T]
             }
         }
 
-        def withFilter(q: T ⇒ Boolean): ChainedListWithFilter = {
-            new ChainedListWithFilter(x ⇒ p(x) && q(x))
+        def withFilter(q: T ⇒ Boolean): ChainWithFilter = {
+            new ChainWithFilter(x ⇒ p(x) && q(x))
         }
     }
 
@@ -140,7 +140,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         f: (T) ⇒ GenTraversableOnce[B]
     )(
         implicit
-        bf: CanBuildFrom[ChainedList[T], B, That]
+        bf: CanBuildFrom[Chain[T], B, That]
     ): That = {
         val b = bf(this)
         //OLD: foreach { t ⇒ f(t) foreach { e ⇒ builder += e } }
@@ -153,7 +153,7 @@ sealed trait ChainedList[@specialized(Int) +T]
         b.result
     }
 
-    def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[ChainedList[T], B, That]): That = {
+    def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
         val builder = bf(this)
         var rest = this
         while (rest.nonEmpty) {
@@ -164,11 +164,11 @@ sealed trait ChainedList[@specialized(Int) +T]
         builder.result
     }
 
-    def withFilter(p: (T) ⇒ Boolean): ChainedListWithFilter = new ChainedListWithFilter(p)
+    def withFilter(p: (T) ⇒ Boolean): ChainWithFilter = new ChainWithFilter(p)
 
     def head: T
 
-    def tail: ChainedList[T]
+    def tail: Chain[T]
 
     def last: T = {
         var rest = this
@@ -250,21 +250,21 @@ sealed trait ChainedList[@specialized(Int) +T]
         result
     }
 
-    def :&:[X >: T](x: X): ChainedList[X] = new :&:(x, this)
+    def :&:[X >: T](x: X): Chain[X] = new :&:(x, this)
 
-    def :&:(x: Int)(implicit ev: this.type <:< ChainedList[Int]): ChainedList[Int] = {
-        new :&:[Int](x, this.asInstanceOf[ChainedList[Int]])
+    def :&:(x: Int)(implicit ev: this.type <:< Chain[Int]): Chain[Int] = {
+        new :&:[Int](x, this.asInstanceOf[Chain[Int]])
     }
 
-    def :&::[X >: T](x: ChainedList[X]): ChainedList[X]
+    def :&::[X >: T](x: Chain[X]): Chain[X]
 
     /**
      * Prepends the given list to '''this list''' by setting the end of the given list to
      * this list.
      *
-     * @note 	'''This mutates the given list.'''
+     * @note     '''This mutates the given list.'''
      */
-    private[opalj] def ++!:[X >: T](x: ChainedList[X]): ChainedList[X] = {
+    private[opalj] def ++!:[X >: T](x: Chain[X]): Chain[X] = {
         if (x.isEmpty)
             return this;
 
@@ -276,31 +276,31 @@ sealed trait ChainedList[@specialized(Int) +T]
         x
     }
 
-    private[opalj] def ++![X >: T](x: ChainedList[X]): ChainedList[X] = x.++!:(this)
+    private[opalj] def ++![X >: T](x: Chain[X]): Chain[X] = x.++!:(this)
 
     /**
      * Clones this list and returns the cloned list as well as the last element of the list; using
      * the last element it is possible to immediately attach further elements to the list at its end.
      * If this list is empty, the last element is null.
      */
-    private[collection] def copy[X >: T](): (ChainedList[X], :&:[X]) = {
+    private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
         if (isEmpty)
             return (this, null);
 
-        val result = new :&:[T](head, ChainedNil)
+        val result = new :&:[T](head, Naught)
         var last = result
-        var rest: ChainedList[T] = this.tail
+        var rest: Chain[T] = this.tail
         while (rest.nonEmpty) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, ChainedNil)
+            val newLast = new :&:[T](x, Naught)
             last.rest = newLast
             last = newLast
         }
         (result, last.asInstanceOf[:&:[X]])
     }
 
-    def ++[X >: T](that: ChainedList[X]): ChainedList[X] = {
+    def ++[X >: T](that: Chain[X]): Chain[X] = {
         if (that.isEmpty)
             return this;
         if (this.isEmpty)
@@ -311,11 +311,11 @@ sealed trait ChainedList[@specialized(Int) +T]
         head
     }
 
-    def ++[X >: T <: AnyRef](other: Traversable[X]): ChainedList[X] = {
+    def ++[X >: T <: AnyRef](other: Traversable[X]): Chain[X] = {
         if (other.isEmpty)
             return this;
 
-        val that = other.to[ChainedList]
+        val that = other.to[Chain]
         if (this.isEmpty)
             that
         else {
@@ -331,32 +331,32 @@ sealed trait ChainedList[@specialized(Int) +T]
      * @param n    An int value in the range [0...this.size].
      * @return     A list consisting of the first n value.
      */
-    def take(n: Int): ChainedList[T]
+    def take(n: Int): Chain[T]
 
-    def takeWhile(f: T ⇒ Boolean): ChainedList[T]
+    def takeWhile(f: T ⇒ Boolean): Chain[T]
 
-    def filter(f: T ⇒ Boolean): ChainedList[T]
+    def filter(f: T ⇒ Boolean): Chain[T]
 
-    def drop(n: Int): ChainedList[T]
+    def drop(n: Int): Chain[T]
 
-    def dropWhile(f: T ⇒ Boolean): ChainedList[T] = {
+    def dropWhile(f: T ⇒ Boolean): Chain[T] = {
         var rest = this
         while (rest.nonEmpty && f(rest.head)) { rest = rest.tail }
         rest
     }
 
-    def zip[X](other: GenIterable[X]): ChainedList[(T, X)] = {
+    def zip[X](other: GenIterable[X]): Chain[(T, X)] = {
         if (this.isEmpty)
-            return this.asInstanceOf[ChainedNil.type];
+            return this.asInstanceOf[Naught.type];
         val otherIt = other.iterator
         if (!otherIt.hasNext)
-            return ChainedNil;
+            return Naught;
 
         var thisIt = this.tail
-        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next), ChainedNil)
+        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next), Naught)
         var last = result
         while (thisIt.nonEmpty && otherIt.hasNext) {
-            val newLast = new :&:((thisIt.head, otherIt.next), ChainedNil)
+            val newLast = new :&:((thisIt.head, otherIt.next), Naught)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
@@ -364,18 +364,18 @@ sealed trait ChainedList[@specialized(Int) +T]
         result
     }
 
-    def zip[X](other: ChainedList[X]): ChainedList[(T, X)] = {
+    def zip[X](other: Chain[X]): Chain[(T, X)] = {
         if (this.isEmpty)
-            return this.asInstanceOf[ChainedNil.type];
+            return this.asInstanceOf[Naught.type];
         if (other.isEmpty)
-            return other.asInstanceOf[ChainedNil.type];
+            return other.asInstanceOf[Naught.type];
 
         var thisIt = this.tail
         var otherIt = other.tail
-        val result: :&:[(T, X)] = new :&:((this.head, other.head), ChainedNil)
+        val result: :&:[(T, X)] = new :&:((this.head, other.head), Naught)
         var last = result
         while (thisIt.nonEmpty && otherIt.nonEmpty) {
-            val newLast = new :&:((thisIt.head, otherIt.head), ChainedNil)
+            val newLast = new :&:((thisIt.head, otherIt.head), Naught)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
@@ -384,9 +384,9 @@ sealed trait ChainedList[@specialized(Int) +T]
         result
     }
 
-    def zipWithIndex: ChainedList[(T, Int)] = {
+    def zipWithIndex: Chain[(T, Int)] = {
         var index = 0
-        map[(T, Int), ChainedList[(T, Int)]] { e ⇒
+        map[(T, Int), Chain[(T, Int)]] { e ⇒
             val currentIndex = index
             index += 1
             (e, currentIndex)
@@ -394,9 +394,9 @@ sealed trait ChainedList[@specialized(Int) +T]
     }
 
     /**
-     * @see	`merge`
+     * @see    `merge`
      */
-    def corresponds[X](other: ChainedList[X])(f: (T, X) ⇒ Boolean): Boolean = {
+    def corresponds[X](other: Chain[X])(f: (T, X) ⇒ Boolean): Boolean = {
         if (this.isEmpty)
             return other.isEmpty;
         if (other.isEmpty)
@@ -416,9 +416,9 @@ sealed trait ChainedList[@specialized(Int) +T]
         thisIt.isEmpty && otherIt.isEmpty
     }
 
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X]
+    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): Chain[X]
 
-    def reverse: ChainedList[T]
+    def reverse: Chain[T]
 
     override def mkString: String = mkString("", "", "")
 
@@ -480,10 +480,10 @@ sealed trait ChainedList[@specialized(Int) +T]
      * If all results are the same (reference equality) as this list's elements then the result
      * will be `this`. Otherwise, only the tail that is identical will be kept.
      *
-     * @param 	other A list with the same number of elements as this list. If the size of
-     * 			the lists it not equal, the result is undefined.
+     * @param     other A list with the same number of elements as this list. If the size of
+     *             the lists it not equal, the result is undefined.
      */
-    def merge[X <: AnyRef, Z >: T <: AnyRef](that: ChainedList[X])(f: (T, X) ⇒ Z): ChainedList[Z]
+    def merge[X <: AnyRef, Z >: T <: AnyRef](that: Chain[X])(f: (T, X) ⇒ Z): Chain[Z]
 
     /**
      * Fuses this list with the given list by fusing the values using the given function.
@@ -491,35 +491,35 @@ sealed trait ChainedList[@specialized(Int) +T]
      * element differ. Hence, when the tail of both lists is equal fusing both lists
      * will terminate immediately and the common tail is attached to the new heading.
      *
-     * @param 	other A list with the same number of elements as this list. If the size of
-     * 			the lists it not equal, the result is undefined.
+     * @param     other A list with the same number of elements as this list. If the size of
+     *             the lists it not equal, the result is undefined.
      */
-    def fuse[X >: T <: AnyRef](that: ChainedList[X], onDiff: (T, X) ⇒ X): ChainedList[X]
+    def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
 }
 
-trait ChainedListLowPriorityImplicits {
+trait ChainLowPriorityImplicits {
 
 }
 
 /**
- * Factory for [[ChainedList]]s.
+ * Factory for [[Chain]]s.
  *
  * @author Michael Eichberg
  */
-object ChainedList extends ChainedListLowPriorityImplicits {
+object Chain extends ChainLowPriorityImplicits {
 
     /**
-     * Builder for [[ChainedList]]s. The builder is specialized for the primitive
+     * Builder for [[Chain]]s. The builder is specialized for the primitive
      *         type `Int` to enable the creation of new instances of the correspondingly
      *         specialized list.
      *
      * @tparam T    The type of the list's element.
      */
-    class ChainedListBuilder[@specialized(Int) T] extends Builder[T, ChainedList[T]] {
-        private var list: ChainedList[T] = ChainedNil
+    class ChainBuilder[@specialized(Int) T] extends Builder[T, Chain[T]] {
+        private var list: Chain[T] = Naught
         private var last: :&:[T] = null
         def +=(elem: T): this.type = {
-            val newLast = new :&:[T](elem, ChainedNil)
+            val newLast = new :&:[T](elem, Naught)
             if (list.isEmpty) {
                 list = newLast
             } else {
@@ -528,58 +528,58 @@ object ChainedList extends ChainedListLowPriorityImplicits {
             last = newLast
             this
         }
-        def clear(): Unit = list = ChainedNil
-        def result(): ChainedList[T] = list
+        def clear(): Unit = list = Naught
+        def result(): Chain[T] = list
     }
 
-    private[this] val baseCanBuildFrom = new CanBuildFrom[ChainedList[_], AnyRef, ChainedList[AnyRef]] {
-        def apply(from: ChainedList[_]) = new ChainedListBuilder[AnyRef]
-        def apply() = new ChainedListBuilder[AnyRef]
+    private[this] val baseCanBuildFrom = new CanBuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {
+        def apply(from: Chain[_]) = new ChainBuilder[AnyRef]
+        def apply() = new ChainBuilder[AnyRef]
     }
-    implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[ChainedList[_], A, ChainedList[A]] = {
-        baseCanBuildFrom.asInstanceOf[CanBuildFrom[ChainedList[_], A, ChainedList[A]]]
+    implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[Chain[_], A, Chain[A]] = {
+        baseCanBuildFrom.asInstanceOf[CanBuildFrom[Chain[_], A, Chain[A]]]
     }
-    private[this] val specializedCanBuildFrom = new CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] {
-        def apply(from: ChainedList[_]) = new ChainedListBuilder[Int]
-        def apply() = new ChainedListBuilder[Int]
+    private[this] val specializedCanBuildFrom = new CanBuildFrom[Chain[_], Int, Chain[Int]] {
+        def apply(from: Chain[_]) = new ChainBuilder[Int]
+        def apply() = new ChainBuilder[Int]
     }
-    implicit def canBuildIntChainedListFrom: CanBuildFrom[ChainedList[_], Int, ChainedList[Int]] = {
+    implicit def canBuildIntChainFrom: CanBuildFrom[Chain[_], Int, Chain[Int]] = {
         specializedCanBuildFrom
     }
 
-    implicit def toTraversable[T](cl: ChainedList[T]): Traversable[T] = cl.toIterable
+    implicit def toTraversable[T](cl: Chain[T]): Traversable[T] = cl.toIterable
 
-    def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainedListBuilder[T] = {
+    def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainBuilder[T] = {
         if (t.runtimeClass == classOf[Int])
-            new ChainedListBuilder[Int].asInstanceOf[ChainedListBuilder[T]]
+            new ChainBuilder[Int].asInstanceOf[ChainBuilder[T]]
         else
-            new ChainedListBuilder[T]
+            new ChainBuilder[T]
     }
 
-    final val IncompleteEmptyChainedList = new IncompleteCollection(ChainedNil: ChainedList[Nothing])
+    final val IncompleteEmptyChain = new IncompleteCollection(Naught: Chain[Nothing])
 
-    final val CompleteEmptyChainedList = new CompleteCollection(ChainedNil: ChainedList[Nothing])
+    final val CompleteEmptyChain = new CompleteCollection(Naught: Chain[Nothing])
 
     /**
      * Returns an empty list.
      *
-     * @note	In general it is preferable to directly use [[ChainedNil]].
+     * @note    In general it is preferable to directly use [[Naught]].
      */
-    def empty[T]: ChainedList[T] = ChainedNil
+    def empty[T]: Chain[T] = Naught
 
-    def singleton[@specialized(Int) T](e: T): ChainedList[T] = new :&:[T](e, ChainedNil)
+    def singleton[@specialized(Int) T](e: T): Chain[T] = new :&:[T](e, Naught)
 
     /**
-     * @note 	The recommended way to create a ChainedList with one element is to
-     * 			use the `singleton` method.
+     * @note     The recommended way to create a Chain with one element is to
+     *             use the `singleton` method.
      */
-    def apply[@specialized(Int) T](es: T*): ChainedList[T] = {
+    def apply[@specialized(Int) T](es: T*): Chain[T] = {
         if (es.isEmpty)
-            return ChainedNil;
-        val result = new :&:[T](es.head, ChainedNil)
+            return Naught;
+        val result = new :&:[T](es.head, Naught)
         var last = result
         es.tail.foreach { e ⇒
-            val newLast = new :&:[T](e, ChainedNil)
+            val newLast = new :&:[T](e, Naught)
             last.rest = newLast
             last = newLast
         }
@@ -589,11 +589,11 @@ object ChainedList extends ChainedListLowPriorityImplicits {
 }
 
 /**
- * An empty [[ChainedList]]s.
+ * An empty [[Chain]]s.
  *
  * @author Michael Eichberg
  */
-case object ChainedNil extends ChainedList[Nothing] {
+case object Naught extends Chain[Nothing] {
 
     private def listIsEmpty = new NoSuchElementException("the list is empty")
 
@@ -601,21 +601,21 @@ case object ChainedNil extends ChainedList[Nothing] {
     def tail: Nothing = throw listIsEmpty
     def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
-    def :&::[X >: Nothing](x: ChainedList[X]): ChainedList[X] = x
-    def take(n: Int): ChainedNil.type = { if (n == 0) this else throw listIsEmpty }
-    def takeWhile(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
-    def filter(f: Nothing ⇒ Boolean): ChainedList[Nothing] = this
-    def drop(n: Int): ChainedNil.type = { if (n == 0) this else throw listIsEmpty }
-    def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): ChainedList[X] = this
-    def reverse: ChainedList[Nothing] = this
+    def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
+    def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
+    def takeWhile(f: Nothing ⇒ Boolean): Chain[Nothing] = this
+    def filter(f: Nothing ⇒ Boolean): Chain[Nothing] = this
+    def drop(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
+    def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): Chain[X] = this
+    def reverse: Chain[Nothing] = this
 
     def merge[X <: AnyRef, Z >: Nothing <: AnyRef](
-        that: ChainedList[X]
+        that: Chain[X]
     )(
         f: (Nothing, X) ⇒ Z
-    ): ChainedList[Z] = this
+    ): Chain[Z] = this
 
-    def fuse[X >: Nothing <: AnyRef](that: ChainedList[X], onDiff: (Nothing, X) ⇒ X): ChainedList[X] = this
+    def fuse[X >: Nothing <: AnyRef](that: Chain[X], onDiff: (Nothing, X) ⇒ X): Chain[X] = this
 }
 
 /**
@@ -624,11 +624,11 @@ case object ChainedNil extends ChainedList[Nothing] {
  * @author Michael Eichberg
  */
 final case class :&:[@specialized(Int) T](
-        head:                        T,
-        private[opalj] var rest: ChainedList[T] = ChainedNil
-) extends ChainedList[T] {
+        head:                    T,
+        private[opalj] var rest: Chain[T] = Naught
+) extends Chain[T] {
 
-    def tail: ChainedList[T] = rest
+    def tail: Chain[T] = rest
 
     def isEmpty: Boolean = false
 
@@ -637,15 +637,15 @@ final case class :&:[@specialized(Int) T](
     // prepends the given list... to make sure that
     // we keep the specialization we have to ask the
     // other list to append this one...
-    def :&::[X >: T](x: ChainedList[X]): ChainedList[X] = {
+    def :&::[X >: T](x: Chain[X]): Chain[X] = {
         x match {
-            case ChainedNil    ⇒ this
+            case Naught        ⇒ this
             case other: :&:[X] ⇒ other ++ this
         }
     }
 
-    def take(n: Int): ChainedList[T] = {
-        val Nil = ChainedNil
+    def take(n: Int): Chain[T] = {
+        val Nil = Naught
 
         if (n == 0)
             return Nil;
@@ -653,7 +653,7 @@ final case class :&:[@specialized(Int) T](
         var taken = 1
         val result = new :&:[T](head, Nil)
         var last = result
-        var rest: ChainedList[T] = this.rest
+        var rest: Chain[T] = this.rest
         while (taken < n) {
             val x = rest.head
             rest = rest.tail
@@ -665,16 +665,16 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def takeWhile(f: T ⇒ Boolean): ChainedList[T] = {
+    def takeWhile(f: T ⇒ Boolean): Chain[T] = {
         val head = this.head
-        val Nil = ChainedNil
+        val Nil = Naught
 
         if (!f(head))
             return Nil;
 
         val result = new :&:(head, Nil)
         var last = result
-        var rest: ChainedList[T] = this.rest
+        var rest: Chain[T] = this.rest
         while (rest.nonEmpty && f(rest.head)) {
             val x = rest.head
             rest = rest.tail
@@ -685,12 +685,12 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def filter(f: T ⇒ Boolean): ChainedList[T] = {
-        val Nil = ChainedNil
+    def filter(f: T ⇒ Boolean): Chain[T] = {
+        val Nil = Naught
 
-        var result: ChainedList[T] = Nil
+        var result: Chain[T] = Nil
         var last = result
-        var rest: ChainedList[T] = this
+        var rest: Chain[T] = this
         do {
             val x = rest.head
             rest = rest.tail
@@ -707,12 +707,12 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def drop(n: Int): ChainedList[T] = {
+    def drop(n: Int): Chain[T] = {
         if (n == 0)
             return this;
 
         var dropped = 1
-        var result: ChainedList[T] = this.rest
+        var result: Chain[T] = this.rest
         while (dropped < n) {
             dropped += 1
             result = result.tail
@@ -720,19 +720,19 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): ChainedList[X] = {
+    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): Chain[X] = {
         val head = this.head
         val newHead = f(head)
         var updated = (head.asInstanceOf[AnyRef] ne newHead)
-        val result = new :&:[X](newHead, ChainedNil)
+        val result = new :&:[X](newHead, Naught)
         var last = result
-        var rest: ChainedList[T] = this.rest
+        var rest: Chain[T] = this.rest
         while (rest.nonEmpty) {
             val e = rest.head
             val x = f(e)
             updated = updated || (x ne e.asInstanceOf[AnyRef])
             rest = rest.tail
-            val newLast = new :&:[X](x, ChainedNil)
+            val newLast = new :&:[X](x, Naught)
             last.rest = newLast
             last = newLast
         }
@@ -742,8 +742,8 @@ final case class :&:[@specialized(Int) T](
             this
     }
 
-    def reverse: ChainedList[T] = {
-        var result: ChainedList[T] = new :&:[T](head, ChainedNil)
+    def reverse: Chain[T] = {
+        var result: Chain[T] = new :&:[T](head, Naught)
         var rest = this.rest
         while (rest.nonEmpty) {
             // NOTE: WE CAN'T USE THE STANDARD :&: OPERATOR
@@ -756,32 +756,32 @@ final case class :&:[@specialized(Int) T](
     }
 
     /**
-     * @note	The `merge` function first calls the given function and then checks if the
-     * 			result is reference equal to the element of the first list while fuse first
-     * 			checks the reference equality of the members before it calls the given function.
-     * 			Therefore `fuse` can abort checking all further values when the
-     * 			remaining list fragments are reference equal because both lists are immutable.
-     * 			In other words: fuse is an optimized version of merge where the function f
-     * 			has the following shape: `(x,y) => if(x eq y) x else /*whatever*/`.
+     * @note    The `merge` function first calls the given function and then checks if the
+     *             result is reference equal to the element of the first list while fuse first
+     *             checks the reference equality of the members before it calls the given function.
+     *             Therefore `fuse` can abort checking all further values when the
+     *             remaining list fragments are reference equal because both lists are immutable.
+     *             In other words: fuse is an optimized version of merge where the function f
+     *             has the following shape: `(x,y) => if(x eq y) x else /*whatever*/`.
      */
     def fuse[X >: T <: AnyRef](
-        that:   ChainedList[X],
+        that:   Chain[X],
         onDiff: (T, X) ⇒ X
-    ): ChainedList[X] = {
+    ): Chain[X] = {
 
-        var thisHead: ChainedList[T] = this
-        var thatHead: ChainedList[X] = that
+        var thisHead: Chain[T] = this
+        var thatHead: Chain[X] = that
 
-        var equalHead: ChainedList[X] = null
+        var equalHead: Chain[X] = null
 
         var newHead: :&:[X] = null
         var newLast: :&:[X] = null
         def appendToNewLast(t: X): Unit = {
             if (newLast eq null) {
-                newLast = new :&:[X](t, ChainedNil)
+                newLast = new :&:[X](t, Naught)
                 newHead = newLast
             } else {
-                val e = new :&:[X](t, ChainedNil)
+                val e = new :&:[X](t, Naught)
                 newLast.rest = e
                 newLast = e
             }
@@ -830,26 +830,26 @@ final case class :&:[@specialized(Int) T](
     }
 
     def merge[X <: AnyRef, Z >: T <: AnyRef](
-        that: ChainedList[X]
+        that: Chain[X]
     )(
         f: (T, X) ⇒ Z
-    ): ChainedList[Z] = {
+    ): Chain[Z] = {
         // The idea: iterate over both lists in parallel, when the merge results in the
         // same value as this list's value, then we do not create a new list element, but
         // instead store this information and otherwise wait until we see a change.
-        var thisHead: ChainedList[T] = this
-        var thatHead: ChainedList[X] = that
+        var thisHead: Chain[T] = this
+        var thatHead: Chain[X] = that
 
-        var equalHead: ChainedList[Z] = null
+        var equalHead: Chain[Z] = null
 
         var newHead: :&:[Z] = null
         var newLast: :&:[Z] = null
         def appendToNewLast(t: Z): Unit = {
             if (newLast eq null) {
-                newLast = new :&:[Z](t, ChainedNil)
+                newLast = new :&:[Z](t, Naught)
                 newHead = newLast
             } else {
-                val e = new :&:[Z](t, ChainedNil)
+                val e = new :&:[Z](t, Naught)
                 newLast.rest = e
                 newLast = e
             }

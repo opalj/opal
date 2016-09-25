@@ -33,7 +33,7 @@ import scala.language.existentials
 
 import scala.xml.Node
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
@@ -141,7 +141,7 @@ trait XHTMLTracer extends AITracer {
             } yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
             }).toIterable
-        val dialogs : Iterable[Node] =
+        val dialogs: Iterable[Node] =
             (for {
                 (path, index) ← inOrderFlow.zipWithIndex
                 flowEntity ← path

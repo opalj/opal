@@ -33,8 +33,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.ChainedNil
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
@@ -87,7 +87,7 @@ object Locking {
      * Afterwards all locks are released in reverse order.
      */
     @inline final def withWriteLocks[T](rwLocks: TraversableOnce[ReentrantReadWriteLock])(f: ⇒ T): T = {
-        var acquiredRWLocks: ChainedList[WriteLock] = ChainedNil
+        var acquiredRWLocks: Chain[WriteLock] = Naught
         var error: Throwable = null
         val allLocked =
             rwLocks.forall { rwLock ⇒

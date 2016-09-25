@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 

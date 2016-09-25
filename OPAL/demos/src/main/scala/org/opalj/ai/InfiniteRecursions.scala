@@ -36,7 +36,7 @@ import scala.Console.BOLD
 import scala.Console.RESET
 import scala.language.existentials
 
-import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
@@ -160,7 +160,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 BaseAI.performInterpretation(
                     strictfp, body, domain
                 )(
-                    ChainedList.empty, parameters
+                    Chain.empty, parameters
                 )
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
@@ -247,7 +247,7 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
 case class InfiniteRecursion(
         classFile: ClassFile,
         method:    Method,
-        operands:  ChainedList[_ <: AnyRef]
+        operands:  Chain[_ <: AnyRef]
 ) {
 
     override def toString: String = {

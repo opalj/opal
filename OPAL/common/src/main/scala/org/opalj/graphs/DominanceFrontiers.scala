@@ -31,7 +31,7 @@ package graphs
 
 import org.opalj.collection.SmallValuesSet
 import org.opalj.collection.immutable
-import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable
 import org.opalj.collection.mutable.IntArrayStack
 
@@ -194,7 +194,7 @@ object DominanceFrontiers {
         // traverse in DFS order
         //var inDFSOrder: List[Int] = Nil
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
-        var nodes: ChainedList[Int] = ChainedList.singleton(startNode)
+        var nodes: Chain[Int] = Chain.singleton(startNode)
         //val nodes = new IntArrayStack(Math.max(1, max - 3))
         //nodes.push(startNode)
         while (nodes.nonEmpty) {

@@ -36,7 +36,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
-import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.Chain
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -229,7 +229,7 @@ package object ai {
      */
     final val SUBROUTINE = -90000009 // some value smaller than -2^16
 
-    type Operands[T >: Null <: ValuesDomain#DomainValue] = ChainedList[T]
+    type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
     type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 
