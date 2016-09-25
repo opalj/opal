@@ -410,7 +410,7 @@ trait RecordCFG
         } {
             val catchNode = new CatchNode(exceptionHandler)
             val handlerPC = exceptionHandler.handlerPC
-            exceptionHandlers += (handlerPC → catchNode)
+            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
                 handlerBB = new BasicBlock(handlerPC, successors = Set(catchNode))
