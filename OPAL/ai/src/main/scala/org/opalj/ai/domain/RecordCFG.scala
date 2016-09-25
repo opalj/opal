@@ -329,11 +329,27 @@ trait RecordCFG
      */
     final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
 
-    final def wasExecuted(pc: PC): Boolean = {
-        pc < code.instructions.size && (
-            (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
+    private[this] final def uncheckedWasExecuted(pc: PC): Boolean = {
+        (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             exitPCs.contains(pc)
-        )
+    }
+
+    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.size && uncheckedWasExecuted(pc)
+
+    /**
+     * Returns true if the exception handler may handle at least one exception thrown
+     * by an instruction in the catch block.
+     */
+    final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
+        val endPC = exceptionHandler.endPC
+        val handlerPC = exceptionHandler.handlerPC
+        var currentPC = exceptionHandler.startPC
+        while (currentPC <= endPC) {
+            if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
+                return true
+            currentPC = code.pcOfNextInstruction(currentPC)
+        }
+        false
     }
 
     /**
