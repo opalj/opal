@@ -70,6 +70,72 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) {
 
+    // 1. check that each basic block has a lower start pc than the end pc
+    assert(
+        basicBlocks.forall { bb ⇒ bb == null || bb.startPC <= bb.endPC },
+        basicBlocks.filter(bb ⇒ bb != null && bb.startPC > bb.endPC).mkString
+    )
+
+    // 2. check that each pc belonging to a basic block (bb) actually points to the respective bb
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            (bb.startPC to bb.endPC).forall { pc ⇒
+                (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
+            }
+        },
+        basicBlocks.zipWithIndex.filter(_._1 != null).
+            map(bb ⇒ s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
+            mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
+    )
+
+    // 3. check that the CFG is self-consistent; i.e., that no node references a node
+    //    that does not occur in the BB.
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            bb.successors.forall { successorBB ⇒
+                (successorBB.isBasicBlock && {
+                    val succBB = successorBB.asBasicBlock
+                    (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
+                }) ||
+                    (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
+                    successorBB.isExitNode
+            }
+        },
+        basicBlocks.filter(_ != null).
+            map(bb ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+            mkString("unexpected successors:\n\t", "\n\t", "")
+    )
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            bb.predecessors.forall { predecessorBB ⇒
+                (
+                    predecessorBB.isBasicBlock && {
+                        val predBB = predecessorBB.asBasicBlock
+                        (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
+                    }
+                ) || catchNodes.contains(predecessorBB.asCatchNode)
+            }
+
+        },
+        basicBlocks.filter(_ != null).
+            map(bb ⇒ bb.toString+" => "+bb.predecessors.mkString(", ")).
+            mkString("unexpected predecessors:\n\t", "\n\t", "")
+    )
+
+    // 4.  all catch nodes referred to by the basic blocks are listed in the sequence of
+    //     catch nodes
+    assert(
+        basicBlocks.
+            filter(bb ⇒ bb != null && bb.successors.exists { _.isCatchNode }).
+            flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
+            forall(catchBB ⇒ catchNodes.contains(catchBB)),
+        catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
+            (basicBlocks.filter(_ != null).collect {
+                case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
+                    s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
+            }).mkString("\n")
+    )
+
     /**
      * The basic block associated with the very first instruction.
      */
