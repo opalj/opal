@@ -406,7 +406,12 @@ trait RecordCFG
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
             exceptionHandler ← code.exceptionHandlers
-            if wasExecuted(exceptionHandler.handlerPC)
+            // 1.1.    Let's check if the handler was executed at all.
+            if uncheckedWasExecuted(exceptionHandler.handlerPC)
+            // 1.2.    The handler may be shared by multiple catch blocks, hence, we have
+            //         to ensure the we have at least one instruction in the try block
+            //         that jumps to the handler.
+            if handlesException(exceptionHandler)
         } {
             val handlerPC = exceptionHandler.handlerPC
             val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
