@@ -31,6 +31,7 @@ package tac
 
 import org.opalj.io.writeAndOpen
 import org.opalj.io.OpeningFileFailedException
+import org.opalj.graphs.toDot
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
@@ -80,8 +81,9 @@ object TAC {
             val ch = project.classHierarchy
             val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
             val aiResult = BaseAI(classFile, method, domain)
-            writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.cfg.gv")
-            writeAndOpen(CFGFactory(method.body.get, project.classHierarchy).toDot, method.name, ".br.cfg.gv")
+            writeAndOpen(toDot(Set(aiResult.domain.cfgAsGraph())), "AICFG"+method.name, "ai.cfg.gv")
+            // [DEBUG] writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
+            writeAndOpen(CFGFactory(method.body.get, project.classHierarchy).toDot, "NaiveCFG"+method.name, ".br.cfg.gv")
 
             val (code, cfg) =
                 //AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
