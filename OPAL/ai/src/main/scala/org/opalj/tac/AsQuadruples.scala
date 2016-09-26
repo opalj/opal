@@ -819,6 +819,10 @@ object AsQuadruples {
                         pcToIndex(currentPC) = index
                     index += 1
                 }
+            } else {
+                // Required by subsequent tranformations to identifiy that some pcs
+                // are related to dead code!
+                pcToIndex(currentPC) = Int.MinValue
             }
             currentPC += 1
         }
