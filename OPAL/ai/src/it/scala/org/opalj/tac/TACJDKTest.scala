@@ -80,11 +80,11 @@ class TACJDKTest extends FunSpec with Matchers {
                 try {
                     val (tacCode, _) = AsQuadruples(
                         method = m,
-                        classHierarchy = project.classHierarchy,						
+                        classHierarchy = project.classHierarchy,
                         optimizations = AllOptimizations,
                         aiResult = aiResult
                     )
-                     ToJavaLike(tacCode)
+                    ToJavaLike(tacCode)
                 } catch {
                     case e: Throwable ⇒ this.synchronized {
                         val methodSignature = m.toJava(cf)
