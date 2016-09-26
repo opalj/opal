@@ -330,7 +330,10 @@ case class CFG(
         } while (startPC < bbsLength)
 
         if (requiresNewStartBlock) {
-            newBasicBlocks(0).addSuccessor(newBasicBlocks(pcToIndex(0)))
+            val firstBB = newBasicBlocks(0)
+            val secondBB = newBasicBlocks(pcToIndex(0))
+            firstBB.addSuccessor(secondBB)
+            secondBB.addPredecessor(firstBB)
         }
 
         // update the catch nodes
