@@ -191,24 +191,16 @@ class CFGFactoryTest extends FunSpec with Matchers {
             analyzeProject("JDK", project)
         }
 
-        it("should be possible for all methods of OPAL-SNAPSHOT-0.3.jar") {
-            val classFiles = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-            analyzeProject("OPAL-0.3", project)
+        val classFilesFolder = locateTestResources("classfiles", "bi")
+        val filter = new FilenameFilter() {
+            def accept(dir: File, name: String) = { name.endsWith(".jar") }
         }
-
-        it("should be possible for all methods of the OPAL-08-14-2014 snapshot") {
-            val classFilesFolder = locateTestResources("classfiles", "bi")
-            val filter = new FilenameFilter() {
-                def accept(dir: File, name: String) = {
-                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
-                }
+        val jars = classFilesFolder.listFiles(filter)
+        jars.foreach { jar ⇒
+            it(s"should be possible for all methods of $jar") {
+                val project = Project(AllClassFiles(Seq(jar)), Traversable.empty, true)
+                analyzeProject(jar.getName, project)
             }
-            val opalJARs = classFilesFolder.listFiles(filter)
-            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
-            opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
-            analyzeProject("OPAL-08-14-2014 snapshot", project)
         }
     }
 }
