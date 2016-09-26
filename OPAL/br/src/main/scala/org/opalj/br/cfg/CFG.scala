@@ -70,13 +70,15 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) {
 
-    // 1. check that each basic block has a lower start pc than the end pc
+    // 1. Check that each basic block has a lower start pc than the end pc
+    //    i.e., startPC <= endPC.
     assert(
         basicBlocks.forall { bb ⇒ bb == null || bb.startPC <= bb.endPC },
         basicBlocks.filter(bb ⇒ bb != null && bb.startPC > bb.endPC).mkString
     )
 
-    // 2. check that each pc belonging to a basic block (bb) actually points to the respective bb
+    // 2. Check that each pc belonging to a basic block (bb) actually points to the respective bb
+    //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
     assert(
         basicBlocks.filter(_ != null).toSet.forall { bb ⇒
             (bb.startPC to bb.endPC).forall { pc ⇒
@@ -88,7 +90,7 @@ case class CFG(
             mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
     )
 
-    // 3. check that the CFG is self-consistent; i.e., that no node references a node
+    // 3. Check that the CFG is self-consistent; i.e., that no node references a node
     //    that does not occur in the BB.
     assert(
         basicBlocks.filter(_ != null).toSet.forall { bb ⇒
@@ -117,13 +119,13 @@ case class CFG(
                     (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
             }
         },
-        basicBlocks.filter(_ != null).
-            map(bb ⇒ bb.toString+" => "+bb.predecessors.mkString(", ")).
-            mkString("unexpected predecessors:\n\t", "\n\t", "")
+        basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
+            map(bb ⇒ bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
+            mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
     )
 
-    // 4.  all catch nodes referred to by the basic blocks are listed in the sequence of
-    //     catch nodes
+    // 4.  Check that all catch nodes referred to by the basic blocks are listed in the
+    //     sequence of catch nodes
     assert(
         basicBlocks.
             filter(bb ⇒ bb != null && bb.successors.exists { _.isCatchNode }).
@@ -134,6 +136,26 @@ case class CFG(
                 case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
                     s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
             }).mkString("\n")
+    )
+
+    // 5.   Check that predecessors and successors are consistent.
+    assert(
+        basicBlocks.filter(bb ⇒ bb != null).toSet.
+            forall(bb ⇒ bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }),
+        "successors and predecessors are inconsistent; e.g., "+
+            basicBlocks.filter(bb ⇒ bb != null).toSet.
+            find(bb ⇒ !bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }).
+            map(bb ⇒ bb.successors.find(succBB ⇒ !succBB.predecessors.contains(bb)).map(succBB ⇒
+                s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
+    )
+    assert(
+        basicBlocks.filter(bb ⇒ bb != null).toSet.
+            forall(bb ⇒ bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }),
+        "predecessors and successors are inconsistent; e.g., "+
+            basicBlocks.filter(bb ⇒ bb != null).toSet.
+            find(bb ⇒ !bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }).
+            map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
+                s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
     )
 
     /**
@@ -280,36 +302,42 @@ case class CFG(
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 
-        /* [USED FOR DEBUGGING PURPOSES]
-         println(
+        /*
+        // [USED FOR DEBUGGING PURPOSES]
+        //
+        println(
             basicBlocks.
                 filter(_ != null).
                 toSet.
                 map((bb: BasicBlock) ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
-                mkString("\n")
+                mkString("Successors:\n", "\n", "\n")
         )
         println(
             basicBlocks.
                 filter(_ != null).
                 toSet.
                 map((bb: BasicBlock) ⇒ bb.predecessors.mkString(", ")+" => "+bb.toString).
-                mkString("\n")
+                mkString("Predecessors:\n", "\n", "\n")
         )
-        println(            catchNodes.mkString("CatchNodes:", ",", "")        )
+        println(catchNodes.mkString("CatchNodes:", ",", "\n"))
+        println(pcToIndex.zipWithIndex.map(_.swap).mkString("Mapping:", ",", "\n"))
+        //
+        // [USED FOR DEBUGGING PURPOSES]
         */
 
         val bbsLength = basicBlocks.length
         val bbMapping = new IdentityHashMap[CFGNode, CFGNode]()
 
         val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
+        val newBasicBlocksArray = newBasicBlocks.asInstanceOf[Array[Object]]
         val requiresNewStartBlock = pcToIndex(0) > 0
 
         var lastNewBB: BasicBlock = null
         if (requiresNewStartBlock) {
             val endIndex = pcToIndex(0) - 1
             // we have added instructions at the beginning which belong to a new start bb
-            lastNewBB = new BasicBlock(startPC = 0, endPC = endIndex)
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], 0, endIndex + 1, lastNewBB)
+            lastNewBB = new BasicBlock(startPC = 0, _endPC = endIndex)
+            Arrays.fill(newBasicBlocksArray, 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
         do {
@@ -318,13 +346,22 @@ case class CFG(
             val endIndex = pcToIndex(oldBB.endPC)
             lastNewBB = new BasicBlock(startIndex, endIndex)
             bbMapping.put(oldBB, lastNewBB)
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, endIndex + 1, lastNewBB)
-            startPC = oldBB.endPC + 1
+            Arrays.fill(newBasicBlocksArray, startIndex, endIndex + 1, lastNewBB)
             // let's advance startPC to the next instruction which is live (which has a BB)
+            startPC = oldBB.endPC + 1
+            var tempBB: BasicBlock = null
             while (startPC < bbsLength && {
-                val bb = basicBlocks(startPC)
-                (bb eq null) || (bb eq oldBB)
+                tempBB = basicBlocks(startPC)
+                (tempBB eq null) || pcToIndex(tempBB.startPC) < 0
             }) {
+                assert(tempBB ne oldBB)
+                // This (index < 0) handles the case where the initial CFG was created using
+                // a simple algorithm that actually resulted in a CFG with detached basic blocks;
+                // we now kill these basic blocks by jumping over them!
+                // NOTE: This is indicative of dead code in the bytecode in the first place!
+                if ((tempBB ne null)) {
+                    startPC = tempBB.endPC
+                }
                 startPC += 1
             }
         } while (startPC < bbsLength)
