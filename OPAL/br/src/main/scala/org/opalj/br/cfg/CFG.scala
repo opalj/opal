@@ -347,19 +347,12 @@ case class CFG(
             )
         }
 
-        // rewire the graph
-
         val newNormalReturnNode = new ExitNode(normalReturn = true)
         bbMapping.put(normalReturnNode, newNormalReturnNode)
-        normalReturnNode.successors.foreach { bb ⇒
-            newNormalReturnNode.addSuccessor(bbMapping.get(bb))
-        }
-
         val newAbnormalReturnNode = new ExitNode(normalReturn = false)
         bbMapping.put(abnormalReturnNode, newAbnormalReturnNode)
-        abnormalReturnNode.successors.foreach { bb ⇒
-            newAbnormalReturnNode.addSuccessor(bbMapping.get(bb))
-        }
+
+        // rewire the graph
 
         bbMapping.keySet().asScala.foreach { oldBB ⇒
             val newBB = bbMapping.get(oldBB)
@@ -367,11 +360,11 @@ case class CFG(
                 val newSuccBB = bbMapping.get(oldSuccBB)
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
-            }
-            oldBB.predecessors.foreach { oldPredBB ⇒
-                val newPredBB = bbMapping.get(oldPredBB)
-                assert(newPredBB ne null, s"no mapping for $oldPredBB")
-                newBB.addPredecessor(newPredBB)
+                // Instead of iterating over the predecessors, we just iterate over
+                // the successors; this way we only include the node that are
+                // live; nodes that; e.g., are attached to the exit node but for
+                // which there is no path to reach them at all are dropped!
+                newSuccBB.addPredecessor(newBB)
             }
         }
 
