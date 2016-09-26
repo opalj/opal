@@ -370,7 +370,6 @@ case class CFG(
 
         val newCatchNodes = catchNodes.map(bbMapping.get(_).asInstanceOf[CatchNode])
         assert(newCatchNodes.forall { _ ne null })
-        val newCFG = CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
@@ -381,7 +380,7 @@ case class CFG(
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        newCFG
+        CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
     }
 
     //
