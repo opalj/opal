@@ -42,8 +42,8 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 class BasicBlock(
-        private[cfg] var _startPC: PC,
-        private[cfg] var _endPC:   PC = Int.MinValue
+        val startPC:             PC, // immutable, because it determines this basic blocks' hash value!
+        private[cfg] var _endPC: PC = Int.MinValue
 ) extends CFGNode {
 
     def this(startPC: PC, successors: Set[CFGNode]) {
@@ -51,19 +51,23 @@ class BasicBlock(
         this.setSuccessors(successors)
     }
 
+    def copy(
+        startPC:      Int          = this.startPC,
+        endPC:        Int          = this.endPC,
+        predecessors: Set[CFGNode] = this.predecessors,
+        successors:   Set[CFGNode] = this.successors
+    ): BasicBlock = {
+        val newBB = new BasicBlock(startPC, endPC)
+        newBB.setPredecessors(predecessors)
+        newBB.setSuccessors(successors)
+        newBB
+    }
+
     final override def isCatchNode: Boolean = false
     final override def isExitNode: Boolean = false
 
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
-
-    def startPC_=(pc: PC): Unit = {
-        _startPC = pc
-    }
-    /**
-     * The pc of the first instruction belonging to this basic block.
-     */
-    def startPC: PC = _startPC
 
     def endPC_=(pc: PC): Unit = {
         _endPC = pc
