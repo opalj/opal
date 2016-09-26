@@ -374,10 +374,11 @@ case class CFG(
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
-            val secondBB = newBasicBlocks(0).successors.head.asBasicBlock
             val firstBB = newBasicBlocks(0)
-            firstBB.endPC = secondBB.endPC
-            firstBB.setSuccessors(secondBB.successors)
+            val secondBB = firstBB.successors.head.asBasicBlock
+            val newFirstBB = secondBB.copy(startPC = 0, predecessors = Set.empty)
+            newFirstBB.successors.foreach(succBB ⇒ succBB.updatePredecessor(secondBB, newFirstBB))
+            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
         newCFG
