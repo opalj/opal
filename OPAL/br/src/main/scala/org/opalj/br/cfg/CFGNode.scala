@@ -58,10 +58,13 @@ trait CFGNode extends Node {
 
     def addPredecessor(predecessor: CFGNode): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
-        _predecessors = _predecessors + predecessor
+        _predecessors += predecessor
     }
     private[cfg] def setPredecessors(predecessors: Set[CFGNode]): Unit = {
         _predecessors = predecessors
+    }
+    private[cfg] def clearPredecessors(): Unit = {
+        _predecessors = Set.empty
     }
 
     private[cfg] def updatePredecessor(oldBB: CFGNode, newBB: CFGNode): Unit = {
@@ -86,6 +89,9 @@ trait CFGNode extends Node {
     }
     private[cfg] def setSuccessors(successors: Set[CFGNode]): Unit = {
         this._successors = successors
+    }
+    private[cfg] def clearSuccessors(): Unit = {
+        _successors = Set.empty
     }
 
     def successors: Set[CFGNode] = _successors
