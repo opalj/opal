@@ -41,15 +41,13 @@ import org.opalj.br.Code
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class BasicBlock(val startPC: PC) extends CFGNode {
-
-    def this(startPC: PC, endPC: PC) {
-        this(startPC)
-        this._endPC = endPC
-    }
+class BasicBlock(
+        private[cfg] var _startPC: PC,
+        private[cfg] var _endPC:   PC = Int.MinValue
+) extends CFGNode {
 
     def this(startPC: PC, successors: Set[CFGNode]) {
-        this(startPC)
+        this(startPC, Int.MinValue)
         this.setSuccessors(successors)
     }
 
@@ -59,9 +57,15 @@ class BasicBlock(val startPC: PC) extends CFGNode {
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
 
-    private[this] var _endPC: PC = 0 // will be initialized at construction time
+    def startPC_=(pc: PC): Unit = {
+        _startPC = pc
+    }
+    /**
+     * The pc of the first instruction belonging to this basic block.
+     */
+    def startPC: PC = _startPC
+
     def endPC_=(pc: PC): Unit = {
-        assert(pc >= startPC, s"the endPc $pc is smaller than the startPC $startPC")
         _endPC = pc
     }
     /**
