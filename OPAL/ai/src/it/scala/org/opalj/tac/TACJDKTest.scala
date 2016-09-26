@@ -71,20 +71,20 @@ class TACJDKTest extends FunSpec with Matchers {
                 file ← folder.listFiles()
                 if file.isFile && file.canRead && file.getName.endsWith(".jar")
                 project = Project(file)
+                ch = project.classHierarchy
                 cf ← project.allProjectClassFiles.par
                 m ← cf.methods
                 if m.body.isDefined
+                aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
             } {
                 try {
-                    val aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
                     val (tacCode, _) = AsQuadruples(
                         method = m,
                         classHierarchy = project.classHierarchy,						
                         optimizations = AllOptimizations,
                         aiResult = aiResult
                     )
-                    ToJavaLike(tacCode)
-                    successfullyCompleted.incrementAndGet()
+                     ToJavaLike(tacCode)
                 } catch {
                     case e: Throwable ⇒ this.synchronized {
                         val methodSignature = m.toJava(cf)
@@ -100,8 +100,8 @@ class TACJDKTest extends FunSpec with Matchers {
                             errors ::= ((file+":"+methodSignature, e))
                         }
                     }
-
                 }
+                successfullyCompleted.incrementAndGet()
             }
             if (errors.nonEmpty) {
                 val message =
