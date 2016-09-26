@@ -39,7 +39,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br._
 import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.ChainedList
+import org.opalj.collection.immutable.Chain
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -172,7 +172,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
             val operands =
                 mapOperands(
-                    localsArray(0).foldLeft(ChainedList.empty[DomainValue])((l, n) ⇒
+                    localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) ⇒
                         if (n ne null) n :&: l else l),
                     coordinatingDomain
                 )

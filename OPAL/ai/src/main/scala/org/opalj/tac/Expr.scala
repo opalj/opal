@@ -136,27 +136,15 @@ case class PrefixExpr(
     operand: Expr
 ) extends Expr
 
-case class PrimitiveTypecastExpr(
-        pc:        PC,
-        targetTpe: BaseType,
-        operand:   Expr
-) extends Expr {
+case class PrimitiveTypecastExpr(pc: PC, targetTpe: BaseType, operand: Expr) extends Expr {
     final def cTpe = targetTpe.computationalType
 }
 
-case class New(
-        pc:  PC,
-        tpe: ObjectType
-) extends Expr {
+case class New(pc: PC, tpe: ObjectType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class NewArray(
-        pc:     PC,
-        counts: List[Expr],
-        tpe:    ArrayType
-) extends Expr {
-
+case class NewArray(pc: PC, counts: List[Expr], tpe: ArrayType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
@@ -168,10 +156,7 @@ case class ArrayLength(pc: PC, arrayRef: Var) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
-case class GetField(
-        pc:             PC,
-        declaringClass: ObjectType, name: String, objRef: Expr
-) extends Expr {
+case class GetField(pc: PC, declaringClass: ObjectType, name: String, objRef: Expr) extends Expr {
     final def cTpe = ComputationalTypeInt
 }
 
@@ -238,7 +223,7 @@ trait Var extends ValueExpr {
 
     /**
      * Creates a new variable that has the same identifier etc. but an updated
-     * type.
+     * computational type.
      */
     def updated(cTpe: ComputationalType): Var
 }
@@ -296,7 +281,7 @@ object OperandVar {
      * Creates a new operand variable to store a value of the given type.
      */
     def apply(cTpe: ComputationalType, stack: Stack): SimpleVar = {
-        val id = stack.foldLeft(0)((c, n) ⇒ c + n.cTpe.category)
+        val id = stack.foldLeft(0)((c, n) ⇒ c + n.cTpe.operandSize)
         SimpleVar(id, cTpe)
     }
 

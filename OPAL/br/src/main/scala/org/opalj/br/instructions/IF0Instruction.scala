@@ -42,6 +42,7 @@ abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
 
     def condition: RelationalOperator
 
+    final def stackSlotsChange: Int = -1
 }
 
 object IF0Instruction {

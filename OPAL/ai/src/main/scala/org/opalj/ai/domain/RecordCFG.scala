@@ -33,8 +33,8 @@ package domain
 import scala.collection.BitSet
 import scala.collection.mutable
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.br.Code
@@ -50,6 +50,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
+import org.opalj.br.ExceptionHandler
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -64,13 +65,13 @@ import org.opalj.br.cfg.CatchNode
  *
  * ==Core Properties==
  *  - Thread-safe: '''No'''; i.e., the domain can only be used by one
- *  			abstract interpreter at a time.
- *  			However, using the collected results is thread-safe!
+ *              abstract interpreter at a time.
+ *              However, using the collected results is thread-safe!
  *  - Reusable: '''Yes'''; all state directly associated with the analyzed code block is
- *          	reset by the method `initProperties`.
+ *              reset by the method `initProperties`.
  *  - No Partial Results: If the abstract interpretation was aborted the results have
- *  			no meaning and must not be used; however, if the abstract interpretation
- *  			is later continued and successfully completed the results are correct.
+ *              no meaning and must not be used; however, if the abstract interpretation
+ *              is later continued and successfully completed the results are correct.
  *
  * @author Michael Eichberg
  * @author Marc Eichler
@@ -253,8 +254,9 @@ trait RecordCFG
      * The returned set is always empty for instructions that cannot raise exceptions,
      * such as the `StackManagementInstruction`s.
      *
-     * @note The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
-     *      thrown exception is directly handled inside this code block.
+     * @note    The [[org.opalj.br.instructions.ATHROW]] has successors if and only if the
+     *          thrown exception is directly handled inside this code block.
+     * @note    The successor instructions are necessarily the handlers of catch blocks.
      */
     def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
         val s = exceptionHandlerSuccessors(pc)
@@ -329,11 +331,27 @@ trait RecordCFG
      */
     final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
 
-    final def wasExecuted(pc: PC): Boolean = {
-        pc < code.instructions.size && (
-            (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
+    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
+        (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             exitPCs.contains(pc)
-        )
+    }
+
+    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.size && unsafeWasExecuted(pc)
+
+    /**
+     * Returns true if the exception handler may handle at least one exception thrown
+     * by an instruction in the catch block.
+     */
+    final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
+        val endPC = exceptionHandler.endPC
+        val handlerPC = exceptionHandler.handlerPC
+        var currentPC = exceptionHandler.startPC
+        while (currentPC <= endPC) {
+            if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
+                return true
+            currentPC = code.pcOfNextInstruction(currentPC)
+        }
+        false
     }
 
     /**
@@ -350,9 +368,7 @@ trait RecordCFG
             visitedSuccessors = visitedSuccessors ++ successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
-                    l ++ (regularSuccessorsOf(r).filter { pc ⇒
-                        !visitedSuccessors.contains(pc)
-                    })
+                    l ++ (regularSuccessorsOf(r).filter { pc ⇒ !visitedSuccessors.contains(pc) })
                 }
         }
         false
@@ -392,88 +408,113 @@ trait RecordCFG
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
             exceptionHandler ← code.exceptionHandlers
-            if wasExecuted(exceptionHandler.handlerPC)
+            // 1.1.    Let's check if the handler was executed at all.
+            if unsafeWasExecuted(exceptionHandler.handlerPC)
+            // 1.2.    The handler may be shared by multiple catch blocks, hence, we have
+            //         to ensure the we have at least one instruction in the try block
+            //         that jumps to the handler.
+            if handlesException(exceptionHandler)
         } {
-            val catchNode = new CatchNode(exceptionHandler)
             val handlerPC = exceptionHandler.handlerPC
-            exceptionHandlers += (handlerPC → catchNode)
+            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, new CatchNode(exceptionHandler))
             var handlerBB = bbs(handlerPC)
             if (handlerBB eq null) {
-                handlerBB = new BasicBlock(handlerPC, successors = Set(catchNode))
+                handlerBB = new BasicBlock(handlerPC)
+                handlerBB.addPredecessor(catchNode)
                 bbs(handlerPC) = handlerBB
             } else {
                 handlerBB.addPredecessor(catchNode)
             }
             catchNode.addSuccessor(handlerBB)
         }
+
         // 2. iterate over the code to determine the basic block boundaries
         var runningBB: BasicBlock = null
-        code.programCounters.foreach { pc ⇒
+        val pcIt = code.programCounters
+        while (pcIt.hasNext) {
+            val pc = pcIt.next
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null) {
-                    runningBB = new BasicBlock(pc)
-                    bbs(pc) = runningBB
+                    if (unsafeWasExecuted(pc)) {
+                        runningBB = new BasicBlock(pc)
+                        bbs(pc) = runningBB
+                    } else {
+                        // When we reach this point, we have found code that is
+                        // dead in the sense that it is not reachable on any
+                        // possible control-flow. Such code is typically not
+                        // generated by mature compilers, but some compilers
+                        // e.g., the Groovy compiler are known to produce some
+                        // very bad code!
+                    }
                 }
             }
+            if (runningBB ne null) {
+                var endRunningBB: Boolean = false
+                var connectedWithNextBBs = false
 
-            var endRunningBB: Boolean = false
-
-            if (exitPCs.contains(pc)) {
-                val successorNode = code.instructions(pc) match {
-                    case r: ReturnInstruction ⇒ normalReturnNode
-                    case _                    ⇒ abnormalReturnNode
+                if (exitPCs.contains(pc)) {
+                    val successorNode = code.instructions(pc) match {
+                        case r: ReturnInstruction ⇒ normalReturnNode
+                        case _                    ⇒ abnormalReturnNode
+                    }
+                    runningBB.addSuccessor(successorNode)
+                    successorNode.addPredecessor(runningBB)
+                    endRunningBB = true
+                    // connection is done later, when we handle the (regular) successors
                 }
-                runningBB.addSuccessor(successorNode)
-                successorNode.addPredecessor(runningBB)
-                endRunningBB = true
-            }
 
-            // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
-            // INCOMING AND OUTGOING DEPENDENCIES!
-            def connect(sourceBB: BasicBlock, targetBBStartPC: PC): Unit = {
-                var targetBB = bbs(targetBBStartPC)
-                if (targetBB eq null) {
-                    targetBB = new BasicBlock(targetBBStartPC)
-                    bbs(targetBBStartPC) = targetBB
+                // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
+                // INCOMING AND OUTGOING DEPENDENCIES!
+                def connect(sourceBB: BasicBlock, targetBBStartPC: PC): Unit = {
+                    var targetBB = bbs(targetBBStartPC)
+                    if (targetBB eq null) {
+                        targetBB = new BasicBlock(targetBBStartPC)
+                        bbs(targetBBStartPC) = targetBB
+                    }
+                    targetBB.addPredecessor(sourceBB)
+                    sourceBB.addSuccessor(targetBB)
                 }
-                targetBB.addPredecessor(sourceBB)
-                sourceBB.addSuccessor(targetBB)
-            }
 
-            var successorsCount = 0
-            val nextInstructionPC = code.pcOfNextInstruction(pc)
-            val theRegularSuccessors = regularSuccessorsOf(pc)
-            val theExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(pc)
-            if (theRegularSuccessors.nonEmpty) {
-                val bb = runningBB
-                successorsCount = theRegularSuccessors.foldLeft(successorsCount) { (count, nextPC) ⇒
-                    connect(bb, nextPC)
-                    if (nextInstructionPC != nextPC) endRunningBB = true
-                    count + 1
+                val nextInstructionPC = code.pcOfNextInstruction(pc)
+                val theRegularSuccessors = regularSuccessorsOf(pc)
+                if (theRegularSuccessors.isEmpty) {
+                    endRunningBB = true
+                } else {
+                    // the following also handles the case where the last instruction is, e.g., a goto
+                    if (endRunningBB || theRegularSuccessors.exists(_ != nextInstructionPC)) {
+                        theRegularSuccessors.foreach { targetPC ⇒ connect(runningBB, targetPC) }
+                        endRunningBB = true
+                        connectedWithNextBBs = true
+                    }
                 }
-            }
-            if (theExceptionHandlerSuccessors.nonEmpty) {
-                endRunningBB = true
-                val bb = runningBB
-                successorsCount = theExceptionHandlerSuccessors.foldLeft(successorsCount) { (count, handlerPC) ⇒
-                    val catchNode = exceptionHandlers(handlerPC)
-                    catchNode.addPredecessor(bb)
-                    bb.addSuccessor(catchNode)
-                    count + 1
-                }
-            }
-            endRunningBB =
-                endRunningBB ||
-                    successorsCount > 1 ||
-                    nextInstructionPC == codeSize || // if the last instruction is, e.g., a goto instruction
-                    hasMultiplePredecessors(nextInstructionPC)
 
-            if (endRunningBB) {
-                runningBB.endPC = pc
-                runningBB = null
-            } else {
-                bbs(nextInstructionPC) = runningBB
+                val theExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(pc)
+                if (theExceptionHandlerSuccessors.nonEmpty) {
+                    if (!endRunningBB && !connectedWithNextBBs) {
+                        connect(runningBB, nextInstructionPC)
+                        connectedWithNextBBs = true
+                    }
+                    endRunningBB = true
+                    theExceptionHandlerSuccessors.foreach { handlerPC ⇒
+                        val catchNode: CatchNode = exceptionHandlers(handlerPC)
+                        catchNode.addPredecessor(runningBB)
+                        runningBB.addSuccessor(catchNode)
+                    }
+                }
+                if (!endRunningBB &&
+                    !connectedWithNextBBs &&
+                    hasMultiplePredecessors(nextInstructionPC)) {
+                    endRunningBB = true
+                    connect(runningBB, nextInstructionPC)
+                }
+
+                if (endRunningBB) {
+                    runningBB.endPC = pc
+                    runningBB = null
+                } else {
+                    bbs(nextInstructionPC) = runningBB
+                }
             }
         }
 

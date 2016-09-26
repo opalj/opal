@@ -72,7 +72,7 @@ object UIDSetSpecification extends Properties("UIDSet") {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // 							G E N E R A T O R S
+    //                             G E N E R A T O R S
 
     val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
 
@@ -89,7 +89,7 @@ object UIDSetSpecification extends Properties("UIDSet") {
     } yield (s, i)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // 							P R O P E R T I E S
+    //                             P R O P E R T I E S
 
     property("create singleton set") = forAll { i: Int ⇒
         val s = SUID(i)
@@ -312,7 +312,7 @@ object UIDSetSpecification extends Properties("UIDSet") {
         val us = toSUIDSet(orig)
         us.toString == s.mkString("UIDSet(", ", ", ")")
     }
-
+    /*
     property("can handle large sets") = forAll(largeSetGen) { (v) ⇒
         val (orig: Set[Int], i) = v
         val us = toSUIDSet(orig)
@@ -371,5 +371,5 @@ object UIDSetSpecification extends Properties("UIDSet") {
             }
         }
     }
-
+*/
 }

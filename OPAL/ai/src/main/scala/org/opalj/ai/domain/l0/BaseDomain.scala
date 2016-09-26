@@ -38,11 +38,11 @@ import org.opalj.br.{Method, ClassFile}
  * A complete domain that performs all computations at the type level and which has
  * a configurable identifier.
  *
- * @note This domain is intended to be used for '''demo purposes only'''.
- *      '''Tests should create their own domains to make sure that
- *      the test results remain stable. The configuration of this
- *      domain just reflects a reasonable configuration that may
- *      change without further notice.'''
+ * @note 	This domain is intended to be used for '''demo purposes only'''.
+ *      	'''Tests should create their own domains to make sure that
+ *      	the test results remain stable. The configuration of this
+ *      	domain just reflects a reasonable configuration that may
+ *      	change without further notice.'''
  *
  * @author Michael Eichberg
  */

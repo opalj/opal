@@ -69,7 +69,7 @@ object StringConstantsInformationKey extends ProjectInformationKey[StringConstan
         project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
-            method.body.get foreach { (pc, instruction) ⇒
+            method.body.get.iterate { (pc, instruction) ⇒
                 instruction.opcode match {
 
                     case LDC.opcode | LDC_W.opcode ⇒

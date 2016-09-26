@@ -45,4 +45,5 @@ case object POP extends PopInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
+    final def stackSlotsChange: Int = -1
 }

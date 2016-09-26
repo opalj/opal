@@ -39,6 +39,8 @@ package instructions
 abstract class AStoreInstruction extends StoreLocalVariableInstruction {
 
     def computationalType: ComputationalType = ComputationalTypeReference
+
+    final def stackSlotsChange: Int = -1
 }
 
 object AStoreInstruction {

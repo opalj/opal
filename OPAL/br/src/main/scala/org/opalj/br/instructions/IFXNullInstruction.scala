@@ -41,5 +41,6 @@ abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
     final def operandCount = 1
 
     def condition: RelationalOperator
-}
 
+    final def stackSlotsChange: Int = -1
+}

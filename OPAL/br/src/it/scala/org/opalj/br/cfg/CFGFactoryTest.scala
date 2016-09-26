@@ -43,9 +43,9 @@ import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -58,7 +58,10 @@ import org.opalj.br.analyses.MethodInfo
 class CFGFactoryTest extends FunSpec with Matchers {
 
     def analyzeProject(name: String, project: SomeProject): Unit = {
+        time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+    }
 
+    def doAnalyzeProject(name: String, project: SomeProject): Unit = {
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
         val errors = new java.util.concurrent.ConcurrentLinkedQueue[String]
         val executionTime = new java.util.concurrent.atomic.AtomicLong(0l)
@@ -74,15 +77,17 @@ class CFGFactoryTest extends FunSpec with Matchers {
                     fail("not all instructions are associated with a basic block")
                 }
 
+                // check that allBBs returns the same as a manual iterator
+                assert(cfg.allBBs.toSet == code.programCounters.map(cfg.bb(_)).filter(_ ne null).toSet)
+
                 // check the boundaries
                 var allStartPCs = Set.empty[Int]
                 var allEndPCs = Set.empty[Int]
-                val allBBs = cfg.allBBs
-                allBBs.foreach { bb ⇒
+                cfg.allBBs.foreach { bb ⇒
                     if (bb.startPC > bb.endPC)
                         fail(s"the startPC ${bb.startPC} is larger than the endPC ${bb.endPC}")
                     if (allStartPCs.contains(bb.startPC))
-                        fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${allBBs.mkString(", ")}")
+                        fail(s"the startPC ${bb.startPC} is used by multiple basic blocks (${cfg.allBBs.mkString(", ")}")
                     else
                         allStartPCs += bb.startPC
 
@@ -106,7 +111,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
 
                 // check the correspondence of "instruction.nextInstruction" and the information
                 // contained in the cfg
-                code.foreach { (pc, instruction) ⇒
+                code.iterate { (pc, instruction) ⇒
                     val nextInstructions = instruction.nextInstructions(pc).iterable.toSet
                     if (nextInstructions.isEmpty) {
                         if (!cfg.bb(pc).successors.forall { succBB ⇒ succBB.isCatchNode || succBB.isExitNode })
@@ -126,7 +131,7 @@ class CFGFactoryTest extends FunSpec with Matchers {
                 }
 
                 // check that cfg.successors and cfg.foreachSuccessor return the same sets
-                code.foreach { (pc, instruction) ⇒
+                code.iterate { (pc, instruction) ⇒
                     {
                         val cfgSuccessors = cfg.successors(pc)
                         var cfgForeachSuccessors = Set.empty[PC]
@@ -171,37 +176,31 @@ class CFGFactoryTest extends FunSpec with Matchers {
             )
     }
 
+    //
+    // Configuration of the tested projects
+    //
+
     describe("computing the cfg") {
 
-        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+        val cache = new BytecodeInstructionsCache
+        val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
         import reader.AllClassFiles
 
         it(s"should be possible for all methods of the JDK ($JRELibraryFolder)") {
             val project = createJREProject
-            time { analyzeProject("JDK", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+            analyzeProject("JDK", project)
         }
 
-        it("should be possible for all methods of the OPAL 0.3 snapshot") {
-            val classFiles = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-            val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
-            time { analyzeProject("OPAL-0.3", project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+        val classFilesFolder = locateTestResources("classfiles", "bi")
+        val filter = new FilenameFilter() {
+            def accept(dir: File, name: String) = { name.endsWith(".jar") }
         }
-
-        it("should be possible for all methods of the OPAL-08-14-2014 snapshot") {
-            val classFilesFolder = locateTestResources("classfiles", "bi")
-            val filter = new FilenameFilter() {
-                def accept(dir: File, name: String) = {
-                    name.startsWith("OPAL-") && name.contains("SNAPSHOT-08-14-2014")
-                }
+        val jars = classFilesFolder.listFiles(filter)
+        jars.foreach { jar ⇒
+            it(s"should be possible for all methods of $jar") {
+                val project = Project(AllClassFiles(Seq(jar)), Traversable.empty, true)
+                analyzeProject(jar.getName, project)
             }
-            val opalJARs = classFilesFolder.listFiles(filter)
-            info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
-            opalJARs.size should not be (0)
-            val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
-
-            time {
-                analyzeProject("OPAL-08-14-2014 snapshot", project)
-            } { t ⇒ info("the analysis took "+t.toSeconds) }
         }
     }
 }

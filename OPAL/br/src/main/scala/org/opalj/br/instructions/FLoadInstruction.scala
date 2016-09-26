@@ -39,6 +39,7 @@ trait FLoadInstruction extends LoadLocalVariableInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeFloat
 
+    final def stackSlotsChange: Int = +1
 }
 object FLoadInstruction {
 

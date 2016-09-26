@@ -35,10 +35,10 @@ import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
 import org.opalj.collection.immutable.:&:
-import org.opalj.collection.immutable.ChainedList
-import org.opalj.collection.immutable.ChainedNil
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.control.foreachNonNullValue
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
@@ -170,7 +170,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method:    Method,
         domain:    D
-    ): domain.Operands = ChainedNil
+    ): domain.Operands = Naught
 
     /**
      * Returns the initial register assignment (the initialized locals) that is
@@ -779,9 +779,7 @@ trait AI[D <: Domain] {
                     // we already evaluated the target (join) instruction ...
                     val currentLocals = targetLocalsArray(targetPC)
                     val mergeResult =
-                        theDomain.join(
-                            targetPC, currentOperands, currentLocals, operands, locals
-                        )
+                        theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
                     if (tracer.isDefined) tracer.get.join(theDomain)(
                         targetPC,
                         currentOperands, currentLocals, operands, locals,
@@ -965,7 +963,8 @@ trait AI[D <: Domain] {
                     }
                     // We don't know the local variable in case that the subroutine
                     // never returned normally and we were not able to fetch the
-                    // information eagerly...
+                    // information eagerly... (which is, however, the case for all known
+                    // compilers)
                     val lvIndex =
                         if (worklist.head == SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE) {
                             worklist = worklist.tail
@@ -1010,19 +1009,21 @@ trait AI[D <: Domain] {
                         subroutine foreach { pc ⇒
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
+                                val currentLocals = localsArray(pc)
                                 assert(currentOperands ne null)
 
                                 val mergedOperands = subroutinesOperandsArray(pc)
                                 if (mergedOperands eq null) {
                                     subroutinesOperandsArray(pc) = currentOperands
-                                    subroutinesLocalsArray(pc) = localsArray(pc)
+                                    subroutinesLocalsArray(pc) = currentLocals
                                 } else {
                                     // we have to merge the results from a previous execution of the
                                     // subroutine with the current results
+                                    val mergedLocals = subroutinesLocalsArray(pc)
                                     theDomain.join(
                                         pc,
-                                        mergedOperands, subroutinesLocalsArray(pc),
-                                        currentOperands, localsArray(pc)
+                                        mergedOperands, mergedLocals,
+                                        currentOperands, currentLocals
                                     ) match {
                                         case NoUpdate ⇒ /*nothing to do...*/
                                         case SomeUpdate((newOperands, newLocals)) ⇒
@@ -1259,7 +1260,7 @@ trait AI[D <: Domain] {
                         branchTarget: PC,
                         upperBound:   Option[ObjectType]
                     ): Unit = {
-                        val newOperands = ChainedList(exceptionValue)
+                        val newOperands = Chain.singleton(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
                                 theDomain.refEstablishIsNonNull(pc, exceptionValue, newOperands, locals)
@@ -1493,8 +1494,7 @@ trait AI[D <: Domain] {
                                     SUBROUTINE_RETURN_TO_TARGET :&: returnTarget :&:
                                     SUBROUTINE :&: worklist
                         }
-                        val newOperands =
-                            theDomain.ReturnAddressValue(returnTarget) :&: operands
+                        val newOperands = theDomain.ReturnAddressValue(returnTarget) :&: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
                             branchTarget, isExceptionalControlFlow = false,
@@ -2589,7 +2589,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    final val initialWorkList: List[PC] = List(0)
+    final val initialWorkList: List[PC] = Chain.singleton(0)
 
 }
 
@@ -2605,7 +2605,7 @@ private object AI {
  */
 object CTC1 {
     def unapply(value: Domain#DomainValue): Boolean =
-        value.computationalType.category == 1
+        value.computationalType.categoryId == 1
 }
 
 /**
@@ -2620,5 +2620,5 @@ object CTC1 {
  */
 object CTC2 {
     def unapply(value: Domain#DomainValue): Boolean =
-        value.computationalType.category == 2
+        value.computationalType.categoryId == 2
 }

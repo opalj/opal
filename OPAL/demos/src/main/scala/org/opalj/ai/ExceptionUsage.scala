@@ -122,7 +122,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
                 }
             }
 
-            body.foreach { (pc, instruction) ⇒
+            body.iterate { (pc, instruction) ⇒
                 val operands = result.operandsArray(pc)
                 if (operands != null) { // the instruction is reached...
                     instruction match {

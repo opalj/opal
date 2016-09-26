@@ -39,6 +39,8 @@ abstract class JSRInstruction extends UnconditionalBranchInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = 1
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (
@@ -51,4 +53,3 @@ abstract class JSRInstruction extends UnconditionalBranchInstruction {
     }
 
 }
-

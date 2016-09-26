@@ -36,7 +36,7 @@ import scala.collection.generic.FilterMonadic
 import scala.collection.mutable.Builder
 
 import org.opalj.collection.UID.areEqual
-import org.opalj.collection.immutable.ChainedList.ChainedListBuilder
+import org.opalj.collection.immutable.Chain.ChainBuilder
 
 /**
  * An immutable set of elements of type `UID`. Underlying the implementation
@@ -503,7 +503,7 @@ private[collection] final class UIDSetNode[T <: UID] private[collection] (
      * @return `true` if all nodes were processed.
      */
     private[collection] def traverse(cont: T ⇒ Boolean): Boolean = {
-        var nodes = ChainedList[NonEmptyUIDSet[T]](this)
+        var nodes = Chain[NonEmptyUIDSet[T]](this)
         while (nodes.nonEmpty) {
             var currentNode = nodes.head
             nodes = nodes.tail
@@ -599,7 +599,7 @@ private[collection] final class UIDSetNode[T <: UID] private[collection] (
     override def toIterator: Iterator[T] = {
         // conceptually: (left.toIterator + e) ++ right.toIterator
         new Iterator[T] {
-            var nodesToProcess: ChainedList[NonEmptyUIDSet[T]] = ChainedNil
+            var nodesToProcess: Chain[NonEmptyUIDSet[T]] = Naught
 
             private[this] def buildStack(n: NonEmptyUIDSet[T]) = {
                 nodesToProcess :&:= n
@@ -718,10 +718,10 @@ object UIDSet {
         }
     }
 
-    implicit def canBuildChainedListFromUIDSet[A]: CanBuildFrom[UIDSet[_], Int, ChainedList[Int]] = {
-        new CanBuildFrom[UIDSet[_], Int, ChainedList[Int]] {
-            def apply(from: UIDSet[_]) = new ChainedListBuilder[Int]
-            def apply() = new ChainedListBuilder[Int]
+    implicit def canBuildChainFromUIDSet[A]: CanBuildFrom[UIDSet[_], Int, Chain[Int]] = {
+        new CanBuildFrom[UIDSet[_], Int, Chain[Int]] {
+            def apply(from: UIDSet[_]) = new ChainBuilder[Int]
+            def apply() = new ChainBuilder[Int]
         }
     }
 

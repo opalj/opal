@@ -397,15 +397,11 @@ class Project[Source] private (
     def fields(): Iterable[Field] = fieldToClassFile.keys
 
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
-        projectClassFiles.view.map { classFile ⇒
-            (classFile, sources(classFile.thisType))
-        }
+        projectClassFiles.view.map { classFile ⇒ (classFile, sources(classFile.thisType)) }
     }
 
     def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
-        libraryClassFiles.view.map { classFile ⇒
-            (classFile, sources(classFile.thisType))
-        }
+        libraryClassFiles.view.map { classFile ⇒ (classFile, sources(classFile.thisType)) }
     }
 
     /**
@@ -429,6 +425,7 @@ class Project[Source] private (
      * @param objectType Some object type.
      */
     def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
+    def source(classFile: ClassFile): Option[Source] = source(classFile.thisType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
@@ -1172,7 +1169,7 @@ object Project {
 
         p.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { e ⇒
             val BasicMethodInfo(c: ClassFile, m: Method) = e
-            m.body.get.foreach { (pc, instruction) ⇒
+            m.body.get.iterate { (pc, instruction) ⇒
                 (instruction.opcode: @scala.annotation.switch) match {
 
                     case NEW.opcode ⇒

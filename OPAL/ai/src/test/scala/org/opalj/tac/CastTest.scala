@@ -117,7 +117,7 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
                 Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
                 Assignment(1, SimpleVar(0, to.computationalType), PrimitiveTypecastExpr(1, to, SimpleVar(0, from))),
-                Assignment(2, SimpleVar(-2 - from.category, to.computationalType), SimpleVar(0, to.computationalType)),
+                Assignment(2, SimpleVar(-2 - from.category.id, to.computationalType), SimpleVar(0, to.computationalType)),
                 Return(3)
             )
 
@@ -361,7 +361,7 @@ class CastTest extends FunSpec with Matchers {
                 Assignment(-1, SimpleVar(-2, from), Param(from, "p_1")),
                 Assignment(0, SimpleVar(0, from), SimpleVar(-2, from)),
                 Assignment(1, SimpleVar(0, to.computationalType), PrimitiveTypecastExpr(1, to, SimpleVar(0, from))),
-                Assignment(2, SimpleVar(-2 - from.category, to.computationalType), SimpleVar(0, to.computationalType)),
+                Assignment(2, SimpleVar(-2 - from.category.id, to.computationalType), SimpleVar(0, to.computationalType)),
                 Return(3)
             )
 

@@ -29,6 +29,8 @@
 package org.opalj
 
 /**
+ * Common definitions related to the definition and processing of three address code.
+ *
  * @author Michael Eichberg
  */
 package object tac {

@@ -65,6 +65,8 @@ abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengt
 
     def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = +computationalType.operandSize
+
     def readsLocal: Boolean = false
 
     @throws[UnsupportedOperationException]("always")
@@ -188,4 +190,3 @@ object LDCMethodType {
         }
     }
 }
-

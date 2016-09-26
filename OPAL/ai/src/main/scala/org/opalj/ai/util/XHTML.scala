@@ -33,7 +33,7 @@ package util
 import scala.xml.Node
 import scala.xml.NodeSeq
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.process
 import org.opalj.br._
 

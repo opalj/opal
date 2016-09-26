@@ -35,7 +35,7 @@ import java.util.{IdentityHashMap ⇒ IDMap}
 
 import scala.collection.BitSet
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
+import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.instructions.Instruction
 import org.opalj.constraints.NumericConstraints
 

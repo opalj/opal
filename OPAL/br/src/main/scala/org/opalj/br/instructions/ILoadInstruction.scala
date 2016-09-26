@@ -38,4 +38,6 @@ package instructions
 trait ILoadInstruction extends LoadLocalVariableInstruction {
 
     final def computationalType: ComputationalType = ComputationalTypeInt
+
+    final def stackSlotsChange: Int = +1
 }

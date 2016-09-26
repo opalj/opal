@@ -41,5 +41,6 @@ abstract class IFACMPInstruction extends SimpleConditionalBranchInstruction {
     final def operandCount = 2
 
     def condition: RelationalOperator
-}
 
+    final def stackSlotsChange: Int = -2
+}

@@ -31,8 +31,8 @@ package ai
 
 import scala.annotation.tailrec
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 
 /**
  * Common utility functionality.

@@ -62,6 +62,8 @@ case class GETFIELD(
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
+    final def stackSlotsChange: Int = -1 + fieldType.computationalType.operandSize
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

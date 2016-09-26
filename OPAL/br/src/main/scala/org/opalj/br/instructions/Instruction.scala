@@ -57,8 +57,8 @@ trait Instruction {
      * by user code nor errors that may arise due to an invalid code base (in particular
      * `LinkageError`s). However, `OutOfMemoryError`s are possible.
      *
-     * The returned types always precisely describe the thrown
-     * exception; they are not upper bounds.
+     * @note	The returned types always precisely describe the thrown exception;
+     * 			they are not upper bounds.
      *
      * All instructions – except of the [[InvocationInstruction]]s and the [[ATHROW$]] instruction –
      * will always either succeed, throw a linkage time related exception or throw one of the
@@ -67,12 +67,12 @@ trait Instruction {
     def jvmExceptions: List[ObjectType]
 
     /**
-     * The index of the next instruction in the code array.
+     * The index of the next instruction in the (sparse) code array.
      *
-     * @note This is primarily a convenience method that delegates to the method
-     * `indexOfNextInstrution(PC,Boolean)`.  However, given that this is also the
-     * standard method called by clients, it is often meaningful to directly implement
-     * this. In particular since most instructions cannot be modified by wide.
+     * @note	This is primarily a convenience method that delegates to the method
+     * 			`indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
+     * 			standard method called by clients, it is often meaningful to directly implement
+     * 			this. In particular since most instructions cannot be modified by wide.
      */
     def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int
 
@@ -84,12 +84,12 @@ trait Instruction {
     /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
-     * that may throw an exception checks if it occurs within a catch block and
+     * that may throw an exception checks if it is handled locally and
      * – if so – checks if an appropriate handler exists and – if so – also returns
      * the first instruction of the handler.
      *
-     * @return The absolute addresses of '''all instructions''' that may be executed next
-     *      at runtime.
+     * @return	The absolute addresses of '''all instructions''' that may be executed next
+     *      	at runtime.
      */
     final def nextInstructions(currentPC: PC)(implicit code: Code): PCs = {
         nextInstructions(currentPC, regularSuccessorsOnly = false)
@@ -146,8 +146,8 @@ trait Instruction {
      *      ''categeory 2'' value (of type `long` or `double`) or two ''category 1''
      *      values.
      *
-     * @param ctg A function that returns the computational type category of
-     *          the value on the operand stack with a given index. E.g., The top value on
+     * @param	ctg A function that returns the computational type category of
+     *          the value on the operand stack with a given value index. E.g., The top value on
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
      */
@@ -165,12 +165,20 @@ trait Instruction {
      *      instruction may just duplicate one ''categeory 2'' value (result is 1)
      *      (of type long or double) or two ''category 1'' values (result is 2).
      *
-     * @param ctg A function that returns the computational type category of
-     *          the value on the operand stack with a given index. The top value on
+     * @param 	ctg A function that returns the computational type category of
+     *          the value on the operand stack with a given value index. The top value on
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
      */
     def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
+
+    /**
+     * The number of stack slots pushed or popped by this instruction.
+     *
+     * @note 	Overall, each [[DUP]] instruction always pushes the same number of stack slots.
+     *   		Only the number of values that are processed may depend on the stack layout.
+     */
+    def stackSlotsChange: Int
 
     /**
      * Returns `true` if this instruction reads/uses a local variable.

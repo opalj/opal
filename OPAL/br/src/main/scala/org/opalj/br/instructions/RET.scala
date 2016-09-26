@@ -63,10 +63,10 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
             UShortSet.create((cfg.successors(currentPC).toSeq: _*))
         }
 
-        // If we have just one subroutine it is sufficient to collect the 
+        // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
         var jumpTargets = UShortSet.empty
-        code.foreach { (pc, instruction) ⇒
+        code.iterate { (pc, instruction) ⇒
             if (pc != currentPC) {
                 instruction.opcode match {
                     case JSR.opcode | JSR_W.opcode ⇒
@@ -74,7 +74,7 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
                         return fallback();
-                    case _ ⇒ // we don't care 
+                    case _ ⇒ // we don't care
                 }
             }
         }
@@ -84,6 +84,8 @@ case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLen
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def stackSlotsChange: Int = 0
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)

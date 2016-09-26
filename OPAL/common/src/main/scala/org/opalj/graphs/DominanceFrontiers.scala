@@ -31,6 +31,7 @@ package graphs
 
 import org.opalj.collection.SmallValuesSet
 import org.opalj.collection.immutable
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.mutable
 import org.opalj.collection.mutable.IntArrayStack
 
@@ -193,7 +194,7 @@ object DominanceFrontiers {
         // traverse in DFS order
         //var inDFSOrder: List[Int] = Nil
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
-        var nodes: List[Int] = List(startNode)
+        var nodes: Chain[Int] = Chain.singleton(startNode)
         //val nodes = new IntArrayStack(Math.max(1, max - 3))
         //nodes.push(startNode)
         while (nodes.nonEmpty) {
@@ -204,7 +205,7 @@ object DominanceFrontiers {
             if (nChildren ne null) {
                 //inDFSOrder ::= n
                 inDFSOrder.push(n)
-                nChildren.foreach { nodes ::= _ }
+                nChildren.foreach { nodes :&:= _ }
                 // nodes.push(nChildren)
             } else {
                 // we immediately compute the dfs_local information 

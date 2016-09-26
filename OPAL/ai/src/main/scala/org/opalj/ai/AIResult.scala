@@ -29,10 +29,10 @@
 package org.opalj
 package ai
 
+import scala.collection.mutable
 import scala.collection.BitSet
-
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.UShortSet
 import org.opalj.br.Code
 
@@ -91,10 +91,8 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
-        val evaluatedInstructions = new scala.collection.mutable.BitSet(code.instructions.size)
-        evaluated.foreach { pc ⇒
-            if (pc >= 0 /*skip "subroutine boundaries"*/ ) evaluatedInstructions += pc
-        }
+        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        evaluated.foreach(pc ⇒ if (pc >= 0) evaluatedInstructions += pc)
         evaluatedInstructions
     }
 
@@ -350,7 +348,7 @@ object AIResultBuilder {
                 ai.continueInterpretation(
                     strictfp, code, joinInstructions, domain
                 )(
-                    List(0), evaluated,
+                    AI.initialWorkList, evaluated,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )

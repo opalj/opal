@@ -34,8 +34,8 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 
 /**
  * Provides the generic infrastructure to register a function that updates the operands

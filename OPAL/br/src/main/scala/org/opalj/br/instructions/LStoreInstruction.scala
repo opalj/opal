@@ -37,12 +37,12 @@ package instructions
  */
 trait LStoreInstruction extends StoreLocalVariableInstruction {
 
-    def computationalType: ComputationalType = ComputationalTypeLong
+    final def computationalType: ComputationalType = ComputationalTypeLong
 
+    final def stackSlotsChange: Int = -2
 }
 
 object LStoreInstruction {
 
     def unapply(lstore: LStoreInstruction): Some[Int] = Some(lstore.lvIndex)
 }
-

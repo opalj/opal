@@ -123,7 +123,7 @@ object CFGFactory {
         var runningBB: BasicBlock = null
         var previousPC: PC = 0
         var subroutineReturnPCs = HashMap.empty[PC, UShortSet]
-        code.foreach { (pc, instruction) ⇒
+        code.iterate { (pc, instruction) ⇒
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null)

@@ -38,7 +38,7 @@ import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -55,9 +55,10 @@ import org.opalj.br.analyses.SomeProject
 @RunWith(classOf[JUnitRunner])
 class TACJDKTest extends FunSpec with Matchers {
 
+    val jreLibFolder: File = JRELibraryFolder
+    val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
+
     describe("creating the three-address representation") {
-        val jreLibFolder: File = JRELibraryFolder
-        val biClassfilesFolder: File = locateTestResources("classfiles", "bi")
 
         def checkFolder(
             folder:        File,
@@ -76,6 +77,7 @@ class TACJDKTest extends FunSpec with Matchers {
                         try {
                             val quadruples = AsQuadruples(
                                 method = m,
+                                classHierarchy = project.classHierarchy,
                                 optimizations = AllOptimizations,
                                 aiResult = domainFactory.map { f ⇒ BaseAI(cf, m, f(project, cf, m)) }
                             )
@@ -113,27 +115,36 @@ class TACJDKTest extends FunSpec with Matchers {
             }
         }
 
-        it("should be able to convert all methods of the JDK to three-address code") {
-            PerformanceEvaluation.time {
-                checkFolder(jreLibFolder)
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+        describe("using the results of an abstract interpretation") {
+
+            val domainFactory = Some((p: SomeProject, cf: ClassFile, m: Method) ⇒ {
+                new DefaultDomainWithCFGAndDefUse(p, cf, m)
+            })
+
+            it("it should be able to create a fully types three address representation for the JDK") {
+                time {
+                    checkFolder(jreLibFolder, domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
+            it("it should be able to convert all methods of the set of collected class files") {
+                time {
+                    checkFolder(biClassfilesFolder, domainFactory)
+                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
         }
 
-        it("should be able to convert all methods of the JDK to three-address code using the result of an abstract interpretation") {
-            PerformanceEvaluation.time {
-                checkFolder(
-                    jreLibFolder,
-                    Some(
-                        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-                            new DefaultDomainWithCFGAndDefUse(p, cf, m)
-                        }
-                    )
-                )
-            } { t ⇒ info(s"conversion took ${t.toSeconds}") }
-        }
+        describe("plain transformation") {
 
-        it("should be able to convert all methods of the set of collected class files") {
-            checkFolder(biClassfilesFolder)
+            it("it should be able to convert all methods of the JDK") {
+                time { checkFolder(jreLibFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
+            it("it should be able to convert all methods of the set of collected class files") {
+                time { checkFolder(biClassfilesFolder) } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+            }
+
         }
     }
 }

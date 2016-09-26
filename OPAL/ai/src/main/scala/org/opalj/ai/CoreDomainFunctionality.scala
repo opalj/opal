@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{ChainedList ⇒ List}
-import org.opalj.collection.immutable.{ChainedNil ⇒ Nil}
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 
@@ -102,26 +102,26 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * method should only be done for analysis purposes.
      *
      * ==Performance==
-     * This method heavily relies on reference comparison to speed up the overall
+     * This method heavily relies on reference comparisons to speed up the overall
      * process of performing an abstract interpretation of a method. Hence,
      * a computation should – whenever possible – return (one of) the original object(s) if
      * that value has the same abstract state as the result. Furthermore, if all original
      * values capture the same abstract state as the result of the computation, the "left"
      * value/the value that was already used in the past should be returned.
      *
-     * @return The joined operand stack and registers.
-     *      Returns `NoUpdate` if ''this'' memory layout already subsumes the
-     *      ''other'' memory layout.
-     * @note The size of the operands stacks that are to be joined and the number of
-     *      registers/locals that are to be joined can be expected to be identical
-     *      under the assumption that the bytecode is valid and the framework contains no
-     *      bugs.
-     * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
-     *      computational type (unless the bytecode is not valid or OPAL contains
-     *      an error). I.e., if the result of joining two operand stack values is an
-     *      `IllegalValue` we assume that the domain implementation is incorrect.
-     *      However, the joining of two register values can result in an illegal value
-     *      which identifies the value is dead.
+     * @return 	The joined operand stack and registers.
+     *      	Returns `NoUpdate` if ''this'' memory layout already subsumes the
+     *      	''other'' memory layout.
+     * @note 	The size of the operands stacks that are to be joined and the number of
+     *      	registers/locals that are to be joined can be expected to be identical
+     *      	under the assumption that the bytecode is valid and the framework contains no
+     *      	bugs.
+     * @note 	The operand stacks are guaranteed to contain compatible values w.r.t. the
+     *      	computational type (unless the bytecode is not valid or OPAL contains
+     *      	an error). I.e., if the result of joining two operand stack values is an
+     *     		 `IllegalValue` we assume that the domain implementation is incorrect.
+     *      	However, the joining of two register values can result in an illegal value
+     *      	which identifies the value is dead.
      */
     def join(
         pc:            PC,
@@ -137,6 +137,17 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
+                def fuseOperands(thisValue: DomainValue, otherValue: DomainValue) = {
+                    val updatedOperand = joinValues(pc, thisValue, otherValue)
+                    if (updatedOperand eq NoUpdate) {
+                        thisValue
+                    } else {
+                        operandsUpdated &:= updatedOperand
+                        updatedOperand.value
+                    }
+                }
+                thisOperands.fuse(otherOperands, fuseOperands)
+                /*
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
                 var newOperands: Operands = Nil // during the update we build the operands stack in reverse order
@@ -165,34 +176,33 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
                     thisOperands
                 } else {
                     newOperands.reverse
-                }
+                }*/
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
+        //        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                def mergeLocals(thisLocal: DomainValue, otherLocal: DomainValue) = {
-                    if ((thisLocal eq null) || (otherLocal eq null)) {
-                        localsUpdated = localsUpdated &: MetaInformationUpdateType
+                def fuseLocals(thisValue: DomainValue, otherValue: DomainValue) = {
+                    if ((thisValue eq null) || (otherValue eq null)) {
+                        localsUpdated &:= MetaInformationUpdateType
                         TheIllegalValue
                     } else {
-                        val updatedLocal = joinValues(pc, thisLocal, otherLocal)
+                        val updatedLocal = joinValues(pc, thisValue, otherValue)
                         if (updatedLocal eq NoUpdate) {
-                            thisLocal
+                            thisValue
                         } else {
-                            localsUpdated = localsUpdated &: updatedLocal
+                            localsUpdated &:= updatedLocal
                             val value = updatedLocal.value
-                            if (value ne TheIllegalValue)
-                                localsUpdateIsRelevant = true
+                            //                            if (value ne TheIllegalValue)
+                            //                                localsUpdateIsRelevant = true
                             value
                         }
                     }
-
                 }
-                val newLocals = thisLocals.merge(otherLocals, mergeLocals)
+                val newLocals = thisLocals.fuse(otherLocals, fuseLocals)
                 //                val newLocals =
                 //                    thisLocals.merge(
                 //                        otherLocals,
@@ -223,10 +233,10 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         afterBaseJoin(pc)
 
         val updateType =
-            if (localsUpdateIsRelevant)
-                operandsUpdated &: localsUpdated
-            else
-                operandsUpdated
+            // if (localsUpdateIsRelevant)
+            operandsUpdated &: localsUpdated
+        // else
+        //     operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 
@@ -258,12 +268,12 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * Methods should always `abstract override` this method and should call the super
      * method.
      *
-     * @param updateType The current update type. The level can be raised. It is
-     *      an error to lower the update level.
-     * @param oldOperands The old operands, before the join. Should not be changed.
-     * @param oldLocals The old locals, before the join. Should not be changed.
-     * @param newOperands The new operands; may be updated.
-     * @param newLocals The new locals; may be updated.
+     * @param 	updateType The current update type. The level can be raised. It is
+     *      	an error to lower the update level.
+     * @param 	oldOperands The old operands, before the join. Should not be changed.
+     * @param 	oldLocals The old locals, before the join. Should not be changed.
+     * @param 	newOperands The new operands; may be updated.
+     * @param 	newLocals The new locals; may be updated.
      */
     protected[this] def joinPostProcessing(
         updateType:  UpdateType,

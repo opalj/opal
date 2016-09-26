@@ -31,17 +31,21 @@ package tac
 
 import org.opalj.io.writeAndOpen
 import org.opalj.io.OpeningFileFailedException
+import org.opalj.graphs.toDot
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.cfg.CFGFactory
 
 /**
  * Creates the three-address representation and prints it.
  *
  * @example
- * 		To convert all files of a project to TAC you can use:
+ *         To convert all files of a project to TAC you can use:
  * {{{
  * import org.opalj.io.write
  * import org.opalj.tac._
@@ -73,16 +77,46 @@ object TAC {
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
 
     def processMethod(project: SomeProject, classFile: ClassFile, method: Method): Unit = {
+        val naiveCFGFile = writeAndOpen(
+            CFGFactory(method.body.get, project.classHierarchy).toDot,
+            "NaiveCFG-"+method.name, ".br.cfg.gv"
+        )
+        println(s"Generated naive CFG (for comparison purposes only) $naiveCFGFile.")
+
         try {
             val ch = project.classHierarchy
-            val (code, cfg) = AsQuadruples(method, ch, optimizations = AllOptimizations, forceCFGCreation = true)
-            val graph = cfg.get.toDot
-            writeAndOpen(graph, method.name, ".tac.cfg.dot")
 
-            val tac = ToJavaLike(code)
-            val fileNamePrefix = classFile.thisType.toJava+"."+method.name
-            val file = writeAndOpen(tac, fileNamePrefix, ".tac.txt")
-            println(s"Generated the tac file $file.")
+            { // USING AI
+                val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
+                val aiResult = Some(BaseAI(classFile, method, domain))
+                val aiCFGFile = writeAndOpen(
+                    toDot(Set(aiResult.get.domain.cfgAsGraph())),
+                    "AICFG-"+method.name, ".ai.cfg.gv"
+                )
+                println(s"Generated ai CFG (input) $aiCFGFile.")
+                val aiBRCFGFile = writeAndOpen(aiResult.get.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
+                println(s"Generated the reified ai CFG $aiBRCFGFile.")
+                val (code, cfg) =
+                    AsQuadruples(method, ch, aiResult, AllOptimizations, forceCFGCreation = true)
+                val graph = cfg.get.toDot
+                val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
+                println(s"Generated the tac cfg file $tacCFGFile.")
+                val tac = ToJavaLike(code)
+                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
+                val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
+                println(s"Generated the ai tac file $file.")
+            }
+
+            { // USING NO AI
+                val (code, _) =
+                    AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
+
+                val tac = ToJavaLike(code)
+                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
+                val file = writeAndOpen(tac, fileNamePrefix, ".naive.tac.txt")
+                println(s"Generated the naive tac file $file.")
+            }
+
         } catch {
             case OpeningFileFailedException(file, cause) ⇒
                 println(s"Opening the tac file $file failed: ${cause.getMessage()}")

@@ -30,10 +30,12 @@ package org.opalj
 package br
 package cfg
 
-import scala.collection.{Set ⇒ SomeSet}
-import scala.collection.JavaConverters._
 import java.util.Arrays
 import java.util.IdentityHashMap
+
+import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.JavaConverters._
+
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -45,17 +47,17 @@ import org.opalj.collection.mutable.UShortSet
  * This class is thread-safe; all data is effectively immutable
  * '''after construction''' time.
  *
- * @param code The code for which the CFG was build.
- * @param normalReturnNode The unique exit node of the control flow graph if the
- * 		method returns normally. If the method always throws an exception this
- * 		node will not have any predecessors.
- * @param abnormalReturnNode The unique exit node of the control flow graph if the
- * 		method returns abnormally (throws an exception). If the method is guaranteed
- * 		to never throw an exception, this node will not have any predecessors.
- * @param catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
- * 		[[org.opalj.br.ExceptionHandler]].
- * @param basicBlocks An implicit map between a program counter and its associated
- * 		[[BasicBlock]]; it may be a sparse array!
+ * @param     code The code for which the CFG was build.
+ * @param     normalReturnNode The unique exit node of the control flow graph if the
+ *             method returns normally. If the method always throws an exception this
+ *             node will not have any predecessors.
+ * @param     abnormalReturnNode The unique exit node of the control flow graph if the
+ *             method returns abnormally (throws an exception). If the method is guaranteed
+ *             to never throw an exception, this node will not have any predecessors.
+ * @param     catchNodes List of all catch nodes. (Usually, we have one [[CatchNode]] per
+ *             [[org.opalj.br.ExceptionHandler]].
+ * @param     basicBlocks An implicit map between a program counter and its associated
+ *             [[BasicBlock]]; it may be a sparse array!
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
@@ -68,6 +70,94 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) {
 
+    // 1. Check that each basic block has a lower start pc than the end pc
+    //    i.e., startPC <= endPC.
+    assert(
+        basicBlocks.forall { bb ⇒ bb == null || bb.startPC <= bb.endPC },
+        basicBlocks.filter(bb ⇒ bb != null && bb.startPC > bb.endPC).mkString
+    )
+
+    // 2. Check that each pc belonging to a basic block (bb) actually points to the respective bb
+    //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            (bb.startPC to bb.endPC).forall { pc ⇒
+                (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
+            }
+        },
+        basicBlocks.zipWithIndex.filter(_._1 != null).
+            map(bb ⇒ s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
+            mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
+    )
+
+    // 3. Check that the CFG is self-consistent; i.e., that no node references a node
+    //    that does not occur in the BB.
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            bb.successors.forall { successorBB ⇒
+                (successorBB.isBasicBlock && {
+                    val succBB = successorBB.asBasicBlock
+                    (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
+                }) ||
+                    (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
+                    successorBB.isExitNode
+            }
+        },
+        basicBlocks.filter(_ != null).
+            map(bb ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+            mkString("unexpected successors:\n\t", "\n\t", "")
+    )
+    assert(
+        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
+            bb.predecessors.forall { predecessorBB ⇒
+                (
+                    predecessorBB.isBasicBlock && {
+                        val predBB = predecessorBB.asBasicBlock
+                        (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
+                    }
+                ) ||
+                    (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
+            }
+        },
+        basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
+            map(bb ⇒ bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
+            mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
+    )
+
+    // 4.  Check that all catch nodes referred to by the basic blocks are listed in the
+    //     sequence of catch nodes
+    assert(
+        basicBlocks.
+            filter(bb ⇒ bb != null && bb.successors.exists { _.isCatchNode }).
+            flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
+            forall(catchBB ⇒ catchNodes.contains(catchBB)),
+        catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
+            (basicBlocks.filter(_ != null).collect {
+                case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
+                    s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
+            }).mkString("\n")
+    )
+
+    // 5.   Check that predecessors and successors are consistent.
+    assert(
+        basicBlocks.filter(bb ⇒ bb != null).toSet.
+            forall(bb ⇒ bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }),
+        "successors and predecessors are inconsistent; e.g., "+
+            basicBlocks.filter(bb ⇒ bb != null).toSet.
+            find(bb ⇒ !bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }).
+            map(bb ⇒ bb.successors.find(succBB ⇒ !succBB.predecessors.contains(bb)).map(succBB ⇒
+                s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
+    )
+    assert(
+        basicBlocks.filter(bb ⇒ bb != null).toSet.
+            forall(bb ⇒ bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }),
+        "predecessors and successors are inconsistent; e.g., "+
+            basicBlocks.filter(bb ⇒ bb != null).toSet.
+            find(bb ⇒ !bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }).
+            map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
+                s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
+    )
+
     /**
      * The basic block associated with the very first instruction.
      */
@@ -78,7 +168,7 @@ case class CFG(
      *
      * @param pc A valid pc.
      * @return The basic block associated with the given `pc`. If the `pc` is not valid
-     * 		`null` is returned or an index out of bounds exception is thrown.
+     *         `null` is returned or an index out of bounds exception is thrown.
      */
     def bb(pc: PC): BasicBlock = basicBlocks(pc)
 
@@ -88,12 +178,25 @@ case class CFG(
     lazy val reachableBBs: SomeSet[CFGNode] = basicBlocks(0).reachable(reflexive = true)
 
     /**
-     * Returns the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
+     * Iterates over the set of all [[BasicBlock]]s. (I.e., the exit and catch nodes are
      * not returned.)
-     *
-     * @note The returned set is recomputed every time this method is called.
      */
-    lazy val allBBs: Set[BasicBlock] = basicBlocks.view.filter(_ ne null).toSet
+    lazy val allBBs: Iterator[BasicBlock] = {
+        //basicBlocks.view.filter(_ ne null).toSet
+        new Iterator[BasicBlock] {
+            var currentStartPC = 0
+            def hasNext: Boolean = currentStartPC < basicBlocks.length
+            def next: BasicBlock = {
+                val current = basicBlocks(currentStartPC)
+                currentStartPC = current.endPC + 1
+                while (currentStartPC < basicBlocks.length && (basicBlocks(currentStartPC) eq null)) {
+                    currentStartPC += 1
+                }
+                current
+            }
+        }
+
+    }
 
     /**
      * Iterates over all runtime successors of the instruction with the given pc.
@@ -103,7 +206,7 @@ case class CFG(
      * a handler of the respective method.
      *
      * @note If possible the function `foreachSuccessor` should be used as it does not have
-     * 		to create comparatively expensive intermediate data structures.
+     *         to create comparatively expensive intermediate data structures.
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
@@ -193,61 +296,81 @@ case class CFG(
      * If the first index (i.e., `pcToIndex(0)` is not 0, then a new basic block for the indexes
      * in {0,pcToIndex(0)} is created if necessary.
      *
-     * @param 	lastIndex The index of the last instruction of the underlying (non-empty) code array.
-     * 			I.e., if the instruction array contains one instruction then the `lastIndex` has to be
-     * 			`0`.
+     * @param   lastIndex The index of the last instruction of the underlying (non-empty) code array.
+     *          I.e., if the instruction array contains one instruction then the `lastIndex` has to be
+     *           `0`.
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 
+        /*
+        // [USED FOR DEBUGGING PURPOSES]
+        //
+        println(
+            basicBlocks.
+                filter(_ != null).
+                toSet.
+                map((bb: BasicBlock) ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+                mkString("Successors:\n", "\n", "\n")
+        )
+        println(
+            basicBlocks.
+                filter(_ != null).
+                toSet.
+                map((bb: BasicBlock) ⇒ bb.predecessors.mkString(", ")+" => "+bb.toString).
+                mkString("Predecessors:\n", "\n", "\n")
+        )
+        println(catchNodes.mkString("CatchNodes:", ",", "\n"))
+        println(pcToIndex.zipWithIndex.map(_.swap).mkString("Mapping:", ",", "\n"))
+        //
+        // [USED FOR DEBUGGING PURPOSES]
+        */
+
+        val bbsLength = basicBlocks.length
         val bbMapping = new IdentityHashMap[CFGNode, CFGNode]()
 
         val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
-        var lastNewBB: BasicBlock = null
-        var startIndex = 0
+        val newBasicBlocksArray = newBasicBlocks.asInstanceOf[Array[Object]]
         val requiresNewStartBlock = pcToIndex(0) > 0
+
+        var lastNewBB: BasicBlock = null
         if (requiresNewStartBlock) {
+            val endIndex = pcToIndex(0) - 1
             // we have added instructions at the beginning which belong to a new start bb
-            lastNewBB = new BasicBlock(0)
-            startIndex = pcToIndex(0)
-            lastNewBB.endPC = startIndex - 1
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], 0, startIndex, lastNewBB)
+            lastNewBB = new BasicBlock(startPC = 0, _endPC = endIndex)
+            Arrays.fill(newBasicBlocksArray, 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
-        val max = basicBlocks.length
         do {
-            var oldBB = basicBlocks(startPC)
-            startIndex = pcToIndex(startPC)
-            lastNewBB = new BasicBlock(startIndex)
-
-            // find the start pc of the next bb that is ALIVE (!)
-            var nextStartPC = oldBB.endPC
-            do {
-                bbMapping.put(oldBB, lastNewBB)
-                nextStartPC += 1
-                while (nextStartPC < max && {
-                    val nextOldBB = basicBlocks(nextStartPC)
-                    (nextOldBB eq null) || (nextOldBB eq oldBB)
-                }) {
-                    nextStartPC += 1
+            val oldBB = basicBlocks(startPC)
+            val startIndex = pcToIndex(startPC)
+            val endIndex = pcToIndex(oldBB.endPC)
+            lastNewBB = new BasicBlock(startIndex, endIndex)
+            bbMapping.put(oldBB, lastNewBB)
+            Arrays.fill(newBasicBlocksArray, startIndex, endIndex + 1, lastNewBB)
+            // let's advance startPC to the next instruction which is live (which has a BB)
+            startPC = oldBB.endPC + 1
+            var tempBB: BasicBlock = null
+            while (startPC < bbsLength && {
+                tempBB = basicBlocks(startPC)
+                (tempBB eq null) || pcToIndex(tempBB.startPC) < 0
+            }) {
+                assert(tempBB ne oldBB)
+                // This (index < 0) handles the case where the initial CFG was created using
+                // a simple algorithm that actually resulted in a CFG with detached basic blocks;
+                // we now kill these basic blocks by jumping over them!
+                // NOTE: This is indicative of dead code in the bytecode in the first place!
+                if ((tempBB ne null)) {
+                    startPC = tempBB.endPC
                 }
-                if (nextStartPC < max)
-                    oldBB = basicBlocks(nextStartPC)
-                // repeat this loop while we see dead basic blocks (i.e., we have actually found
-                // code which cannot be reached on any path; this is a frequent issue with older
-                // compilers or foreign language compilers such as the groovy compiler)
-            } while (nextStartPC < max && pcToIndex(nextStartPC) == 0)
-
-            val endIndex = if (nextStartPC < max) pcToIndex(nextStartPC) - 1 else lastIndex
-            lastNewBB.endPC = endIndex
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, endIndex + 1, lastNewBB)
-            startPC = nextStartPC
-            startIndex = endIndex + 1
-        } while (startPC < max)
-        if (startIndex < lastIndex)
-            Arrays.fill(newBasicBlocks.asInstanceOf[Array[Object]], startIndex, lastIndex, lastNewBB)
+                startPC += 1
+            }
+        } while (startPC < bbsLength)
 
         if (requiresNewStartBlock) {
-            newBasicBlocks(0).addSuccessor(newBasicBlocks(pcToIndex(0)))
+            val firstBB = newBasicBlocks(0)
+            val secondBB = newBasicBlocks(pcToIndex(0))
+            firstBB.addSuccessor(secondBB)
+            secondBB.addPredecessor(firstBB)
         }
 
         // update the catch nodes
@@ -264,19 +387,12 @@ case class CFG(
             )
         }
 
-        // rewire the graph
-
         val newNormalReturnNode = new ExitNode(normalReturn = true)
         bbMapping.put(normalReturnNode, newNormalReturnNode)
-        normalReturnNode.successors.foreach { bb ⇒
-            newNormalReturnNode.addSuccessor(bbMapping.get(bb))
-        }
-
         val newAbnormalReturnNode = new ExitNode(normalReturn = false)
         bbMapping.put(abnormalReturnNode, newAbnormalReturnNode)
-        abnormalReturnNode.successors.foreach { bb ⇒
-            newAbnormalReturnNode.addSuccessor(bbMapping.get(bb))
-        }
+
+        // rewire the graph
 
         bbMapping.keySet().asScala.foreach { oldBB ⇒
             val newBB = bbMapping.get(oldBB)
@@ -284,33 +400,27 @@ case class CFG(
                 val newSuccBB = bbMapping.get(oldSuccBB)
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
-            }
-            oldBB.predecessors.foreach { oldPredBB ⇒
-                val newPredBB = bbMapping.get(oldPredBB)
-                assert(newPredBB ne null, s"no mapping for $oldPredBB")
-                newBB.addPredecessor(newPredBB)
+                // Instead of iterating over the predecessors, we just iterate over
+                // the successors; this way we only include the node that are
+                // live; nodes that; e.g., are attached to the exit node but for
+                // which there is no path to reach them at all are dropped!
+                newSuccBB.addPredecessor(newBB)
             }
         }
 
         val newCatchNodes = catchNodes.map(bbMapping.get(_).asInstanceOf[CatchNode])
         assert(newCatchNodes.forall { _ ne null })
-        val newCFG = CFG(
-            code,
-            newNormalReturnNode,
-            newAbnormalReturnNode,
-            newCatchNodes,
-            newBasicBlocks
-        )
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
-            val secondBB = newBasicBlocks(0).successors.head.asBasicBlock
             val firstBB = newBasicBlocks(0)
-            firstBB.endPC = secondBB.endPC
-            firstBB.setSuccessors(secondBB.successors)
+            val secondBB = firstBB.successors.head.asBasicBlock
+            val newFirstBB = secondBB.copy(startPC = 0, predecessors = Set.empty)
+            newFirstBB.successors.foreach(succBB ⇒ succBB.updatePredecessor(secondBB, newFirstBB))
+            Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        newCFG
+        CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
     }
 
     //

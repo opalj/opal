@@ -80,7 +80,7 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                     var isomorphicCount = 0
                     var notIsomorphicCount = 0
                     var lastPC = -1
-                    body foreach { (pc, instruction) ⇒
+                    body iterate { (pc, instruction) ⇒
                         assert(
                             instruction.isIsomorphic(pc, pc)(body),
                             s"$instruction should be isomorphic to itself"
