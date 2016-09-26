@@ -77,28 +77,45 @@ object TAC {
             "Example:\n\tjava …TAC /Library/jre/lib/rt.jar java.util.ArrayList toString"
 
     def processMethod(project: SomeProject, classFile: ClassFile, method: Method): Unit = {
-        val naiveCFGFile = writeAndOpen(CFGFactory(method.body.get, project.classHierarchy).toDot, "NaiveCFG-"+method.name, ".br.cfg.gv")
+        val naiveCFGFile = writeAndOpen(
+            CFGFactory(method.body.get, project.classHierarchy).toDot,
+            "NaiveCFG-"+method.name, ".br.cfg.gv"
+        )
+        println(s"Generated naive CFG (for comparison purposes only) $naiveCFGFile.")
+
         try {
             val ch = project.classHierarchy
-            val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
-            val aiResult = BaseAI(classFile, method, domain)
-            val aiCFGFile = writeAndOpen(toDot(Set(aiResult.domain.cfgAsGraph())), "AICFG-"+method.name, ".ai.cfg.gv")
-            val aiBRCFGFile = writeAndOpen(aiResult.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
 
-            val (code, cfg) =
-                //AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
-                AsQuadruples(method, ch, Some(aiResult), AllOptimizations, forceCFGCreation = true)
-            val graph = cfg.get.toDot
-            val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
+            { // USING AI
+                val domain = new DefaultDomainWithCFGAndDefUse(project, classFile, method)
+                val aiResult = Some(BaseAI(classFile, method, domain))
+                val aiCFGFile = writeAndOpen(
+                    toDot(Set(aiResult.get.domain.cfgAsGraph())),
+                    "AICFG-"+method.name, ".ai.cfg.gv"
+                )
+                println(s"Generated ai CFG (input) $aiCFGFile.")
+                val aiBRCFGFile = writeAndOpen(aiResult.get.domain.bbCFG.toDot, "AICFG", "ai.br.cfg.gv")
+                println(s"Generated the reified ai CFG $aiBRCFGFile.")
+                val (code, cfg) =
+                    AsQuadruples(method, ch, aiResult, AllOptimizations, forceCFGCreation = true)
+                val graph = cfg.get.toDot
+                val tacCFGFile = writeAndOpen(graph, "TACCFG-"+method.name, ".tac.cfg.gv")
+                println(s"Generated the tac cfg file $tacCFGFile.")
+                val tac = ToJavaLike(code)
+                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
+                val file = writeAndOpen(tac, fileNamePrefix, ".ai.tac.txt")
+                println(s"Generated the ai tac file $file.")
+            }
 
-            val tac = ToJavaLike(code)
-            val fileNamePrefix = classFile.thisType.toJava+"."+method.name
-            val file = writeAndOpen(tac, fileNamePrefix, ".tac.txt")
-            println(s"Generated naive CFG (for comparison purposes only) $naiveCFGFile.")
-            println(s"Generated ai CFG (input) $aiCFGFile.")
-            println(s"Generated the reified ai CFG $aiBRCFGFile.")
-            println(s"Generated the tac file $file.")
-            println(s"Generated the tac cfg file $tacCFGFile.")
+            { // USING NO AI
+                val (code, _) =
+                    AsQuadruples(method, ch, None, AllOptimizations, forceCFGCreation = true)
+
+                val tac = ToJavaLike(code)
+                val fileNamePrefix = classFile.thisType.toJava+"."+method.name
+                val file = writeAndOpen(tac, fileNamePrefix, ".naive.tac.txt")
+                println(s"Generated the naive tac file $file.")
+            }
 
         } catch {
             case OpeningFileFailedException(file, cause) ⇒
