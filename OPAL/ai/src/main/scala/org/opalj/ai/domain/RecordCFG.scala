@@ -461,7 +461,7 @@ trait RecordCFG
                     runningBB.addSuccessor(successorNode)
                     successorNode.addPredecessor(runningBB)
                     endRunningBB = true
-                    // connection is done later, when we handle the regular successors
+                    // connection is done later, when we handle the (regular) successors
                 }
 
                 // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
