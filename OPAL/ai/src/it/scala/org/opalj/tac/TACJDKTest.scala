@@ -123,13 +123,13 @@ class TACJDKTest extends FunSpec with Matchers {
                 new DefaultDomainWithCFGAndDefUse(p, cf, m)
             })
 
-            it("it should be able to create a fully types three address representation for the JDK") {
+            it("it should be able to create a fully typed three address representation for the JDK") {
                 time {
                     checkFolder(jreLibFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
             }
 
-            it("it should be able to convert all methods of the set of collected class files") {
+            it("it should be able to create a fully typed three address representation for the JDK") {
                 time {
                     checkFolder(biClassfilesFolder, domainFactory)
                 } { t ⇒ info(s"conversion took ${t.toSeconds}") }
