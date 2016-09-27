@@ -1109,9 +1109,9 @@ final class Code private (
      * Here, complex means that evaluating the instruction may result in multiple control flows.
      * If the sequence contains complex logic, `false` will be returned.
      *
-     * One use case of this method is to, e.g., check if the code
-     * of the default case of a switch
-     * instruction always throws some error (e.g., an `UnknownError` or `AssertionError`).
+     * One use case of this method is, e.g., to check if the code
+     * of the default case of a switch instruction always throws some error
+     * (e.g., an `UnknownError` or `AssertionError`).
      * {{{
      * switch(...) {
      *  case X : ....
