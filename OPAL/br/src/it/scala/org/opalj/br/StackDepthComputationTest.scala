@@ -81,18 +81,18 @@ class StackDepthComputationTest extends FunSpec with Matchers {
             val instructions = code.instructions
             val exceptionHandlers = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
-try {
-            val computedMaxStack = computeMaxStack(instructions, classHierarchy, exceptionHandlers)
-            analyzedMethodsCount.incrementAndGet()
-            if (specifiedMaxStack < computedMaxStack) {
-                errors.add(
-                    s"the computed max stack is too large for ${method.toJava(classFile)}}: "+
-                        s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed)"
-                )
+            try {
+                val computedMaxStack = computeMaxStack(instructions, classHierarchy, exceptionHandlers)
+                analyzedMethodsCount.incrementAndGet()
+                if (specifiedMaxStack < computedMaxStack) {
+                    errors.add(
+                        s"the computed max stack is too large for ${method.toJava(classFile)}}: "+
+                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed)"
+                    )
+                }
+            } catch {
+                case t: Throwable ⇒ errors.add(t.getMessage)
             }
-} catch {
-    case t : Throwable => errors.add(t.getMessage)
-}
         }
         if (!errors.isEmpty()) {
             fail(errors.asScala.mkString("computation of max stack failed:\n\t", "\n\t", "\n"))
