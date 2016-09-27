@@ -86,8 +86,8 @@ class StackDepthComputationTest extends FunSpec with Matchers {
                 analyzedMethodsCount.incrementAndGet()
                 if (specifiedMaxStack < computedMaxStack) {
                     errors.add(
-                        s"the computed max stack is too large for ${method.toJava(classFile)}}: "+
-                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed)"
+                        s"the computed max stack is (too?) large for ${method.toJava(classFile)}}: "+
+                            s"$specifiedMaxStack(specified) vs. $computedMaxStack(computed):\n"+code.toString
                     )
                 }
             } catch {
@@ -95,7 +95,7 @@ class StackDepthComputationTest extends FunSpec with Matchers {
             }
         }
         if (!errors.isEmpty()) {
-            fail(errors.asScala.mkString("computation of max stack failed:\n\t", "\n\t", "\n"))
+            fail(errors.asScala.mkString("computation of max stack failed:\n", "\n", "\n"))
         }
         analyzedMethodsCount.get()
     }
