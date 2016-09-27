@@ -70,6 +70,7 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) {
 
+    /*
     // 1. Check that each basic block has a lower start pc than the end pc
     //    i.e., startPC <= endPC.
     assert(
@@ -157,6 +158,7 @@ case class CFG(
             map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
                 s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
     )
+	*/
 
     /**
      * The basic block associated with the very first instruction.
@@ -184,9 +186,12 @@ case class CFG(
     lazy val allBBs: Iterator[BasicBlock] = {
         //basicBlocks.view.filter(_ ne null).toSet
         new Iterator[BasicBlock] {
+			
             var currentStartPC = 0
-            def hasNext: Boolean = currentStartPC < basicBlocks.length
-            def next: BasicBlock = {
+            
+			def hasNext: Boolean = currentStartPC < basicBlocks.length
+            
+			def next: BasicBlock = {
                 val current = basicBlocks(currentStartPC)
                 currentStartPC = current.endPC + 1
                 while (currentStartPC < basicBlocks.length && (basicBlocks(currentStartPC) eq null)) {
@@ -296,15 +301,14 @@ case class CFG(
      * If the first index (i.e., `pcToIndex(0)` is not 0, then a new basic block for the indexes
      * in {0,pcToIndex(0)} is created if necessary.
      *
-     * @param   lastIndex The index of the last instruction of the underlying (non-empty) code array.
-     *          I.e., if the instruction array contains one instruction then the `lastIndex` has to be
-     *           `0`.
+     * @param  lastIndex The index of the last instruction of the underlying (non-empty) code array.
+     *         I.e., if the instruction array contains one instruction then the `lastIndex` has 
+     *         to be `0`.
      */
     def mapPCsToIndexes(pcToIndex: Array[PC], lastIndex: Int): CFG = {
 
-        /*
-        // [USED FOR DEBUGGING PURPOSES]
-        //
+        /* 
+		// [USED FOR DEBUGGING PURPOSES] *********************************************************
         println(
             basicBlocks.
                 filter(_ != null).
@@ -322,7 +326,7 @@ case class CFG(
         println(catchNodes.mkString("CatchNodes:", ",", "\n"))
         println(pcToIndex.zipWithIndex.map(_.swap).mkString("Mapping:", ",", "\n"))
         //
-        // [USED FOR DEBUGGING PURPOSES]
+		// ********************************************************* [USED FOR DEBUGGING PURPOSES] 
         */
 
         val bbsLength = basicBlocks.length
