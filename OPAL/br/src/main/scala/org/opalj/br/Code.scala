@@ -36,6 +36,9 @@ import scala.collection.mutable
 import org.opalj.br.instructions._
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -1302,7 +1305,7 @@ object Code {
      *
      * @note    The method's descriptor may actually require
      */
-    def maxRegistersRequiredByCode(instructions: Array[Instruction]): Int = {
+    def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
 
         val maxPC = instructions.length
         var pc = 0
@@ -1324,13 +1327,13 @@ object Code {
         maxRegisters
     }
 
-    def maxRegisters(
+    def computeMaxLocals(
         isInstanceMethod: Boolean,
         descriptor:       MethodDescriptor,
         instructions:     Array[Instruction]
     ): Int = {
         Math.max(
-            maxRegistersRequiredByCode(instructions),
+            computeMaxLocalsRequiredByCode(instructions),
             descriptor.parameterTypes.foldLeft(if (isInstanceMethod) 1 else 0) { (c, n) ⇒
                 c + n.computationalType.operandSize
             }
@@ -1346,114 +1349,41 @@ object Code {
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def computeMaxStack(
         instructions:      Array[Instruction],
+        classHierarchy:    ClassHierarchy     = ClassHierarchy.preInitializedClassHierarchy,
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
     ): Int = {
-        ???
-        /*
-         * THE ALGORITHM
-         * Start with the first instruction and a stack size of zero.
-         * While instruction is valid (this means it is not null):
-         * Get the stack change by the current instruction and calculate max_stack.
-         * Push every jump target with the current stack size onto a target stack;
-         * if the target was not already pushed onto the stack. If the current instruction terminates the
-         * execution, set instruction to null. If instruction is not null set
-         * instruction to the next instruction otherwise pop a jump target from
-         * the stack, set the current instruction to the jump's target
-         * instruction and set the stack depth. Return the maximum stack size.
-         * (Note this algorithm works because for every instruction the stack
-         * depth must always be the same regardless of the taken execution path.
-         * See JVM spec. for details.)
-         */
-        /*
-        var maxStackDepth : Int = 0;
-        var stackDepth : Int = 0;
+        val tempCode = Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers)
+        val cfg = CFGFactory(tempCode, classHierarchy)
 
-        var jumpTargets : Chain[(PC,Int)]  = Naught
+        // Basic ides: follow all paths
+        var maxStackDepth: Int = 0;
 
-        exceptionHandlers.
+        var paths: Chain[(PC, Int /*stackdepth before executing the instruction wiht pc*/ )] = Naught
+        val visitedPCs = new mutable.BitSet(instructions.length)
 
-        Code_JumpTargets jumpTargets = new Code_JumpTargets();
+        // We start with the first instruction and an empty stack.
+        paths :&:= ((0, 0))
+        visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is catched, the stack size is always 1 -
         // containing the exception itself.
-        for (ExceptionHandler exceptionHandler : getExceptionHandlers()) {
-            jumpTargets.push(new Code_JumpTarget(exceptionHandler
-                .getHandlerInstruction(), 1));
+        for (exceptionHandler ← exceptionHandlers) {
+            val handlerPC = exceptionHandler.handlerPC
+            if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
         }
 
-        /*
-         * Evaluate max_stack.
-         */
-        int maxStackDepth = 0;
-        int stackDepth = 0;
-
-        Instruction instruction = anchorInstruction.getNextInstruction();
-        while (instruction != null) {
-            // every method must always end with a "return" instruction, so
-            // NoInstruction (<=> anchorInstruction) should never be reached!
-            if (instruction == anchorInstruction)
-                throw new ClassFormatError(
-                        "Method does not end with a return instruction.");
-
-            stackDepth += instruction.getStackChange();
-
-            if (stackDepth > maxStackDepth)
-                maxStackDepth = stackDepth;
-
-            if (instruction.isJumpInstruction()) {
-                JumpInstruction jInstr = (JumpInstruction) instruction;
-
-                if (jInstr.isSingleJumpTargetInstruction()) {
-                    jumpTargets.push(new Code_JumpTarget(
-                            ((SingleTargetJumpInstruction) jInstr)
-                                .getJumpTarget().getTargetInstruction(),
-                            stackDepth));
-                }
-                else {
-                    for (JumpTarget jumpTarget : ((MultipleTargetsJumpInstruction) jInstr)
-                        .getJumpTargets()) {
-                        jumpTargets.push(new Code_JumpTarget(jumpTarget
-                            .getTargetInstruction(), stackDepth));
-                    }
-                }
-
-                int opcode = jInstr.getVirtualOpcode();
-
-                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_TABLESWITCH
-                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_LOOKUPSWITCH
-                        || opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_GOTO)
-                    // the next instruction is determined by jump target
-                    instruction = null;
-
-                if (opcode == VirtualOpcodeMnemonics.VIRTUAL_OM_JSR) {
-                    // after returning the normal execution is continued, but
-                    // the stack_depth is reduced by one; to handle this case
-                    // the next instruction is also pushed onto the stack with
-                    // the appropriate stack_depth size.
-                    jumpTargets.push(new Code_JumpTarget(instruction
-                        .getNextInstruction(), stackDepth - 1));
-                    instruction = null;
-                }
-
-            }
-            else if (instruction.isReturnInstruction())
-                // "ret" is also a return instruction!
-                instruction = null;
-
-            if (instruction != null)
-                instruction = instruction.getNextInstruction();
-            else {
-                Code_JumpTarget jumpTarget = jumpTargets.pop();
-                if (jumpTarget != null) {
-                    instruction = jumpTarget.targetInstruction;
-                    stackDepth = jumpTarget.stackDepth;
-                }
+        while (paths.nonEmpty) {
+            val (pc, initialStackDepth) = paths.head
+            paths = paths.tail
+            val stackDepth = initialStackDepth + instructions(pc).stackSlotsChange
+            maxStackDepth = Math.max(maxStackDepth, stackDepth)
+            cfg.foreachSuccessor(pc) { succPC ⇒
+                if (visitedPCs.add(succPC)) { paths :&:= ((succPC, stackDepth)) }
             }
         }
 
-        return maxStackDepth;
-        */
+        return maxStackDepth
     }
 
 }
